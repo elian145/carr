@@ -1,0 +1,766 @@
+{% extends "base.html" %}
+
+{% block content %}
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.2/css/all.min.css">
+<div class="row mb-4">
+    <div class="col-md-12">
+        <div class="card glass-effect">
+            <div class="card-body">
+                <h5 class="card-title" style="font-family: 'Orbitron', sans-serif;">SEARCH VEHICLES</h5>
+                <form method="GET" action="{{ url_for('search') }}" class="row g-3" id="searchForm">
+                    <div class="col-md-4">
+                        <label for="brandSelectBtn" class="form-label text-light">Brand</label>
+                        <button type="button" class="btn btn-outline-primary w-100" id="brandSelectBtn">
+                            <i class="fas fa-car"></i> Select Brand
+                        </button>
+                        <input type="hidden" id="selectedBrand" name="brand" value="{{ request.args.get('brand', '') }}">
+                    </div>
+                    <div class="col-md-4">
+                        <label for="modelSelect" class="form-label text-light">Model</label>
+                        <select class="form-control bg-dark text-light" id="modelSelect" name="model" {% if not request.args.get('model') %}disabled{% endif %} data-selected="{{ request.args.get('model', '') }}">
+                            <option value="" disabled {% if not request.args.get('model') %}selected{% endif %}>Select Model</option>
+                            {% if request.args.get('model') %}
+                            <option value="{{ request.args.get('model') }}" selected>{{ request.args.get('model') }}</option>
+                            {% endif %}
+                        </select>
+                    </div>
+                    <div class="col-md-4">
+                        <label for="trimSelect" class="form-label text-light">Trim</label>
+                        <select class="form-control bg-dark text-light" id="trimSelect" name="trim" {% if not request.args.get('trim') %}disabled{% endif %} data-selected="{{ request.args.get('trim', '') }}">
+                            <option value="" disabled {% if not request.args.get('trim') %}selected{% endif %}>Select Trim</option>
+                            {% if request.args.get('trim') %}
+                            <option value="{{ request.args.get('trim') }}" selected>{{ request.args.get('trim') }}</option>
+                            {% endif %}
+                        </select>
+                    </div>
+                    <div class="col-md-2">
+                        <label for="min_price" class="form-label text-light">Min Price</label>
+                        <select class="form-control" id="min_price" name="min_price">
+                            <option value="any" {% if not request.args.get('min_price') or request.args.get('min_price') == 'any' %}selected{% endif %}>Any Min Price</option>
+                            {% for price in range(1000, 1000001, 1000) %}
+                            {% set min_price = request.args.get('min_price') %}
+                            <option value="{{ price }}" {% if min_price and min_price != 'any' and min_price|int == price %}selected{% endif %}>${{ "{:,}".format(price) }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                    <div class="col-md-2">
+                        <label for="max_price" class="form-label text-light">Max Price</label>
+                        <select class="form-control" id="max_price" name="max_price">
+                            <option value="any" {% if not request.args.get('max_price') or request.args.get('max_price') == 'any' %}selected{% endif %}>Any Max Price</option>
+                            {% for price in range(1000, 1000001, 1000) %}
+                                {% set max_price = request.args.get('max_price') %}
+                                <option value="{{ price }}" {% if max_price and max_price != 'any' and max_price|int == price %}selected{% endif %}>${{ "{:,}".format(price) }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                    <div class="col-md-2">
+                        <label for="min_year" class="form-label text-light">Min Year</label>
+                        <select class="form-control" id="min_year" name="min_year">
+                            <option value="any" {% if not request.args.get('min_year') or request.args.get('min_year') == 'any' %}selected{% endif %}>Any Min Year</option>
+                            {% set safe_current_year = current_year if current_year is defined and current_year is not none and current_year|string|int > 1900 else 2024 %}
+                            {% for year in range(safe_current_year, 1899, -1) %}
+                                {% set min_year = request.args.get('min_year') %}
+                                <option value="{{ year }}" {% if min_year and min_year != 'any' and min_year|int == year %}selected{% endif %}>{{ year }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                    <div class="col-md-2">
+                        <label for="max_year" class="form-label text-light">Max Year</label>
+                        <select class="form-control" id="max_year" name="max_year">
+                            <option value="any" {% if not request.args.get('max_year') or request.args.get('max_year') == 'any' %}selected{% endif %}>Any Max Year</option>
+                            {% set safe_current_year = current_year if current_year is defined and current_year is not none and current_year|string|int > 1900 else 2024 %}
+                            {% for year in range(safe_current_year, 1899, -1) %}
+                                {% set max_year = request.args.get('max_year') %}
+                                <option value="{{ year }}" {% if max_year and max_year != 'any' and max_year|int == year %}selected{% endif %}>{{ year }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                    <div class="col-md-2">
+                        <label for="min_mileage" class="form-label text-light">Min Mileage</label>
+                        <select class="form-control" id="min_mileage" name="min_mileage">
+                            <option value="any" {% if not request.args.get('min_mileage') or request.args.get('min_mileage') == 'any' or request.args.get('min_mileage') == '0' %}selected{% endif %}>Any Min Mileage</option>
+                            {% for mileage in range(0, 1000001, 5000) %}
+                                {% set min_mileage = request.args.get('min_mileage') %}
+                                <option value="{{ mileage }}" {% if min_mileage and min_mileage != 'any' and min_mileage != '0' and min_mileage|int == mileage %}selected{% endif %}>{{ "{:,}".format(mileage) }} km</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                    <div class="col-md-2">
+                        <label for="max_mileage" class="form-label text-light">Max Mileage</label>
+                        <select class="form-control" id="max_mileage" name="max_mileage">
+                            <option value="any" {% if not request.args.get('max_mileage') or request.args.get('max_mileage') == 'any' or request.args.get('max_mileage') == '0' %}selected{% endif %}>Any Max Mileage</option>
+                            {% for mileage in range(0, 1000001, 5000) %}
+                                {% set max_mileage = request.args.get('max_mileage') %}
+                                <option value="{{ mileage }}" {% if max_mileage and max_mileage != 'any' and max_mileage != '0' and max_mileage|int == mileage %}selected{% endif %}>{{ "{:,}".format(mileage) }} km</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                    <div class="col-md-2">
+                        <label for="condition" class="form-label text-light">Condition</label>
+                        <select class="form-control" id="condition" name="condition">
+                            <option value="any" {% if not request.args.get('condition') or request.args.get('condition') == 'any' %}selected{% endif %}>Any Condition</option>
+                            <option value="new" {% if request.args.get('condition') == 'new' %}selected{% endif %}>New</option>
+                            <option value="used" {% if request.args.get('condition') == 'used' %}selected{% endif %}>Used</option>
+                        </select>
+                    </div>
+                    <div class="col-md-2">
+                        <label for="city" class="form-label text-light">City</label>
+                        <select class="form-control" id="city" name="city">
+                            <option value="any" {% if not request.args.get('city') or request.args.get('city') == 'any' %}selected{% endif %}>Any City</option>
+                            <option value="baghdad" {% if request.args.get('city') == 'baghdad' %}selected{% endif %}>Baghdad</option>
+                            <option value="basra" {% if request.args.get('city') == 'basra' %}selected{% endif %}>Basra</option>
+                            <option value="erbil" {% if request.args.get('city') == 'erbil' %}selected{% endif %}>Erbil</option>
+                            <option value="najaf" {% if request.args.get('city') == 'najaf' %}selected{% endif %}>Najaf</option>
+                            <option value="karbala" {% if request.args.get('city') == 'karbala' %}selected{% endif %}>Karbala</option>
+                            <option value="kirkuk" {% if request.args.get('city') == 'kirkuk' %}selected{% endif %}>Kirkuk</option>
+                            <option value="mosul" {% if request.args.get('city') == 'mosul' %}selected{% endif %}>Mosul</option>
+                            <option value="sulaymaniyah" {% if request.args.get('city') == 'sulaymaniyah' %}selected{% endif %}>Sulaymaniyah</option>
+                            <option value="dohuk" {% if request.args.get('city') == 'dohuk' %}selected{% endif %}>Dohok</option>
+                            <option value="anbar" {% if request.args.get('city') == 'anbar' %}selected{% endif %}>Anbar</option>
+                            <option value="halabja" {% if request.args.get('city') == 'halabja' %}selected{% endif %}>Halabja</option>
+                            <option value="diyala" {% if request.args.get('city') == 'diyala' %}selected{% endif %}>Diyala</option>
+                            <option value="diyarbakir" {% if request.args.get('city') == 'diyarbakir' %}selected{% endif %}>Diyarbakir</option>
+                            <option value="maysan" {% if request.args.get('city') == 'maysan' %}selected{% endif %}>Maysan</option>
+                            <option value="muthanna" {% if request.args.get('city') == 'muthanna' %}selected{% endif %}>Muthanna</option>
+                            <option value="dhi_qar" {% if request.args.get('city') == 'dhi_qar' %}selected{% endif %}>Dhi Qar</option>
+                            <option value="salaheldeen" {% if request.args.get('city') == 'salaheldeen' %}selected{% endif %}>Salaheldeen</option>
+                        </select>
+                    </div>
+                    <div class="col-md-2">
+                        <label for="sort_by" class="form-label text-light">Sort By</label>
+                        <select class="form-control" id="sort_by" name="sort_by">
+                            <option value="any" {% if not request.args.get('sort_by') or request.args.get('sort_by') == 'any' %}selected{% endif %}>Default (Newest)</option>
+                            <option value="price_asc" {% if request.args.get('sort_by') == 'price_asc' %}selected{% endif %}>Price (Low to High)</option>
+                            <option value="price_desc" {% if request.args.get('sort_by') == 'price_desc' %}selected{% endif %}>Price (High to Low)</option>
+                            <option value="year_desc" {% if request.args.get('sort_by') == 'year_desc' %}selected{% endif %}>Year (Newest)</option>
+                            <option value="year_asc" {% if request.args.get('sort_by') == 'year_asc' %}selected{% endif %}>Year (Oldest)</option>
+                            <option value="mileage_asc" {% if request.args.get('sort_by') == 'mileage_asc' %}selected{% endif %}>Mileage (Low to High)</option>
+                            <option value="mileage_desc" {% if request.args.get('sort_by') == 'mileage_desc' %}selected{% endif %}>Mileage (High to Low)</option>
+                        </select>
+                    </div>
+                    <div class="col-md-2 d-flex flex-column justify-content-end align-items-start">
+                        <label class="form-label text-light" style="visibility:hidden;">Advanced</label>
+                        <button type="button" class="btn btn-outline-primary w-100" id="advancedSearchBtn">
+                            <i class="fas fa-sliders-h"></i> Advanced Search
+                        </button>
+                    </div>
+                    <div class="col-12">
+                        <button type="submit" class="btn btn-primary">SEARCH</button>
+                        <a href="{{ url_for('home') }}" class="btn btn-secondary">CLEAR</a>
+                    </div>
+                    
+                    <!-- Advanced Search Section -->
+                    <div class="col-12 mt-3" id="advancedSearchSection" style="display: none;">
+                        <div class="card bg-dark">
+                            <div class="card-body">
+                                <div class="row">
+                                    <div class="col-md-6 mb-3">
+                                        <label for="title_status" class="form-label text-light">Title Status</label>
+                                        <select class="form-control" id="title_status" name="title_status" onchange="toggleDamagedParts()">
+                                            <option value="any" {% if not request.args.get('title_status') or request.args.get('title_status') == 'any' %}selected{% endif %}>Any Title Status</option>
+                                            <option value="clean" {% if request.args.get('title_status') == 'clean' %}selected{% endif %}>Clean Title</option>
+                                            <option value="damaged" {% if request.args.get('title_status') == 'damaged' %}selected{% endif %}>Damaged Title</option>
+                                        </select>
+                                    </div>
+                                    <div class="col-md-6 mb-3" id="damagedPartsContainer" style="display: none;">
+                                        <label for="damaged_parts" class="form-label text-light">Number of Damaged Parts</label>
+                                        <select class="form-control" id="damaged_parts" name="damaged_parts">
+                                            <option value="any" {% if not request.args.get('damaged_parts') or request.args.get('damaged_parts') == 'any' %}selected{% endif %}>Any Number of Parts</option>
+                                            {% for i in range(1, 16) %}
+                                            {% set damaged_parts = request.args.get('damaged_parts') %}
+                                            <option value="{{ i }}" {% if damaged_parts and damaged_parts != 'any' and damaged_parts|int == i %}selected{% endif %}>{{ i }} Part{% if i != 1 %}s{% endif %}</option>
+                                            {% endfor %}
+                                        </select>
+                                    </div>
+                                    <div class="col-md-6 mb-3">
+                                        <label for="transmission" class="form-label text-light">Transmission</label>
+                                        <select class="form-control" id="transmission" name="transmission">
+                                            <option value="any" {% if not request.args.get('transmission') or request.args.get('transmission') == 'any' %}selected{% endif %}>Any Transmission</option>
+                                            <option value="automatic" {% if request.args.get('transmission') == 'automatic' %}selected{% endif %}>Automatic</option>
+                                            <option value="manual" {% if request.args.get('transmission') == 'manual' %}selected{% endif %}>Manual</option>
+                                        </select>
+                                    </div>
+                                    <div class="col-md-6">
+                                        <label for="fuel_type" class="form-label text-light">Fuel Type</label>
+                                        <select class="form-control" id="fuel_type" name="fuel_type">
+                                            <option value="any" {% if not request.args.get('fuel_type') or request.args.get('fuel_type') == 'any' %}selected{% endif %}>Any Fuel Type</option>
+                                            <option value="gasoline" {% if request.args.get('fuel_type') == 'gasoline' %}selected{% endif %}>Gasoline</option>
+                                            <option value="diesel" {% if request.args.get('fuel_type') == 'diesel' %}selected{% endif %}>Diesel</option>
+                                            <option value="electric" {% if request.args.get('fuel_type') == 'electric' %}selected{% endif %}>Electric</option>
+                                            <option value="hybrid" {% if request.args.get('fuel_type') == 'hybrid' %}selected{% endif %}>Hybrid</option>
+                                            <option value="lpg" {% if request.args.get('fuel_type') == 'lpg' %}selected{% endif %}>LPG</option>
+                                            <option value="plug_in_hybrid" {% if request.args.get('fuel_type') == 'plug_in_hybrid' %}selected{% endif %}>Plug-in Hybrid</option>
+                                        </select>
+                                    </div>
+                                    <div class="col-md-6">
+                                        <label for="body_type" class="form-label text-light">Body Type</label>
+                                        <select class="form-control" id="body_type" name="body_type">
+                                            <option value="any" {% if not request.args.get('body_type') or request.args.get('body_type') == 'any' %}selected{% endif %}>Any Body Type</option>
+                                            <option value="sedan" {% if request.args.get('body_type') == 'sedan' %}selected{% endif %}>Sedan</option>
+                                            <option value="suv" {% if request.args.get('body_type') == 'suv' %}selected{% endif %}>SUV</option>
+                                            <option value="hatchback" {% if request.args.get('body_type') == 'hatchback' %}selected{% endif %}>Hatchback</option>
+                                            <option value="coupe" {% if request.args.get('body_type') == 'coupe' %}selected{% endif %}>Coupe</option>
+                                            <option value="wagon" {% if request.args.get('body_type') == 'wagon' %}selected{% endif %}>Wagon</option>
+                                            <option value="pickup" {% if request.args.get('body_type') == 'pickup' %}selected{% endif %}>Pickup</option>
+                                            <option value="van" {% if request.args.get('body_type') == 'van' %}selected{% endif %}>Van</option>
+                                            <option value="minivan" {% if request.args.get('body_type') == 'minivan' %}selected{% endif %}>Minivan</option>
+                                            <option value="motorcycle" {% if request.args.get('body_type') == 'motorcycle' %}selected{% endif %}>Motorcycle</option>
+                                            <option value="utv" {% if request.args.get('body_type') == 'utv' %}selected{% endif %}>UTV</option>
+                                            <option value="atv" {% if request.args.get('body_type') == 'atv' %}selected{% endif %}>ATV</option>
+                                        </select>
+                                    </div>
+                                    <div class="col-md-6">
+                                        <label for="seating" class="form-label text-light">Total Seating</label>
+                                        <select class="form-control" id="seating" name="seating">
+                                            <option value="any" {% if not request.args.get('seating') or request.args.get('seating') == 'any' %}selected{% endif %}>Any Seating</option>
+                                            <option value="1" {% if request.args.get('seating') == '1' %}selected{% endif %}>1 Seat</option>
+                                            <option value="2" {% if request.args.get('seating') == '2' %}selected{% endif %}>2 Seats</option>
+                                            <option value="3" {% if request.args.get('seating') == '3' %}selected{% endif %}>3 Seats</option>
+                                            <option value="4" {% if request.args.get('seating') == '4' %}selected{% endif %}>4 Seats</option>
+                                            <option value="5" {% if request.args.get('seating') == '5' %}selected{% endif %}>5 Seats</option>
+                                            <option value="6" {% if request.args.get('seating') == '6' %}selected{% endif %}>6 Seats</option>
+                                            <option value="7" {% if request.args.get('seating') == '7' %}selected{% endif %}>7 Seats</option>
+                                            <option value="8" {% if request.args.get('seating') == '8' %}selected{% endif %}>8 Seats</option>
+                                            <option value="9" {% if request.args.get('seating') == '9' %}selected{% endif %}>9 Seats</option>
+                                            <option value="10" {% if request.args.get('seating') == '10' %}selected{% endif %}>10+ Seats</option>
+                                        </select>
+                                    </div>
+                                    <div class="col-md-6">
+                                        <label for="drive_type" class="form-label text-light">Drive Type</label>
+                                        <select class="form-control" id="drive_type" name="drive_type">
+                                            <option value="any" {% if not request.args.get('drive_type') or request.args.get('drive_type') == 'any' %}selected{% endif %}>Any Drive Type</option>
+                                            <option value="fwd" {% if request.args.get('drive_type') == 'fwd' %}selected{% endif %}>Front-Wheel Drive (FWD)</option>
+                                            <option value="rwd" {% if request.args.get('drive_type') == 'rwd' %}selected{% endif %}>Rear-Wheel Drive (RWD)</option>
+                                            <option value="awd" {% if request.args.get('drive_type') == 'awd' %}selected{% endif %}>All-Wheel Drive (AWD)</option>
+                                            <option value="4wd" {% if request.args.get('drive_type') == '4wd' %}selected{% endif %}>Four-Wheel Drive (4WD)</option>
+                                        </select>
+                                    </div>
+                                    <div class="col-md-6 mb-3">
+                                        <label for="color" class="form-label text-light">Color</label>
+                                        <select class="form-control" id="color" name="color">
+                                            <option value="any" {% if not request.args.get('color') or request.args.get('color') == 'any' %}selected{% endif %}>Any</option>
+                                            <option value="black" {% if request.args.get('color') == 'black' %}selected{% endif %}>Black</option>
+                                            <option value="white" {% if request.args.get('color') == 'white' %}selected{% endif %}>White</option>
+                                            <option value="silver" {% if request.args.get('color') == 'silver' %}selected{% endif %}>Silver</option>
+                                            <option value="gray" {% if request.args.get('color') == 'gray' %}selected{% endif %}>Gray</option>
+                                            <option value="red" {% if request.args.get('color') == 'red' %}selected{% endif %}>Red</option>
+                                            <option value="blue" {% if request.args.get('color') == 'blue' %}selected{% endif %}>Blue</option>
+                                            <option value="green" {% if request.args.get('color') == 'green' %}selected{% endif %}>Green</option>
+                                            <option value="yellow" {% if request.args.get('color') == 'yellow' %}selected{% endif %}>Yellow</option>
+                                            <option value="orange" {% if request.args.get('color') == 'orange' %}selected{% endif %}>Orange</option>
+                                            <option value="purple" {% if request.args.get('color') == 'purple' %}selected{% endif %}>Purple</option>
+                                            <option value="brown" {% if request.args.get('color') == 'brown' %}selected{% endif %}>Brown</option>
+                                            <option value="beige" {% if request.args.get('color') == 'beige' %}selected{% endif %}>Beige</option>
+                                            <option value="gold" {% if request.args.get('color') == 'gold' %}selected{% endif %}>Gold</option>
+                                        </select>
+                                    </div>
+                                    <div class="col-md-6 mb-3">
+                                        <label for="cylinder_count" class="form-label text-light">Cylinder Count</label>
+                                        <select class="form-control" id="cylinder_count" name="cylinder_count">
+                                            <option value="any" {% if not request.args.get('cylinder_count') or request.args.get('cylinder_count') == 'any' %}selected{% endif %}>Any</option>
+                                            <option value="1" {% if request.args.get('cylinder_count') == '1' %}selected{% endif %}>1 Cylinder</option>
+                                            <option value="2" {% if request.args.get('cylinder_count') == '2' %}selected{% endif %}>2 Cylinders</option>
+                                            <option value="3" {% if request.args.get('cylinder_count') == '3' %}selected{% endif %}>3 Cylinders</option>
+                                            <option value="4" {% if request.args.get('cylinder_count') == '4' %}selected{% endif %}>4 Cylinders</option>
+                                            <option value="5" {% if request.args.get('cylinder_count') == '5' %}selected{% endif %}>5 Cylinders</option>
+                                            <option value="6" {% if request.args.get('cylinder_count') == '6' %}selected{% endif %}>6 Cylinders</option>
+                                            <option value="8" {% if request.args.get('cylinder_count') == '8' %}selected{% endif %}>8 Cylinders</option>
+                                            <option value="10" {% if request.args.get('cylinder_count') == '10' %}selected{% endif %}>10 Cylinders</option>
+                                            <option value="12" {% if request.args.get('cylinder_count') == '12' %}selected{% endif %}>12 Cylinders</option>
+                                        </select>
+                                    </div>
+                                    <div class="col-md-6 mb-3">
+                                        <label for="engine_size" class="form-label text-light">Engine Size</label>
+                                        <select class="form-control" id="engine_size" name="engine_size">
+                                            <option value="any">Any</option>
+                                            <option value="0.05">50cc</option>
+                                            <option value="0.125">125cc</option>
+                                            <option value="0.25">250cc</option>
+                                            <option value="0.3">300cc</option>
+                                            <option value="0.4">400cc</option>
+                                            <option value="0.5">500cc</option>
+                                            <option value="0.6">600cc</option>
+                                            <option value="0.7">700cc</option>
+                                            <option value="0.8">800cc</option>
+                                            <option value="0.9">900cc</option>
+                                            <option value="1.0">1.0L</option>
+                                            <option value="1.2">1.2L</option>
+                                            <option value="1.4">1.4L</option>
+                                            <option value="1.6">1.6L</option>
+                                            <option value="1.8">1.8L</option>
+                                            <option value="2.0">2.0L</option>
+                                            <option value="2.2">2.2L</option>
+                                            <option value="2.4">2.4L</option>
+                                            <option value="2.5">2.5L</option>
+                                            <option value="2.8">2.8L</option>
+                                            <option value="3.0">3.0L</option>
+                                            <option value="3.5">3.5L</option>
+                                            <option value="4.0">4.0L</option>
+                                            <option value="4.5">4.5L</option>
+                                            <option value="5.0">5.0L</option>
+                                            <option value="5.7">5.7L</option>
+                                            <option value="6.0">6.0L</option>
+                                            <option value="6.2">6.2L</option>
+                                            <option value="6.7">6.7L</option>
+                                            <option value="7.0">7.0L</option>
+                                            <option value="8.0">8.0L</option>
+                                            <option value="10.0">10.0L</option>
+                                            <option value="12.0">12.0L</option>
+                                            <option value="14.0">14.0L</option>
+                                            <option value="16.0">16.0L</option>
+                                            <option value="18.0">18.0L</option>
+                                        </select>
+                                    </div>
+                                    <div class="col-md-6 mb-3">
+                                        <label for="import_country" class="form-label text-light">Import Country</label>
+                                        <select class="form-control" id="import_country" name="import_country">
+                                            <option value="any" {% if not request.args.get('import_country') or request.args.get('import_country') == 'any' %}selected{% endif %}>Any</option>
+                                            <option value="us">United States</option>
+                                            <option value="gcc">GCC Countries</option>
+                                            <option value="iraq">Iraq</option>
+                                            <option value="canada">Canada</option>
+                                            <option value="eu">European Union</option>
+                                            <option value="cn">China</option>
+                                            <option value="korea">South Korea</option>
+                                            <option value="ru">Russia</option>
+                                            <option value="iran">Iran</option>
+                                        </select>
+                                    </div>
+                                    <div class="col-md-6 mb-3">
+                                        <label for="license_plate_type" class="form-label text-light">License Plate Type</label>
+                                        <select class="form-control" id="license_plate_type" name="license_plate_type">
+                                            <option value="any" {% if not request.args.get('license_plate_type') or request.args.get('license_plate_type') == 'any' %}selected{% endif %}>Any License Plate Type</option>
+                                            <option value="private" {% if request.args.get('license_plate_type') == 'private' %}selected{% endif %}>Private</option>
+                                            <option value="temporary" {% if request.args.get('license_plate_type') == 'temporary' %}selected{% endif %}>Temporary</option>
+                                            <option value="commercial" {% if request.args.get('license_plate_type') == 'commercial' %}selected{% endif %}>Commercial</option>
+                                            <option value="taxi" {% if request.args.get('license_plate_type') == 'taxi' %}selected{% endif %}>Taxi</option>
+                                        </select>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="row row-cols-1 row-cols-md-3 g-4">
+    {% for car in cars %}
+    <div class="col">
+        <a href="{{ url_for('car_detail', car_id=car.id) }}" class="text-decoration-none text-reset">
+        <div class="card h-100 car-card glass-effect position-relative">
+            {% if car.images and car.images|length > 0 %}
+                    <img src="{{ url_for('static', filename=car.images[0].image_url) }}" class="card-img-top car-image" alt="{{ car.brand|replace('-', ' ')|title }} {{ car.model }}">
+            {% else %}
+                <img src="{{ url_for('static', filename='uploads/default-car.jpg') }}" class="card-img-top car-image" alt="Default Car Image">
+            {% endif %}
+            <button class="btn btn-danger favorite-list-btn position-absolute" data-car-id="{{ car.id }}" title="Add to Favorites" style="top: 10px; right: 10px; border-radius: 50%; padding: 0.3em 0.5em; font-size: 1.1em; box-shadow: 0 2px 8px rgba(0,0,0,0.18);">
+                <i class="fa{% if car.id in favorited_ids %}s{% else %}-regular{% endif %} fa-heart"></i>
+            </button>
+            <div class="card-body">
+                    <h5 class="card-title listing-title">{{ car.brand|replace('-', ' ')|title }} {{ car.model }}</h5>
+                    <div class="price-tag">{% if car.price %}${{ '{:,.2f}'.format(car.price) }}{% else %}Price on request{% endif %}</div>
+                <div class="d-flex justify-content-between card-details-row">
+                    <div class="details-col-left">
+                        <div><i class="fas fa-calendar-alt me-1"></i><strong>Year:</strong> {{ car.year }}</div>
+                        <div><i class="fas fa-tachometer-alt me-1"></i><strong>Mileage:</strong> {{ car.mileage }} km</div>
+                    </div>
+                    <div class="details-col-right">
+                        <div><i class="fas fa-id-card me-1"></i><strong>Title:</strong> {{ car.title_status|title }}</div>
+                        <div><i class="fas fa-layer-group me-1"></i><strong>Trim:</strong> {{ car.trim }}</div>
+                    </div>
+                </div>
+                </div>
+            </div>
+        </a>
+    </div>
+    {% else %}
+    <div class="col-12">
+        <div class="alert alert-info glass-effect">
+            No cars found. <a href="{{ url_for('add_car') }}" class="text-warning">Add a new car listing</a>
+        </div>
+    </div>
+    {% endfor %}
+</div>
+
+<!-- Brand Selection Modal -->
+<div class="modal fade" id="brandModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content bg-dark">
+            <div class="modal-header border-secondary">
+                <h5 class="modal-title text-light">Select Brand</h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <div class="brand-grid" id="brandGrid">
+                    <!-- Brands will be loaded dynamically -->
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Login/Signup Modal -->
+<div class="modal fade" id="loginSignupModal" tabindex="-1" aria-labelledby="loginSignupModalLabel" aria-hidden="true">
+  <div class="modal-dialog modal-dialog-centered">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title" id="loginSignupModalLabel">Sign Up or Log In</h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+      </div>
+      <div class="modal-body text-center">
+        <p>You need to sign up or log in to favorite a car listing.</p>
+        <a href="{{ url_for('login') }}" class="btn btn-primary me-2">Log In</a>
+        <a href="{{ url_for('signup') }}" class="btn btn-outline-primary">Sign Up</a>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        const advancedSearchBtn = document.getElementById('advancedSearchBtn');
+        const advancedSearchSection = document.getElementById('advancedSearchSection');
+        const brandSelectBtn = document.getElementById('brandSelectBtn');
+        const brandModal = new bootstrap.Modal(document.getElementById('brandModal'));
+        const selectedBrandInput = document.getElementById('selectedBrand');
+        const brandGrid = document.getElementById('brandGrid');
+        const modelSelect = document.getElementById('modelSelect');
+        const trimSelect = document.getElementById('trimSelect');
+        const searchForm = document.getElementById('searchForm');
+        
+        // Advanced Search Toggle
+        advancedSearchBtn.addEventListener('click', function() {
+            if (advancedSearchSection.style.display === 'none') {
+                advancedSearchSection.style.display = 'block';
+                advancedSearchBtn.classList.add('active');
+            } else {
+                advancedSearchSection.style.display = 'none';
+                advancedSearchBtn.classList.remove('active');
+            }
+        });
+
+        // Brand list - Ordered from most famous to least famous
+        const brands = [
+            // Tier 1: Global Luxury & Premium Brands
+            { id: 'mercedes-benz', name: 'Mercedes-Benz' },
+            { id: 'bmw', name: 'BMW' },
+            { id: 'audi', name: 'Audi' },
+            { id: 'toyota', name: 'Toyota' },
+            { id: 'volkswagen', name: 'Volkswagen' },
+            { id: 'honda', name: 'Honda' },
+            { id: 'nissan', name: 'Nissan' },
+            { id: 'ford', name: 'Ford' },
+            { id: 'chevrolet', name: 'Chevrolet' },
+            { id: 'hyundai', name: 'Hyundai' },
+            { id: 'kia', name: 'Kia' },
+            { id: 'volvo', name: 'Volvo' },
+            { id: 'lexus', name: 'Lexus' },
+            { id: 'porsche', name: 'Porsche' },
+            { id: 'jaguar', name: 'Jaguar' },
+            { id: 'land-rover', name: 'Land Rover' },
+            { id: 'mini', name: 'Mini' },
+            { id: 'smart', name: 'Smart' },
+            { id: 'subaru', name: 'Subaru' },
+            { id: 'mazda', name: 'Mazda' },
+            { id: 'mitsubishi', name: 'Mitsubishi' },
+            { id: 'suzuki', name: 'Suzuki' },
+
+            // Tier 2: Luxury & Sports Car Manufacturers
+            { id: 'ferrari', name: 'Ferrari' },
+            { id: 'lamborghini', name: 'Lamborghini' },
+            { id: 'bentley', name: 'Bentley' },
+            { id: 'rolls-royce', name: 'Rolls-Royce' },
+            { id: 'aston-martin', name: 'Aston Martin' },
+            { id: 'mclaren', name: 'McLaren' },
+            { id: 'maserati', name: 'Maserati' },
+            { id: 'bugatti', name: 'Bugatti' },
+            { id: 'pagani', name: 'Pagani' },
+            { id: 'koenigsegg', name: 'Koenigsegg' },
+
+            // Tier 3: European Manufacturers
+            { id: 'alfa-romeo', name: 'Alfa Romeo' },
+            { id: 'fiat', name: 'Fiat' },
+            { id: 'lancia', name: 'Lancia' },
+            { id: 'abarth', name: 'Abarth' },
+            { id: 'opel', name: 'Opel' },
+            { id: 'vauxhall', name: 'Vauxhall' },
+            { id: 'peugeot', name: 'Peugeot' },
+            { id: 'citroen', name: 'Citroën' },
+            { id: 'renault', name: 'Renault' },
+            { id: 'ds', name: 'DS' },
+            { id: 'seat', name: 'SEAT' },
+            { id: 'skoda', name: 'Škoda' },
+            { id: 'dacia', name: 'Dacia' },
+
+            // Tier 4: American Manufacturers
+            { id: 'cadillac', name: 'Cadillac' },
+            { id: 'buick', name: 'Buick' },
+            { id: 'gmc', name: 'GMC' },
+            { id: 'chrysler', name: 'Chrysler' },
+            { id: 'dodge', name: 'Dodge' },
+            { id: 'jeep', name: 'Jeep' },
+            { id: 'ram', name: 'RAM' },
+            { id: 'lincoln', name: 'Lincoln' },
+
+            // Tier 5: Performance Tuners
+            { id: 'alpina', name: 'Alpina' },
+            { id: 'brabus', name: 'Brabus' },
+            { id: 'mansory', name: 'Mansory' },
+
+            // Tier 6: Asian Manufacturers
+            { id: 'genesis', name: 'Genesis' },
+            { id: 'isuzu', name: 'Isuzu' },
+            { id: 'datsun', name: 'Datsun' },
+            { id: 'jac-motors', name: 'JAC Motors' },
+            { id: 'jac-trucks', name: 'JAC Trucks' },
+            { id: 'ktm', name: 'KTM' },
+
+            // Tier 7: Chinese Manufacturers
+            { id: 'byd', name: 'BYD' },
+            { id: 'geely-zgh', name: 'Geely' },
+            { id: 'great-wall-motors', name: 'Great Wall Motors' },
+            { id: 'chery-automobile', name: 'Chery' },
+            { id: 'baic', name: 'BAIC' },
+            { id: 'gac', name: 'GAC' },
+            { id: 'saic', name: 'SAIC' },
+            { id: 'mg', name: 'MG' },
+            { id: 'bestune', name: 'Bestune' },
+            { id: 'hongqi', name: 'Hongqi' },
+            { id: 'dongfeng-motor', name: 'Dongfeng' },
+            { id: 'faw', name: 'FAW' },
+            { id: 'faw-jiefang', name: 'FAW Jiefang' },
+            { id: 'foton', name: 'Foton' },
+            { id: 'leapmotor', name: 'Leapmotor' },
+
+            // Tier 8: Commercial & Other Manufacturers
+            { id: 'man', name: 'MAN' },
+            { id: 'iran-khodro', name: 'Iran Khodro' }
+        ];
+
+        // Load brands when modal opens
+        brandSelectBtn.addEventListener('click', function() {
+            if (brandGrid.children.length === 0) {
+                brands.forEach(brand => {
+                    const brandItem = document.createElement('div');
+                    brandItem.className = 'brand-item';
+                    brandItem.dataset.brand = brand.id;
+                    brandItem.innerHTML = `
+                        <div class="brand-logo">
+                            <img src="/static/images/brands/${brand.id}.png" alt="${brand.name} Logo" onerror="this.onerror=null;this.src='/static/images/brands/default.png';">
+                        </div>
+                        <span>${brand.name}</span>
+                    `;
+                    brandItem.addEventListener('click', function() {
+                        selectedBrandInput.value = brand.id;
+                        selectedBrandInput.dispatchEvent(new Event('change'));
+                        brandSelectBtn.innerHTML = `<img src='/static/images/brands/${brand.id}.png' class='selected-brand-logo' alt='${brand.name} Logo'> <span class='selected-brand-name'>${brand.name}</span>`;
+                        brandModal.hide();
+                        // Enable and populate model select
+                        modelSelect.disabled = false;
+                        modelSelect.innerHTML = '<option value="" disabled selected>Loading models...</option>';
+                        // Fetch models for selected brand
+                        fetch(`/api/models/${brand.id}`)
+                            .then(response => response.json())
+                            .then(models => {
+                                modelSelect.innerHTML = '<option value="" disabled selected>Select Model</option>';
+                                models.forEach(model => {
+                                    const option = document.createElement('option');
+                                    option.value = model;
+                                    option.textContent = model;
+                                    modelSelect.appendChild(option);
+                                });
+                            })
+                            .catch(error => {
+                                console.error('Error fetching models:', error);
+                                modelSelect.innerHTML = '<option value="" disabled selected>Error loading models</option>';
+                            });
+                    });
+                    brandGrid.appendChild(brandItem);
+                });
+            }
+            brandModal.show();
+        });
+
+        // Function to update models based on selected brand
+        function updateModels() {
+            const brand = selectedBrandInput.value;
+            modelSelect.innerHTML = '<option value="" disabled selected>Select Model</option>';
+            trimSelect.innerHTML = '<option value="" disabled selected>Select Trim</option>';
+            trimSelect.disabled = true;
+            
+            if (brand) {
+                fetch(`/api/models/${brand}`)
+                    .then(response => response.json())
+                    .then(models => {
+                        models.forEach(model => {
+                            const option = document.createElement('option');
+                            option.value = model;
+                            option.textContent = model;
+                            modelSelect.appendChild(option);
+                        });
+                        modelSelect.disabled = false;
+                    });
+            }
+        }
+        
+        // Function to update trims based on selected brand and model
+        function updateTrims() {
+            const brand = selectedBrandInput.value;
+            const model = modelSelect.value;
+            trimSelect.innerHTML = '<option value="" disabled selected>Select Trim</option>';
+            trimSelect.disabled = true;
+            
+            if (brand && model) {
+                fetch(`/api/trims/${brand}/${model}`)
+                    .then(response => response.json())
+                    .then(trims => {
+                        if (trims && trims.length > 0) {
+                            trims.forEach(trim => {
+                                const option = document.createElement('option');
+                                option.value = trim;
+                                option.textContent = trim;
+                                trimSelect.appendChild(option);
+                            });
+                            trimSelect.disabled = false;
+                        }
+                    });
+            }
+        }
+        
+        // Event listeners
+        selectedBrandInput.addEventListener('change', function() {
+            updateModels();
+        });
+        
+        modelSelect.addEventListener('change', updateTrims);
+        
+        // Initialize models if brand is pre-selected
+        if (selectedBrandInput.value) {
+            updateModels();
+        }
+        
+        // Initialize trims if model is pre-selected
+        if (modelSelect.value) {
+            updateTrims();
+        }
+
+        // Debug form submission
+        searchForm.addEventListener('submit', function(e) {
+            console.log('Form submitted');
+            const formData = new FormData(searchForm);
+            for (let [key, value] of formData.entries()) {
+                console.log(`${key}: ${value}`);
+            }
+        });
+
+        function toggleDamagedParts() {
+            console.log('toggleDamagedParts called');
+            const titleStatus = document.getElementById('title_status');
+            const damagedPartsContainer = document.getElementById('damagedPartsContainer');
+            const damagedParts = document.getElementById('damaged_parts');
+            
+            console.log('Title Status Value:', titleStatus.value);
+            
+            if (titleStatus.value === 'damaged') {
+                console.log('Showing damaged parts container');
+                damagedPartsContainer.style.display = 'block';
+                damagedParts.required = true;
+            } else {
+                console.log('Hiding damaged parts container');
+                damagedPartsContainer.style.display = 'none';
+                damagedParts.required = false;
+                damagedParts.value = 'any';
+            }
+        }
+
+        // Set brand button and logo if a brand is pre-selected (run after brands array is defined)
+        const selectedBrand = selectedBrandInput.value;
+        if (selectedBrand) {
+            const brandObj = brands.find(b => b.id === selectedBrand);
+            if (brandObj) {
+                brandSelectBtn.innerHTML = `<img src='/static/images/brands/${brandObj.id}.png' class='selected-brand-logo' alt='${brandObj.name} Logo'> <span class='selected-brand-name'>${brandObj.name}</span>`;
+            }
+            // If a model is pre-selected, populate models and set selected
+            const preselectedModel = modelSelect.getAttribute('data-selected');
+            if (preselectedModel) {
+                fetch(`/api/models/${selectedBrand}`)
+                    .then(response => response.json())
+                    .then(models => {
+                        modelSelect.innerHTML = '<option value="" disabled>Select Model</option>';
+                        models.forEach(model => {
+                            const option = document.createElement('option');
+                            option.value = model;
+                            option.textContent = model;
+                            if (model === preselectedModel) option.selected = true;
+                            modelSelect.appendChild(option);
+                        });
+                        modelSelect.disabled = false;
+                        // If a trim is pre-selected, populate trims and set selected
+                        const preselectedTrim = trimSelect.getAttribute('data-selected');
+                        if (preselectedTrim) {
+                            fetch(`/api/trims/${selectedBrand}/${preselectedModel}`)
+                                .then(response => response.json())
+                                .then(trims => {
+                                    trimSelect.innerHTML = '<option value="" disabled>Select Trim</option>';
+                                    trims.forEach(trim => {
+                                        const option = document.createElement('option');
+                                        option.value = trim;
+                                        option.textContent = trim;
+                                        if (trim === preselectedTrim) option.selected = true;
+                                        trimSelect.appendChild(option);
+                                    });
+                                    trimSelect.disabled = false;
+                                });
+                        }
+                    });
+            }
+        }
+
+        document.querySelectorAll('.favorite-list-btn').forEach(function(btn) {
+            btn.addEventListener('click', function(e) {
+                e.preventDefault();
+                var carId = btn.getAttribute('data-car-id');
+                var isAuthenticated = {{ 'true' if current_user.is_authenticated else 'false' }};
+                if (!isAuthenticated) {
+                    var loginModal = new bootstrap.Modal(document.getElementById('loginSignupModal'));
+                    loginModal.show();
+                    return;
+                }
+                fetch('/favorite/' + carId, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'X-Requested-With': 'XMLHttpRequest'
+                    },
+                    credentials: 'same-origin'
+                })
+                .then(response => response.json())
+                .then(data => {
+                    const icon = btn.querySelector('i');
+                    if (data.favorited) {
+                        icon.classList.remove('fa-regular');
+                        icon.classList.add('fas');
+                    } else {
+                        icon.classList.remove('fas');
+                        icon.classList.add('fa-regular');
+                    }
+                });
+            });
+        });
+    });
+</script>
+
+<style>
+.favorite-list-btn:hover, .favorite-list-btn:focus {
+    background: var(--primary-orange) !important;
+    color: #fff !important;
+}
+.favorite-list-btn:hover i, .favorite-list-btn:focus i {
+    color: #fff !important;
+    font-weight: bold;
+}
+</style>
+{% endblock %} 

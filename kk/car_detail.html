@@ -1,0 +1,525 @@
+{% extends "base.html" %}
+
+{% block title %}{{ car.brand|replace('-', ' ')|title }} {{ car.model }} - Car Listings{% endblock %}
+
+{% block content %}
+<!-- Main Title -->
+<div class="container mt-4 position-relative">
+    <a href="{{ url_for('home') }}" class="btn btn-outline-secondary position-absolute" title="Back to Listings" style="left: -60px; top: 0; border-radius: 50%; padding: 0.4em 0.7em; font-size: 1.5rem; z-index: 10;">
+        <i class="fas fa-arrow-left"></i>
+    </a>
+    <div class="d-flex align-items-center mb-4">
+        <h1 class="mb-0" style="font-family: 'Orbitron', sans-serif; color: var(--primary-orange); font-size: 2.5rem; text-shadow: 0 0 10px rgba(255, 107, 0, 0.3);">
+            {{ car.brand|replace('-', ' ')|title }} {{ car.model }}
+        </h1>
+    </div>
+</div>
+
+<div class="row">
+    <div class="col-md-8">
+        <div class="card mb-4 glass-effect">
+            {% if car.images %}
+            <div id="carImagesCarousel" class="carousel slide mb-3" data-bs-ride="carousel">
+                <div class="carousel-inner">
+                    {% for image in car.images %}
+                    <div class="carousel-item {% if loop.first %}active{% endif %}">
+                        <img src="{{ url_for('static', filename=image.image_url) }}" class="d-block w-100 carousel-image" alt="{{ car.brand|replace('-', ' ')|title }} {{ car.model }} image {{ loop.index }}" style="max-height: 400px; object-fit: cover; border-radius: 15px 15px 0 0; cursor: pointer;" data-bs-toggle="modal" data-bs-target="#imageModal" data-image-index="{{ loop.index0 }}">
+                    </div>
+                    {% endfor %}
+                </div>
+                <button class="carousel-control-prev" type="button" data-bs-target="#carImagesCarousel" data-bs-slide="prev">
+                    <span class="carousel-control-prev-icon" aria-hidden="true"></span>
+                    <span class="visually-hidden">Previous</span>
+                </button>
+                <button class="carousel-control-next" type="button" data-bs-target="#carImagesCarousel" data-bs-slide="next">
+                    <span class="carousel-control-next-icon" aria-hidden="true"></span>
+                    <span class="visually-hidden">Next</span>
+                </button>
+            </div>
+            {% else %}
+            <img src="{{ url_for('static', filename='uploads/default-car.jpg') }}" class="card-img-top" alt="Default Car Image" style="max-height: 400px; object-fit: cover; border-radius: 15px 15px 0 0;">
+            {% endif %}
+            {% if car.images|length > 1 %}
+            <div class="car-thumbs-row mb-3">
+                {% for image in car.images %}
+                <img 
+                    src="{{ url_for('static', filename=image.image_url) }}" 
+                    class="car-thumb"
+                    data-bs-target="#carImagesCarousel" 
+                    data-bs-slide-to="{{ loop.index0 }}" 
+                    {% if loop.first %}aria-current="true"{% endif %}
+                    alt="Thumbnail {{ loop.index }}"
+                >
+                {% endfor %}
+            </div>
+            {% endif %}
+            <div class="card-body">
+                <p class="card-text">{{ car.description }}</p>
+            </div>
+        </div>
+        
+        <!-- Car Details Grid -->
+        <div class="card mb-4 glass-effect">
+            <div class="card-body">
+                <h4 class="text-light mb-3" style="font-family: 'Orbitron', sans-serif; color: var(--primary-orange);">Vehicle Details</h4>
+                <div class="row">
+                    <div class="col-md-6 mb-2">
+                        <div class="detail-item">
+                            <i class="fas fa-layer-group me-2" style="color: var(--primary-orange);"></i>
+                            <strong style="color: var(--primary-orange);">Trim:</strong> 
+                            <span class="text-light">{{ car.trim }}</span>
+                        </div>
+                    </div>
+                    <div class="col-md-6 mb-2">
+                        <div class="detail-item">
+                            <i class="fas fa-tachometer-alt me-2" style="color: var(--primary-orange);"></i>
+                            <strong style="color: var(--primary-orange);">Mileage:</strong> 
+                            <span class="text-light">{{ "{:,}".format(car.mileage) }} km</span>
+                        </div>
+                    </div>
+                    <div class="col-md-6 mb-2">
+                        <div class="detail-item">
+                            <i class="fas fa-calendar-alt me-2" style="color: var(--primary-orange);"></i>
+                            <strong style="color: var(--primary-orange);">Year:</strong> 
+                            <span class="text-light">{{ car.year }}</span>
+                        </div>
+                    </div>
+                    <div class="col-md-6 mb-2">
+                        <div class="detail-item">
+                            <i class="fas fa-cogs me-2" style="color: var(--primary-orange);"></i>
+                            <strong style="color: var(--primary-orange);">Transmission:</strong> 
+                            <span class="text-light">{{ car.transmission|title }}</span>
+                        </div>
+                    </div>
+                    <div class="col-md-6 mb-2">
+                        <div class="detail-item">
+                            <i class="fas fa-id-card me-2" style="color: var(--primary-orange);"></i>
+                            <strong style="color: var(--primary-orange);">Title Status:</strong> 
+                            <span class="text-light">{{ car.title_status|title }}</span>
+                        </div>
+                    </div>
+                    <div class="col-md-6 mb-2">
+                        <div class="detail-item">
+                            <i class="fas fa-fire me-2" style="color: var(--primary-orange);"></i>
+                            <strong style="color: var(--primary-orange);">Cylinders:</strong> 
+                            <span class="text-light">{{ car.cylinder_count }}</span>
+                        </div>
+                    </div>
+                    <div class="col-md-6 mb-2">
+                        <div class="detail-item">
+                            <i class="fas fa-oil-can me-2" style="color: var(--primary-orange);"></i>
+                            <strong style="color: var(--primary-orange);">Engine Size:</strong> 
+                            <span class="text-light">{{ car.engine_size }}L</span>
+                        </div>
+                    </div>
+                    <div class="col-md-6 mb-2">
+                        <div class="detail-item">
+                            <i class="fas fa-map-marker-alt me-2" style="color: var(--primary-orange);"></i>
+                            <strong style="color: var(--primary-orange);">Plate City:</strong> 
+                            <span class="text-light">{{ car.city|replace('_', ' ')|title }}</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-md-4 position-relative">
+        <button class="btn btn-danger favorite-float-btn" id="favoriteBtn" title="Add to Favorites" style="position: absolute; top: 10px; right: -55px; z-index: 10; border-radius: 50%; padding: 0.4em 0.6em; font-size: 1.3em; box-shadow: 0 4px 16px rgba(0,0,0,0.25); transition: background 0.2s, color 0.2s;">
+            <i class="fa{{ 's' if favorited else '-regular' }} fa-heart"></i>
+        </button>
+        {% if current_user.is_authenticated and car.user_id != current_user.id %}
+        <div class="d-grid gap-2 mb-4">
+            <button class="btn btn-primary" onclick="startChat({{ car.id }})">
+                <i class="fas fa-comments me-2"></i>Contact Seller
+            </button>
+        </div>
+        {% elif current_user.is_authenticated and car.user_id == current_user.id %}
+        <div class="alert alert-info mb-4">
+            <i class="fas fa-info-circle me-2"></i>
+            This is your listing. You can edit or delete it from your account.
+        </div>
+        {% else %}
+        <div class="d-grid gap-2 mb-4">
+            <button class="btn btn-primary" onclick="showLoginModal()">
+                <i class="fas fa-sign-in-alt me-2"></i>Login to Contact Seller
+            </button>
+        </div>
+        {% endif %}
+        <div class="card mb-4 glass-effect" style="margin-top: -8px;">
+            <div class="card-header d-flex justify-content-between align-items-center" style="background: linear-gradient(135deg, var(--primary-orange), var(--dark-orange));">
+                <h4 class="card-title mb-0" style="font-family: 'Orbitron', sans-serif; color: white;">DETAILS</h4>
+            </div>
+            <div class="card-body">
+                <ul class="list-group list-group-flush">
+                    <li class="list-group-item detail-item" style="background: transparent; color: var(--text-light);">
+                        <span class="price-tag">{% if car.price %}${{ '{:,.2f}'.format(car.price) }}{% else %}Price on request{% endif %}</span>
+                    </li>
+                    <li class="list-group-item detail-item" style="background: transparent; color: var(--text-light);">
+                        <i class="fas fa-car me-2" style="color: var(--primary-orange);"></i><strong style="color: var(--primary-orange);">Brand:</strong> {{ car.brand|replace('-', ' ')|title }}
+                    </li>
+                    <li class="list-group-item detail-item" style="background: transparent; color: var(--text-light);">
+                        <i class="fas fa-tag me-2" style="color: var(--primary-orange);"></i><strong style="color: var(--primary-orange);">Model:</strong> {{ car.model }}
+                    </li>
+                    <li class="list-group-item detail-item" style="background: transparent; color: var(--text-light);">
+                        <i class="fas fa-gas-pump me-2" style="color: var(--primary-orange);"></i><strong style="color: var(--primary-orange);">Fuel Type:</strong> {{ car.fuel_type|title }}
+                    </li>
+                    <li class="list-group-item detail-item" style="background: transparent; color: var(--text-light);">
+                        <i class="fas fa-palette me-2" style="color: var(--primary-orange);"></i><strong style="color: var(--primary-orange);">Color:</strong> {{ car.color|title }}
+                    </li>
+                    <li class="list-group-item detail-item" style="background: transparent; color: var(--text-light);">
+                        <i class="fas fa-car-side me-2" style="color: var(--primary-orange);"></i><strong style="color: var(--primary-orange);">Body Type:</strong> {{ car.body_type|title }}
+                    </li>
+                    <li class="list-group-item detail-item" style="background: transparent; color: var(--text-light);">
+                        <i class="fas fa-users me-2" style="color: var(--primary-orange);"></i><strong style="color: var(--primary-orange);">Seating:</strong> {{ car.seating }}
+                    </li>
+                    <li class="list-group-item detail-item" style="background: transparent; color: var(--text-light);">
+                        <i class="fas fa-road me-2" style="color: var(--primary-orange);"></i><strong style="color: var(--primary-orange);">Drive Type:</strong> {{ car.drive_type|title }}
+                    </li>
+                    <li class="list-group-item detail-item" style="background: transparent; color: var(--text-light);">
+                        <i class="fas fa-flag me-2" style="color: var(--primary-orange);"></i><strong style="color: var(--primary-orange);">Import Country:</strong> {{ car.import_country|title }}
+                    </li>
+                    <li class="list-group-item detail-item" style="background: transparent; color: var(--text-light);">
+                        <i class="fas fa-exclamation-triangle me-2" style="color: var(--primary-orange);"></i><strong style="color: var(--primary-orange);">Condition:</strong> {{ car.condition|title }}
+                    </li>
+                    <li class="list-group-item detail-item" style="background: transparent; color: var(--text-light);">
+                        <i class="fas fa-user me-2" style="color: var(--primary-orange);"></i><strong style="color: var(--primary-orange);">Seller:</strong> {{ car.user.username }}
+                    </li>
+                </ul>
+            </div>
+        </div>
+        
+        <div class="d-grid gap-2">
+            {% if current_user.is_authenticated and car.user_id != current_user.id and car.price %}
+                <!-- Removed Buy Now/payment button as payment is now only for listing fees -->
+            {% endif %}
+            {% if current_user.is_authenticated and car.user_id == current_user.id %}
+                <form action="{{ url_for('delete_car', car_id=car.id) }}" method="POST">
+                    <button type="submit" class="btn btn-danger w-100" onclick="return confirm('Are you sure you want to delete this listing?')">DELETE LISTING</button>
+                </form>
+            {% endif %}
+        </div>
+    </div>
+</div>
+
+<!-- Other Listings Section -->
+{% if other_cars and other_cars|length > 0 %}
+<div class="mt-5">
+    <h3 style="font-family: 'Orbitron', sans-serif; color: var(--primary-orange);">Other Listings</h3>
+    <div class="row row-cols-1 row-cols-md-3 g-4">
+        {% for other in other_cars %}
+        <div class="col">
+            <a href="{{ url_for('car_detail', car_id=other.id) }}" class="text-decoration-none text-reset">
+                <div class="card h-100 car-card glass-effect position-relative">
+                {% if other.images and other.images|length > 0 %}
+                        <img src="{{ url_for('static', filename=other.images[0].image_url) }}" class="card-img-top car-image" alt="{{ other.brand|replace('-', ' ')|title }} {{ other.model }}">
+                {% else %}
+                    <img src="{{ url_for('static', filename='uploads/default-car.jpg') }}" class="card-img-top car-image" alt="Default Car Image">
+                {% endif %}
+                    <button class="btn btn-danger favorite-list-btn position-absolute" data-car-id="{{ other.id }}" title="Add to Favorites" style="top: 10px; right: 10px; border-radius: 50%; padding: 0.3em 0.5em; font-size: 1.1em; box-shadow: 0 2px 8px rgba(0,0,0,0.18); z-index: 2;">
+                        <i class="fa-regular fa-heart"></i>
+                    </button>
+                <div class="card-body">
+                        <h5 class="card-title listing-title">{{ other.brand|replace('-', ' ')|title }} {{ other.model }}</h5>
+                        <div class="price-tag">{% if other.price %}${{ '{:,.2f}'.format(other.price) }}{% else %}Price on request{% endif %}</div>
+                    <div class="d-flex justify-content-between card-details-row">
+                        <div class="details-col-left">
+                            <div><i class="fas fa-calendar-alt me-1"></i><strong>Year:</strong> {{ other.year }}</div>
+                            <div><i class="fas fa-tachometer-alt me-1"></i><strong>Mileage:</strong> {{ other.mileage }} km</div>
+                        </div>
+                        <div class="details-col-right">
+                            <div><i class="fas fa-id-card me-1"></i><strong>Title:</strong> {{ other.title_status|title }}</div>
+                            <div><i class="fas fa-layer-group me-1"></i><strong>Trim:</strong> {{ other.trim }}</div>
+                        </div>
+                    </div>
+                    </div>
+                </div>
+            </a>
+        </div>
+        {% endfor %}
+    </div>
+</div>
+{% endif %}
+
+<!-- Similar Listings Section -->
+{% if similar_cars and similar_cars|length > 0 %}
+<div class="mt-5">
+    <h3 style="font-family: 'Orbitron', sans-serif; color: var(--primary-orange);">Similar Listings</h3>
+    <div class="row row-cols-1 row-cols-md-3 g-4">
+        {% for similar in similar_cars %}
+        <div class="col">
+            <a href="{{ url_for('car_detail', car_id=similar.id) }}" class="text-decoration-none text-reset">
+                <div class="card h-100 car-card glass-effect position-relative">
+                {% if similar.images and similar.images|length > 0 %}
+                        <img src="{{ url_for('static', filename=similar.images[0].image_url) }}" class="card-img-top car-image" alt="{{ similar.brand|replace('-', ' ')|title }} {{ similar.model }}">
+                {% else %}
+                    <img src="{{ url_for('static', filename='uploads/default-car.jpg') }}" class="card-img-top car-image" alt="Default Car Image">
+                {% endif %}
+                    <button class="btn btn-danger favorite-list-btn position-absolute" data-car-id="{{ similar.id }}" title="Add to Favorites" style="top: 10px; right: 10px; border-radius: 50%; padding: 0.3em 0.5em; font-size: 1.1em; box-shadow: 0 2px 8px rgba(0,0,0,0.18); z-index: 2;">
+                        <i class="fa-regular fa-heart"></i>
+                    </button>
+                <div class="card-body">
+                        <h5 class="card-title listing-title">{{ similar.brand|replace('-', ' ')|title }} {{ similar.model }}</h5>
+                        <div class="price-tag">{% if similar.price %}${{ '{:,.2f}'.format(similar.price) }}{% else %}Price on request{% endif %}</div>
+                    <div class="d-flex justify-content-between card-details-row">
+                        <div class="details-col-left">
+                            <div><i class="fas fa-calendar-alt me-1"></i><strong>Year:</strong> {{ similar.year }}</div>
+                            <div><i class="fas fa-tachometer-alt me-1"></i><strong>Mileage:</strong> {{ similar.mileage }} km</div>
+                        </div>
+                        <div class="details-col-right">
+                            <div><i class="fas fa-id-card me-1"></i><strong>Title:</strong> {{ similar.title_status|title }}</div>
+                            <div><i class="fas fa-layer-group me-1"></i><strong>Trim:</strong> {{ similar.trim }}</div>
+                        </div>
+                    </div>
+                    </div>
+                </div>
+            </a>
+        </div>
+        {% endfor %}
+    </div>
+</div>
+{% endif %}
+
+<!-- Image Modal -->
+<div class="modal fade" id="imageModal" tabindex="-1" aria-labelledby="imageModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-xl modal-dialog-centered">
+        <div class="modal-content bg-dark">
+            <div class="modal-header border-secondary">
+                <h5 class="modal-title text-light" id="imageModalLabel">{{ car.brand|replace('-', ' ')|title }} {{ car.model }} - Image Gallery</h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body p-0">
+                <div id="modalCarousel" class="carousel slide" data-bs-ride="false">
+                    <div class="carousel-inner">
+                        {% for image in car.images %}
+                        <div class="carousel-item {% if loop.first %}active{% endif %}">
+                            <img src="{{ url_for('static', filename=image.image_url) }}" class="d-block w-100" alt="{{ car.brand|replace('-', ' ')|title }} {{ car.model }} image {{ loop.index }}" style="max-height: 70vh; object-fit: contain;">
+                        </div>
+                        {% endfor %}
+                    </div>
+                    {% if car.images|length > 1 %}
+                    <button class="carousel-control-prev" type="button" data-bs-target="#modalCarousel" data-bs-slide="prev">
+                        <span class="carousel-control-prev-icon" aria-hidden="true"></span>
+                        <span class="visually-hidden">Previous</span>
+                    </button>
+                    <button class="carousel-control-next" type="button" data-bs-target="#modalCarousel" data-bs-slide="next">
+                        <span class="carousel-control-next-icon" aria-hidden="true"></span>
+                        <span class="visually-hidden">Next</span>
+                    </button>
+                    {% endif %}
+                </div>
+                {% if car.images|length > 1 %}
+                <div class="modal-footer border-secondary">
+                    <div class="d-flex justify-content-center w-100">
+                        <div class="car-thumbs-row">
+                            {% for image in car.images %}
+                            <img 
+                                src="{{ url_for('static', filename=image.image_url) }}" 
+                                class="car-thumb modal-thumb"
+                                data-bs-target="#modalCarousel" 
+                                data-bs-slide-to="{{ loop.index0 }}" 
+                                {% if loop.first %}aria-current="true"{% endif %}
+                                alt="Thumbnail {{ loop.index }}"
+                                style="cursor: pointer;"
+                            >
+                            {% endfor %}
+                        </div>
+                    </div>
+                </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Login/Signup Modal -->
+<div class="modal fade" id="loginSignupModal" tabindex="-1" aria-labelledby="loginSignupModalLabel" aria-hidden="true">
+  <div class="modal-dialog modal-dialog-centered">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title" id="loginSignupModalLabel">Sign Up or Log In</h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+      </div>
+      <div class="modal-body text-center">
+        <p>You need to sign up or log in to favorite a car listing.</p>
+        <a href="{{ url_for('login') }}" class="btn btn-primary me-2">Log In</a>
+        <a href="{{ url_for('signup') }}" class="btn btn-outline-primary">Sign Up</a>
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+{{ super() }}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    var carousel = document.getElementById('carImagesCarousel');
+    if (carousel) {
+        carousel.addEventListener('slid.bs.carousel', function (event) {
+            var thumbs = document.querySelectorAll('.car-thumb');
+            thumbs.forEach(function(thumb, idx) {
+                thumb.classList.toggle('active', idx === event.to);
+            });
+        });
+        // Set the first thumb as active on load
+        var thumbs = document.querySelectorAll('.car-thumb');
+        if (thumbs.length) thumbs[0].classList.add('active');
+    }
+
+    // Drag-to-scroll for thumbnail row
+    var thumbsRow = document.querySelector('.car-thumbs-row');
+    if (thumbsRow) {
+        let isDown = false;
+        let startX;
+        let scrollLeft;
+        thumbsRow.addEventListener('mousedown', function(e) {
+            isDown = true;
+            thumbsRow.classList.add('dragging');
+            startX = e.pageX - thumbsRow.offsetLeft;
+            scrollLeft = thumbsRow.scrollLeft;
+        });
+        thumbsRow.addEventListener('mouseleave', function() {
+            isDown = false;
+            thumbsRow.classList.remove('dragging');
+        });
+        thumbsRow.addEventListener('mouseup', function() {
+            isDown = false;
+            thumbsRow.classList.remove('dragging');
+        });
+        thumbsRow.addEventListener('mousemove', function(e) {
+            if (!isDown) return;
+            e.preventDefault();
+            const x = e.pageX - thumbsRow.offsetLeft;
+            const walk = (x - startX) * 2; // scroll-fast
+            thumbsRow.scrollLeft = scrollLeft - walk;
+        });
+        // Touch support
+        thumbsRow.addEventListener('touchstart', function(e) {
+            isDown = true;
+            startX = e.touches[0].pageX - thumbsRow.offsetLeft;
+            scrollLeft = thumbsRow.scrollLeft;
+        });
+        thumbsRow.addEventListener('touchend', function() {
+            isDown = false;
+        });
+        thumbsRow.addEventListener('touchmove', function(e) {
+            if (!isDown) return;
+            e.preventDefault();
+            const x = e.touches[0].pageX - thumbsRow.offsetLeft;
+            const walk = (x - startX) * 2;
+            thumbsRow.scrollLeft = scrollLeft - walk;
+        });
+    }
+
+    const favoriteBtn = document.getElementById('favoriteBtn');
+    if (favoriteBtn) {
+        favoriteBtn.addEventListener('click', function(e) {
+            e.preventDefault();
+            var isAuthenticated = {{ 'true' if current_user.is_authenticated else 'false' }};
+            if (!isAuthenticated) {
+                var loginModal = new bootstrap.Modal(document.getElementById('loginSignupModal'));
+                loginModal.show();
+                return;
+            }
+            fetch("{{ url_for('toggle_favorite', car_id=car.id) }}", {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-Requested-With': 'XMLHttpRequest'
+                },
+                credentials: 'same-origin'
+            })
+            .then(response => response.json())
+            .then(data => {
+                const icon = favoriteBtn.querySelector('i');
+                if (data.favorited) {
+                    icon.classList.remove('fa-regular');
+                    icon.classList.add('fas');
+                } else {
+                    icon.classList.remove('fas');
+                    icon.classList.add('fa-regular');
+                }
+            });
+        });
+    }
+
+    document.querySelectorAll('.favorite-list-btn').forEach(function(btn) {
+        btn.addEventListener('click', function(e) {
+            e.preventDefault();
+            var carId = btn.getAttribute('data-car-id');
+            var isAuthenticated = {{ 'true' if current_user.is_authenticated else 'false' }};
+            if (!isAuthenticated) {
+                var loginModal = new bootstrap.Modal(document.getElementById('loginSignupModal'));
+                loginModal.show();
+                return;
+            }
+            fetch('/favorite/' + carId, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-Requested-With': 'XMLHttpRequest'
+                },
+                credentials: 'same-origin'
+            })
+            .then(response => response.json())
+            .then(data => {
+                const icon = btn.querySelector('i');
+                if (data.favorited) {
+                    icon.classList.remove('fa-regular');
+                    icon.classList.add('fas');
+                } else {
+                    icon.classList.remove('fas');
+                    icon.classList.add('fa-regular');
+                }
+            });
+        });
+    });
+
+    // Image Modal functionality
+    const imageModal = document.getElementById('imageModal');
+    if (imageModal) {
+        imageModal.addEventListener('show.bs.modal', function (event) {
+            const button = event.relatedTarget;
+            const imageIndex = button.getAttribute('data-image-index');
+            if (imageIndex !== null) {
+                const modalCarousel = new bootstrap.Carousel(document.getElementById('modalCarousel'));
+                modalCarousel.to(parseInt(imageIndex));
+            }
+        });
+    }
+
+    // Sync modal thumbnails with main carousel
+    const modalThumbs = document.querySelectorAll('.modal-thumb');
+    modalThumbs.forEach(function(thumb, idx) {
+        thumb.addEventListener('click', function() {
+            const modalCarousel = new bootstrap.Carousel(document.getElementById('modalCarousel'));
+            modalCarousel.to(idx);
+        });
+    });
+});
+</script>
+
+<script>
+function startChat(carId) {
+    window.location.href = `/chat/${carId}`;
+}
+
+function showLoginModal() {
+    // Show the login modal that should already exist in base.html
+    const loginModal = new bootstrap.Modal(document.getElementById('loginModal'));
+    loginModal.show();
+}
+</script>
+{% endblock %}
+
+<style>
+.favorite-float-btn:hover, .favorite-float-btn:focus {
+    background: var(--primary-orange) !important;
+    color: #fff !important;
+}
+.favorite-float-btn:hover i, .favorite-float-btn:focus i {
+    color: #fff !important;
+    font-weight: bold;
+}
+</style> 

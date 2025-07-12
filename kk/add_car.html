@@ -1,0 +1,553 @@
+{% extends "base.html" %}
+
+{% block title %}Add New Car - Car Listings{% endblock %}
+
+{% block content %}
+<div class="row justify-content-center">
+    <div class="col-md-8">
+        <div class="card glass-effect">
+            <div class="card-header" style="background: linear-gradient(135deg, var(--primary-orange), var(--dark-orange));">
+                <h4 class="mb-0" style="font-family: 'Orbitron', sans-serif; color: white;">ADD NEW VEHICLE</h4>
+            </div>
+            <div class="card-body">
+                <form method="POST" enctype="multipart/form-data" novalidate>
+                    <!-- Ownership/Title Info -->
+                    <div class="row">
+                        <div class="col-md-6 mb-3">
+                        <label for="title_status" class="form-label" style="color: var(--primary-orange);">Title Status</label>
+                        <select class="form-control" id="title_status" name="title_status" required onchange="toggleDamagedParts()">
+                            <option value="clean" {% if car.get('title_status') == 'clean' %}selected{% endif %}>Clean Title</option>
+                            <option value="damaged" {% if car.get('title_status') == 'damaged' %}selected{% endif %}>Damaged Title</option>
+                        </select>
+                    </div>
+                        <div class="col-md-6 mb-3 form-group" id="damagedPartsContainer" style="display: none;">
+                        <label for="damaged_parts" class="form-label" style="color: var(--primary-orange);">Number of Damaged Parts</label>
+                        <select class="form-control" id="damaged_parts" name="damaged_parts">
+                            <option value="" disabled selected>Select number of damaged parts</option>
+                            {% for i in range(1, 16) %}
+                            <option value="{{ i }}" {% if car.get('damaged_parts')|int == i %}selected{% endif %}>{{ i }} Part{% if i != 1 %}s{% endif %}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                    </div>
+                    <!-- Vehicle Identity -->
+                    <div class="row">
+                        <div class="col-md-4 mb-3">
+                            <label for="selectedBrand" class="form-label">Brand</label>
+                            <button type="button" class="btn btn-outline-primary w-100" id="brandSelectBtn">
+                                <i class="fas fa-car"></i> Select Brand
+                            </button>
+                            <input type="hidden" id="selectedBrand" name="brand" value="{{ car.get('brand', '') }}" required>
+                        </div>
+                        <div class="col-md-4 mb-3">
+                            <label for="modelSelect" class="form-label">Model</label>
+                            <select class="form-control" id="modelSelect" name="model" {% if not car.get('model') %}disabled{% endif %} required>
+                                <option value="" disabled selected>Select Model</option>
+                                {% if car.get('model') %}
+                                <option value="{{ car.get('model') }}" selected>{{ car.get('model') }}</option>
+                                {% endif %}
+                            </select>
+                        </div>
+                        <div class="col-md-4 mb-3">
+                            <label for="trimSelect" class="form-label">Trim</label>
+                            <select class="form-control" id="trimSelect" name="trim" {% if not car.get('trim') %}disabled{% endif %} required>
+                                <option value="" disabled selected>Select Trim</option>
+                                {% if car.get('trim') %}
+                                <option value="{{ car.get('trim') }}" selected>{{ car.get('trim') }}</option>
+                                {% endif %}
+                            </select>
+                        </div>
+                    </div>
+                    <!-- Listing Info -->
+                    <div class="row">
+                        <div class="col-md-4 mb-3">
+                            <label for="price" class="form-label" style="color: var(--primary-orange);">Price ($) <span class="text-muted">(Optional)</span></label>
+                            <select class="form-control mb-1" id="priceDropdown" name="priceDropdown">
+                                <option value="" disabled selected>Select from list</option>
+                                {% for price in range(1000, 1000001, 1000) %}
+                                <option value="{{ price }}" {% if car.get('price')|float == price %}selected{% endif %}>${{ "{:,}".format(price) }}</option>
+                                {% endfor %}
+                            </select>
+                            <input type="number" class="form-control" id="priceInput" name="price" placeholder="Or enter your own (optional)" min="0" step="0.01" value="{{ car.get('price', '') }}">
+                        </div>
+                        <div class="col-md-4 mb-3">
+                            <label for="year" class="form-label" style="color: var(--primary-orange);">Year</label>
+                            <select class="form-control" id="year" name="year" required>
+                                <option value="" disabled selected>Select Year</option>
+                                {% for year in range(current_year, 1899, -1) %}
+                                <option value="{{ year }}" {% if car.get('year')|int == year %}selected{% endif %}>{{ year }}</option>
+                                {% endfor %}
+                            </select>
+                        </div>
+                        <div class="col-md-4 mb-3">
+                            <label for="mileage" class="form-label" style="color: var(--primary-orange);">Mileage (km)</label>
+                            <select class="form-control mb-1" id="mileageDropdown" name="mileageDropdown">
+                                <option value="" disabled selected>Select from list</option>
+                                {% for mileage in range(0, 1000001, 1000) %}
+                                <option value="{{ mileage }}" {% if car.get('mileage')|int == mileage %}selected{% endif %}>{{ "{:,}".format(mileage) }} km</option>
+                                {% endfor %}
+                            </select>
+                            <input type="number" class="form-control" id="mileageInput" name="mileage" placeholder="Or enter your own" min="0" value="{{ car.get('mileage', '') }}">
+                        </div>
+                    </div>
+                    <!-- Specs -->
+                    <div class="row">
+                        <div class="col-md-4 mb-3">
+                            <label for="engine_size" class="form-label" style="color: var(--primary-orange);">Engine Size</label>
+                            <select class="form-control mb-1" id="engineSizeDropdown" name="engineSizeDropdown">
+                                <option value="" disabled selected>Select from list</option>
+                                {% for size in [0.05,0.1,0.125,0.15,0.2,0.25,0.3,0.35,0.4,0.45,0.5,0.55,0.6,0.65,0.7,0.75,0.8,0.85,0.9,1.0,1.1,1.2,1.3,1.4,1.5,1.6,1.7,1.8,1.9,2.0,2.1,2.2,2.3,2.4,2.5,2.6,2.7,2.8,2.9,3.0,3.2,3.5,3.8,4.0,4.2,4.5,4.8,5.0,5.2,5.5,5.7,6.0,6.2,6.3,6.5,6.7,7.0,7.2,7.5,7.7,8.0,10.0,12.0,14.0,16.0,18.0,20.0,24.0] %}
+                                <option value="{{ size }}" {% if car.get('engine_size')|float == size %}selected{% endif %}>{{ size }}L</option>
+                            {% endfor %}
+                            </select>
+                            <input type="number" class="form-control" id="engineSizeInput" name="engine_size" placeholder="Or enter your own (L)" min="0" step="0.01" value="{{ car.get('engine_size', '') }}">
+                        </div>
+                        <div class="col-md-4 mb-3">
+                            <label for="cylinder_count" class="form-label" style="color: var(--primary-orange);">Cylinder Count</label>
+                            <select class="form-control" id="cylinder_count" name="cylinder_count">
+                                <option value="" disabled selected>Select Cylinder Count</option>
+                                <option value="1" {% if car.get('cylinder_count') == '1' %}selected{% endif %}>1 Cylinder</option>
+                                <option value="2" {% if car.get('cylinder_count') == '2' %}selected{% endif %}>2 Cylinders</option>
+                                <option value="3" {% if car.get('cylinder_count') == '3' %}selected{% endif %}>3 Cylinders</option>
+                                <option value="4" {% if car.get('cylinder_count') == '4' %}selected{% endif %}>4 Cylinders</option>
+                                <option value="5" {% if car.get('cylinder_count') == '5' %}selected{% endif %}>5 Cylinders</option>
+                                <option value="6" {% if car.get('cylinder_count') == '6' %}selected{% endif %}>6 Cylinders</option>
+                                <option value="8" {% if car.get('cylinder_count') == '8' %}selected{% endif %}>8 Cylinders</option>
+                                <option value="10" {% if car.get('cylinder_count') == '10' %}selected{% endif %}>10 Cylinders</option>
+                                <option value="12" {% if car.get('cylinder_count') == '12' %}selected{% endif %}>12 Cylinders</option>
+                            </select>
+                        </div>
+                        <div class="col-md-4 mb-3">
+                        <label for="fuel_type" class="form-label">Fuel Type</label>
+                        <select class="form-control" id="fuel_type" name="fuel_type" required>
+                            <option value="gasoline" {% if car.get('fuel_type') == 'gasoline' %}selected{% endif %}>Gasoline</option>
+                            <option value="diesel" {% if car.get('fuel_type') == 'diesel' %}selected{% endif %}>Diesel</option>
+                            <option value="electric" {% if car.get('fuel_type') == 'electric' %}selected{% endif %}>Electric</option>
+                            <option value="hybrid" {% if car.get('fuel_type') == 'hybrid' %}selected{% endif %}>Hybrid</option>
+                            <option value="lpg" {% if car.get('fuel_type') == 'lpg' %}selected{% endif %}>LPG</option>
+                            <option value="plug_in_hybrid" {% if car.get('fuel_type') == 'plug_in_hybrid' %}selected{% endif %}>Plug-in Hybrid</option>
+                        </select>
+                    </div>
+                    </div>
+                    <div class="row">
+                        <div class="col-md-4 mb-3">
+                            <label for="transmission" class="form-label" style="color: var(--primary-orange);">Transmission Type</label>
+                            <select class="form-control" id="transmission" name="transmission" required>
+                                <option value="" disabled selected>Select Transmission Type</option>
+                                <option value="automatic" {% if car.get('transmission') == 'automatic' %}selected{% endif %}>Automatic</option>
+                                <option value="manual" {% if car.get('transmission') == 'manual' %}selected{% endif %}>Manual</option>
+                            </select>
+                        </div>
+                        <div class="col-md-4 mb-3">
+                        <label for="body_type" class="form-label">Body Type</label>
+                        <select class="form-control" id="body_type" name="body_type" required>
+                            <option value="sedan" {% if car.get('body_type') == 'sedan' %}selected{% endif %}>Sedan</option>
+                            <option value="suv" {% if car.get('body_type') == 'suv' %}selected{% endif %}>SUV</option>
+                            <option value="hatchback" {% if car.get('body_type') == 'hatchback' %}selected{% endif %}>Hatchback</option>
+                            <option value="coupe" {% if car.get('body_type') == 'coupe' %}selected{% endif %}>Coupe</option>
+                            <option value="wagon" {% if car.get('body_type') == 'wagon' %}selected{% endif %}>Wagon</option>
+                            <option value="pickup" {% if car.get('body_type') == 'pickup' %}selected{% endif %}>Pickup</option>
+                            <option value="van" {% if car.get('body_type') == 'van' %}selected{% endif %}>Van</option>
+                            <option value="minivan" {% if car.get('body_type') == 'minivan' %}selected{% endif %}>Minivan</option>
+                            <option value="motorcycle" {% if car.get('body_type') == 'motorcycle' %}selected{% endif %}>Motorcycle</option>
+                            <option value="utv" {% if car.get('body_type') == 'utv' %}selected{% endif %}>UTV</option>
+                            <option value="atv" {% if car.get('body_type') == 'atv' %}selected{% endif %}>ATV</option>
+                        </select>
+                    </div>
+                        <div class="col-md-4 mb-3">
+                        <label for="color" class="form-label">Color</label>
+                        <select class="form-control" id="color" name="color" required>
+                            <option value="black" {% if car.get('color') == 'black' %}selected{% endif %}>Black</option>
+                            <option value="white" {% if car.get('color') == 'white' %}selected{% endif %}>White</option>
+                            <option value="silver" {% if car.get('color') == 'silver' %}selected{% endif %}>Silver</option>
+                            <option value="gray" {% if car.get('color') == 'gray' %}selected{% endif %}>Gray</option>
+                            <option value="red" {% if car.get('color') == 'red' %}selected{% endif %}>Red</option>
+                            <option value="blue" {% if car.get('color') == 'blue' %}selected{% endif %}>Blue</option>
+                            <option value="green" {% if car.get('color') == 'green' %}selected{% endif %}>Green</option>
+                            <option value="yellow" {% if car.get('color') == 'yellow' %}selected{% endif %}>Yellow</option>
+                            <option value="orange" {% if car.get('color') == 'orange' %}selected{% endif %}>Orange</option>
+                            <option value="purple" {% if car.get('color') == 'purple' %}selected{% endif %}>Purple</option>
+                            <option value="brown" {% if car.get('color') == 'brown' %}selected{% endif %}>Brown</option>
+                            <option value="beige" {% if car.get('color') == 'beige' %}selected{% endif %}>Beige</option>
+                            <option value="gold" {% if car.get('color') == 'gold' %}selected{% endif %}>Gold</option>
+                        </select>
+                    </div>
+                    </div>
+                    <div class="row">
+                        <div class="col-md-4 mb-3">
+                            <label for="seating" class="form-label">Total Seating</label>
+                            <select class="form-control" id="seating" name="seating" required>
+                                <option value="1" {% if car.get('seating') == '1' %}selected{% endif %}>1 Seat</option>
+                                <option value="2" {% if car.get('seating') == '2' %}selected{% endif %}>2 Seats</option>
+                                <option value="3" {% if car.get('seating') == '3' %}selected{% endif %}>3 Seats</option>
+                                <option value="4" {% if car.get('seating') == '4' %}selected{% endif %}>4 Seats</option>
+                                <option value="5" {% if car.get('seating') == '5' %}selected{% endif %}>5 Seats</option>
+                                <option value="6" {% if car.get('seating') == '6' %}selected{% endif %}>6 Seats</option>
+                                <option value="7" {% if car.get('seating') == '7' %}selected{% endif %}>7 Seats</option>
+                                <option value="8" {% if car.get('seating') == '8' %}selected{% endif %}>8 Seats</option>
+                                <option value="9" {% if car.get('seating') == '9' %}selected{% endif %}>9 Seats</option>
+                                <option value="10" {% if car.get('seating') == '10' %}selected{% endif %}>10+ Seats</option>
+                            </select>
+                        </div>
+                        <div class="col-md-4 mb-3">
+                            <label for="drive_type" class="form-label">Drive Type</label>
+                            <select class="form-control" id="drive_type" name="drive_type" required>
+                                <option value="fwd" {% if car.get('drive_type') == 'fwd' %}selected{% endif %}>Front-Wheel Drive (FWD)</option>
+                                <option value="rwd" {% if car.get('drive_type') == 'rwd' %}selected{% endif %}>Rear-Wheel Drive (RWD)</option>
+                                <option value="awd" {% if car.get('drive_type') == 'awd' %}selected{% endif %}>All-Wheel Drive (AWD)</option>
+                                <option value="4wd" {% if car.get('drive_type') == '4wd' %}selected{% endif %}>Four-Wheel Drive (4WD)</option>
+                            </select>
+                        </div>
+                        <div class="col-md-4 mb-3">
+                            <label for="condition" class="form-label" style="color: var(--primary-orange);">Condition</label>
+                            <select class="form-control" id="condition" name="condition" required>
+                                <option value="" disabled selected>Select Condition</option>
+                                <option value="new" {% if car.get('condition') == 'new' %}selected{% endif %}>New</option>
+                                <option value="used" {% if car.get('condition') == 'used' %}selected{% endif %}>Used</option>
+                            </select>
+                        </div>
+                    </div>
+                    <!-- Registration -->
+                    <div class="row">
+                        <div class="col-md-4 mb-3">
+                        <label for="import_country" class="form-label" style="color: var(--primary-orange);">Import Country</label>
+                        <select class="form-control" id="import_country" name="import_country" required>
+                            <option value="us" {% if car.get('import_country') == 'us' %}selected{% endif %}>United States</option>
+                            <option value="gcc" {% if car.get('import_country') == 'gcc' %}selected{% endif %}>GCC Countries</option>
+                            <option value="iraq" {% if car.get('import_country') == 'iraq' %}selected{% endif %}>Iraq</option>
+                            <option value="canada" {% if car.get('import_country') == 'canada' %}selected{% endif %}>Canada</option>
+                            <option value="eu" {% if car.get('import_country') == 'eu' %}selected{% endif %}>European Union</option>
+                            <option value="cn" {% if car.get('import_country') == 'cn' %}selected{% endif %}>China</option>
+                            <option value="korea" {% if car.get('import_country') == 'korea' %}selected{% endif %}>South Korea</option>
+                            <option value="ru" {% if car.get('import_country') == 'ru' %}selected{% endif %}>Russia</option>
+                            <option value="iran" {% if car.get('import_country') == 'iran' %}selected{% endif %}>Iran</option>
+                        </select>
+                    </div>
+                        <div class="col-md-4 mb-3">
+                            <label for="city" class="form-label" style="color: var(--primary-orange);">Plate City</label>
+                        <select class="form-control" id="city" name="city" required>
+                            <option value="baghdad" {% if car.get('city') == 'baghdad' %}selected{% endif %}>Baghdad</option>
+                            <option value="basra" {% if car.get('city') == 'basra' %}selected{% endif %}>Basra</option>
+                            <option value="erbil" {% if car.get('city') == 'erbil' %}selected{% endif %}>Erbil</option>
+                            <option value="najaf" {% if car.get('city') == 'najaf' %}selected{% endif %}>Najaf</option>
+                            <option value="karbala" {% if car.get('city') == 'karbala' %}selected{% endif %}>Karbala</option>
+                            <option value="kirkuk" {% if car.get('city') == 'kirkuk' %}selected{% endif %}>Kirkuk</option>
+                            <option value="sulaymaniyah" {% if car.get('city') == 'sulaymaniyah' %}selected{% endif %}>Sulaymaniyah</option>
+                            <option value="dohuk" {% if car.get('city') == 'dohuk' %}selected{% endif %}>Dohuk</option>
+                            <option value="halabja" {% if car.get('city') == 'halabja' %}selected{% endif %}>Halabja</option>
+                            <option value="diyala" {% if car.get('city') == 'diyala' %}selected{% endif %}>Diyala</option>
+                            <option value="diyarbakir" {% if car.get('city') == 'diyarbakir' %}selected{% endif %}>Diyarbakir</option>
+                            <option value="maysan" {% if car.get('city') == 'maysan' %}selected{% endif %}>Maysan</option>
+                            <option value="muthanna" {% if car.get('city') == 'muthanna' %}selected{% endif %}>Muthanna</option>
+                            <option value="dhi_qar" {% if car.get('city') == 'dhi_qar' %}selected{% endif %}>Dhi Qar</option>
+                            <option value="salaheldeen" {% if car.get('city') == 'salaheldeen' %}selected{% endif %}>Salaheldeen</option>
+                        </select>
+                    </div>
+                        <div class="col-md-4 mb-3">
+                        <label for="license_plate_type" class="form-label" style="color: var(--primary-orange);">License Plate Type</label>
+                        <select class="form-control" id="license_plate_type" name="license_plate_type" required>
+                            <option value="private" {% if car.get('license_plate_type') == 'private' %}selected{% endif %}>Private</option>
+                            <option value="temporary" {% if car.get('license_plate_type') == 'temporary' %}selected{% endif %}>Temporary</option>
+                            <option value="commercial" {% if car.get('license_plate_type') == 'commercial' %}selected{% endif %}>Commercial</option>
+                            <option value="taxi" {% if car.get('license_plate_type') == 'taxi' %}selected{% endif %}>Taxi</option>
+                        </select>
+                    </div>
+                    </div>
+                    <div class="mb-3">
+                        <label for="image" class="form-label" style="color: var(--primary-orange);">Vehicle Images (at least 4)</label>
+                        <input type="file" class="form-control" id="image" name="image" accept="image/*" multiple required>
+                        <div class="form-text" style="color: var(--light-orange);">Upload at least 4 clear images of the vehicle (required)</div>
+                    </div>
+                    <div class="d-grid gap-2">
+                        <button type="submit" class="btn btn-primary">ADD VEHICLE</button>
+                        <a href="{{ url_for('home') }}" class="btn btn-secondary">CANCEL</a>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Brand Selection Modal -->
+<div class="modal fade" id="brandModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content bg-dark">
+            <div class="modal-header border-secondary">
+                <h5 class="modal-title text-light">Select Brand</h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <div class="brand-grid" id="brandGrid">
+                    <!-- Brands will be loaded dynamically -->
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Add Select2 CSS -->
+<link href="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/css/select2.min.css" rel="stylesheet" />
+
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        function setupCoupledInputs(dropdownId, inputId, formName) {
+            const dropdown = document.getElementById(dropdownId);
+            const input = document.getElementById(inputId);
+
+            if (!dropdown || !input) return;
+
+            // Set initial state
+            if (input.value) {
+                dropdown.required = false;
+                input.required = true;
+            } else {
+                dropdown.required = true;
+                input.required = false;
+            }
+
+            dropdown.addEventListener('change', function() {
+                if (this.value) {
+                    input.value = ''; // Clear the text input
+                    input.required = false;
+                    dropdown.required = true;
+                    // Copy dropdown value to the hidden input for submission
+                    document.querySelector(`input[name="${formName}"]`).value = this.value;
+
+                }
+            });
+
+            input.addEventListener('input', function() {
+                if (this.value) {
+                    dropdown.selectedIndex = 0; // Reset dropdown
+                    dropdown.required = false;
+                    input.required = true;
+                     // Copy input value to the hidden input for submission
+                    document.querySelector(`input[name="${formName}"]`).value = this.value;
+                } else {
+                    dropdown.required = true;
+                }
+            });
+        }
+
+        setupCoupledInputs('priceDropdown', 'priceInput', 'price');
+        setupCoupledInputs('mileageDropdown', 'mileageInput', 'mileage');
+        setupCoupledInputs('engineSizeDropdown', 'engineSizeInput', 'engine_size');
+        
+        // The rest of your existing script for brand/model/trim selection
+        const brandSelectBtn = document.getElementById('brandSelectBtn');
+        const brandModal = new bootstrap.Modal(document.getElementById('brandModal'));
+        const selectedBrandInput = document.getElementById('selectedBrand');
+        const brandGrid = document.getElementById('brandGrid');
+        const modelSelect = document.getElementById('modelSelect');
+        const trimSelect = document.getElementById('trimSelect');
+        
+        // Brand list - Ordered from most famous to least famous
+        const brands = [
+            // Most popular global brands
+            { id: 'toyota', name: 'Toyota' },
+            { id: 'volkswagen', name: 'Volkswagen' },
+            { id: 'ford', name: 'Ford' },
+            { id: 'honda', name: 'Honda' },
+            { id: 'hyundai', name: 'Hyundai' },
+            { id: 'nissan', name: 'Nissan' },
+            { id: 'chevrolet', name: 'Chevrolet' },
+            { id: 'kia', name: 'Kia' },
+            { id: 'mercedes-benz', name: 'Mercedes-Benz' },
+            { id: 'bmw', name: 'BMW' },
+            { id: 'audi', name: 'Audi' },
+            { id: 'lexus', name: 'Lexus' },
+            { id: 'mazda', name: 'Mazda' },
+            { id: 'subaru', name: 'Subaru' },
+            { id: 'volvo', name: 'Volvo' },
+            { id: 'jeep', name: 'Jeep' },
+            { id: 'ram', name: 'RAM' },
+            { id: 'gmc', name: 'GMC' },
+            { id: 'buick', name: 'Buick' },
+            { id: 'cadillac', name: 'Cadillac' },
+            { id: 'lincoln', name: 'Lincoln' },
+            { id: 'mitsubishi', name: 'Mitsubishi' },
+            { id: 'acura', name: 'Acura' },
+            { id: 'infiniti', name: 'Infiniti' },
+            { id: 'tesla', name: 'Tesla' },
+            { id: 'mini', name: 'Mini' },
+            { id: 'porsche', name: 'Porsche' },
+            { id: 'land-rover', name: 'Land Rover' },
+            { id: 'jaguar', name: 'Jaguar' },
+            { id: 'fiat', name: 'Fiat' },
+            { id: 'renault', name: 'Renault' },
+            { id: 'peugeot', name: 'Peugeot' },
+            { id: 'citroen', name: 'Citroën' },
+            { id: 'skoda', name: 'Škoda' },
+            { id: 'seat', name: 'SEAT' },
+            { id: 'dacia', name: 'Dacia' },
+            { id: 'chery', name: 'Chery' },
+            { id: 'byd', name: 'BYD' },
+            { id: 'great-wall', name: 'Great Wall' },
+            { id: 'faw', name: 'FAW' },
+            { id: 'roewe', name: 'Roewe' },
+            { id: 'proton', name: 'Proton' },
+            { id: 'perodua', name: 'Perodua' },
+            { id: 'tata', name: 'Tata' },
+            { id: 'mahindra', name: 'Mahindra' },
+            { id: 'lada', name: 'Lada' },
+            { id: 'zaz', name: 'ZAZ' },
+            { id: 'daewoo', name: 'Daewoo' },
+            { id: 'ssangyong', name: 'SsangYong' },
+            { id: 'changan', name: 'Changan' },
+            { id: 'haval', name: 'Haval' },
+            { id: 'wuling', name: 'Wuling' },
+            { id: 'baojun', name: 'Baojun' },
+            { id: 'nio', name: 'Nio' },
+            { id: 'xpeng', name: 'XPeng' },
+            { id: 'li-auto', name: 'Li Auto' },
+            { id: 'vinfast', name: 'VinFast' },
+            // Luxury, sports, and niche brands
+            { id: 'ferrari', name: 'Ferrari' },
+            { id: 'lamborghini', name: 'Lamborghini' },
+            { id: 'bentley', name: 'Bentley' },
+            { id: 'rolls-royce', name: 'Rolls-Royce' },
+            { id: 'aston-martin', name: 'Aston Martin' },
+            { id: 'mclaren', name: 'McLaren' },
+            { id: 'maserati', name: 'Maserati' },
+            { id: 'bugatti', name: 'Bugatti' },
+            { id: 'pagani', name: 'Pagani' },
+            { id: 'koenigsegg', name: 'Koenigsegg' },
+            { id: 'polestar', name: 'Polestar' },
+            { id: 'rivian', name: 'Rivian' },
+            { id: 'lucid', name: 'Lucid' },
+            { id: 'alfa-romeo', name: 'Alfa Romeo' },
+            { id: 'lancia', name: 'Lancia' },
+            { id: 'abarth', name: 'Abarth' },
+            { id: 'opel', name: 'Opel' },
+            { id: 'ds', name: 'DS' },
+            { id: 'man', name: 'MAN' },
+            { id: 'iran-khodro', name: 'Iran Khodro' },
+            { id: 'genesis', name: 'Genesis' },
+            { id: 'isuzu', name: 'Isuzu' },
+            { id: 'datsun', name: 'Datsun' },
+            { id: 'jac-motors', name: 'JAC Motors' },
+            { id: 'jac-trucks', name: 'JAC Trucks' },
+            { id: 'ktm', name: 'KTM' },
+            { id: 'alpina', name: 'Alpina' },
+            { id: 'brabus', name: 'Brabus' },
+            { id: 'mansory', name: 'Mansory' },
+            { id: 'bestune', name: 'Bestune' },
+            { id: 'hongqi', name: 'Hongqi' },
+            { id: 'dongfeng-motor', name: 'Dongfeng' },
+            { id: 'faw-jiefang', name: 'FAW Jiefang' },
+            { id: 'foton', name: 'Foton' },
+            { id: 'leapmotor', name: 'Leapmotor' },
+            { id: 'gac', name: 'GAC' },
+            { id: 'saic', name: 'SAIC' },
+            { id: 'mg', name: 'MG' },
+            { id: 'vauxhall', name: 'Vauxhall' },
+            { id: 'mclaren', name: 'McLaren' },
+            { id: 'aston-martin', name: 'Aston Martin' },
+            { id: 'mini', name: 'Mini' },
+            { id: 'jaguar', name: 'Jaguar' },
+            { id: 'land-rover', name: 'Land Rover' },
+            { id: 'smart', name: 'Smart' }
+        ];
+
+        // Load brands when modal opens
+        brandSelectBtn.addEventListener('click', function() {
+            if (brandGrid.children.length === 0) {
+                brands.forEach(brand => {
+                    const brandItem = document.createElement('div');
+                    brandItem.className = 'brand-item';
+                    brandItem.dataset.brand = brand.id;
+                    brandItem.innerHTML = `
+                        <div class="brand-logo">
+                            <img src="/static/images/brands/${brand.id}.png" alt="${brand.name} Logo" onerror="this.onerror=null;this.src='/static/images/brands/default.png';">
+                        </div>
+                        <span>${brand.name}</span>
+                    `;
+                    brandItem.addEventListener('click', function() {
+                        selectedBrandInput.value = brand.id;
+                        brandSelectBtn.innerHTML = `<img src='/static/images/brands/${brand.id}.png' class='selected-brand-logo' alt='${brand.name} Logo'> <span class='selected-brand-name'>${brand.name}</span>`;
+                        brandModal.hide();
+                        
+                        // Enable and populate model select
+                        modelSelect.disabled = false;
+                        modelSelect.innerHTML = '<option value="" disabled selected>Loading models...</option>';
+                        
+                        // Fetch models for selected brand
+                        fetch(`/api/models/${brand.id}`)
+                            .then(response => response.json())
+                            .then(models => {
+                                modelSelect.innerHTML = '<option value="" disabled selected>Select Model</option>';
+                                models.forEach(model => {
+                                    const option = document.createElement('option');
+                                    option.value = model;
+                                    option.textContent = model;
+                                    modelSelect.appendChild(option);
+                                });
+                            })
+                            .catch(error => {
+                                console.error('Error fetching models:', error);
+                                modelSelect.innerHTML = '<option value="" disabled selected>Error loading models</option>';
+                            });
+                    });
+                    brandGrid.appendChild(brandItem);
+                });
+            }
+            brandModal.show();
+        });
+
+        function toggleDamagedParts() {
+            const titleStatus = document.getElementById('title_status');
+            const damagedPartsContainer = document.getElementById('damagedPartsContainer');
+            const damagedParts = document.getElementById('damaged_parts');
+            
+            if (titleStatus.value === 'damaged') {
+                damagedPartsContainer.style.display = 'block';
+                damagedParts.required = true;
+            } else {
+                damagedPartsContainer.style.display = 'none';
+                damagedParts.required = false;
+                damagedParts.value = '';
+            }
+        }
+
+        // Call on page load to set initial state
+        toggleDamagedParts();
+
+        // Model select change event
+        modelSelect.addEventListener('change', function() {
+            trimSelect.disabled = false;
+            trimSelect.innerHTML = '<option value="" disabled selected>Loading trims...</option>';
+            
+            // Fetch trims for selected model
+            fetch(`/api/trims/${selectedBrandInput.value}/${modelSelect.value}`)
+                .then(response => response.json())
+                .then(trims => {
+                    trimSelect.innerHTML = '<option value="" disabled selected>Select Trim</option>';
+                    trims.forEach(trim => {
+                        const option = document.createElement('option');
+                        option.value = trim;
+                        option.textContent = trim;
+                        trimSelect.appendChild(option);
+                    });
+                })
+                .catch(error => {
+                    console.error('Error fetching trims:', error);
+                    trimSelect.innerHTML = '<option value="" disabled selected>Error loading trims</option>';
+                });
+        });
+
+        // Set initial brand display if a brand is pre-selected
+        const initialBrandId = selectedBrandInput.value;
+        if (initialBrandId) {
+            const brandData = brands.find(b => b.id === initialBrandId);
+            if (brandData) {
+                brandSelectBtn.innerHTML = `<img src='/static/images/brands/${brandData.id}.png' class='selected-brand-logo' alt='${brandData.name} Logo'> <span class='selected-brand-name'>${brandData.name}</span>`;
+            } else {
+                brandSelectBtn.textContent = initialBrandId.replace('-', ' ').title();
+            }
+        }
+    });
+</script>
+
+<!-- Add Select2 JS -->
+<script src="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/js/select2.min.js"></script>
+{% endblock %} 

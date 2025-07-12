@@ -1,0 +1,190 @@
+{% extends "base.html" %}
+
+{% block title %}Payment Gateway{% endblock %}
+
+{% block content %}
+<div class="container mt-5">
+    <div class="row justify-content-center">
+        <div class="col-md-8">
+            <div class="card shadow">
+                <div class="card-header bg-primary text-white">
+                    <h3 class="mb-0">
+                        <i class="fas fa-credit-card me-2"></i>
+                        FIB Payment Gateway
+                    </h3>
+                </div>
+                <div class="card-body">
+                    <div class="text-center mb-4">
+                        <img src="https://via.placeholder.com/200x80/007bff/ffffff?text=FIB+Bank" alt="FIB Bank" class="mb-3">
+                        <h4>Complete Your Payment</h4>
+                        <p class="text-muted">Secure payment processing by First Iraqi Bank</p>
+                    </div>
+
+                    <div class="row">
+                        <div class="col-md-6">
+                            <div class="card border-primary">
+                                <div class="card-body">
+                                    <h5 class="card-title text-primary">
+                                        <i class="fas fa-receipt me-2"></i>
+                                        Payment Summary
+                                    </h5>
+                                    <table class="table table-borderless">
+                                        <tr>
+                                            <td><strong>Payment Type:</strong></td>
+                                            <td>
+                                                {% if payment.payment_type == 'listing_fee' %}
+                                                    <span class="badge bg-success">Listing Fee</span>
+                                                {% else %}
+                                                    <span class="badge bg-primary">Car Purchase</span>
+                                                {% endif %}
+                                            </td>
+                                        </tr>
+                                        <tr>
+                                            <td><strong>Amount:</strong></td>
+                                            <td class="h5 text-primary">${{ "%.2f"|format(payment.amount) }} {{ payment.currency }}</td>
+                                        </tr>
+                                        <tr>
+                                            <td><strong>Payment ID:</strong></td>
+                                            <td><code>{{ payment.payment_id }}</code></td>
+                                        </tr>
+                                        <tr>
+                                            <td><strong>Date:</strong></td>
+                                            <td>{{ payment.created_at.strftime('%B %d, %Y at %I:%M %p') }}</td>
+                                        </tr>
+                                    </table>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="card border-success">
+                                <div class="card-body">
+                                    <h5 class="card-title text-success">
+                                        <i class="fas fa-user me-2"></i>
+                                        Customer Information
+                                    </h5>
+                                    <table class="table table-borderless">
+                                        <tr>
+                                            <td><strong>Name:</strong></td>
+                                            <td>{{ payment.user.username }}</td>
+                                        </tr>
+                                        <tr>
+                                            <td><strong>Email:</strong></td>
+                                            <td>{{ payment.user.email }}</td>
+                                        </tr>
+                                        <tr>
+                                            <td><strong>Account:</strong></td>
+                                            <td>{{ payment.user.id }}</td>
+                                        </tr>
+                                    </table>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <hr class="my-4">
+
+                    <div class="alert alert-info">
+                        <h6><i class="fas fa-info-circle me-2"></i>Payment Instructions</h6>
+                        <p class="mb-0">
+                            {% if payment.payment_type == 'listing_fee' %}
+                                This is a listing fee payment. After successful payment, you will be able to add your car listing to our platform.
+                            {% else %}
+                                This payment is for purchasing a car. The seller will be notified of your payment and will contact you to arrange the sale.
+                            {% endif %}
+                        </p>
+                    </div>
+
+                    <!-- Simulated Payment Form -->
+                    <div class="card border-warning">
+                        <div class="card-header bg-warning text-dark">
+                            <h6 class="mb-0">
+                                <i class="fas fa-exclamation-triangle me-2"></i>
+                                Demo Payment Interface
+                            </h6>
+                        </div>
+                        <div class="card-body">
+                            <p class="text-muted mb-3">
+                                This is a simulated payment interface for demonstration purposes. 
+                                In production, this would redirect to the actual FIB payment gateway.
+                            </p>
+                            
+                            <div class="row">
+                                <div class="col-md-6">
+                                    <div class="form-group mb-3">
+                                        <label for="cardNumber" class="form-label">Card Number</label>
+                                        <input type="text" class="form-control" id="cardNumber" value="**** **** **** 1234" readonly>
+                                    </div>
+                                </div>
+                                <div class="col-md-3">
+                                    <div class="form-group mb-3">
+                                        <label for="expiry" class="form-label">Expiry</label>
+                                        <input type="text" class="form-control" id="expiry" value="12/25" readonly>
+                                    </div>
+                                </div>
+                                <div class="col-md-3">
+                                    <div class="form-group mb-3">
+                                        <label for="cvv" class="form-label">CVV</label>
+                                        <input type="text" class="form-control" id="cvv" value="***" readonly>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="d-flex justify-content-between mt-4">
+                        <form method="POST" style="display: inline;">
+                            <input type="hidden" name="action" value="cancel">
+                            <button type="submit" class="btn btn-outline-danger">
+                                <i class="fas fa-times me-2"></i>
+                                Cancel Payment
+                            </button>
+                        </form>
+                        
+                        <form method="POST" style="display: inline;">
+                            <input type="hidden" name="action" value="complete">
+                            <button type="submit" class="btn btn-success btn-lg">
+                                <i class="fas fa-check me-2"></i>
+                                Complete Payment
+                            </button>
+                        </form>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+.card {
+    border-radius: 15px;
+    border: none;
+}
+
+.card-header {
+    border-radius: 15px 15px 0 0 !important;
+}
+
+.btn-lg {
+    padding: 12px 30px;
+    font-size: 1.1rem;
+    border-radius: 10px;
+}
+
+.table-borderless td {
+    padding: 8px 0;
+    border: none;
+}
+
+.badge {
+    font-size: 0.8rem;
+    padding: 6px 12px;
+}
+
+code {
+    background-color: #f8f9fa;
+    padding: 4px 8px;
+    border-radius: 4px;
+    font-size: 0.9rem;
+}
+</style>
+{% endblock %} 

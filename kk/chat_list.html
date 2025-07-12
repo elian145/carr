@@ -1,0 +1,73 @@
+{% extends "base.html" %}
+
+{% block title %}My Conversations{% endblock %}
+
+{% block content %}
+<div class="container mt-4">
+    <div class="row">
+        <div class="col-12">
+            <h2 class="mb-4" style="font-family: 'Orbitron', sans-serif; color: var(--primary-orange);">
+                <i class="fas fa-comments me-2"></i>My Conversations
+            </h2>
+            
+            {% if conversations %}
+                <div class="row">
+                    {% for conversation in conversations %}
+                    <div class="col-12 mb-3">
+                        <div class="card glass-effect conversation-card" style="cursor: pointer;" 
+                             onclick="window.location.href='{{ url_for('chat_conversation', conversation_id=conversation.id) }}'">
+                            <div class="card-body">
+                                <div class="row align-items-center">
+                                    <div class="col-md-2">
+                                        {% if conversation.car.images and conversation.car.images|length > 0 %}
+                                            <img src="{{ url_for('static', filename=conversation.car.images[0].image_url) }}" 
+                                                 class="img-fluid rounded" alt="Car Image" style="max-height: 80px; object-fit: cover;">
+                                        {% else %}
+                                            <img src="{{ url_for('static', filename='uploads/default-car.jpg') }}" 
+                                                 class="img-fluid rounded" alt="Default Car Image" style="max-height: 80px; object-fit: cover;">
+                                        {% endif %}
+                                    </div>
+                                    <div class="col-md-6">
+                                        <h5 class="card-title mb-1">{{ conversation.car.brand|replace('-', ' ')|title }} {{ conversation.car.model }}</h5>
+                                        <p class="text-muted mb-1">
+                                            {% if conversation.buyer_id == current_user.id %}
+                                                <i class="fas fa-user me-1"></i>Chatting with seller
+                                            {% else %}
+                                                <i class="fas fa-user me-1"></i>Chatting with buyer
+                                            {% endif %}
+                                        </p>
+                                        <p class="text-muted mb-0">
+                                            <small>
+                                                <i class="fas fa-clock me-1"></i>
+                                                {{ conversation.updated_at.strftime('%b %d, %Y at %I:%M %p') }}
+                                            </small>
+                                        </p>
+                                    </div>
+                                    <div class="col-md-2">
+                                        <div class="text-center">
+                                            <span class="badge bg-primary">{{ conversation.messages|length }} messages</span>
+                                        </div>
+                                    </div>
+                                    <div class="col-md-2 text-end">
+                                        <i class="fas fa-chevron-right text-muted"></i>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    {% endfor %}
+                </div>
+            {% else %}
+                <div class="text-center py-5">
+                    <i class="fas fa-comments fa-3x text-muted mb-3"></i>
+                    <h4 class="text-muted">No conversations yet</h4>
+                    <p class="text-muted">Start chatting with sellers or buyers about cars you're interested in.</p>
+                    <a href="{{ url_for('home') }}" class="btn btn-primary">
+                        <i class="fas fa-search me-2"></i>Browse Cars
+                    </a>
+                </div>
+            {% endif %}
+        </div>
+    </div>
+</div>
+{% endblock %} 

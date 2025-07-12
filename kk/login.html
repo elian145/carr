@@ -1,0 +1,34 @@
+{% extends "base.html" %}
+{% block title %}Login - Car Listings{% endblock %}
+{% block content %}
+<div class="row justify-content-center">
+    <div class="col-md-6">
+        <div class="card glass-effect">
+            <div class="card-header" style="background: linear-gradient(135deg, var(--primary-orange), var(--dark-orange));">
+                <h4 class="mb-0" style="font-family: 'Orbitron', sans-serif; color: white;">LOGIN</h4>
+            </div>
+            <div class="card-body">
+                <form method="POST">
+                    <div class="mb-3">
+                        <label for="username" class="form-label">Username</label>
+                        <input type="text" class="form-control" id="username" name="username" required>
+                    </div>
+                    <div class="mb-3">
+                        <label for="password" class="form-label">Password</label>
+                        <input type="password" class="form-control" id="password" name="password" required>
+                    </div>
+                    <div class="d-grid gap-2 mb-2">
+                        <a href="{{ url_for('google_login') }}" class="btn btn-danger">
+                            <i class="fab fa-google me-1"></i> Log in with Google
+                        </a>
+                    </div>
+                    <div class="d-grid gap-2">
+                        <button type="submit" class="btn btn-primary">Login</button>
+                        <a href="{{ url_for('signup') }}" class="btn btn-secondary">Sign Up</a>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %} 

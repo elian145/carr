@@ -1,0 +1,102 @@
+{% extends "base.html" %}
+
+{% block title %}My Favorite Cars{% endblock %}
+
+{% block content %}
+<div class="container mt-4">
+    <h2 style="font-family: 'Orbitron', sans-serif; color: var(--primary-orange);">My Favorite Cars</h2>
+    <div class="row row-cols-1 row-cols-md-3 g-4 mt-2">
+        {% for car in cars %}
+        <div class="col">
+            <a href="{{ url_for('car_detail', car_id=car.id) }}" class="text-decoration-none text-reset">
+                <div class="card h-100 car-card glass-effect position-relative">
+                    {% if car.images and car.images|length > 0 %}
+                        <img src="{{ url_for('static', filename=car.images[0].image_url) }}" class="card-img-top car-image" alt="{{ car.brand|replace('-', ' ')|title }} {{ car.model }}">
+                    {% else %}
+                        <img src="{{ url_for('static', filename='uploads/default-car.jpg') }}" class="card-img-top car-image" alt="Default Car Image">
+                    {% endif %}
+                    <button class="btn btn-danger favorite-list-btn position-absolute" data-car-id="{{ car.id }}" title="Unfavorite" style="top: 10px; right: 10px; border-radius: 50%; padding: 0.3em 0.5em; font-size: 1.1em; box-shadow: 0 2px 8px rgba(0,0,0,0.18); z-index: 2;">
+                        <i class="fas fa-heart"></i>
+                    </button>
+                    <div class="card-body">
+                        <h5 class="card-title listing-title">{{ car.brand|replace('-', ' ')|title }} {{ car.model }}</h5>
+                        <div class="price-tag">{% if car.price %}${{ '{:,.2f}'.format(car.price) }}{% else %}Price on request{% endif %}</div>
+                        <div class="d-flex justify-content-between card-details-row">
+                            <div class="details-col-left">
+                                <div><i class="fas fa-calendar-alt me-1"></i><strong>Year:</strong> {{ car.year }}</div>
+                                <div><i class="fas fa-tachometer-alt me-1"></i><strong>Mileage:</strong> {{ car.mileage }} km</div>
+                            </div>
+                            <div class="details-col-right">
+                                <div><i class="fas fa-id-card me-1"></i><strong>Title:</strong> {{ car.title_status|title }}</div>
+                                <div><i class="fas fa-layer-group me-1"></i><strong>Trim:</strong> {{ car.trim }}</div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </a>
+        </div>
+        {% else %}
+        <div class="col-12">
+            <div class="alert alert-info glass-effect mt-4">
+                You have no favorite cars yet.
+            </div>
+        </div>
+        {% endfor %}
+    </div>
+</div>
+
+<!-- Login/Signup Modal -->
+<div class="modal fade" id="loginSignupModal" tabindex="-1" aria-labelledby="loginSignupModalLabel" aria-hidden="true">
+  <div class="modal-dialog modal-dialog-centered">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title" id="loginSignupModalLabel">Sign Up or Log In</h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+      </div>
+      <div class="modal-body text-center">
+        <p>You need to sign up or log in to favorite a car listing.</p>
+        <a href="{{ url_for('login') }}" class="btn btn-primary me-2">Log In</a>
+        <a href="{{ url_for('signup') }}" class="btn btn-outline-primary">Sign Up</a>
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    document.querySelectorAll('.favorite-list-btn').forEach(function(btn) {
+        btn.addEventListener('click', function(e) {
+            e.preventDefault();
+            var carId = btn.getAttribute('data-car-id');
+            var isAuthenticated = {{ 'true' if current_user.is_authenticated else 'false' }};
+            if (!isAuthenticated) {
+                var loginModal = new bootstrap.Modal(document.getElementById('loginSignupModal'));
+                loginModal.show();
+                return;
+            }
+            fetch('/favorite/' + carId, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-Requested-With': 'XMLHttpRequest'
+                },
+                credentials: 'same-origin'
+            })
+            .then(response => response.json())
+            .then(data => {
+                const icon = btn.querySelector('i');
+                if (!data.favorited) {
+                    // Remove the card from the page if unfavorited
+                    btn.closest('.col').remove();
+                } else {
+                    icon.classList.remove('fa-regular');
+                    icon.classList.add('fas');
+                }
+            });
+        });
+    });
+});
+</script>
+{% endblock %} 

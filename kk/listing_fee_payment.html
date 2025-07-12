@@ -1,0 +1,124 @@
+{% extends "base.html" %}
+
+{% block title %}Listing Fee Payment{% endblock %}
+
+{% block content %}
+<div class="container mt-5">
+    <div class="row justify-content-center">
+        <div class="col-md-8">
+            <div class="card shadow">
+                <div class="card-header bg-primary text-white">
+                    <h3 class="mb-0">
+                        <i class="fas fa-credit-card me-2"></i>
+                        Car Listing Fee
+                    </h3>
+                </div>
+                <div class="card-body">
+                    <div class="text-center mb-4">
+                        <i class="fas fa-car fa-3x text-primary mb-3"></i>
+                        <h4>Pay Listing Fee to Add Your Car</h4>
+                        <p class="text-muted">Complete the payment to list your car on our platform</p>
+                    </div>
+
+                    <div class="row">
+                        <div class="col-md-6">
+                            <div class="card border-success">
+                                <div class="card-body text-center">
+                                    <h5 class="card-title text-success">
+                                        <i class="fas fa-check-circle me-2"></i>
+                                        What You Get
+                                    </h5>
+                                    <ul class="list-unstyled">
+                                        <li><i class="fas fa-plus text-success me-2"></i>Add 1 car listing</li>
+                                        <li><i class="fas fa-eye text-success me-2"></i>Premium visibility</li>
+                                        <li><i class="fas fa-clock text-success me-2"></i>24-hour listing period</li>
+                                        <li><i class="fas fa-users text-success me-2"></i>Direct buyer contact</li>
+                                    </ul>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="card border-primary">
+                                <div class="card-body text-center">
+                                    <h5 class="card-title text-primary">
+                                        <i class="fas fa-dollar-sign me-2"></i>
+                                        Payment Details
+                                    </h5>
+                                    <div class="mb-3">
+                                        <span class="h2 text-primary">${{ "%.2f"|format(50.00) }}</span>
+                                        <span class="text-muted">USD</span>
+                                    </div>
+                                    <p class="text-muted small">
+                                        <i class="fas fa-shield-alt me-1"></i>
+                                        Secure payment via FIB Bank
+                                    </p>
+                                    <p class="text-muted small">
+                                        <i class="fas fa-lock me-1"></i>
+                                        Your payment information is protected
+                                    </p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <hr class="my-4">
+
+                    <div class="alert alert-info">
+                        <h6><i class="fas fa-info-circle me-2"></i>Important Information</h6>
+                        <ul class="mb-0">
+                            <li>The listing fee is <strong>$50 USD</strong> per car listing</li>
+                            <li>After payment, you can add <strong>one car listing</strong> within 24 hours</li>
+                            <li>Payment is processed securely through FIB (First Iraqi Bank)</li>
+                            <li>You can view your payment history in your account</li>
+                        </ul>
+                    </div>
+
+                    <form method="POST" class="mt-4">
+                        <div class="d-grid gap-2">
+                            <button type="submit" class="btn btn-primary btn-lg">
+                                <i class="fas fa-credit-card me-2"></i>
+                                Pay ${{ "%.2f"|format(50.00) }} and Continue
+                            </button>
+                            <a href="{{ url_for('home') }}" class="btn btn-outline-secondary">
+                                <i class="fas fa-arrow-left me-2"></i>
+                                Back to Home
+                            </a>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+.card {
+    border-radius: 15px;
+    border: none;
+}
+
+.card-header {
+    border-radius: 15px 15px 0 0 !important;
+    background: linear-gradient(135deg, #007bff, #0056b3) !important;
+}
+
+.btn-lg {
+    padding: 15px 30px;
+    font-size: 1.1rem;
+    border-radius: 10px;
+}
+
+.fa-3x {
+    font-size: 3em;
+}
+
+.list-unstyled li {
+    padding: 8px 0;
+    border-bottom: 1px solid #f8f9fa;
+}
+
+.list-unstyled li:last-child {
+    border-bottom: none;
+}
+</style>
+{% endblock %} 

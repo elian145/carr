@@ -1,0 +1,1073 @@
+:root {
+    --primary-orange: #ff6b00;
+    --secondary-orange: #ff8533;
+    --dark-orange: #cc5500;
+    --light-orange: #ffb380;
+    --background-dark: #1a1a1a;
+    --text-light: #ffffff;
+    --text-muted: #e0e0e0;
+    --card-bg: #2a2a2a;
+    --placeholder-color: #a0a0a0;
+}
+
+body {
+    background-color: var(--background-dark);
+    color: var(--text-light);
+    font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
+}
+
+.navbar {
+    background: linear-gradient(135deg, var(--primary-orange), var(--dark-orange)) !important;
+    box-shadow: 0 2px 15px rgba(255, 107, 0, 0.3);
+}
+
+.navbar-brand, .nav-link {
+    color: var(--text-light) !important;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+}
+
+.nav-link:hover {
+    color: var(--light-orange) !important;
+    transform: translateY(-1px);
+    transition: all 0.3s ease;
+}
+
+.card {
+    background-color: var(--card-bg);
+    border: none;
+    border-radius: 15px;
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.2);
+    transition: transform 0.3s ease, box-shadow 0.3s ease;
+}
+
+.card:hover {
+    transform: translateY(-5px);
+    box-shadow: 0 8px 25px rgba(255, 107, 0, 0.2);
+    border-radius: 30px;
+}
+
+.card-title {
+    color: var(--primary-orange);
+    font-weight: 700;
+}
+
+.card-text {
+    color: var(--text-muted);
+}
+
+.btn-primary {
+    background: linear-gradient(135deg, var(--primary-orange), var(--dark-orange));
+    border: none;
+    border-radius: 25px;
+    padding: 10px 25px;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    transition: all 0.3s ease;
+}
+
+.btn-primary:hover {
+    background: linear-gradient(135deg, var(--dark-orange), var(--primary-orange));
+    transform: translateY(-2px);
+    box-shadow: 0 5px 15px rgba(255, 107, 0, 0.3);
+}
+
+.btn-danger {
+    background: linear-gradient(135deg, #ff3333, #cc0000);
+    border: none;
+    border-radius: 25px;
+    padding: 10px 25px;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    transition: all 0.3s ease;
+}
+
+.btn-danger:hover {
+    background: linear-gradient(135deg, #cc0000, #ff3333);
+    transform: translateY(-2px);
+    box-shadow: 0 5px 15px rgba(255, 0, 0, 0.3);
+}
+
+.btn-outline-primary {
+    transition: transform 0.2s cubic-bezier(.4,2,.6,1), box-shadow 0.2s cubic-bezier(.4,2,.6,1), background 0.2s;
+}
+.btn-outline-primary:hover, .btn-outline-primary:focus {
+    transform: translateY(-3px) scale(1.04) rotate(-1deg);
+    box-shadow: 0 6px 24px 0 rgba(255,107,0,0.18), 0 1.5px 8px 0 rgba(0,0,0,0.10);
+    background: linear-gradient(135deg, var(--primary-orange), var(--dark-orange));
+    color: #fff !important;
+    border-color: var(--primary-orange);
+}
+
+.form-control {
+    background-color: #333;
+    border: 2px solid var(--primary-orange);
+    color: var(--text-light);
+    border-radius: 10px;
+    padding: 12px;
+    transition: transform 0.18s cubic-bezier(.4,2,.6,1), box-shadow 0.18s cubic-bezier(.4,2,.6,1), border-color 0.18s;
+}
+
+.form-control::placeholder {
+    color: var(--placeholder-color);
+    opacity: 1;
+}
+
+.form-control:-ms-input-placeholder {
+    color: var(--placeholder-color);
+}
+
+.form-control::-ms-input-placeholder {
+    color: var(--placeholder-color);
+}
+
+.form-control:focus {
+    background-color: #333;
+    border-color: var(--secondary-orange);
+    color: var(--text-light);
+    box-shadow: 0 0 0 0.25rem rgba(255, 107, 0, 0.25);
+}
+
+.form-control:hover, .form-control:focus {
+    transform: translateY(-2px) scale(1.03);
+    box-shadow: 0 4px 18px 0 rgba(255,107,0,0.13), 0 1.5px 8px 0 rgba(0,0,0,0.08);
+    border-color: var(--secondary-orange);
+    z-index: 2;
+}
+
+.form-label {
+    color: var(--text-light);
+}
+
+.form-text {
+    color: var(--light-orange) !important;
+}
+
+.alert {
+    border-radius: 10px;
+    border: none;
+    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+}
+
+.alert-info {
+    background-color: rgba(255, 107, 0, 0.1);
+    color: var(--text-light);
+}
+
+.alert-info a {
+    color: var(--light-orange);
+    text-decoration: none;
+}
+
+.alert-info a:hover {
+    color: var(--primary-orange);
+    text-decoration: underline;
+}
+
+.alert-success {
+    background-color: #28a745 !important;
+    color: #fff !important;
+    border: none;
+    box-shadow: 0 4px 15px rgba(40, 167, 69, 0.2);
+}
+
+.alert-danger {
+    background: linear-gradient(135deg, #ff3333, #cc0000);
+    color: #fff !important;
+    font-weight: bold;
+    border: none;
+    box-shadow: 0 0 10px 2px rgba(255, 51, 51, 0.4);
+    text-shadow: 0 1px 2px rgba(0,0,0,0.2);
+    letter-spacing: 1px;
+}
+
+.car-image {
+    border-radius: 15px 15px 0 0;
+    transition: transform 0.3s ease;
+}
+
+.card:hover .car-image {
+    transform: scale(1.05);
+    border-radius: 30px;
+}
+
+/* Futuristic elements */
+.glass-effect {
+    background: rgba(255, 255, 255, 0.1);
+    backdrop-filter: blur(10px);
+    border: 1px solid rgba(255, 255, 255, 0.2);
+}
+
+.price-tag {
+    color: var(--primary-orange);
+    background: none;
+    padding: 0;
+    border-radius: 0;
+    font-weight: bold;
+    font-size: 1.4rem;
+    display: inline-block;
+    margin: 10px 0;
+    letter-spacing: 1px;
+}
+
+.listing-title {
+    background: linear-gradient(135deg, var(--primary-orange), var(--dark-orange));
+    color: white;
+    padding: 8px 22px;
+    border-radius: 30px;
+    font-weight: bold;
+    font-size: 1.1rem;
+    display: inline-block;
+    margin-bottom: 10px;
+    letter-spacing: 1px;
+}
+
+.list-group-item {
+    background-color: transparent !important;
+    color: var(--text-muted) !important;
+    border-color: rgba(255, 255, 255, 0.1) !important;
+}
+
+/* Animations */
+@keyframes glow {
+    0% { box-shadow: 0 0 5px rgba(255, 107, 0, 0.5); }
+    50% { box-shadow: 0 0 20px rgba(255, 107, 0, 0.8); }
+    100% { box-shadow: 0 0 5px rgba(255, 107, 0, 0.5); }
+}
+
+.navbar-brand {
+    animation: glow 2s infinite;
+}
+
+/* Number input styling */
+input[type="number"] {
+    -moz-appearance: textfield;
+    padding-right: 40px !important;
+}
+
+/* Remove default spinners */
+input[type="number"]::-webkit-outer-spin-button,
+input[type="number"]::-webkit-inner-spin-button {
+    -webkit-appearance: none;
+    margin: 0;
+}
+
+/* Custom number input container */
+input[type="number"] {
+    position: relative;
+}
+
+/* Up arrow */
+input[type="number"]::before {
+    content: '';
+    position: absolute;
+    right: 10px;
+    top: 25%;
+    width: 0;
+    height: 0;
+    border-left: 6px solid transparent;
+    border-right: 6px solid transparent;
+    border-bottom: 6px solid var(--primary-orange);
+    cursor: pointer;
+    transition: all 0.3s ease;
+}
+
+/* Down arrow */
+input[type="number"]::after {
+    content: '';
+    position: absolute;
+    right: 10px;
+    top: 65%;
+    width: 0;
+    height: 0;
+    border-left: 6px solid transparent;
+    border-right: 6px solid transparent;
+    border-top: 6px solid var(--primary-orange);
+    cursor: pointer;
+    transition: all 0.3s ease;
+}
+
+/* Hover effects */
+input[type="number"]:hover::before {
+    border-bottom-color: var(--dark-orange);
+    transform: translateY(-2px);
+}
+
+input[type="number"]:hover::after {
+    border-top-color: var(--dark-orange);
+    transform: translateY(2px);
+}
+
+/* Firefox specific styling */
+@-moz-document url-prefix() {
+    input[type="number"] {
+        padding-right: 40px;
+    }
+    
+    input[type="number"]::before {
+        right: 12px;
+    }
+    
+    input[type="number"]::after {
+        right: 12px;
+    }
+}
+
+/* Datalist styling */
+input[list] {
+    background-color: #333;
+    color: var(--text-light);
+}
+
+input[list]::-webkit-calendar-picker-indicator {
+    filter: invert(1);
+    opacity: 0.5;
+    cursor: pointer;
+}
+
+input[list]::-webkit-calendar-picker-indicator:hover {
+    opacity: 1;
+}
+
+/* Style the datalist options */
+datalist {
+    background-color: var(--card-bg);
+    border: 1px solid var(--primary-orange);
+    border-radius: 10px;
+    padding: 5px;
+    max-height: 300px;
+    overflow-y: auto;
+}
+
+datalist option {
+    background-color: var(--card-bg);
+    color: var(--text-light);
+    padding: 8px;
+    cursor: pointer;
+    font-size: 14px;
+}
+
+datalist option:hover {
+    background-color: var(--primary-orange);
+    color: white;
+}
+
+/* Price input specific styling */
+input[name="min_price"],
+input[name="max_price"] {
+    position: relative;
+    font-size: 14px;
+}
+
+input[name="min_price"]::placeholder,
+input[name="max_price"]::placeholder {
+    color: var(--placeholder-color);
+}
+
+/* Format price values */
+input[type="number"][name="min_price"]::-webkit-inner-spin-button,
+input[type="number"][name="max_price"]::-webkit-inner-spin-button {
+    opacity: 1;
+    background: var(--primary-orange);
+    width: 20px;
+    height: 20px;
+    border-radius: 4px;
+    cursor: pointer;
+    margin-right: 5px;
+}
+
+/* Ensure the datalist is visible and scrollable */
+input[list]:focus {
+    border-color: var(--primary-orange);
+    box-shadow: 0 0 0 0.25rem rgba(255, 107, 0, 0.25);
+}
+
+/* Style the scrollbar for the datalist */
+datalist::-webkit-scrollbar {
+    width: 8px;
+}
+
+datalist::-webkit-scrollbar-track {
+    background: var(--card-bg);
+    border-radius: 4px;
+}
+
+datalist::-webkit-scrollbar-thumb {
+    background: var(--primary-orange);
+    border-radius: 4px;
+}
+
+datalist::-webkit-scrollbar-thumb:hover {
+    background: var(--dark-orange);
+}
+
+/* Select dropdown styling */
+select.form-control {
+    background-color: #333;
+    color: var(--text-light);
+    border: 2px solid var(--primary-orange);
+    border-radius: 10px;
+    padding: 12px;
+    cursor: pointer;
+    appearance: none;
+    -webkit-appearance: none;
+    -moz-appearance: none;
+    background-image: url("data:image/svg+xml;charset=UTF-8,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23ff6b00' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3e%3cpolyline points='6 9 12 15 18 9'%3e%3c/polyline%3e%3c/svg%3e");
+    background-repeat: no-repeat;
+    background-position: right 12px center;
+    background-size: 16px;
+    padding-right: 40px;
+}
+
+select.form-control:focus {
+    border-color: var(--secondary-orange);
+    box-shadow: 0 0 0 0.25rem rgba(255, 107, 0, 0.25);
+    outline: none;
+}
+
+select.form-control option {
+    background-color: var(--card-bg);
+    color: var(--text-light);
+    padding: 12px;
+}
+
+select.form-control option:hover {
+    background-color: var(--primary-orange);
+}
+
+/* Style the scrollbar for select dropdowns */
+select.form-control::-webkit-scrollbar {
+    width: 8px;
+}
+
+select.form-control::-webkit-scrollbar-track {
+    background: var(--card-bg);
+    border-radius: 4px;
+}
+
+select.form-control::-webkit-scrollbar-thumb {
+    background: var(--primary-orange);
+    border-radius: 4px;
+}
+
+select.form-control::-webkit-scrollbar-thumb:hover {
+    background: var(--dark-orange);
+}
+
+/* Firefox specific styling */
+@-moz-document url-prefix() {
+    select.form-control {
+        background-image: url("data:image/svg+xml;charset=UTF-8,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23ff6b00' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3e%3cpolyline points='6 9 12 15 18 9'%3e%3c/polyline%3e%3c/svg%3e");
+    }
+}
+
+/* Small form controls */
+select.form-control-sm {
+    padding: 6px 12px;
+    font-size: 0.875rem;
+    background-size: 12px;
+    background-position: right 8px center;
+    padding-right: 30px;
+}
+
+select.form-control-sm option {
+    font-size: 0.875rem;
+    padding: 6px;
+}
+
+/* Advanced Search Button */
+#advancedSearchBtn {
+    width: 100%;
+    background-color: var(--card-bg);
+    color: var(--text-light);
+    border: 2px solid var(--primary-orange);
+    border-radius: 10px;
+    padding: 12px;
+    transition: all 0.3s ease;
+}
+
+#advancedSearchBtn:hover {
+    background-color: var(--primary-orange);
+    color: var(--text-light);
+    border-color: var(--primary-orange);
+}
+
+#advancedSearchBtn.active {
+    background-color: var(--primary-orange);
+    color: var(--text-light);
+}
+
+#advancedSearchBtn i {
+    margin-right: 8px;
+}
+
+/* Advanced Search Section */
+#advancedSearchSection .card {
+    border: 2px solid var(--primary-orange);
+    border-radius: 10px;
+    background-color: var(--card-bg) !important;
+}
+
+#advancedSearchSection .card-body {
+    padding: 20px;
+}
+
+#advancedSearchSection .form-control {
+    margin-bottom: 0;
+}
+
+/* Brand Select Styling */
+#brand {
+    background-color: #333;
+    color: var(--text-light);
+    border: 2px solid var(--primary-orange);
+    border-radius: 10px;
+    padding: 12px;
+    cursor: pointer;
+    appearance: none;
+    -webkit-appearance: none;
+    -moz-appearance: none;
+    background-image: url("data:image/svg+xml;charset=UTF-8,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23ff6b00' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3e%3cpolyline points='6 9 12 15 18 9'%3e%3c/polyline%3e%3c/svg%3e");
+    background-repeat: no-repeat;
+    background-position: right 12px center;
+    background-size: 16px;
+    padding-right: 40px;
+}
+
+#brand option {
+    background-color: var(--card-bg);
+    color: var(--text-light);
+    padding: 12px;
+    display: flex;
+    align-items: center;
+}
+
+#brand option:hover {
+    background-color: var(--primary-orange);
+}
+
+/* Brand Logo Images */
+.brand-logo {
+    width: 100px;
+    height: 100px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin-bottom: 10px;
+    transition: all 0.3s cubic-bezier(.4,2,.6,1), box-shadow 0.3s;
+    background: linear-gradient(135deg, #fff 60%, #ffe5d0 100%);
+    border-radius: 50%;
+    border: 3px solid var(--primary-orange);
+    box-shadow: 0 4px 24px 0 rgba(255,107,0,0.10), 0 1.5px 8px 0 rgba(0,0,0,0.10);
+    overflow: hidden;
+}
+
+.brand-logo i {
+    font-size: 24px;
+    color: var(--primary-orange);
+    transition: all 0.3s ease;
+}
+
+.brand-item:hover .brand-logo {
+    transform: scale(1.10);
+    box-shadow: 0 0 24px 4px var(--primary-orange), 0 4px 24px 0 rgba(255,107,0,0.15);
+    background: linear-gradient(135deg, #fff 40%, #ffd6b3 100%);
+}
+
+.brand-item:hover .brand-logo img {
+    transform: scale(1.12) rotate(-2deg);
+    filter: drop-shadow(0 0 12px var(--primary-orange));
+}
+
+.brand-logo img {
+    width: 80%;
+    height: 80%;
+    object-fit: contain;
+    transition: transform 0.3s cubic-bezier(.4,2,.6,1), filter 0.3s;
+    filter: drop-shadow(0 2px 8px rgba(255,107,0,0.10));
+    background: transparent;
+    border-radius: 50%;
+}
+
+/* Brand Select Dropdown */
+.brand-select-dropdown {
+    position: absolute;
+    top: 100%;
+    left: 0;
+    right: 0;
+    background-color: var(--card-bg);
+    border: 2px solid var(--primary-orange);
+    border-radius: 10px;
+    margin-top: 4px;
+    max-height: 400px;
+    overflow-y: auto;
+    z-index: 1000;
+    display: none;
+}
+
+.brand-select-dropdown.show {
+    display: block;
+}
+
+.brand-option {
+    padding: 12px;
+    display: flex;
+    align-items: center;
+    cursor: pointer;
+    transition: background-color 0.3s ease;
+}
+
+.brand-option:hover {
+    background-color: var(--primary-orange);
+}
+
+.brand-option img {
+    width: 24px;
+    height: 24px;
+    margin-right: 12px;
+}
+
+.brand-option span {
+    color: var(--text-light);
+}
+
+/* Brand Selection Button */
+#brandSelectBtn {
+    background-color: var(--card-bg);
+    color: var(--text-light);
+    border: 2px solid var(--primary-orange);
+    border-radius: 10px;
+    padding: 12px;
+    transition: all 0.3s ease;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    min-height: unset;
+    height: 48px;
+    width: 100%;
+    font-size: 1rem;
+}
+
+#brandSelectBtn:hover {
+    background-color: var(--primary-orange);
+    color: var(--text-light);
+    border-color: var(--primary-orange);
+    margin-right: 8px;
+}
+
+#brandSelectBtn i {
+    margin-right: 8px;
+}
+
+#brandSelectBtn .selected-brand-logo {
+    width: 48px;
+    height: 48px;
+    margin-right: 10px;
+    object-fit: contain;
+    vertical-align: middle;
+}
+
+#brandSelectBtn .selected-brand-name {
+    font-size: 1.25rem;
+    font-weight: 600;
+    vertical-align: middle;
+}
+
+/* Brand Grid */
+.brand-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(100px, 1fr));
+    gap: 15px;
+    padding: 15px;
+}
+
+.brand-item {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    padding: 15px;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    background: transparent;
+    border: none;
+}
+
+.brand-item:hover {
+    transform: translateY(-5px);
+}
+
+.brand-item span {
+    color: var(--text-light);
+    font-size: 0.9rem;
+    font-weight: 500;
+    text-align: center;
+    margin-top: 5px;
+    transition: all 0.3s ease;
+}
+
+/* Modal Styling */
+.modal-content {
+    border: 2px solid var(--primary-orange);
+    background-color: var(--card-bg);
+}
+
+.modal-header {
+    border-bottom-color: var(--primary-orange) !important;
+}
+
+.modal-header .modal-title {
+    color: var(--text-light);
+}
+
+.modal-body {
+    max-height: 70vh;
+    overflow-y: auto;
+    background-color: var(--card-bg);
+}
+
+/* Scrollbar for Modal */
+.modal-body::-webkit-scrollbar {
+    width: 8px;
+}
+
+.modal-body::-webkit-scrollbar-track {
+    background: var(--card-bg);
+    border-radius: 4px;
+}
+
+.modal-body::-webkit-scrollbar-thumb {
+    background: var(--primary-orange);
+    border-radius: 4px;
+}
+
+.modal-body::-webkit-scrollbar-thumb:hover {
+    background: var(--dark-orange);
+}
+
+/* Make all form fields in the add car section a darker shade than the card background for differentiation */
+.card-body form input,
+.card-body form select,
+.card-body form textarea {
+    background-color: #232323 !important;
+    color: var(--text-light);
+    border-color: #444;
+}
+
+.card-body form input::placeholder,
+.card-body form textarea::placeholder {
+    color: var(--placeholder-color);
+    opacity: 1;
+}
+
+/* Make all form field labels in the add car section orange */
+.card-body form .form-label {
+    color: var(--primary-orange) !important;
+}
+
+.car-thumbs-row {
+    display: flex;
+    flex-direction: row;
+    justify-content: flex-start;
+    align-items: center;
+    gap: 8px;
+    width: 100%;
+    overflow-x: auto;
+    padding: 6px 0;
+    scrollbar-width: thin;
+    scrollbar-color: var(--primary-orange) #222;
+}
+.car-thumbs-row::-webkit-scrollbar {
+    height: 8px;
+}
+.car-thumbs-row::-webkit-scrollbar-thumb {
+    background: var(--primary-orange);
+    border-radius: 4px;
+}
+.car-thumbs-row::-webkit-scrollbar-track {
+    background: #222;
+    border-radius: 4px;
+}
+.car-thumb {
+    opacity: 0.7;
+    transition: border 0.2s, opacity 0.2s;
+    flex: 0 0 auto;
+    width: 80px;
+    height: 60px;
+    object-fit: cover;
+    cursor: pointer;
+    border: 2px solid var(--primary-orange);
+}
+.car-thumb.active {
+    border: 2px solid #ff6600;
+    opacity: 1;
+}
+
+/* Make the brand selection modal wider */
+#brandModal .modal-dialog {
+    max-width: 1000px;
+    width: 95vw;
+}
+
+.card-details-row {
+    font-size: 1.1rem;
+    font-weight: 600;
+    margin-top: -12px;
+    margin-bottom: 2px;
+    color: #fff;
+    text-shadow: none;
+    gap: 32px;
+}
+.details-col-left, .details-col-right {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+}
+
+/* Image Modal Styles */
+#imageModal .modal-content {
+    background: rgba(0, 0, 0, 0.95);
+    border: 1px solid rgba(255, 107, 0, 0.3);
+}
+
+#imageModal .modal-header {
+    background: rgba(255, 107, 0, 0.1);
+    border-bottom: 1px solid rgba(255, 107, 0, 0.3);
+}
+
+#imageModal .modal-footer {
+    background: rgba(255, 107, 0, 0.1);
+    border-top: 1px solid rgba(255, 107, 0, 0.3);
+}
+
+#imageModal .carousel-control-prev,
+#imageModal .carousel-control-next {
+    background: rgba(0, 0, 0, 0.5);
+    border-radius: 50%;
+    width: 50px;
+    height: 50px;
+    top: 50%;
+    transform: translateY(-50%);
+    margin: 0 20px;
+}
+
+#imageModal .carousel-control-prev-icon,
+#imageModal .carousel-control-next-icon {
+    width: 25px;
+    height: 25px;
+}
+
+#imageModal .modal-thumb {
+    width: 60px;
+    height: 45px;
+    border: 2px solid rgba(255, 107, 0, 0.5);
+    transition: all 0.3s ease;
+}
+
+#imageModal .modal-thumb:hover {
+    border-color: var(--primary-orange);
+    transform: scale(1.1);
+}
+
+#imageModal .modal-thumb.active {
+    border-color: var(--primary-orange);
+    box-shadow: 0 0 10px rgba(255, 107, 0, 0.5);
+}
+
+.carousel-image {
+    transition: transform 0.3s ease;
+}
+
+.carousel-image:hover {
+    transform: scale(1.02);
+}
+
+.detail-item {
+    display: flex;
+    align-items: center;
+    padding: 8px 16px;
+    border-radius: 16px;
+    background: rgba(30, 30, 30, 0.96);
+    border: 1.5px solid rgba(255, 107, 0, 0.18);
+    box-shadow: 0 2px 8px rgba(255, 107, 0, 0.08);
+    font-size: 1.2rem;
+    margin-bottom: 10px;
+    transition: background 0.25s cubic-bezier(0.4,0,0.2,1), box-shadow 0.25s cubic-bezier(0.4,0,0.2,1), border-color 0.25s cubic-bezier(0.4,0,0.2,1);
+}
+.detail-item:last-child {
+    margin-bottom: 0;
+}
+.detail-item:hover {
+    background: rgba(255, 107, 0, 0.1);
+    box-shadow: 0 4px 16px rgba(255, 107, 0, 0.18);
+    border-color: rgba(255, 107, 0, 0.18);
+}
+.detail-item strong {
+    min-width: 0;
+    display: inline-block;
+    font-size: 1.3rem;
+    margin-right: 2px;
+    color: inherit;
+}
+.detail-item span {
+    flex: 1;
+    font-size: 1.2rem;
+}
+.detail-item i {
+    font-size: 1.3rem;
+}
+.card-body .row {
+    --bs-gutter-x: 0.5rem;
+}
+
+.card-body .row {
+    margin: 0;
+}
+
+/* Chat Styles */
+.conversation-card {
+    transition: transform 0.2s ease, box-shadow 0.2s ease;
+    cursor: pointer;
+}
+
+.conversation-card:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 8px 25px rgba(255, 107, 0, 0.15);
+}
+
+.message {
+    margin-bottom: 1rem;
+    max-width: 70%;
+    animation: fadeIn 0.3s ease-in;
+}
+
+.message.own {
+    margin-left: auto;
+}
+
+.message.other {
+    margin-right: auto;
+}
+
+.message-content {
+    padding: 0.75rem 1rem;
+    border-radius: 1rem;
+    word-wrap: break-word;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+}
+
+.message.own .message-content {
+    background: linear-gradient(135deg, var(--primary-orange), var(--dark-orange));
+    color: white;
+    border-bottom-right-radius: 0.25rem;
+}
+
+.message.other .message-content {
+    background-color: #2a2a2a;
+    color: white;
+    border-bottom-left-radius: 0.25rem;
+    border: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.message-time {
+    font-size: 0.75rem;
+    color: #6c757d;
+    margin-top: 0.25rem;
+}
+
+.message.own .message-time {
+    text-align: right;
+}
+
+.message.other .message-time {
+    text-align: left;
+}
+
+#messagesContainer {
+    scrollbar-width: thin;
+    scrollbar-color: var(--primary-orange) #f1f1f1;
+}
+
+#messagesContainer::-webkit-scrollbar {
+    width: 6px;
+}
+
+#messagesContainer::-webkit-scrollbar-track {
+    background: #f1f1f1;
+    border-radius: 3px;
+}
+
+#messagesContainer::-webkit-scrollbar-thumb {
+    background: var(--primary-orange);
+    border-radius: 3px;
+}
+
+#messagesContainer::-webkit-scrollbar-thumb:hover {
+    background: var(--dark-orange);
+}
+
+@keyframes fadeIn {
+    from {
+        opacity: 0;
+        transform: translateY(10px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+/* Chat input styles */
+#messageInput {
+    border-radius: 25px;
+    border: 2px solid var(--primary-orange);
+    background-color: #333;
+    color: var(--text-light);
+    transition: all 0.3s ease;
+}
+
+#messageInput:focus {
+    border-color: var(--secondary-orange);
+    box-shadow: 0 0 0 0.25rem rgba(255, 107, 0, 0.25);
+    transform: translateY(-1px);
+}
+
+#messageForm .btn {
+    border-radius: 50%;
+    width: 45px;
+    height: 45px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: all 0.3s ease;
+}
+
+#messageForm .btn:hover {
+    transform: scale(1.1);
+    box-shadow: 0 4px 15px rgba(255, 107, 0, 0.3);
+}
+
+/* Unread message indicator */
+.unread-badge {
+    background: linear-gradient(135deg, #ff3333, #cc0000);
+    color: white;
+    border-radius: 50%;
+    padding: 0.25rem 0.5rem;
+    font-size: 0.75rem;
+    font-weight: bold;
+    animation: pulse 2s infinite;
+}
+
+@keyframes pulse {
+    0% {
+        transform: scale(1);
+    }
+    50% {
+        transform: scale(1.1);
+    }
+    100% {
+        transform: scale(1);
+    }
+} 

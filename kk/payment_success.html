@@ -1,0 +1,179 @@
+{% extends "base.html" %}
+
+{% block title %}Payment Successful{% endblock %}
+
+{% block content %}
+<div class="container mt-4">
+    <div class="row justify-content-center">
+        <div class="col-md-8">
+            <!-- Success Header -->
+            <div class="card mb-4" style="background: linear-gradient(135deg, #28a745, #20c997); border: none;">
+                <div class="card-body text-center py-5">
+                    <div class="mb-4">
+                        <div style="width: 80px; height: 80px; background: white; border-radius: 50%; display: flex; align-items: center; justify-content: center; margin: 0 auto 20px;">
+                            <i class="fas fa-check" style="color: #28a745; font-size: 40px;"></i>
+                        </div>
+                        <h2 class="text-white mb-2">Payment Successful!</h2>
+                        <p class="text-white-50 mb-0">Your payment has been processed successfully</p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Payment Details -->
+            <div class="card glass-effect mb-4">
+                <div class="card-header" style="background: rgba(40, 167, 69, 0.1); border-bottom: 2px solid #28a745;">
+                    <h5 class="card-title mb-0 text-light">
+                        <i class="fas fa-receipt me-2" style="color: #28a745;"></i>Payment Confirmation
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <div class="row">
+                        <div class="col-md-6">
+                            <h6 style="color: #28a745;">Transaction Details</h6>
+                            <p class="mb-1"><strong style="color: var(--primary-orange);">Transaction ID:</strong></p>
+                            <p class="mb-1 text-light">{{ payment.transaction_reference }}</p>
+                            
+                            <p class="mb-1"><strong style="color: var(--primary-orange);">Payment ID:</strong></p>
+                            <p class="mb-1 text-light">{{ payment.payment_id }}</p>
+                            
+                            <p class="mb-1"><strong style="color: var(--primary-orange);">Amount Paid:</strong></p>
+                            <p class="mb-1 text-light">${{ '{:,.2f}'.format(payment.amount) }}</p>
+                            
+                            <p class="mb-1"><strong style="color: var(--primary-orange);">Payment Method:</strong></p>
+                            <p class="mb-1 text-light">FIB Bank Transfer</p>
+                        </div>
+                        <div class="col-md-6">
+                            <h6 style="color: #28a745;">Car Details</h6>
+                            <p class="mb-1"><strong style="color: var(--primary-orange);">Vehicle:</strong></p>
+                            <p class="mb-1 text-light">{{ payment.car.brand|replace('-', ' ')|title }} {{ payment.car.model }}</p>
+                            
+                            <p class="mb-1"><strong style="color: var(--primary-orange);">Year:</strong></p>
+                            <p class="mb-1 text-light">{{ payment.car.year }}</p>
+                            
+                            <p class="mb-1"><strong style="color: var(--primary-orange);">Seller:</strong></p>
+                            <p class="mb-1 text-light">{{ payment.seller.username }}</p>
+                            
+                            <p class="mb-1"><strong style="color: var(--primary-orange);">Payment Date:</strong></p>
+                            <p class="mb-1 text-light">{{ payment.updated_at.strftime('%B %d, %Y at %I:%M %p') }}</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Next Steps -->
+            <div class="card glass-effect mb-4">
+                <div class="card-header" style="background: rgba(255, 107, 0, 0.1); border-bottom: 2px solid var(--primary-orange);">
+                    <h5 class="card-title mb-0 text-light">
+                        <i class="fas fa-arrow-right me-2" style="color: var(--primary-orange);"></i>What Happens Next?
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <div class="row">
+                        <div class="col-md-6">
+                            <div class="d-flex align-items-start mb-3">
+                                <div class="me-3">
+                                    <div style="width: 30px; height: 30px; background: var(--primary-orange); border-radius: 50%; display: flex; align-items: center; justify-content: center;">
+                                        <span class="text-white" style="font-size: 14px; font-weight: bold;">1</span>
+                                    </div>
+                                </div>
+                                <div>
+                                    <h6 class="text-light mb-1">Payment Confirmation</h6>
+                                    <p class="text-muted small mb-0">Your payment has been confirmed and the seller has been notified.</p>
+                                </div>
+                            </div>
+                            
+                            <div class="d-flex align-items-start mb-3">
+                                <div class="me-3">
+                                    <div style="width: 30px; height: 30px; background: var(--primary-orange); border-radius: 50%; display: flex; align-items: center; justify-content: center;">
+                                        <span class="text-white" style="font-size: 14px; font-weight: bold;">2</span>
+                                    </div>
+                                </div>
+                                <div>
+                                    <h6 class="text-light mb-1">Seller Contact</h6>
+                                    <p class="text-muted small mb-0">The seller will contact you within 24 hours to arrange delivery.</p>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="d-flex align-items-start mb-3">
+                                <div class="me-3">
+                                    <div style="width: 30px; height: 30px; background: var(--primary-orange); border-radius: 50%; display: flex; align-items: center; justify-content: center;">
+                                        <span class="text-white" style="font-size: 14px; font-weight: bold;">3</span>
+                                    </div>
+                                </div>
+                                <div>
+                                    <h6 class="text-light mb-1">Documentation</h6>
+                                    <p class="text-muted small mb-0">Complete all necessary paperwork and transfer documents.</p>
+                                </div>
+                            </div>
+                            
+                            <div class="d-flex align-items-start mb-3">
+                                <div class="me-3">
+                                    <div style="width: 30px; height: 30px; background: var(--primary-orange); border-radius: 50%; display: flex; align-items: center; justify-content: center;">
+                                        <span class="text-white" style="font-size: 14px; font-weight: bold;">4</span>
+                                    </div>
+                                </div>
+                                <div>
+                                    <h6 class="text-light mb-1">Vehicle Transfer</h6>
+                                    <p class="text-muted small mb-0">Arrange for vehicle pickup or delivery as agreed with the seller.</p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Contact Information -->
+            <div class="card glass-effect mb-4">
+                <div class="card-header" style="background: rgba(255, 107, 0, 0.1); border-bottom: 2px solid var(--primary-orange);">
+                    <h5 class="card-title mb-0 text-light">
+                        <i class="fas fa-phone me-2" style="color: var(--primary-orange);"></i>Contact Information
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <div class="row">
+                        <div class="col-md-6">
+                            <h6 style="color: var(--primary-orange);">Seller Contact</h6>
+                            <p class="mb-1"><strong>Name:</strong> {{ payment.seller.username }}</p>
+                            <p class="mb-1"><strong>Email:</strong> {{ payment.seller.email }}</p>
+                            {% if hasattr(payment.seller, 'phone') and payment.seller.phone %}
+                                <p class="mb-1"><strong>Phone:</strong> {{ payment.seller.phone }}</p>
+                            {% endif %}
+                        </div>
+                        <div class="col-md-6">
+                            <h6 style="color: var(--primary-orange);">Support</h6>
+                            <p class="mb-1"><strong>Email:</strong> support@carlistings.com</p>
+                            <p class="mb-1"><strong>Phone:</strong> +964 XXX XXX XXXX</p>
+                            <p class="mb-1"><strong>Hours:</strong> 9:00 AM - 6:00 PM (Iraq Time)</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Action Buttons -->
+            <div class="d-flex gap-3 justify-content-center">
+                <a href="{{ url_for('payment_history') }}" class="btn btn-primary">
+                    <i class="fas fa-history me-2"></i>View Payment History
+                </a>
+                <a href="{{ url_for('car_detail', car_id=payment.car.id) }}" class="btn btn-outline-primary">
+                    <i class="fas fa-car me-2"></i>View Car Details
+                </a>
+                <a href="{{ url_for('home') }}" class="btn btn-outline-secondary">
+                    <i class="fas fa-home me-2"></i>Back to Home
+                </a>
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+.card {
+    transition: transform 0.3s ease, box-shadow 0.3s ease;
+}
+
+.card:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 8px 25px rgba(0, 0, 0, 0.15);
+}
+</style>
+{% endblock %} 
