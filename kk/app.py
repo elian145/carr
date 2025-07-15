@@ -1684,10 +1684,6 @@ def google_logged_in(blueprint, token):
 def serve_brand_logo(filename):
     return send_from_directory('static/uploads/car_brand_logos', filename)
 
-@app.route('/brand_logo/<filename>')
-def serve_brand_logo(filename):
-    return send_from_directory('static/uploads/car_brand_logos', filename)
-
 if __name__ == '__main__':
     with app.app_context():
         try:
@@ -1702,4 +1698,4 @@ if __name__ == '__main__':
             print(f"Error initializing database: {str(e)}")
             raise e
     
-    app.run(debug=True) 
+    app.run(host='0.0.0.0', port=5000, debug=True) 
