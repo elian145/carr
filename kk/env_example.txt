@@ -1,0 +1,46 @@
+# Flask Configuration
+FLASK_ENV=development
+SECRET_KEY=your-secret-key-here-change-in-production
+JWT_SECRET_KEY=your-jwt-secret-key-here-change-in-production
+
+# Database Configuration
+# For SQLite (default)
+# DATABASE_URL=sqlite:///car_listings.db
+
+# For PostgreSQL (uncomment and configure)
+USE_POSTGRES=true
+POSTGRES_HOST=localhost
+POSTGRES_PORT=5432
+POSTGRES_DB=car_listings
+POSTGRES_USER=postgres
+POSTGRES_PASSWORD=postgres
+
+# Or use a full PostgreSQL URL
+# DATABASE_URL=postgresql+psycopg2://username:password@localhost:5432/car_listings
+
+# SMS Configuration (for password reset - optional)
+# SMS_PROVIDER=twilio
+# TWILIO_ACCOUNT_SID=your-twilio-account-sid
+# TWILIO_AUTH_TOKEN=your-twilio-auth-token
+# TWILIO_PHONE_NUMBER=your-twilio-phone-number
+
+# Redis Configuration (optional, for caching and sessions)
+REDIS_URL=redis://localhost:6379/0
+
+# Firebase Configuration (for push notifications)
+FIREBASE_SERVER_KEY=your-firebase-server-key
+FIREBASE_PROJECT_ID=your-firebase-project-id
+
+# AWS Configuration (for file storage)
+AWS_ACCESS_KEY_ID=your-aws-access-key
+AWS_SECRET_ACCESS_KEY=your-aws-secret-key
+AWS_BUCKET_NAME=your-s3-bucket-name
+AWS_REGION=us-east-1
+
+# Security Configuration
+BCRYPT_LOG_ROUNDS=12
+PASSWORD_RESET_EXPIRY=3600
+
+# File Upload Configuration
+UPLOAD_FOLDER=static/uploads
+MAX_CONTENT_LENGTH=104857600  # 100MB in bytes

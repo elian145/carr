@@ -1,6 +1,6 @@
 {
-    "name": "car_listing_app",
-    "short_name": "car_listing_app",
+    "name": "CARZO",
+    "short_name": "CARZO",
     "start_url": ".",
     "display": "standalone",
     "background_color": "#0175C2",

@@ -10,6 +10,28 @@
     --placeholder-color: #a0a0a0;
 }
 
+/* Light theme variables */
+.light-theme {
+    --background-dark: #f8f9fa;
+    --text-light: #212529;
+    --text-muted: #6c757d;
+    --card-bg: #ffffff;
+    --placeholder-color: #6c757d;
+    --border-color: #dee2e6;
+    --shadow-color: rgba(0, 0, 0, 0.1);
+}
+
+/* Dark theme variables */
+.dark-theme {
+    --background-dark: #1a1a1a;
+    --text-light: #ffffff;
+    --text-muted: #e0e0e0;
+    --card-bg: #2a2a2a;
+    --placeholder-color: #a0a0a0;
+    --border-color: #404040;
+    --shadow-color: rgba(0, 0, 0, 0.3);
+}
+
 body {
     background-color: var(--background-dark);
     color: var(--text-light);
@@ -36,9 +58,9 @@ body {
 
 .card {
     background-color: var(--card-bg);
-    border: none;
+    border: 1px solid var(--border-color);
     border-radius: 15px;
-    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.2);
+    box-shadow: 0 4px 20px var(--shadow-color);
     transition: transform 0.3s ease, box-shadow 0.3s ease;
 }
 
@@ -745,6 +767,66 @@ select.form-control-sm option {
 
 .modal-body::-webkit-scrollbar-thumb:hover {
     background: var(--dark-orange);
+}
+
+/* Body Type Grid */
+.body-type-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(110px, 1fr));
+    gap: 12px;
+}
+
+.body-type-item {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    padding: 10px 8px;
+    background: rgba(255, 255, 255, 0.06);
+    border: 2px solid rgba(255, 107, 0, 0.35);
+    border-radius: 12px;
+    cursor: pointer;
+    transition: transform 0.2s cubic-bezier(.4,2,.6,1), box-shadow 0.2s cubic-bezier(.4,2,.6,1), border-color 0.2s, background 0.2s;
+    color: var(--text-light);
+}
+
+.body-type-item:hover {
+    transform: translateY(-3px);
+    box-shadow: 0 6px 24px 0 rgba(255,107,0,0.18), 0 1.5px 8px 0 rgba(0,0,0,0.10);
+    background: rgba(255, 107, 0, 0.08);
+    border-color: var(--primary-orange);
+}
+
+.body-type-item.selected {
+    background: rgba(255, 107, 0, 0.12);
+    border-color: var(--primary-orange);
+    box-shadow: inset 0 0 0 2px rgba(255, 107, 0, 0.25);
+}
+
+.body-type-item span {
+    margin-top: 8px;
+    font-size: 0.95rem;
+    font-weight: 600;
+}
+
+.body-type-logo {
+    width: 72px;
+    height: 72px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: linear-gradient(135deg, #fff 60%, #ffe5d0 100%);
+    border-radius: 50%;
+    border: 3px solid var(--primary-orange);
+    box-shadow: 0 4px 24px 0 rgba(255,107,0,0.10);
+    overflow: hidden;
+}
+
+.body-type-logo img {
+    width: 70%;
+    height: 70%;
+    object-fit: contain;
+    filter: drop-shadow(0 2px 8px rgba(255,107,0,0.10));
 }
 
 /* Make all form fields in the add car section a darker shade than the card background for differentiation */

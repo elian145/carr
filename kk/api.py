@@ -1,18 +1,54 @@
 from flask import Flask, jsonify, request, g
+from flask_jwt_extended import JWTManager, create_access_token, get_jwt_identity, verify_jwt_in_request
 from flask_sqlalchemy import SQLAlchemy
 from datetime import datetime
 import os
 from sqlalchemy import and_
+from werkzeug.security import generate_password_hash, check_password_hash
+try:
+    # Optional: load environment variables from .env if present
+    from dotenv import load_dotenv  # type: ignore
+    load_dotenv()
+except Exception:
+    pass
+import secrets
 
 # Setup Flask app
 BASE_DIR = os.path.abspath(os.path.dirname(__file__))
 DB_PATH = os.path.join(BASE_DIR, 'instance', 'cars.db')
 
 app = Flask(__name__)
-app.config['SQLALCHEMY_DATABASE_URI'] = f'sqlite:///{DB_PATH}'
+# Database configuration: prefer DATABASE_URL, then USE_POSTGRES, else fallback to SQLite
+db_url = os.environ.get('DATABASE_URL', '').strip()
+if not db_url and os.environ.get('USE_POSTGRES', '').lower() in ('true', '1', 'yes', 'on'):
+    pg_host = os.environ.get('POSTGRES_HOST', 'localhost')
+    pg_port = os.environ.get('POSTGRES_PORT', '5432')
+    pg_db = os.environ.get('POSTGRES_DB', 'car_listings')
+    pg_user = os.environ.get('POSTGRES_USER', 'postgres')
+    pg_password = os.environ.get('POSTGRES_PASSWORD', '')
+    db_url = f"postgresql+psycopg2://{pg_user}:{pg_password}@{pg_host}:{pg_port}/{pg_db}"
+if not db_url:
+    db_url = f'sqlite:///{DB_PATH}'
+app.config['SQLALCHEMY_DATABASE_URI'] = db_url
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
+engine_opts = {
+    'pool_pre_ping': True,
+    'pool_recycle': 1800,
+}
+if db_url.startswith('postgresql'):
+    pool_size = int(os.environ.get('DB_POOL_SIZE', '5'))
+    max_overflow = int(os.environ.get('DB_MAX_OVERFLOW', '10'))
+    pool_timeout = int(os.environ.get('DB_POOL_TIMEOUT', '30'))
+    engine_opts.update({'pool_size': pool_size, 'max_overflow': max_overflow, 'pool_timeout': pool_timeout})
+app.config['SQLALCHEMY_ENGINE_OPTIONS'] = engine_opts
+app.config['SECRET_KEY'] = os.environ.get('SECRET_KEY', 'dev-secret')
+app.config['JWT_SECRET_KEY'] = os.environ.get('JWT_SECRET_KEY', app.config['SECRET_KEY'])
 
 db = SQLAlchemy(app)
+jwt = JWTManager(app)
+
+# Legacy: Simple in-memory token store for emulator usage (kept for backward compatibility)
+TOKENS = {}
 
 # Your Car model
 class Car(db.Model):
@@ -42,6 +78,14 @@ class Car(db.Model):
     city = db.Column(db.String(50), nullable=True)
     status = db.Column(db.String(20), nullable=False, default='pending_payment')
 
+# Minimal User model for emulator auth
+class User(db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+    username = db.Column(db.String(80), unique=True, nullable=False)
+    email = db.Column(db.String(120), unique=True, nullable=False)
+    password = db.Column(db.String(200), nullable=False)
+    created_at = db.Column(db.DateTime, nullable=False, default=datetime.utcnow)
+
 # Favorite model (if not already defined)
 class Favorite(db.Model):
     id = db.Column(db.Integer, primary_key=True)
@@ -66,8 +110,59 @@ class Message(db.Model):
     is_read = db.Column(db.Boolean, default=False)
     created_at = db.Column(db.DateTime, nullable=False, default=datetime.utcnow)
 
-# Dummy user_id for demo (replace with real auth in production)
-USER_ID = 1
+
+def get_current_user_id():
+    # Prefer JWT
+    try:
+        verify_jwt_in_request(optional=True)
+        identity = get_jwt_identity()
+        if identity:
+            return int(identity)
+    except Exception:
+        pass
+    # Fallback to legacy token map
+    auth = request.headers.get('Authorization', '')
+    if auth.startswith('Bearer '):
+        token = auth[7:]
+        return TOKENS.get(token)
+    return None
+
+@app.route('/api/auth/signup', methods=['POST'])
+def api_auth_signup():
+    data = request.get_json() or {}
+    username = (data.get('username') or '').strip()
+    email = (data.get('email') or '').strip().lower()
+    password = (data.get('password') or '')
+    if not username or not email or not password:
+        return jsonify({'error': 'username, email, password required'}), 400
+    if User.query.filter((User.username == username) | (User.email == email)).first():
+        return jsonify({'error': 'Username or email already exists'}), 409
+    user = User(username=username, email=email, password=generate_password_hash(password))
+    db.session.add(user)
+    db.session.commit()
+    token = create_access_token(identity=str(user.id))
+    return jsonify({'token': token, 'user': {'id': user.id, 'username': user.username, 'email': user.email}})
+
+@app.route('/api/auth/login', methods=['POST'])
+def api_auth_login():
+    data = request.get_json() or {}
+    username = (data.get('username') or '').strip()
+    password = (data.get('password') or '')
+    if not username or not password:
+        return jsonify({'error': 'username and password required'}), 400
+    user = User.query.filter_by(username=username).first()
+    if not user or not check_password_hash(user.password, password):
+        return jsonify({'error': 'Invalid credentials'}), 401
+    token = create_access_token(identity=str(user.id))
+    return jsonify({'token': token, 'user': {'id': user.id, 'username': user.username, 'email': user.email}})
+
+@app.route('/api/auth/me', methods=['GET'])
+def api_auth_me():
+    uid = get_current_user_id()
+    if not uid:
+        return jsonify({'error': 'Unauthorized'}), 401
+    user = User.query.get(uid)
+    return jsonify({'id': user.id, 'username': user.username, 'email': user.email})
 
 # Route to get all cars
 @app.route('/cars', methods=['GET', 'POST'])
@@ -86,6 +181,7 @@ def cars():
         transmission = request.args.get('transmission')
         fuel_type = request.args.get('fuel_type')
         body_type = request.args.get('body_type')
+        sort_by = request.args.get('sort_by')
         # Add more filters as needed
         if brand:
             query = query.filter(Car.brand == brand)
@@ -109,7 +205,29 @@ def cars():
             query = query.filter(Car.fuel_type == fuel_type)
         if body_type:
             query = query.filter(Car.body_type == body_type)
-        cars = query.order_by(Car.created_at.desc()).all()
+        
+        # Apply sorting
+        if sort_by == 'Newest' or sort_by == 'الأحدث' or sort_by == 'نوێترین':
+            query = query.order_by(Car.created_at.desc())
+        elif sort_by == 'Price (Low to High)' or sort_by == 'السعر (تصاعدي)' or sort_by == 'نرخ (کەم بۆ زۆر)':
+            # Null prices last, then ascending
+            query = query.order_by(Car.price.is_(None), Car.price.asc())
+        elif sort_by == 'Price (High to Low)' or sort_by == 'السعر (تنازلي)' or sort_by == 'نرخ (زۆر بۆ کەم)':
+            # Null prices last, then descending  
+            query = query.order_by(Car.price.is_(None), Car.price.desc())
+        elif sort_by == 'Year (Newest)' or sort_by == 'السنة (الأحدث)' or sort_by == 'ساڵ (نوێترین)':
+            query = query.order_by(Car.year.desc())
+        elif sort_by == 'Year (Oldest)' or sort_by == 'السنة (الأقدم)' or sort_by == 'ساڵ (کۆنترین)':
+            query = query.order_by(Car.year.asc())
+        elif sort_by == 'Mileage (Low to High)' or sort_by == 'المسافة (تصاعدي)' or sort_by == 'کێڵگە (کەم بۆ زۆر)':
+            query = query.order_by(Car.mileage.asc())
+        elif sort_by == 'Mileage (High to Low)' or sort_by == 'المسافة (تنازلي)' or sort_by == 'کێڵگە (زۆر بۆ کەم)':
+            query = query.order_by(Car.mileage.desc())
+        else:
+            # Default sorting: newest first
+            query = query.order_by(Car.created_at.desc())
+        
+        cars = query.all()
         result = []
         for car in cars:
             result.append({
@@ -131,6 +249,9 @@ def cars():
             })
         return jsonify(result)
     elif request.method == 'POST':
+        uid = get_current_user_id()
+        if not uid:
+            return jsonify({'error': 'Unauthorized'}), 401
         data = request.get_json()
         required_fields = [
             'title', 'brand', 'model', 'trim', 'year', 'mileage', 'condition',
@@ -261,7 +382,10 @@ def update_car(car_id):
 # GET /api/favorites - list of favorited cars for user
 @app.route('/api/favorites', methods=['GET'])
 def api_favorites():
-    favorites = Favorite.query.filter_by(user_id=USER_ID).all()
+    uid = get_current_user_id()
+    if not uid:
+        return jsonify({'error': 'Unauthorized'}), 401
+    favorites = Favorite.query.filter_by(user_id=uid).all()
     car_ids = [fav.car_id for fav in favorites]
     cars = Car.query.filter(Car.id.in_(car_ids)).all()
     result = []
@@ -288,20 +412,26 @@ def api_favorites():
 # POST /api/favorite/<car_id> - toggle favorite
 @app.route('/api/favorite/<int:car_id>', methods=['POST'])
 def api_toggle_favorite(car_id):
-    fav = Favorite.query.filter_by(user_id=USER_ID, car_id=car_id).first()
+    uid = get_current_user_id()
+    if not uid:
+        return jsonify({'error': 'Unauthorized'}), 401
+    fav = Favorite.query.filter_by(user_id=uid, car_id=car_id).first()
     if fav:
         db.session.delete(fav)
         db.session.commit()
         return jsonify({'favorited': False})
     else:
-        new_fav = Favorite(user_id=USER_ID, car_id=car_id)
+        new_fav = Favorite(user_id=uid, car_id=car_id)
         db.session.add(new_fav)
         db.session.commit()
         return jsonify({'favorited': True})
 
 @app.route('/api/chats', methods=['GET'])
 def api_chats():
-    conversations = Conversation.query.filter((Conversation.buyer_id == USER_ID) | (Conversation.seller_id == USER_ID)).order_by(Conversation.updated_at.desc()).all()
+    uid = get_current_user_id()
+    if not uid:
+        return jsonify({'error': 'Unauthorized'}), 401
+    conversations = Conversation.query.filter((Conversation.buyer_id == uid) | (Conversation.seller_id == uid)).order_by(Conversation.updated_at.desc()).all()
     result = []
     for conv in conversations:
         result.append({
@@ -316,6 +446,9 @@ def api_chats():
 
 @app.route('/api/chats/<int:conversation_id>/messages', methods=['GET'])
 def api_chat_messages(conversation_id):
+    uid = get_current_user_id()
+    if not uid:
+        return jsonify({'error': 'Unauthorized'}), 401
     messages = Message.query.filter_by(conversation_id=conversation_id).order_by(Message.created_at.asc()).all()
     result = []
     for msg in messages:
@@ -330,11 +463,14 @@ def api_chat_messages(conversation_id):
 
 @app.route('/api/chats/<int:conversation_id>/send', methods=['POST'])
 def api_send_message(conversation_id):
+    uid = get_current_user_id()
+    if not uid:
+        return jsonify({'error': 'Unauthorized'}), 401
     data = request.get_json()
     content = data.get('content')
     if not content:
         return jsonify({'error': 'Message content required'}), 400
-    msg = Message(conversation_id=conversation_id, sender_id=USER_ID, content=content)
+    msg = Message(conversation_id=conversation_id, sender_id=uid, content=content)
     db.session.add(msg)
     db.session.commit()
     return jsonify({'success': True, 'message_id': msg.id})
@@ -355,7 +491,10 @@ class Payment(db.Model):
 
 @app.route('/api/payments', methods=['GET'])
 def api_payments():
-    payments = Payment.query.filter_by(user_id=USER_ID).order_by(Payment.created_at.desc()).all()
+    uid = get_current_user_id()
+    if not uid:
+        return jsonify({'error': 'Unauthorized'}), 401
+    payments = Payment.query.filter_by(user_id=uid).order_by(Payment.created_at.desc()).all()
     result = []
     for p in payments:
         result.append({
@@ -392,6 +531,9 @@ def api_payment_status(payment_id):
 
 @app.route('/api/payment/initiate', methods=['POST'])
 def api_payment_initiate():
+    uid = get_current_user_id()
+    if not uid:
+        return jsonify({'error': 'Unauthorized'}), 401
     data = request.get_json()
     amount = data.get('amount')
     car_id = data.get('car_id')
@@ -401,7 +543,7 @@ def api_payment_initiate():
     payment = Payment(
         payment_id=str(uuid.uuid4()),
         car_id=car_id,
-        user_id=USER_ID,
+        user_id=uid,
         amount=amount,
         status='pending',
         payment_type='listing_fee',
@@ -412,17 +554,18 @@ def api_payment_initiate():
 
 @app.route('/api/user', methods=['GET'])
 def api_user():
-    # Dummy user info for user_id=1
-    return jsonify({
-        'id': 1,
-        'username': 'demo_user',
-        'email': 'demo@example.com',
-        'created_at': '2024-01-01T00:00:00',
-    })
+    uid = get_current_user_id()
+    if not uid:
+        return jsonify({'id': 0, 'username': '', 'email': ''})
+    u = User.query.get(uid)
+    return jsonify({'id': u.id, 'username': u.username, 'email': u.email})
 
 @app.route('/api/my_listings', methods=['GET'])
 def api_my_listings():
-    cars = Car.query.filter_by(user_id=USER_ID).order_by(Car.created_at.desc()).all()
+    uid = get_current_user_id()
+    if not uid:
+        return jsonify({'error': 'Unauthorized'}), 401
+    cars = Car.query.filter_by(user_id=uid).order_by(Car.created_at.desc()).all()
     result = []
     for car in cars:
         result.append({
@@ -445,4 +588,13 @@ def api_my_listings():
     return jsonify(result)
 
 if __name__ == '__main__':
+    # Ensure DB tables exist, especially on Postgres
+    with app.app_context():
+        try:
+            db.create_all()
+            if db_url.startswith('postgresql'):
+                print('Ensured PostgreSQL tables exist.')
+        except Exception as e:
+            print(f'Error ensuring tables: {str(e)}')
+            raise e
     app.run(debug=True)

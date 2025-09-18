@@ -3,6 +3,7 @@ from flask import Flask, render_template, request, redirect, url_for, flash, jso
 from flask_sqlalchemy import SQLAlchemy
 from werkzeug.utils import secure_filename
 from datetime import datetime, timedelta
+import random
 from flask_login import LoginManager, UserMixin, login_user, login_required, logout_user, current_user
 from flask_migrate import Migrate
 from werkzeug.security import generate_password_hash, check_password_hash
@@ -12,10 +13,24 @@ import uuid
 import hashlib
 import hmac
 import base64
+import secrets
 from urllib.parse import urlencode
+from flask_jwt_extended import JWTManager, create_access_token, get_jwt_identity, verify_jwt_in_request
+
+# Optional Twilio import for SMS delivery; fallback to dev mode if unavailable
+try:
+    from twilio.rest import Client as TwilioClient
+except Exception:
+    TwilioClient = None
 from flask_dance.contrib.google import make_google_blueprint, google
 from flask_dance.consumer import oauth_authorized
 from oauthlib.oauth2.rfc6749.errors import TokenExpiredError
+try:
+    # Optional: load environment variables from .env if present
+    from dotenv import load_dotenv  # type: ignore
+    load_dotenv()
+except Exception:
+    pass
 
 # Absolute path for the database
 BASE_DIR = os.path.abspath(os.path.dirname(__file__))
@@ -23,11 +38,36 @@ DB_PATH = os.path.join(BASE_DIR, 'instance', 'cars.db')
 
 app = Flask(__name__)
 app.config['SECRET_KEY'] = 'your-secret-key'
-app.config['SQLALCHEMY_DATABASE_URI'] = f'sqlite:///{DB_PATH}'
-app.config['UPLOAD_FOLDER'] = 'static/uploads'
-app.config['MAX_CONTENT_LENGTH'] = 16 * 1024 * 1024  # 16MB max file size
+# Database configuration: prefer DATABASE_URL, then USE_POSTGRES, else fallback to SQLite
+db_url = os.environ.get('DATABASE_URL', '').strip()
+if not db_url and os.environ.get('USE_POSTGRES', '').lower() in ('true', '1', 'yes', 'on'):
+    pg_host = os.environ.get('POSTGRES_HOST', 'localhost')
+    pg_port = os.environ.get('POSTGRES_PORT', '5432')
+    pg_db = os.environ.get('POSTGRES_DB', 'car_listings')
+    pg_user = os.environ.get('POSTGRES_USER', 'postgres')
+    pg_password = os.environ.get('POSTGRES_PASSWORD', '')
+    db_url = f"postgresql+psycopg2://{pg_user}:{pg_password}@{pg_host}:{pg_port}/{pg_db}"
+if not db_url:
+    db_url = f'sqlite:///{DB_PATH}'
+app.config['SQLALCHEMY_DATABASE_URI'] = db_url
+app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
+engine_opts = {
+    'pool_pre_ping': True,
+    'pool_recycle': 1800,
+}
+if db_url.startswith('postgresql'):
+    # Reasonable defaults; override via env if needed
+    pool_size = int(os.environ.get('DB_POOL_SIZE', '5'))
+    max_overflow = int(os.environ.get('DB_MAX_OVERFLOW', '10'))
+    pool_timeout = int(os.environ.get('DB_POOL_TIMEOUT', '30'))
+    engine_opts.update({'pool_size': pool_size, 'max_overflow': max_overflow, 'pool_timeout': pool_timeout})
+app.config['SQLALCHEMY_ENGINE_OPTIONS'] = engine_opts
+app.config['UPLOAD_FOLDER'] = os.path.join(app.root_path, 'static', 'uploads')
+app.config['MAX_CONTENT_LENGTH'] = 100 * 1024 * 1024  # 100MB max file size for videos
 ALLOWED_EXTENSIONS = {'png', 'jpg', 'jpeg', 'gif'}
+ALLOWED_VIDEO_EXTENSIONS = {'mp4', 'mov', 'avi', 'mkv', 'webm'}
 app.config['PERMANENT_SESSION_LIFETIME'] = timedelta(days=30)
+app.config['JWT_SECRET_KEY'] = os.environ.get('JWT_SECRET_KEY', app.config['SECRET_KEY'])
 
 # Google OAuth config (replace with your credentials)
 app.config['GOOGLE_OAUTH_CLIENT_ID'] = os.environ.get('GOOGLE_OAUTH_CLIENT_ID', 'your-google-client-id')
@@ -50,7 +90,9 @@ login_manager = LoginManager()
 login_manager.init_app(app)
 login_manager.login_view = 'login'
 
-# Ensure upload folder exists
+jwt = JWTManager(app)
+
+# Ensure upload folder exists (absolute path)
 os.makedirs(app.config['UPLOAD_FOLDER'], exist_ok=True)
 
 class User(UserMixin, db.Model):
@@ -63,6 +105,211 @@ class User(UserMixin, db.Model):
 @login_manager.user_loader
 def load_user(user_id):
     return User.query.get(int(user_id))
+
+# Simple in-memory token store for emulator/mobile API
+TOKENS: dict[str, int] = {}
+
+# Simple in-memory phone OTP store and user->phone mapping (for demo/dev)
+PHONE_OTPS: dict[str, dict] = {}
+USER_PHONES: dict[int, str] = {}
+
+def _normalize_phone(raw: str) -> str:
+    """Return E.164-like string: keep digits and leading '+'. If no '+', prefix '+'"""
+    s = str(raw or '').strip()
+    # Keep digits and '+'
+    kept = []
+    for ch in s:
+        if ch.isdigit() or ch == '+':
+            kept.append(ch)
+    if not kept:
+        return ''
+    if kept[0] != '+':
+        # ensure starts with '+' and only digits after
+        digits = ''.join(ch for ch in kept if ch.isdigit())
+        return f'+{digits}' if digits else ''
+    # already has '+': ensure only digits after
+    return '+' + ''.join(ch for ch in kept[1:] if ch.isdigit())
+
+def get_api_user():
+    """Return a User from JWT Bearer token if present; fallback to legacy token or current_user."""
+    # Prefer JWT tokens
+    try:
+        verify_jwt_in_request(optional=True)
+        identity = get_jwt_identity()
+        if identity:
+            return User.query.get(int(identity))
+        else:
+            # Debug: no identity even though we attempted verification
+            try:
+                ah = flask_request.headers.get('Authorization', '')
+                print('[AUTH DEBUG] No JWT identity. has_header=', bool(ah), ' bearer_prefix=', ah.startswith('Bearer '), ' sample=', ah[:32])
+            except Exception:
+                pass
+    except Exception as e:
+        try:
+            print('[AUTH DEBUG] JWT verify error:', str(e))
+        except Exception:
+            pass
+    # Legacy in-memory token support
+    try:
+        auth = flask_request.headers.get('Authorization', '')
+        if auth.startswith('Bearer '):
+            token = auth[7:]
+            uid = TOKENS.get(token)
+            if uid:
+                return User.query.get(uid)
+            else:
+                # Debug: legacy token not found
+                try:
+                    print('[AUTH DEBUG] Legacy token not found in TOKENS map. sample=', token[:16])
+                except Exception:
+                    pass
+    except Exception:
+        pass
+    # Fallback to session-based auth
+    if current_user.is_authenticated:
+        return current_user
+    return None
+
+# Mobile auth endpoints (token-based) for emulator
+@app.route('/api/auth/signup', methods=['POST'])
+def api_auth_signup_mobile():
+    data = request.get_json() or {}
+    username = str(data.get('username', '')).strip()
+    # Phone-based signup: accept phone + otp_code; email becomes a placeholder
+    phone_raw = str(data.get('phone', ''))
+    otp_code = str(data.get('otp_code', ''))
+    password = str(data.get('password', ''))
+    phone = _normalize_phone(phone_raw)
+    if not username or not phone or not password or not otp_code:
+        return jsonify({'error': 'username, phone, password, otp_code required'}), 400
+    # Verify OTP
+    entry = PHONE_OTPS.get(phone)
+    if not entry or entry.get('code') != otp_code or entry.get('expires_at') < datetime.utcnow():
+        return jsonify({'error': 'Invalid or expired verification code'}), 400
+    # Generate placeholder unique email from phone (to satisfy non-null/unique constraint)
+    digits_only = ''.join(ch for ch in phone if ch.isdigit())
+    email_placeholder = f"{digits_only}@phone.local"
+    if User.query.filter((User.username == username) | (User.email == email_placeholder)).first():
+        return jsonify({'error': 'Username or phone already exists'}), 409
+    user = User(username=username, email=email_placeholder, password=generate_password_hash(password))
+    db.session.add(user)
+    db.session.commit()
+    # Map phone to user (in-memory for dev/demo)
+    USER_PHONES[user.id] = phone
+    # Consume OTP
+    PHONE_OTPS.pop(phone, None)
+    token = create_access_token(identity=str(user.id), expires_delta=timedelta(days=30))
+    return jsonify({'token': token, 'user': {'id': user.id, 'username': user.username, 'email': user.email, 'phone': phone}})
+
+@app.route('/api/auth/login', methods=['POST'])
+def api_auth_login_mobile():
+    data = request.get_json() or {}
+    username = str(data.get('username', '')).strip()
+    password = str(data.get('password', ''))
+    if not username or not password:
+        return jsonify({'error': 'username and password required'}), 400
+    user = User.query.filter_by(username=username).first()
+    if not user or not check_password_hash(user.password, password):
+        return jsonify({'error': 'Invalid credentials'}), 401
+    token = create_access_token(identity=str(user.id), expires_delta=timedelta(days=30))
+    # Include phone if known
+    phone = USER_PHONES.get(user.id, '')
+    return jsonify({'token': token, 'user': {'id': user.id, 'username': user.username, 'email': user.email, 'phone': phone}})
+
+@app.route('/api/auth/me', methods=['GET'])
+def api_auth_me_mobile():
+    user = get_api_user()
+    if not user:
+        return jsonify({'error': 'Unauthorized'}), 401
+    phone = ''
+    try:
+        phone = getattr(user, 'phone', None) or ''
+    except Exception:
+        phone = ''
+    if not phone:
+        phone = USER_PHONES.get(user.id, '')
+    return jsonify({'id': user.id, 'username': user.username, 'email': user.email, 'phone': phone})
+
+# Send OTP to phone (dev/demo: returns code in response; replace with SMS integration)
+@app.route('/api/auth/send_otp', methods=['POST'])
+def api_auth_send_otp():
+    data = request.get_json() or {}
+    phone_raw = str(data.get('phone', ''))
+    phone = _normalize_phone(phone_raw)
+    if not phone:
+        return jsonify({'error': 'phone required'}), 400
+    code = f"{random.randint(100000, 999999)}"
+    PHONE_OTPS[phone] = {
+        'code': code,
+        'expires_at': datetime.utcnow() + timedelta(minutes=10)
+    }
+    # Send via provider
+    body = f"Your verification code is {code}"
+    sent, err = _send_sms(phone, body)
+    if sent:
+        return jsonify({'sent': True})
+    return jsonify({'sent': False, 'error': err, 'dev_code': code})
+
+def _send_sms(phone: str, body: str) -> tuple[bool, str]:
+    provider = os.environ.get('SMS_PROVIDER', 'twilio').strip().lower()
+    try:
+        if provider == 'twilio':
+            sid = os.environ.get('TWILIO_ACCOUNT_SID')
+            token = os.environ.get('TWILIO_AUTH_TOKEN')
+            from_number = os.environ.get('TWILIO_FROM_NUMBER')
+            if TwilioClient and sid and token and from_number:
+                client = TwilioClient(sid, token)
+                client.messages.create(to=phone, from_=from_number, body=body)
+                return True, ''
+            return False, 'Twilio not configured'
+        elif provider == 'infobip':
+            # Infobip SMS over HTTP
+            base_url = os.environ.get('INFOBIP_BASE_URL', '').rstrip('/')
+            api_key = os.environ.get('INFOBIP_API_KEY', '')
+            sender = os.environ.get('INFOBIP_SENDER', '')
+            if not (base_url and api_key):
+                return False, 'Infobip not configured (INFOBIP_BASE_URL, INFOBIP_API_KEY)'
+            url = f"{base_url}/sms/2/text/advanced"
+            headers = {
+                'Authorization': f"App {api_key}",
+                'Content-Type': 'application/json'
+            }
+            msg = {
+                'destinations': [{'to': phone}],
+                'text': body,
+            }
+            if sender:
+                msg['from'] = sender
+            payload = {'messages': [msg]}
+            resp = requests.post(url, headers=headers, json=payload, timeout=15)
+            if 200 <= resp.status_code < 300:
+                return True, ''
+            return False, f'Infobip {resp.status_code}: {resp.text[:200]}'
+        elif provider == 'custom':
+            url = os.environ.get('CUSTOM_SMS_URL', '').strip()
+            if not url:
+                return False, 'CUSTOM_SMS_URL not set'
+            method = os.environ.get('CUSTOM_SMS_METHOD', 'POST').upper()
+            to_param = os.environ.get('CUSTOM_SMS_TO_PARAM', 'to')
+            msg_param = os.environ.get('CUSTOM_SMS_MSG_PARAM', 'message')
+            extra_json = os.environ.get('CUSTOM_SMS_EXTRA_JSON', '')
+            try:
+                extra = json.loads(extra_json) if extra_json else {}
+            except Exception:
+                extra = {}
+            payload = {**extra, to_param: phone, msg_param: body}
+            if method == 'GET':
+                resp = requests.get(url, params=payload, timeout=10)
+            else:
+                resp = requests.post(url, data=payload, timeout=10)
+            if 200 <= resp.status_code < 300:
+                return True, ''
+            return False, f'Gateway {resp.status_code}: {resp.text[:200]}'
+        else:
+            return False, f'Unknown SMS_PROVIDER {provider}'
+    except Exception as e:
+        return False, str(e)
 
 class Car(db.Model):
     id = db.Column(db.Integer, primary_key=True)
@@ -91,9 +338,12 @@ class Car(db.Model):
     drive_type = db.Column(db.String(20), nullable=False)
     license_plate_type = db.Column(db.String(20), nullable=True)  # private, temporary, commercial, taxi
     city = db.Column(db.String(50), nullable=True)  # City in Iraq
+    contact_phone = db.Column(db.String(20), nullable=True)  # WhatsApp/contact phone for seller
     images = db.relationship('CarImage', backref='car', lazy=True, cascade='all, delete-orphan')
+    videos = db.relationship('CarVideo', backref='car', lazy=True, cascade='all, delete-orphan')
     favorited_by = db.relationship('Favorite', back_populates='car', lazy=True, cascade='all, delete-orphan')
     status = db.Column(db.String(20), nullable=False, default='pending_payment')  # pending_payment, active, etc.
+    is_quick_sell = db.Column(db.Boolean, default=False)
 
 class CarModel(db.Model):
     id = db.Column(db.Integer, primary_key=True)
@@ -108,6 +358,12 @@ class CarImage(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     car_id = db.Column(db.Integer, db.ForeignKey('car.id'), nullable=False)
     image_url = db.Column(db.String(200), nullable=False)
+
+class CarVideo(db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+    car_id = db.Column(db.Integer, db.ForeignKey('car.id'), nullable=False)
+    video_url = db.Column(db.String(200), nullable=False)
+    created_at = db.Column(db.DateTime, nullable=False, default=datetime.utcnow)
 
 class Favorite(db.Model):
     id = db.Column(db.Integer, primary_key=True)
@@ -174,6 +430,9 @@ class PaymentTransaction(db.Model):
 
 def allowed_file(filename):
     return '.' in filename and filename.rsplit('.', 1)[1].lower() in ALLOWED_EXTENSIONS
+
+def allowed_video_file(filename):
+    return '.' in filename and filename.rsplit('.', 1)[1].lower() in ALLOWED_VIDEO_EXTENSIONS
 
 @app.route('/')
 def home():
@@ -249,6 +508,7 @@ def add_car():
             license_plate_type=license_plate_type,
             city=city,
             condition=condition,
+            is_quick_sell=bool(form_data.get('is_quick_sell', False)),
             user_id=current_user.id,
             status='pending_payment'
         )
@@ -276,6 +536,24 @@ def add_car():
             db.session.delete(car)
             db.session.commit()
             return render_template('add_car.html', current_year=datetime.now().year, car=form_data)
+        
+        # Handle video uploads (optional)
+        videos = request.files.getlist('video')
+        if videos and videos[0].filename:
+            for video in videos:
+                if video and allowed_video_file(video.filename):
+                    filename = secure_filename(video.filename)
+                    timestamp = datetime.now().strftime('%Y%m%d_%H%M%S')
+                    filename = f"{timestamp}_{filename}"
+                    video_path = os.path.join(app.config['UPLOAD_FOLDER'], 'car_videos', filename)
+                    os.makedirs(os.path.dirname(video_path), exist_ok=True)
+                    video.save(video_path)
+                    car_video = CarVideo(
+                        car_id=car.id,
+                        video_url=f"uploads/car_videos/{filename}"
+                    )
+                    db.session.add(car_video)
+            db.session.commit()
         # Create a payment record for this car
         payment = Payment(
             payment_id=str(uuid.uuid4()),
@@ -318,7 +596,13 @@ def delete_car(car_id):
     # Delete all image files for this car
     for image in car.images:
         try:
-            os.remove(os.path.join(app.config['UPLOAD_FOLDER'], image.image_url.split('/')[-1]))
+            # image.image_url like 'uploads/car_photos/filename.jpg' → store under static/uploads
+            rel = image.image_url
+            if rel.startswith('uploads/'):
+                rel = rel[8:]
+            file_path = os.path.join(app.config['UPLOAD_FOLDER'], rel)
+            if os.path.exists(file_path):
+                os.remove(file_path)
         except Exception:
             pass
     db.session.delete(car)
@@ -1013,9 +1297,105 @@ def populate_car_models():
     
     db.session.commit()
 
+def seed_example_listings(count: int = 100):
+    """Create example users and car listings for testing.
+    Safe to call multiple times; it will only top up to the requested count.
+    """
+    # Ensure a demo user exists
+    demo = User.query.filter_by(username='demo').first()
+    if not demo:
+        demo = User(
+            username='demo',
+            email='demo@example.com',
+            password=generate_password_hash('demo1234')
+        )
+        db.session.add(demo)
+        db.session.commit()
+
+    # Basic option pools
+    conditions = ['new', 'used']
+    transmissions = ['automatic', 'manual']
+    fuel_types = ['gasoline', 'diesel', 'electric', 'hybrid']
+    colors = ['black', 'white', 'silver', 'gray', 'red', 'blue', 'green', 'orange']
+    body_types = ['sedan', 'suv', 'hatchback', 'coupe', 'wagon', 'pickup', 'van', 'minivan']
+    drive_types = ['fwd', 'rwd', 'awd', '4wd']
+    license_plate_types = ['private', 'temporary', 'commercial', 'taxi']
+    cities = ['baghdad', 'basra', 'erbil', 'najaf', 'karbala', 'kirkuk', 'sulaymaniyah', 'dohuk']
+
+    # Pull available (brand, model) pairs from CarModel table
+    model_rows = CarModel.query.all()
+    if not model_rows:
+        populate_car_models()
+        model_rows = CarModel.query.all()
+
+    # Current number of cars
+    current_total = Car.query.count()
+    to_create = max(0, count - current_total)
+    if to_create == 0:
+        return
+
+    new_cars: list[Car] = []
+    for i in range(to_create):
+        cm = random.choice(model_rows)
+        brand = cm.brand
+        model = cm.model
+        # Simple trim fallback
+        trim = 'Base'
+
+        year = random.randint(datetime.now().year - 20, datetime.now().year)
+        mileage = random.randint(0, 220_000)
+        price = random.choice([None, random.randint(1500, 120000)])
+        transmission = random.choice(transmissions)
+        fuel_type = random.choice(fuel_types)
+        color = random.choice(colors)
+        condition = random.choice(conditions)
+        body_type = random.choice(body_types)
+        seating = random.choice([2, 4, 5, 7, 8])
+        drive_type = random.choice(drive_types)
+        license_plate_type = random.choice(license_plate_types)
+        city = random.choice(cities)
+        cylinder_count = random.choice([3, 4, 6, 8, 10, 12])
+        engine_size = round(random.uniform(1.0, 6.0), 1)
+        import_country = random.choice(['us', 'gcc', 'iraq', 'canada', 'eu'])
+
+        title = f"{brand.replace('-', ' ').title()} {model} {trim}"
+        created_offset_days = random.randint(0, 120)
+
+        car = Car(
+            title=title,
+            brand=brand,
+            model=model,
+            trim=trim,
+            year=year,
+            mileage=mileage,
+            price=price,
+            title_status='clean',
+            damaged_parts=None,
+            transmission=transmission,
+            fuel_type=fuel_type,
+            color=color,
+            cylinder_count=cylinder_count,
+            engine_size=engine_size,
+            import_country=import_country,
+            body_type=body_type,
+            seating=seating,
+            drive_type=drive_type,
+            license_plate_type=license_plate_type,
+            city=city,
+            condition=condition,
+            user_id=demo.id,
+            status='active',
+            created_at=datetime.utcnow() - timedelta(days=created_offset_days)
+        )
+        new_cars.append(car)
+
+    db.session.bulk_save_objects(new_cars)
+    db.session.commit()
+
 @app.route('/search')
 def search():
     query = request.args.get('query', '')
+    current_year = datetime.now().year
     def sanitize_numeric(val, typ):
         if val in (None, '', 'any', 'Undefined'):
             return None
@@ -1024,12 +1404,19 @@ def search():
         except Exception:
             return None
 
+    # Support both legacy range params and new single-value params
+    price_exact = sanitize_numeric(request.args.get('price'), float)
+    year_exact = sanitize_numeric(request.args.get('year'), int)
+    mileage_exact = sanitize_numeric(request.args.get('mileage'), int)
+
     min_price = sanitize_numeric(request.args.get('min_price'), float)
     max_price = sanitize_numeric(request.args.get('max_price'), float)
     min_year = sanitize_numeric(request.args.get('min_year'), int)
     max_year = sanitize_numeric(request.args.get('max_year'), int)
     min_mileage = sanitize_numeric(request.args.get('min_mileage'), int)
     max_mileage = sanitize_numeric(request.args.get('max_mileage'), int)
+    # Number of damaged parts for damaged title filtering (Flutter app support)
+    damaged_parts = sanitize_numeric(request.args.get('damaged_parts'), int)
     damaged_parts = sanitize_numeric(request.args.get('damaged_parts'), int)
     cylinder_count = sanitize_numeric(request.args.get('cylinder_count'), int)
     engine_size = sanitize_numeric(request.args.get('engine_size'), float)
@@ -1059,17 +1446,24 @@ def search():
             )
         )
 
-    if min_price is not None and min_price != 'any':
+    # Apply exact filters if provided; fall back to ranges
+    if price_exact is not None:
+        car_query = car_query.filter(Car.price == price_exact)
+    elif min_price is not None and min_price != 'any':
         car_query = car_query.filter(Car.price >= min_price)
-    if max_price is not None and max_price != 'any':
+    if price_exact is None and max_price is not None and max_price != 'any':
         car_query = car_query.filter(Car.price <= max_price)
-    if min_year is not None and min_year != 'any':
+    if year_exact is not None:
+        car_query = car_query.filter(Car.year == year_exact)
+    elif min_year is not None and min_year != 'any':
         car_query = car_query.filter(Car.year >= min_year)
-    if max_year is not None and max_year != 'any':
+    if year_exact is None and max_year is not None and max_year != 'any':
         car_query = car_query.filter(Car.year <= max_year)
-    if min_mileage is not None and min_mileage != 'any' and min_mileage != 0:
+    if mileage_exact is not None:
+        car_query = car_query.filter(Car.mileage == mileage_exact)
+    elif min_mileage is not None and min_mileage != 'any' and min_mileage != 0:
         car_query = car_query.filter(Car.mileage >= min_mileage)
-    if max_mileage is not None and max_mileage != 'any' and max_mileage != 0:
+    if mileage_exact is None and max_mileage is not None and max_mileage != 'any' and max_mileage != 0:
         car_query = car_query.filter(Car.mileage <= max_mileage)
     if brand and brand != 'any':
         car_query = car_query.filter(Car.brand.ilike(f'%{brand}%'))
@@ -1083,6 +1477,9 @@ def search():
         car_query = car_query.filter(Car.fuel_type == fuel_type)
     if title_status and title_status != 'any':
         car_query = car_query.filter(Car.title_status == title_status)
+        # If specifically filtering damaged titles, allow narrowing by number of parts
+        if title_status == 'damaged' and damaged_parts is not None and damaged_parts != 'any':
+            car_query = car_query.filter(Car.damaged_parts == damaged_parts)
         if title_status == 'damaged' and damaged_parts is not None and damaged_parts != 'any':
             car_query = car_query.filter(Car.damaged_parts == damaged_parts)
     if condition and condition != 'any':
@@ -1102,7 +1499,9 @@ def search():
 
     # Apply sorting
     if sort_by and sort_by != 'any':
-        if sort_by == 'price_asc':
+        if sort_by == 'newest':
+            car_query = car_query.order_by(Car.created_at.desc())
+        elif sort_by == 'price_asc':
             car_query = car_query.order_by(Car.price.asc())
         elif sort_by == 'price_desc':
             car_query = car_query.order_by(Car.price.desc())
@@ -1122,6 +1521,10 @@ def search():
     return render_template('home.html',
                          cars=cars,
                          query=query,
+                         current_year=current_year,
+                         price_exact=price_exact,
+                         year_exact=year_exact,
+                         mileage_exact=mileage_exact,
                          min_price=min_price,
                          max_price=max_price,
                          min_year=min_year,
@@ -1142,6 +1545,489 @@ def search():
                          models=get_models(brand) if brand else [],
                          trims=get_trims(brand, model) if brand and model else [],
                          import_country=import_country)
+
+@app.route('/cars', methods=['GET', 'POST'])
+def api_cars():
+    """JSON API for listings used by the Flutter app.
+    Mirrors the filtering logic of the /search route, but returns JSON.
+    """
+    # Create a new car listing (used by emulator/mobile Add Listing)
+    if request.method == 'POST':
+        try:
+            # Require authentication via web session or Bearer token
+            api_user = get_api_user()
+            if not api_user:
+                return jsonify({'error': 'Authentication required'}), 401
+            data = request.get_json() or {}
+            required_fields = [
+                'title', 'brand', 'model', 'trim', 'year', 'mileage', 'condition',
+                'transmission', 'fuel_type', 'color', 'body_type', 'seating', 'drive_type', 'title_status'
+            ]
+            missing = [f for f in required_fields if not data.get(f)]
+            if missing:
+                return jsonify({'error': f"Missing required fields: {', '.join(missing)}"}), 400
+
+            car = Car(
+                title=data['title'],
+                brand=str(data['brand']),
+                model=str(data['model']),
+                trim=str(data['trim']),
+                year=int(data['year']),
+                price=(float(data['price']) if data.get('price') not in (None, '', 'any') else None),
+                mileage=int(data['mileage']),
+                condition=str(data['condition']).lower(),
+                transmission=str(data['transmission']).lower(),
+                fuel_type=str(data['fuel_type']).lower(),
+                color=str(data['color']).lower(),
+                image_url=(data.get('image_url') or ''),
+                cylinder_count=(int(data['cylinder_count']) if data.get('cylinder_count') else None),
+                engine_size=(float(data['engine_size']) if data.get('engine_size') else None),
+                import_country=(str(data['import_country']).lower() if data.get('import_country') else None),
+                body_type=str(data['body_type']).lower(),
+                seating=int(data['seating']),
+                drive_type=str(data['drive_type']).lower(),
+                license_plate_type=(str(data['license_plate_type']).lower() if data.get('license_plate_type') else None),
+                city=(str(data['city']).lower() if data.get('city') else None),
+                contact_phone=(str(data['contact_phone']).strip() if data.get('contact_phone') else None),
+                title_status=str(data['title_status']).lower(),
+                damaged_parts=(int(data['damaged_parts']) if data.get('damaged_parts') else None),
+                is_quick_sell=bool(data.get('is_quick_sell', False)),
+                status='active',  # Activate immediately for emulator UX
+                user_id=api_user.id
+            )
+            db.session.add(car)
+            db.session.commit()
+
+            def first_image_rel_path(new_car: Car) -> str:
+                if new_car.images:
+                    path = new_car.images[0].image_url or ''
+                    return path[8:] if path.startswith('uploads/') else path
+                return (new_car.image_url or '').lstrip('/')
+
+            return jsonify({
+                'id': car.id,
+                'title': car.title,
+                'brand': car.brand,
+                'model': car.model,
+                'trim': car.trim,
+                'year': car.year,
+                'price': car.price,
+                'mileage': car.mileage,
+                'title_status': car.title_status,
+                'damaged_parts': car.damaged_parts,
+                'condition': car.condition,
+                'transmission': car.transmission,
+                'fuel_type': car.fuel_type,
+                'color': car.color,
+                'body_type': car.body_type,
+                'seating': car.seating,
+                'drive_type': car.drive_type,
+                'cylinder_count': car.cylinder_count,
+                'engine_size': car.engine_size,
+                'import_country': car.import_country,
+                'license_plate_type': car.license_plate_type,
+                'city': car.city,
+                'contact_phone': car.contact_phone,
+                'image_url': first_image_rel_path(car),
+                'status': car.status,
+            }), 201
+        except Exception as e:
+            db.session.rollback()
+            return jsonify({'error': str(e)}), 500
+    # Safety net: if database is empty, seed some examples so the app always shows data
+    if Car.query.count() == 0:
+        try:
+            populate_car_models()
+            seed_example_listings(100)
+        except Exception:
+            pass
+    def sanitize_numeric(val, typ):
+        if val in (None, '', 'any', 'Undefined'):
+            return None
+        try:
+            return typ(val)
+        except Exception:
+            return None
+
+    price_exact = sanitize_numeric(request.args.get('price'), float)
+    year_exact = sanitize_numeric(request.args.get('year'), int)
+    mileage_exact = sanitize_numeric(request.args.get('mileage'), int)
+
+    min_price = sanitize_numeric(request.args.get('min_price'), float)
+    max_price = sanitize_numeric(request.args.get('max_price'), float)
+    min_year = sanitize_numeric(request.args.get('min_year'), int)
+    max_year = sanitize_numeric(request.args.get('max_year'), int)
+    min_mileage = sanitize_numeric(request.args.get('min_mileage'), int)
+    max_mileage = sanitize_numeric(request.args.get('max_mileage'), int)
+
+    query_id = sanitize_numeric(request.args.get('id'), int)
+    brand = request.args.get('brand', '')
+    model = request.args.get('model', '')
+    trim = request.args.get('trim', '')
+    transmission = request.args.get('transmission', '')
+    fuel_type = request.args.get('fuel_type', '')
+    title_status = request.args.get('title_status', '')
+    condition = request.args.get('condition', '')
+    sort_by = request.args.get('sort_by', '')
+    color = request.args.get('color', '')
+    import_country = request.args.get('import_country', '')
+    license_plate_type = request.args.get('license_plate_type', '')
+    city = request.args.get('city', '')
+    drive_type = request.args.get('drive_type', '')
+    seating = sanitize_numeric(request.args.get('seating'), int)
+    cylinder_count = sanitize_numeric(request.args.get('cylinder_count'), int)
+
+    # For emulator/dev experience, include newly submitted listings that are pending payment
+    car_query = Car.query.filter(Car.status.in_(['active', 'pending_payment']))
+    if query_id is not None:
+        car_query = car_query.filter(Car.id == query_id)
+
+    if price_exact is not None:
+        car_query = car_query.filter(Car.price == price_exact)
+    elif min_price is not None and min_price != 'any':
+        car_query = car_query.filter(Car.price >= min_price)
+    if price_exact is None and max_price is not None and max_price != 'any':
+        car_query = car_query.filter(Car.price <= max_price)
+    if year_exact is not None:
+        car_query = car_query.filter(Car.year == year_exact)
+    elif min_year is not None and min_year != 'any':
+        car_query = car_query.filter(Car.year >= min_year)
+    if year_exact is None and max_year is not None and max_year != 'any':
+        car_query = car_query.filter(Car.year <= max_year)
+    if mileage_exact is not None:
+        car_query = car_query.filter(Car.mileage == mileage_exact)
+    elif min_mileage is not None and min_mileage != 'any' and min_mileage != 0:
+        car_query = car_query.filter(Car.mileage >= min_mileage)
+    if mileage_exact is None and max_mileage is not None and max_mileage != 'any' and max_mileage != 0:
+        car_query = car_query.filter(Car.mileage <= max_mileage)
+    if brand and brand != 'any':
+        car_query = car_query.filter(Car.brand.ilike(f'%{brand}%'))
+    if model and model != 'any':
+        car_query = car_query.filter(Car.model == model)
+    if trim and trim != 'any':
+        car_query = car_query.filter(Car.trim == trim)
+    if transmission and transmission != 'any':
+        car_query = car_query.filter(Car.transmission == transmission)
+    if fuel_type and fuel_type != 'any':
+        car_query = car_query.filter(Car.fuel_type == fuel_type)
+    if title_status and title_status != 'any':
+        car_query = car_query.filter(Car.title_status == title_status)
+    if condition and condition != 'any':
+        car_query = car_query.filter(Car.condition == condition)
+    if color and color != 'any':
+        car_query = car_query.filter(Car.color == color)
+    if import_country and import_country != 'any':
+        car_query = car_query.filter(Car.import_country == import_country)
+    if license_plate_type and license_plate_type != 'any':
+        car_query = car_query.filter(Car.license_plate_type == license_plate_type)
+    if city and city != 'any':
+        car_query = car_query.filter(Car.city == city)
+    if drive_type and drive_type != 'any':
+        car_query = car_query.filter(Car.drive_type == drive_type)
+    if seating is not None and seating != 'any':
+        car_query = car_query.filter(Car.seating == seating)
+    if cylinder_count is not None and cylinder_count != 'any':
+        car_query = car_query.filter(Car.cylinder_count == cylinder_count)
+
+    if sort_by and sort_by != 'any':
+        if sort_by == 'newest':
+            car_query = car_query.order_by(Car.created_at.desc())
+        elif sort_by == 'price_asc':
+            car_query = car_query.order_by(Car.price.asc())
+        elif sort_by == 'price_desc':
+            car_query = car_query.order_by(Car.price.desc())
+        elif sort_by == 'year_desc':
+            car_query = car_query.order_by(Car.year.desc())
+        elif sort_by == 'year_asc':
+            car_query = car_query.order_by(Car.year.asc())
+        elif sort_by == 'mileage_asc':
+            car_query = car_query.order_by(Car.mileage.asc())
+        elif sort_by == 'mileage_desc':
+            car_query = car_query.order_by(Car.mileage.desc())
+    else:
+        car_query = car_query.order_by(Car.created_at.desc())
+
+    cars = car_query.all()
+
+    def first_image_rel_path(car: Car) -> str:
+        # Prefer first CarImage if present; strip leading 'uploads/' for Flutter
+        if car.images:
+            path = car.images[0].image_url or ''  # e.g., 'uploads/car_photos/file.jpg'
+            return path[8:] if path.startswith('uploads/') else path
+        # Fallback to car.image_url (assume already relative under uploads)
+        return (car.image_url or '').lstrip('/')
+
+    def images_rel_paths(car: Car):
+        out = []
+        for im in car.images:
+            p = (im.image_url or '')
+            out.append(p[8:] if p.startswith('uploads/') else p)
+        return out
+
+    def videos_rel_paths(car: Car):
+        out = []
+        for v in car.videos:
+            p = (v.video_url or '')
+            out.append(p[8:] if p.startswith('uploads/') else p)
+        return out
+
+    payload = [{
+        'id': c.id,
+        'title': c.title,
+        'brand': c.brand,
+        'model': c.model,
+        'trim': c.trim,
+        'year': c.year,
+        'price': c.price,
+        'mileage': c.mileage,
+        'title_status': c.title_status,
+        'damaged_parts': c.damaged_parts,
+        'condition': c.condition,
+        'transmission': c.transmission,
+        'fuel_type': c.fuel_type,
+        'color': c.color,
+        'body_type': c.body_type,
+        'seating': c.seating,
+        'drive_type': c.drive_type,
+        'cylinder_count': c.cylinder_count,
+        'engine_size': c.engine_size,
+        'import_country': c.import_country,
+        'license_plate_type': c.license_plate_type,
+        'city': c.city,
+        'contact_phone': c.contact_phone,
+        'image_url': first_image_rel_path(c),  # Flutter builds /static/uploads/{image_url}
+        'images': images_rel_paths(c),
+        'videos': videos_rel_paths(c),
+    } for c in cars]
+
+    return jsonify(payload)
+
+@app.route('/api/cars/<int:car_id>/images', methods=['POST'])
+def upload_car_images(car_id):
+    """Upload one or more images for a specific car (used by the Flutter app).
+    Expects multipart/form-data with one or more 'image' files.
+    Returns JSON with uploaded relative paths.
+    """
+    car = Car.query.get_or_404(car_id)
+    # Only the owner (from token or session) can upload images
+    api_user = get_api_user()
+    if not api_user or car.user_id != api_user.id:
+        return jsonify({'error': 'Unauthorized'}), 403
+    try:
+        files = request.files.getlist('image')  # supports repeated 'image' fields
+        if not files:
+            return jsonify({'error': 'No image files provided'}), 400
+
+        saved_paths = []
+        for file in files:
+            if file and allowed_file(file.filename):
+                filename = secure_filename(file.filename)
+                timestamp = datetime.now().strftime('%Y%m%d_%H%M%S')
+                filename = f"{timestamp}_{filename}"
+                target_path = os.path.join(app.config['UPLOAD_FOLDER'], 'car_photos', filename)
+                os.makedirs(os.path.dirname(target_path), exist_ok=True)
+                file.save(target_path)
+
+                rel_path = f"uploads/car_photos/{filename}"
+                car_image = CarImage(car_id=car.id, image_url=rel_path)
+                db.session.add(car_image)
+                saved_paths.append(rel_path)
+
+        # If no primary image set, use the first uploaded
+        if (not car.image_url) and saved_paths:
+            # Store trimmed so API consistency: DB holds relative-under-uploads path without prefix
+            first_trimmed = saved_paths[0][8:] if saved_paths[0].startswith('uploads/') else saved_paths[0]
+            car.image_url = first_trimmed
+
+        db.session.commit()
+
+        # Return paths without the leading 'uploads/' to match the /cars JSON API
+        trimmed = [p[8:] if p.startswith('uploads/') else p for p in saved_paths]
+        return jsonify({'uploaded': trimmed, 'image_url': car.image_url or ''}), 201
+    except Exception as e:
+        db.session.rollback()
+        return jsonify({'error': str(e)}), 500
+
+@app.route('/api/cars/<int:car_id>/videos', methods=['POST'])
+def upload_car_videos(car_id):
+    """Upload one or more videos for a specific car (used by the Flutter app).
+    Expects multipart/form-data with one or more 'video' files.
+    Returns JSON with uploaded relative paths.
+    """
+    car = Car.query.get_or_404(car_id)
+    # Only the owner (from token or session) can upload videos
+    api_user = get_api_user()
+    if not api_user or car.user_id != api_user.id:
+        return jsonify({'error': 'Unauthorized'}), 403
+    try:
+        files = request.files.getlist('video')  # supports repeated 'video' fields
+        if not files:
+            return jsonify({'error': 'No video files provided'}), 400
+
+        saved_paths = []
+        for file in files:
+            if file and allowed_video_file(file.filename):
+                filename = secure_filename(file.filename)
+                timestamp = datetime.now().strftime('%Y%m%d_%H%M%S')
+                filename = f"{timestamp}_{filename}"
+                target_path = os.path.join(app.config['UPLOAD_FOLDER'], 'car_videos', filename)
+                os.makedirs(os.path.dirname(target_path), exist_ok=True)
+                file.save(target_path)
+
+                rel_path = f"uploads/car_videos/{filename}"
+                car_video = CarVideo(car_id=car.id, video_url=rel_path)
+                db.session.add(car_video)
+                saved_paths.append(rel_path)
+
+        db.session.commit()
+
+        # Return paths without the leading 'uploads/' to match the /cars JSON API
+        trimmed = [p[8:] if p.startswith('uploads/') else p for p in saved_paths]
+        return jsonify({'uploaded': trimmed}), 201
+    except Exception as e:
+        db.session.rollback()
+        return jsonify({'error': str(e)}), 500
+
+# -----------------------
+# JSON APIs scoped to current user (web session); emulator should use kk/api.py token endpoints
+# -----------------------
+
+@app.route('/api/favorites', methods=['GET'])
+def api_favorites():
+    # Support both token-based (mobile) and session-based auth
+    api_user = get_api_user()
+    if not api_user:
+        return jsonify({'error': 'Unauthorized'}), 401
+    favs = Favorite.query.filter_by(user_id=api_user.id).all()
+    cars = [fav.car for fav in favs]
+
+    def first_image_rel_path(c: Car) -> str:
+        if c.images:
+            path = c.images[0].image_url or ''
+            return path[8:] if path.startswith('uploads/') else path
+        return (c.image_url or '').lstrip('/')
+
+    payload = [{
+        'id': c.id,
+        'title': c.title,
+        'brand': c.brand,
+        'model': c.model,
+        'trim': c.trim,
+        'year': c.year,
+        'price': c.price,
+        'mileage': c.mileage,
+        'condition': c.condition,
+        'transmission': c.transmission,
+        'fuel_type': c.fuel_type,
+        'color': c.color,
+        'image_url': first_image_rel_path(c),
+        'city': c.city,
+        'status': c.status
+    } for c in cars]
+    return jsonify(payload)
+
+@app.route('/api/favorite/<int:car_id>', methods=['POST'])
+def api_toggle_favorite(car_id):
+    # Support both token-based (mobile) and session-based auth
+    api_user = get_api_user()
+    if not api_user:
+        return jsonify({'error': 'Unauthorized'}), 401
+    car = Car.query.get_or_404(car_id)
+    favorite = Favorite.query.filter_by(user_id=api_user.id, car_id=car_id).first()
+    if favorite:
+        db.session.delete(favorite)
+        db.session.commit()
+        return jsonify({'favorited': False})
+    else:
+        new_fav = Favorite(user_id=api_user.id, car_id=car.id)
+        db.session.add(new_fav)
+        db.session.commit()
+        return jsonify({'favorited': True})
+
+@app.route('/api/my_listings', methods=['GET'])
+def api_my_listings():
+    # Support both token-based (mobile) and session-based auth
+    api_user = get_api_user()
+    if not api_user:
+        return jsonify({'error': 'Unauthorized'}), 401
+    cars = Car.query.filter_by(user_id=api_user.id).order_by(Car.created_at.desc()).all()
+
+    def first_image_rel_path(c: Car) -> str:
+        if c.images:
+            path = c.images[0].image_url or ''
+            return path[8:] if path.startswith('uploads/') else path
+        return (c.image_url or '').lstrip('/')
+
+    result = [{
+        'id': c.id,
+        'title': c.title,
+        'brand': c.brand,
+        'model': c.model,
+        'trim': c.trim,
+        'year': c.year,
+        'price': c.price,
+        'mileage': c.mileage,
+        'condition': c.condition,
+        'transmission': c.transmission,
+        'fuel_type': c.fuel_type,
+        'color': c.color,
+        'image_url': first_image_rel_path(c),
+        'city': c.city,
+        'status': c.status
+    } for c in cars]
+    return jsonify(result)
+
+@app.route('/api/chats', methods=['GET'])
+@login_required
+def api_chats():
+    conversations = Conversation.query.filter(
+        db.or_(
+            Conversation.buyer_id == current_user.id,
+            Conversation.seller_id == current_user.id
+        )
+    ).order_by(Conversation.updated_at.desc()).all()
+
+    result = []
+    for conv in conversations:
+        result.append({
+            'id': conv.id,
+            'car_id': conv.car_id,
+            'buyer_id': conv.buyer_id,
+            'seller_id': conv.seller_id,
+            'created_at': conv.created_at.isoformat(),
+            'updated_at': conv.updated_at.isoformat(),
+        })
+    return jsonify(result)
+
+@app.route('/api/user', methods=['GET'])
+@login_required
+def api_user():
+    return jsonify({
+        'id': current_user.id,
+        'username': current_user.username,
+        'email': current_user.email,
+        'created_at': current_user.created_at.isoformat() if current_user.created_at else None,
+    })
+
+@app.route('/dev/seed')
+def dev_seed():
+    """Development helper: top up listings to the requested total count.
+    Usage: /dev/seed?count=200
+    """
+    try:
+        target = int(request.args.get('count', '200'))
+    except Exception:
+        target = 200
+    # Ensure car models exist
+    if CarModel.query.count() == 0:
+        populate_car_models()
+    # Top up to target
+    seed_example_listings(target)
+    return jsonify({
+        'ok': True,
+        'target': target,
+        'total': Car.query.count()
+    })
 
 @app.route('/signup', methods=['GET', 'POST'])
 def signup():
@@ -1482,6 +2368,15 @@ def payment_gateway(payment_id):
             db.session.commit()
             
             if payment.payment_type == 'listing_fee':
+                # If this payment is tied to a car listing, activate it so it appears in search
+                if payment.car_id:
+                    car = Car.query.get(payment.car_id)
+                    if car and car.status != 'active':
+                        car.status = 'active'
+                        db.session.commit()
+                        flash('Listing fee paid successfully! Your listing is now live.', 'success')
+                        return redirect(url_for('car_detail', car_id=car.id))
+                # Fallback for standalone listing-fee payments without a car attached
                 flash('Listing fee paid successfully! You can now add your car listing.', 'success')
                 return redirect(url_for('add_car'))
             else:
@@ -1542,6 +2437,11 @@ def payment_callback():
             response_data=json.dumps(data)
         )
         db.session.add(transaction)
+        # If a listing-fee payment tied to a car is completed via webhook, activate the car
+        if payment.payment_type == 'listing_fee' and payment.car_id and status in ('completed', 'success', 'paid'):
+            car = Car.query.get(payment.car_id)
+            if car and car.status != 'active':
+                car.status = 'active'
         db.session.commit()
         
         return jsonify({'status': 'success'})
@@ -1680,22 +2580,38 @@ def google_logged_in(blueprint, token):
     # Always redirect to your handler after OAuth
     return redirect(url_for("google_login"))
 
-@app.route('/static/uploads/car_brand_logos/<filename>')
-def serve_brand_logo(filename):
-    return send_from_directory('static/uploads/car_brand_logos', filename)
-
 if __name__ == '__main__':
     with app.app_context():
         try:
-            # Drop all tables and recreate them
-            db.drop_all()
-            db.create_all()
-            
-            # Populate car models
-            populate_car_models()
-            print("Database initialized successfully!")
+            # Ensure instance directory exists
+            instance_dir = os.path.join(BASE_DIR, 'instance')
+            os.makedirs(instance_dir, exist_ok=True)
+            # Always ensure tables exist (safe no-op if already created)
+            try:
+                db.create_all()
+                print("Ensured database tables exist.")
+            except Exception as e:
+                print(f"Error creating tables: {str(e)}")
+
+            # Seed demo data if empty so the mobile app has content
+            try:
+                from sqlalchemy import inspect
+                inspector = inspect(db.engine)
+                # If the 'user' table doesn't exist or there are no cars, seed
+                needs_seed = False
+                try:
+                    needs_seed = (db.session.execute(db.text('SELECT COUNT(*) FROM car')).scalar() or 0) == 0
+                except Exception:
+                    needs_seed = True
+                if needs_seed:
+                    populate_car_models()
+                    seed_example_listings(100)
+                    print("Seeded example listings.")
+            except Exception:
+                # Best-effort seeding; do not block startup
+                pass
         except Exception as e:
             print(f"Error initializing database: {str(e)}")
             raise e
-    
-    app.run(host='0.0.0.0', port=5000, debug=True) 
+
+    app.run(host='0.0.0.0', port=5000, debug=True)

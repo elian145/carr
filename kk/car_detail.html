@@ -53,6 +53,38 @@
                 {% endfor %}
             </div>
             {% endif %}
+            
+            <!-- Videos Section -->
+            {% if car.videos %}
+            <div class="card mb-4 glass-effect">
+                <div class="card-header" style="background: linear-gradient(135deg, var(--primary-orange), var(--dark-orange));">
+                    <h5 class="mb-0" style="font-family: 'Orbitron', sans-serif; color: white;">
+                        <i class="fas fa-video me-2"></i>Vehicle Videos
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <div class="row">
+                        {% for video in car.videos %}
+                        <div class="col-md-6 mb-3">
+                            <div class="video-container" style="position: relative; width: 100%; height: 0; padding-bottom: 56.25%; background: #000; border-radius: 10px; overflow: hidden;">
+                                <video 
+                                    controls 
+                                    style="position: absolute; top: 0; left: 0; width: 100%; height: 100%;"
+                                    preload="metadata"
+                                >
+                                    <source src="{{ url_for('static', filename=video.video_url) }}" type="video/mp4">
+                                    <source src="{{ url_for('static', filename=video.video_url) }}" type="video/webm">
+                                    <source src="{{ url_for('static', filename=video.video_url) }}" type="video/ogg">
+                                    Your browser does not support the video tag.
+                                </video>
+                            </div>
+                        </div>
+                        {% endfor %}
+                    </div>
+                </div>
+            </div>
+            {% endif %}
+            
             <div class="card-body">
                 <p class="card-text">{{ car.description }}</p>
             </div>

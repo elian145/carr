@@ -40,54 +40,97 @@
                             <input type="hidden" id="selectedBrand" name="brand" value="{{ car.get('brand', '') }}" required>
                         </div>
                         <div class="col-md-4 mb-3">
-                            <label for="modelSelect" class="form-label">Model</label>
-                            <select class="form-control" id="modelSelect" name="model" {% if not car.get('model') %}disabled{% endif %} required>
+                            <label for="modelSelectBtn" class="form-label">Model</label>
+                            <button type="button" class="btn btn-outline-primary w-100" id="modelSelectBtn" {% if not car.get('brand') and not car.get('model') %}disabled{% endif %}>
+                                <i class="fas fa-list"></i> {% if car.get('model') %}{{ car.get('model') }}{% else %}Select Model{% endif %}
+                            </button>
+                            <input type="hidden" id="selectedModel" name="model" value="{{ car.get('model', '') }}" required>
+                            <!-- Keep original select hidden for compatibility -->
+                            <select class="form-control" id="modelSelect" name="model_select" style="display:none;" {% if not car.get('model') %}disabled{% endif %}>
                                 <option value="" disabled selected>Select Model</option>
                                 {% if car.get('model') %}
                                 <option value="{{ car.get('model') }}" selected>{{ car.get('model') }}</option>
                                 {% endif %}
                             </select>
-                        </div>
-                        <div class="col-md-4 mb-3">
-                            <label for="trimSelect" class="form-label">Trim</label>
-                            <select class="form-control" id="trimSelect" name="trim" {% if not car.get('trim') %}disabled{% endif %} required>
-                                <option value="" disabled selected>Select Trim</option>
-                                {% if car.get('trim') %}
-                                <option value="{{ car.get('trim') }}" selected>{{ car.get('trim') }}</option>
-                                {% endif %}
-                            </select>
+                            <div class="mt-3">
+                                <label for="trimSelectBtn" class="form-label">Trim</label>
+                                <button type="button" class="btn btn-outline-primary w-100" id="trimSelectBtn" {% if not car.get('trim') and not car.get('model') %}disabled{% endif %}>
+                                    <i class="fas fa-layer-group"></i> {% if car.get('trim') %}{{ car.get('trim') }}{% else %}Select Trim{% endif %}
+                                </button>
+                                <input type="hidden" id="selectedTrim" name="trim" value="{{ car.get('trim', '') }}" required>
+                                <!-- Keep original select hidden for compatibility -->
+                                <select class="form-control" id="trimSelect" name="trim_select" style="display:none;" {% if not car.get('trim') %}disabled{% endif %}>
+                                    <option value="" disabled selected>Select Trim</option>
+                                    {% if car.get('trim') %}
+                                    <option value="{{ car.get('trim') }}" selected>{{ car.get('trim') }}</option>
+                                    {% endif %}
+                                </select>
+                            </div>
                         </div>
                     </div>
                     <!-- Listing Info -->
                     <div class="row">
                         <div class="col-md-4 mb-3">
-                            <label for="price" class="form-label" style="color: var(--primary-orange);">Price ($) <span class="text-muted">(Optional)</span></label>
-                            <select class="form-control mb-1" id="priceDropdown" name="priceDropdown">
-                                <option value="" disabled selected>Select from list</option>
-                                {% for price in range(1000, 1000001, 1000) %}
-                                <option value="{{ price }}" {% if car.get('price')|float == price %}selected{% endif %}>${{ "{:,}".format(price) }}</option>
-                                {% endfor %}
-                            </select>
-                            <input type="number" class="form-control" id="priceInput" name="price" placeholder="Or enter your own (optional)" min="0" step="0.01" value="{{ car.get('price', '') }}">
+                            <label for="priceDropdown" class="form-label" style="color: var(--primary-orange);">Price ($) <span class="text-muted">(Optional)</span></label>
+                            <div class="input-group">
+                                <div id="priceDropdownContainer" style="display: block; width: 100%;">
+                                    <select class="form-control" id="priceDropdown" name="price" {% if car.get('price') %}{% endif %}>
+                                        <option value="" {% if not car.get('price') %}selected{% endif %}>Select price</option>
+                                        <option value="1000" {% if car.get('price')|int == 1000 %}selected{% endif %}>$1,000</option>
+                                        <option value="2000" {% if car.get('price')|int == 2000 %}selected{% endif %}>$2,000</option>
+                                        <option value="5000" {% if car.get('price')|int == 5000 %}selected{% endif %}>$5,000</option>
+                                        <option value="10000" {% if car.get('price')|int == 10000 %}selected{% endif %}>$10,000</option>
+                                        <option value="15000" {% if car.get('price')|int == 15000 %}selected{% endif %}>$15,000</option>
+                                        <option value="20000" {% if car.get('price')|int == 20000 %}selected{% endif %}>$20,000</option>
+                                        <option value="30000" {% if car.get('price')|int == 30000 %}selected{% endif %}>$30,000</option>
+                                        <option value="40000" {% if car.get('price')|int == 40000 %}selected{% endif %}>$40,000</option>
+                                        <option value="50000" {% if car.get('price')|int == 50000 %}selected{% endif %}>$50,000</option>
+                                        <option value="75000" {% if car.get('price')|int == 75000 %}selected{% endif %}>$75,000</option>
+                                        <option value="100000" {% if car.get('price')|int == 100000 %}selected{% endif %}>$100,000</option>
+                                    </select>
+                                </div>
+                                <div id="priceCustomContainer" style="display: none; width: 100%;">
+                                    <input type="number" class="form-control" id="priceInput" name="price" placeholder="Enter price" min="0" step="0.01" value="{{ car.get('price', '') }}" disabled>
+                                </div>
+                                <button type="button" class="btn btn-outline-secondary" id="priceToggleBtn" onclick="togglePriceInput()" title="Switch to custom input"><i class="fas fa-edit"></i></button>
+                            </div>
                         </div>
                         <div class="col-md-4 mb-3">
                             <label for="year" class="form-label" style="color: var(--primary-orange);">Year</label>
-                            <select class="form-control" id="year" name="year" required>
-                                <option value="" disabled selected>Select Year</option>
-                                {% for year in range(current_year, 1899, -1) %}
-                                <option value="{{ year }}" {% if car.get('year')|int == year %}selected{% endif %}>{{ year }}</option>
-                                {% endfor %}
-                            </select>
+                            <div class="input-group">
+                                <div id="yearDropdownContainer" style="display: block; width: 100%;">
+                                    <select class="form-control" id="year" name="year" required>
+                                        <option value="" disabled {% if not car.get('year') %}selected{% endif %}>Select Year</option>
+                                        {% for year in range(current_year, 1899, -1) %}
+                                        <option value="{{ year }}" {% if car.get('year')|int == year %}selected{% endif %}>{{ year }}</option>
+                                        {% endfor %}
+                                    </select>
+                                </div>
+                                <div id="yearCustomContainer" style="display: none; width: 100%;">
+                                    <input type="number" class="form-control" id="yearInput" name="year" placeholder="Enter year" min="1900" max="{{ current_year }}" step="1" value="{{ car.get('year', '') }}" disabled>
+                                </div>
+                                <button type="button" class="btn btn-outline-secondary" id="yearToggleBtn" onclick="toggleYearInput()" title="Switch to custom input"><i class="fas fa-edit"></i></button>
+                            </div>
                         </div>
                         <div class="col-md-4 mb-3">
-                            <label for="mileage" class="form-label" style="color: var(--primary-orange);">Mileage (km)</label>
-                            <select class="form-control mb-1" id="mileageDropdown" name="mileageDropdown">
-                                <option value="" disabled selected>Select from list</option>
-                                {% for mileage in range(0, 1000001, 1000) %}
-                                <option value="{{ mileage }}" {% if car.get('mileage')|int == mileage %}selected{% endif %}>{{ "{:,}".format(mileage) }} km</option>
-                                {% endfor %}
-                            </select>
-                            <input type="number" class="form-control" id="mileageInput" name="mileage" placeholder="Or enter your own" min="0" value="{{ car.get('mileage', '') }}">
+                            <label for="mileageDropdown" class="form-label" style="color: var(--primary-orange);">Mileage (km)</label>
+                            <div class="input-group">
+                                <div id="mileageDropdownContainer" style="display: block; width: 100%;">
+                                    <select class="form-control" id="mileageDropdown" name="mileage">
+                                        <option value="" {% if not car.get('mileage') %}selected{% endif %}>Select mileage</option>
+                                        {% for m in range(0, 100001, 1000) %}
+                                        <option value="{{ m }}" {% if car.get('mileage') and car.get('mileage')|int == m %}selected{% endif %}>{{ "{:,.0f}".format(m) }}</option>
+                                        {% endfor %}
+                                        {% for m in range(105000, 300001, 5000) %}
+                                        <option value="{{ m }}" {% if car.get('mileage') and car.get('mileage')|int == m %}selected{% endif %}>{{ "{:,.0f}".format(m) }}</option>
+                                        {% endfor %}
+                                    </select>
+                                </div>
+                                <div id="mileageCustomContainer" style="display: none; width: 100%;">
+                                    <input type="number" class="form-control" id="mileageInput" name="mileage" placeholder="Enter mileage" min="0" value="{{ car.get('mileage', '') }}" disabled>
+                                </div>
+                                <button type="button" class="btn btn-outline-secondary" id="mileageToggleBtn" onclick="toggleMileageInput()" title="Switch to custom input"><i class="fas fa-edit"></i></button>
+                            </div>
                         </div>
                     </div>
                     <!-- Specs -->
@@ -139,8 +182,13 @@
                             </select>
                         </div>
                         <div class="col-md-4 mb-3">
-                        <label for="body_type" class="form-label">Body Type</label>
-                        <select class="form-control" id="body_type" name="body_type" required>
+                        <label for="bodyTypeSelectBtn" class="form-label">Body Type</label>
+                        <button type="button" class="btn btn-outline-primary w-100" id="bodyTypeSelectBtn">
+                            <i class="fas fa-shapes"></i> {% if car.get('body_type') %}{{ car.get('body_type')|replace('-', ' ')|title }}{% else %}Select Body Type{% endif %}
+                        </button>
+                        <input type="hidden" id="selectedBodyType" name="body_type" value="{{ car.get('body_type', '') }}" required>
+                        <!-- Keep original select hidden for compatibility -->
+                        <select class="form-control" id="body_type" name="body_type_select" style="display:none;">
                             <option value="sedan" {% if car.get('body_type') == 'sedan' %}selected{% endif %}>Sedan</option>
                             <option value="suv" {% if car.get('body_type') == 'suv' %}selected{% endif %}>SUV</option>
                             <option value="hatchback" {% if car.get('body_type') == 'hatchback' %}selected{% endif %}>Hatchback</option>
@@ -155,8 +203,13 @@
                         </select>
                     </div>
                         <div class="col-md-4 mb-3">
-                        <label for="color" class="form-label">Color</label>
-                        <select class="form-control" id="color" name="color" required>
+                        <label for="colorSelectBtn" class="form-label">Color</label>
+                        <button type="button" class="btn btn-outline-primary w-100" id="colorSelectBtn">
+                            <i class="fas fa-palette"></i> {% if car.get('color') %}{{ car.get('color')|replace('-', ' ')|title }}{% else %}Select Color{% endif %}
+                        </button>
+                        <input type="hidden" id="selectedColor" name="color" value="{{ car.get('color', '') }}" required>
+                        <!-- Keep original select hidden for compatibility -->
+                        <select class="form-control" id="color" name="color_select" style="display:none;">
                             <option value="black" {% if car.get('color') == 'black' %}selected{% endif %}>Black</option>
                             <option value="white" {% if car.get('color') == 'white' %}selected{% endif %}>White</option>
                             <option value="silver" {% if car.get('color') == 'silver' %}selected{% endif %}>Silver</option>
@@ -258,6 +311,11 @@
                         <input type="file" class="form-control" id="image" name="image" accept="image/*" multiple required>
                         <div class="form-text" style="color: var(--light-orange);">Upload at least 4 clear images of the vehicle (required)</div>
                     </div>
+                    <div class="mb-3">
+                        <label for="video" class="form-label" style="color: var(--primary-orange);">Vehicle Video (Optional)</label>
+                        <input type="file" class="form-control" id="video" name="video" accept="video/*" multiple>
+                        <div class="form-text" style="color: var(--light-orange);">Upload video(s) of the vehicle (MP4, MOV, AVI, MKV, WebM - max 100MB each)</div>
+                    </div>
                     <div class="d-grid gap-2">
                         <button type="submit" class="btn btn-primary">ADD VEHICLE</button>
                         <a href="{{ url_for('home') }}" class="btn btn-secondary">CANCEL</a>
@@ -280,6 +338,66 @@
                 <div class="brand-grid" id="brandGrid">
                     <!-- Brands will be loaded dynamically -->
                 </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Model Selection Modal -->
+<div class="modal fade" id="modelModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content bg-dark">
+            <div class="modal-header border-secondary">
+                <h5 class="modal-title text-light">Select Model</h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <div class="list-group" id="modelList"></div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Trim Selection Modal -->
+<div class="modal fade" id="trimModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content bg-dark">
+            <div class="modal-header border-secondary">
+                <h5 class="modal-title text-light">Select Trim</h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <div class="list-group" id="trimList"></div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Body Type Modal -->
+<div class="modal fade" id="bodyTypeModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content bg-dark">
+            <div class="modal-header border-secondary">
+                <h5 class="modal-title text-light">Select Body Type</h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <div class="body-type-grid" id="addBodyTypeGrid"></div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Color Selection Modal -->
+<div class="modal fade" id="colorModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content bg-dark">
+            <div class="modal-header border-secondary">
+                <h5 class="modal-title text-light">Select Color</h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <div class="row g-2" id="colorGrid"></div>
             </div>
         </div>
     </div>
@@ -329,8 +447,7 @@
             });
         }
 
-        setupCoupledInputs('priceDropdown', 'priceInput', 'price');
-        setupCoupledInputs('mileageDropdown', 'mileageInput', 'mileage');
+        // price/year/mileage simplified to single inputs; keep engine size coupling only
         setupCoupledInputs('engineSizeDropdown', 'engineSizeInput', 'engine_size');
         
         // The rest of your existing script for brand/model/trim selection
@@ -340,6 +457,22 @@
         const brandGrid = document.getElementById('brandGrid');
         const modelSelect = document.getElementById('modelSelect');
         const trimSelect = document.getElementById('trimSelect');
+        const modelSelectBtn = document.getElementById('modelSelectBtn');
+        const trimSelectBtn = document.getElementById('trimSelectBtn');
+        const bodyTypeSelectBtn = document.getElementById('bodyTypeSelectBtn');
+        const colorSelectBtn = document.getElementById('colorSelectBtn');
+        const selectedModelInput = document.getElementById('selectedModel');
+        const selectedTrimInput = document.getElementById('selectedTrim');
+        const selectedBodyTypeInput = document.getElementById('selectedBodyType');
+        const selectedColorInput = document.getElementById('selectedColor');
+        const modelModal = new bootstrap.Modal(document.getElementById('modelModal'));
+        const trimModal = new bootstrap.Modal(document.getElementById('trimModal'));
+        const bodyTypeModal = new bootstrap.Modal(document.getElementById('bodyTypeModal'));
+        const colorModal = new bootstrap.Modal(document.getElementById('colorModal'));
+        const modelList = document.getElementById('modelList');
+        const trimList = document.getElementById('trimList');
+        const addBodyTypeGrid = document.getElementById('addBodyTypeGrid');
+        const colorGrid = document.getElementById('colorGrid');
         
         // Brand list - Ordered from most famous to least famous
         const brands = [
@@ -458,18 +591,32 @@
                     brandItem.dataset.brand = brand.id;
                     brandItem.innerHTML = `
                         <div class="brand-logo">
-                            <img src="/static/images/brands/${brand.id}.png" alt="${brand.name} Logo" onerror="this.onerror=null;this.src='/static/images/brands/default.png';">
+                            <img src="/static/images/brands/${brand.id}.png" alt="${brand.name} Logo" loading="lazy" onerror="this.onerror=null;this.src='/static/images/brands/default.png';">
                         </div>
                         <span>${brand.name}</span>
                     `;
                     brandItem.addEventListener('click', function() {
                         selectedBrandInput.value = brand.id;
-                        brandSelectBtn.innerHTML = `<img src='/static/images/brands/${brand.id}.png' class='selected-brand-logo' alt='${brand.name} Logo'> <span class='selected-brand-name'>${brand.name}</span>`;
+                        brandSelectBtn.innerHTML = `<img src='/static/images/brands/${brand.id}.png' class='selected-brand-logo' alt='${brand.name} Logo' loading='lazy'> <span class='selected-brand-name'>${brand.name}</span>`;
                         brandModal.hide();
                         
-                        // Enable and populate model select
-                        modelSelect.disabled = false;
-                        modelSelect.innerHTML = '<option value="" disabled selected>Loading models...</option>';
+                        // Enable model button and clear selection
+                        if (modelSelectBtn) {
+                            modelSelectBtn.disabled = false;
+                            modelSelectBtn.innerHTML = '<i class="fas fa-list"></i> Select Model';
+                        }
+                        if (selectedModelInput) selectedModelInput.value = '';
+                        // Reset trims on brand change
+                        if (trimSelectBtn) {
+                            trimSelectBtn.disabled = true;
+                            trimSelectBtn.innerHTML = '<i class="fas fa-layer-group"></i> Select Trim';
+                        }
+                        if (selectedTrimInput) selectedTrimInput.value = '';
+                        // Also ensure selects reflect cleared state
+                        modelSelect.disabled = true;
+                        modelSelect.innerHTML = '<option value="" disabled selected>Select Model</option>';
+                        trimSelect.disabled = true;
+                        trimSelect.innerHTML = '<option value="" disabled selected>Select Trim</option>';
                         
                         // Fetch models for selected brand
                         fetch(`/api/models/${brand.id}`)
@@ -482,6 +629,7 @@
                                     option.textContent = model;
                                     modelSelect.appendChild(option);
                                 });
+                                modelSelect.disabled = false;
                             })
                             .catch(error => {
                                 console.error('Error fetching models:', error);
@@ -512,39 +660,314 @@
         // Call on page load to set initial state
         toggleDamagedParts();
 
-        // Model select change event
-        modelSelect.addEventListener('change', function() {
-            trimSelect.disabled = false;
-            trimSelect.innerHTML = '<option value="" disabled selected>Loading trims...</option>';
-            
-            // Fetch trims for selected model
-            fetch(`/api/trims/${selectedBrandInput.value}/${modelSelect.value}`)
-                .then(response => response.json())
-                .then(trims => {
+        // Modal open helpers
+        function openModelModal() {
+            const brandId = selectedBrandInput.value;
+            if (!brandId) return;
+            modelList.innerHTML = '<div class="text-muted">Loading models...</div>';
+            fetch(`/api/models/${brandId}`)
+                .then(r => r.json())
+                .then(models => {
+                    modelList.innerHTML = '';
+                    models.forEach(m => {
+                        const a = document.createElement('button');
+                        a.type = 'button';
+                        a.className = 'list-group-item list-group-item-action';
+                        a.textContent = m;
+                        a.addEventListener('click', () => {
+                            selectedModelInput.value = m;
+                            modelSelectBtn.innerHTML = `<i class=\"fas fa-list\"></i> ${m}`;
+                            // Prepare hidden select value
+                            modelSelect.innerHTML = '<option value="" disabled>Select Model</option>';
+                            const opt = document.createElement('option');
+                            opt.value = m; opt.textContent = m; opt.selected = true;
+                            modelSelect.appendChild(opt);
+                            modelSelect.disabled = false;
+                            // Enable trim button and reset trim
+                            trimSelectBtn.disabled = false;
+                            trimSelectBtn.innerHTML = '<i class=\"fas fa-layer-group\"></i> Select Trim';
+                            selectedTrimInput.value = '';
                     trimSelect.innerHTML = '<option value="" disabled selected>Select Trim</option>';
-                    trims.forEach(trim => {
-                        const option = document.createElement('option');
-                        option.value = trim;
-                        option.textContent = trim;
-                        trimSelect.appendChild(option);
+                            trimSelect.disabled = true;
+                            modelModal.hide();
+                        });
+                        modelList.appendChild(a);
                     });
                 })
-                .catch(error => {
-                    console.error('Error fetching trims:', error);
-                    trimSelect.innerHTML = '<option value="" disabled selected>Error loading trims</option>';
+                .catch(() => { modelList.innerHTML = '<div class="text-danger">Failed to load models</div>'; });
+            modelModal.show();
+        }
+
+        function openTrimModal() {
+            const brandId = selectedBrandInput.value;
+            const model = selectedModelInput.value;
+            if (!brandId || !model) return;
+            trimList.innerHTML = '<div class="text-muted">Loading trims...</div>';
+            fetch(`/api/trims/${brandId}/${model}`)
+                .then(r => r.json())
+                .then(trims => {
+                    trimList.innerHTML = '';
+                    (trims || []).forEach(t => {
+                        const a = document.createElement('button');
+                        a.type = 'button';
+                        a.className = 'list-group-item list-group-item-action';
+                        a.textContent = t;
+                        a.addEventListener('click', () => {
+                            selectedTrimInput.value = t;
+                            trimSelectBtn.innerHTML = `<i class=\"fas fa-layer-group\"></i> ${t}`;
+                            trimSelect.innerHTML = '<option value="" disabled>Select Trim</option>';
+                            const opt = document.createElement('option');
+                            opt.value = t; opt.textContent = t; opt.selected = true;
+                            trimSelect.appendChild(opt);
+                            trimSelect.disabled = false;
+                            trimModal.hide();
+                        });
+                        trimList.appendChild(a);
+                    });
+                    if (!trims || trims.length === 0) {
+                        trimList.innerHTML = '<div class="text-muted">No trims available</div>';
+                    }
+                })
+                .catch(() => { trimList.innerHTML = '<div class="text-danger">Failed to load trims</div>'; });
+            trimModal.show();
+        }
+
+        function openBodyTypeModal() {
+            const bodyTypes = [
+                { value: 'sedan', label: 'Sedan' },
+                { value: 'suv', label: 'SUV' },
+                { value: 'hatchback', label: 'Hatchback' },
+                { value: 'coupe', label: 'Coupe' },
+                { value: 'wagon', label: 'Wagon' },
+                { value: 'pickup', label: 'Pickup' },
+                { value: 'truck', label: 'Truck' },
+                { value: 'minitruck', label: 'Mini Truck' },
+                { value: 'bigtruck', label: 'Big Truck' },
+                { value: 'van', label: 'Van' },
+                { value: 'minivan', label: 'Minivan' },
+                { value: 'cabriolet', label: 'Cabriolet' },
+                { value: 'motorcycle', label: 'Motorcycle' },
+                { value: 'utv', label: 'UTV' },
+                { value: 'atv', label: 'ATV' }
+            ];
+            addBodyTypeGrid.innerHTML = '';
+            const current = selectedBodyTypeInput.value || '';
+            bodyTypes.forEach(bt => {
+                const item = document.createElement('button');
+                item.type = 'button';
+                item.className = 'body-type-item' + (bt.value === current ? ' selected' : '');
+                item.setAttribute('data-value', bt.value);
+                item.innerHTML = `
+                    <div class=\"body-type-logo\">\n                        <img src=\"/static/images/body_types/${bt.value}.svg\" alt=\"${bt.label}\" loading=\"lazy\" onerror=\"this.onerror=null;this.src='/static/images/body_types/default.svg'\">\n                    </div>\n                    <span>${bt.label}</span>
+                `;
+                item.addEventListener('click', () => {
+                    selectedBodyTypeInput.value = bt.value;
+                    bodyTypeSelectBtn.innerHTML = `<i class=\"fas fa-shapes\"></i> ${bt.label}`;
+                    bodyTypeModal.hide();
                 });
-        });
+                addBodyTypeGrid.appendChild(item);
+            });
+            bodyTypeModal.show();
+        }
+
+        function openColorModal() {
+            const colors = [
+                { value: 'black', label: 'Black', hex: '#000000' },
+                { value: 'white', label: 'White', hex: '#ffffff' },
+                { value: 'silver', label: 'Silver', hex: '#c0c0c0' },
+                { value: 'gray', label: 'Gray', hex: '#808080' },
+                { value: 'red', label: 'Red', hex: '#ff0000' },
+                { value: 'blue', label: 'Blue', hex: '#0d6efd' },
+                { value: 'green', label: 'Green', hex: '#198754' },
+                { value: 'yellow', label: 'Yellow', hex: '#ffc107' },
+                { value: 'orange', label: 'Orange', hex: '#fd7e14' },
+                { value: 'purple', label: 'Purple', hex: '#6f42c1' },
+                { value: 'brown', label: 'Brown', hex: '#8b4513' },
+                { value: 'beige', label: 'Beige', hex: '#f5f5dc' },
+                { value: 'gold', label: 'Gold', hex: '#d4af37' }
+            ];
+            colorGrid.innerHTML = '';
+            const current = selectedColorInput.value || '';
+            colors.forEach(c => {
+                const col = document.createElement('div');
+                col.className = 'col-6 col-md-3';
+                const btn = document.createElement('button');
+                btn.type = 'button';
+                btn.className = 'btn w-100 d-flex align-items-center justify-content-start gap-2 border';
+                btn.style.background = 'transparent';
+                btn.innerHTML = `<span style="display:inline-block;width:22px;height:22px;border-radius:50%;border:2px solid #555;background:${c.hex}"></span><span>${c.label}</span>`;
+                if (c.value === current) { btn.classList.add('border-warning'); }
+                btn.addEventListener('click', () => {
+                    selectedColorInput.value = c.value;
+                    colorSelectBtn.innerHTML = `<i class=\"fas fa-palette\"></i> ${c.label}`;
+                    // update hidden select for compatibility
+                    const colorSelect = document.getElementById('color');
+                    colorSelect.value = c.value;
+                    colorModal.hide();
+                });
+                col.appendChild(btn);
+                colorGrid.appendChild(col);
+            });
+            colorModal.show();
+        }
+
+        if (modelSelectBtn) { modelSelectBtn.addEventListener('click', openModelModal); }
+        if (trimSelectBtn) { trimSelectBtn.addEventListener('click', openTrimModal); }
+        if (bodyTypeSelectBtn) { bodyTypeSelectBtn.addEventListener('click', openBodyTypeModal); }
+        if (colorSelectBtn) { colorSelectBtn.addEventListener('click', openColorModal); }
+
+        // Initialize button states on load
+        if (selectedBrandInput.value && modelSelectBtn) { modelSelectBtn.disabled = false; }
+        if (selectedModelInput && selectedModelInput.value && trimSelectBtn) { trimSelectBtn.disabled = false; }
+        if (selectedModelInput && selectedModelInput.value && modelSelectBtn) { modelSelectBtn.innerHTML = `<i class=\"fas fa-list\"></i> ${selectedModelInput.value}`; }
+        if (selectedTrimInput && selectedTrimInput.value && trimSelectBtn) { trimSelectBtn.innerHTML = `<i class=\"fas fa-layer-group\"></i> ${selectedTrimInput.value}`; }
+        if (selectedBodyTypeInput && selectedBodyTypeInput.value && bodyTypeSelectBtn) {
+            const label = selectedBodyTypeInput.value.replace('-', ' ');
+            bodyTypeSelectBtn.innerHTML = `<i class=\"fas fa-shapes\"></i> ${label.charAt(0).toUpperCase() + label.slice(1)}`;
+        }
+        if (selectedColorInput && selectedColorInput.value && colorSelectBtn) {
+            const label = selectedColorInput.value.replace('-', ' ');
+            colorSelectBtn.innerHTML = `<i class=\"fas fa-palette\"></i> ${label.charAt(0).toUpperCase() + label.slice(1)}`;
+        }
+
 
         // Set initial brand display if a brand is pre-selected
         const initialBrandId = selectedBrandInput.value;
         if (initialBrandId) {
             const brandData = brands.find(b => b.id === initialBrandId);
             if (brandData) {
-                brandSelectBtn.innerHTML = `<img src='/static/images/brands/${brandData.id}.png' class='selected-brand-logo' alt='${brandData.name} Logo'> <span class='selected-brand-name'>${brandData.name}</span>`;
+                brandSelectBtn.innerHTML = `<img src='/static/images/brands/${brandData.id}.png' class='selected-brand-logo' alt='${brandData.name} Logo' loading='lazy'> <span class='selected-brand-name'>${brandData.name}</span>`;
             } else {
-                brandSelectBtn.textContent = initialBrandId.replace('-', ' ').title();
+                // Fallback: simple title-case without relying on .title()
+                const toTitle = (s) => s.replace(/-/g, ' ').replace(/\b\w/g, (c) => c.toUpperCase());
+                brandSelectBtn.textContent = toTitle(initialBrandId);
             }
         }
+
+        // Toggle functions for price, year, and mileage inputs
+        window.togglePriceInput = function() {
+            const dropdownContainer = document.getElementById('priceDropdownContainer');
+            const customContainer = document.getElementById('priceCustomContainer');
+            const toggleBtn = document.getElementById('priceToggleBtn');
+            const dropdown = document.getElementById('priceDropdown');
+            const input = document.getElementById('priceInput');
+
+            if (dropdownContainer.style.display !== 'none') {
+                dropdownContainer.style.display = 'none';
+                customContainer.style.display = 'block';
+                dropdown.disabled = true;
+                input.disabled = false;
+                toggleBtn.innerHTML = '<i class="fas fa-list"></i>';
+                toggleBtn.title = 'Switch to dropdown';
+            } else {
+                dropdownContainer.style.display = 'block';
+                customContainer.style.display = 'none';
+                dropdown.disabled = false;
+                input.disabled = true;
+                toggleBtn.innerHTML = '<i class="fas fa-edit"></i>';
+                toggleBtn.title = 'Switch to custom input';
+            }
+        }
+
+        window.toggleYearInput = function() {
+            const dropdownContainer = document.getElementById('yearDropdownContainer');
+            const customContainer = document.getElementById('yearCustomContainer');
+            const toggleBtn = document.getElementById('yearToggleBtn');
+            const dropdown = document.getElementById('year');
+            const input = document.getElementById('yearInput');
+
+            if (dropdownContainer.style.display !== 'none') {
+                dropdownContainer.style.display = 'none';
+                customContainer.style.display = 'block';
+                dropdown.disabled = true;
+                dropdown.required = false;
+                input.disabled = false;
+                input.required = true;
+                toggleBtn.innerHTML = '<i class="fas fa-list"></i>';
+                toggleBtn.title = 'Switch to dropdown';
+            } else {
+                dropdownContainer.style.display = 'block';
+                customContainer.style.display = 'none';
+                dropdown.disabled = false;
+                dropdown.required = true;
+                input.disabled = true;
+                input.required = false;
+                toggleBtn.innerHTML = '<i class="fas fa-edit"></i>';
+                toggleBtn.title = 'Switch to custom input';
+            }
+        }
+
+        window.toggleMileageInput = function() {
+            const dropdownContainer = document.getElementById('mileageDropdownContainer');
+            const customContainer = document.getElementById('mileageCustomContainer');
+            const toggleBtn = document.getElementById('mileageToggleBtn');
+            const dropdown = document.getElementById('mileageDropdown');
+            const input = document.getElementById('mileageInput');
+
+            if (dropdownContainer.style.display !== 'none') {
+                dropdownContainer.style.display = 'none';
+                customContainer.style.display = 'block';
+                dropdown.disabled = true;
+                input.disabled = false;
+                toggleBtn.innerHTML = '<i class="fas fa-list"></i>';
+                toggleBtn.title = 'Switch to dropdown';
+            } else {
+                dropdownContainer.style.display = 'block';
+                customContainer.style.display = 'none';
+                dropdown.disabled = false;
+                input.disabled = true;
+                toggleBtn.innerHTML = '<i class="fas fa-edit"></i>';
+                toggleBtn.title = 'Switch to custom input';
+            }
+        }
+
+        // Initialize modes based on existing values
+        (function initToggleModes() {
+            // Price
+            const priceDropdown = document.getElementById('priceDropdown');
+            const priceInput = document.getElementById('priceInput');
+            if (priceDropdown && priceInput) {
+                const value = priceInput.value?.toString();
+                const hasMatch = !!(value && Array.from(priceDropdown.options).some(o => o.value === value));
+                if (value && !hasMatch) {
+                    window.togglePriceInput();
+                } else {
+                    // Ensure dropdown mode is enabled by default
+                    priceDropdown.disabled = false;
+                    priceInput.disabled = true;
+                }
+            }
+
+            // Year (required)
+            const yearDropdown = document.getElementById('year');
+            const yearInput = document.getElementById('yearInput');
+            if (yearDropdown && yearInput) {
+                const value = yearInput.value?.toString();
+                const hasMatch = !!(value && Array.from(yearDropdown.options).some(o => o.value === value));
+                if (value && !hasMatch) {
+                    window.toggleYearInput();
+                } else {
+                    yearDropdown.disabled = false;
+                    yearDropdown.required = true;
+                    yearInput.disabled = true;
+                    yearInput.required = false;
+                }
+            }
+
+            // Mileage
+            const mileageDropdown = document.getElementById('mileageDropdown');
+            const mileageInput = document.getElementById('mileageInput');
+            if (mileageDropdown && mileageInput) {
+                const value = mileageInput.value?.toString();
+                const hasMatch = !!(value && Array.from(mileageDropdown.options).some(o => o.value === value));
+                if (value && !hasMatch) {
+                    window.toggleMileageInput();
+                } else {
+                    mileageDropdown.disabled = false;
+                    mileageInput.disabled = true;
+                }
+            }
+        })();
     });
 </script>
 

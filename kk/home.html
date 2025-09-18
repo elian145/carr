@@ -8,6 +8,7 @@
             <div class="card-body">
                 <h5 class="card-title" style="font-family: 'Orbitron', sans-serif;">SEARCH VEHICLES</h5>
                 <form method="GET" action="{{ url_for('search') }}" class="row g-3" id="searchForm">
+                    <!-- Basic Filters -->
                     <div class="col-md-4">
                         <label for="brandSelectBtn" class="form-label text-light">Brand</label>
                         <button type="button" class="btn btn-outline-primary w-100" id="brandSelectBtn">
@@ -33,69 +34,89 @@
                             {% endif %}
                         </select>
                     </div>
-                    <div class="col-md-2">
-                        <label for="min_price" class="form-label text-light">Min Price</label>
-                        <select class="form-control" id="min_price" name="min_price">
-                            <option value="any" {% if not request.args.get('min_price') or request.args.get('min_price') == 'any' %}selected{% endif %}>Any Min Price</option>
-                            {% for price in range(1000, 1000001, 1000) %}
-                            {% set min_price = request.args.get('min_price') %}
-                            <option value="{{ price }}" {% if min_price and min_price != 'any' and min_price|int == price %}selected{% endif %}>${{ "{:,}".format(price) }}</option>
-                            {% endfor %}
-                        </select>
+                </div>
+
+                <!-- Single-value Filters: Price, Year, Mileage -->
+                <div class="row mt-3">
+                    <div class="col-12">
+                        <div class="card bg-dark border-primary">
+                            <div class="card-header bg-primary text-white">
+                                <h5 class="mb-0"><i class="fas fa-filter"></i> Price, Year & Mileage</h5>
+                            </div>
+                            <div class="card-body">
+                                <div class="row mb-3">
+                                    <div class="col-md-4">
+                                        <label for="searchPriceDropdown" class="form-label text-light">Price (USD)</label>
+                                        <div class="input-group">
+                                            <div id="searchPriceDropdownContainer" style="display: block; width: 100%;">
+                                                <select class="form-control" id="searchPriceDropdown" name="price">
+                                                    <option value="" {% if not request.args.get('price') %}selected{% endif %}>Select price</option>
+                                                    <option value="1000" {% if request.args.get('price')|int == 1000 %}selected{% endif %}>$1,000</option>
+                                                    <option value="2000" {% if request.args.get('price')|int == 2000 %}selected{% endif %}>$2,000</option>
+                                                    <option value="5000" {% if request.args.get('price')|int == 5000 %}selected{% endif %}>$5,000</option>
+                                                    <option value="10000" {% if request.args.get('price')|int == 10000 %}selected{% endif %}>$10,000</option>
+                                                    <option value="15000" {% if request.args.get('price')|int == 15000 %}selected{% endif %}>$15,000</option>
+                                                    <option value="20000" {% if request.args.get('price')|int == 20000 %}selected{% endif %}>$20,000</option>
+                                                    <option value="30000" {% if request.args.get('price')|int == 30000 %}selected{% endif %}>$30,000</option>
+                                                    <option value="40000" {% if request.args.get('price')|int == 40000 %}selected{% endif %}>$40,000</option>
+                                                    <option value="50000" {% if request.args.get('price')|int == 50000 %}selected{% endif %}>$50,000</option>
+                                                    <option value="75000" {% if request.args.get('price')|int == 75000 %}selected{% endif %}>$75,000</option>
+                                                    <option value="100000" {% if request.args.get('price')|int == 100000 %}selected{% endif %}>$100,000</option>
+                                                </select>
+                                            </div>
+                                            <div id="searchPriceCustomContainer" style="display: none; width: 100%;">
+                                                <input type="number" class="form-control" id="searchPriceInput" name="price" placeholder="e.g. 25000" min="0" step="100" value="{{ request.args.get('price', '') }}" disabled>
+                                            </div>
+                                            <button type="button" class="btn btn-outline-secondary" id="searchPriceToggleBtn" onclick="toggleSearchPrice()" title="Switch to custom input"><i class="fas fa-edit"></i></button>
+                                        </div>
+                                    </div>
+                                    <div class="col-md-4">
+                                        <label for="searchYearDropdown" class="form-label text-light">Year</label>
+                                        <div class="input-group">
+                                            <div id="searchYearDropdownContainer" style="display: block; width: 100%;">
+                                                <select class="form-control" id="searchYearDropdown" name="year">
+                                                    <option value="" {% if not request.args.get('year') %}selected{% endif %}>Select Year</option>
+                                                    {% for y in range(current_year, 1899, -1) %}
+                                                    <option value="{{ y }}" {% if request.args.get('year')|int == y %}selected{% endif %}>{{ y }}</option>
+                                                    {% endfor %}
+                                                </select>
+                                            </div>
+                                            <div id="searchYearCustomContainer" style="display: none; width: 100%;">
+                                                <input type="number" class="form-control" id="searchYearInput" name="year" placeholder="e.g. 2018" min="1900" max="{{ current_year }}" value="{{ request.args.get('year', '') }}" disabled>
+                                            </div>
+                                            <button type="button" class="btn btn-outline-secondary" id="searchYearToggleBtn" onclick="toggleSearchYear()" title="Switch to custom input"><i class="fas fa-edit"></i></button>
+                                        </div>
+                                    </div>
+                                    <div class="col-md-4">
+                                        <label for="searchMileageDropdown" class="form-label text-light">Mileage (km)</label>
+                                        <div class="input-group">
+                                            <div id="searchMileageDropdownContainer" style="display: block; width: 100%;">
+                                                <select class="form-control" id="searchMileageDropdown" name="mileage">
+                                                    <option value="" {% if not request.args.get('mileage') %}selected{% endif %}>Select mileage</option>
+                                                    {# 1,000 km increments from 0 to 100,000 #}
+                                                    {% for m in range(0, 100001, 1000) %}
+                                                    <option value="{{ m }}" {% if request.args.get('mileage') and request.args.get('mileage')|int == m %}selected{% endif %}>{{ "{:,.0f}".format(m) }}</option>
+                                                    {% endfor %}
+                                                    {# 5,000 km increments from 105,000 to 300,000 #}
+                                                    {% for m in range(105000, 300001, 5000) %}
+                                                    <option value="{{ m }}" {% if request.args.get('mileage') and request.args.get('mileage')|int == m %}selected{% endif %}>{{ "{:,.0f}".format(m) }}</option>
+                                                    {% endfor %}
+                                                </select>
+                                            </div>
+                                            <div id="searchMileageCustomContainer" style="display: none; width: 100%;">
+                                                <input type="number" class="form-control" id="searchMileageInput" name="mileage" placeholder="e.g. 60000" min="0" step="1000" value="{{ request.args.get('mileage', '') }}" disabled>
+                                            </div>
+                                            <button type="button" class="btn btn-outline-secondary" id="searchMileageToggleBtn" onclick="toggleSearchMileage()" title="Switch to custom input"><i class="fas fa-edit"></i></button>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
                     </div>
-                    <div class="col-md-2">
-                        <label for="max_price" class="form-label text-light">Max Price</label>
-                        <select class="form-control" id="max_price" name="max_price">
-                            <option value="any" {% if not request.args.get('max_price') or request.args.get('max_price') == 'any' %}selected{% endif %}>Any Max Price</option>
-                            {% for price in range(1000, 1000001, 1000) %}
-                                {% set max_price = request.args.get('max_price') %}
-                                <option value="{{ price }}" {% if max_price and max_price != 'any' and max_price|int == price %}selected{% endif %}>${{ "{:,}".format(price) }}</option>
-                            {% endfor %}
-                        </select>
-                    </div>
-                    <div class="col-md-2">
-                        <label for="min_year" class="form-label text-light">Min Year</label>
-                        <select class="form-control" id="min_year" name="min_year">
-                            <option value="any" {% if not request.args.get('min_year') or request.args.get('min_year') == 'any' %}selected{% endif %}>Any Min Year</option>
-                            {% set safe_current_year = current_year if current_year is defined and current_year is not none and current_year|string|int > 1900 else 2024 %}
-                            {% for year in range(safe_current_year, 1899, -1) %}
-                                {% set min_year = request.args.get('min_year') %}
-                                <option value="{{ year }}" {% if min_year and min_year != 'any' and min_year|int == year %}selected{% endif %}>{{ year }}</option>
-                            {% endfor %}
-                        </select>
-                    </div>
-                    <div class="col-md-2">
-                        <label for="max_year" class="form-label text-light">Max Year</label>
-                        <select class="form-control" id="max_year" name="max_year">
-                            <option value="any" {% if not request.args.get('max_year') or request.args.get('max_year') == 'any' %}selected{% endif %}>Any Max Year</option>
-                            {% set safe_current_year = current_year if current_year is defined and current_year is not none and current_year|string|int > 1900 else 2024 %}
-                            {% for year in range(safe_current_year, 1899, -1) %}
-                                {% set max_year = request.args.get('max_year') %}
-                                <option value="{{ year }}" {% if max_year and max_year != 'any' and max_year|int == year %}selected{% endif %}>{{ year }}</option>
-                            {% endfor %}
-                        </select>
-                    </div>
-                    <div class="col-md-2">
-                        <label for="min_mileage" class="form-label text-light">Min Mileage</label>
-                        <select class="form-control" id="min_mileage" name="min_mileage">
-                            <option value="any" {% if not request.args.get('min_mileage') or request.args.get('min_mileage') == 'any' or request.args.get('min_mileage') == '0' %}selected{% endif %}>Any Min Mileage</option>
-                            {% for mileage in range(0, 1000001, 5000) %}
-                                {% set min_mileage = request.args.get('min_mileage') %}
-                                <option value="{{ mileage }}" {% if min_mileage and min_mileage != 'any' and min_mileage != '0' and min_mileage|int == mileage %}selected{% endif %}>{{ "{:,}".format(mileage) }} km</option>
-                            {% endfor %}
-                        </select>
-                    </div>
-                    <div class="col-md-2">
-                        <label for="max_mileage" class="form-label text-light">Max Mileage</label>
-                        <select class="form-control" id="max_mileage" name="max_mileage">
-                            <option value="any" {% if not request.args.get('max_mileage') or request.args.get('max_mileage') == 'any' or request.args.get('max_mileage') == '0' %}selected{% endif %}>Any Max Mileage</option>
-                            {% for mileage in range(0, 1000001, 5000) %}
-                                {% set max_mileage = request.args.get('max_mileage') %}
-                                <option value="{{ mileage }}" {% if max_mileage and max_mileage != 'any' and max_mileage != '0' and max_mileage|int == mileage %}selected{% endif %}>{{ "{:,}".format(mileage) }} km</option>
-                            {% endfor %}
-                        </select>
-                    </div>
-                    <div class="col-md-2">
+                </div>
+                <!-- Other Filters -->
+                <div class="row mt-3">
+                    <div class="col-md-3">
                         <label for="condition" class="form-label text-light">Condition</label>
                         <select class="form-control" id="condition" name="condition">
                             <option value="any" {% if not request.args.get('condition') or request.args.get('condition') == 'any' %}selected{% endif %}>Any Condition</option>
@@ -103,7 +124,7 @@
                             <option value="used" {% if request.args.get('condition') == 'used' %}selected{% endif %}>Used</option>
                         </select>
                     </div>
-                    <div class="col-md-2">
+                    <div class="col-md-3">
                         <label for="city" class="form-label text-light">City</label>
                         <select class="form-control" id="city" name="city">
                             <option value="any" {% if not request.args.get('city') or request.args.get('city') == 'any' %}selected{% endif %}>Any City</option>
@@ -126,7 +147,7 @@
                             <option value="salaheldeen" {% if request.args.get('city') == 'salaheldeen' %}selected{% endif %}>Salaheldeen</option>
                         </select>
                     </div>
-                    <div class="col-md-2">
+                    <div class="col-md-3">
                         <label for="sort_by" class="form-label text-light">Sort By</label>
                         <select class="form-control" id="sort_by" name="sort_by">
                             <option value="any" {% if not request.args.get('sort_by') or request.args.get('sort_by') == 'any' %}selected{% endif %}>Default (Newest)</option>
@@ -138,16 +159,27 @@
                             <option value="mileage_desc" {% if request.args.get('sort_by') == 'mileage_desc' %}selected{% endif %}>Mileage (High to Low)</option>
                         </select>
                     </div>
-                    <div class="col-md-2 d-flex flex-column justify-content-end align-items-start">
+                    <div class="col-md-3 d-flex flex-column justify-content-end align-items-start">
                         <label class="form-label text-light" style="visibility:hidden;">Advanced</label>
                         <button type="button" class="btn btn-outline-primary w-100" id="advancedSearchBtn">
                             <i class="fas fa-sliders-h"></i> Advanced Search
                         </button>
                     </div>
-                    <div class="col-12">
-                        <button type="submit" class="btn btn-primary">SEARCH</button>
-                        <a href="{{ url_for('home') }}" class="btn btn-secondary">CLEAR</a>
+                </div>
+
+                <!-- Search Buttons -->
+                <div class="row mt-3">
+                    <div class="col-12 d-flex justify-content-center">
+                        <div class="d-flex gap-3">
+                            <button type="submit" class="btn btn-primary btn-lg px-5">
+                                <i class="fas fa-search"></i> APPLY
+                            </button>
+                            <a href="{{ url_for('home') }}" class="btn btn-secondary btn-lg px-5">
+                                <i class="fas fa-times"></i> CLEAR
+                            </a>
+                        </div>
                     </div>
+                </div>
                     
                     <!-- Advanced Search Section -->
                     <div class="col-12 mt-3" id="advancedSearchSection" style="display: none;">
@@ -194,7 +226,7 @@
                                     </div>
                                     <div class="col-md-6">
                                         <label for="body_type" class="form-label text-light">Body Type</label>
-                                        <select class="form-control" id="body_type" name="body_type">
+                                        <select class="form-control" id="body_type" name="body_type" style="display:none;">
                                             <option value="any" {% if not request.args.get('body_type') or request.args.get('body_type') == 'any' %}selected{% endif %}>Any Body Type</option>
                                             <option value="sedan" {% if request.args.get('body_type') == 'sedan' %}selected{% endif %}>Sedan</option>
                                             <option value="suv" {% if request.args.get('body_type') == 'suv' %}selected{% endif %}>SUV</option>
@@ -202,12 +234,19 @@
                                             <option value="coupe" {% if request.args.get('body_type') == 'coupe' %}selected{% endif %}>Coupe</option>
                                             <option value="wagon" {% if request.args.get('body_type') == 'wagon' %}selected{% endif %}>Wagon</option>
                                             <option value="pickup" {% if request.args.get('body_type') == 'pickup' %}selected{% endif %}>Pickup</option>
+                                            <option value="truck" {% if request.args.get('body_type') == 'truck' %}selected{% endif %}>Truck</option>
+                                            <option value="minitruck" {% if request.args.get('body_type') == 'minitruck' %}selected{% endif %}>Mini Truck</option>
+                                            <option value="bigtruck" {% if request.args.get('body_type') == 'bigtruck' %}selected{% endif %}>Big Truck</option>
                                             <option value="van" {% if request.args.get('body_type') == 'van' %}selected{% endif %}>Van</option>
                                             <option value="minivan" {% if request.args.get('body_type') == 'minivan' %}selected{% endif %}>Minivan</option>
+                                            <option value="cabriolet" {% if request.args.get('body_type') == 'cabriolet' %}selected{% endif %}>Cabriolet</option>
                                             <option value="motorcycle" {% if request.args.get('body_type') == 'motorcycle' %}selected{% endif %}>Motorcycle</option>
                                             <option value="utv" {% if request.args.get('body_type') == 'utv' %}selected{% endif %}>UTV</option>
                                             <option value="atv" {% if request.args.get('body_type') == 'atv' %}selected{% endif %}>ATV</option>
                                         </select>
+                                        <div id="bodyTypeGrid" class="body-type-grid" data-selected="{{ request.args.get('body_type', 'any') }}">
+                                            <!-- Body types will be rendered here -->
+                                        </div>
                                     </div>
                                     <div class="col-md-6">
                                         <label for="seating" class="form-label text-light">Total Seating</label>
@@ -442,6 +481,55 @@
             }
         });
 
+        // Body type grid render
+        const bodyTypeGrid = document.getElementById('bodyTypeGrid');
+        const bodyTypeSelect = document.getElementById('body_type');
+        const selectedBodyType = bodyTypeGrid ? (bodyTypeGrid.getAttribute('data-selected') || 'any') : 'any';
+        const bodyTypes = [
+            { value: 'any', label: 'Any' },
+            { value: 'sedan', label: 'Sedan' },
+            { value: 'suv', label: 'SUV' },
+            { value: 'hatchback', label: 'Hatchback' },
+            { value: 'coupe', label: 'Coupe' },
+            { value: 'wagon', label: 'Wagon' },
+            { value: 'pickup', label: 'Pickup' },
+            { value: 'truck', label: 'Truck' },
+            { value: 'minitruck', label: 'Mini Truck' },
+            { value: 'bigtruck', label: 'Big Truck' },
+            { value: 'van', label: 'Van' },
+            { value: 'minivan', label: 'Minivan' },
+            { value: 'cabriolet', label: 'Cabriolet' },
+            { value: 'motorcycle', label: 'Motorcycle' },
+            { value: 'utv', label: 'UTV' },
+            { value: 'atv', label: 'ATV' }
+        ];
+
+        if (bodyTypeGrid) {
+            bodyTypeGrid.innerHTML = '';
+            bodyTypes.forEach(bt => {
+                const item = document.createElement('button');
+                item.type = 'button';
+                item.className = 'body-type-item' + (bt.value === selectedBodyType ? ' selected' : '');
+                item.setAttribute('data-value', bt.value);
+                item.innerHTML = `
+                    <div class="body-type-logo">
+                        <img src="/static/images/body_types/${bt.value}.svg" alt="${bt.label}" loading="lazy" onerror="this.onerror=null;this.src='/static/images/body_types/default.svg'">
+                    </div>
+                    <span>${bt.label}</span>
+                `;
+                item.addEventListener('click', () => {
+                    // Toggle selection
+                    bodyTypeGrid.querySelectorAll('.body-type-item').forEach(el => el.classList.remove('selected'));
+                    item.classList.add('selected');
+                    // Update hidden select for form submission
+                    if (bodyTypeSelect) {
+                        bodyTypeSelect.value = bt.value;
+                    }
+                });
+                bodyTypeGrid.appendChild(item);
+            });
+        }
+
         // Brand list - Ordered from most famous to least famous
         const brands = [
             // Tier 1: Global Luxury & Premium Brands
@@ -549,14 +637,14 @@
                     brandItem.dataset.brand = brand.id;
                     brandItem.innerHTML = `
                         <div class="brand-logo">
-                            <img src="/static/images/brands/${brand.id}.png" alt="${brand.name} Logo" onerror="this.onerror=null;this.src='/static/images/brands/default.png';">
+                            <img src="/static/images/brands/${brand.id}.png" alt="${brand.name} Logo" loading="lazy" onerror="this.onerror=null;this.src='/static/images/brands/default.png';">
                         </div>
                         <span>${brand.name}</span>
                     `;
                     brandItem.addEventListener('click', function() {
                         selectedBrandInput.value = brand.id;
                         selectedBrandInput.dispatchEvent(new Event('change'));
-                        brandSelectBtn.innerHTML = `<img src='/static/images/brands/${brand.id}.png' class='selected-brand-logo' alt='${brand.name} Logo'> <span class='selected-brand-name'>${brand.name}</span>`;
+                        brandSelectBtn.innerHTML = `<img src='/static/images/brands/${brand.id}.png' class='selected-brand-logo' alt='${brand.name} Logo' loading='lazy'> <span class='selected-brand-name'>${brand.name}</span>`;
                         brandModal.hide();
                         // Enable and populate model select
                         modelSelect.disabled = false;
@@ -681,7 +769,7 @@
         if (selectedBrand) {
             const brandObj = brands.find(b => b.id === selectedBrand);
             if (brandObj) {
-                brandSelectBtn.innerHTML = `<img src='/static/images/brands/${brandObj.id}.png' class='selected-brand-logo' alt='${brandObj.name} Logo'> <span class='selected-brand-name'>${brandObj.name}</span>`;
+                brandSelectBtn.innerHTML = `<img src='/static/images/brands/${brandObj.id}.png' class='selected-brand-logo' alt='${brandObj.name} Logo' loading='lazy'> <span class='selected-brand-name'>${brandObj.name}</span>`;
             }
             // If a model is pre-selected, populate models and set selected
             const preselectedModel = modelSelect.getAttribute('data-selected');
@@ -750,6 +838,391 @@
                 });
             });
         });
+
+        // Toggle helpers for single-rectangle search inputs
+        window.toggleSearchPrice = function() {
+            const ddC = document.getElementById('searchPriceDropdownContainer');
+            const inC = document.getElementById('searchPriceCustomContainer');
+            const dd = document.getElementById('searchPriceDropdown');
+            const input = document.getElementById('searchPriceInput');
+            const btn = document.getElementById('searchPriceToggleBtn');
+            if (ddC.style.display !== 'none') {
+                ddC.style.display = 'none'; inC.style.display = 'block'; dd.disabled = true; input.disabled = false; btn.innerHTML = '<i class="fas fa-list"></i>'; btn.title = 'Switch to dropdown';
+            } else {
+                ddC.style.display = 'block'; inC.style.display = 'none'; dd.disabled = false; input.disabled = true; btn.innerHTML = '<i class="fas fa-edit"></i>'; btn.title = 'Switch to custom input';
+            }
+        }
+        window.toggleSearchYear = function() {
+            const ddC = document.getElementById('searchYearDropdownContainer');
+            const inC = document.getElementById('searchYearCustomContainer');
+            const dd = document.getElementById('searchYearDropdown');
+            const input = document.getElementById('searchYearInput');
+            const btn = document.getElementById('searchYearToggleBtn');
+            if (ddC.style.display !== 'none') {
+                ddC.style.display = 'none'; inC.style.display = 'block'; dd.disabled = true; input.disabled = false; btn.innerHTML = '<i class="fas fa-list"></i>'; btn.title = 'Switch to dropdown';
+            } else {
+                ddC.style.display = 'block'; inC.style.display = 'none'; dd.disabled = false; input.disabled = true; btn.innerHTML = '<i class="fas fa-edit"></i>'; btn.title = 'Switch to custom input';
+            }
+        }
+        window.toggleSearchMileage = function() {
+            const ddC = document.getElementById('searchMileageDropdownContainer');
+            const inC = document.getElementById('searchMileageCustomContainer');
+            const dd = document.getElementById('searchMileageDropdown');
+            const input = document.getElementById('searchMileageInput');
+            const btn = document.getElementById('searchMileageToggleBtn');
+            if (ddC.style.display !== 'none') {
+                ddC.style.display = 'none'; inC.style.display = 'block'; dd.disabled = true; input.disabled = false; btn.innerHTML = '<i class="fas fa-list"></i>'; btn.title = 'Switch to dropdown';
+            } else {
+                ddC.style.display = 'block'; inC.style.display = 'none'; dd.disabled = false; input.disabled = true; btn.innerHTML = '<i class="fas fa-edit"></i>'; btn.title = 'Switch to custom input';
+            }
+        }
+
+        // Initialize default modes based on existing values
+        (function initSearchToggleModes(){
+            const priceDD = document.getElementById('searchPriceDropdown');
+            const priceInput = document.getElementById('searchPriceInput');
+            if (priceDD && priceInput) {
+                const v = priceInput.value?.toString();
+                const has = !!(v && Array.from(priceDD.options).some(o => o.value === v));
+                if (v && !has) { window.toggleSearchPrice(); }
+            }
+            const yearDD = document.getElementById('searchYearDropdown');
+            const yearInput = document.getElementById('searchYearInput');
+            if (yearDD && yearInput) {
+                const v = yearInput.value?.toString();
+                const has = !!(v && Array.from(yearDD.options).some(o => o.value === v));
+                if (v && !has) { window.toggleSearchYear(); }
+            }
+            const milDD = document.getElementById('searchMileageDropdown');
+            const milInput = document.getElementById('searchMileageInput');
+            if (milDD && milInput) {
+                const v = milInput.value?.toString();
+                const has = !!(v && Array.from(milDD.options).some(o => o.value === v));
+                if (v && !has) { window.toggleSearchMileage(); }
+            }
+        })();
+
+        // Price and Year synchronization functions (legacy advanced filters)
+        function updateMinPriceInput() {
+            const dropdown = document.getElementById('min_price_dropdown');
+            const input = document.getElementById('min_price');
+            if (dropdown.value === 'any') {
+                input.value = '';
+            } else {
+                input.value = dropdown.value;
+            }
+        }
+
+        function updateMaxPriceInput() {
+            const dropdown = document.getElementById('max_price_dropdown');
+            const input = document.getElementById('max_price');
+            if (dropdown.value === 'any') {
+                input.value = '';
+            } else {
+                input.value = dropdown.value;
+            }
+        }
+
+        function updateMinPriceDropdown() {
+            const dropdown = document.getElementById('min_price_dropdown');
+            const input = document.getElementById('min_price');
+            if (input.value === '') {
+                dropdown.value = 'any';
+            } else {
+                // Find the closest option or set to 'any' if not found
+                const value = parseInt(input.value);
+                const options = Array.from(dropdown.options).map(opt => parseInt(opt.value)).filter(v => !isNaN(v));
+                const closest = options.reduce((prev, curr) => Math.abs(curr - value) < Math.abs(prev - value) ? curr : prev);
+                if (Math.abs(closest - value) <= 1000) {
+                    dropdown.value = closest.toString();
+                } else {
+                    dropdown.value = 'any';
+                }
+            }
+        }
+
+        function updateMaxPriceDropdown() {
+            const dropdown = document.getElementById('max_price_dropdown');
+            const input = document.getElementById('max_price');
+            if (input.value === '') {
+                dropdown.value = 'any';
+            } else {
+                // Find the closest option or set to 'any' if not found
+                const value = parseInt(input.value);
+                const options = Array.from(dropdown.options).map(opt => parseInt(opt.value)).filter(v => !isNaN(v));
+                const closest = options.reduce((prev, curr) => Math.abs(curr - value) < Math.abs(prev - value) ? curr : prev);
+                if (Math.abs(closest - value) <= 1000) {
+                    dropdown.value = closest.toString();
+                } else {
+                    dropdown.value = 'any';
+                }
+            }
+        }
+
+        function updateMinYearInput() {
+            const dropdown = document.getElementById('min_year_dropdown');
+            const input = document.getElementById('min_year');
+            if (dropdown.value === 'any') {
+                input.value = '';
+            } else {
+                input.value = dropdown.value;
+            }
+        }
+
+        function updateMaxYearInput() {
+            const dropdown = document.getElementById('max_year_dropdown');
+            const input = document.getElementById('max_year');
+            if (dropdown.value === 'any') {
+                input.value = '';
+            } else {
+                input.value = dropdown.value;
+            }
+        }
+
+        function updateMinYearDropdown() {
+            const dropdown = document.getElementById('min_year_dropdown');
+            const input = document.getElementById('min_year');
+            if (input.value === '') {
+                dropdown.value = 'any';
+            } else {
+                // Find the exact year or set to 'any' if not found
+                const value = parseInt(input.value);
+                const options = Array.from(dropdown.options).map(opt => parseInt(opt.value)).filter(v => !isNaN(v));
+                if (options.includes(value)) {
+                    dropdown.value = value.toString();
+                } else {
+                    dropdown.value = 'any';
+                }
+            }
+        }
+
+        function updateMaxYearDropdown() {
+            const dropdown = document.getElementById('max_year_dropdown');
+            const input = document.getElementById('max_year');
+            if (input.value === '') {
+                dropdown.value = 'any';
+            } else {
+                // Find the exact year or set to 'any' if not found
+                const value = parseInt(input.value);
+                const options = Array.from(dropdown.options).map(opt => parseInt(opt.value)).filter(v => !isNaN(v));
+                if (options.includes(value)) {
+                    dropdown.value = value.toString();
+                } else {
+                    dropdown.value = 'any';
+                }
+            }
+        }
+
+        function updateMinMileageInput() {
+            const dropdown = document.getElementById('min_mileage_dropdown');
+            const input = document.getElementById('min_mileage');
+            if (dropdown.value === 'any') {
+                input.value = '';
+            } else {
+                input.value = dropdown.value;
+            }
+        }
+
+        function updateMaxMileageInput() {
+            const dropdown = document.getElementById('max_mileage_dropdown');
+            const input = document.getElementById('max_mileage');
+            if (dropdown.value === 'any') {
+                input.value = '';
+            } else {
+                input.value = dropdown.value;
+            }
+        }
+
+        function updateMinMileageDropdown() {
+            const dropdown = document.getElementById('min_mileage_dropdown');
+            const input = document.getElementById('min_mileage');
+            if (input.value === '') {
+                dropdown.value = 'any';
+            } else {
+                // Find the closest mileage option or set to 'any' if not found
+                const value = parseInt(input.value);
+                const options = Array.from(dropdown.options).map(opt => parseInt(opt.value)).filter(v => !isNaN(v));
+                const closest = options.reduce((prev, curr) => Math.abs(curr - value) < Math.abs(prev - value) ? curr : prev);
+                if (Math.abs(closest - value) <= 2500) { // Within 2500 km range
+                    dropdown.value = closest.toString();
+                } else {
+                    dropdown.value = 'any';
+                }
+            }
+        }
+
+        function updateMaxMileageDropdown() {
+            const dropdown = document.getElementById('max_mileage_dropdown');
+            const input = document.getElementById('max_mileage');
+            if (input.value === '') {
+                dropdown.value = 'any';
+            } else {
+                // Find the closest mileage option or set to 'any' if not found
+                const value = parseInt(input.value);
+                const options = Array.from(dropdown.options).map(opt => parseInt(opt.value)).filter(v => !isNaN(v));
+                const closest = options.reduce((prev, curr) => Math.abs(curr - value) < Math.abs(prev - value) ? curr : prev);
+                if (Math.abs(closest - value) <= 2500) { // Within 2500 km range
+                    dropdown.value = closest.toString();
+                } else {
+                    dropdown.value = 'any';
+                }
+            }
+        }
+
+        // Toggle functions for individual filters
+        function togglePriceFilter() {
+            const dropdownContainer = document.getElementById('priceDropdownContainer');
+            const customContainer = document.getElementById('priceCustomContainer');
+            const toggleBtn = document.getElementById('priceToggleBtn');
+            
+            if (dropdownContainer.style.display !== 'none') {
+                // Switch to custom input
+                dropdownContainer.style.display = 'none';
+                customContainer.style.display = 'block';
+                toggleBtn.innerHTML = '<i class="fas fa-list"></i>';
+                toggleBtn.title = 'Switch to dropdown';
+            } else {
+                // Switch to dropdown
+                dropdownContainer.style.display = 'block';
+                customContainer.style.display = 'none';
+                toggleBtn.innerHTML = '<i class="fas fa-edit"></i>';
+                toggleBtn.title = 'Switch to custom input';
+            }
+        }
+
+        function toggleYearFilter() {
+            const dropdownContainer = document.getElementById('yearDropdownContainer');
+            const customContainer = document.getElementById('yearCustomContainer');
+            const toggleBtn = document.getElementById('yearToggleBtn');
+            
+            if (dropdownContainer.style.display !== 'none') {
+                // Switch to custom input
+                dropdownContainer.style.display = 'none';
+                customContainer.style.display = 'block';
+                toggleBtn.innerHTML = '<i class="fas fa-list"></i>';
+                toggleBtn.title = 'Switch to dropdown';
+            } else {
+                // Switch to dropdown
+                dropdownContainer.style.display = 'block';
+                customContainer.style.display = 'none';
+                toggleBtn.innerHTML = '<i class="fas fa-edit"></i>';
+                toggleBtn.title = 'Switch to custom input';
+            }
+        }
+
+        function toggleMileageFilter() {
+            const dropdownContainer = document.getElementById('mileageDropdownContainer');
+            const customContainer = document.getElementById('mileageCustomContainer');
+            const toggleBtn = document.getElementById('mileageToggleBtn');
+            
+            if (dropdownContainer.style.display !== 'none') {
+                // Switch to custom input
+                dropdownContainer.style.display = 'none';
+                customContainer.style.display = 'block';
+                toggleBtn.innerHTML = '<i class="fas fa-list"></i>';
+                toggleBtn.title = 'Switch to dropdown';
+            } else {
+                // Switch to dropdown
+                dropdownContainer.style.display = 'block';
+                customContainer.style.display = 'none';
+                toggleBtn.innerHTML = '<i class="fas fa-edit"></i>';
+                toggleBtn.title = 'Switch to custom input';
+            }
+        }
+
+        // Update functions for the new filter structure
+        function updatePriceFilter() {
+            const dropdown = document.getElementById('price_filter_dropdown');
+            const custom = document.getElementById('price_filter_custom');
+            
+            if (dropdown.style.display !== 'none') {
+                const value = dropdown.value;
+                if (value === 'any') {
+                    // Clear any existing price filters
+                    const url = new URL(window.location);
+                    url.searchParams.delete('min_price');
+                    url.searchParams.delete('max_price');
+                    window.location.href = url.toString();
+                } else if (value.includes('-')) {
+                    const [min, max] = value.split('-');
+                    const url = new URL(window.location);
+                    url.searchParams.set('min_price', min);
+                    url.searchParams.set('max_price', max);
+                    window.location.href = url.toString();
+                } else if (value.includes('+')) {
+                    const min = value.replace('+', '');
+                    const url = new URL(window.location);
+                    url.searchParams.set('min_price', min);
+                    url.searchParams.delete('max_price');
+                    window.location.href = url.toString();
+                }
+            } else if (custom.value) {
+                const url = new URL(window.location);
+                url.searchParams.set('min_price', custom.value);
+                url.searchParams.delete('max_price');
+                window.location.href = url.toString();
+            }
+        }
+
+        function updateYearFilter() {
+            const dropdown = document.getElementById('year_filter_dropdown');
+            const custom = document.getElementById('year_filter_custom');
+            
+            if (dropdown.style.display !== 'none') {
+                const value = dropdown.value;
+                if (value === 'any') {
+                    // Clear any existing year filters
+                    const url = new URL(window.location);
+                    url.searchParams.delete('min_year');
+                    url.searchParams.delete('max_year');
+                    window.location.href = url.toString();
+                } else if (value.includes('-')) {
+                    const [min, max] = value.split('-');
+                    const url = new URL(window.location);
+                    url.searchParams.set('min_year', min);
+                    url.searchParams.set('max_year', max);
+                    window.location.href = url.toString();
+                }
+            } else if (custom.value) {
+                const url = new URL(window.location);
+                url.searchParams.set('min_year', custom.value);
+                url.searchParams.set('max_year', custom.value);
+                window.location.href = url.toString();
+            }
+        }
+
+        function updateMileageFilter() {
+            const dropdown = document.getElementById('mileage_filter_dropdown');
+            const custom = document.getElementById('mileage_filter_custom');
+            
+            if (dropdown.style.display !== 'none') {
+                const value = dropdown.value;
+                if (value === 'any') {
+                    // Clear any existing mileage filters
+                    const url = new URL(window.location);
+                    url.searchParams.delete('min_mileage');
+                    url.searchParams.delete('max_mileage');
+                    window.location.href = url.toString();
+                } else if (value.includes('-')) {
+                    const [min, max] = value.split('-');
+                    const url = new URL(window.location);
+                    url.searchParams.set('min_mileage', min);
+                    url.searchParams.set('max_mileage', max);
+                    window.location.href = url.toString();
+                } else if (value.includes('+')) {
+                    const min = value.replace('+', '');
+                    const url = new URL(window.location);
+                    url.searchParams.set('min_mileage', min);
+                    url.searchParams.delete('max_mileage');
+                    window.location.href = url.toString();
+                }
+            } else if (custom.value) {
+                const url = new URL(window.location);
+                url.searchParams.set('min_mileage', custom.value);
+                url.searchParams.delete('max_mileage');
+                window.location.href = url.toString();
+            }
+        }
     });
 </script>
 
