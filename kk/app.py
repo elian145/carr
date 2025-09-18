@@ -1733,17 +1733,23 @@ def api_cars():
         if sort_by == 'newest':
             car_query = car_query.order_by(Car.created_at.desc())
         elif sort_by == 'price_asc':
-            car_query = car_query.order_by(Car.price.asc())
+            # Handle NULL prices by putting them last, then sort ascending
+            car_query = car_query.order_by(Car.price.is_(None), Car.price.asc())
         elif sort_by == 'price_desc':
-            car_query = car_query.order_by(Car.price.desc())
+            # Handle NULL prices by putting them last, then sort descending
+            car_query = car_query.order_by(Car.price.is_(None), Car.price.desc())
         elif sort_by == 'year_desc':
-            car_query = car_query.order_by(Car.year.desc())
+            # Handle NULL years by putting them last, then sort descending
+            car_query = car_query.order_by(Car.year.is_(None), Car.year.desc())
         elif sort_by == 'year_asc':
-            car_query = car_query.order_by(Car.year.asc())
+            # Handle NULL years by putting them last, then sort ascending
+            car_query = car_query.order_by(Car.year.is_(None), Car.year.asc())
         elif sort_by == 'mileage_asc':
-            car_query = car_query.order_by(Car.mileage.asc())
+            # Handle NULL mileage by putting them last, then sort ascending
+            car_query = car_query.order_by(Car.mileage.is_(None), Car.mileage.asc())
         elif sort_by == 'mileage_desc':
-            car_query = car_query.order_by(Car.mileage.desc())
+            # Handle NULL mileage by putting them last, then sort descending
+            car_query = car_query.order_by(Car.mileage.is_(None), Car.mileage.desc())
     else:
         car_query = car_query.order_by(Car.created_at.desc())
 

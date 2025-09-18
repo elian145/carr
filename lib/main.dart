@@ -1971,14 +1971,274 @@ class _HomePageState extends State<HomePage> {
     }
   }
 
-  Future<void> fetchCars({bool bypassCache = false}) async {
-    print('🚀 fetchCars called with bypassCache: $bypassCache');
+  Future<void> fetchCars({bool bypassCache = false, bool isRetry = false}) async {
+    print('🚀 fetchCars called with bypassCache: $bypassCache, isRetry: $isRetry');
     unawaited(AnalyticsService.trackEvent('search_fetch', properties: {
       'brand': selectedBrand,
       'model': selectedModel,
       'city': selectedCity,
+      'sort_by': selectedSortBy,
     }));
     if (mounted) setState(() { isLoading = true; loadErrorMessage = null; });
+    Map<String, String> filters = _buildFilters();
+    
+    String query = Uri(queryParameters: filters).query;
+    final url = Uri.parse('${getApiBase()}/cars${query.isNotEmpty ? '?$query' : ''}');
+
+    // Debug: Print the URL being called
+    print('🔍 Fetching cars from: $url');
+    print('🔍 Applied filters: $filters');
+    print('🔍 Sort parameter: ${filters['sort_by']}');
+
+    // Offline-first cache (skip cache if bypassCache is true)
+    final sp = await SharedPreferences.getInstance();
+    final cacheKey = 'cache_home_' + query.hashCode.toString();
+    String? cached;
+    if (!bypassCache) {
+      // Use cached data to improve reliability and reduce API dependency
+      cached = sp.getString(cacheKey);
+      if (cached != null && cached.isNotEmpty) {
+        print('📦 Using cached data for key: $cacheKey');
+        try {
+          final decoded = json.decode(cached);
+          final List<Map<String, dynamic>> parsed = decoded is List
+              ? decoded.whereType<Map>().map((e) => e.map((k, v) => MapEntry(k.toString(), v))).toList().cast<Map<String, dynamic>>()
+              : <Map<String, dynamic>>[];
+          if (mounted) setState(() { cars = parsed; isLoading = false; hasLoadedOnce = true; loadErrorMessage = null; });
+        } catch (_) {}
+      }
+    } else {
+      print('🚫 Bypassing cache for key: $cacheKey');
+    }
+
+    try {
+      // Use longer timeout for sorting requests and add connection headers
+      final timeout = filters.containsKey('sort_by') ? Duration(seconds: 30) : Duration(seconds: 15);
+      final response = await http.get(
+        url,
+        headers: {
+          'Connection': 'keep-alive',
+          'Accept': 'application/json',
+          'User-Agent': 'CARZO-Mobile/1.0',
+          'Cache-Control': 'no-cache',
+          'Pragma': 'no-cache',
+        },
+      ).timeout(timeout);
+      
+      print('📡 Response status: ${response.statusCode}');
+      print('📡 Response body length: ${response.body.length}');
+      
+      if (response.statusCode == 200) {
+        final decoded = json.decode(response.body);
+        final List<Map<String, dynamic>> parsed = decoded is List
+            ? decoded
+                .whereType<Map>()
+                .map((e) => e.map((k, v) => MapEntry(k.toString(), v)))
+                .toList()
+                .cast<Map<String, dynamic>>()
+            : <Map<String, dynamic>>[];
+        
+        print('📊 Parsed ${parsed.length} cars from response');
+        
+        if (mounted) {
+          setState(() {
+            cars = parsed;
+            isLoading = false;
+            hasLoadedOnce = true;
+            loadErrorMessage = null; // Clear any previous error message on success
+          });
+        }
+        // Save fresh cache
+        unawaited(sp.setString(cacheKey, response.body));
+        print('✅ Found ${parsed.length} cars with applied filters');
+        // Reset retry count on success
+        _fetchRetryCount = 0;
+      } else {
+        print('❌ Server error: ${response.statusCode}');
+        print('❌ Response body: ${response.body}');
+        await _handleFetchError(bypassCache, cached, 'Server ${response.statusCode}', isRetry: isRetry);
+      }
+    } catch (e) {
+      print('❌ Network error: $e');
+      await _handleFetchError(bypassCache, cached, 'Network error', isRetry: isRetry);
+    }
+  }
+  
+  Future<void> _handleFetchError(bool bypassCache, String? cached, String errorMessage, {bool isRetry = false}) async {
+    // Don't show error immediately - try fallback strategies first
+    print('🔄 Handling fetch error: $errorMessage, isRetry: $isRetry');
+    
+    // If sorting failed and we have a sort parameter, try without sorting first
+    if (selectedSortBy != null && selectedSortBy!.isNotEmpty && !isRetry) {
+      print('🔄 Sorting failed, trying without sort parameter');
+      try {
+        await _fetchWithoutSort();
+        return; // Success, don't show error
+      } catch (e) {
+        print('❌ Fallback without sort also failed: $e');
+      }
+    }
+    
+    // Auto-retry logic for network errors
+    if (_fetchRetryCount < _maxRetries && errorMessage == 'Network error' && !isRetry) {
+      _fetchRetryCount++;
+      print('🔄 Auto-retrying fetch (attempt $_fetchRetryCount/$_maxRetries)');
+      await Future.delayed(Duration(seconds: 1)); // Shorter delay for better UX
+      if (mounted) {
+        try {
+          await fetchCars(bypassCache: bypassCache, isRetry: true);
+          return; // Success, don't show error
+        } catch (e) {
+          print('❌ Auto-retry failed: $e');
+        }
+      }
+    }
+    
+    // Only show error if all fallback strategies failed
+    if (mounted) {
+      setState(() { 
+        isLoading = false; 
+        hasLoadedOnce = true; 
+        // Only show error if bypassing cache OR no cached data is available
+        if (bypassCache || cached == null) {
+          loadErrorMessage = errorMessage;
+        } else {
+          loadErrorMessage = null; // Clear error when using cached data
+        }
+      });
+    }
+  }
+  
+  Future<void> _fetchWithAlternativeHeaders(String sortValue) async {
+    try {
+      print('🔄 Attempting fetch with alternative headers for sort: $sortValue');
+      Map<String, String> filters = _buildFilters();
+      
+      String query = Uri(queryParameters: filters).query;
+      final url = Uri.parse('${getApiBase()}/cars${query.isNotEmpty ? '?$query' : ''}');
+      
+      print('🔍 Alternative fetch URL: $url');
+      
+      final response = await http.get(
+        url,
+        headers: {
+          'Connection': 'close',
+          'Accept': 'application/json',
+          'User-Agent': 'CARZO-Mobile/1.0',
+          'Cache-Control': 'no-cache',
+          'Pragma': 'no-cache',
+        },
+      ).timeout(Duration(seconds: 25));
+      
+      if (response.statusCode == 200) {
+        final decoded = json.decode(response.body);
+        final List<Map<String, dynamic>> parsed = decoded is List
+            ? decoded
+                .whereType<Map>()
+                .map((e) => e.map((k, v) => MapEntry(k.toString(), v)))
+                .toList()
+                .cast<Map<String, dynamic>>()
+            : <Map<String, dynamic>>[];
+        
+        if (mounted) {
+          setState(() {
+            cars = parsed;
+            isLoading = false;
+            hasLoadedOnce = true;
+            loadErrorMessage = null;
+          });
+        }
+        
+        print('✅ Alternative fetch successful: ${parsed.length} cars loaded');
+      } else {
+        throw Exception('Server error: ${response.statusCode}');
+      }
+    } catch (e) {
+      print('❌ Alternative fetch error: $e');
+      rethrow;
+    }
+  }
+
+  Future<void> _fetchWithoutSort() async {
+    try {
+      print('🔄 Attempting fetch without sort parameter');
+      Map<String, String> filters = _buildFilters(includeSort: false);
+      
+      String query = Uri(queryParameters: filters).query;
+      final url = Uri.parse('${getApiBase()}/cars${query.isNotEmpty ? '?$query' : ''}');
+      
+      print('🔍 Fallback URL: $url');
+      
+      final response = await http.get(url).timeout(Duration(seconds: 10));
+      if (response.statusCode == 200) {
+        final decoded = json.decode(response.body);
+        final List<Map<String, dynamic>> parsed = decoded is List
+            ? decoded
+                .whereType<Map>()
+                .map((e) => e.map((k, v) => MapEntry(k.toString(), v)))
+                .toList()
+                .cast<Map<String, dynamic>>()
+            : <Map<String, dynamic>>[];
+        
+        if (mounted) {
+          setState(() {
+            cars = parsed;
+            isLoading = false;
+            hasLoadedOnce = true;
+            loadErrorMessage = null;
+          });
+        }
+        
+        print('✅ Fallback fetch successful: ${parsed.length} cars loaded');
+        
+        // Show a message that sorting was disabled
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text('Sorting temporarily disabled due to server issue'),
+              duration: Duration(seconds: 3),
+              backgroundColor: Colors.orange,
+            ),
+          );
+        }
+      } else {
+        print('❌ Fallback fetch failed: ${response.statusCode}');
+        if (mounted) {
+          setState(() {
+            loadErrorMessage = 'Server error: ${response.statusCode}';
+            isLoading = false;
+          });
+        }
+      }
+    } catch (e) {
+      print('❌ Fallback fetch error: $e');
+      if (mounted) {
+        setState(() {
+          loadErrorMessage = 'Network error';
+          isLoading = false;
+        });
+      }
+    }
+  }
+
+  void onFilterChanged() {
+    unawaited(AnalyticsService.trackEvent('filters_applied', properties: {
+      'brand': selectedBrand,
+      'model': selectedModel,
+      'city': selectedCity,
+      'condition': selectedCondition,
+      'drive_type': selectedDriveType,
+    }));
+    fetchCars();
+    // Auto-save search after applying filters
+    unawaited(_autoSaveSearch());
+  }
+
+  Timer? _sortDebounceTimer;
+  int _fetchRetryCount = 0;
+  static const int _maxRetries = 3;
+  
+  Map<String, String> _buildFilters({bool includeSort = true}) {
     Map<String, String> filters = {};
     
     // Brand and Model filters
@@ -2007,12 +2267,19 @@ class _HomePageState extends State<HomePage> {
     if (selectedDriveType != null && selectedDriveType!.isNotEmpty && selectedDriveType != 'Any') filters['drive_type'] = selectedDriveType!.toLowerCase();
     if (selectedCylinderCount != null && selectedCylinderCount!.isNotEmpty && selectedCylinderCount != 'Any') filters['cylinder_count'] = selectedCylinderCount!;
     if (selectedSeating != null && selectedSeating!.isNotEmpty && selectedSeating != 'Any') filters['seating'] = selectedSeating!;
+    if (selectedEngineSize != null && selectedEngineSize!.isNotEmpty && selectedEngineSize != 'Any') filters['engine_size'] = selectedEngineSize!;
     
     // Location and other filters
     if (selectedCity != null && selectedCity!.isNotEmpty) filters['city'] = selectedCity!;
-    // Convert localized sort option to backend API value
-    final apiSortValue = _convertSortToApiValue(context, selectedSortBy);
-    if (apiSortValue != null && apiSortValue.isNotEmpty) filters['sort_by'] = apiSortValue;
+    
+    // Only include sort if requested and valid
+    if (includeSort) {
+      final apiSortValue = _convertSortToApiValue(context, selectedSortBy);
+      if (apiSortValue != null && apiSortValue.isNotEmpty) {
+        filters['sort_by'] = apiSortValue;
+      }
+    }
+    
     if (selectedOwners != null && selectedOwners!.isNotEmpty) filters['owners'] = selectedOwners!;
     if (selectedVIN != null && selectedVIN!.isNotEmpty) filters['vin'] = selectedVIN!;
     if (selectedAccidentHistory != null && selectedAccidentHistory!.isNotEmpty) filters['accident_history'] = selectedAccidentHistory!;
@@ -2025,131 +2292,385 @@ class _HomePageState extends State<HomePage> {
       }
     }
     
-    String query = Uri(queryParameters: filters).query;
-    final url = Uri.parse('${getApiBase()}/cars${query.isNotEmpty ? '?$query' : ''}');
-
-    // Debug: Print the URL being called
-    print('🔍 Fetching cars from: $url');
-    print('🔍 Applied filters: $filters');
-
-    // Offline-first cache (skip cache if bypassCache is true)
-    final sp = await SharedPreferences.getInstance();
-    final cacheKey = 'cache_home_' + query.hashCode.toString();
-    String? cached;
-    if (!bypassCache) {
-      // Use cached data to improve reliability and reduce API dependency
-      cached = sp.getString(cacheKey);
-      if (cached != null && cached.isNotEmpty) {
-        print('📦 Using cached data for key: $cacheKey');
-        try {
-          final decoded = json.decode(cached);
-          final List<Map<String, dynamic>> parsed = decoded is List
-              ? decoded.whereType<Map>().map((e) => e.map((k, v) => MapEntry(k.toString(), v))).toList().cast<Map<String, dynamic>>()
-              : <Map<String, dynamic>>[];
-          if (mounted) setState(() { cars = parsed; isLoading = false; hasLoadedOnce = true; loadErrorMessage = null; });
-        } catch (_) {}
-      }
-    } else {
-      print('🚫 Bypassing cache for key: $cacheKey');
-    }
-
-    try {
-      final response = await http.get(url).timeout(Duration(seconds: 8));
-      if (response.statusCode == 200) {
-        final decoded = json.decode(response.body);
-        final List<Map<String, dynamic>> parsed = decoded is List
-            ? decoded
-                .whereType<Map>()
-                .map((e) => e.map((k, v) => MapEntry(k.toString(), v)))
-                .toList()
-                .cast<Map<String, dynamic>>()
-            : <Map<String, dynamic>>[];
-        if (mounted) {
-          setState(() {
-            cars = parsed;
-            isLoading = false;
-            hasLoadedOnce = true;
-            loadErrorMessage = null; // Clear any previous error message on success
-          });
-        }
-        // Save fresh cache
-        unawaited(sp.setString(cacheKey, response.body));
-        print('✅ Found ${parsed.length} cars with applied filters');
-      } else {
-        if (mounted) {
-          setState(() { 
-            isLoading = false; 
-            hasLoadedOnce = true; 
-            // Only show error if bypassing cache OR no cached data is available
-            if (bypassCache || cached == null) {
-              loadErrorMessage = 'Server ${response.statusCode}';
-            } else {
-              loadErrorMessage = null; // Clear error when using cached data
-            }
-          });
-        }
-        print('❌ Server error: ${response.statusCode}');
-      }
-    } catch (e) {
-      if (mounted) {
-        setState(() { 
-          isLoading = false; 
-          hasLoadedOnce = true; 
-          // Only show error if bypassing cache OR no cached data is available
-          if (bypassCache || cached == null) {
-            loadErrorMessage = 'Network error';
-          } else {
-            loadErrorMessage = null; // Clear error when using cached data
-          }
-        });
-      }
-      print('❌ Network error: $e');
-    }
+    return filters;
   }
-
-  void onFilterChanged() {
-    unawaited(AnalyticsService.trackEvent('filters_applied', properties: {
-      'brand': selectedBrand,
-      'model': selectedModel,
-      'city': selectedCity,
-      'condition': selectedCondition,
-      'drive_type': selectedDriveType,
-    }));
-    fetchCars();
-    // Auto-save search after applying filters
-    unawaited(_autoSaveSearch());
-  }
-
+  
   void onSortChanged() async {
     print('🔄 Sort changed to: $selectedSortBy');
     unawaited(AnalyticsService.trackEvent('sort_changed', properties: {
       'sort_by': selectedSortBy,
     }));
     
-    // Clear any existing cache entries that might interfere
-    try {
-      final sp = await SharedPreferences.getInstance();
-      final keysToRemove = sp.getKeys().where((key) => key.startsWith('cache_home_')).toList();
-      for (final key in keysToRemove) {
-        await sp.remove(key);
-      }
-      print('🗑️ Cleared ${keysToRemove.length} cache entries');
-    } catch (e) {
-      print('❌ Error clearing cache: $e');
-    }
+    // Cancel any pending sort operation
+    _sortDebounceTimer?.cancel();
     
-    // Clear existing data and error state when sorting changes
+    // Immediate response - no debounce for better UX
+    if (!mounted) return;
+    
+    // Reset retry count when sorting changes
+    _fetchRetryCount = 0;
+    
+    // Clear any previous error messages
     if (mounted) {
       setState(() {
-        cars = [];
         loadErrorMessage = null;
         isLoading = true;
       });
     }
-    // Bypass cache when sorting changes to ensure fresh results
-    fetchCars(bypassCache: true);
-    // Auto-save search after applying filters
-    unawaited(_autoSaveSearch());
+    
+    // Clear cache for current filters
+    try {
+      final sp = await SharedPreferences.getInstance();
+      final currentFilters = _buildFilters();
+      final query = Uri(queryParameters: currentFilters).query;
+      final cacheKey = 'cache_home_' + query.hashCode.toString();
+      await sp.remove(cacheKey);
+      print('🗑️ Cleared cache for current filters: $cacheKey');
+    } catch (e) {
+      print('❌ Error clearing cache: $e');
+    }
+    
+    // Try the sort operation immediately
+    await _performSortWithFallback();
+  }
+  
+  Future<void> _performSortWithFallback() async {
+    // Validate sort parameter before attempting
+    final apiSortValue = _convertSortToApiValue(context, selectedSortBy);
+    print('🔄 Sort parameter validation: ${selectedSortBy} -> ${apiSortValue}');
+    
+    if (apiSortValue == null || apiSortValue.isEmpty) {
+      print('⚠️ Invalid sort parameter, skipping sort');
+      await fetchCars(bypassCache: true);
+      return;
+    }
+    
+    // Try multiple strategies in sequence
+    List<Future<void> Function()> strategies = [
+      () => _tryDirectSort(apiSortValue),
+      () => _tryAlternativeSort(apiSortValue),
+      () => _trySimpleSort(apiSortValue),
+      () => _tryConnectionReset(apiSortValue),
+      () => _tryWithoutSort(),
+    ];
+    
+    for (int i = 0; i < strategies.length; i++) {
+      try {
+        print('🔄 Trying strategy ${i + 1}/${strategies.length}');
+        await strategies[i]();
+        print('✅ Strategy ${i + 1} successful');
+        return;
+      } catch (e) {
+        print('❌ Strategy ${i + 1} failed: $e');
+        if (i < strategies.length - 1) {
+          await Future.delayed(Duration(milliseconds: 200));
+        }
+      }
+    }
+    
+    // If all strategies fail, show error
+    if (mounted) {
+      setState(() {
+        loadErrorMessage = 'Failed to load listings';
+        isLoading = false;
+      });
+    }
+  }
+  
+  Future<void> _tryDirectSort(String apiSortValue) async {
+    print('🔄 Direct sort attempt with: $apiSortValue');
+    
+    // Try up to 5 times with increasing delays and different approaches
+    for (int attempt = 1; attempt <= 5; attempt++) {
+      try {
+        // Use different timeout and connection settings based on attempt
+        final timeout = Duration(seconds: 10 + (attempt * 5));
+        print('🔄 Attempt $attempt with ${timeout.inSeconds}s timeout');
+        
+        Map<String, String> filters = _buildFilters();
+        String query = Uri(queryParameters: filters).query;
+        final url = Uri.parse('${getApiBase()}/cars${query.isNotEmpty ? '?$query' : ''}');
+        
+        final response = await http.get(
+          url,
+          headers: {
+            'Accept': 'application/json',
+            'User-Agent': 'CARZO-Mobile/1.0',
+            'Connection': attempt % 2 == 0 ? 'close' : 'keep-alive',
+            'Cache-Control': 'no-cache',
+          },
+        ).timeout(timeout);
+        
+        if (response.statusCode == 200) {
+          final decoded = json.decode(response.body);
+          final List<Map<String, dynamic>> parsed = decoded is List
+              ? decoded.whereType<Map>().map((e) => e.map((k, v) => MapEntry(k.toString(), v))).toList().cast<Map<String, dynamic>>()
+              : <Map<String, dynamic>>[];
+          
+          if (mounted) {
+            setState(() {
+              cars = parsed;
+              isLoading = false;
+              hasLoadedOnce = true;
+              loadErrorMessage = null;
+            });
+          }
+          
+          // Save to cache
+          final sp = await SharedPreferences.getInstance();
+          final cacheKey = 'cache_home_' + query.hashCode.toString();
+          unawaited(sp.setString(cacheKey, response.body));
+          
+          unawaited(_autoSaveSearch());
+          print('✅ Direct sort successful on attempt $attempt');
+          return;
+        } else {
+          throw Exception('Server error: ${response.statusCode}');
+        }
+      } catch (e) {
+        print('❌ Direct sort attempt $attempt failed: $e');
+        if (attempt < 5) {
+          await Future.delayed(Duration(milliseconds: 200 * attempt));
+        } else {
+          rethrow;
+        }
+      }
+    }
+  }
+  
+  Future<void> _tryAlternativeSort(String apiSortValue) async {
+    print('🔄 Alternative sort attempt with: $apiSortValue');
+    
+    // Try with different connection approaches
+    for (int attempt = 1; attempt <= 3; attempt++) {
+      try {
+        Map<String, String> filters = _buildFilters();
+        String query = Uri(queryParameters: filters).query;
+        final url = Uri.parse('${getApiBase()}/cars${query.isNotEmpty ? '?$query' : ''}');
+        
+        final response = await http.get(
+          url,
+          headers: {
+            'Accept': 'application/json',
+            'User-Agent': 'CARZO-Mobile/1.0',
+            'Connection': 'close',
+            'Cache-Control': 'no-cache',
+            'Pragma': 'no-cache',
+            'If-None-Match': '*',
+          },
+        ).timeout(Duration(seconds: 15));
+        
+        if (response.statusCode == 200) {
+          final decoded = json.decode(response.body);
+          final List<Map<String, dynamic>> parsed = decoded is List
+              ? decoded.whereType<Map>().map((e) => e.map((k, v) => MapEntry(k.toString(), v))).toList().cast<Map<String, dynamic>>()
+              : <Map<String, dynamic>>[];
+          
+          if (mounted) {
+            setState(() {
+              cars = parsed;
+              isLoading = false;
+              hasLoadedOnce = true;
+              loadErrorMessage = null;
+            });
+          }
+          
+          unawaited(_autoSaveSearch());
+          print('✅ Alternative sort successful on attempt $attempt');
+          return;
+        } else {
+          throw Exception('Server error: ${response.statusCode}');
+        }
+      } catch (e) {
+        print('❌ Alternative sort attempt $attempt failed: $e');
+        if (attempt < 3) {
+          await Future.delayed(Duration(milliseconds: 300));
+        } else {
+          rethrow;
+        }
+      }
+    }
+  }
+  
+  Future<void> _trySimpleSort(String apiSortValue) async {
+    print('🔄 Simple sort attempt with: $apiSortValue');
+    // Try with minimal headers and shorter timeout
+    Map<String, String> filters = _buildFilters();
+    String query = Uri(queryParameters: filters).query;
+    final url = Uri.parse('${getApiBase()}/cars${query.isNotEmpty ? '?$query' : ''}');
+    
+    final response = await http.get(
+      url,
+      headers: {'Accept': 'application/json'},
+    ).timeout(Duration(seconds: 10));
+    
+    if (response.statusCode == 200) {
+      final decoded = json.decode(response.body);
+      final List<Map<String, dynamic>> parsed = decoded is List
+          ? decoded.whereType<Map>().map((e) => e.map((k, v) => MapEntry(k.toString(), v))).toList().cast<Map<String, dynamic>>()
+          : <Map<String, dynamic>>[];
+      
+      if (mounted) {
+        setState(() {
+          cars = parsed;
+          isLoading = false;
+          hasLoadedOnce = true;
+          loadErrorMessage = null;
+        });
+      }
+      unawaited(_autoSaveSearch());
+    } else {
+      throw Exception('Server error: ${response.statusCode}');
+    }
+  }
+  
+  Future<void> _tryConnectionReset(String apiSortValue) async {
+    print('🔄 Connection reset attempt with: $apiSortValue');
+    
+    // Wait a bit longer and try with a completely fresh approach
+    await Future.delayed(Duration(milliseconds: 1000));
+    
+    try {
+      Map<String, String> filters = _buildFilters();
+      String query = Uri(queryParameters: filters).query;
+      final url = Uri.parse('${getApiBase()}/cars${query.isNotEmpty ? '?$query' : ''}');
+      
+      // Try with a very simple request
+      final response = await http.get(
+        url,
+        headers: {
+          'Accept': 'application/json',
+        },
+      ).timeout(Duration(seconds: 20));
+      
+      if (response.statusCode == 200) {
+        final decoded = json.decode(response.body);
+        final List<Map<String, dynamic>> parsed = decoded is List
+            ? decoded.whereType<Map>().map((e) => e.map((k, v) => MapEntry(k.toString(), v))).toList().cast<Map<String, dynamic>>()
+            : <Map<String, dynamic>>[];
+        
+        if (mounted) {
+          setState(() {
+            cars = parsed;
+            isLoading = false;
+            hasLoadedOnce = true;
+            loadErrorMessage = null;
+          });
+        }
+        
+        unawaited(_autoSaveSearch());
+        print('✅ Connection reset successful');
+      } else {
+        throw Exception('Server error: ${response.statusCode}');
+      }
+    } catch (e) {
+      print('❌ Connection reset failed: $e');
+      rethrow;
+    }
+  }
+
+  Future<void> _tryWithoutSort() async {
+    print('🔄 Fallback: trying without sort');
+    try {
+      await _fetchWithoutSort();
+      // If we get here, try client-side sorting as a last resort
+      await _tryClientSideSort();
+    } catch (e) {
+      print('❌ Fallback also failed: $e');
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Sorting temporarily unavailable'),
+            duration: Duration(seconds: 2),
+            backgroundColor: Colors.orange,
+          ),
+        );
+      }
+    }
+  }
+  
+  Future<void> _tryClientSideSort() async {
+    print('🔄 Attempting client-side sort');
+    final apiSortValue = _convertSortToApiValue(context, selectedSortBy);
+    if (apiSortValue == null || selectedSortBy == null) return;
+    
+    List<Map<String, dynamic>> sortedCars = List.from(cars);
+    
+    try {
+      switch (apiSortValue) {
+        case 'price_asc':
+          sortedCars.sort((a, b) {
+            final priceA = double.tryParse(a['price']?.toString() ?? '0') ?? 0;
+            final priceB = double.tryParse(b['price']?.toString() ?? '0') ?? 0;
+            return priceA.compareTo(priceB);
+          });
+          break;
+        case 'price_desc':
+          sortedCars.sort((a, b) {
+            final priceA = double.tryParse(a['price']?.toString() ?? '0') ?? 0;
+            final priceB = double.tryParse(b['price']?.toString() ?? '0') ?? 0;
+            return priceB.compareTo(priceA);
+          });
+          break;
+        case 'year_desc':
+          sortedCars.sort((a, b) {
+            final yearA = int.tryParse(a['year']?.toString() ?? '0') ?? 0;
+            final yearB = int.tryParse(b['year']?.toString() ?? '0') ?? 0;
+            return yearB.compareTo(yearA);
+          });
+          break;
+        case 'year_asc':
+          sortedCars.sort((a, b) {
+            final yearA = int.tryParse(a['year']?.toString() ?? '0') ?? 0;
+            final yearB = int.tryParse(b['year']?.toString() ?? '0') ?? 0;
+            return yearA.compareTo(yearB);
+          });
+          break;
+        case 'mileage_asc':
+          sortedCars.sort((a, b) {
+            final mileageA = int.tryParse(a['mileage']?.toString() ?? '0') ?? 0;
+            final mileageB = int.tryParse(b['mileage']?.toString() ?? '0') ?? 0;
+            return mileageA.compareTo(mileageB);
+          });
+          break;
+        case 'mileage_desc':
+          sortedCars.sort((a, b) {
+            final mileageA = int.tryParse(a['mileage']?.toString() ?? '0') ?? 0;
+            final mileageB = int.tryParse(b['mileage']?.toString() ?? '0') ?? 0;
+            return mileageB.compareTo(mileageA);
+          });
+          break;
+        case 'newest':
+          sortedCars.sort((a, b) {
+            final dateA = DateTime.tryParse(a['created_at']?.toString() ?? '') ?? DateTime(1970);
+            final dateB = DateTime.tryParse(b['created_at']?.toString() ?? '') ?? DateTime(1970);
+            return dateB.compareTo(dateA);
+          });
+          break;
+      }
+      
+      if (mounted) {
+        setState(() {
+          cars = sortedCars;
+          isLoading = false;
+          loadErrorMessage = null;
+        });
+      }
+      
+      print('✅ Client-side sort successful');
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Sorted locally (server unavailable)'),
+            duration: Duration(seconds: 2),
+            backgroundColor: Colors.blue,
+          ),
+        );
+      }
+    } catch (e) {
+      print('❌ Client-side sort failed: $e');
+      rethrow;
+    }
   }
 
   void clearFiltersOnVehicleChange() {
@@ -4022,16 +4543,24 @@ class _HomePageState extends State<HomePage> {
                 ),
                 Expanded(
                   child: isLoading
-                      ? ListView.builder(
-                          padding: EdgeInsets.all(12),
-                          itemCount: 6,
-                          itemBuilder: (_, __) => Container(
-                            margin: EdgeInsets.symmetric(vertical: 8),
-                            height: 110,
-                            decoration: BoxDecoration(
-                              color: Colors.white.withOpacity(0.06),
-                              borderRadius: BorderRadius.circular(12),
-                            ),
+                      ? Center(
+                          child: Column(
+                            mainAxisAlignment: MainAxisAlignment.center,
+                            children: [
+                              CircularProgressIndicator(
+                                valueColor: AlwaysStoppedAnimation<Color>(Color(0xFFFF6B00)),
+                              ),
+                              SizedBox(height: 16),
+                              Text(
+                                selectedSortBy != null 
+                                  ? 'Sorting listings...' 
+                                  : 'Loading listings...',
+                                style: TextStyle(
+                                  color: Colors.white70,
+                                  fontSize: 16,
+                                ),
+                              ),
+                            ],
                           ),
                         )
                       : (loadErrorMessage != null && cars.isEmpty)
@@ -4042,7 +4571,13 @@ class _HomePageState extends State<HomePage> {
                                   Text(_couldNotLoadListingsTextGlobal(context), style: TextStyle(color: Colors.white70)),
                                   SizedBox(height: 8),
                                   Wrap(spacing: 8, children: [
-                                    OutlinedButton(onPressed: fetchCars, child: Text('Retry')),
+                                    OutlinedButton(
+                                      onPressed: () {
+                                        _fetchRetryCount = 0; // Reset retry count
+                                        fetchCars(bypassCache: true);
+                                      }, 
+                                      child: Text('Retry')
+                                    ),
                                     OutlinedButton(onPressed: () => onFilterChanged(), child: Text(AppLocalizations.of(context)!.clearFilters)),
                                   ]),
                                 ],
@@ -4528,6 +5063,12 @@ class _HomePageState extends State<HomePage> {
       default:
         return '🚘';
     }
+  }
+  
+  @override
+  void dispose() {
+    _sortDebounceTimer?.cancel();
+    super.dispose();
   }
 }
 
