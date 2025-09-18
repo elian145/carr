@@ -229,6 +229,68 @@ class CarVideo(db.Model):
     def __repr__(self):
         return f'<CarVideo {self.video_url}>'
 
+class ListingAnalytics(db.Model):
+    __tablename__ = 'listing_analytics'
+    
+    id = db.Column(db.Integer, primary_key=True)
+    car_id = db.Column(db.Integer, db.ForeignKey('car.id'), nullable=False)
+    views = db.Column(db.Integer, default=0)
+    messages = db.Column(db.Integer, default=0)
+    calls = db.Column(db.Integer, default=0)
+    shares = db.Column(db.Integer, default=0)
+    favorites = db.Column(db.Integer, default=0)
+    created_at = db.Column(db.DateTime, default=datetime.utcnow)
+    updated_at = db.Column(db.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+    
+    # Relationship
+    car = db.relationship('Car', backref='analytics')
+    
+    def to_dict(self):
+        return {
+            'listing_id': self.car.public_id if self.car else str(self.car_id),
+            'title': self.car.title if self.car else '',
+            'brand': self.car.brand if self.car else '',
+            'model': self.car.model if self.car else '',
+            'year': self.car.year if self.car else 0,
+            'price': self.car.price if self.car else 0,
+            'image_url': self.car.images[0].image_url if self.car and self.car.images else None,
+            'views': self.views,
+            'messages': self.messages,
+            'calls': self.calls,
+            'shares': self.shares,
+            'favorites': self.favorites,
+            'created_at': self.created_at.isoformat() if self.created_at else None,
+            'last_updated': self.updated_at.isoformat() if self.updated_at else None,
+        }
+    
+    def increment_views(self):
+        self.views += 1
+        self.updated_at = datetime.utcnow()
+        db.session.commit()
+    
+    def increment_messages(self):
+        self.messages += 1
+        self.updated_at = datetime.utcnow()
+        db.session.commit()
+    
+    def increment_calls(self):
+        self.calls += 1
+        self.updated_at = datetime.utcnow()
+        db.session.commit()
+    
+    def increment_shares(self):
+        self.shares += 1
+        self.updated_at = datetime.utcnow()
+        db.session.commit()
+    
+    def increment_favorites(self):
+        self.favorites += 1
+        self.updated_at = datetime.utcnow()
+        db.session.commit()
+    
+    def __repr__(self):
+        return f'<ListingAnalytics car_id={self.car_id} views={self.views}>'
+
 class Message(db.Model):
     __tablename__ = 'message'
     

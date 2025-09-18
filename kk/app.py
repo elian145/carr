@@ -2015,6 +2015,217 @@ def api_user():
         'created_at': current_user.created_at.isoformat() if current_user.created_at else None,
     })
 
+# Analytics endpoints
+@app.route('/api/analytics/listings', methods=['GET'])
+@login_required
+def get_listings_analytics():
+    """Get analytics for all user's listings"""
+    try:
+        from models import ListingAnalytics
+        
+        # Get all cars owned by current user
+        user_cars = Car.query.filter_by(user_id=current_user.id).all()
+        car_ids = [car.id for car in user_cars]
+        
+        # Get analytics for these cars
+        analytics = ListingAnalytics.query.filter(ListingAnalytics.car_id.in_(car_ids)).all()
+        
+        # Create analytics for cars that don't have analytics yet
+        existing_car_ids = [a.car_id for a in analytics]
+        for car in user_cars:
+            if car.id not in existing_car_ids:
+                new_analytics = ListingAnalytics(car_id=car.id)
+                db.session.add(new_analytics)
+        
+        db.session.commit()
+        
+        # Get updated analytics
+        analytics = ListingAnalytics.query.filter(ListingAnalytics.car_id.in_(car_ids)).all()
+        
+        return jsonify([a.to_dict() for a in analytics])
+        
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
+
+@app.route('/api/analytics/listings/<int:car_id>', methods=['GET'])
+@login_required
+def get_listing_analytics(car_id):
+    """Get analytics for a specific listing"""
+    try:
+        from models import ListingAnalytics
+        
+        # Verify the car belongs to current user
+        car = Car.query.filter_by(id=car_id, user_id=current_user.id).first()
+        if not car:
+            return jsonify({'error': 'Listing not found'}), 404
+        
+        # Get or create analytics for this car
+        analytics = ListingAnalytics.query.filter_by(car_id=car_id).first()
+        if not analytics:
+            analytics = ListingAnalytics(car_id=car_id)
+            db.session.add(analytics)
+            db.session.commit()
+        
+        return jsonify(analytics.to_dict())
+        
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
+
+@app.route('/api/analytics/track/view', methods=['POST'])
+@login_required
+def track_view():
+    """Track a view for a listing"""
+    try:
+        from models import ListingAnalytics
+        
+        data = request.get_json()
+        car_id = data.get('listing_id')
+        
+        if not car_id:
+            return jsonify({'error': 'listing_id required'}), 400
+        
+        # Verify the car belongs to current user
+        car = Car.query.filter_by(id=car_id, user_id=current_user.id).first()
+        if not car:
+            return jsonify({'error': 'Listing not found'}), 404
+        
+        # Get or create analytics
+        analytics = ListingAnalytics.query.filter_by(car_id=car_id).first()
+        if not analytics:
+            analytics = ListingAnalytics(car_id=car_id)
+            db.session.add(analytics)
+        
+        analytics.increment_views()
+        
+        return jsonify({'success': True})
+        
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
+
+@app.route('/api/analytics/track/message', methods=['POST'])
+@login_required
+def track_message():
+    """Track a message for a listing"""
+    try:
+        from models import ListingAnalytics
+        
+        data = request.get_json()
+        car_id = data.get('listing_id')
+        
+        if not car_id:
+            return jsonify({'error': 'listing_id required'}), 400
+        
+        # Verify the car belongs to current user
+        car = Car.query.filter_by(id=car_id, user_id=current_user.id).first()
+        if not car:
+            return jsonify({'error': 'Listing not found'}), 404
+        
+        # Get or create analytics
+        analytics = ListingAnalytics.query.filter_by(car_id=car_id).first()
+        if not analytics:
+            analytics = ListingAnalytics(car_id=car_id)
+            db.session.add(analytics)
+        
+        analytics.increment_messages()
+        
+        return jsonify({'success': True})
+        
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
+
+@app.route('/api/analytics/track/call', methods=['POST'])
+@login_required
+def track_call():
+    """Track a call for a listing"""
+    try:
+        from models import ListingAnalytics
+        
+        data = request.get_json()
+        car_id = data.get('listing_id')
+        
+        if not car_id:
+            return jsonify({'error': 'listing_id required'}), 400
+        
+        # Verify the car belongs to current user
+        car = Car.query.filter_by(id=car_id, user_id=current_user.id).first()
+        if not car:
+            return jsonify({'error': 'Listing not found'}), 404
+        
+        # Get or create analytics
+        analytics = ListingAnalytics.query.filter_by(car_id=car_id).first()
+        if not analytics:
+            analytics = ListingAnalytics(car_id=car_id)
+            db.session.add(analytics)
+        
+        analytics.increment_calls()
+        
+        return jsonify({'success': True})
+        
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
+
+@app.route('/api/analytics/track/share', methods=['POST'])
+@login_required
+def track_share():
+    """Track a share for a listing"""
+    try:
+        from models import ListingAnalytics
+        
+        data = request.get_json()
+        car_id = data.get('listing_id')
+        
+        if not car_id:
+            return jsonify({'error': 'listing_id required'}), 400
+        
+        # Verify the car belongs to current user
+        car = Car.query.filter_by(id=car_id, user_id=current_user.id).first()
+        if not car:
+            return jsonify({'error': 'Listing not found'}), 404
+        
+        # Get or create analytics
+        analytics = ListingAnalytics.query.filter_by(car_id=car_id).first()
+        if not analytics:
+            analytics = ListingAnalytics(car_id=car_id)
+            db.session.add(analytics)
+        
+        analytics.increment_shares()
+        
+        return jsonify({'success': True})
+        
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
+
+@app.route('/api/analytics/track/favorite', methods=['POST'])
+@login_required
+def track_favorite():
+    """Track a favorite for a listing"""
+    try:
+        from models import ListingAnalytics
+        
+        data = request.get_json()
+        car_id = data.get('listing_id')
+        
+        if not car_id:
+            return jsonify({'error': 'listing_id required'}), 400
+        
+        # Verify the car belongs to current user
+        car = Car.query.filter_by(id=car_id, user_id=current_user.id).first()
+        if not car:
+            return jsonify({'error': 'Listing not found'}), 404
+        
+        # Get or create analytics
+        analytics = ListingAnalytics.query.filter_by(car_id=car_id).first()
+        if not analytics:
+            analytics = ListingAnalytics(car_id=car_id)
+            db.session.add(analytics)
+        
+        analytics.increment_favorites()
+        
+        return jsonify({'success': True})
+        
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
+
 @app.route('/dev/seed')
 def dev_seed():
     """Development helper: top up listings to the requested total count.

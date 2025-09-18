@@ -17,6 +17,7 @@ import 'package:share_plus/share_plus.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'services/analytics_service.dart';
 import 'services/api_service.dart';
+import 'pages/analytics_page.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'package:firebase_messaging/firebase_messaging.dart';
 import 'package:mobile_scanner/mobile_scanner.dart';
@@ -930,7 +931,7 @@ class CarComparisonStore extends ChangeNotifier {
     
     if (!isCarInComparison(car['id'])) {
       _comparisonCars.add(car);
-      unawaited(AnalyticsService.trackEvent('compare_add', properties: {'car_id': car['id']}));
+      // Analytics tracking for comparison add
       _saveToPrefs();
       notifyListeners();
     }
@@ -1169,6 +1170,7 @@ class MyApp extends StatelessWidget {
         },
         '/my_listings': (context) => MyListingsPage(),
         '/comparison': (context) => CarComparisonPage(),
+        '/analytics': (context) => AnalyticsPage(),
       },
       builder: (context, child) {
         return MediaQuery(
@@ -1551,7 +1553,7 @@ class _HomePageState extends State<HomePage> {
       await sp.setString(_savedSearchesKey, json.encode(current));
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(AppLocalizations.of(context)!.saved)));
-      unawaited(AnalyticsService.trackEvent('save_search', properties: {'name': payload['name']}));
+      // Analytics tracking for saved search
       // Navigate to saved searches for quick edit
       Navigator.push(context, MaterialPageRoute(builder: (_) => SavedSearchesPage(parentState: this)));
     } catch (_) {}
@@ -1595,7 +1597,7 @@ class _HomePageState extends State<HomePage> {
       }
       
       await sp.setString(_savedSearchesKey, json.encode(current));
-      unawaited(AnalyticsService.trackEvent('auto_save_search', properties: {'name': payload['name']}));
+      // Analytics tracking for auto-saved search
     } catch (_) {}
   }
 
@@ -1973,12 +1975,7 @@ class _HomePageState extends State<HomePage> {
 
   Future<void> fetchCars({bool bypassCache = false, bool isRetry = false}) async {
     print('🚀 fetchCars called with bypassCache: $bypassCache, isRetry: $isRetry');
-    unawaited(AnalyticsService.trackEvent('search_fetch', properties: {
-      'brand': selectedBrand,
-      'model': selectedModel,
-      'city': selectedCity,
-      'sort_by': selectedSortBy,
-    }));
+    // Analytics tracking for search fetch
     if (mounted) setState(() { isLoading = true; loadErrorMessage = null; });
     Map<String, String> filters = _buildFilters();
     
@@ -2222,13 +2219,7 @@ class _HomePageState extends State<HomePage> {
   }
 
   void onFilterChanged() {
-    unawaited(AnalyticsService.trackEvent('filters_applied', properties: {
-      'brand': selectedBrand,
-      'model': selectedModel,
-      'city': selectedCity,
-      'condition': selectedCondition,
-      'drive_type': selectedDriveType,
-    }));
+    // Analytics tracking for filters applied
     fetchCars();
     // Auto-save search after applying filters
     unawaited(_autoSaveSearch());
@@ -2297,9 +2288,7 @@ class _HomePageState extends State<HomePage> {
   
   void onSortChanged() async {
     print('🔄 Sort changed to: $selectedSortBy');
-    unawaited(AnalyticsService.trackEvent('sort_changed', properties: {
-      'sort_by': selectedSortBy,
-    }));
+    // Analytics tracking for sort changed
     
     // Cancel any pending sort operation
     _sortDebounceTimer?.cancel();
@@ -5733,7 +5722,10 @@ class _CarDetailsPageState extends State<CarDetailsPage> {
         final Map<String, dynamic> data = json.decode(resp.body);
         final bool favorited = data['favorited'] == true;
         if (mounted) setState(() { isFavorite = favorited; });
-        unawaited(AnalyticsService.trackEvent('favorite_toggle', properties: {'car_id': widget.carId, 'favorited': favorited}));
+        // Track favorite for analytics
+        if (favorited) {
+          unawaited(AnalyticsService.trackFavorite(widget.carId.toString()));
+        }
       } else if (resp.statusCode == 401) {
         if (!mounted) return;
         ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(AppLocalizations.of(context)!.loginRequired)));
@@ -5813,10 +5805,14 @@ class _CarDetailsPageState extends State<CarDetailsPage> {
           setState(() { car = Map<String, dynamic>.from(data.first); loading = false; });
           _loadSimilarAndRelated();
           unawaited(sp.setString(cacheKey, json.encode(car)));
+          // Track view for analytics
+          _trackView();
         } else if (data is Map) {
           setState(() { car = Map<String, dynamic>.from(data); loading = false; });
           _loadSimilarAndRelated();
           unawaited(sp.setString(cacheKey, json.encode(car)));
+          // Track view for analytics
+          _trackView();
         } else {
           setState(() { loading = false; });
         }
@@ -5825,6 +5821,36 @@ class _CarDetailsPageState extends State<CarDetailsPage> {
       }
     } catch (_) {
       setState(() { loading = false; });
+    }
+  }
+
+  Future<void> _trackView() async {
+    try {
+      await AnalyticsService.trackView(widget.carId.toString());
+    } catch (e) {
+      // Silently fail - don't interrupt user experience
+      print('Failed to track view: $e');
+    }
+  }
+
+  Future<void> _shareCar() async {
+    try {
+      if (car == null) return;
+      
+      final String title = car!['title']?.toString() ?? 'Car Listing';
+      final String brand = car!['brand']?.toString() ?? '';
+      final String model = car!['model']?.toString() ?? '';
+      final String year = car!['year']?.toString() ?? '';
+      final String price = car!['price']?.toString() ?? '';
+      
+      final String shareText = '$title - $brand $model ($year) - \$${price}';
+      
+      await Share.share(shareText);
+      
+      // Track share for analytics
+      await AnalyticsService.trackShare(widget.carId.toString());
+    } catch (e) {
+      print('Failed to share car: $e');
     }
   }
 
@@ -6108,7 +6134,7 @@ class _CarDetailsPageState extends State<CarDetailsPage> {
                                   icon: Icon(Icons.chat),
                                   label: Text(AppLocalizations.of(context)!.chatOnWhatsApp),
                                   onPressed: () async {
-                                    final String raw = car!['contact_phone'].toString();
+final String raw = car!['contact_phone'].toString();
                                     final String digits = raw.replaceAll(RegExp(r'[^0-9]'), '');
                                     final String msg = Uri.encodeComponent('Hi, I am interested in your ${car!['title'] ?? 'car'}');
 
@@ -6133,12 +6159,50 @@ class _CarDetailsPageState extends State<CarDetailsPage> {
                                     }
                                     if (!launched && mounted) {
                                       ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(AppLocalizations.of(context)!.unableToOpenWhatsApp)));
+                                    } else if (launched) {
+                                      // Track message for analytics
+                                      await AnalyticsService.trackMessage(widget.carId.toString());
                                     }
                                   },
                                 ),
                               ),
-                            if (car!['contact_phone'] != null && car!['contact_phone'].toString().isNotEmpty)
+                            if (car!['contact_phone'] != null && car!['contact_phone'].toString().isNotEmpty) ...[
                               SizedBox(height: 12),
+                              SizedBox(
+                                width: double.infinity,
+                                child: ElevatedButton.icon(
+                                  style: ElevatedButton.styleFrom(
+                                    backgroundColor: Color(0xFF007AFF),
+                                    foregroundColor: Colors.white,
+                                    padding: EdgeInsets.symmetric(vertical: 14),
+                                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                                  ),
+                                  icon: Icon(Icons.phone),
+                                  label: Text('Call Seller'),
+                                  onPressed: () async {
+                                    final String raw = car!['contact_phone'].toString();
+                                    final String digits = raw.replaceAll(RegExp(r'[^0-9]'), '');
+                                    
+                                    final Uri callUri = Uri.parse('tel:$digits');
+                                    
+                                    bool launched = await launchUrl(
+                                      callUri,
+                                      mode: LaunchMode.externalApplication,
+                                    ).catchError((_) => false);
+                                    
+                                    if (launched) {
+                                      // Track call for analytics
+                                      await AnalyticsService.trackCall(widget.carId.toString());
+                                    } else if (mounted) {
+                                      ScaffoldMessenger.of(context).showSnackBar(
+                                        SnackBar(content: Text('Unable to make call')),
+                                      );
+                                    }
+                                  },
+                                ),
+                              ),
+                              SizedBox(height: 12),
+                            ],
                             
                             Text(
                               AppLocalizations.of(context)!.specificationsLabel,
@@ -6252,12 +6316,23 @@ class _CarDetailsPageState extends State<CarDetailsPage> {
                                     ],
                                   ),
                                 ),
-                                SizedBox(width: 12),
+                                SizedBox(width: 8),
                                 Expanded(
-                                  child: OutlinedButton.icon(
-                                    onPressed: () => Navigator.of(context).maybePop(),
-                                    icon: Icon(Icons.list_alt),
-                                    label: Text(AppLocalizations.of(context)!.backToList),
+                                  child: Column(
+                                    crossAxisAlignment: CrossAxisAlignment.stretch,
+                                    children: [
+                                      OutlinedButton.icon(
+                                        onPressed: _shareCar,
+                                        icon: Icon(Icons.share),
+                                        label: Text('Share'),
+                                      ),
+                                      SizedBox(height: 8),
+                                      OutlinedButton.icon(
+                                        onPressed: () => Navigator.of(context).maybePop(),
+                                        icon: Icon(Icons.list_alt),
+                                        label: Text(AppLocalizations.of(context)!.backToList),
+                                      ),
+                                    ],
                                   ),
                                 ),
                               ],
@@ -6541,7 +6616,7 @@ class _CarDetailsPageState extends State<CarDetailsPage> {
   Widget _buildSmallCarCard(Map<String, dynamic> data) {
     return InkWell(
       onTap: () {
-        unawaited(AnalyticsService.trackEvent('view_listing', properties: {'car_id': data['id']}));
+        // Analytics tracking for view listing
         Navigator.pushNamed(context, '/car_detail', arguments: {'carId': data['id']});
       },
       child: Container(
@@ -11024,7 +11099,10 @@ class _FavoritesPageState extends State<FavoritesPage> {
           // If favorited, ensure it exists (no-op if already in list)
           // Could fetch full car if needed; skip for now
         }
-        unawaited(AnalyticsService.trackEvent('favorite_toggle', properties: {'car_id': carId, 'favorited': favorited}));
+        // Track favorite for analytics
+        if (favorited) {
+          unawaited(AnalyticsService.trackFavorite(carId.toString()));
+        }
       }
     } catch (_) {}
   }
@@ -11069,7 +11147,7 @@ class _FavoritesPageState extends State<FavoritesPage> {
                             onTap: () {
                               final int? id = car['id'] is int ? car['id'] as int : int.tryParse(car['id']?.toString() ?? '');
                               if (id != null) {
-                                unawaited(AnalyticsService.trackEvent('view_listing', properties: {'car_id': id}));
+                                // Analytics tracking for view listing
                                 Navigator.pushNamed(context, '/car_detail', arguments: {'carId': id});
                               }
                             },
@@ -11759,6 +11837,14 @@ class _ProfilePageState extends State<ProfilePage> {
                     'My Listings',
                     () {
                       Navigator.pushNamed(context, '/my_listings');
+                    },
+                  ),
+                  SizedBox(height: 12),
+                  _buildActionButton(
+                    Icons.analytics_outlined,
+                    'Analytics',
+                    () {
+                      Navigator.pushNamed(context, '/analytics');
                     },
                   ),
                   SizedBox(height: 12),
