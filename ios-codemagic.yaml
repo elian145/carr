@@ -1,0 +1,57 @@
+workflows:
+  ios-car-listing-app:
+    name: Car Listing App iOS
+    max_build_duration: 90
+    environment:
+      flutter: stable
+      xcode: latest
+      cocoapods: default
+      vars:
+        # Add your Firebase and other environment variables here
+        # FIREBASE_PROJECT_ID: your-project-id
+        # FIREBASE_APP_ID: your-app-id
+    scripts:
+      - name: Set up keychain to be used for codesigning
+        script: |
+          keychain initialize
+      - name: Set up signing certificate
+        script: |
+          # Add your certificate setup here
+          # app-store-connect fetch-signing-files "com.example.carListingApp" --type IOS_APP_STORE --create
+      - name: Set up provisioning profile
+        script: |
+          # Add your provisioning profile setup here
+          # app-store-connect fetch-signing-files "com.example.carListingApp" --type IOS_APP_STORE --create
+      - name: Install Flutter dependencies
+        script: |
+          flutter packages pub get
+      - name: Install CocoaPods dependencies
+        script: |
+          cd ios && pod install --repo-update
+      - name: Flutter analyze
+        script: |
+          flutter analyze
+      - name: Flutter unit tests
+        script: |
+          flutter test
+      - name: Build iOS app
+        script: |
+          flutter build ios --release
+      - name: Build iOS IPA
+        script: |
+          flutter build ipa --export-options-plist ios/ExportOptions.plist
+    artifacts:
+      - build/ios/ipa/*.ipa
+      - /tmp/xcodebuild_logs/*.log
+      - flutter_drive.log
+    publishing:
+      app_store_connect:
+        auth: integration
+        submit_to_testflight: true
+        submit_to_app_store: false
+      email:
+        recipients:
+          - your-email@example.com
+        notify:
+          success: true
+          failure: true
