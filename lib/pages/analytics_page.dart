@@ -108,8 +108,6 @@ class _AnalyticsPageState extends State<AnalyticsPage> {
           _buildListingSelection(),
           SizedBox(height: 24),
 
-          // Selected Listing Analytics
-          if (_selectedListing != null) _buildSelectedListingAnalytics(),
         ],
       ),
     );
@@ -260,37 +258,500 @@ class _AnalyticsPageState extends State<AnalyticsPage> {
             color: Colors.grey[800],
           ),
         ),
-        SizedBox(height: 12),
-        Container(
-          width: double.infinity,
-          padding: EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-          decoration: BoxDecoration(
-            border: Border.all(color: Colors.grey[300]!),
-            borderRadius: BorderRadius.circular(8),
+        SizedBox(height: 16),
+        GridView.builder(
+          shrinkWrap: true,
+          physics: NeverScrollableScrollPhysics(),
+          gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
+            crossAxisCount: 2,
+            childAspectRatio: 0.8,
+            crossAxisSpacing: 12,
+            mainAxisSpacing: 12,
           ),
-          child: DropdownButtonHideUnderline(
-            child: DropdownButton<ListingAnalytics>(
-              value: _selectedListing,
-              hint: Text('Choose a listing to view analytics'),
-              isExpanded: true,
-              items: _listings.map((listing) {
-                return DropdownMenuItem<ListingAnalytics>(
-                  value: listing,
-                  child: Text(
-                    '${listing.carTitle} - ${listing.formattedPrice}',
-                    overflow: TextOverflow.ellipsis,
-                  ),
-                );
-              }).toList(),
-              onChanged: (ListingAnalytics? newValue) {
-                setState(() {
-                  _selectedListing = newValue;
-                });
-              },
-            ),
-          ),
+          itemCount: _listings.length,
+          itemBuilder: (context, index) {
+            final listing = _listings[index];
+            return _buildListingCard(listing);
+          },
         ),
       ],
+    );
+  }
+
+  Widget _buildListingCard(ListingAnalytics listing) {
+    final isSelected = _selectedListing?.listingId == listing.listingId;
+    
+    return GestureDetector(
+      onTap: () {
+        _showAnalyticsModal(context, listing);
+      },
+      child: Container(
+        decoration: BoxDecoration(
+          color: Colors.white,
+          borderRadius: BorderRadius.circular(12),
+          border: Border.all(
+            color: isSelected ? Color(0xFFFF6B00) : Colors.grey[300]!,
+            width: isSelected ? 2 : 1,
+          ),
+          boxShadow: [
+            BoxShadow(
+              color: Colors.black.withOpacity(0.1),
+              blurRadius: 8,
+              offset: Offset(0, 4),
+            ),
+          ],
+        ),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            // Car image
+            Expanded(
+              flex: 3,
+              child: Container(
+                width: double.infinity,
+                decoration: BoxDecoration(
+                  borderRadius: BorderRadius.vertical(top: Radius.circular(12)),
+                  color: Colors.grey[200],
+                ),
+                child: ClipRRect(
+                  borderRadius: BorderRadius.vertical(top: Radius.circular(12)),
+                  child: listing.imageUrl != null && listing.imageUrl!.isNotEmpty
+                      ? Image.network(
+                          listing.imageUrl!,
+                          fit: BoxFit.cover,
+                          errorBuilder: (context, error, stackTrace) {
+                            return Container(
+                              color: Colors.grey[200],
+                              child: Icon(
+                                Icons.directions_car,
+                                color: Colors.grey[400],
+                                size: 40,
+                              ),
+                            );
+                          },
+                          loadingBuilder: (context, child, loadingProgress) {
+                            if (loadingProgress == null) return child;
+                            return Container(
+                              color: Colors.grey[200],
+                              child: Center(
+                                child: SizedBox(
+                                  width: 20,
+                                  height: 20,
+                                  child: CircularProgressIndicator(
+                                    strokeWidth: 2,
+                                    valueColor: AlwaysStoppedAnimation<Color>(Color(0xFFFF6B00)),
+                                  ),
+                                ),
+                              ),
+                            );
+                          },
+                        )
+                      : Container(
+                          color: Colors.grey[200],
+                          child: Icon(
+                            Icons.directions_car,
+                            color: Colors.grey[400],
+                            size: 40,
+                          ),
+                        ),
+                ),
+              ),
+            ),
+            // Car details
+            Expanded(
+              flex: 2,
+              child: Padding(
+                padding: EdgeInsets.all(12),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      listing.carTitle,
+                      style: TextStyle(
+                        fontSize: 14,
+                        fontWeight: FontWeight.w600,
+                        color: Colors.grey[800],
+                      ),
+                      overflow: TextOverflow.ellipsis,
+                      maxLines: 1,
+                    ),
+                    SizedBox(height: 4),
+                    Text(
+                      listing.formattedPrice,
+                      style: TextStyle(
+                        fontSize: 16,
+                        color: Color(0xFFFF6B00),
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
+                    Spacer(),
+                    // Selection indicator
+                    if (isSelected)
+                      Container(
+                        width: double.infinity,
+                        padding: EdgeInsets.symmetric(vertical: 4),
+                        decoration: BoxDecoration(
+                          color: Color(0xFFFF6B00),
+                          borderRadius: BorderRadius.circular(4),
+                        ),
+                        child: Text(
+                          'SELECTED',
+                          textAlign: TextAlign.center,
+                          style: TextStyle(
+                            color: Colors.white,
+                            fontSize: 10,
+                            fontWeight: FontWeight.bold,
+                          ),
+                        ),
+                      ),
+                  ],
+                ),
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  void _showAnalyticsModal(BuildContext context, ListingAnalytics listing) {
+    showDialog(
+      context: context,
+      barrierDismissible: true,
+      builder: (BuildContext context) {
+        return Dialog(
+          backgroundColor: Colors.transparent,
+          elevation: 0,
+          child: Container(
+            width: 360,
+            height: 600,
+            decoration: BoxDecoration(
+              borderRadius: BorderRadius.circular(24),
+              gradient: LinearGradient(
+                begin: Alignment.topLeft,
+                end: Alignment.bottomRight,
+                colors: [
+                  Colors.white,
+                  Colors.grey[50]!,
+                ],
+              ),
+              boxShadow: [
+                BoxShadow(
+                  color: Colors.black.withOpacity(0.1),
+                  blurRadius: 30,
+                  offset: Offset(0, 10),
+                ),
+                BoxShadow(
+                  color: Colors.black.withOpacity(0.05),
+                  blurRadius: 60,
+                  offset: Offset(0, 20),
+                ),
+              ],
+            ),
+            child: Column(
+              children: [
+                // Modern header with gradient
+                Container(
+                  padding: EdgeInsets.fromLTRB(24, 20, 20, 20),
+                  decoration: BoxDecoration(
+                    borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
+                    gradient: LinearGradient(
+                      begin: Alignment.topLeft,
+                      end: Alignment.bottomRight,
+                      colors: [
+                        Color(0xFFFF6B00),
+                        Color(0xFFFF8A50),
+                      ],
+                    ),
+                  ),
+                  child: Row(
+                    children: [
+                      Container(
+                        padding: EdgeInsets.all(8),
+                        decoration: BoxDecoration(
+                          color: Colors.white.withOpacity(0.2),
+                          borderRadius: BorderRadius.circular(12),
+                        ),
+                        child: Icon(
+                          Icons.analytics_outlined,
+                          color: Colors.white,
+                          size: 24,
+                        ),
+                      ),
+                      SizedBox(width: 12),
+                      Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(
+                              'Analytics Dashboard',
+                              style: TextStyle(
+                                color: Colors.white,
+                                fontSize: 20,
+                                fontWeight: FontWeight.bold,
+                                letterSpacing: 0.5,
+                              ),
+                            ),
+                            Text(
+                              'Performance insights',
+                              style: TextStyle(
+                                color: Colors.white.withOpacity(0.9),
+                                fontSize: 14,
+                                fontWeight: FontWeight.w400,
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                      GestureDetector(
+                        onTap: () => Navigator.of(context).pop(),
+                        child: Container(
+                          padding: EdgeInsets.all(8),
+                          decoration: BoxDecoration(
+                            color: Colors.white.withOpacity(0.2),
+                            borderRadius: BorderRadius.circular(12),
+                          ),
+                          child: Icon(
+                            Icons.close_rounded,
+                            color: Colors.white,
+                            size: 20,
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+                // Content with modern styling
+                Expanded(
+                  child: SingleChildScrollView(
+                    padding: EdgeInsets.all(24),
+                    child: Column(
+                      children: [
+                        // Car image with modern styling
+                        Container(
+                          width: 240,
+                          height: 160,
+                          decoration: BoxDecoration(
+                            borderRadius: BorderRadius.circular(20),
+                            boxShadow: [
+                              BoxShadow(
+                                color: Color(0xFFFF6B00).withOpacity(0.2),
+                                blurRadius: 20,
+                                offset: Offset(0, 8),
+                              ),
+                            ],
+                          ),
+                          child: ClipRRect(
+                            borderRadius: BorderRadius.circular(20),
+                            child: listing.imageUrl != null && listing.imageUrl!.isNotEmpty
+                                ? Image.network(
+                                    listing.imageUrl!,
+                                    fit: BoxFit.cover,
+                                    errorBuilder: (context, error, stackTrace) {
+                                      return Container(
+                                        decoration: BoxDecoration(
+                                          gradient: LinearGradient(
+                                            colors: [Colors.grey[100]!, Colors.grey[200]!],
+                                          ),
+                                        ),
+                                        child: Icon(
+                                          Icons.directions_car_outlined,
+                                          color: Colors.grey[500],
+                                          size: 60,
+                                        ),
+                                      );
+                                    },
+                                  )
+                                : Container(
+                                    decoration: BoxDecoration(
+                                      gradient: LinearGradient(
+                                        colors: [Colors.grey[100]!, Colors.grey[200]!],
+                                      ),
+                                    ),
+                                    child: Icon(
+                                      Icons.directions_car_outlined,
+                                      color: Colors.grey[500],
+                                      size: 60,
+                                    ),
+                                  ),
+                          ),
+                        ),
+                        SizedBox(height: 24),
+                        // Car details with modern typography
+                        Container(
+                          padding: EdgeInsets.symmetric(horizontal: 20, vertical: 16),
+                          decoration: BoxDecoration(
+                            color: Colors.white,
+                            borderRadius: BorderRadius.circular(16),
+                            border: Border.all(color: Colors.grey[100]!),
+                            boxShadow: [
+                              BoxShadow(
+                                color: Colors.black.withOpacity(0.03),
+                                blurRadius: 10,
+                                offset: Offset(0, 4),
+                              ),
+                            ],
+                          ),
+                          child: Column(
+                            children: [
+                              Text(
+                                listing.carTitle,
+                                style: TextStyle(
+                                  fontSize: 22,
+                                  fontWeight: FontWeight.bold,
+                                  color: Colors.grey[900],
+                                  letterSpacing: 0.3,
+                                ),
+                                textAlign: TextAlign.center,
+                              ),
+                              SizedBox(height: 8),
+                              Container(
+                                padding: EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                                decoration: BoxDecoration(
+                                  gradient: LinearGradient(
+                                    colors: [Color(0xFFFF6B00), Color(0xFFFF8A50)],
+                                  ),
+                                  borderRadius: BorderRadius.circular(20),
+                                ),
+                                child: Text(
+                                  listing.formattedPrice,
+                                  style: TextStyle(
+                                    fontSize: 20,
+                                    color: Colors.white,
+                                    fontWeight: FontWeight.bold,
+                                    letterSpacing: 0.5,
+                                  ),
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                        SizedBox(height: 32),
+                        // Modern metrics section
+                        Text(
+                          'Performance Metrics',
+                          style: TextStyle(
+                            fontSize: 18,
+                            fontWeight: FontWeight.bold,
+                            color: Colors.grey[800],
+                            letterSpacing: 0.5,
+                          ),
+                        ),
+                        SizedBox(height: 20),
+                        // Modern metrics grid
+                        Container(
+                          padding: EdgeInsets.all(20),
+                          decoration: BoxDecoration(
+                            color: Colors.white,
+                            borderRadius: BorderRadius.circular(20),
+                            border: Border.all(color: Colors.grey[100]!),
+                            boxShadow: [
+                              BoxShadow(
+                                color: Colors.black.withOpacity(0.03),
+                                blurRadius: 15,
+                                offset: Offset(0, 5),
+                              ),
+                            ],
+                          ),
+                          child: Column(
+                            children: [
+                              // First row
+                              Row(
+                                children: [
+                                  Expanded(child: _buildModernMetricItem(Icons.visibility_outlined, '${listing.views}', 'Views', Color(0xFF4CAF50))),
+                                  SizedBox(width: 12),
+                                  Expanded(child: _buildModernMetricItem(Icons.message_outlined, '${listing.messages}', 'Messages', Color(0xFF2196F3))),
+                                ],
+                              ),
+                              SizedBox(height: 16),
+                              // Second row
+                              Row(
+                                children: [
+                                  Expanded(child: _buildModernMetricItem(Icons.phone_outlined, '${listing.calls}', 'Calls', Color(0xFF9C27B0))),
+                                  SizedBox(width: 12),
+                                  Expanded(child: _buildModernMetricItem(Icons.share_outlined, '${listing.shares}', 'Shares', Color(0xFFFF9800))),
+                                ],
+                              ),
+                              SizedBox(height: 16),
+                              // Third row
+                              Row(
+                                children: [
+                                  Expanded(child: _buildModernMetricItem(Icons.favorite_outline, '${listing.favorites}', 'Favorites', Color(0xFFE91E63))),
+                                  SizedBox(width: 12),
+                                  Expanded(child: _buildModernMetricItem(Icons.trending_up_outlined, '${listing.engagementRate.toStringAsFixed(1)}%', 'Engagement', Color(0xFF00BCD4))),
+                                ],
+                              ),
+                            ],
+                          ),
+                        ),
+                        SizedBox(height: 20),
+                      ],
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          ),
+        );
+      },
+    );
+  }
+
+  Widget _buildModernMetricItem(IconData icon, String value, String label, Color color) {
+    return Container(
+      padding: EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        gradient: LinearGradient(
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+          colors: [
+            color.withOpacity(0.1),
+            color.withOpacity(0.05),
+          ],
+        ),
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(
+          color: color.withOpacity(0.2),
+          width: 1,
+        ),
+      ),
+      child: Column(
+        children: [
+          Container(
+            padding: EdgeInsets.all(12),
+            decoration: BoxDecoration(
+              color: color.withOpacity(0.1),
+              borderRadius: BorderRadius.circular(12),
+            ),
+            child: Icon(
+              icon,
+              color: color,
+              size: 24,
+            ),
+          ),
+          SizedBox(height: 12),
+          Text(
+            value,
+            style: TextStyle(
+              fontSize: 20,
+              fontWeight: FontWeight.bold,
+              color: Colors.grey[900],
+              letterSpacing: 0.5,
+            ),
+          ),
+          SizedBox(height: 4),
+          Text(
+            label,
+            style: TextStyle(
+              fontSize: 12,
+              color: Colors.grey[600],
+              fontWeight: FontWeight.w500,
+              letterSpacing: 0.3,
+            ),
+            textAlign: TextAlign.center,
+          ),
+        ],
+      ),
     );
   }
 

@@ -246,6 +246,13 @@ class ListingAnalytics(db.Model):
     car = db.relationship('Car', backref='analytics')
     
     def to_dict(self):
+        # Get image URL using the same logic as the my_listings endpoint
+        def first_image_rel_path(car):
+            if car and car.images:
+                path = car.images[0].image_url or ''
+                return path[8:] if path.startswith('uploads/') else path
+            return (car.image_url or '').lstrip('/') if car else ''
+        
         return {
             'listing_id': self.car.public_id if self.car else str(self.car_id),
             'title': self.car.title if self.car else '',
@@ -253,7 +260,7 @@ class ListingAnalytics(db.Model):
             'model': self.car.model if self.car else '',
             'year': self.car.year if self.car else 0,
             'price': self.car.price if self.car else 0,
-            'image_url': self.car.images[0].image_url if self.car and self.car.images else None,
+            'image_url': first_image_rel_path(self.car),
             'views': self.views,
             'messages': self.messages,
             'calls': self.calls,

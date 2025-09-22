@@ -14,6 +14,15 @@ class AnalyticsService {
     return 'http://localhost:5000/api';
   }
 
+  static String get _imageBaseUrl {
+    try {
+      if (Platform.isAndroid) {
+        return 'http://10.0.2.2:5000';
+      }
+    } catch (_) {}
+    return 'http://localhost:5000';
+  }
+
   /// Get analytics for all user's listings
   static Future<List<ListingAnalytics>> getUserListingsAnalytics() async {
     try {
@@ -34,7 +43,16 @@ class AnalyticsService {
 
         if (response.statusCode == 200) {
           final List<dynamic> data = json.decode(response.body);
-          return data.map((json) => ListingAnalytics.fromJson(json)).toList();
+          return data.map((json) {
+            // Ensure image URLs are full URLs
+            if (json['image_url'] != null && json['image_url'].toString().isNotEmpty) {
+              final imageUrl = json['image_url'].toString();
+              if (!imageUrl.startsWith('http')) {
+                json['image_url'] = _imageBaseUrl + '/static/uploads/' + imageUrl;
+              }
+            }
+            return ListingAnalytics.fromJson(json);
+          }).toList();
         }
       } catch (e) {
         print('Analytics endpoint failed, falling back to my_listings: $e');
@@ -54,6 +72,13 @@ class AnalyticsService {
         
         // Convert listings to analytics format
         return listings.map((listing) {
+          // Construct full image URL if image_url exists
+          String? fullImageUrl;
+          final imageUrl = listing['image_url']?.toString();
+          if (imageUrl != null && imageUrl.isNotEmpty) {
+            fullImageUrl = _imageBaseUrl + '/static/uploads/' + imageUrl;
+          }
+          
           return ListingAnalytics(
             listingId: listing['id'].toString(),
             title: listing['title'] ?? '',
@@ -61,7 +86,7 @@ class AnalyticsService {
             model: listing['model'] ?? '',
             year: listing['year'] ?? 0,
             price: (listing['price'] ?? 0).toDouble(),
-            imageUrl: listing['image_url'],
+            imageUrl: fullImageUrl,
             views: 0, // Will be populated when analytics are tracked
             messages: 0,
             calls: 0,
