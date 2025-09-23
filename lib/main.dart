@@ -4658,7 +4658,7 @@ class _HomePageState extends State<HomePage> {
                                           padding: EdgeInsets.all(8),
                                           gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
                                             crossAxisCount: listingColumns,
-                                            childAspectRatio: listingColumns == 2 ? 0.8 : 1.4,
+                                            childAspectRatio: listingColumns == 2 ? 0.72 : 1.45, // Adjusted for slightly more height to prevent overlap
                                             crossAxisSpacing: 8,
                                             mainAxisSpacing: 8,
                                           ),
@@ -4687,10 +4687,19 @@ class _HomePageState extends State<HomePage> {
   Widget buildCarCard(Map car) {
     final brand = car['brand'] ?? '';
     final brandId = brandLogoFilenames[brand] ?? brand.toString().toLowerCase().replaceAll(' ', '-').replaceAll('é', 'e').replaceAll('ö', 'o');
-    return Card(
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
-      elevation: 8,
-      color: Colors.white.withOpacity(0.10),
+    return Container(
+      height: 185, // Fixed total height to match other cards
+      decoration: BoxDecoration(
+        color: Colors.white.withOpacity(0.10),
+        borderRadius: BorderRadius.circular(20),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withOpacity(0.2),
+            blurRadius: 8,
+            offset: Offset(0, 4),
+          ),
+        ],
+      ),
       child: Stack(
         children: [
           InkWell(
@@ -4705,10 +4714,11 @@ class _HomePageState extends State<HomePage> {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-            // Quick Sell Banner
+            // Quick Sell Banner (conditional height)
             if (car['is_quick_sell'] == true || car['is_quick_sell'] == 'true')
               Container(
                 width: double.infinity,
+                height: 35, // Fixed height for banner
                 padding: EdgeInsets.symmetric(vertical: 8, horizontal: 12),
                 decoration: BoxDecoration(
                   gradient: LinearGradient(
@@ -4735,77 +4745,96 @@ class _HomePageState extends State<HomePage> {
                   ],
                 ),
               ),
-            Expanded(
+            Container(
+              height: (car['is_quick_sell'] == true || car['is_quick_sell'] == 'true') ? 120 : 155, // Fixed image height (accounting for banner)
               child: ClipRRect(
                 borderRadius: BorderRadius.vertical(
                   top: (car['is_quick_sell'] == true || car['is_quick_sell'] == 'true') 
                     ? Radius.zero 
                     : Radius.circular(20),
-                  bottom: Radius.circular(20),
+                  bottom: Radius.zero,
                 ),
                 child: _buildCardImageCarousel(context, car),
               ),
             ),
-            Padding(
-              padding: const EdgeInsets.all(12.0),
+            Container(
+              height: 62, // Fixed height for grey area to accommodate title and price without overflow
+              padding: EdgeInsets.fromLTRB(12, 4, 12, 4),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                  Row(
-                    children: [
-                      if (car['brand'] != null && car['brand'].toString().isNotEmpty)
-                        SizedBox(
-                          width: 28,
-                          height: 28,
-                          child: Container(
-                            width: 28,
-                            height: 28,
-                            padding: EdgeInsets.all(4),
-                            decoration: BoxDecoration(
-                              color: Colors.white,
-                              borderRadius: BorderRadius.circular(8),
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                        Row(
+                          children: [
+                            if (car['brand'] != null && car['brand'].toString().isNotEmpty)
+                              SizedBox(
+                                width: 28,
+                                height: 28,
+                                child: Container(
+                                  width: 28,
+                                  height: 28,
+                                  padding: EdgeInsets.all(4),
+                                  decoration: BoxDecoration(
+                                    color: Colors.white,
+                                    borderRadius: BorderRadius.circular(8),
+                                  ),
+                                  child: CachedNetworkImage(
+                                    imageUrl: getApiBase() + '/static/images/brands/' + brandId + '.png',
+                                    placeholder: (context, url) => SizedBox(width: 24, height: 24, child: CircularProgressIndicator(strokeWidth: 2)),
+                                    errorWidget: (context, url, error) => Icon(Icons.directions_car, size: 20, color: Color(0xFFFF6B00)),
+                                    fit: BoxFit.contain,
+                                  ),
+                                ),
+                              ),
+                            SizedBox(width: 8),
+                            Expanded(
+                              child: Text(
+                                car['title'] ?? '',
+                                style: TextStyle(
+                                  fontWeight: FontWeight.bold,
+                                  color: Color(0xFFFF6B00),
+                                  fontSize: 14,
+                                  height: 1.1, // Reduced line height to fit better
+                                ),
+                                maxLines: 2, // Allow two lines for longer titles
+                                overflow: TextOverflow.ellipsis,
+                              ),
                             ),
-                            child: CachedNetworkImage(
-                              imageUrl: getApiBase() + '/static/images/brands/' + brandId + '.png',
-                              placeholder: (context, url) => SizedBox(width: 24, height: 24, child: CircularProgressIndicator(strokeWidth: 2)),
-                              errorWidget: (context, url, error) => Icon(Icons.directions_car, size: 20, color: Color(0xFFFF6B00)),
-                              fit: BoxFit.contain,
-                            ),
-                          ),
+                          ],
                         ),
-                      SizedBox(width: 8),
-                      Expanded(
-                        child: Text(
-                          car['title'] ?? '',
+                        SizedBox(height: 2),
+                        Text(
+                          _formatCurrencyGlobal(context, car['price']),
                           style: TextStyle(
-                            fontWeight: FontWeight.bold,
                             color: Color(0xFFFF6B00),
-                            fontSize: 16,
+                            fontWeight: FontWeight.w600,
+                            fontSize: 15,
                           ),
-                          overflow: TextOverflow.ellipsis,
                         ),
-                      ),
-                    ],
-                  ),
-                  SizedBox(height: 6),
-                  Text(
-                    _formatCurrencyGlobal(context, car['price']),
-                    style: TextStyle(
-                      color: Color(0xFFFF6B00),
-                      fontWeight: FontWeight.w600,
-                      fontSize: 15,
-                    ),
-                  ),
-                  SizedBox(height: 6),
-                  Text(
-                    '${_localizeDigitsGlobal(context, (car['year'] ?? '').toString())} • ${_localizeDigitsGlobal(context, (car['mileage'] ?? '').toString())} ${AppLocalizations.of(context)!.unit_km} • ${_translateValueGlobal(context, car['city']?.toString()) ?? (car['city'] ?? '')}',
-                    style: TextStyle(color: Colors.white70, fontSize: 13),
-                  ),
                 ],
               ),
             ),
           ],
         ),
+          ),
+          // Bottom info positioned relative to entire card - year and mileage above city
+          Positioned(
+            bottom: 22,
+            left: 12,
+            right: 12,
+            child: Text(
+              '${_localizeDigitsGlobal(context, (car['year'] ?? '').toString())} • ${_localizeDigitsGlobal(context, (car['mileage'] ?? '').toString())} ${AppLocalizations.of(context)!.unit_km}',
+              style: TextStyle(color: Colors.white70, fontSize: 13),
+            ),
+          ),
+          // City name at bottom left of entire card
+          Positioned(
+            bottom: 8,
+            left: 12,
+            child: Text(
+              '${_translateValueGlobal(context, car['city']?.toString()) ?? (car['city'] ?? '')}',
+              style: TextStyle(color: Colors.white70, fontSize: 13),
+            ),
           ),
           // Comparison Button
           // Removed banner comparison button to move it inside details page
@@ -4876,9 +4905,11 @@ class _HomePageState extends State<HomePage> {
                 bottom: 8,
                 left: 0,
                 right: 0,
-                child: Row(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  children: List.generate(urls.length, (i) {
+                child: SingleChildScrollView(
+                  scrollDirection: Axis.horizontal,
+                  child: Row(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: List.generate(urls.length, (i) {
                     final active = i == currentIndex;
                     return AnimatedContainer(
                       duration: Duration(milliseconds: 200),
@@ -4891,6 +4922,7 @@ class _HomePageState extends State<HomePage> {
                       ),
                     );
                   }),
+                  ),
                 ),
               ),
           ],
@@ -12622,9 +12654,9 @@ class _MyListingsPageState extends State<MyListingsPage> {
             child: GridView.builder(
               gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
                 crossAxisCount: 2,
-                childAspectRatio: 0.8,
                 crossAxisSpacing: 12,
                 mainAxisSpacing: 12,
+                childAspectRatio: 0.8, // Adjusted for fixed height cards (220px total height)
               ),
               itemCount: myListings.length,
               itemBuilder: (context, index) {
@@ -12655,6 +12687,7 @@ class _MyListingsPageState extends State<MyListingsPage> {
     final status = listing['status']?.toString() ?? 'active';
 
     return Container(
+      height: 220, // Fixed total height: 120px image + 100px grey area
       decoration: BoxDecoration(
         color: Colors.white,
         borderRadius: BorderRadius.circular(16),
@@ -12678,40 +12711,38 @@ class _MyListingsPageState extends State<MyListingsPage> {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Expanded(
-              flex: 3,
-              child: Container(
-                width: double.infinity,
-                decoration: BoxDecoration(
-                  borderRadius: BorderRadius.vertical(top: Radius.circular(16)),
-                  color: Colors.grey[200],
-                ),
-                child: ClipRRect(
-                  borderRadius: BorderRadius.vertical(top: Radius.circular(16)),
-                  child: imageUrl.isNotEmpty
-                      ? CachedNetworkImage(
-                          imageUrl: getApiBase() + '/static/uploads/' + imageUrl,
-                          fit: BoxFit.cover,
-                          placeholder: (_, __) => Container(color: Colors.white10),
-                          errorWidget: (_, __, ___) => Container(color: Colors.grey[300], child: Icon(Icons.directions_car, size: 48, color: Colors.grey[600])),
-                        )
-                      : Container(
-                          color: Colors.grey[300],
-                          child: Icon(
-                            Icons.directions_car,
-                            size: 48,
-                            color: Colors.grey[600],
-                          ),
+            Container(
+              height: 120, // Fixed smaller height for all images - never changes
+              width: double.infinity,
+              decoration: BoxDecoration(
+                borderRadius: BorderRadius.vertical(top: Radius.circular(16)),
+                color: Colors.grey[200],
+              ),
+              child: ClipRRect(
+                borderRadius: BorderRadius.vertical(top: Radius.circular(16)),
+                child: imageUrl.isNotEmpty
+                    ? CachedNetworkImage(
+                        imageUrl: getApiBase() + '/static/uploads/' + imageUrl,
+                        fit: BoxFit.cover,
+                        placeholder: (_, __) => Container(color: Colors.white10),
+                        errorWidget: (_, __, ___) => Container(color: Colors.grey[300], child: Icon(Icons.directions_car, size: 48, color: Colors.grey[600])),
+                      )
+                    : Container(
+                        color: Colors.grey[300],
+                        child: Icon(
+                          Icons.directions_car,
+                          size: 48,
+                          color: Colors.grey[600],
                         ),
-                ),
+                      ),
               ),
             ),
-            Expanded(
-              flex: 2,
-              child: Padding(
-                padding: EdgeInsets.all(12),
-                child: Column(
+            Container(
+              height: 100, // Fixed height for grey area to accommodate all possible text
+              padding: EdgeInsets.all(16), // Padding for grey area
+              child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
+                  mainAxisSize: MainAxisSize.max,
                   children: [
                     Text(
                       '${brand.replaceAll('-', ' ').split(' ').map((word) => word.isNotEmpty ? word[0].toUpperCase() + word.substring(1) : '').join(' ')} $model',
@@ -12719,51 +12750,42 @@ class _MyListingsPageState extends State<MyListingsPage> {
                         fontSize: 14,
                         fontWeight: FontWeight.bold,
                         color: Colors.grey[800],
+                        height: 1.2, // Line height for better readability
                       ),
-                      maxLines: 1,
+                      maxLines: 2, // Allow two lines for longer titles
                       overflow: TextOverflow.ellipsis,
                     ),
                     SizedBox(height: 4),
                     Text(
-                      year.isNotEmpty ? '$year' : 'Year N/A',
+                      price.isNotEmpty ? '\$${double.parse(price).toStringAsFixed(0)}' : 'Price N/A',
+                      style: TextStyle(
+                        fontSize: 16,
+                        fontWeight: FontWeight.bold,
+                        color: Color(0xFFFF6B00),
+                      ),
+                    ),
+                    SizedBox(height: 8),
+                    Text(
+                      '${year.isNotEmpty ? year : 'N/A'} • ${mileage.isNotEmpty ? mileage + ' km' : 'N/A'}',
                       style: TextStyle(
                         fontSize: 12,
                         color: Colors.grey[600],
                       ),
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
                     ),
-                    SizedBox(height: 4),
-                    Row(
-                      children: [
-                        Expanded(
-                          child: Text(
-                            price.isNotEmpty ? '\$${double.parse(price).toStringAsFixed(0)}' : 'Price N/A',
-                            style: TextStyle(
-                              fontSize: 14,
-                              fontWeight: FontWeight.bold,
-                              color: Color(0xFFFF6B00),
-                            ),
-                          ),
-                        ),
-                        Container(
-                          padding: EdgeInsets.symmetric(horizontal: 6, vertical: 2),
-                          decoration: BoxDecoration(
-                            color: status == 'active' ? Colors.green[100] : Colors.orange[100],
-                            borderRadius: BorderRadius.circular(4),
-                          ),
-                          child: Text(
-                            status.toUpperCase(),
-                            style: TextStyle(
-                              fontSize: 10,
-                              fontWeight: FontWeight.bold,
-                              color: status == 'active' ? Colors.green[800] : Colors.orange[800],
-                            ),
-                          ),
-                        ),
-                      ],
+                    SizedBox(height: 2),
+                    Text(
+                      '${listing['city']?.toString() ?? 'N/A'}',
+                      style: TextStyle(
+                        fontSize: 12,
+                        color: Colors.grey[600],
+                      ),
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
                     ),
                   ],
                 ),
-              ),
             ),
           ],
         ),
