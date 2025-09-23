@@ -264,7 +264,7 @@ class _AnalyticsPageState extends State<AnalyticsPage> {
           physics: NeverScrollableScrollPhysics(),
           gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
             crossAxisCount: 2,
-            childAspectRatio: 0.8,
+            childAspectRatio: 0.69, // Adjusted for fixed height cards (260px total height)
             crossAxisSpacing: 12,
             mainAxisSpacing: 12,
           ),
@@ -286,6 +286,7 @@ class _AnalyticsPageState extends State<AnalyticsPage> {
         _showAnalyticsModal(context, listing);
       },
       child: Container(
+        height: 260, // Fixed total height: 120px image + 140px grey area
         decoration: BoxDecoration(
           color: Colors.white,
           borderRadius: BorderRadius.circular(12),
@@ -305,17 +306,16 @@ class _AnalyticsPageState extends State<AnalyticsPage> {
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             // Car image
-            Expanded(
-              flex: 3,
-              child: Container(
-                width: double.infinity,
-                decoration: BoxDecoration(
-                  borderRadius: BorderRadius.vertical(top: Radius.circular(12)),
-                  color: Colors.grey[200],
-                ),
-                child: ClipRRect(
-                  borderRadius: BorderRadius.vertical(top: Radius.circular(12)),
-                  child: listing.imageUrl != null && listing.imageUrl!.isNotEmpty
+            Container(
+              height: 120, // Fixed smaller height for all images - never changes
+              width: double.infinity,
+              decoration: BoxDecoration(
+                borderRadius: BorderRadius.vertical(top: Radius.circular(12)),
+                color: Colors.grey[200],
+              ),
+              child: ClipRRect(
+                borderRadius: BorderRadius.vertical(top: Radius.circular(12)),
+                child: listing.imageUrl != null && listing.imageUrl!.isNotEmpty
                       ? Image.network(
                           listing.imageUrl!,
                           fit: BoxFit.cover,
@@ -354,16 +354,15 @@ class _AnalyticsPageState extends State<AnalyticsPage> {
                             size: 40,
                           ),
                         ),
-                ),
               ),
             ),
             // Car details
-            Expanded(
-              flex: 2,
-              child: Padding(
-                padding: EdgeInsets.all(12),
-                child: Column(
+            Container(
+              height: 140, // Fixed larger height for grey area to accommodate all possible text
+              padding: EdgeInsets.all(12),
+              child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
+                  mainAxisSize: MainAxisSize.max,
                   children: [
                     Text(
                       listing.carTitle,
@@ -371,9 +370,10 @@ class _AnalyticsPageState extends State<AnalyticsPage> {
                         fontSize: 14,
                         fontWeight: FontWeight.w600,
                         color: Colors.grey[800],
+                        height: 1.2, // Line height for better readability
                       ),
                       overflow: TextOverflow.ellipsis,
-                      maxLines: 1,
+                      maxLines: 2, // Allow two lines for longer titles
                     ),
                     SizedBox(height: 4),
                     Text(
@@ -384,11 +384,19 @@ class _AnalyticsPageState extends State<AnalyticsPage> {
                         fontWeight: FontWeight.bold,
                       ),
                     ),
-                    Spacer(),
+                    Spacer(), // Push year info to bottom of fixed grey area
+                    Text(
+                      '${listing.year} • Analytics',
+                      style: TextStyle(
+                        fontSize: 12,
+                        color: Colors.grey[600],
+                      ),
+                    ),
                     // Selection indicator
                     if (isSelected)
                       Container(
                         width: double.infinity,
+                        margin: EdgeInsets.only(top: 4),
                         padding: EdgeInsets.symmetric(vertical: 4),
                         decoration: BoxDecoration(
                           color: Color(0xFFFF6B00),
@@ -406,7 +414,6 @@ class _AnalyticsPageState extends State<AnalyticsPage> {
                       ),
                   ],
                 ),
-              ),
             ),
           ],
         ),

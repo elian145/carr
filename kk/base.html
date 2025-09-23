@@ -15,11 +15,16 @@
             object-fit: cover;
         }
         .car-card {
-            height: 100%;
-        }
-        .car-card .card-body {
+            height: 400px !important; /* Fixed height for all cards */
             display: flex;
             flex-direction: column;
+        }
+        .car-card .card-body {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            padding: 20px; /* Increased padding for more grey area */
+            min-height: 200px; /* Minimum height for grey area */
         }
         .car-card .card-text {
             flex-grow: 1;

@@ -38,17 +38,8 @@ DB_PATH = os.path.join(BASE_DIR, 'instance', 'cars.db')
 
 app = Flask(__name__)
 app.config['SECRET_KEY'] = 'your-secret-key'
-# Database configuration: prefer DATABASE_URL, then USE_POSTGRES, else fallback to SQLite
-db_url = os.environ.get('DATABASE_URL', '').strip()
-if not db_url and os.environ.get('USE_POSTGRES', '').lower() in ('true', '1', 'yes', 'on'):
-    pg_host = os.environ.get('POSTGRES_HOST', 'localhost')
-    pg_port = os.environ.get('POSTGRES_PORT', '5432')
-    pg_db = os.environ.get('POSTGRES_DB', 'car_listings')
-    pg_user = os.environ.get('POSTGRES_USER', 'postgres')
-    pg_password = os.environ.get('POSTGRES_PASSWORD', '')
-    db_url = f"postgresql+psycopg2://{pg_user}:{pg_password}@{pg_host}:{pg_port}/{pg_db}"
-if not db_url:
-    db_url = f'sqlite:///{DB_PATH}'
+# Database configuration: Force use of cars.db to avoid schema mismatch
+db_url = f'sqlite:///{DB_PATH}'
 app.config['SQLALCHEMY_DATABASE_URI'] = db_url
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 engine_opts = {
