@@ -6,6 +6,8 @@ class ListingAnalytics {
   final int year;
   final double price;
   final String? imageUrl;
+  final int? mileage;
+  final String? city;
   final int views;
   final int messages;
   final int calls;
@@ -22,6 +24,8 @@ class ListingAnalytics {
     required this.year,
     required this.price,
     this.imageUrl,
+    this.mileage,
+    this.city,
     required this.views,
     required this.messages,
     required this.calls,
@@ -32,6 +36,14 @@ class ListingAnalytics {
   });
 
   factory ListingAnalytics.fromJson(Map<String, dynamic> json) {
+    int? _parseMileage(dynamic v) {
+      if (v == null) return null;
+      if (v is int) return v;
+      if (v is double) return v.toInt();
+      final s = v.toString().replaceAll(RegExp(r'[^0-9]'), '');
+      if (s.isEmpty) return null;
+      return int.tryParse(s);
+    }
     return ListingAnalytics(
       listingId: json['listing_id'] ?? json['id'] ?? '',
       title: json['title'] ?? '',
@@ -40,6 +52,8 @@ class ListingAnalytics {
       year: json['year'] ?? 0,
       price: (json['price'] ?? 0).toDouble(),
       imageUrl: json['image_url'],
+      mileage: _parseMileage(json['mileage'] ?? json['odometer'] ?? json['miles']),
+      city: json['city'] ?? json['location'],
       views: json['views'] ?? 0,
       messages: json['messages'] ?? 0,
       calls: json['calls'] ?? 0,
@@ -59,6 +73,8 @@ class ListingAnalytics {
       'year': year,
       'price': price,
       'image_url': imageUrl,
+      'mileage': mileage,
+      'city': city,
       'views': views,
       'messages': messages,
       'calls': calls,
