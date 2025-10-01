@@ -14,6 +14,11 @@ workflows:
       - name: Get Flutter packages
         script: |
           flutter packages pub get
+      - name: Bootstrap iOS build settings
+        script: |
+          flutter pub get
+          flutter precache --ios
+          flutter build ios --release --no-codesign
       - name: Install CocoaPods dependencies
         script: |
           cd ios && pod install
