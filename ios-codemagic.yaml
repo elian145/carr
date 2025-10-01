@@ -6,22 +6,17 @@ workflows:
       flutter: stable
       xcode: latest
       cocoapods: default
-      vars:
-        # Add your Firebase and other environment variables here
-        # FIREBASE_PROJECT_ID: your-project-id
-        # FIREBASE_APP_ID: your-app-id
+      vars: {}
     scripts:
       - name: Set up keychain to be used for codesigning
         script: |
           keychain initialize
-      - name: Set up signing certificate
+      - name: Fetch Ad Hoc signing files
         script: |
-          # Add your certificate setup here
-          # app-store-connect fetch-signing-files "com.example.carListingApp" --type IOS_APP_STORE --create
-      - name: Set up provisioning profile
+          app-store-connect fetch-signing-files "com.carzo.app" --type IOS_ADHOC --create
+      - name: Use signing profiles
         script: |
-          # Add your provisioning profile setup here
-          # app-store-connect fetch-signing-files "com.example.carListingApp" --type IOS_APP_STORE --create
+          xcode-project use-profiles
       - name: Install Flutter dependencies
         script: |
           flutter packages pub get
@@ -37,7 +32,7 @@ workflows:
       - name: Build iOS app
         script: |
           flutter build ios --release
-      - name: Build iOS IPA
+      - name: Build iOS IPA (Ad Hoc)
         script: |
           flutter build ipa --export-options-plist ios/ExportOptions.plist
     artifacts:
@@ -45,10 +40,6 @@ workflows:
       - /tmp/xcodebuild_logs/*.log
       - flutter_drive.log
     publishing:
-      app_store_connect:
-        auth: integration
-        submit_to_testflight: true
-        submit_to_app_store: false
       email:
         recipients:
           - your-email@example.com

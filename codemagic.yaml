@@ -6,12 +6,7 @@ workflows:
       flutter: stable
       xcode: latest
       cocoapods: default
-      vars:
-        # Add your environment variables here
-        # APP_STORE_CONNECT_ISSUER_ID: Encrypted(...)
-        # APP_STORE_CONNECT_KEY_IDENTIFIER: Encrypted(...)
-        # APP_STORE_CONNECT_PRIVATE_KEY: Encrypted(...)
-        # CERTIFICATE_PRIVATE_KEY: Encrypted(...)
+      vars: {}
     scripts:
       - name: Set up local.properties
         script: |
