@@ -19,10 +19,12 @@ workflows:
           xcode-project use-profiles
       - name: Install Flutter dependencies
         script: |
-          flutter packages pub get
-      - name: Install CocoaPods dependencies
+          flutter pub get
+      - name: Bootstrap iOS build settings
         script: |
-          cd ios && pod install --repo-update
+          flutter precache --ios
+          # Ensure Generated.xcconfig exists by invoking a config-only iOS build
+          flutter build ios --release --no-codesign
       - name: Flutter analyze
         script: |
           flutter analyze
