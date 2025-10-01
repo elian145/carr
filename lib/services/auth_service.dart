@@ -122,7 +122,7 @@ class AuthService extends ChangeNotifier {
     
     try {
       await ApiService.logout();
-      await WebSocketService.disconnect();
+      WebSocketService.disconnect();
     } catch (e) {
       print('Logout error: $e');
     } finally {
