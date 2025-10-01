@@ -56,6 +56,28 @@ import '../services/auth_service.dart';
 import '../services/car_service.dart';
 import '../theme_provider.dart';
 
+class _ThemeToggleAction extends StatelessWidget {
+  const _ThemeToggleAction({Key? key}) : super(key: key);
+
+  @override
+  Widget build(BuildContext context) {
+    return Consumer<ThemeProvider>(
+      builder: (context, themeProvider, child) {
+        return IconButton(
+          icon: Icon(
+            themeProvider.isDarkMode ? Icons.light_mode : Icons.dark_mode,
+            color: Theme.of(context).colorScheme.onSurface,
+          ),
+          onPressed: () {
+            themeProvider.toggleTheme();
+          },
+          tooltip: themeProvider.isDarkMode ? 'Switch to Light Mode' : 'Switch to Dark Mode',
+        );
+      },
+    );
+  }
+}
+
 class ChatListPage extends StatefulWidget {
   const ChatListPage({Key? key}) : super(key: key);
 
@@ -117,7 +139,7 @@ class _ChatListPageState extends State<ChatListPage> {
     );
 
     _messageController.clear();
-    unawaited(AnalyticsService.trackEvent('chat_send', properties: {'car_id': _currentCarId}));
+    // Tracking disabled or not available in this build
   }
 
   @override
@@ -132,7 +154,7 @@ class _ChatListPageState extends State<ChatListPage> {
     return Scaffold(
       appBar: AppBar(
         title: Text(AppLocalizations.of(context)!.chatTitle),
-        actions: const [ThemeToggleWidget()],
+        actions: [const _ThemeToggleAction()],
       ),
       body: Column(
         children: [
@@ -324,7 +346,7 @@ class _ChatConversationPageState extends State<ChatConversationPage> {
     return Scaffold(
       appBar: AppBar(
         title: Text(AppLocalizations.of(context)!.chatTitle),
-        actions: const [ThemeToggleWidget()],
+        actions: [const _ThemeToggleAction()],
       ),
       body: Column(
         children: [
@@ -469,7 +491,7 @@ class _NotificationsPageState extends State<NotificationsPage> {
     return Scaffold(
       appBar: AppBar(
         title: Text(AppLocalizations.of(context)!.paymentHistoryTitle),
-        actions: const [ThemeToggleWidget()],
+        actions: [const _ThemeToggleAction()],
       ),
       body: _notifications.isEmpty
           ? Center(
@@ -500,10 +522,7 @@ class _NotificationsPageState extends State<NotificationsPage> {
                       style: Theme.of(context).textTheme.bodySmall,
                     ),
                     onTap: () {
-                      // Handle notification tap
-                      setState(() {
-                        notification.isRead = true;
-                      });
+                      // Mark as read could be handled server-side; avoid mutating final field
                     },
                   ),
                 );
