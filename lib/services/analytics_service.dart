@@ -72,6 +72,14 @@ class AnalyticsService {
         
         // Convert listings to analytics format
         return listings.map((listing) {
+          int? _parseMileage(dynamic v) {
+            if (v == null) return null;
+            if (v is int) return v;
+            if (v is double) return v.toInt();
+            final s = v.toString().replaceAll(RegExp(r'[^0-9]'), '');
+            if (s.isEmpty) return null;
+            return int.tryParse(s);
+          }
           // Construct full image URL if image_url exists
           String? fullImageUrl;
           final imageUrl = listing['image_url']?.toString();
@@ -87,6 +95,8 @@ class AnalyticsService {
             year: listing['year'] ?? 0,
             price: (listing['price'] ?? 0).toDouble(),
             imageUrl: fullImageUrl,
+            mileage: _parseMileage(listing['mileage'] ?? listing['odometer'] ?? listing['miles']),
+            city: listing['city']?.toString() ?? listing['location']?.toString(),
             views: 0, // Will be populated when analytics are tracked
             messages: 0,
             calls: 0,

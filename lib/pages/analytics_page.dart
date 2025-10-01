@@ -21,8 +21,8 @@ class _AnalyticsPageState extends State<AnalyticsPage> {
   String? _error;
   AnalyticsSummary? _summary;
   
-  // Currency symbol getter
-  String get symbol => '\$';
+  // Currency symbol getter (match Home page)
+  String _currencySymbol(BuildContext context) => AppLocalizations.of(context)!.currencySymbol;
 
   // Brand logo filenames map (copied from main.dart)
   final Map<String, String> brandLogoFilenames = {
@@ -169,6 +169,7 @@ class _AnalyticsPageState extends State<AnalyticsPage> {
   }
 
   String _formatCurrencyGlobal(BuildContext context, dynamic raw) {
+    final symbol = _currencySymbol(context);
     num? value;
     if (raw is num) {
       value = raw;
@@ -201,6 +202,23 @@ class _AnalyticsPageState extends State<AnalyticsPage> {
       case 'fwd': return loc.value_drive_fwd;
       case 'rwd': return loc.value_drive_rwd;
       case 'awd': return loc.value_drive_awd;
+      // Cities (match Home page mapping)
+      case 'baghdad': return loc.city_baghdad;
+      case 'basra': return loc.city_basra;
+      case 'erbil': return loc.city_erbil;
+      case 'najaf': return loc.city_najaf;
+      case 'karbala': return loc.city_karbala;
+      case 'kirkuk': return loc.city_kirkuk;
+      case 'mosul': return loc.city_mosul;
+      case 'sulaymaniyah': return loc.city_sulaymaniyah;
+      case 'dohuk': return loc.city_dohuk;
+      case 'anbar': return loc.city_anbar;
+      case 'halabja': return loc.city_halabja;
+      case 'diyala': return loc.city_diyala;
+      case 'dhi qar': return loc.city_dhi_qar;
+      case 'maysan': return loc.city_maysan;
+      case 'muthanna': return loc.city_muthanna;
+      case 'salaheldeen': return loc.city_salaheldeen;
       default: return raw;
     }
   }
@@ -296,18 +314,16 @@ class _AnalyticsPageState extends State<AnalyticsPage> {
     }
 
     return SingleChildScrollView(
-      padding: EdgeInsets.all(16),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          // Summary Card
-          if (_summary != null) _buildSummaryCard(),
-          SizedBox(height: 24),
-
-          // Listing Selection
+          if (_summary != null)
+            Padding(
+              padding: EdgeInsets.all(16),
+              child: _buildSummaryCard(),
+            ),
           _buildListingSelection(),
-          SizedBox(height: 24),
-
+          SizedBox(height: 16),
         ],
       ),
     );
@@ -447,35 +463,21 @@ class _AnalyticsPageState extends State<AnalyticsPage> {
   }
 
   Widget _buildListingSelection() {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Text(
-          'Select a Listing',
-          style: TextStyle(
-            fontSize: 18,
-            fontWeight: FontWeight.bold,
-            color: Colors.grey[800],
-          ),
-        ),
-        SizedBox(height: 16),
-        GridView.builder(
-          padding: EdgeInsets.all(8), // Same padding as home page
-          shrinkWrap: true,
-          physics: NeverScrollableScrollPhysics(),
-          gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
-            crossAxisCount: 2,
-            childAspectRatio: 0.65, // Same aspect ratio as home page
-            crossAxisSpacing: 8, // Same spacing as home page
-            mainAxisSpacing: 8, // Same spacing as home page
-          ),
-          itemCount: _listings.length,
-          itemBuilder: (context, index) {
-            final listing = _listings[index];
-            return _buildListingCard(listing);
-          },
-        ),
-      ],
+    return GridView.builder(
+      padding: EdgeInsets.all(8), // Same padding as home page
+      shrinkWrap: true,
+      physics: NeverScrollableScrollPhysics(),
+      gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
+        crossAxisCount: 2,
+        childAspectRatio: 0.65, // Same aspect ratio as home page
+        crossAxisSpacing: 8, // Same spacing as home page
+        mainAxisSpacing: 8, // Same spacing as home page
+      ),
+      itemCount: _listings.length,
+      itemBuilder: (context, index) {
+        final listing = _listings[index];
+        return _buildListingCard(listing);
+      },
     );
   }
 
@@ -498,35 +500,27 @@ class _AnalyticsPageState extends State<AnalyticsPage> {
       displayTitle = yearStr.isNotEmpty ? (base + ' (' + yearStr + ')') : base;
     }
 
+    final num? _mileageNum = listing.mileage;
+    final String _mileageFormatted = _mileageNum == null
+        ? ''
+        : _decimalFormatterGlobal(context).format(_mileageNum);
+
     final car = {
       'id': listing.listingId,
       'brand': brand,
       'title': displayTitle,
       'price': listing.price,
       'year': listing.year,
-      'mileage': listing.mileage ?? 0,
+      'mileage': _mileageFormatted,
       'city': listing.city ?? '',
       'image_url': listing.imageUrl?.replaceFirst(getApiBase() + '/static/uploads/', '') ?? '',
       'images': [],
       'is_quick_sell': false,
     };
     
-    // DUPLICATE the exact Home page card design (not shared component)
+    // Pass selection state into the card and draw border inside to avoid layout shift
+    car['selected'] = isSelected;
     Widget cardWidget = _buildAnalyticsCarCard(context, car);
-    
-    // Add selection border for analytics if selected
-    if (isSelected) {
-      cardWidget = Container(
-        decoration: BoxDecoration(
-          borderRadius: BorderRadius.circular(20),
-          border: Border.all(
-            color: Color(0xFFFF6B00),
-            width: 2,
-          ),
-        ),
-        child: cardWidget,
-      );
-    }
     
     // Override tap behavior for analytics modal
     return GestureDetector(
@@ -695,6 +689,18 @@ class _AnalyticsPageState extends State<AnalyticsPage> {
               style: TextStyle(color: Colors.white70, fontSize: 13),
             ),
           ),
+          // Selection border drawn inside so size matches Home exactly
+          if (car['selected'] == true)
+            Positioned.fill(
+              child: IgnorePointer(
+                child: Container(
+                  decoration: BoxDecoration(
+                    borderRadius: BorderRadius.circular(20),
+                    border: Border.all(color: Color(0xFFFF6B00), width: 2),
+                  ),
+                ),
+              ),
+            ),
         ],
       ),
     );

@@ -725,23 +725,25 @@ Widget _buildGlobalCardImageCarousel(BuildContext context, Map car) {
               bottom: 8,
               left: 0,
               right: 0,
-              child: SingleChildScrollView(
-                scrollDirection: Axis.horizontal,
-                child: Row(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  children: List.generate(urls.length, (i) {
-                  final active = i == currentIndex;
-                  return AnimatedContainer(
-                    duration: Duration(milliseconds: 200),
-                    margin: EdgeInsets.symmetric(horizontal: 3),
-                    width: active ? 8 : 6,
-                    height: active ? 8 : 6,
-                    decoration: BoxDecoration(
-                      color: active ? Colors.white : Colors.white70,
-                      shape: BoxShape.circle,
-                    ),
-                  );
-                }),
+              child: Center(
+                child: SingleChildScrollView(
+                  scrollDirection: Axis.horizontal,
+                  child: Row(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: List.generate(urls.length, (i) {
+                    final active = i == currentIndex;
+                    return AnimatedContainer(
+                      duration: Duration(milliseconds: 200),
+                      margin: EdgeInsets.symmetric(horizontal: 3),
+                      width: active ? 8 : 6,
+                      height: active ? 8 : 6,
+                      decoration: BoxDecoration(
+                        color: active ? Colors.white : Colors.white70,
+                        shape: BoxShape.circle,
+                      ),
+                    );
+                  }),
+                  ),
                 ),
               ),
             ),
@@ -4991,23 +4993,25 @@ class _HomePageState extends State<HomePage> {
                 bottom: 8,
                 left: 0,
                 right: 0,
-                child: SingleChildScrollView(
-                  scrollDirection: Axis.horizontal,
-                  child: Row(
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    children: List.generate(urls.length, (i) {
-                    final active = i == currentIndex;
-                    return AnimatedContainer(
-                      duration: Duration(milliseconds: 200),
-                      margin: EdgeInsets.symmetric(horizontal: 3),
-                      width: active ? 8 : 6,
-                      height: active ? 8 : 6,
-                      decoration: BoxDecoration(
-                        color: active ? Colors.white : Colors.white70,
-                        shape: BoxShape.circle,
-                      ),
-                    );
-                  }),
+                child: Center(
+                  child: SingleChildScrollView(
+                    scrollDirection: Axis.horizontal,
+                    child: Row(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: List.generate(urls.length, (i) {
+                      final active = i == currentIndex;
+                      return AnimatedContainer(
+                        duration: Duration(milliseconds: 200),
+                        margin: EdgeInsets.symmetric(horizontal: 3),
+                        width: active ? 8 : 6,
+                        height: active ? 8 : 6,
+                        decoration: BoxDecoration(
+                          color: active ? Colors.white : Colors.white70,
+                          shape: BoxShape.circle,
+                        ),
+                      );
+                    }),
+                    ),
                   ),
                 ),
               ),
@@ -6146,29 +6150,31 @@ class _CarDetailsPageState extends State<CarDetailsPage> {
                             ),
                             if (_imageUrls.length > 1)
                               Positioned(
-                                bottom: 72,
+                                bottom: 16,
                                 left: 0,
                                 right: 0,
                                 child: IgnorePointer(
                                   ignoring: true,
-                                  child: SingleChildScrollView(
-                                    scrollDirection: Axis.horizontal,
-                                    physics: BouncingScrollPhysics(),
-                                  child: Row(
-                                    mainAxisAlignment: MainAxisAlignment.center,
-                                    children: List.generate(_imageUrls.length, (i) {
-                                      final bool active = i == _currentImageIndex;
-                                      return AnimatedContainer(
-                                        duration: Duration(milliseconds: 200),
-                                        margin: EdgeInsets.symmetric(horizontal: 4),
-                                        width: active ? 10 : 6,
-                                        height: active ? 10 : 6,
-                                        decoration: BoxDecoration(
-                                          color: active ? Colors.white : Colors.white70,
-                                          shape: BoxShape.circle,
-                                        ),
-                                      );
-                                    }),
+                                  child: Center(
+                                    child: SingleChildScrollView(
+                                      scrollDirection: Axis.horizontal,
+                                      physics: BouncingScrollPhysics(),
+                                      child: Row(
+                                        mainAxisAlignment: MainAxisAlignment.center,
+                                        children: List.generate(_imageUrls.length, (i) {
+                                          final bool active = i == _currentImageIndex;
+                                          return AnimatedContainer(
+                                            duration: Duration(milliseconds: 200),
+                                            margin: EdgeInsets.symmetric(horizontal: 4),
+                                            width: active ? 10 : 6,
+                                            height: active ? 10 : 6,
+                                            decoration: BoxDecoration(
+                                              color: active ? Colors.white : Colors.white70,
+                                              shape: BoxShape.circle,
+                                            ),
+                                          );
+                                        }),
+                                      ),
                                     ),
                                   ),
                                 ),
@@ -12689,11 +12695,11 @@ class _MyListingsPageState extends State<MyListingsPage> {
   }
 
   Widget _buildListingsGrid() {
-    return Padding(
-      padding: EdgeInsets.all(16),
-      child: Column(
-        children: [
-          Container(
+    return Column(
+      children: [
+        Padding(
+          padding: EdgeInsets.all(16),
+          child: Container(
             padding: EdgeInsets.all(16),
             decoration: BoxDecoration(
               color: Colors.white,
@@ -12735,25 +12741,25 @@ class _MyListingsPageState extends State<MyListingsPage> {
               ],
             ),
           ),
-          SizedBox(height: 16),
-          Expanded(
-            child: GridView.builder(
-              padding: EdgeInsets.all(8), // Same padding as home page
-              gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
-                crossAxisCount: 2,
-                crossAxisSpacing: 8, // Same spacing as home page
-                mainAxisSpacing: 8, // Same spacing as home page
-                childAspectRatio: 0.65, // Same aspect ratio as home page
-              ),
-              itemCount: myListings.length,
-              itemBuilder: (context, index) {
-                final listing = myListings[index];
-                return _buildListingCard(listing);
-              },
+        ),
+        SizedBox(height: 0),
+        Expanded(
+          child: GridView.builder(
+            padding: EdgeInsets.all(8),
+            gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
+              crossAxisCount: 2,
+              crossAxisSpacing: 8,
+              mainAxisSpacing: 8,
+              childAspectRatio: 0.65,
             ),
+            itemCount: myListings.length,
+            itemBuilder: (context, index) {
+              final listing = myListings[index];
+              return _buildListingCard(listing);
+            },
           ),
-        ],
-      ),
+        ),
+      ],
     );
   }
   Widget _buildListingCard(Map<String, dynamic> listing) {
@@ -12774,13 +12780,24 @@ class _MyListingsPageState extends State<MyListingsPage> {
       displayTitle = yearStr.isNotEmpty ? (base + ' (' + yearStr + ')') : base;
     }
 
+    final num? _mileageNum = () {
+      final v = listing['mileage'];
+      if (v == null) return null;
+      if (v is num) return v;
+      final s = v.toString().replaceAll(RegExp(r'[^0-9.-]'), '');
+      return num.tryParse(s);
+    }();
+    final String _mileageFormatted = _mileageNum == null
+        ? (listing['mileage']?.toString() ?? '')
+        : _decimalFormatterGlobal(context).format(_mileageNum);
+
     final car = {
       'id': listing['id'],
       'brand': brand,
       'title': displayTitle,
       'price': listing['price'],
       'year': listing['year'],
-      'mileage': listing['mileage'],
+      'mileage': _mileageFormatted,
       'city': listing['city'],
       'image_url': listing['image_url'],
       'images': listing['images'],
