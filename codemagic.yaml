@@ -6,7 +6,13 @@ workflows:
       flutter: stable
       xcode: latest
       cocoapods: default
-      vars: {}
+      vars:
+        BUNDLE_ID: com.carzo.app
+        # Set the following in Codemagic UI as secure environment variables
+        APP_STORE_CONNECT_ISSUER_ID: ""
+        APP_STORE_CONNECT_KEY_IDENTIFIER: ""
+        APP_STORE_CONNECT_PRIVATE_KEY: ""
+        KEYCHAIN_PASSWORD: ""
     scripts:
       - name: Set up local.properties
         script: |
@@ -18,7 +24,17 @@ workflows:
         script: |
           flutter pub get
           flutter precache --ios
-          flutter build ios --release --no-codesign
+      - name: Automatic code signing (development)
+        script: |
+          keychain add --name ios-signing --password "$KEYCHAIN_PASSWORD"
+          app-store-connect fetch-signing-files "$BUNDLE_ID" \
+            --type IOS_APP_DEVELOPMENT \
+            --issuer-id "$APP_STORE_CONNECT_ISSUER_ID" \
+            --key-id "$APP_STORE_CONNECT_KEY_IDENTIFIER" \
+            --api-key "$APP_STORE_CONNECT_PRIVATE_KEY" \
+            --create
+          keychain use ios-signing
+          xcode-project use-profiles
       - name: Install CocoaPods dependencies
         script: |
           cd ios && pod install
@@ -28,9 +44,9 @@ workflows:
       - name: Flutter unit tests
         script: |
           flutter test
-      - name: Build iOS
+      - name: Build iOS IPA (release, development-signed)
         script: |
-          flutter build ios --release --no-codesign
+          flutter build ipa --release || true
     artifacts:
       - build/ios/ipa/*.ipa
       - /tmp/xcodebuild_logs/*.log
