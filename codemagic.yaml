@@ -8,11 +8,8 @@ workflows:
       cocoapods: default
       vars:
         BUNDLE_ID: com.carzo.app
-        # Set the following in Codemagic UI as secure environment variables
-        APP_STORE_CONNECT_ISSUER_ID: ""
-        APP_STORE_CONNECT_KEY_IDENTIFIER: ""
-        APP_STORE_CONNECT_PRIVATE_KEY: ""
-        KEYCHAIN_PASSWORD: ""
+      groups:
+        - app_store_connect
     scripts:
       - name: Set up local.properties
         script: |
