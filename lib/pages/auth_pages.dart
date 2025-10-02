@@ -3,9 +3,7 @@ import 'package:flutter/foundation.dart';
 import 'package:flutter/services.dart';
 import 'package:provider/provider.dart';
 import '../services/auth_service.dart';
-import '../services/car_service.dart';
-import '../services/websocket_service.dart';
-import '../theme_provider.dart';
+// Removed unused imports
 import '../l10n/app_localizations.dart';
 import '../services/api_service.dart';
 import '../widgets/theme_toggle_widget.dart';
@@ -66,10 +64,7 @@ String _alreadyHaveAccount(BuildContext context) {
   if (c == 'ku') return 'هەژمارت هەیە؟ ';
   return 'Already have an account? ';
 }
-String _createAccountTitle(BuildContext context) {
-  final loc = AppLocalizations.of(context)!;
-  return loc.createAccount;
-}
+// Removed unused helper _createAccountTitle
 String _firstNameLabel(BuildContext context) {
   final c = _lang(context);
   if (c == 'ar') return 'الاسم الأول';

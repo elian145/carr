@@ -4,7 +4,7 @@ import 'package:provider/provider.dart';
 import '../theme_provider.dart';
 
 class ThemeToggleWidget extends StatelessWidget {
-  const ThemeToggleWidget({Key? key}) : super(key: key);
+  const ThemeToggleWidget({super.key});
 
   @override
   Widget build(BuildContext context) {

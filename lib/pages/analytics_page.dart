@@ -383,7 +383,7 @@ class _AnalyticsPageState extends State<AnalyticsPage> {
         borderRadius: BorderRadius.circular(16),
         boxShadow: [
           BoxShadow(
-            color: Color(0xFFFF6B00).withOpacity(0.3),
+            color: Color(0xFFFF6B00).withValues(alpha: 0.3),
             blurRadius: 10,
             offset: Offset(0, 5),
           ),
@@ -539,11 +539,11 @@ class _AnalyticsPageState extends State<AnalyticsPage> {
     return Container(
       height: 205, // Standard height for all car cards
       decoration: BoxDecoration(
-        color: Colors.white.withOpacity(0.10),
+        color: Colors.white.withValues(alpha: 0.10),
         borderRadius: BorderRadius.circular(20),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.2),
+            color: Colors.black.withValues(alpha: 0.2),
             blurRadius: 8,
             offset: Offset(0, 4),
           ),
@@ -834,12 +834,12 @@ class _AnalyticsPageState extends State<AnalyticsPage> {
               ),
               boxShadow: [
                 BoxShadow(
-                  color: Colors.black.withOpacity(0.1),
+                  color: Colors.black.withValues(alpha: 0.1),
                   blurRadius: 30,
                   offset: Offset(0, 10),
                 ),
                 BoxShadow(
-                  color: Colors.black.withOpacity(0.05),
+                  color: Colors.black.withValues(alpha: 0.05),
                   blurRadius: 60,
                   offset: Offset(0, 20),
                 ),
@@ -866,7 +866,7 @@ class _AnalyticsPageState extends State<AnalyticsPage> {
                       Container(
                         padding: EdgeInsets.all(8),
                         decoration: BoxDecoration(
-                          color: Colors.white.withOpacity(0.2),
+                          color: Colors.white.withValues(alpha: 0.2),
                           borderRadius: BorderRadius.circular(12),
                         ),
                         child: Icon(
@@ -892,7 +892,7 @@ class _AnalyticsPageState extends State<AnalyticsPage> {
                             Text(
                               'Performance insights',
                               style: TextStyle(
-                                color: Colors.white.withOpacity(0.9),
+                                color: Colors.white.withValues(alpha: 0.9),
                                 fontSize: 14,
                                 fontWeight: FontWeight.w400,
                               ),
@@ -905,7 +905,7 @@ class _AnalyticsPageState extends State<AnalyticsPage> {
                         child: Container(
                           padding: EdgeInsets.all(8),
                           decoration: BoxDecoration(
-                            color: Colors.white.withOpacity(0.2),
+                            color: Colors.white.withValues(alpha: 0.2),
                             borderRadius: BorderRadius.circular(12),
                           ),
                           child: Icon(
@@ -932,7 +932,7 @@ class _AnalyticsPageState extends State<AnalyticsPage> {
                             borderRadius: BorderRadius.circular(20),
                             boxShadow: [
                               BoxShadow(
-                                color: Color(0xFFFF6B00).withOpacity(0.2),
+                                color: Color(0xFFFF6B00).withValues(alpha: 0.2),
                                 blurRadius: 20,
                                 offset: Offset(0, 8),
                               ),
@@ -983,7 +983,7 @@ class _AnalyticsPageState extends State<AnalyticsPage> {
                             border: Border.all(color: Colors.grey[100]!),
                             boxShadow: [
                               BoxShadow(
-                                color: Colors.black.withOpacity(0.03),
+                                color: Colors.black.withValues(alpha: 0.03),
                                 blurRadius: 10,
                                 offset: Offset(0, 4),
                               ),
@@ -1025,15 +1025,15 @@ class _AnalyticsPageState extends State<AnalyticsPage> {
                         ),
                         SizedBox(height: 32),
                         // Modern metrics section
-                        Text(
-                          'Performance Metrics',
-                          style: TextStyle(
-                            fontSize: 18,
-                            fontWeight: FontWeight.bold,
-                            color: Colors.grey[800],
-                            letterSpacing: 0.5,
-                          ),
-                        ),
+                              Text(
+                                'Performance Metrics',
+                                style: TextStyle(
+                                  fontSize: 18,
+                                  fontWeight: FontWeight.bold,
+                                  color: Colors.grey[800],
+                                  letterSpacing: 0.5,
+                                ),
+                              ),
                         SizedBox(height: 20),
                         // Modern metrics grid
                         Container(
@@ -1102,13 +1102,13 @@ class _AnalyticsPageState extends State<AnalyticsPage> {
           begin: Alignment.topLeft,
           end: Alignment.bottomRight,
           colors: [
-            color.withOpacity(0.1),
-            color.withOpacity(0.05),
+            color.withValues(alpha: 0.1),
+            color.withValues(alpha: 0.05),
           ],
         ),
         borderRadius: BorderRadius.circular(16),
         border: Border.all(
-          color: color.withOpacity(0.2),
+          color: color.withValues(alpha: 0.2),
           width: 1,
         ),
       ),
@@ -1117,7 +1117,7 @@ class _AnalyticsPageState extends State<AnalyticsPage> {
           Container(
             padding: EdgeInsets.all(12),
             decoration: BoxDecoration(
-              color: color.withOpacity(0.1),
+              color: color.withValues(alpha: 0.1),
               borderRadius: BorderRadius.circular(12),
             ),
             child: Icon(
@@ -1163,7 +1163,7 @@ class _AnalyticsPageState extends State<AnalyticsPage> {
         borderRadius: BorderRadius.circular(16),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.05),
+            color: Colors.black.withValues(alpha: 0.05),
             blurRadius: 10,
             offset: Offset(0, 5),
           ),
@@ -1178,7 +1178,7 @@ class _AnalyticsPageState extends State<AnalyticsPage> {
                 width: 60,
                 height: 60,
                 decoration: BoxDecoration(
-                  color: Color(0xFFFF6B00).withOpacity(0.1),
+                  color: Color(0xFFFF6B00).withValues(alpha: 0.1),
                   borderRadius: BorderRadius.circular(8),
                 ),
                 child: Icon(
@@ -1239,7 +1239,7 @@ class _AnalyticsPageState extends State<AnalyticsPage> {
             width: double.infinity,
             padding: EdgeInsets.all(16),
             decoration: BoxDecoration(
-              color: Color(0xFFFF6B00).withOpacity(0.1),
+              color: Color(0xFFFF6B00).withValues(alpha: 0.1),
               borderRadius: BorderRadius.circular(8),
             ),
             child: Column(
