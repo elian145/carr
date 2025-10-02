@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/foundation.dart';
+import 'package:flutter/services.dart';
 import 'package:provider/provider.dart';
 import '../services/auth_service.dart';
 import '../services/car_service.dart';
@@ -7,6 +8,7 @@ import '../services/websocket_service.dart';
 import '../theme_provider.dart';
 import '../l10n/app_localizations.dart';
 import '../services/api_service.dart';
+import '../widgets/theme_toggle_widget.dart';
 import 'package:http/http.dart' as http;
 import 'dart:convert';
 
@@ -26,7 +28,7 @@ String _welcomeBackText(BuildContext context) {
 }
 String _usernameOrEmailLabel(BuildContext context) {
   final loc = AppLocalizations.of(context)!;
-  return loc.usernameLabel + ' / ' + loc.emailLabel;
+  return '${loc.usernameLabel} / ${loc.emailLabel}';
 }
 String _pleaseEnterUsernameOrEmail(BuildContext context) {
   final c = _lang(context);
@@ -42,9 +44,9 @@ String _pleaseEnterPassword(BuildContext context) {
 }
 String _loginFailedText(BuildContext context, String message) {
   final c = _lang(context);
-  if (c == 'ar') return 'فشل تسجيل الدخول: ' + message;
-  if (c == 'ku') return 'هەڵە لە چوونەژوورەوە: ' + message;
-  return 'Login failed: ' + message;
+  if (c == 'ar') return 'فشل تسجيل الدخول: $message';
+  if (c == 'ku') return 'هەڵە لە چوونەژوورەوە: $message';
+  return 'Login failed: $message';
 }
 String _forgotPasswordQuestion(BuildContext context) {
   final c = _lang(context);
@@ -107,8 +109,8 @@ String _pleaseEnterValidEmail(BuildContext context) {
 String _phoneOptionalLabel(BuildContext context) {
   final loc = AppLocalizations.of(context)!;
   final c = _lang(context);
-  if (c == 'ar') return loc.phoneLabel + ' (اختياري)';
-  if (c == 'ku') return loc.phoneLabel + ' (هەلبژاردە)';
+  if (c == 'ar') return '${loc.phoneLabel} (اختياري)';
+  if (c == 'ku') return '${loc.phoneLabel} (هەلبژاردە)';
   return 'Phone Number (Optional)';
 }
 String _confirmPasswordLabel(BuildContext context) {
@@ -161,8 +163,8 @@ String _resetPasswordTitle(BuildContext context) {
 }
 String _resetEmailSent(BuildContext context, String email) {
   final c = _lang(context);
-  if (c == 'ar') return 'أرسلنا رابط إعادة تعيين إلى ' + email + '. يرجى التحقق من بريدك.';
-  if (c == 'ku') return 'بەستەری ڕێکخستنەوە نێردرا بۆ ' + email + ' . تکایە ئیمەیلەکەت بپشکنە.';
+  if (c == 'ar') return 'أرسلنا رابط إعادة تعيين إلى $email. يرجى التحقق من بريدك.';
+  if (c == 'ku') return 'بەستەری ڕێکخستنەوە نێردرا بۆ $email . تکایە ئیمەیلەکەت بپشکنە.';
   return "We've sent a password reset link to $email. Please check your email and follow the instructions.";
 }
 String _registrationSuccess(BuildContext context) {
@@ -173,15 +175,15 @@ String _registrationSuccess(BuildContext context) {
 }
 String _registrationFailed(BuildContext context, String msg) {
   final c = _lang(context);
-  if (c == 'ar') return 'فشل التسجيل: ' + msg;
-  if (c == 'ku') return 'هەڵە لە خۆتۆمارکردن: ' + msg;
-  return 'Registration failed: ' + msg;
+  if (c == 'ar') return 'فشل التسجيل: $msg';
+  if (c == 'ku') return 'هەڵە لە خۆتۆمارکردن: $msg';
+  return 'Registration failed: $msg';
 }
 String _failedToSendResetEmail(BuildContext context, String msg) {
   final c = _lang(context);
-  if (c == 'ar') return 'فشل إرسال بريد الاستعادة: ' + msg;
-  if (c == 'ku') return 'نەتوانرا ئیمەیلی ڕێکخستنەوە بنێردرێت: ' + msg;
-  return 'Failed to send reset email: ' + msg;
+  if (c == 'ar') return 'فشل إرسال بريد الاستعادة: $msg';
+  if (c == 'ku') return 'نەتوانرا ئیمەیلی ڕێکخستنەوە بنێردرێت: $msg';
+  return 'Failed to send reset email: $msg';
 }
 
 class LoginPage extends StatefulWidget {

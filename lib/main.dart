@@ -27,6 +27,7 @@ import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:intl/intl.dart';
 import 'package:provider/provider.dart';
 import 'theme_provider.dart';
+import 'widgets/theme_toggle_widget.dart';
 
 // Fallback delegates to provide Material/Cupertino/Widgets localizations for 'ku'
 class KuMaterialLocalizationsDelegate extends LocalizationsDelegate<MaterialLocalizations> {
@@ -1458,27 +1459,7 @@ class MyApp extends StatelessWidget {
 }
 
 // Theme Toggle Widget
-class ThemeToggleWidget extends StatelessWidget {
-  const ThemeToggleWidget({Key? key}) : super(key: key);
-
-  @override
-  Widget build(BuildContext context) {
-    return Consumer<ThemeProvider>(
-      builder: (context, themeProvider, child) {
-        return IconButton(
-          icon: Icon(
-            themeProvider.isDarkMode ? Icons.light_mode : Icons.dark_mode,
-            color: Theme.of(context).colorScheme.onSurface,
-          ),
-          onPressed: () {
-            themeProvider.toggleTheme();
-          },
-          tooltip: themeProvider.isDarkMode ? 'Switch to Light Mode' : 'Switch to Dark Mode',
-        );
-      },
-    );
-  }
-}
+// Moved to lib/widgets/theme_toggle_widget.dart
 
 List<double> _tintColorMatrix(Color color) {
   const double lR = 0.2126;
