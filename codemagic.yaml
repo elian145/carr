@@ -8,8 +8,6 @@ workflows:
       cocoapods: default
       vars:
         BUNDLE_ID: com.carzo.app
-      groups:
-        - app_store_connect
     scripts:
       - name: Set up local.properties
         script: |
@@ -21,17 +19,6 @@ workflows:
         script: |
           flutter pub get
           flutter precache --ios
-      - name: Automatic code signing (development)
-        script: |
-          keychain add --name ios-signing --password "$KEYCHAIN_PASSWORD"
-          app-store-connect fetch-signing-files "$BUNDLE_ID" \
-            --type IOS_APP_DEVELOPMENT \
-            --issuer-id "$APP_STORE_CONNECT_ISSUER_ID" \
-            --key-id "$APP_STORE_CONNECT_KEY_IDENTIFIER" \
-            --api-key "$APP_STORE_CONNECT_PRIVATE_KEY" \
-            --create
-          keychain use ios-signing
-          xcode-project use-profiles
       - name: Install CocoaPods dependencies
         script: |
           cd ios && pod install
@@ -41,9 +28,9 @@ workflows:
       - name: Flutter unit tests
         script: |
           flutter test
-      - name: Build iOS IPA (release, development-signed)
+      - name: Build iOS IPA (release, unsigned for Sideloadly)
         script: |
-          flutter build ipa --release || true
+          flutter build ipa --release --no-codesign || true
     artifacts:
       - build/ios/ipa/*.ipa
       - /tmp/xcodebuild_logs/*.log
