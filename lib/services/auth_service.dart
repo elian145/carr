@@ -1,4 +1,5 @@
 import 'package:flutter/foundation.dart';
+import 'dart:developer' as developer;
 import 'api_service.dart';
 import 'websocket_service.dart';
 
@@ -28,7 +29,7 @@ class AuthService extends ChangeNotifier {
         await WebSocketService.connect();
       }
     } catch (e) {
-      print('Auth initialization error: $e');
+      developer.log('Auth initialization error: $e', name: 'AuthService');
       await _clearAuthState();
     } finally {
       _setLoading(false);
@@ -53,7 +54,7 @@ class AuthService extends ChangeNotifier {
       _isAuthenticated = true;
       notifyListeners();
     } catch (e) {
-      print('Load profile error: $e');
+      developer.log('Load profile error: $e', name: 'AuthService');
       await _clearAuthState();
     }
   }
@@ -124,7 +125,7 @@ class AuthService extends ChangeNotifier {
       await ApiService.logout();
       WebSocketService.disconnect();
     } catch (e) {
-      print('Logout error: $e');
+      developer.log('Logout error: $e', name: 'AuthService');
     } finally {
       await _clearAuthState();
       _setLoading(false);

@@ -1,5 +1,6 @@
 import 'dart:convert';
 import 'dart:io';
+import 'dart:developer' as developer;
 import 'package:http/http.dart' as http;
 import '../models/analytics_model.dart';
 import 'api_service.dart';
@@ -48,14 +49,14 @@ class AnalyticsService {
             if (json['image_url'] != null && json['image_url'].toString().isNotEmpty) {
               final imageUrl = json['image_url'].toString();
               if (!imageUrl.startsWith('http')) {
-                json['image_url'] = _imageBaseUrl + '/static/uploads/' + imageUrl;
+                json['image_url'] = '$_imageBaseUrl/static/uploads/$imageUrl';
               }
             }
             return ListingAnalytics.fromJson(json);
           }).toList();
         }
       } catch (e) {
-        print('Analytics endpoint failed, falling back to my_listings: $e');
+        developer.log('Analytics endpoint failed, falling back to my_listings: $e', name: 'AnalyticsService');
       }
 
       // Fallback: Get user's listings and create analytics data
@@ -72,7 +73,7 @@ class AnalyticsService {
         
         // Convert listings to analytics format
         return listings.map((listing) {
-          int? _parseMileage(dynamic v) {
+          int? parseMileage(dynamic v) {
             if (v == null) return null;
             if (v is int) return v;
             if (v is double) return v.toInt();
@@ -84,7 +85,7 @@ class AnalyticsService {
           String? fullImageUrl;
           final imageUrl = listing['image_url']?.toString();
           if (imageUrl != null && imageUrl.isNotEmpty) {
-            fullImageUrl = _imageBaseUrl + '/static/uploads/' + imageUrl;
+            fullImageUrl = '$_imageBaseUrl/static/uploads/$imageUrl';
           }
           
           return ListingAnalytics(
@@ -95,7 +96,7 @@ class AnalyticsService {
             year: listing['year'] ?? 0,
             price: (listing['price'] ?? 0).toDouble(),
             imageUrl: fullImageUrl,
-            mileage: _parseMileage(listing['mileage'] ?? listing['odometer'] ?? listing['miles']),
+            mileage: parseMileage(listing['mileage'] ?? listing['odometer'] ?? listing['miles']),
             city: listing['city']?.toString() ?? listing['location']?.toString(),
             views: 0, // Will be populated when analytics are tracked
             messages: 0,
@@ -173,7 +174,7 @@ class AnalyticsService {
       );
     } catch (e) {
       // Silently fail for tracking - don't interrupt user experience
-      print('Failed to track view: $e');
+      developer.log('Failed to track view: $e', name: 'AnalyticsService');
     }
   }
 
@@ -192,7 +193,7 @@ class AnalyticsService {
         body: json.encode({'listing_id': listingId}),
       );
     } catch (e) {
-      print('Failed to track message: $e');
+      developer.log('Failed to track message: $e', name: 'AnalyticsService');
     }
   }
 
@@ -211,7 +212,7 @@ class AnalyticsService {
         body: json.encode({'listing_id': listingId}),
       );
     } catch (e) {
-      print('Failed to track call: $e');
+      developer.log('Failed to track call: $e', name: 'AnalyticsService');
     }
   }
 
@@ -230,7 +231,7 @@ class AnalyticsService {
         body: json.encode({'listing_id': listingId}),
       );
     } catch (e) {
-      print('Failed to track share: $e');
+      developer.log('Failed to track share: $e', name: 'AnalyticsService');
     }
   }
 
@@ -249,7 +250,7 @@ class AnalyticsService {
         body: json.encode({'listing_id': listingId}),
       );
     } catch (e) {
-      print('Failed to track favorite: $e');
+      developer.log('Failed to track favorite: $e', name: 'AnalyticsService');
     }
   }
 

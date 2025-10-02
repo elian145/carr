@@ -1,6 +1,9 @@
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
 import '../l10n/app_localizations.dart';
-import '../services/analytics_service.dart';
+import '../services/websocket_service.dart';
+import '../services/auth_service.dart';
+import '../theme_provider.dart';
 
 String _digitsLocalized(BuildContext context, String input) {
   final code = Localizations.localeOf(context).languageCode;
@@ -37,12 +40,7 @@ String _relativeTime(BuildContext context, DateTime dateTime) {
   return 'Just now';
 }
 
-String _notificationsTitle(BuildContext context) {
-  final code = Localizations.localeOf(context).languageCode;
-  if (code == 'ar') return 'الإشعارات';
-  if (code == 'ku') return 'ئاگەدارییەکان';
-  return 'Notifications';
-}
+ 
 
 String _noMessagesText(BuildContext context) {
   final code = Localizations.localeOf(context).languageCode;
@@ -50,11 +48,6 @@ String _noMessagesText(BuildContext context) {
   if (code == 'ku') return 'هیچ نامەیەک نییە. گفتوگۆیەک دەست پێبکە!';
   return 'No messages yet. Start a conversation!';
 }
-import 'package:provider/provider.dart';
-import '../services/websocket_service.dart';
-import '../services/auth_service.dart';
-import '../services/car_service.dart';
-import '../theme_provider.dart';
 
 class _ThemeToggleAction extends StatelessWidget {
   const _ThemeToggleAction({Key? key}) : super(key: key);
@@ -79,7 +72,7 @@ class _ThemeToggleAction extends StatelessWidget {
 }
 
 class ChatListPage extends StatefulWidget {
-  const ChatListPage({Key? key}) : super(key: key);
+  const ChatListPage({super.key});
 
   @override
   _ChatListPageState createState() => _ChatListPageState();
@@ -253,20 +246,7 @@ class _ChatListPageState extends State<ChatListPage> {
     );
   }
 
-  String _formatTime(DateTime dateTime) {
-    final now = DateTime.now();
-    final difference = now.difference(dateTime);
-
-    if (difference.inDays > 0) {
-      return '${difference.inDays}d ago';
-    } else if (difference.inHours > 0) {
-      return '${difference.inHours}h ago';
-    } else if (difference.inMinutes > 0) {
-      return '${difference.inMinutes}m ago';
-    } else {
-      return 'Just now';
-    }
-  }
+  
 }
 
 class ChatConversationPage extends StatefulWidget {
@@ -274,10 +254,10 @@ class ChatConversationPage extends StatefulWidget {
   final String? receiverId;
 
   const ChatConversationPage({
-    Key? key,
+    super.key,
     required this.carId,
     this.receiverId,
-  }) : super(key: key);
+  });
 
   @override
   _ChatConversationPageState createState() => _ChatConversationPageState();
@@ -444,20 +424,7 @@ class _ChatConversationPageState extends State<ChatConversationPage> {
     );
   }
 
-  String _formatTime(DateTime dateTime) {
-    final now = DateTime.now();
-    final difference = now.difference(dateTime);
-
-    if (difference.inDays > 0) {
-      return '${difference.inDays}d ago';
-    } else if (difference.inHours > 0) {
-      return '${difference.inHours}h ago';
-    } else if (difference.inMinutes > 0) {
-      return '${difference.inMinutes}m ago';
-    } else {
-      return 'Just now';
-    }
-  }
+  
 }
 
 class NotificationsPage extends StatefulWidget {

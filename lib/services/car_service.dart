@@ -1,4 +1,5 @@
 import 'package:flutter/foundation.dart';
+import 'dart:developer' as developer;
 import 'package:image_picker/image_picker.dart';
 import 'api_service.dart';
 
@@ -83,7 +84,7 @@ class CarService extends ChangeNotifier {
       _currentPage++;
 
     } catch (e) {
-      print('Get cars error: $e');
+      developer.log('Get cars error: $e', name: 'CarService');
       rethrow;
     } finally {
       _setLoading(false);
@@ -98,7 +99,7 @@ class CarService extends ChangeNotifier {
       final response = await ApiService.getCar(carId);
       _currentCar = response['car'];
     } catch (e) {
-      print('Get car error: $e');
+      developer.log('Get car error: $e', name: 'CarService');
       rethrow;
     } finally {
       _setLoading(false);
@@ -120,7 +121,7 @@ class CarService extends ChangeNotifier {
       
       return response;
     } catch (e) {
-      print('Create car error: $e');
+      developer.log('Create car error: $e', name: 'CarService');
       rethrow;
     } finally {
       _setLoading(false);
@@ -154,7 +155,7 @@ class CarService extends ChangeNotifier {
       
       return response;
     } catch (e) {
-      print('Update car error: $e');
+      developer.log('Update car error: $e', name: 'CarService');
       rethrow;
     } finally {
       _setLoading(false);
@@ -178,7 +179,7 @@ class CarService extends ChangeNotifier {
       
       notifyListeners();
     } catch (e) {
-      print('Delete car error: $e');
+      developer.log('Delete car error: $e', name: 'CarService');
       rethrow;
     } finally {
       _setLoading(false);
@@ -212,7 +213,7 @@ class CarService extends ChangeNotifier {
       
       return response;
     } catch (e) {
-      print('Upload car images error: $e');
+      developer.log('Upload car images error: $e', name: 'CarService');
       rethrow;
     } finally {
       _setLoading(false);
@@ -246,7 +247,7 @@ class CarService extends ChangeNotifier {
       
       return response;
     } catch (e) {
-      print('Upload car videos error: $e');
+      developer.log('Upload car videos error: $e', name: 'CarService');
       rethrow;
     } finally {
       _setLoading(false);
@@ -265,7 +266,7 @@ class CarService extends ChangeNotifier {
       final response = await ApiService.getFavorites();
       _favorites = List<Map<String, dynamic>>.from(response['cars']);
     } catch (e) {
-      print('Get favorites error: $e');
+      developer.log('Get favorites error: $e', name: 'CarService');
       rethrow;
     } finally {
       _setLoading(false);
@@ -301,7 +302,7 @@ class CarService extends ChangeNotifier {
       
       notifyListeners();
     } catch (e) {
-      print('Toggle favorite error: $e');
+      developer.log('Toggle favorite error: $e', name: 'CarService');
       rethrow;
     }
   }
