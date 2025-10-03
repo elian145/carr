@@ -533,6 +533,70 @@ def get_cars():
         logger.error(f"Get cars error: {str(e)}")
         return jsonify({'message': 'Failed to get cars'}), 500
 
+# Alias routes compatible with older mobile client expectations
+@app.route('/cars', methods=['GET'])
+def get_cars_alias():
+    """Compatibility alias: returns a bare list of cars, and supports ?id=<public_id>."""
+    try:
+        car_id = request.args.get('id')
+        if car_id:
+            car = Car.query.filter_by(public_id=car_id, is_active=True).first()
+            if not car:
+                return jsonify({'message': 'Car not found'}), 404
+            # Match client expectation: return a single object
+            return jsonify(car.to_dict()), 200
+
+        # Mirror filters from /api/cars
+        page = request.args.get('page', 1, type=int)
+        per_page = request.args.get('per_page', 20, type=int)
+        brand = request.args.get('brand')
+        model = request.args.get('model')
+        year_min = request.args.get('year_min', type=int)
+        year_max = request.args.get('year_max', type=int)
+        price_min = request.args.get('price_min', type=float)
+        price_max = request.args.get('price_max', type=float)
+        location = request.args.get('location')
+        condition = request.args.get('condition')
+        body_type = request.args.get('body_type')
+        transmission = request.args.get('transmission')
+        drive_type = request.args.get('drive_type')
+        engine_type = request.args.get('engine_type')
+
+        query = Car.query.filter_by(is_active=True)
+        if brand:
+            query = query.filter(Car.brand.ilike(f'%{brand}%'))
+        if model:
+            query = query.filter(Car.model.ilike(f'%{model}%'))
+        if year_min:
+            query = query.filter(Car.year >= year_min)
+        if year_max:
+            query = query.filter(Car.year <= year_max)
+        if price_min:
+            query = query.filter(Car.price >= price_min)
+        if price_max:
+            query = query.filter(Car.price <= price_max)
+        if location:
+            query = query.filter(Car.location.ilike(f'%{location}%'))
+        if condition:
+            query = query.filter(Car.condition == condition)
+        if body_type:
+            query = query.filter(Car.body_type == body_type)
+        if transmission:
+            query = query.filter(Car.transmission == transmission)
+        if drive_type:
+            query = query.filter(Car.drive_type == drive_type)
+        if engine_type:
+            query = query.filter(Car.engine_type == engine_type)
+
+        query = query.order_by(Car.is_featured.desc(), Car.created_at.desc())
+        pagination = query.paginate(page=page, per_page=per_page, error_out=False)
+        cars = [car.to_dict() for car in pagination.items]
+        # Return bare list as expected by client
+        return jsonify(cars), 200
+    except Exception as e:
+        logger.error(f"Get cars alias error: {str(e)}")
+        return jsonify({'message': 'Failed to get cars'}), 500
+
 @app.route('/api/cars/<car_id>', methods=['GET'])
 def get_car(car_id):
     """Get single car by ID"""
