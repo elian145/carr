@@ -14,19 +14,29 @@ class ApiService {
 
   // Initialize tokens from storage
   static Future<void> initializeTokens() async {
-    // Align with AuthStore key
-    _accessToken = await _storage.read(key: 'auth_token');
+    // Align with AuthStore key; guard against keychain issues on sideload builds
+    try {
+      _accessToken = await _storage.read(key: 'auth_token');
+    } catch (_) {
+      _accessToken = null;
+    }
   }
 
   // Save tokens to storage
   static Future<void> _saveAccessToken(String accessToken) async {
-    await _storage.write(key: 'auth_token', value: accessToken);
-    _accessToken = accessToken;
+    try {
+      await _storage.write(key: 'auth_token', value: accessToken);
+      _accessToken = accessToken;
+    } catch (_) {
+      _accessToken = accessToken;
+    }
   }
 
   // Clear tokens
   static Future<void> clearTokens() async {
-    await _storage.delete(key: 'auth_token');
+    try {
+      await _storage.delete(key: 'auth_token');
+    } catch (_) {}
     _accessToken = null;
   }
 

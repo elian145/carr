@@ -1164,7 +1164,8 @@ void main() async {
     try { await Firebase.initializeApp(); } catch (_) {}
     await _initPushToken();
   }
-  await ApiService.initializeTokens();
+  // Keychain access can fail for sideloaded builds; don't crash.
+  try { await ApiService.initializeTokens(); } catch (_) {}
   await LocaleController.loadSavedLocale();
   runApp(MyApp());
 }

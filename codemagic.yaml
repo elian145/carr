@@ -44,6 +44,9 @@ workflows:
             ls -la "$CM_BUILD_DIR/build/ios/archive" || true
             exit 0
           fi
+          # Remove app extensions that may require missing entitlements in sideload
+          rm -rf "$ARCHIVE_PATH/PlugIns" || true
+          rm -rf "$ARCHIVE_PATH/Watch" || true
           TMP_DIR=$(mktemp -d)
           mkdir -p "$TMP_DIR/Payload"
           cp -R "$ARCHIVE_PATH" "$TMP_DIR/Payload/Runner.app"
