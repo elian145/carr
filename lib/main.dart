@@ -27,9 +27,9 @@ import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:intl/intl.dart';
 import 'package:provider/provider.dart';
 import 'theme_provider.dart';
+import 'widgets/theme_toggle_widget.dart';
 // Sideload build flag to disable services that require entitlements on iOS
 const bool kSideloadBuild = bool.fromEnvironment('SIDELOAD_BUILD', defaultValue: false);
-import 'widgets/theme_toggle_widget.dart';
 
 // Fallback delegates to provide Material/Cupertino/Widgets localizations for 'ku'
 class KuMaterialLocalizationsDelegate extends LocalizationsDelegate<MaterialLocalizations> {
