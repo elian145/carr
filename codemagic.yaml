@@ -30,7 +30,10 @@ workflows:
           flutter test
       - name: Build iOS IPA (release, unsigned for Sideloadly)
         script: |
-          flutter build ipa --release --no-codesign || true
+          # Disable App Transport Security restrictions for sideload testing
+          /usr/libexec/PlistBuddy -c 'Add :NSAppTransportSecurity:NSAllowsArbitraryLoads bool YES' ios/Runner/Info.plist || true
+          # Build with a define to disable Firebase/Push on sideload
+          flutter build ipa --release --no-codesign --dart-define=SIDELOAD_BUILD=true || true
       - name: Package unsigned IPA from xcarchive
         script: |
           set -e

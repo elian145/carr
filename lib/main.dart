@@ -27,6 +27,8 @@ import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:intl/intl.dart';
 import 'package:provider/provider.dart';
 import 'theme_provider.dart';
+// Sideload build flag to disable services that require entitlements on iOS
+const bool kSideloadBuild = bool.fromEnvironment('SIDELOAD_BUILD', defaultValue: false);
 import 'widgets/theme_toggle_widget.dart';
 
 // Fallback delegates to provide Material/Cupertino/Widgets localizations for 'ku'
@@ -1157,8 +1159,11 @@ final Map<String, Map<String, Map<String, Map<String, dynamic>>>> globalVehicleS
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
-  try { await Firebase.initializeApp(); } catch (_) {}
-  await _initPushToken();
+  // Skip Firebase/Push init for sideload builds on iOS to avoid entitlement crashes
+  if (!(kSideloadBuild && Platform.isIOS)) {
+    try { await Firebase.initializeApp(); } catch (_) {}
+    await _initPushToken();
+  }
   await ApiService.initializeTokens();
   await LocaleController.loadSavedLocale();
   runApp(MyApp());
