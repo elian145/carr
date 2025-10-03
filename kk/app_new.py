@@ -1172,14 +1172,10 @@ def internal_error(error):
     db.session.rollback()
     return jsonify({'message': 'Internal server error'}), 500
 
-# Database initialization
-@app.before_first_request
-def create_tables():
-    """Create database tables"""
-    db.create_all()
+# Database initialization is handled at process start below for Flask 3 compatibility
 
 if __name__ == '__main__':
     with app.app_context():
         db.create_all()
     
-    socketio.run(app, debug=True, host='0.0.0.0', port=5000)
+    socketio.run(app, debug=True, host='0.0.0.0', port=5000, allow_unsafe_werkzeug=True)
