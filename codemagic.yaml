@@ -8,6 +8,8 @@ workflows:
       cocoapods: default
       vars:
         BUNDLE_ID: com.carzo.app
+        # Development API endpoint for sideload builds (no trailing slash)
+        API_BASE: http://192.168.1.9:5000
     scripts:
       - name: Set up local.properties
         script: |
