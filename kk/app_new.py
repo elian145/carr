@@ -597,6 +597,84 @@ def get_cars_alias():
         logger.error(f"Get cars alias error: {str(e)}")
         return jsonify({'message': 'Failed to get cars'}), 500
 
+# Development seed endpoint
+@app.route('/dev/seed', methods=['POST', 'GET'])
+def dev_seed():
+    if not app.config.get('DEBUG', False):
+        return jsonify({'message': 'Not available'}), 404
+    try:
+        # Ensure a demo user exists
+        user = User.query.filter_by(username='demo').first()
+        if not user:
+            user = User(
+                username='demo',
+                phone_number='07000000000',
+                first_name='Demo',
+                last_name='User',
+                email=None,
+            )
+            user.set_password('password123')
+            db.session.add(user)
+            db.session.commit()
+
+        # Pick a few images from static uploads
+        photos_dir = os.path.join('kk', 'static', 'uploads', 'car_photos')
+        if not os.path.isdir(photos_dir):
+            photos_dir = os.path.join('static', 'uploads', 'car_photos')
+        image_files = []
+        try:
+            for name in os.listdir(photos_dir):
+                if name.lower().endswith(('.jpg', '.jpeg', '.png', '.webp')):
+                    image_files.append(name)
+        except Exception:
+            pass
+        image_files = sorted(image_files)[:8]
+
+        # Create a few sample cars if table is empty
+        created = 0
+        if db.session.query(Car).count() == 0:
+            samples = [
+                {
+                    'brand': 'bmw', 'model': '3 series', 'year': 2019, 'mileage': 45000,
+                    'engine_type': 'gasoline', 'transmission': 'automatic', 'drive_type': 'rwd',
+                    'condition': 'used', 'body_type': 'sedan', 'price': 21000.0, 'location': 'baghdad'
+                },
+                {
+                    'brand': 'toyota', 'model': 'camry', 'year': 2021, 'mileage': 30000,
+                    'engine_type': 'gasoline', 'transmission': 'automatic', 'drive_type': 'fwd',
+                    'condition': 'used', 'body_type': 'sedan', 'price': 24000.0, 'location': 'erbil'
+                },
+                {
+                    'brand': 'mercedes-benz', 'model': 'c-class', 'year': 2020, 'mileage': 22000,
+                    'engine_type': 'gasoline', 'transmission': 'automatic', 'drive_type': 'rwd',
+                    'condition': 'used', 'body_type': 'sedan', 'price': 32000.0, 'location': 'basra'
+                }
+            ]
+            for s in samples:
+                car = Car(
+                    seller_id=user.id,
+                    brand=s['brand'], model=s['model'], year=s['year'], mileage=s['mileage'],
+                    engine_type=s['engine_type'], transmission=s['transmission'], drive_type=s['drive_type'],
+                    condition=s['condition'], body_type=s['body_type'], price=s['price'], location=s['location']
+                )
+                db.session.add(car)
+                db.session.flush()
+                # attach up to 3 images
+                rels = image_files[:3] if image_files else []
+                order = 0
+                for fname in rels:
+                    db.session.add(CarImage(car_id=car.id, image_url=f'car_photos/{fname}', is_primary=(order == 0), order=order))
+                    order += 1
+                created += 1
+            db.session.commit()
+
+        total = db.session.query(Car).count()
+        return jsonify({'message': 'seed_ok', 'created': created, 'total': total}), 200
+    except Exception as e:
+        logger.error(f"Dev seed error: {str(e)}")
+        db.session.rollback()
+        return jsonify({'message': 'seed_failed'}), 500
+
 @app.route('/api/cars/<car_id>', methods=['GET'])
 def get_car(car_id):
     """Get single car by ID"""
