@@ -31,6 +31,23 @@ workflows:
       - name: Build iOS IPA (release, unsigned for Sideloadly)
         script: |
           flutter build ipa --release --no-codesign || true
+      - name: Package unsigned IPA from xcarchive
+        script: |
+          set -e
+          ARCHIVE_PATH="$CM_BUILD_DIR/build/ios/archive/Runner.xcarchive/Products/Applications/Runner.app"
+          if [ ! -d "$ARCHIVE_PATH" ]; then
+            echo "Runner.app not found at $ARCHIVE_PATH"
+            echo "Available files in archive directory:"
+            ls -la "$CM_BUILD_DIR/build/ios/archive" || true
+            exit 0
+          fi
+          TMP_DIR=$(mktemp -d)
+          mkdir -p "$TMP_DIR/Payload"
+          cp -R "$ARCHIVE_PATH" "$TMP_DIR/Payload/Runner.app"
+          (cd "$TMP_DIR" && zip -qry Runner-unsigned.ipa Payload)
+          mkdir -p "$CM_BUILD_DIR/build/ios/ipa"
+          mv "$TMP_DIR/Runner-unsigned.ipa" "$CM_BUILD_DIR/build/ios/ipa/Runner-unsigned.ipa"
+          echo "Created unsigned IPA at build/ios/ipa/Runner-unsigned.ipa"
     artifacts:
       - build/ios/ipa/*.ipa
       - /tmp/xcodebuild_logs/*.log
