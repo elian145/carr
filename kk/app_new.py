@@ -590,12 +590,93 @@ def get_cars_alias():
 
         query = query.order_by(Car.is_featured.desc(), Car.created_at.desc())
         pagination = query.paginate(page=page, per_page=per_page, error_out=False)
-        cars = [car.to_dict() for car in pagination.items]
+        cars = []
+        for c in pagination.items:
+            d = c.to_dict()
+            # Compute compatibility fields expected by mobile client
+            image_list = [img.image_url for img in c.images] if c.images else []
+            primary_rel = image_list[0] if image_list else ''
+            d['image_url'] = primary_rel  # relative path only
+            d['images'] = image_list      # list of relative paths
+            d['videos'] = [v.video_url for v in c.videos] if c.videos else []
+            # Provide a title if missing
+            if not d.get('title'):
+                d['title'] = f"{(c.brand or '').title()} {(c.model or '').title()} {c.year or ''}".strip()
+            cars.append(d)
         # Return bare list as expected by client
         return jsonify(cars), 200
     except Exception as e:
         logger.error(f"Get cars alias error: {str(e)}")
         return jsonify({'message': 'Failed to get cars'}), 500
+
+# Compatibility auth endpoints for the mobile client
+@app.route('/api/auth/send_otp', methods=['POST'])
+def compat_send_otp():
+    try:
+        data = request.get_json(silent=True) or {}
+        phone = data.get('phone') or data.get('phone_number') or ''
+        # In development, return a fixed code
+        return jsonify({'dev_code': '000000', 'phone': phone}), 200
+    except Exception:
+        return jsonify({'dev_code': '000000'}), 200
+
+@app.route('/api/auth/signup', methods=['POST'])
+def compat_signup():
+    try:
+        data = request.get_json() or {}
+        username = (data.get('username') or '').strip()
+        phone = (data.get('phone') or data.get('phone_number') or '').strip()
+        password = (data.get('password') or '').strip()
+        first_name = (data.get('first_name') or 'User').strip()
+        last_name = (data.get('last_name') or 'Demo').strip()
+        if not username:
+            username = phone or f"user_{secrets.token_hex(3)}"
+        if not phone:
+            phone = f"070{secrets.randbelow(10**8):08d}"
+        if not password:
+            password = 'password123'
+
+        # Check existing
+        if User.query.filter((User.username == username) | (User.phone_number == phone)).first():
+            return jsonify({'message': 'User already exists'}), 400
+
+        user = User(
+            username=username,
+            phone_number=phone,
+            first_name=first_name,
+            last_name=last_name,
+            email=None,
+        )
+        user.set_password(password)
+        db.session.add(user)
+        db.session.commit()
+        return jsonify({'message': 'Signup successful'}), 201
+    except Exception as e:
+        logger.error(f"Compat signup error: {str(e)}")
+        db.session.rollback()
+        return jsonify({'message': 'Signup failed'}), 500
+
+@app.route('/api/auth/login', methods=['POST'])
+def compat_login_legacy():
+    try:
+        data = request.get_json() or {}
+        username = (data.get('username') or '').strip()
+        password = (data.get('password') or '').strip()
+        if not username or not password:
+            return jsonify({'message': 'Username and password required'}), 400
+        user = User.query.filter((User.username == username) | (User.phone_number == username)).first()
+        if not user or not user.check_password(password):
+            return jsonify({'message': 'Invalid credentials'}), 401
+        if not user.is_active:
+            return jsonify({'message': 'Account is deactivated'}), 401
+        user.last_login = datetime.utcnow()
+        db.session.commit()
+        access_token, _ = user.generate_tokens()
+        # Mobile client expects 'token'
+        return jsonify({'token': access_token}), 200
+    except Exception as e:
+        logger.error(f"Compat login error: {str(e)}")
+        return jsonify({'message': 'Login failed'}), 500
 
 # Development seed endpoint
 @app.route('/dev/seed', methods=['POST', 'GET'])
