@@ -1166,17 +1166,43 @@ final Map<String, Map<String, Map<String, Map<String, dynamic>>>> globalVehicleS
   },
 };
 
-void main() async {
-  WidgetsFlutterBinding.ensureInitialized();
-  // Skip Firebase/Push init for sideload builds on iOS to avoid entitlement crashes
-  if (!(kSideloadBuild && Platform.isIOS)) {
-    try { await Firebase.initializeApp(); } catch (_) {}
-    await _initPushToken();
+void main() {
+  runZonedGuarded(() async {
+    WidgetsFlutterBinding.ensureInitialized();
+    FlutterError.onError = (FlutterErrorDetails details) async {
+      // Persist the last error for diagnosis on sideload builds
+      try {
+        final sp = await SharedPreferences.getInstance();
+        await sp.setString('last_startup_error', details.exceptionAsString());
+      } catch (_) {}
+    };
+
+    // Skip Firebase/Push init for sideload builds on iOS to avoid entitlement crashes
+    if (!(kSideloadBuild && Platform.isIOS)) {
+      try { await Firebase.initializeApp(); } catch (_) {}
+      try { await _initPushToken(); } catch (_) {}
+    }
+
+    // Keychain access can fail for sideloaded builds; don't crash.
+    try { await ApiService.initializeTokens(); } catch (_) {}
+    try { await LocaleController.loadSavedLocale(); } catch (_) {}
+    runApp(MyApp());
+  }, (error, stack) async {
+    try {
+      final sp = await SharedPreferences.getInstance();
+      await sp.setString('last_startup_error', error.toString());
+    } catch (_) {}
+  });
+}
+
+// Helper page to view last startup error if present (can be wired to a hidden gesture if needed)
+class _StartupDiagnostics {
+  static Future<String?> lastError() async {
+    try {
+      final sp = await SharedPreferences.getInstance();
+      return sp.getString('last_startup_error');
+    } catch (_) { return null; }
   }
-  // Keychain access can fail for sideloaded builds; don't crash.
-  try { await ApiService.initializeTokens(); } catch (_) {}
-  await LocaleController.loadSavedLocale();
-  runApp(MyApp());
 }
 
 Future<void> _initPushToken() async {

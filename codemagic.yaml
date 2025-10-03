@@ -32,6 +32,8 @@ workflows:
         script: |
           # Disable App Transport Security restrictions for sideload testing
           /usr/libexec/PlistBuddy -c 'Add :NSAppTransportSecurity:NSAllowsArbitraryLoads bool YES' ios/Runner/Info.plist || true
+          # Remove background modes that may require entitlements on unsandboxed builds
+          /usr/libexec/PlistBuddy -c 'Delete :UIBackgroundModes' ios/Runner/Info.plist || true
           # Build with a define to disable Firebase/Push on sideload
           flutter build ipa --release --no-codesign --dart-define=SIDELOAD_BUILD=true || true
       - name: Package unsigned IPA from xcarchive
