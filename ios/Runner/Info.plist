@@ -52,5 +52,13 @@
 	</array>
 	<key>FirebaseAppDelegateProxyEnabled</key>
 	<false/>
+	<key>NSCameraUsageDescription</key>
+	<string>Camera access is needed to scan VIN codes and take photos of cars.</string>
+	<key>NSPhotoLibraryUsageDescription</key>
+	<string>Photo library access is needed to select car photos.</string>
+	<key>NSPhotoLibraryAddUsageDescription</key>
+	<string>We need permission to save car photos.</string>
+	<key>NSMicrophoneUsageDescription</key>
+	<string>Microphone access is needed for video capture when adding listings.</string>
 </dict>
 </plist>

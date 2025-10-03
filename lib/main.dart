@@ -759,17 +759,26 @@ Widget _buildGlobalCardImageCarousel(BuildContext context, Map car) {
 class AuthStore {
   static String? token;
   static Future<void> saveToken(String? t) async {
-    const storage = FlutterSecureStorage();
-    if (t == null || t.isEmpty) {
-      await storage.delete(key: 'auth_token');
-    } else {
-      await storage.write(key: 'auth_token', value: t);
+    try {
+      const storage = FlutterSecureStorage();
+      if (t == null || t.isEmpty) {
+        await storage.delete(key: 'auth_token');
+      } else {
+        await storage.write(key: 'auth_token', value: t);
+      }
+      token = t;
+    } catch (_) {
+      // In sideload builds, keychain operations may fail; keep in-memory token
+      token = t;
     }
-    token = t;
   }
   static Future<void> loadToken() async {
-    const storage = FlutterSecureStorage();
-    token = await storage.read(key: 'auth_token');
+    try {
+      const storage = FlutterSecureStorage();
+      token = await storage.read(key: 'auth_token');
+    } catch (_) {
+      token = null;
+    }
   }
 }
 
