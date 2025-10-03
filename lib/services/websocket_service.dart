@@ -4,11 +4,14 @@ import 'dart:async';
 import 'package:web_socket_channel/web_socket_channel.dart';
 import 'package:web_socket_channel/status.dart' as status;
 import 'api_service.dart';
+import 'config.dart';
 
 class WebSocketService {
   static String get baseUrl {
-    if (Platform.isAndroid) return 'ws://10.0.2.2:5000';
-    return 'ws://localhost:5000';
+    final base = apiBase();
+    if (base.startsWith('https://')) return base.replaceFirst('https://', 'wss://');
+    if (base.startsWith('http://')) return base.replaceFirst('http://', 'ws://');
+    return 'ws://' + base;
   }
   static WebSocketChannel? _channel;
   static bool _isConnected = false;

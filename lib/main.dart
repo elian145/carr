@@ -28,6 +28,7 @@ import 'package:intl/intl.dart';
 import 'package:provider/provider.dart';
 import 'theme_provider.dart';
 import 'widgets/theme_toggle_widget.dart';
+import 'services/config.dart';
 // Sideload build flag to disable services that require entitlements on iOS
 const bool kSideloadBuild = bool.fromEnvironment('SIDELOAD_BUILD', defaultValue: false);
 
@@ -73,12 +74,7 @@ class KuWidgetsLocalizationsDelegate extends LocalizationsDelegate<WidgetsLocali
  
 
 String getApiBase() {
-  try {
-    if (Platform.isAndroid) {
-      return 'http://10.0.2.2:5000';
-    }
-  } catch (_) {}
-  return 'http://localhost:5000';
+  return apiBase();
 }
 
 String _localizeDigitsGlobal(BuildContext context, String input) {

@@ -4,25 +4,12 @@ import 'dart:developer' as developer;
 import 'package:http/http.dart' as http;
 import '../models/analytics_model.dart';
 import 'api_service.dart';
+import 'config.dart';
 
 class AnalyticsService {
-  static String get _baseUrl {
-    try {
-      if (Platform.isAndroid) {
-        return 'http://10.0.2.2:5000/api';
-      }
-    } catch (_) {}
-    return 'http://localhost:5000/api';
-  }
+  static String get _baseUrl => apiBaseApi();
 
-  static String get _imageBaseUrl {
-    try {
-      if (Platform.isAndroid) {
-        return 'http://10.0.2.2:5000';
-      }
-    } catch (_) {}
-    return 'http://localhost:5000';
-  }
+  static String get _imageBaseUrl => apiBase();
 
   /// Get analytics for all user's listings
   static Future<List<ListingAnalytics>> getUserListingsAnalytics() async {

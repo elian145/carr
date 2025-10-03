@@ -34,8 +34,14 @@ workflows:
           /usr/libexec/PlistBuddy -c 'Add :NSAppTransportSecurity:NSAllowsArbitraryLoads bool YES' ios/Runner/Info.plist || true
           # Remove background modes that may require entitlements on unsandboxed builds
           /usr/libexec/PlistBuddy -c 'Delete :UIBackgroundModes' ios/Runner/Info.plist || true
-          # Build with a define to disable Firebase/Push on sideload
-          flutter build ipa --release --no-codesign --dart-define=SIDELOAD_BUILD=true || true
+          # Build with defines to disable Firebase/Push on sideload and set API base if provided
+          DEFINE_API_BASE=${API_BASE:-}
+          if [ -n "$DEFINE_API_BASE" ]; then
+            echo "Using API_BASE=$DEFINE_API_BASE"
+            flutter build ipa --release --no-codesign --dart-define=SIDELOAD_BUILD=true --dart-define=API_BASE=$DEFINE_API_BASE || true
+          else
+            flutter build ipa --release --no-codesign --dart-define=SIDELOAD_BUILD=true || true
+          fi
       - name: Package unsigned IPA from xcarchive
         script: |
           set -e

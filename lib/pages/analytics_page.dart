@@ -4,6 +4,7 @@ import '../l10n/app_localizations.dart';
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:intl/intl.dart';
 import 'dart:io';
+import '../services/config.dart';
 import '../models/analytics_model.dart';
 import '../services/analytics_service.dart';
 // Intentionally avoid importing shared card or helpers; this page uses its own duplicated implementations
@@ -138,12 +139,7 @@ class _AnalyticsPageState extends State<AnalyticsPage> {
 
   // Helper functions (copied from main.dart)
   String getApiBase() {
-    try {
-      if (Platform.isAndroid) {
-        return 'http://10.0.2.2:5000';
-      }
-    } catch (_) {}
-    return 'http://localhost:5000';
+    return apiBase();
   }
 
   String _localizeDigitsGlobal(BuildContext context, String input) {

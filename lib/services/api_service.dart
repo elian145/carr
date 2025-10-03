@@ -3,11 +3,11 @@ import 'dart:io';
 import 'package:http/http.dart' as http;
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:image_picker/image_picker.dart';
+import 'config.dart';
 
 class ApiService {
   static String get baseUrl {
-    if (Platform.isAndroid) return 'http://10.0.2.2:5000/api';
-    return 'http://localhost:5000/api';
+    return apiBaseApi();
   }
   static String? _accessToken;
   static const FlutterSecureStorage _storage = FlutterSecureStorage();
