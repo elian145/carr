@@ -543,8 +543,16 @@ def get_cars_alias():
             car = Car.query.filter_by(public_id=car_id, is_active=True).first()
             if not car:
                 return jsonify({'message': 'Car not found'}), 404
-            # Match client expectation: return a single object
-            return jsonify(car.to_dict()), 200
+            # Match client expectation: return a single object with image_url/images/videos fields
+            d = car.to_dict()
+            image_list = [img.image_url for img in car.images] if car.images else []
+            primary_rel = image_list[0] if image_list else ''
+            d['image_url'] = primary_rel
+            d['images'] = image_list
+            d['videos'] = [v.video_url for v in car.videos] if car.videos else []
+            if not d.get('title'):
+                d['title'] = f"{(car.brand or '').title()} {(car.model or '').title()} {car.year or ''}".strip()
+            return jsonify(d), 200
 
         # Mirror filters from /api/cars
         page = request.args.get('page', 1, type=int)
