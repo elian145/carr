@@ -6139,6 +6139,7 @@ class _CarDetailsPageState extends State<CarDetailsPage> {
                                       ),
                                     ),
                                   );
+                                  );
                                 },
                                 child: (_imageUrls.isNotEmpty)
                                     ? PageView.builder(
