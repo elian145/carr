@@ -540,11 +540,22 @@ def get_cars_alias():
     try:
         car_id = request.args.get('id')
         if car_id:
-            car = Car.query.filter_by(public_id=car_id, is_active=True).first()
+            car = None
+            try:
+                # Accept numeric database id
+                if car_id.isdigit():
+                    car = Car.query.filter_by(id=int(car_id), is_active=True).first()
+            except Exception:
+                pass
+            if car is None:
+                # Fallback to public_id
+                car = Car.query.filter_by(public_id=car_id, is_active=True).first()
             if not car:
                 return jsonify({'message': 'Car not found'}), 404
             # Match client expectation: return a single object with image_url/images/videos fields
             d = car.to_dict()
+            # Ensure numeric id for mobile client
+            d['id'] = car.id
             image_list = [img.image_url for img in car.images] if car.images else []
             primary_rel = image_list[0] if image_list else ''
             d['image_url'] = primary_rel
@@ -601,6 +612,8 @@ def get_cars_alias():
         cars = []
         for c in pagination.items:
             d = c.to_dict()
+            # Ensure numeric id for mobile client
+            d['id'] = c.id
             # Compute compatibility fields expected by mobile client
             image_list = [img.image_url for img in c.images] if c.images else []
             primary_rel = image_list[0] if image_list else ''
