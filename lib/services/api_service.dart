@@ -384,6 +384,10 @@ class ApiService {
 
     // Add files
     for (final file in videoFiles) {
+      // Support both backends: some expect 'files', others expect 'video'
+      final multipart = await http.MultipartFile.fromPath('video', file.path);
+      request.files.add(multipart);
+      // Also include under 'files' for compatibility (ignored by servers that only read 'video')
       request.files.add(await http.MultipartFile.fromPath('files', file.path));
     }
 
@@ -391,7 +395,31 @@ class ApiService {
     final responseBody = await response.stream.bytesToString();
 
     if (response.statusCode >= 200 && response.statusCode < 300) {
-      return json.decode(responseBody);
+      // Normalize response to always return {'videos': List<String>}
+      final dynamic decoded = responseBody.isNotEmpty ? json.decode(responseBody) : <String, dynamic>{};
+      List<dynamic> raw;
+      if (decoded is Map && decoded['videos'] is List) {
+        raw = decoded['videos'] as List;
+      } else if (decoded is Map && decoded['uploaded'] is List) {
+        raw = decoded['uploaded'] as List; // e.g., ["car_videos/xyz.mp4"]
+      } else {
+        raw = const [];
+      }
+
+      // Map items to relative string paths like 'car_videos/filename'
+      final List<String> normalized = raw.map((it) {
+        if (it is String) {
+          final s = it.startsWith('uploads/') ? it.substring(8) : it;
+          return s;
+        }
+        if (it is Map && it['video_url'] is String) {
+          final s = (it['video_url'] as String);
+          return s.startsWith('uploads/') ? s.substring(8) : s;
+        }
+        return it.toString();
+      }).whereType<String>().toList();
+
+      return {'videos': normalized};
     } else {
       final error = json.decode(responseBody);
       throw Exception(error['message'] ?? 'Upload failed');
