@@ -3411,7 +3411,6 @@ class _HomePageState extends State<HomePage> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        toolbarHeight: kToolbarHeight + (MediaQuery.of(context).padding.top * 0.15),
         title: Text(AppLocalizations.of(context)!.appTitle),
         actions: [
           IconButton(
@@ -3467,7 +3466,7 @@ class _HomePageState extends State<HomePage> {
         ],
       ),
       body: SafeArea(
-        top: false,
+        top: true,
         bottom: true,
         child: Stack(
           children: [
