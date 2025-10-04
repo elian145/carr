@@ -1480,14 +1480,7 @@ class MyApp extends StatelessWidget {
         '/comparison': (context) => CarComparisonPage(),
         '/analytics': (context) => AnalyticsPage(),
       },
-      builder: (context, child) {
-        return MediaQuery(
-          data: MediaQuery.of(context).copyWith(
-            padding: EdgeInsets.zero,
-          ),
-          child: child!,
-        );
-      },
+      builder: (context, child) => child!,
     ),
           ),
         ),
