@@ -3411,6 +3411,7 @@ class _HomePageState extends State<HomePage> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
+        toolbarHeight: kToolbarHeight + (MediaQuery.of(context).padding.top * 0.15),
         title: Text(AppLocalizations.of(context)!.appTitle),
         actions: [
           IconButton(
@@ -3465,8 +3466,11 @@ class _HomePageState extends State<HomePage> {
           BottomNavigationBarItem(icon: Icon(Icons.person), label: (ApiService.accessToken == null || ApiService.accessToken!.isEmpty) ? AppLocalizations.of(context)!.navLogin : AppLocalizations.of(context)!.navProfile),
         ],
       ),
-      body: Stack(
-        children: [
+      body: SafeArea(
+        top: false,
+        bottom: true,
+        child: Stack(
+          children: [
           Container(
             decoration: BoxDecoration(
               gradient: LinearGradient(
