@@ -198,11 +198,17 @@ class ApiService {
     );
 
     final data = _handleResponse(response);
-    final String? token = (data['token'] as String?)?.trim();
-    if (token != null && token.isNotEmpty) {
-      await _saveAccessToken(token);
+    // Accept multiple token shapes from different backends
+    String? rawToken;
+    final dynamic t1 = data['token'];
+    final dynamic t2 = data['access_token'];
+    if (t1 is String && t1.trim().isNotEmpty) rawToken = t1.trim();
+    if ((rawToken == null || rawToken.isEmpty) && t2 is String && t2.trim().isNotEmpty) rawToken = t2.trim();
+    if ((rawToken == null || rawToken.isEmpty) && data['jwt'] is String) rawToken = (data['jwt'] as String).trim();
+    if (rawToken != null && rawToken.isNotEmpty) {
+      await _saveAccessToken(rawToken);
     }
-    return data;
+    return data is Map<String, dynamic> ? data : <String, dynamic>{};
   }
 
   static Future<void> logout() async {
@@ -244,7 +250,17 @@ class ApiService {
 
   // User profile methods
   static Future<Map<String, dynamic>> getProfile() async {
-    return await _makeAuthenticatedRequest('GET', '/auth/me');
+    // Try common endpoints in order
+    try {
+      return await _makeAuthenticatedRequest('GET', '/auth/me');
+    } catch (_) {}
+    try {
+      // Some backends expose /user as bare object
+      final resp = await _makeAuthenticatedRequest('GET', '/user');
+      return (resp is Map<String, dynamic> && resp.containsKey('id')) ? resp : resp;
+    } catch (_) {}
+    // Fallback to empty
+    return <String, dynamic>{};
   }
 
   static Future<Map<String, dynamic>> updateProfile(Map<String, dynamic> profileData) async {
@@ -319,8 +335,23 @@ class ApiService {
       Uri.parse('$baseUrl/cars?$queryString'),
       headers: _getHeaders(includeAuth: false),
     );
-
-    return _handleResponse(response);
+    final dynamic decoded = _handleResponse(response);
+    if (decoded is List) {
+      // Wrap list into expected shape
+      final int total = decoded.length;
+      return {
+        'cars': List<Map<String, dynamic>>.from(decoded.map((e) => Map<String, dynamic>.from(e as Map))),
+        'pagination': {
+          'page': page,
+          'per_page': perPage,
+          'total': total,
+          'pages': (total / (perPage == 0 ? 1 : perPage)).ceil(),
+          'has_next': total > perPage,
+          'has_prev': page > 1,
+        },
+      };
+    }
+    return decoded is Map<String, dynamic> ? decoded : <String, dynamic>{};
   }
 
   static Future<Map<String, dynamic>> getCar(String carId) async {
@@ -328,8 +359,14 @@ class ApiService {
       Uri.parse('$baseUrl/cars/$carId'),
       headers: _getHeaders(includeAuth: false),
     );
-
-    return _handleResponse(response);
+    final dynamic decoded = _handleResponse(response);
+    if (decoded is Map<String, dynamic> && decoded.containsKey('car')) {
+      return decoded;
+    }
+    if (decoded is Map<String, dynamic>) {
+      return {'car': decoded};
+    }
+    return <String, dynamic>{};
   }
 
   static Future<Map<String, dynamic>> createCar(Map<String, dynamic> carData) async {
