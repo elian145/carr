@@ -8,6 +8,17 @@ workflows:
       cocoapods: default
       vars: {}
     scripts:
+      - name: Print commit used for this build
+        script: |
+          echo "Building commit: $(git rev-parse HEAD)"
+          git log -1 --pretty=oneline
+      - name: Force clean Flutter and iOS workspace
+        script: |
+          set -e
+          flutter clean
+          rm -rf ios/Pods ios/Podfile.lock
+          rm -rf "$HOME/Library/Developer/Xcode/DerivedData" || true
+          flutter pub get
       - name: Set up keychain to be used for codesigning
         script: |
           keychain initialize
@@ -36,7 +47,9 @@ workflows:
           flutter build ios --release
       - name: Build iOS IPA (Ad Hoc)
         script: |
-          flutter build ipa --export-options-plist ios/ExportOptions.plist
+          GIT_SHA=$(git rev-parse --short=8 HEAD)
+          flutter build ipa --export-options-plist ios/ExportOptions.plist \
+            --dart-define=BUILD_COMMIT_SHA=$GIT_SHA
     artifacts:
       - build/ios/ipa/*.ipa
       - /tmp/xcodebuild_logs/*.log
