@@ -148,6 +148,57 @@ class ApiService {
     return _handleResponse(response);
   }
 
+  // Normalize a car object so the UI has consistent keys and types
+  static Map<String, dynamic> _normalizeCar(Map<String, dynamic> input) {
+    final Map<String, dynamic> car = Map<String, dynamic>.from(input);
+    // Ensure id is a string
+    final dynamic idRaw = car['id'];
+    car['id'] = idRaw?.toString() ?? '';
+    // Strings
+    for (final key in [
+      'brand', 'model', 'body_type', 'transmission', 'drive_type', 'engine_type',
+      'condition', 'color', 'location', 'title', 'title_status', 'license_plate_type',
+      'city',
+    ]) {
+      final v = car[key];
+      car[key] = v == null ? '' : v.toString();
+    }
+    // Numbers
+    car['year'] = car['year'] is num ? car['year'] : int.tryParse('${car['year'] ?? ''}') ?? 0;
+    car['mileage'] = car['mileage'] is num ? car['mileage'] : int.tryParse('${car['mileage'] ?? ''}') ?? 0;
+    car['price'] = car['price'] is num ? car['price'] : double.tryParse('${car['price'] ?? ''}') ?? 0.0;
+    car['seating'] = car['seating'] is num ? car['seating'] : int.tryParse('${car['seating'] ?? ''}') ?? 0;
+    car['cylinder_count'] = car['cylinder_count'] is num ? car['cylinder_count'] : int.tryParse('${car['cylinder_count'] ?? ''}') ?? 0;
+    // Images: accept list of strings or list of maps {image_url}
+    final dynamic imagesRaw = car['images'];
+    List<String> images = const [];
+    if (imagesRaw is List) {
+      images = imagesRaw.map((it) {
+        if (it is String) return it;
+        if (it is Map && it['image_url'] is String) return it['image_url'] as String;
+        return '';
+      }).where((s) => s.isNotEmpty).toList();
+    }
+    car['images'] = images;
+    // Videos: accept list of strings or list of maps {video_url}
+    final dynamic videosRaw = car['videos'];
+    List<String> videos = const [];
+    if (videosRaw is List) {
+      videos = videosRaw.map((it) {
+        if (it is String) return it;
+        if (it is Map && it['video_url'] is String) return it['video_url'] as String;
+        return '';
+      }).where((s) => s.isNotEmpty).toList();
+    }
+    car['videos'] = videos;
+    // Primary image
+    final dynamic imageUrlRaw = car['image_url'];
+    car['image_url'] = imageUrlRaw is String && imageUrlRaw.isNotEmpty
+        ? imageUrlRaw
+        : (images.isNotEmpty ? images.first : '');
+    return car;
+  }
+
   // Authentication methods
   static Future<Map<String, dynamic>> register({
     required String username,
@@ -339,8 +390,10 @@ class ApiService {
     if (decoded is List) {
       // Wrap list into expected shape
       final int total = decoded.length;
+      final cars = List<Map<String, dynamic>>.from(decoded.map((e) => Map<String, dynamic>.from(e as Map)));
+      final normalized = cars.map(_normalizeCar).toList();
       return {
-        'cars': List<Map<String, dynamic>>.from(decoded.map((e) => Map<String, dynamic>.from(e as Map))),
+        'cars': normalized,
         'pagination': {
           'page': page,
           'per_page': perPage,
@@ -351,7 +404,15 @@ class ApiService {
         },
       };
     }
-    return decoded is Map<String, dynamic> ? decoded : <String, dynamic>{};
+    if (decoded is Map<String, dynamic>) {
+      // If shape is {cars:[...]}
+      if (decoded['cars'] is List) {
+        final list = List<Map<String, dynamic>>.from((decoded['cars'] as List).map((e) => Map<String, dynamic>.from(e as Map)));
+        decoded['cars'] = list.map(_normalizeCar).toList();
+      }
+      return decoded;
+    }
+    return <String, dynamic>{};
   }
 
   static Future<Map<String, dynamic>> getCar(String carId) async {
@@ -361,10 +422,14 @@ class ApiService {
     );
     final dynamic decoded = _handleResponse(response);
     if (decoded is Map<String, dynamic> && decoded.containsKey('car')) {
-      return decoded;
+      final obj = Map<String, dynamic>.from(decoded);
+      if (obj['car'] is Map<String, dynamic>) {
+        obj['car'] = _normalizeCar(Map<String, dynamic>.from(obj['car'] as Map));
+      }
+      return obj;
     }
     if (decoded is Map<String, dynamic>) {
-      return {'car': decoded};
+      return {'car': _normalizeCar(decoded)};
     }
     return <String, dynamic>{};
   }
@@ -453,8 +518,8 @@ class ApiService {
           final s = (it['video_url'] as String);
           return s.startsWith('uploads/') ? s.substring(8) : s;
         }
-        return it.toString();
-      }).whereType<String>().toList();
+        return '';
+      }).where((s) => s.isNotEmpty).toList();
 
       return {'videos': normalized};
     } else {
