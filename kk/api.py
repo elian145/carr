@@ -597,4 +597,8 @@ if __name__ == '__main__':
         except Exception as e:
             print(f'Error ensuring tables: {str(e)}')
             raise e
-    app.run(debug=True)
+    host = os.environ.get('HOST', '0.0.0.0')
+    port = int(os.environ.get('PORT', '5000'))
+    debug = os.environ.get('DEBUG', '').lower() in ('1', 'true', 'yes', 'on')
+    print(f"Starting API on {host}:{port} (debug={debug}) DB={db_url}")
+    app.run(host=host, port=port, debug=debug)

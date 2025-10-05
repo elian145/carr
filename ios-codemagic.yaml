@@ -6,7 +6,9 @@ workflows:
       flutter: stable
       xcode: latest
       cocoapods: default
-      vars: {}
+      vars:
+        # Override per-build to your reachable backend from device
+        API_BASE: http://192.168.1.13:5000
     scripts:
       - name: Print commit used for this build
         script: |
@@ -44,12 +46,19 @@ workflows:
           flutter test
       - name: Build iOS app
         script: |
-          flutter build ios --release
+          # Allow ATS for sideload/dev
+          /usr/libexec/PlistBuddy -c 'Add :NSAppTransportSecurity:NSAllowsArbitraryLoads bool YES' ios/Runner/Info.plist || true
+          # Pass API base and commit SHA for verification
+          GIT_SHA=$(git rev-parse --short=8 HEAD)
+          flutter build ios --release \
+            --dart-define=BUILD_COMMIT_SHA=$GIT_SHA \
+            --dart-define=API_BASE=${API_BASE:-}
       - name: Build iOS IPA (Ad Hoc)
         script: |
           GIT_SHA=$(git rev-parse --short=8 HEAD)
           flutter build ipa --export-options-plist ios/ExportOptions.plist \
-            --dart-define=BUILD_COMMIT_SHA=$GIT_SHA
+            --dart-define=BUILD_COMMIT_SHA=$GIT_SHA \
+            --dart-define=API_BASE=${API_BASE:-}
     artifacts:
       - build/ios/ipa/*.ipa
       - /tmp/xcodebuild_logs/*.log
