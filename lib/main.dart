@@ -1410,6 +1410,7 @@ class ComparisonButton extends StatelessWidget {
 class MyApp extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
+    const String _buildSha = String.fromEnvironment('BUILD_COMMIT_SHA', defaultValue: 'dev');
     return MultiProvider(
       providers: [
         ChangeNotifierProvider(create: (context) => ThemeProvider()),
@@ -3463,6 +3464,38 @@ class _HomePageState extends State<HomePage> {
         bottom: true,
         child: Stack(
           children: [
+          // Build commit badge (tap to copy)
+          Positioned(
+            right: 8,
+            bottom: 8,
+            child: GestureDetector(
+              onLongPress: () async {
+                await Clipboard.setData(ClipboardData(text: _buildSha));
+                if (mounted) {
+                  ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Commit: ' + _buildSha + ' copied')));
+                }
+              },
+              child: Container(
+                padding: EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                decoration: BoxDecoration(
+                  color: Colors.black.withOpacity(0.6),
+                  borderRadius: BorderRadius.circular(6),
+                  border: Border.all(color: Colors.white24),
+                ),
+                child: Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Icon(Icons.tag, size: 12, color: Colors.white70),
+                    SizedBox(width: 4),
+                    Text(
+                      _buildSha,
+                      style: TextStyle(color: Colors.white70, fontSize: 11, letterSpacing: 0.5),
+                    ),
+                  ],
+                ),
+              ),
+            ),
+          ),
           Container(
             decoration: BoxDecoration(
               gradient: LinearGradient(
