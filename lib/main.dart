@@ -6377,7 +6377,15 @@ final String raw = car!['contact_phone'].toString();
                                 ),
                                 itemCount: _videoUrls.length,
                                 itemBuilder: (context, index) {
-                                  return Container(
+                                  final String videoUrl = _videoUrls[index];
+                                  return InkWell(
+                                    onTap: () async {
+                                      try {
+                                        final uri = Uri.parse(videoUrl);
+                                        await launchUrl(uri, mode: LaunchMode.externalApplication);
+                                      } catch (_) {}
+                                    },
+                                    child: Container(
                                     decoration: BoxDecoration(
                                       borderRadius: BorderRadius.circular(12),
                                       color: Colors.grey[900],
