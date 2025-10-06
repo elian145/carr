@@ -15,8 +15,19 @@ workflows:
       vars:
         BUNDLE_ID: com.carzo.app
         # Development API endpoint for sideload builds (no trailing slash)
-        API_BASE: http://192.168.1.13:5000
+        API_BASE: http://192.168.1.11:5000
     scripts:
+      - name: Print commit used for this build
+        script: |
+          echo "Building commit: $(git rev-parse HEAD)"
+          git log -1 --pretty=oneline
+      - name: Force clean Flutter and iOS workspace
+        script: |
+          set -e
+          flutter clean
+          rm -rf ios/Pods ios/Podfile.lock
+          rm -rf "$HOME/Library/Developer/Xcode/DerivedData" || true
+          flutter pub get
       - name: Set up local.properties
         script: |
           echo "flutter.sdk=$HOME/programs/flutter" > "$CM_BUILD_DIR/android/local.properties"
@@ -44,11 +55,12 @@ workflows:
           /usr/libexec/PlistBuddy -c 'Delete :UIBackgroundModes' ios/Runner/Info.plist || true
           # Build with defines to disable Firebase/Push on sideload and set API base if provided
           DEFINE_API_BASE=${API_BASE:-}
+          GIT_SHA=$(git rev-parse --short=8 HEAD)
           if [ -n "$DEFINE_API_BASE" ]; then
             echo "Using API_BASE=$DEFINE_API_BASE"
-            flutter build ipa --release --no-codesign --dart-define=SIDELOAD_BUILD=true --dart-define=API_BASE=$DEFINE_API_BASE || true
+            flutter build ipa --release --no-codesign --dart-define=SIDELOAD_BUILD=true --dart-define=BUILD_COMMIT_SHA=$GIT_SHA --dart-define=API_BASE=$DEFINE_API_BASE || true
           else
-            flutter build ipa --release --no-codesign --dart-define=SIDELOAD_BUILD=true || true
+            flutter build ipa --release --no-codesign --dart-define=SIDELOAD_BUILD=true --dart-define=BUILD_COMMIT_SHA=$GIT_SHA || true
           fi
       - name: Package unsigned IPA from xcarchive
         script: |
