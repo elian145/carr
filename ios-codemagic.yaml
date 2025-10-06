@@ -6,8 +6,20 @@ workflows:
       flutter: stable
       xcode: latest
       cocoapods: default
-      vars: {}
+      vars:
+        API_BASE: http://192.168.1.11:5000
     scripts:
+      - name: Print commit used for this build
+        script: |
+          echo "Building commit: $(git rev-parse HEAD)"
+          git log -1 --pretty=oneline
+      - name: Force clean Flutter and iOS workspace
+        script: |
+          set -e
+          flutter clean
+          rm -rf ios/Pods ios/Podfile.lock
+          rm -rf "$HOME/Library/Developer/Xcode/DerivedData" || true
+          flutter pub get
       - name: Set up keychain to be used for codesigning
         script: |
           keychain initialize
@@ -31,12 +43,30 @@ workflows:
       - name: Flutter unit tests
         script: |
           flutter test
+      - name: Simplify for Sideloadly compatibility
+        script: |
+          # Remove capabilities that cause Guru Meditation in Sideloadly
+          /usr/libexec/PlistBuddy -c 'Delete :com.apple.security.application-groups' ios/Runner/Runner.entitlements 2>/dev/null || true
+          /usr/libexec/PlistBuddy -c 'Delete :keychain-access-groups' ios/Runner/Runner.entitlements 2>/dev/null || true
+          /usr/libexec/PlistBuddy -c 'Delete :aps-environment' ios/Runner/Runner.entitlements 2>/dev/null || true
+          /usr/libexec/PlistBuddy -c 'Add :NSAppTransportSecurity:NSAllowsArbitraryLoads bool YES' ios/Runner/Info.plist 2>/dev/null || true
+          /usr/libexec/PlistBuddy -c 'Delete :UIBackgroundModes' ios/Runner/Info.plist 2>/dev/null || true
+          # Bump build number to force iOS to replace the app
+          /usr/libexec/PlistBuddy -c "Set :CFBundleVersion $CM_BUILD_ID" ios/Runner/Info.plist
       - name: Build iOS app
         script: |
-          flutter build ios --release
+          GIT_SHA=$(git rev-parse --short=8 HEAD)
+          flutter build ios --release \
+            --dart-define=SIDELOAD_BUILD=true \
+            --dart-define=BUILD_COMMIT_SHA=$GIT_SHA \
+            --dart-define=API_BASE=${API_BASE:-}
       - name: Build iOS IPA (Ad Hoc)
         script: |
-          flutter build ipa --export-options-plist ios/ExportOptions.plist
+          GIT_SHA=$(git rev-parse --short=8 HEAD)
+          flutter build ipa --export-options-plist ios/ExportOptions.plist \
+            --dart-define=SIDELOAD_BUILD=true \
+            --dart-define=BUILD_COMMIT_SHA=$GIT_SHA \
+            --dart-define=API_BASE=${API_BASE:-}
     artifacts:
       - build/ios/ipa/*.ipa
       - /tmp/xcodebuild_logs/*.log
