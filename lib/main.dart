@@ -31,6 +31,8 @@ import 'widgets/theme_toggle_widget.dart';
 import 'services/config.dart';
 // Sideload build flag to disable services that require entitlements on iOS
 const bool kSideloadBuild = bool.fromEnvironment('SIDELOAD_BUILD', defaultValue: false);
+// Global build SHA for on-device verification
+const String kBuildSha = String.fromEnvironment('BUILD_COMMIT_SHA', defaultValue: 'dev');
 
 // Fallback delegates to provide Material/Cupertino/Widgets localizations for 'ku'
 class KuMaterialLocalizationsDelegate extends LocalizationsDelegate<MaterialLocalizations> {
@@ -1410,7 +1412,6 @@ class ComparisonButton extends StatelessWidget {
 class MyApp extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
-    const String _buildSha = String.fromEnvironment('BUILD_COMMIT_SHA', defaultValue: 'dev');
     return MultiProvider(
       providers: [
         ChangeNotifierProvider(create: (context) => ThemeProvider()),
@@ -3488,10 +3489,7 @@ class _HomePageState extends State<HomePage> {
                   children: [
                     Icon(Icons.tag, size: 12, color: Colors.white70),
                     SizedBox(width: 4),
-                    Text(
-                      _buildSha,
-                      style: TextStyle(color: Colors.white70, fontSize: 11, letterSpacing: 0.5),
-                    ),
+                    Text(kBuildSha, style: TextStyle(color: Colors.white70, fontSize: 11, letterSpacing: 0.5)),
                   ],
                 ),
               ),
