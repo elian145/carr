@@ -31,6 +31,8 @@ import 'widgets/theme_toggle_widget.dart';
 import 'services/config.dart';
 // Sideload build flag to disable services that require entitlements on iOS
 const bool kSideloadBuild = bool.fromEnvironment('SIDELOAD_BUILD', defaultValue: false);
+// Build commit SHA for on-device verification
+const String kBuildSha = String.fromEnvironment('BUILD_COMMIT_SHA', defaultValue: 'dev');
 
 // Fallback delegates to provide Material/Cupertino/Widgets localizations for 'ku'
 class KuMaterialLocalizationsDelegate extends LocalizationsDelegate<MaterialLocalizations> {
