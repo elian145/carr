@@ -3411,7 +3411,16 @@ class _HomePageState extends State<HomePage> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: Text(AppLocalizations.of(context)!.appTitle),
+        title: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Text(AppLocalizations.of(context)!.appTitle),
+            Text(
+              'REVERTED BUILD ' + kBuildSha,
+              style: TextStyle(fontSize: 10, color: Colors.green, fontWeight: FontWeight.bold),
+            ),
+          ],
+        ),
         actions: [
           IconButton(
             tooltip: 'Saved Searches',
