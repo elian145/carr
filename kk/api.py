@@ -305,6 +305,86 @@ def cars():
             "status": car.status
         }), 201
 
+# Compatibility wrapper used by the mobile app: paginated JSON under /api/cars
+@app.route('/api/cars', methods=['GET'])
+def api_cars_list():
+    query = Car.query.filter_by(status="active")
+    brand = request.args.get('brand')
+    model = request.args.get('model')
+    min_price = request.args.get('min_price', type=float)
+    max_price = request.args.get('max_price', type=float)
+    min_year = request.args.get('min_year', type=int)
+    max_year = request.args.get('max_year', type=int)
+    city = request.args.get('city')
+    condition = request.args.get('condition')
+    transmission = request.args.get('transmission')
+    fuel_type = request.args.get('fuel_type')
+    body_type = request.args.get('body_type')
+
+    if brand:
+        query = query.filter(Car.brand == brand)
+    if model:
+        query = query.filter(Car.model == model)
+    if min_price is not None:
+        query = query.filter(Car.price >= min_price)
+    if max_price is not None:
+        query = query.filter(Car.price <= max_price)
+    if min_year is not None:
+        query = query.filter(Car.year >= min_year)
+    if max_year is not None:
+        query = query.filter(Car.year <= max_year)
+    if city:
+        query = query.filter(Car.city == city)
+    if condition:
+        query = query.filter(Car.condition == condition)
+    if transmission:
+        query = query.filter(Car.transmission == transmission)
+    if fuel_type:
+        query = query.filter(Car.fuel_type == fuel_type)
+    if body_type:
+        query = query.filter(Car.body_type == body_type)
+
+    page = request.args.get('page', default=1, type=int)
+    per_page = request.args.get('per_page', default=20, type=int)
+    total = query.count()
+    items = (
+        query.order_by(Car.created_at.desc())
+             .offset((page - 1) * per_page)
+             .limit(per_page)
+             .all()
+    )
+
+    cars_payload = []
+    for car in items:
+        cars_payload.append({
+            "id": car.id,
+            "title": car.title,
+            "brand": car.brand,
+            "model": car.model,
+            "trim": car.trim,
+            "year": car.year,
+            "price": car.price,
+            "mileage": car.mileage,
+            "condition": car.condition,
+            "transmission": car.transmission,
+            "fuel_type": car.fuel_type,
+            "color": car.color,
+            "image_url": car.image_url,
+            "city": car.city,
+            "status": car.status
+        })
+
+    has_next = (page * per_page) < total
+    return jsonify({
+        'cars': cars_payload,
+        'pagination': {
+            'page': page,
+            'per_page': per_page,
+            'total': total,
+            'has_next': has_next,
+        }
+    })
+
 # Route to get car by ID
 @app.route('/cars/<int:car_id>', methods=['GET'])
 def get_car_by_id(car_id):
@@ -326,6 +406,29 @@ def get_car_by_id(car_id):
         "city": car.city,
         "status": car.status
     })
+
+# Compatibility wrapper for mobile app: /api/cars/<id> returns {car: {...}}
+@app.route('/api/cars/<int:car_id>', methods=['GET'])
+def api_get_car(car_id):
+    car = Car.query.get_or_404(car_id)
+    payload = {
+        "id": car.id,
+        "title": car.title,
+        "brand": car.brand,
+        "model": car.model,
+        "trim": car.trim,
+        "year": car.year,
+        "price": car.price,
+        "mileage": car.mileage,
+        "condition": car.condition,
+        "transmission": car.transmission,
+        "fuel_type": car.fuel_type,
+        "color": car.color,
+        "image_url": car.image_url,
+        "city": car.city,
+        "status": car.status
+    }
+    return jsonify({'car': payload})
 
 @app.route('/cars/<int:car_id>', methods=['PUT'])
 def update_car(car_id):
@@ -409,6 +512,36 @@ def api_favorites():
         })
     return jsonify(result)
 
+# Compatibility wrapper expected by app: /api/user/favorites => {cars: [...]}
+@app.route('/api/user/favorites', methods=['GET'])
+def api_user_favorites():
+    uid = get_current_user_id()
+    if not uid:
+        return jsonify({'error': 'Unauthorized'}), 401
+    favorites = Favorite.query.filter_by(user_id=uid).all()
+    car_ids = [fav.car_id for fav in favorites]
+    cars = Car.query.filter(Car.id.in_(car_ids)).all()
+    result = []
+    for car in cars:
+        result.append({
+            "id": car.id,
+            "title": car.title,
+            "brand": car.brand,
+            "model": car.model,
+            "trim": car.trim,
+            "year": car.year,
+            "price": car.price,
+            "mileage": car.mileage,
+            "condition": car.condition,
+            "transmission": car.transmission,
+            "fuel_type": car.fuel_type,
+            "color": car.color,
+            "image_url": car.image_url,
+            "city": car.city,
+            "status": car.status
+        })
+    return jsonify({'cars': result})
+
 # POST /api/favorite/<car_id> - toggle favorite
 @app.route('/api/favorite/<int:car_id>', methods=['POST'])
 def api_toggle_favorite(car_id):
@@ -419,12 +552,17 @@ def api_toggle_favorite(car_id):
     if fav:
         db.session.delete(fav)
         db.session.commit()
-        return jsonify({'favorited': False})
+        return jsonify({'favorited': False, 'is_favorited': False})
     else:
         new_fav = Favorite(user_id=uid, car_id=car_id)
         db.session.add(new_fav)
         db.session.commit()
-        return jsonify({'favorited': True})
+        return jsonify({'favorited': True, 'is_favorited': True})
+
+# Compatibility wrapper expected by app: /api/cars/<id>/favorite
+@app.route('/api/cars/<int:car_id>/favorite', methods=['POST'])
+def api_toggle_favorite_alt(car_id):
+    return api_toggle_favorite(car_id)
 
 @app.route('/api/chats', methods=['GET'])
 def api_chats():
