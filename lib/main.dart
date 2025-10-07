@@ -3414,7 +3414,7 @@ class _HomePageState extends State<HomePage> {
     final double statusBarHeight = MediaQuery.of(context).padding.top;
     return Scaffold(
       appBar: PreferredSize(
-        preferredSize: Size.fromHeight(kToolbarHeight),
+        preferredSize: Size.fromHeight(kToolbarHeight + statusBarHeight),
         child: Padding(
           padding: EdgeInsets.only(top: statusBarHeight),
           child: AppBar(
