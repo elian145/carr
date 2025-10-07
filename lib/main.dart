@@ -3411,24 +3411,20 @@ class _HomePageState extends State<HomePage> {
 
   @override
   Widget build(BuildContext context) {
-    final double statusBarHeight = MediaQuery.of(context).padding.top;
     return Scaffold(
-      appBar: PreferredSize(
-        preferredSize: Size.fromHeight(kToolbarHeight + statusBarHeight),
-        child: Padding(
-          padding: EdgeInsets.only(top: statusBarHeight),
-          child: AppBar(
-            title: Column(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                Text(AppLocalizations.of(context)!.appTitle),
-                Text(
-                  'REVERTED ' + kBuildSha,
-                  style: TextStyle(fontSize: 10, color: Colors.green, fontWeight: FontWeight.bold),
-                ),
-              ],
+      extendBodyBehindAppBar: false,
+      appBar: AppBar(
+        title: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Text(AppLocalizations.of(context)!.appTitle),
+            Text(
+              'REVERTED ' + kBuildSha,
+              style: TextStyle(fontSize: 10, color: Colors.green, fontWeight: FontWeight.bold),
             ),
-            actions: [
+          ],
+        ),
+        actions: [
           IconButton(
             tooltip: 'Saved Searches',
             onPressed: () => Navigator.push(context, MaterialPageRoute(builder: (_) => SavedSearchesPage(parentState: this))),
@@ -3451,11 +3447,9 @@ class _HomePageState extends State<HomePage> {
               padding: EdgeInsets.symmetric(horizontal: 12),
             ),
           ),
-              const ThemeToggleWidget(),
-              buildLanguageMenu(),
-            ],
-          ),
-        ),
+          const ThemeToggleWidget(),
+          buildLanguageMenu(),
+        ],
       ),
       // Pull-to-refresh is already provided inside the main content via internal scrollables
       bottomNavigationBar: BottomNavigationBar(
