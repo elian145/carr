@@ -3412,16 +3412,24 @@ class _HomePageState extends State<HomePage> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      extendBodyBehindAppBar: false,
       appBar: AppBar(
-        title: Column(
-          mainAxisSize: MainAxisSize.min,
+        title: Row(
           children: [
             Text(AppLocalizations.of(context)!.appTitle),
-            Text(
-              'REVERTED ' + kBuildSha,
-              style: TextStyle(fontSize: 10, color: Colors.green, fontWeight: FontWeight.bold),
+            SizedBox(width: 8),
+            Container(
+              padding: EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+              decoration: BoxDecoration(
+                color: Colors.green,
+                borderRadius: BorderRadius.circular(4),
+              ),
+              child: Text(
+                kBuildSha,
+                style: TextStyle(fontSize: 9, color: Colors.black, fontWeight: FontWeight.bold),
+              ),
             ),
+            SizedBox(width: 4),
+            Text('API: ${getApiBase()}', style: TextStyle(fontSize: 8, color: Colors.white70)),
           ],
         ),
         actions: [
