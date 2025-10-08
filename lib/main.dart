@@ -3411,19 +3411,11 @@ class _HomePageState extends State<HomePage> {
 
   @override
   Widget build(BuildContext context) {
-    return SafeArea(
-      child: Scaffold(
+    return Scaffold(
         appBar: AppBar(
-          title: Row(
-            children: [
-              Expanded(
-                child: Text(
-                  AppLocalizations.of(context)!.appTitle + ' [${kBuildSha}] ${getApiBase()}',
-                  style: TextStyle(fontSize: 14),
-                  overflow: TextOverflow.ellipsis,
-                ),
-              ),
-            ],
+          title: Text(
+            AppLocalizations.of(context)!.appTitle,
+            style: TextStyle(fontSize: 18),
           ),
           actions: [
           IconButton(
@@ -4962,7 +4954,6 @@ class _HomePageState extends State<HomePage> {
       ),
     ),
       floatingActionButton: null,
-      ),
     );
   }
 
