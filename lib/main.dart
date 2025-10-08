@@ -3411,14 +3411,20 @@ class _HomePageState extends State<HomePage> {
 
   @override
   Widget build(BuildContext context) {
-    return SafeArea(
-      child: Scaffold(
-        appBar: AppBar(
-          title: Text(
-            AppLocalizations.of(context)!.appTitle,
-            style: TextStyle(fontSize: 18),
-          ),
-          actions: [
+    final mediaQuery = MediaQuery.of(context);
+    final topPadding = mediaQuery.padding.top;
+    
+    return Scaffold(
+        appBar: PreferredSize(
+          preferredSize: Size.fromHeight(kToolbarHeight + topPadding),
+          child: Padding(
+            padding: EdgeInsets.only(top: topPadding),
+            child: AppBar(
+              title: Text(
+                AppLocalizations.of(context)!.appTitle,
+                style: TextStyle(fontSize: 18),
+              ),
+              actions: [
           IconButton(
             tooltip: 'Saved Searches',
             onPressed: () => Navigator.push(context, MaterialPageRoute(builder: (_) => SavedSearchesPage(parentState: this))),
@@ -3444,6 +3450,8 @@ class _HomePageState extends State<HomePage> {
           const ThemeToggleWidget(),
           buildLanguageMenu(),
         ],
+            ),
+          ),
         ),
         // Pull-to-refresh is already provided inside the main content via internal scrollables
         bottomNavigationBar: BottomNavigationBar(
@@ -4955,7 +4963,6 @@ class _HomePageState extends State<HomePage> {
       ),
     ),
       floatingActionButton: null,
-      ),
     );
   }
 
