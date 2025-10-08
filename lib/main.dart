@@ -3411,28 +3411,21 @@ class _HomePageState extends State<HomePage> {
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(
-        title: Row(
-          children: [
-            Text(AppLocalizations.of(context)!.appTitle),
-            SizedBox(width: 8),
-            Container(
-              padding: EdgeInsets.symmetric(horizontal: 6, vertical: 2),
-              decoration: BoxDecoration(
-                color: Colors.green,
-                borderRadius: BorderRadius.circular(4),
+    return SafeArea(
+      child: Scaffold(
+        appBar: AppBar(
+          title: Row(
+            children: [
+              Expanded(
+                child: Text(
+                  AppLocalizations.of(context)!.appTitle + ' [${kBuildSha}] ${getApiBase()}',
+                  style: TextStyle(fontSize: 14),
+                  overflow: TextOverflow.ellipsis,
+                ),
               ),
-              child: Text(
-                kBuildSha,
-                style: TextStyle(fontSize: 9, color: Colors.black, fontWeight: FontWeight.bold),
-              ),
-            ),
-            SizedBox(width: 4),
-            Text('API: ${getApiBase()}', style: TextStyle(fontSize: 8, color: Colors.white70)),
-          ],
-        ),
-        actions: [
+            ],
+          ),
+          actions: [
           IconButton(
             tooltip: 'Saved Searches',
             onPressed: () => Navigator.push(context, MaterialPageRoute(builder: (_) => SavedSearchesPage(parentState: this))),
@@ -3458,34 +3451,34 @@ class _HomePageState extends State<HomePage> {
           const ThemeToggleWidget(),
           buildLanguageMenu(),
         ],
-      ),
-      // Pull-to-refresh is already provided inside the main content via internal scrollables
-      bottomNavigationBar: BottomNavigationBar(
-        type: BottomNavigationBarType.fixed,
-        backgroundColor: Colors.black87,
-        selectedItemColor: Color(0xFFFF6B00),
-        unselectedItemColor: Colors.white70,
-        currentIndex: 0,
-        onTap: (idx) {
-          switch (idx) {
-            case 0:
-              Navigator.pushReplacementNamed(context, '/');
-              break;
-            case 1:
-              Navigator.pushReplacementNamed(context, '/favorites');
-              break;
-            case 2:
-              Navigator.pushReplacementNamed(context, '/profile');
-              break;
-          }
-        },
-        items: [
-          BottomNavigationBarItem(icon: Icon(Icons.home), label: AppLocalizations.of(context)!.navHome),
-          BottomNavigationBarItem(icon: Icon(Icons.favorite), label: AppLocalizations.of(context)!.navSaved),
-          BottomNavigationBarItem(icon: Icon(Icons.person), label: (ApiService.accessToken == null || ApiService.accessToken!.isEmpty) ? AppLocalizations.of(context)!.navLogin : AppLocalizations.of(context)!.navProfile),
-        ],
-      ),
-      body: SafeArea(
+        ),
+        // Pull-to-refresh is already provided inside the main content via internal scrollables
+        bottomNavigationBar: BottomNavigationBar(
+          type: BottomNavigationBarType.fixed,
+          backgroundColor: Colors.black87,
+          selectedItemColor: Color(0xFFFF6B00),
+          unselectedItemColor: Colors.white70,
+          currentIndex: 0,
+          onTap: (idx) {
+            switch (idx) {
+              case 0:
+                Navigator.pushReplacementNamed(context, '/');
+                break;
+              case 1:
+                Navigator.pushReplacementNamed(context, '/favorites');
+                break;
+              case 2:
+                Navigator.pushReplacementNamed(context, '/profile');
+                break;
+            }
+          },
+          items: [
+            BottomNavigationBarItem(icon: Icon(Icons.home), label: AppLocalizations.of(context)!.navHome),
+            BottomNavigationBarItem(icon: Icon(Icons.favorite), label: AppLocalizations.of(context)!.navSaved),
+            BottomNavigationBarItem(icon: Icon(Icons.person), label: (ApiService.accessToken == null || ApiService.accessToken!.isEmpty) ? AppLocalizations.of(context)!.navLogin : AppLocalizations.of(context)!.navProfile),
+          ],
+        ),
+        body: SafeArea(
         top: true,
         bottom: true,
         child: Stack(
