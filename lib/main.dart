@@ -3411,7 +3411,8 @@ class _HomePageState extends State<HomePage> {
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
+    return SafeArea(
+      child: Scaffold(
         appBar: AppBar(
           title: Text(
             AppLocalizations.of(context)!.appTitle,
@@ -4954,6 +4955,7 @@ class _HomePageState extends State<HomePage> {
       ),
     ),
       floatingActionButton: null,
+      ),
     );
   }
 
