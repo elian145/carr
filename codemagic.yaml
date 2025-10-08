@@ -15,7 +15,7 @@ workflows:
       vars:
         BUNDLE_ID: com.carzo.app
         # Development API endpoint for sideload builds (no trailing slash)
-        API_BASE: http://192.168.1.11:5000
+        API_BASE: http://192.168.1.12:5000
     scripts:
       - name: Print commit used for this build
         script: |
