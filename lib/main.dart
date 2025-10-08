@@ -3471,7 +3471,7 @@ class _HomePageState extends State<HomePage> {
           ],
         ),
         body: SafeArea(
-        top: true,
+        top: false,
         bottom: true,
         child: Stack(
           children: [
