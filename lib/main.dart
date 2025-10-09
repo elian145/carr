@@ -3858,7 +3858,7 @@ class _HomePageState extends State<HomePage> {
                                                       child: DropdownButtonFormField<String>(
                                                         value: selectedMinPrice ?? '',
                                                         decoration: InputDecoration(
-                                                          hintText: AppLocalizations.of(context)!.minPrice,
+                                                          hintText: AppLocalizations.of(context)!.any,
                                                           filled: true,
                                                           fillColor: Colors.black.withOpacity(0.2),
                                                           hintStyle: TextStyle(color: Colors.white70),
@@ -3899,7 +3899,7 @@ class _HomePageState extends State<HomePage> {
                                                       child: DropdownButtonFormField<String>(
                                                         value: selectedMaxPrice ?? '',
                                                         decoration: InputDecoration(
-                                                          hintText: AppLocalizations.of(context)!.maxPrice,
+                                                          hintText: AppLocalizations.of(context)!.any,
                                                           filled: true,
                                                           fillColor: Colors.black.withOpacity(0.2),
                                                           hintStyle: TextStyle(color: Colors.white70),
@@ -3947,7 +3947,7 @@ class _HomePageState extends State<HomePage> {
                                                       child: TextFormField(
                                                         controller: TextEditingController(text: selectedMinPrice ?? ''),
                                                         decoration: InputDecoration(
-                                                          hintText: AppLocalizations.of(context)!.minPrice,
+                                                          hintText: AppLocalizations.of(context)!.any,
                                                           filled: true,
                                                           fillColor: Colors.black.withOpacity(0.2),
                                                           hintStyle: TextStyle(color: Colors.white70),
@@ -3972,7 +3972,7 @@ class _HomePageState extends State<HomePage> {
                                                       child: TextFormField(
                                                         controller: TextEditingController(text: selectedMaxPrice ?? ''),
                                                         decoration: InputDecoration(
-                                                          hintText: AppLocalizations.of(context)!.maxPrice,
+                                                          hintText: AppLocalizations.of(context)!.any,
                                                           filled: true,
                                                           fillColor: Colors.black.withOpacity(0.2),
                                                           hintStyle: TextStyle(color: Colors.white70),
@@ -4024,7 +4024,7 @@ class _HomePageState extends State<HomePage> {
                                                       child: DropdownButtonFormField<String>(
                                                         value: selectedMinYear ?? '',
                                                         decoration: InputDecoration(
-                                                          hintText: AppLocalizations.of(context)!.minYear,
+                                                          hintText: AppLocalizations.of(context)!.any,
                                                           filled: true,
                                                           fillColor: Colors.black.withOpacity(0.2),
                                                           hintStyle: TextStyle(color: Colors.white70),
@@ -4060,7 +4060,7 @@ class _HomePageState extends State<HomePage> {
                                                       child: DropdownButtonFormField<String>(
                                                         value: selectedMaxYear ?? '',
                                                         decoration: InputDecoration(
-                                                          hintText: AppLocalizations.of(context)!.maxYear,
+                                                          hintText: AppLocalizations.of(context)!.any,
                                                           filled: true,
                                                           fillColor: Colors.black.withOpacity(0.2),
                                                           hintStyle: TextStyle(color: Colors.white70),
@@ -4103,7 +4103,7 @@ class _HomePageState extends State<HomePage> {
                                                       child: TextFormField(
                                                         controller: TextEditingController(text: selectedMinYear ?? ''),
                                                         decoration: InputDecoration(
-                                                          hintText: AppLocalizations.of(context)!.enterMinYear,
+                                                          hintText: AppLocalizations.of(context)!.any,
                                                           filled: true,
                                                           fillColor: Colors.black.withOpacity(0.2),
                                                           hintStyle: TextStyle(color: Colors.white70),
@@ -4121,7 +4121,7 @@ class _HomePageState extends State<HomePage> {
                                                       child: TextFormField(
                                                         controller: TextEditingController(text: selectedMaxYear ?? ''),
                                                         decoration: InputDecoration(
-                                                          hintText: AppLocalizations.of(context)!.enterMaxYear,
+                                                          hintText: AppLocalizations.of(context)!.any,
                                                           filled: true,
                                                           fillColor: Colors.black.withOpacity(0.2),
                                                           hintStyle: TextStyle(color: Colors.white70),
@@ -4255,7 +4255,7 @@ class _HomePageState extends State<HomePage> {
                                                       child: TextFormField(
                                                         controller: TextEditingController(text: selectedMinMileage ?? ''),
                                                         decoration: InputDecoration(
-                                                          hintText: AppLocalizations.of(context)!.enterMinMileage,
+                                                          hintText: AppLocalizations.of(context)!.any,
                                                           filled: true,
                                                           fillColor: Colors.black.withOpacity(0.2),
                                                           hintStyle: TextStyle(color: Colors.white70),
@@ -4273,7 +4273,7 @@ class _HomePageState extends State<HomePage> {
                                                       child: TextFormField(
                                                         controller: TextEditingController(text: selectedMaxMileage ?? ''),
                                                         decoration: InputDecoration(
-                                                          hintText: AppLocalizations.of(context)!.enterMaxMileage,
+                                                          hintText: AppLocalizations.of(context)!.any,
                                                           filled: true,
                                                           fillColor: Colors.black.withOpacity(0.2),
                                                           hintStyle: TextStyle(color: Colors.white70),
@@ -10132,7 +10132,7 @@ class CarComparisonPage extends StatelessWidget {
                       child: isYearDropdown
                           ? DropdownButtonFormField<String>(
                               decoration: InputDecoration(
-                                hintText: AppLocalizations.of(context)!.yearLabel,
+                                hintText: AppLocalizations.of(context)!.any,
                                 border: OutlineInputBorder(),
                               ),
                               value: (selectedMinYear != null && selectedMinYear!.isNotEmpty && years.contains(selectedMinYear)) ? selectedMinYear : null,
@@ -10141,7 +10141,7 @@ class CarComparisonPage extends StatelessWidget {
                             )
                           : TextFormField(
                               decoration: InputDecoration(
-                                hintText: AppLocalizations.of(context)!.minYear,
+                                hintText: AppLocalizations.of(context)!.any,
                                 border: OutlineInputBorder(),
                               ),
                               keyboardType: TextInputType.number,
@@ -10167,7 +10167,7 @@ class CarComparisonPage extends StatelessWidget {
                       child: isPriceDropdown
                           ? DropdownButtonFormField<String>(
                               decoration: InputDecoration(
-                                hintText: AppLocalizations.of(context)!.priceLabel,
+                                hintText: AppLocalizations.of(context)!.any,
                                 border: OutlineInputBorder(),
                               ),
                               value: (selectedMinPrice != null && selectedMinPrice!.isNotEmpty) ? selectedMinPrice : null,
@@ -10179,7 +10179,7 @@ class CarComparisonPage extends StatelessWidget {
                             )
                           : TextFormField(
                               decoration: InputDecoration(
-                                hintText: AppLocalizations.of(context)!.minPrice,
+                                hintText: AppLocalizations.of(context)!.any,
                                 border: OutlineInputBorder(),
                               ),
                               keyboardType: TextInputType.number,
@@ -10205,7 +10205,7 @@ class CarComparisonPage extends StatelessWidget {
                       child: isMileageDropdown
                           ? DropdownButtonFormField<String>(
                               decoration: InputDecoration(
-                                hintText: AppLocalizations.of(context)!.mileageLabel,
+                                hintText: AppLocalizations.of(context)!.any,
                                 border: OutlineInputBorder(),
                               ),
                               value: (selectedMaxMileage != null && selectedMaxMileage!.isNotEmpty) ? selectedMaxMileage : null,
@@ -10225,7 +10225,7 @@ class CarComparisonPage extends StatelessWidget {
                             )
                           : TextFormField(
                               decoration: InputDecoration(
-                                hintText: AppLocalizations.of(context)!.minMileage,
+                                hintText: AppLocalizations.of(context)!.any,
                                 border: OutlineInputBorder(),
                               ),
                               keyboardType: TextInputType.number,
