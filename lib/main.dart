@@ -6637,7 +6637,7 @@ final String raw = car!['contact_phone'].toString();
         crossAxisCount: 3,
         crossAxisSpacing: 12,
         mainAxisSpacing: 12,
-        childAspectRatio: 1.8,
+        childAspectRatio: 1.5,
       ),
       itemCount: primItems.length,
       itemBuilder: (context, index) => _buildSpecCard(primItems[index]),
@@ -6671,14 +6671,14 @@ final String raw = car!['contact_phone'].toString();
               Expanded(
                 child: Text(
                   item.label,
-                  maxLines: 1,
-                  softWrap: false,
+                  maxLines: 2,
                   overflow: TextOverflow.ellipsis,
                   style: TextStyle(
-                    fontSize: 12,
+                    fontSize: 11,
                     color: Colors.black,
                     fontWeight: FontWeight.w800,
                     letterSpacing: 0.2,
+                    height: 1.1,
                   ),
                 ),
               ),
