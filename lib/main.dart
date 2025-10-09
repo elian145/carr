@@ -3858,10 +3858,10 @@ class _HomePageState extends State<HomePage> {
                                                       child: DropdownButtonFormField<String>(
                                                         value: selectedMinPrice ?? '',
                                                         decoration: InputDecoration(
-                                                                          labelText: AppLocalizations.of(context)!.minPrice,
+                                                          hintText: AppLocalizations.of(context)!.minPrice,
                                                           filled: true,
                                                           fillColor: Colors.black.withOpacity(0.2),
-                                                          labelStyle: TextStyle(color: Colors.white),
+                                                          hintStyle: TextStyle(color: Colors.white70),
                                                           border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
                                                         ),
                                                         items: [
@@ -3899,10 +3899,10 @@ class _HomePageState extends State<HomePage> {
                                                       child: DropdownButtonFormField<String>(
                                                         value: selectedMaxPrice ?? '',
                                                         decoration: InputDecoration(
-                                                                          labelText: AppLocalizations.of(context)!.maxPrice,
+                                                          hintText: AppLocalizations.of(context)!.maxPrice,
                                                           filled: true,
                                                           fillColor: Colors.black.withOpacity(0.2),
-                                                          labelStyle: TextStyle(color: Colors.white),
+                                                          hintStyle: TextStyle(color: Colors.white70),
                                                           border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
                                                         ),
                                                         items: [
@@ -3947,10 +3947,10 @@ class _HomePageState extends State<HomePage> {
                                                       child: TextFormField(
                                                         controller: TextEditingController(text: selectedMinPrice ?? ''),
                                                         decoration: InputDecoration(
-                                                                          labelText: AppLocalizations.of(context)!.minPrice,
+                                                          hintText: AppLocalizations.of(context)!.minPrice,
                                                           filled: true,
                                                           fillColor: Colors.black.withOpacity(0.2),
-                                                          labelStyle: TextStyle(color: Colors.white),
+                                                          hintStyle: TextStyle(color: Colors.white70),
                                                           border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
                                                         ),
                                                         keyboardType: TextInputType.number,
@@ -3972,10 +3972,10 @@ class _HomePageState extends State<HomePage> {
                                                       child: TextFormField(
                                                         controller: TextEditingController(text: selectedMaxPrice ?? ''),
                                                         decoration: InputDecoration(
-                                                                          labelText: AppLocalizations.of(context)!.maxPrice,
+                                                          hintText: AppLocalizations.of(context)!.maxPrice,
                                                           filled: true,
                                                           fillColor: Colors.black.withOpacity(0.2),
-                                                          labelStyle: TextStyle(color: Colors.white),
+                                                          hintStyle: TextStyle(color: Colors.white70),
                                                           border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
                                                         ),
                                                         keyboardType: TextInputType.number,
@@ -4024,10 +4024,10 @@ class _HomePageState extends State<HomePage> {
                                                       child: DropdownButtonFormField<String>(
                                                         value: selectedMinYear ?? '',
                                                         decoration: InputDecoration(
-                                                                          labelText: AppLocalizations.of(context)!.minYear,
+                                                          hintText: AppLocalizations.of(context)!.minYear,
                                                           filled: true,
                                                           fillColor: Colors.black.withOpacity(0.2),
-                                                          labelStyle: TextStyle(color: Colors.white),
+                                                          hintStyle: TextStyle(color: Colors.white70),
                                                           border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
                                                         ),
                                                         items: [
@@ -4060,10 +4060,10 @@ class _HomePageState extends State<HomePage> {
                                                       child: DropdownButtonFormField<String>(
                                                         value: selectedMaxYear ?? '',
                                                         decoration: InputDecoration(
-                                                                          labelText: AppLocalizations.of(context)!.maxYear,
+                                                          hintText: AppLocalizations.of(context)!.maxYear,
                                                           filled: true,
                                                           fillColor: Colors.black.withOpacity(0.2),
-                                                          labelStyle: TextStyle(color: Colors.white),
+                                                          hintStyle: TextStyle(color: Colors.white70),
                                                           border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
                                                         ),
                                                         items: [
@@ -4103,12 +4103,11 @@ class _HomePageState extends State<HomePage> {
                                                       child: TextFormField(
                                                         controller: TextEditingController(text: selectedMinYear ?? ''),
                                                         decoration: InputDecoration(
-                                                                          labelText: AppLocalizations.of(context)!.minYear,
+                                                          hintText: AppLocalizations.of(context)!.enterMinYear,
                                                           filled: true,
                                                           fillColor: Colors.black.withOpacity(0.2),
-                                                          labelStyle: TextStyle(color: Colors.white),
+                                                          hintStyle: TextStyle(color: Colors.white70),
                                                           border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
-                                                                          hintText: AppLocalizations.of(context)!.enterMinYear,
                                                         ),
                                                         keyboardType: TextInputType.number,
                                                                         onChanged: (value) {
@@ -4122,12 +4121,11 @@ class _HomePageState extends State<HomePage> {
                                                       child: TextFormField(
                                                         controller: TextEditingController(text: selectedMaxYear ?? ''),
                                                         decoration: InputDecoration(
-                                                                          labelText: AppLocalizations.of(context)!.maxYear,
+                                                          hintText: AppLocalizations.of(context)!.enterMaxYear,
                                                           filled: true,
                                                           fillColor: Colors.black.withOpacity(0.2),
-                                                          labelStyle: TextStyle(color: Colors.white),
+                                                          hintStyle: TextStyle(color: Colors.white70),
                                                           border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
-                                                                          hintText: AppLocalizations.of(context)!.enterMaxYear,
                                                         ),
                                                         keyboardType: TextInputType.number,
                                                                         onChanged: (value) {
@@ -4168,10 +4166,10 @@ class _HomePageState extends State<HomePage> {
                                                                       child: DropdownButtonFormField<String>(
                                                                         value: (selectedMinMileage != null && selectedMinMileage!.isNotEmpty) ? selectedMinMileage : '',
                                                                         decoration: InputDecoration(
-                                                                          labelText: AppLocalizations.of(context)!.minMileage,
+                                                                          hintText: AppLocalizations.of(context)!.minMileage,
                                                                           filled: true,
                                                                           fillColor: Colors.black.withOpacity(0.2),
-                                                                          labelStyle: TextStyle(color: Colors.white),
+                                                                          hintStyle: TextStyle(color: Colors.white70),
                                                                           border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
                                                                         ),
                                                                         items: [
@@ -4209,10 +4207,10 @@ class _HomePageState extends State<HomePage> {
                                                                       child: DropdownButtonFormField<String>(
                                                                         value: (selectedMaxMileage != null && selectedMaxMileage!.isNotEmpty) ? selectedMaxMileage : '',
                                                                         decoration: InputDecoration(
-                                                                          labelText: AppLocalizations.of(context)!.maxMileage,
+                                                                          hintText: AppLocalizations.of(context)!.maxMileage,
                                                                           filled: true,
                                                                           fillColor: Colors.black.withOpacity(0.2),
-                                                                          labelStyle: TextStyle(color: Colors.white),
+                                                                          hintStyle: TextStyle(color: Colors.white70),
                                                                           border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
                                                                         ),
                                                                         items: [
@@ -4257,12 +4255,11 @@ class _HomePageState extends State<HomePage> {
                                                       child: TextFormField(
                                                         controller: TextEditingController(text: selectedMinMileage ?? ''),
                                                         decoration: InputDecoration(
-                                                                          labelText: AppLocalizations.of(context)!.minMileage,
+                                                          hintText: AppLocalizations.of(context)!.enterMinMileage,
                                                           filled: true,
                                                           fillColor: Colors.black.withOpacity(0.2),
-                                                          labelStyle: TextStyle(color: Colors.white),
+                                                          hintStyle: TextStyle(color: Colors.white70),
                                                           border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
-                                                                          hintText: AppLocalizations.of(context)!.enterMinMileage,
                                                         ),
                                                         keyboardType: TextInputType.number,
                                                                         onChanged: (value) {
@@ -4276,12 +4273,11 @@ class _HomePageState extends State<HomePage> {
                                                       child: TextFormField(
                                                         controller: TextEditingController(text: selectedMaxMileage ?? ''),
                                                         decoration: InputDecoration(
-                                                                          labelText: AppLocalizations.of(context)!.maxMileage,
+                                                          hintText: AppLocalizations.of(context)!.enterMaxMileage,
                                                           filled: true,
                                                           fillColor: Colors.black.withOpacity(0.2),
-                                                          labelStyle: TextStyle(color: Colors.white),
+                                                          hintStyle: TextStyle(color: Colors.white70),
                                                           border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
-                                                                          hintText: AppLocalizations.of(context)!.enterMaxMileage,
                                                         ),
                                                         keyboardType: TextInputType.number,
                                                                         onChanged: (value) {
