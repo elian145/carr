@@ -3865,7 +3865,7 @@ class _HomePageState extends State<HomePage> {
                                                           border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
                                                         ),
                                                         items: [
-                                                          DropdownMenuItem(value: '', child: Text(AppLocalizations.of(context)!.anyMinPrice, style: TextStyle(color: Colors.grey))),
+                                                          DropdownMenuItem(value: '', child: Text(AppLocalizations.of(context)!.any, style: TextStyle(color: Colors.grey))),
                                                           ...[
                                                             for (int p = 500; p <= 300000; p += 500) p,
                                                             for (int p = 310000; p <= 2000000; p += 10000) p,
@@ -3906,7 +3906,7 @@ class _HomePageState extends State<HomePage> {
                                                           border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
                                                         ),
                                                         items: [
-                                                          DropdownMenuItem(value: '', child: Text(AppLocalizations.of(context)!.anyMaxPrice, style: TextStyle(color: Colors.grey))),
+                                                          DropdownMenuItem(value: '', child: Text(AppLocalizations.of(context)!.any, style: TextStyle(color: Colors.grey))),
                                                           ...[
                                                             for (int p = 500; p <= 300000; p += 500) p,
                                                             for (int p = 310000; p <= 2000000; p += 10000) p,
@@ -4031,7 +4031,7 @@ class _HomePageState extends State<HomePage> {
                                                           border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
                                                         ),
                                                         items: [
-                                                                          DropdownMenuItem(value: '', child: Text(AppLocalizations.of(context)!.anyMinYear, style: TextStyle(color: Colors.grey))),
+                                                                          DropdownMenuItem(value: '', child: Text(AppLocalizations.of(context)!.any, style: TextStyle(color: Colors.grey))),
                                                                           ...List.generate(127, (i) => (1900 + i).toString()).reversed
                                                                             .where((y) {
                                                                               if (selectedMaxYear == null || selectedMaxYear!.isEmpty) return true;
@@ -4067,7 +4067,7 @@ class _HomePageState extends State<HomePage> {
                                                           border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
                                                         ),
                                                         items: [
-                                                                          DropdownMenuItem(value: '', child: Text(AppLocalizations.of(context)!.anyMaxYear, style: TextStyle(color: Colors.grey))),
+                                                                          DropdownMenuItem(value: '', child: Text(AppLocalizations.of(context)!.any, style: TextStyle(color: Colors.grey))),
                                                                           ...List.generate(127, (i) => (1900 + i).toString()).reversed
                                                                             .where((y) {
                                                                               if (selectedMinYear == null || selectedMinYear!.isEmpty) return true;
