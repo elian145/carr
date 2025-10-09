@@ -10132,7 +10132,7 @@ class CarComparisonPage extends StatelessWidget {
                       child: isYearDropdown
                           ? DropdownButtonFormField<String>(
                               decoration: InputDecoration(
-                                labelText: AppLocalizations.of(context)!.yearLabel,
+                                hintText: AppLocalizations.of(context)!.yearLabel,
                                 border: OutlineInputBorder(),
                               ),
                               value: (selectedMinYear != null && selectedMinYear!.isNotEmpty && years.contains(selectedMinYear)) ? selectedMinYear : null,
@@ -10141,9 +10141,8 @@ class CarComparisonPage extends StatelessWidget {
                             )
                           : TextFormField(
                               decoration: InputDecoration(
-                                labelText: AppLocalizations.of(context)!.yearLabel,
-                                border: OutlineInputBorder(),
                                 hintText: AppLocalizations.of(context)!.minYear,
+                                border: OutlineInputBorder(),
                               ),
                               keyboardType: TextInputType.number,
                               onChanged: (v) { setState(() { selectedMinYear = v; selectedMaxYear = v; }); _persistFilters(); },
@@ -10168,7 +10167,7 @@ class CarComparisonPage extends StatelessWidget {
                       child: isPriceDropdown
                           ? DropdownButtonFormField<String>(
                               decoration: InputDecoration(
-                                labelText: AppLocalizations.of(context)!.priceLabel,
+                                hintText: AppLocalizations.of(context)!.priceLabel,
                                 border: OutlineInputBorder(),
                               ),
                               value: (selectedMinPrice != null && selectedMinPrice!.isNotEmpty) ? selectedMinPrice : null,
@@ -10180,9 +10179,8 @@ class CarComparisonPage extends StatelessWidget {
                             )
                           : TextFormField(
                               decoration: InputDecoration(
-                                labelText: AppLocalizations.of(context)!.priceLabel,
-                                border: OutlineInputBorder(),
                                 hintText: AppLocalizations.of(context)!.minPrice,
+                                border: OutlineInputBorder(),
                               ),
                               keyboardType: TextInputType.number,
                               onChanged: (v) => setState(() { selectedMinPrice = v; selectedMaxPrice = v; }),
@@ -10207,7 +10205,7 @@ class CarComparisonPage extends StatelessWidget {
                       child: isMileageDropdown
                           ? DropdownButtonFormField<String>(
                               decoration: InputDecoration(
-                                labelText: AppLocalizations.of(context)!.mileageLabel,
+                                hintText: AppLocalizations.of(context)!.mileageLabel,
                                 border: OutlineInputBorder(),
                               ),
                               value: (selectedMaxMileage != null && selectedMaxMileage!.isNotEmpty) ? selectedMaxMileage : null,
@@ -10227,9 +10225,8 @@ class CarComparisonPage extends StatelessWidget {
                             )
                           : TextFormField(
                               decoration: InputDecoration(
-                                labelText: AppLocalizations.of(context)!.mileageLabel,
-                                border: OutlineInputBorder(),
                                 hintText: AppLocalizations.of(context)!.minMileage,
+                                border: OutlineInputBorder(),
                               ),
                               keyboardType: TextInputType.number,
                               onChanged: (v) => setState(() { selectedMaxMileage = v; }),
