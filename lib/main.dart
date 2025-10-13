@@ -7380,66 +7380,66 @@ class _SellStep1PageState extends State<SellStep1Page> {
             ),
             SizedBox(height: 16),
             
-            // Year (Modal or Manual Input)
-            Row(
-              children: [
-                Expanded(
-                  child: isYearManualInput
-                      ? TextFormField(
-                          initialValue: selectedYear,
-                          decoration: InputDecoration(
-                            labelText: 'Year *',
-                            hintText: 'Enter year (e.g. 2024)',
-                            filled: true,
-                            fillColor: Colors.black.withOpacity(0.2),
-                            labelStyle: TextStyle(color: Colors.white),
-                            hintStyle: TextStyle(color: Colors.white54),
-                            border: OutlineInputBorder(
-                              borderRadius: BorderRadius.circular(12),
-                            ),
-                            errorBorder: OutlineInputBorder(
-                              borderRadius: BorderRadius.circular(12),
-                              borderSide: BorderSide(color: Colors.red),
-                            ),
-                          ),
-                          style: TextStyle(color: Colors.white),
-                          keyboardType: TextInputType.number,
-                          onChanged: (value) {
-                            setState(() {
-                              selectedYear = value.isEmpty ? null : value;
-                            });
-                          },
-                          validator: (value) {
-                            if (value == null || value.isEmpty) return 'Please enter year';
-                            final year = int.tryParse(value);
-                            if (year == null) return 'Invalid year';
-                            if (year < 1900 || year > DateTime.now().year + 1) return 'Year out of range';
-                            return null;
-                          },
-                        )
-                      : FormField<String>(
-                          validator: (_) => selectedYear == null ? 'Please select a year' : null,
-                          builder: (state) => GestureDetector(
-                            onTap: () async {
-                              final choice = await _pickFromList('Year', availableYears);
-                              if (choice != null) setState(() { selectedYear = choice; });
-                            },
-                            child: buildFancySelector(context, icon: Icons.calendar_today, label: 'Year *', value: selectedYear != null ? _localizeDigitsGlobal(context, selectedYear!) : null, isError: errYear && (selectedYear == null || selectedYear!.isEmpty)),
-                          ),
-                        ),
-                ),
-                SizedBox(width: 8),
-                IconButton(
-                  onPressed: () => setState(() => isYearManualInput = !isYearManualInput),
-                  icon: Icon(isYearManualInput ? Icons.list : Icons.edit, color: Color(0xFFFF6B00)),
-                  style: IconButton.styleFrom(
-                    backgroundColor: Colors.grey.withOpacity(0.1),
-                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
-                  ),
-                  tooltip: isYearManualInput ? 'Select from list' : 'Type manually',
-                ),
-              ],
-            ),
+             // Year (Modal or Manual Input)
+             Row(
+               children: [
+                 Expanded(
+                   child: isYearManualInput
+                       ? TextFormField(
+                           initialValue: selectedYear,
+                           decoration: InputDecoration(
+                             labelText: 'Year *',
+                             hintText: 'Enter year (e.g. 2024)',
+                             filled: true,
+                             fillColor: Colors.black.withOpacity(0.2),
+                             labelStyle: TextStyle(color: Colors.white),
+                             hintStyle: TextStyle(color: Colors.white54),
+                             border: OutlineInputBorder(
+                               borderRadius: BorderRadius.circular(12),
+                             ),
+                             errorBorder: OutlineInputBorder(
+                               borderRadius: BorderRadius.circular(12),
+                               borderSide: BorderSide(color: Colors.red),
+                             ),
+                           ),
+                           style: TextStyle(color: Colors.white),
+                           keyboardType: TextInputType.number,
+                           onChanged: (value) {
+                             setState(() {
+                               selectedYear = value.isEmpty ? null : value;
+                             });
+                           },
+                           validator: (value) {
+                             if (value == null || value.isEmpty) return 'Please enter year';
+                             final year = int.tryParse(value);
+                             if (year == null) return 'Invalid year';
+                             if (year < 1900 || year > DateTime.now().year + 1) return 'Year out of range';
+                             return null;
+                           },
+                         )
+                       : FormField<String>(
+                           validator: (_) => selectedYear == null ? 'Please select a year' : null,
+                           builder: (state) => GestureDetector(
+                             onTap: () async {
+                               final choice = await _pickFromList('Year', availableYears);
+                               if (choice != null) setState(() { selectedYear = choice; });
+                             },
+                             child: buildFancySelector(context, icon: Icons.calendar_today, label: 'Year *', value: selectedYear != null ? _localizeDigitsGlobal(context, selectedYear!) : null, isError: errYear && (selectedYear == null || selectedYear!.isEmpty)),
+                           ),
+                         ),
+                 ),
+                 SizedBox(width: 8),
+                 IconButton(
+                   onPressed: () => setState(() => isYearManualInput = !isYearManualInput),
+                   icon: Icon(isYearManualInput ? Icons.list : Icons.edit, color: Color(0xFFFF6B00)),
+                   style: IconButton.styleFrom(
+                     backgroundColor: Colors.grey.withOpacity(0.1),
+                     shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+                   ),
+                   tooltip: isYearManualInput ? 'Select from list' : 'Type manually',
+                 ),
+               ],
+             ),
             SizedBox(height: 32),
             
             // Next Button
@@ -7770,78 +7770,78 @@ class _SellStep2PageState extends State<SellStep2Page> {
             ),
             SizedBox(height: 24),
             
-            // Mileage (Modal or Manual Input)
-            Row(
-              children: [
-                Expanded(
-                  child: isMileageManualInput
-                      ? TextFormField(
-                          initialValue: selectedMileage,
-                          decoration: InputDecoration(
-                            labelText: 'Mileage (km) *',
-                            hintText: 'Enter mileage',
-                            filled: true,
-                            fillColor: Colors.black.withOpacity(0.2),
-                            labelStyle: TextStyle(color: Colors.white),
-                            hintStyle: TextStyle(color: Colors.white54),
-                            border: OutlineInputBorder(
-                              borderRadius: BorderRadius.circular(12),
-                            ),
-                            errorBorder: OutlineInputBorder(
-                              borderRadius: BorderRadius.circular(12),
-                              borderSide: BorderSide(color: Colors.red),
-                            ),
-                          ),
-                          style: TextStyle(color: Colors.white),
-                          keyboardType: TextInputType.number,
-                          onChanged: (value) {
-                            setState(() {
-                              selectedMileage = value.isEmpty ? null : value;
-                            });
-                          },
-                          validator: (value) {
-                            if (value == null || value.isEmpty) return 'Please enter mileage';
-                            final mileage = int.tryParse(value);
-                            if (mileage == null) return 'Invalid mileage';
-                            if (mileage < 0) return 'Mileage cannot be negative';
-                            return null;
-                          },
-                        )
-                      : FormField<String>(
-                          validator: (_) => (selectedMileage == null || selectedMileage!.isEmpty) ? 'Please select mileage' : null,
-                          builder: (state) => GestureDetector(
-                            onTap: () async {
-                              final miles = [
-                                ...[for (int m = 0; m <= 100000; m += 1000) m.toString()],
-                                ...[for (int m = 105000; m <= 300000; m += 5000) m.toString()],
-                              ];
-                              final choice = await _pickFromList('Mileage (km)', miles);
-                              if (choice != null) setState(() => selectedMileage = choice);
-                            },
-                            child: buildFancySelector(
-                              context,
-                              icon: Icons.speed,
-                              label: 'Mileage (km) *',
-                              value: selectedMileage != null
-                                  ? (_localizeDigitsGlobal(context, _decimalFormatterGlobal(context).format(int.tryParse(selectedMileage!) ?? 0)) + ' ' + AppLocalizations.of(context)!.unit_km)
-                                  : null,
-                              isError: errMileage && (selectedMileage == null || selectedMileage!.isEmpty),
-                            ),
-                          ),
-                        ),
-                ),
-                SizedBox(width: 8),
-                IconButton(
-                  onPressed: () => setState(() => isMileageManualInput = !isMileageManualInput),
-                  icon: Icon(isMileageManualInput ? Icons.list : Icons.edit, color: Color(0xFFFF6B00)),
-                  style: IconButton.styleFrom(
-                    backgroundColor: Colors.grey.withOpacity(0.1),
-                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
-                  ),
-                  tooltip: isMileageManualInput ? 'Select from list' : 'Type manually',
-                ),
-              ],
-            ),
+             // Mileage (Modal or Manual Input)
+             Row(
+               children: [
+                 Expanded(
+                   child: isMileageManualInput
+                       ? TextFormField(
+                           initialValue: selectedMileage,
+                           decoration: InputDecoration(
+                             labelText: 'Mileage (km) *',
+                             hintText: 'Enter mileage',
+                             filled: true,
+                             fillColor: Colors.black.withOpacity(0.2),
+                             labelStyle: TextStyle(color: Colors.white),
+                             hintStyle: TextStyle(color: Colors.white54),
+                             border: OutlineInputBorder(
+                               borderRadius: BorderRadius.circular(12),
+                             ),
+                             errorBorder: OutlineInputBorder(
+                               borderRadius: BorderRadius.circular(12),
+                               borderSide: BorderSide(color: Colors.red),
+                             ),
+                           ),
+                           style: TextStyle(color: Colors.white),
+                           keyboardType: TextInputType.number,
+                           onChanged: (value) {
+                             setState(() {
+                               selectedMileage = value.isEmpty ? null : value;
+                             });
+                           },
+                           validator: (value) {
+                             if (value == null || value.isEmpty) return 'Please enter mileage';
+                             final mileage = int.tryParse(value);
+                             if (mileage == null) return 'Invalid mileage';
+                             if (mileage < 0) return 'Mileage cannot be negative';
+                             return null;
+                           },
+                         )
+                       : FormField<String>(
+                           validator: (_) => (selectedMileage == null || selectedMileage!.isEmpty) ? 'Please select mileage' : null,
+                           builder: (state) => GestureDetector(
+                             onTap: () async {
+                               final miles = [
+                                 ...[for (int m = 0; m <= 100000; m += 1000) m.toString()],
+                                 ...[for (int m = 105000; m <= 300000; m += 5000) m.toString()],
+                               ];
+                               final choice = await _pickFromList('Mileage (km)', miles);
+                               if (choice != null) setState(() => selectedMileage = choice);
+                             },
+                             child: buildFancySelector(
+                               context,
+                               icon: Icons.speed,
+                               label: 'Mileage (km) *',
+                               value: selectedMileage != null
+                                   ? (_localizeDigitsGlobal(context, _decimalFormatterGlobal(context).format(int.tryParse(selectedMileage!) ?? 0)) + ' ' + AppLocalizations.of(context)!.unit_km)
+                                   : null,
+                               isError: errMileage && (selectedMileage == null || selectedMileage!.isEmpty),
+                             ),
+                           ),
+                         ),
+                 ),
+                 SizedBox(width: 8),
+                 IconButton(
+                   onPressed: () => setState(() => isMileageManualInput = !isMileageManualInput),
+                   icon: Icon(isMileageManualInput ? Icons.list : Icons.edit, color: Color(0xFFFF6B00)),
+                   style: IconButton.styleFrom(
+                     backgroundColor: Colors.grey.withOpacity(0.1),
+                     shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+                   ),
+                   tooltip: isMileageManualInput ? 'Select from list' : 'Type manually',
+                 ),
+               ],
+             ),
             SizedBox(height: 16),
             
             // Condition (Modal)
@@ -8403,7 +8403,7 @@ class _SellStep3PageState extends State<SellStep3Page> {
             ),
             SizedBox(height: 24),
             
-            // Price (Modal)
+            // Price (Modal or Manual Input)
             FormField<String>(
               validator: (_) => (selectedPrice == null || selectedPrice!.isEmpty) ? 'Please select price' : null,
               builder: (state) => GestureDetector(
