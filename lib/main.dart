@@ -3954,6 +3954,7 @@ class _HomePageState extends State<HomePage> {
                                                           border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
                                                         ),
                                                         keyboardType: TextInputType.number,
+                                                        textInputAction: TextInputAction.done,
                                                                         onChanged: (value) {
                                                                           setState(() {
                                                                             selectedMinPrice = value.isEmpty ? null : value;
@@ -3979,6 +3980,7 @@ class _HomePageState extends State<HomePage> {
                                                           border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
                                                         ),
                                                         keyboardType: TextInputType.number,
+                                                        textInputAction: TextInputAction.done,
                                                                         onChanged: (value) {
                                                                           setState(() {
                                                                             selectedMaxPrice = value.isEmpty ? null : value;
@@ -4110,6 +4112,7 @@ class _HomePageState extends State<HomePage> {
                                                           border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
                                                         ),
                                                         keyboardType: TextInputType.number,
+                                                        textInputAction: TextInputAction.done,
                                                                         onChanged: (value) {
                                                                           setState(() => selectedMinYear = value.isEmpty ? null : value);
                                                                           setStateDialog(() {});
@@ -4128,6 +4131,7 @@ class _HomePageState extends State<HomePage> {
                                                           border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
                                                         ),
                                                         keyboardType: TextInputType.number,
+                                                        textInputAction: TextInputAction.done,
                                                                         onChanged: (value) {
                                                                           setState(() => selectedMaxYear = value.isEmpty ? null : value);
                                                                           setStateDialog(() {});
@@ -4262,6 +4266,7 @@ class _HomePageState extends State<HomePage> {
                                                           border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
                                                         ),
                                                         keyboardType: TextInputType.number,
+                                                        textInputAction: TextInputAction.done,
                                                                         onChanged: (value) {
                                                                           setState(() => selectedMinMileage = value.isEmpty ? null : value);
                                                                           setStateDialog(() {});
@@ -4280,6 +4285,7 @@ class _HomePageState extends State<HomePage> {
                                                           border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
                                                         ),
                                                         keyboardType: TextInputType.number,
+                                                        textInputAction: TextInputAction.done,
                                                                         onChanged: (value) {
                                                                           setState(() => selectedMaxMileage = value.isEmpty ? null : value);
                                                                           setStateDialog(() {});
@@ -7403,12 +7409,13 @@ class _SellStep1PageState extends State<SellStep1Page> {
                              ),
                            ),
                            style: TextStyle(color: Colors.white),
-                           keyboardType: TextInputType.number,
-                           onChanged: (value) {
-                             setState(() {
-                               selectedYear = value.isEmpty ? null : value;
-                             });
-                           },
+                          keyboardType: TextInputType.number,
+                          textInputAction: TextInputAction.done,
+                          onChanged: (value) {
+                            setState(() {
+                              selectedYear = value.isEmpty ? null : value;
+                            });
+                          },
                            validator: (value) {
                              if (value == null || value.isEmpty) return 'Please enter year';
                              final year = int.tryParse(value);
@@ -7793,12 +7800,13 @@ class _SellStep2PageState extends State<SellStep2Page> {
                              ),
                            ),
                            style: TextStyle(color: Colors.white),
-                           keyboardType: TextInputType.number,
-                           onChanged: (value) {
-                             setState(() {
-                               selectedMileage = value.isEmpty ? null : value;
-                             });
-                           },
+                          keyboardType: TextInputType.number,
+                          textInputAction: TextInputAction.done,
+                          onChanged: (value) {
+                            setState(() {
+                              selectedMileage = value.isEmpty ? null : value;
+                            });
+                          },
                            validator: (value) {
                              if (value == null || value.isEmpty) return 'Please enter mileage';
                              final mileage = int.tryParse(value);
@@ -8456,6 +8464,7 @@ class _SellStep3PageState extends State<SellStep3Page> {
                           ),
                           style: TextStyle(color: Colors.white),
                           keyboardType: TextInputType.number,
+                          textInputAction: TextInputAction.done,
                           onChanged: (value) {
                             setState(() {
                               selectedPrice = value.isEmpty ? null : value;
