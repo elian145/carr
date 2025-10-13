@@ -8430,44 +8430,11 @@ class _SellStep3PageState extends State<SellStep3Page> {
             ),
             SizedBox(height: 24),
             
-            // Currency Selector
-            Row(
-              children: [
-                Text(
-                  'Currency:',
-                  style: TextStyle(
-                    color: Colors.white,
-                    fontSize: 16,
-                    fontWeight: FontWeight.w500,
-                  ),
-                ),
-                SizedBox(width: 16),
-                Container(
-                  decoration: BoxDecoration(
-                    color: Colors.black.withOpacity(0.2),
-                    borderRadius: BorderRadius.circular(12),
-                    border: Border.all(color: Colors.white.withOpacity(0.3)),
-                  ),
-                  child: Row(
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      _buildCurrencyButton('USD', selectedCurrency == 'USD'),
-                      Container(
-                        width: 1,
-                        height: 40,
-                        color: Colors.white.withOpacity(0.3),
-                      ),
-                      _buildCurrencyButton('IQD', selectedCurrency == 'IQD'),
-                    ],
-                  ),
-                ),
-              ],
-            ),
-            SizedBox(height: 16),
-            
             // Price (Modal or Manual Input)
-            Row(
+            Column(
               children: [
+                Row(
+                  children: [
                 Expanded(
                   child: isPriceManualInput
                       ? TextFormField(
@@ -8531,6 +8498,42 @@ class _SellStep3PageState extends State<SellStep3Page> {
                     shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
                   ),
                   tooltip: isPriceManualInput ? 'Select from list' : 'Type manually',
+                ),
+                  ],
+                ),
+                SizedBox(height: 8),
+                // Currency Selector above pencil button
+                Row(
+                  children: [
+                    Text(
+                      'Currency:',
+                      style: TextStyle(
+                        color: Colors.white,
+                        fontSize: 14,
+                        fontWeight: FontWeight.w500,
+                      ),
+                    ),
+                    SizedBox(width: 12),
+                    Container(
+                      decoration: BoxDecoration(
+                        color: Colors.black.withOpacity(0.2),
+                        borderRadius: BorderRadius.circular(8),
+                        border: Border.all(color: Colors.white.withOpacity(0.3)),
+                      ),
+                      child: Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          _buildCurrencyButton('USD', selectedCurrency == 'USD'),
+                          Container(
+                            width: 1,
+                            height: 32,
+                            color: Colors.white.withOpacity(0.3),
+                          ),
+                          _buildCurrencyButton('IQD', selectedCurrency == 'IQD'),
+                        ],
+                      ),
+                    ),
+                  ],
                 ),
               ],
             ),
