@@ -8541,6 +8541,10 @@ class _SellStep3PageState extends State<SellStep3Page> {
                           onChanged: (value) {
                             setState(() {
                               selectedPrice = value.isEmpty ? null : value;
+                              // Automatically switch to manual input mode when user starts typing
+                              if (!isPriceManualInput && value.isNotEmpty) {
+                                isPriceManualInput = true;
+                              }
                             });
                           },
                           validator: (value) {
@@ -8604,15 +8608,28 @@ class _SellStep3PageState extends State<SellStep3Page> {
                   tooltip: 'Switch to ${selectedCurrency == 'USD' ? 'IQD' : 'USD'}',
                 ),
                 SizedBox(width: 8),
-                // Pencil button
+                // Pencil/Checkmark button
                 IconButton(
-                  onPressed: () => setState(() => isPriceManualInput = !isPriceManualInput),
-                  icon: Icon(isPriceManualInput ? Icons.list : Icons.edit, color: Color(0xFFFF6B00)),
+                  onPressed: () {
+                    if (isPriceManualInput) {
+                      // If in manual input mode, confirm the price and dismiss keyboard
+                      _priceFocusNode.unfocus();
+                      FocusScope.of(context).unfocus();
+                      setState(() => isPriceManualInput = false);
+                    } else {
+                      // If in dropdown mode, switch to manual input
+                      setState(() => isPriceManualInput = true);
+                    }
+                  },
+                  icon: Icon(
+                    isPriceManualInput ? Icons.check : Icons.edit, 
+                    color: Color(0xFFFF6B00)
+                  ),
                   style: IconButton.styleFrom(
                     backgroundColor: Colors.grey.withOpacity(0.1),
                     shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
                   ),
-                  tooltip: isPriceManualInput ? 'Select from list' : 'Type manually',
+                  tooltip: isPriceManualInput ? 'Confirm price' : 'Type manually',
                 ),
                   ],
                 ),
