@@ -8510,10 +8510,7 @@ class _SellStep3PageState extends State<SellStep3Page> {
                     ...List.generate(600, (i) => (500 + i * 500).toString()),
                     ...List.generate(171, (i) => (300000 + (i + 1) * 10000).toString()),
                   ].map((p) => ' ' + p).toList();
-                  final choice = await _pickFromList('Price ($selectedCurrency)', [
-                    ...List.generate(600, (i) => (500 + i * 500).toString()),
-                    ...List.generate(170, (i) => (300000 + (i + 1) * 10000).toString()),
-                  ]);
+                  final choice = await _pickFromList('Price ($selectedCurrency)', priceOptions);
                   if (choice != null) setState(() => selectedPrice = choice);
                 },
                 child: buildFancySelector(
