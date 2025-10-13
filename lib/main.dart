@@ -629,7 +629,7 @@ Widget buildGlobalCarCard(BuildContext context, Map car) {
           left: 12,
           right: 12,
           child: Text(
-            '${_localizeDigitsGlobal(context, (car['year'] ?? '').toString())} â€¢ ${_localizeDigitsGlobal(context, (car['mileage'] ?? '').toString())} ${AppLocalizations.of(context)!.unit_km}',
+            '${_localizeDigitsGlobal(context, (car['year'] ?? '').toString())} • ${_localizeDigitsGlobal(context, (car['mileage'] ?? '').toString())} ${AppLocalizations.of(context)!.unit_km}',
             style: TextStyle(color: Colors.white70, fontSize: 13),
           ),
         ),
@@ -2052,7 +2052,7 @@ class _HomePageState extends State<HomePage> {
     if (selectedModel?.isNotEmpty == true) parts.add(selectedModel!);
     if (selectedCity?.isNotEmpty == true) parts.add(_translateValueGlobal(context, selectedCity) ?? selectedCity!);
     if (selectedMaxPrice?.isNotEmpty == true) parts.add('\$' + (selectedMaxPrice ?? ''));
-    return parts.isEmpty ? AppLocalizations.of(context)!.defaultSort : parts.join(' â€¢ ');
+    return parts.isEmpty ? AppLocalizations.of(context)!.defaultSort : parts.join(' • ');
   }
 
   // Static options
@@ -9562,7 +9562,7 @@ class CarComparisonPage extends StatelessWidget {
               try {
                 final store = Provider.of<CarComparisonStore>(context, listen: false);
                 final cars = store.comparisonCars;
-                final text = cars.map((c) => '${c['title'] ?? ''} â€¢ ${c['year'] ?? ''} â€¢ ${c['price'] ?? ''}').join('\n');
+                final text = cars.map((c) => '${c['title'] ?? ''} • ${c['year'] ?? ''} • ${c['price'] ?? ''}').join('\n');
                 if (text.trim().isNotEmpty) Share.share(text);
               } catch (_) {}
             },
@@ -12262,7 +12262,7 @@ class _ProfilePageState extends State<ProfilePage> {
                     _buildInfoRow(Icons.phone_outlined, AppLocalizations.of(context)!.phoneLabel, me!['phone'].toString()),
                   ],
                   SizedBox(height: 16),
-                  _buildInfoRow(Icons.lock_outline, AppLocalizations.of(context)!.passwordLabel, 'â€¢â€¢â€¢â€¢â€¢â€¢â€¢â€¢'),
+                  _buildInfoRow(Icons.lock_outline, AppLocalizations.of(context)!.passwordLabel, '••••••••'),
                 ],
               ),
             ),
@@ -13292,7 +13292,7 @@ class _MyListingsPageState extends State<MyListingsPage> {
             left: 12,
             right: 12,
             child: Text(
-              '${_localizeDigitsGlobal(context, (car['year'] ?? '').toString())} â€¢ ${_localizeDigitsGlobal(context, (car['mileage'] ?? '').toString())} ${AppLocalizations.of(context)!.unit_km}',
+              '${_localizeDigitsGlobal(context, (car['year'] ?? '').toString())} • ${_localizeDigitsGlobal(context, (car['mileage'] ?? '').toString())} ${AppLocalizations.of(context)!.unit_km}',
               style: TextStyle(color: Colors.white70, fontSize: 13),
             ),
           ),
