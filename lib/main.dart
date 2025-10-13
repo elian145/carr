@@ -7033,6 +7033,12 @@ class _SellStep1PageState extends State<SellStep1Page> {
     setState(() {});
   }
   
+  void _dismissKeyboard() {
+    // Clear focus from year field
+    _yearFocusNode.unfocus();
+    FocusScope.of(context).unfocus();
+  }
+  
   Future<String?> _pickFromList(String title, List<String> options) async {
     services.HapticFeedback.selectionClick();
     return await showGeneralDialog<String>(
@@ -7322,6 +7328,7 @@ class _SellStep1PageState extends State<SellStep1Page> {
               validator: (_) => selectedBrand == null ? 'Please select a brand' : null,
               builder: (state) => GestureDetector(
                 onTap: () async {
+                  _dismissKeyboard();
                   final choice = await _pickBrandModal();
                   if (choice != null) {
                     setState(() {
@@ -7364,6 +7371,7 @@ class _SellStep1PageState extends State<SellStep1Page> {
               validator: (_) => selectedModel == null ? 'Please select a model' : null,
               builder: (state) => GestureDetector(
                 onTap: () async {
+                  _dismissKeyboard();
                   if (selectedBrand == null) return;
                   final options = models[selectedBrand!] ?? [];
                   final choice = await _pickFromList('Model', options);
@@ -7381,6 +7389,7 @@ class _SellStep1PageState extends State<SellStep1Page> {
               validator: (_) => selectedTrim == null ? 'Please select a trim' : null,
               builder: (state) => GestureDetector(
                 onTap: () async {
+                  _dismissKeyboard();
                   final choice = await _pickFromList('Trim', availableTrims);
                   if (choice != null) setState(() { selectedTrim = choice; });
                 },
@@ -7569,6 +7578,12 @@ class _SellStep2PageState extends State<SellStep2Page> {
     selectedCylinderCount = null;
     selectedTitleStatus = null;
     selectedDamagedParts = null;
+  }
+  
+  void _dismissKeyboard() {
+    // Clear focus from mileage field
+    _mileageFocusNode.unfocus();
+    FocusScope.of(context).unfocus();
   }
   
   final List<String> conditions = ['New', 'Used', 'Certified'];
@@ -7869,6 +7884,7 @@ class _SellStep2PageState extends State<SellStep2Page> {
               validator: (_) => selectedCondition == null ? 'Please select condition' : null,
               builder: (state) => GestureDetector(
                 onTap: () async {
+                  _dismissKeyboard();
                   final choice = await _pickFromList('Condition', getAvailableConditions());
                   if (choice != null) setState(() => selectedCondition = choice);
                 },
@@ -8320,6 +8336,8 @@ class _SellStep3PageState extends State<SellStep3Page> {
   }
   
   void _dismissKeyboard() {
+    // Clear focus from all number input fields
+    _priceFocusNode.unfocus();
     FocusScope.of(context).unfocus();
   }
   
