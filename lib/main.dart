@@ -18,6 +18,7 @@ import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'services/analytics_service.dart';
 import 'services/api_service.dart';
 import 'models/analytics_model.dart';
+import 'globals.dart';
 import 'pages/analytics_page.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'package:firebase_messaging/firebase_messaging.dart';
@@ -95,7 +96,7 @@ String _localizeDigitsGlobal(BuildContext context, String input) {
 
 // Locale-aware currency formatting with digit localization
 String _formatCurrencyGlobal(BuildContext context, dynamic raw) {
-  final symbol = AppLocalizations.of(context)!.currencySymbol;
+  final symbol = globalSymbol; // Use global currency symbol
   num? value;
   if (raw is num) {
     value = raw;
@@ -1183,6 +1184,10 @@ void main() {
     // Keychain access can fail for sideloaded builds; don't crash.
     try { await ApiService.initializeTokens(); } catch (_) {}
     try { await LocaleController.loadSavedLocale(); } catch (_) {}
+    
+    // Initialize global currency symbol
+    globalSymbol = r'$';
+    
     runApp(MyApp());
   }, (error, stack) async {
     try {
@@ -8369,6 +8374,8 @@ class _SellStep3PageState extends State<SellStep3Page> {
     isQuickSell = false;
     selectedCurrency = 'USD';
     _priceController.clear();
+    // Initialize global currency symbol
+    globalSymbol = r'$';
   }
   
   void _dismissKeyboard() {
@@ -8607,6 +8614,8 @@ class _SellStep3PageState extends State<SellStep3Page> {
                         _priceController.text = numericValue;
                       }
                       selectedCurrency = selectedCurrency == 'USD' ? 'IQD' : 'USD';
+                      // Update global currency symbol
+                      globalSymbol = selectedCurrency == 'IQD' ? 'IQD ' : r'$';
                     });
                   },
                   icon: Text(
