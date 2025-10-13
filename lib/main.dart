@@ -6987,6 +6987,9 @@ class _SellStep1PageState extends State<SellStep1Page> {
   bool errYear = false;
   bool isYearManualInput = false;
   
+  // Focus node for keyboard management
+  FocusNode _yearFocusNode = FocusNode();
+  
   String _brandSlug(String brand) {
     String s = brand.toLowerCase().trim();
     const replacements = {
@@ -7014,6 +7017,12 @@ class _SellStep1PageState extends State<SellStep1Page> {
   void initState() {
     super.initState();
     _resetSellFilters();
+  }
+  
+  @override
+  void dispose() {
+    _yearFocusNode.dispose();
+    super.dispose();
   }
   
   Future<void> _resetSellFilters() async {
@@ -7532,10 +7541,19 @@ class _SellStep2PageState extends State<SellStep2Page> {
   bool errDamagedParts = false;
   bool isMileageManualInput = false;
   
+  // Focus node for keyboard management
+  FocusNode _mileageFocusNode = FocusNode();
+  
   @override
   void initState() {
     super.initState();
     _resetStep2();
+  }
+  
+  @override
+  void dispose() {
+    _mileageFocusNode.dispose();
+    super.dispose();
   }
   
   void _resetStep2() {
@@ -8278,9 +8296,7 @@ class _SellStep3PageState extends State<SellStep3Page> {
   bool isPriceManualInput = false;
   String selectedCurrency = 'USD';
   
-  // Focus nodes for keyboard management
-  FocusNode _yearFocusNode = FocusNode();
-  FocusNode _mileageFocusNode = FocusNode();
+  // Focus node for keyboard management
   FocusNode _priceFocusNode = FocusNode();
   
   @override
@@ -8291,8 +8307,6 @@ class _SellStep3PageState extends State<SellStep3Page> {
   
   @override
   void dispose() {
-    _yearFocusNode.dispose();
-    _mileageFocusNode.dispose();
     _priceFocusNode.dispose();
     super.dispose();
   }
