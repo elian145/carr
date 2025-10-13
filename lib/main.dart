@@ -3954,7 +3954,6 @@ class _HomePageState extends State<HomePage> {
                                                           border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
                                                         ),
                                                         keyboardType: TextInputType.number,
-                                                        textInputAction: TextInputAction.done,
                                                                         onChanged: (value) {
                                                                           setState(() {
                                                                             selectedMinPrice = value.isEmpty ? null : value;
@@ -3980,7 +3979,6 @@ class _HomePageState extends State<HomePage> {
                                                           border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
                                                         ),
                                                         keyboardType: TextInputType.number,
-                                                        textInputAction: TextInputAction.done,
                                                                         onChanged: (value) {
                                                                           setState(() {
                                                                             selectedMaxPrice = value.isEmpty ? null : value;
@@ -4112,7 +4110,6 @@ class _HomePageState extends State<HomePage> {
                                                           border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
                                                         ),
                                                         keyboardType: TextInputType.number,
-                                                        textInputAction: TextInputAction.done,
                                                                         onChanged: (value) {
                                                                           setState(() => selectedMinYear = value.isEmpty ? null : value);
                                                                           setStateDialog(() {});
@@ -4131,7 +4128,6 @@ class _HomePageState extends State<HomePage> {
                                                           border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
                                                         ),
                                                         keyboardType: TextInputType.number,
-                                                        textInputAction: TextInputAction.done,
                                                                         onChanged: (value) {
                                                                           setState(() => selectedMaxYear = value.isEmpty ? null : value);
                                                                           setStateDialog(() {});
@@ -4266,7 +4262,6 @@ class _HomePageState extends State<HomePage> {
                                                           border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
                                                         ),
                                                         keyboardType: TextInputType.number,
-                                                        textInputAction: TextInputAction.done,
                                                                         onChanged: (value) {
                                                                           setState(() => selectedMinMileage = value.isEmpty ? null : value);
                                                                           setStateDialog(() {});
@@ -4285,7 +4280,6 @@ class _HomePageState extends State<HomePage> {
                                                           border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
                                                         ),
                                                         keyboardType: TextInputType.number,
-                                                        textInputAction: TextInputAction.done,
                                                                         onChanged: (value) {
                                                                           setState(() => selectedMaxMileage = value.isEmpty ? null : value);
                                                                           setStateDialog(() {});
@@ -7391,26 +7385,26 @@ class _SellStep1PageState extends State<SellStep1Page> {
                children: [
                  Expanded(
                    child: isYearManualInput
-                       ? TextFormField(
-                           initialValue: selectedYear,
-                           decoration: InputDecoration(
-                             labelText: 'Year *',
-                             hintText: 'Enter year (e.g. 2024)',
-                             filled: true,
-                             fillColor: Colors.black.withOpacity(0.2),
-                             labelStyle: TextStyle(color: Colors.white),
-                             hintStyle: TextStyle(color: Colors.white54),
-                             border: OutlineInputBorder(
-                               borderRadius: BorderRadius.circular(12),
-                             ),
-                             errorBorder: OutlineInputBorder(
-                               borderRadius: BorderRadius.circular(12),
-                               borderSide: BorderSide(color: Colors.red),
-                             ),
-                           ),
-                           style: TextStyle(color: Colors.white),
+                      ? TextFormField(
+                          focusNode: _yearFocusNode,
+                          initialValue: selectedYear,
+                          decoration: InputDecoration(
+                            labelText: 'Year *',
+                            hintText: 'Enter year (e.g. 2024)',
+                            filled: true,
+                            fillColor: Colors.black.withOpacity(0.2),
+                            labelStyle: TextStyle(color: Colors.white),
+                            hintStyle: TextStyle(color: Colors.white54),
+                            border: OutlineInputBorder(
+                              borderRadius: BorderRadius.circular(12),
+                            ),
+                            errorBorder: OutlineInputBorder(
+                              borderRadius: BorderRadius.circular(12),
+                              borderSide: BorderSide(color: Colors.red),
+                            ),
+                          ),
+                          style: TextStyle(color: Colors.white),
                           keyboardType: TextInputType.number,
-                          textInputAction: TextInputAction.done,
                           onChanged: (value) {
                             setState(() {
                               selectedYear = value.isEmpty ? null : value;
@@ -7782,26 +7776,26 @@ class _SellStep2PageState extends State<SellStep2Page> {
                children: [
                  Expanded(
                    child: isMileageManualInput
-                       ? TextFormField(
-                           initialValue: selectedMileage,
-                           decoration: InputDecoration(
-                             labelText: 'Mileage (km) *',
-                             hintText: 'Enter mileage',
-                             filled: true,
-                             fillColor: Colors.black.withOpacity(0.2),
-                             labelStyle: TextStyle(color: Colors.white),
-                             hintStyle: TextStyle(color: Colors.white54),
-                             border: OutlineInputBorder(
-                               borderRadius: BorderRadius.circular(12),
-                             ),
-                             errorBorder: OutlineInputBorder(
-                               borderRadius: BorderRadius.circular(12),
-                               borderSide: BorderSide(color: Colors.red),
-                             ),
-                           ),
-                           style: TextStyle(color: Colors.white),
+                      ? TextFormField(
+                          focusNode: _mileageFocusNode,
+                          initialValue: selectedMileage,
+                          decoration: InputDecoration(
+                            labelText: 'Mileage (km) *',
+                            hintText: 'Enter mileage',
+                            filled: true,
+                            fillColor: Colors.black.withOpacity(0.2),
+                            labelStyle: TextStyle(color: Colors.white),
+                            hintStyle: TextStyle(color: Colors.white54),
+                            border: OutlineInputBorder(
+                              borderRadius: BorderRadius.circular(12),
+                            ),
+                            errorBorder: OutlineInputBorder(
+                              borderRadius: BorderRadius.circular(12),
+                              borderSide: BorderSide(color: Colors.red),
+                            ),
+                          ),
+                          style: TextStyle(color: Colors.white),
                           keyboardType: TextInputType.number,
-                          textInputAction: TextInputAction.done,
                           onChanged: (value) {
                             setState(() {
                               selectedMileage = value.isEmpty ? null : value;
@@ -8284,10 +8278,23 @@ class _SellStep3PageState extends State<SellStep3Page> {
   bool isPriceManualInput = false;
   String selectedCurrency = 'USD';
   
+  // Focus nodes for keyboard management
+  FocusNode _yearFocusNode = FocusNode();
+  FocusNode _mileageFocusNode = FocusNode();
+  FocusNode _priceFocusNode = FocusNode();
+  
   @override
   void initState() {
     super.initState();
     _resetStep3();
+  }
+  
+  @override
+  void dispose() {
+    _yearFocusNode.dispose();
+    _mileageFocusNode.dispose();
+    _priceFocusNode.dispose();
+    super.dispose();
   }
   
   void _resetStep3() {
@@ -8296,6 +8303,10 @@ class _SellStep3PageState extends State<SellStep3Page> {
     contactPhone = null;
     isQuickSell = false;
     selectedCurrency = 'USD';
+  }
+  
+  void _dismissKeyboard() {
+    FocusScope.of(context).unfocus();
   }
   
   Widget _buildCurrencyButton(String currency, bool isSelected) {
@@ -8446,6 +8457,7 @@ class _SellStep3PageState extends State<SellStep3Page> {
                 Expanded(
                   child: isPriceManualInput
                       ? TextFormField(
+                          focusNode: _priceFocusNode,
                           initialValue: selectedPrice,
                           decoration: InputDecoration(
                             labelText: 'Price ($selectedCurrency) *',
@@ -8464,7 +8476,6 @@ class _SellStep3PageState extends State<SellStep3Page> {
                           ),
                           style: TextStyle(color: Colors.white),
                           keyboardType: TextInputType.number,
-                          textInputAction: TextInputAction.done,
                           onChanged: (value) {
                             setState(() {
                               selectedPrice = value.isEmpty ? null : value;
@@ -8542,6 +8553,7 @@ class _SellStep3PageState extends State<SellStep3Page> {
               validator: (_) => selectedCity == null ? 'Please select city' : null,
               builder: (state) => GestureDetector(
                 onTap: () async {
+                  _dismissKeyboard();
                   final choice = await _pickFromList('City', cities);
                   if (choice != null) setState(() => selectedCity = choice);
                 },
@@ -8552,6 +8564,7 @@ class _SellStep3PageState extends State<SellStep3Page> {
             
             // Contact Phone
             TextFormField(
+              onTap: () => _dismissKeyboard(),
               decoration: InputDecoration(
                 labelText: 'WhatsApp/Phone Number *',
                 hintText: '+964 7XX XXX XXXX',
