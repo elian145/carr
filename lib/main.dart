@@ -8314,6 +8314,9 @@ class _SellStep3PageState extends State<SellStep3Page> {
   // Focus node for keyboard management
   FocusNode _priceFocusNode = FocusNode();
   
+  // Controller for price input
+  late TextEditingController _priceController;
+  
   // Currency conversion method
   String _convertCurrency(String price, String fromCurrency, String toCurrency) {
     if (price.isEmpty) return price;
@@ -8348,12 +8351,14 @@ class _SellStep3PageState extends State<SellStep3Page> {
   @override
   void initState() {
     super.initState();
+    _priceController = TextEditingController();
     _resetStep3();
   }
   
   @override
   void dispose() {
     _priceFocusNode.dispose();
+    _priceController.dispose();
     super.dispose();
   }
   
@@ -8363,6 +8368,7 @@ class _SellStep3PageState extends State<SellStep3Page> {
     contactPhone = null;
     isQuickSell = false;
     selectedCurrency = 'USD';
+    _priceController.clear();
   }
   
   void _dismissKeyboard() {
@@ -8520,10 +8526,16 @@ class _SellStep3PageState extends State<SellStep3Page> {
                   child: isPriceManualInput
                       ? TextFormField(
                           focusNode: _priceFocusNode,
-                          initialValue: selectedPrice,
+                          controller: _priceController,
                           decoration: InputDecoration(
-                            labelText: 'Price ($selectedCurrency) *',
+                            labelText: 'Price *',
                             hintText: 'Enter price',
+                            prefixText: selectedCurrency == 'IQD' ? 'IQD ' : '\$',
+                            prefixStyle: TextStyle(
+                              color: Color(0xFFFF6B00),
+                              fontWeight: FontWeight.bold,
+                              fontSize: 16,
+                            ),
                             filled: true,
                             fillColor: Colors.black.withOpacity(0.2),
                             labelStyle: TextStyle(color: Colors.white),
@@ -8540,7 +8552,8 @@ class _SellStep3PageState extends State<SellStep3Page> {
                           keyboardType: TextInputType.number,
                           onChanged: (value) {
                             setState(() {
-                              selectedPrice = value.isEmpty ? null : value;
+                              // Store the full price with currency prefix
+                              selectedPrice = value.isEmpty ? null : (selectedCurrency == 'IQD' ? 'IQD $value' : '\$$value');
                               // Automatically switch to manual input mode when user starts typing
                               if (!isPriceManualInput && value.isNotEmpty) {
                                 isPriceManualInput = true;
@@ -8589,6 +8602,9 @@ class _SellStep3PageState extends State<SellStep3Page> {
                       if (selectedPrice != null && selectedPrice!.isNotEmpty) {
                         String convertedPrice = _convertCurrency(selectedPrice!, selectedCurrency, selectedCurrency == 'USD' ? 'IQD' : 'USD');
                         selectedPrice = convertedPrice;
+                        // Update controller with numeric value only
+                        String numericValue = convertedPrice.replaceAll(RegExp(r'[^\d.]'), '');
+                        _priceController.text = numericValue;
                       }
                       selectedCurrency = selectedCurrency == 'USD' ? 'IQD' : 'USD';
                     });
