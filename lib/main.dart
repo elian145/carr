@@ -8404,7 +8404,43 @@ class _SellStep3PageState extends State<SellStep3Page> {
             SizedBox(height: 24),
             
             // Price (Modal or Manual Input)
-            FormField<String>(
+            Row(
+              children: [
+                Expanded(
+                  child: isPriceManualInput
+                      ? TextFormField(
+                          initialValue: selectedPrice,
+                          decoration: InputDecoration(
+                            labelText: 'Price (USD) *',
+                            hintText: 'Enter price',
+                            filled: true,
+                            fillColor: Colors.black.withOpacity(0.2),
+                            labelStyle: TextStyle(color: Colors.white),
+                            hintStyle: TextStyle(color: Colors.white54),
+                            border: OutlineInputBorder(
+                              borderRadius: BorderRadius.circular(12),
+                            ),
+                            errorBorder: OutlineInputBorder(
+                              borderRadius: BorderRadius.circular(12),
+                              borderSide: BorderSide(color: Colors.red),
+                            ),
+                          ),
+                          style: TextStyle(color: Colors.white),
+                          keyboardType: TextInputType.number,
+                          onChanged: (value) {
+                            setState(() {
+                              selectedPrice = value.isEmpty ? null : value;
+                            });
+                          },
+                          validator: (value) {
+                            if (value == null || value.isEmpty) return 'Please enter price';
+                            final price = int.tryParse(value);
+                            if (price == null) return 'Invalid price';
+                            if (price < 0) return 'Price cannot be negative';
+                            return null;
+                          },
+                        )
+                      : FormField<String>(
               validator: (_) => (selectedPrice == null || selectedPrice!.isEmpty) ? 'Please select price' : null,
               builder: (state) => GestureDetector(
                 onTap: () async {
@@ -8425,6 +8461,19 @@ class _SellStep3PageState extends State<SellStep3Page> {
                   value: selectedPrice != null ? _formatCurrencyGlobal(context, selectedPrice) : null,
                 ),
               ),
+                        ),
+                ),
+                SizedBox(width: 8),
+                IconButton(
+                  onPressed: () => setState(() => isPriceManualInput = !isPriceManualInput),
+                  icon: Icon(isPriceManualInput ? Icons.list : Icons.edit, color: Color(0xFFFF6B00)),
+                  style: IconButton.styleFrom(
+                    backgroundColor: Colors.grey.withOpacity(0.1),
+                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+                  ),
+                  tooltip: isPriceManualInput ? 'Select from list' : 'Type manually',
+                ),
+              ],
             ),
             SizedBox(height: 16),
             
