@@ -1,4 +1,4 @@
-import 'package:flutter/material.dart';
+﻿import 'package:flutter/material.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:http/http.dart' as http;
 import 'dart:convert';
@@ -83,7 +83,7 @@ String _localizeDigitsGlobal(BuildContext context, String input) {
   final locale = Localizations.localeOf(context);
   if (locale.languageCode == 'ar' || locale.languageCode == 'ku') {
     const western = ['0','1','2','3','4','5','6','7','8','9',','];
-    const eastern = ['٠','١','٢','٣','٤','٥','٦','٧','٨','٩','٬'];
+    const eastern = ['Ù ','Ù¡','Ù¢','Ù£','Ù¤','Ù¥','Ù¦','Ù§','Ù¨','Ù©','Ù¬'];
     String out = input;
     for (int i = 0; i < western.length; i++) {
       out = out.replaceAll(western[i], eastern[i]);
@@ -159,22 +159,22 @@ Widget buildFancySelector(BuildContext context, {IconData? icon, required String
 
 String _cancelTextGlobal(BuildContext context) {
   final code = Localizations.localeOf(context).languageCode;
-  if (code == 'ar') return 'إلغاء';
-  if (code == 'ku') return 'پاشگەزبوونەوە';
+  if (code == 'ar') return 'Ø¥Ù„ØºØ§Ø¡';
+  if (code == 'ku') return 'Ù¾Ø§Ø´Ú¯Û•Ø²Ø¨ÙˆÙˆÙ†Û•ÙˆÛ•';
   return 'Cancel';
 }
 
 String _contactForPriceGlobal(BuildContext context) {
   final code = Localizations.localeOf(context).languageCode;
-  if (code == 'ar') return 'اتصل للسعر';
-  if (code == 'ku') return 'نرخ بپرسە بە پەیوەندی';
+  if (code == 'ar') return 'Ø§ØªØµÙ„ Ù„Ù„Ø³Ø¹Ø±';
+  if (code == 'ku') return 'Ù†Ø±Ø® Ø¨Ù¾Ø±Ø³Û• Ø¨Û• Ù¾Û•ÛŒÙˆÛ•Ù†Ø¯ÛŒ';
   return 'Contact for price';
 }
 
 String _pleaseFillRequiredGlobal(BuildContext context) {
   final code = Localizations.localeOf(context).languageCode;
-  if (code == 'ar') return 'يرجى إكمال';
-  if (code == 'ku') return 'تکایە پڕ بکەرەوە';
+  if (code == 'ar') return 'ÙŠØ±Ø¬Ù‰ Ø¥ÙƒÙ…Ø§Ù„';
+  if (code == 'ku') return 'ØªÚ©Ø§ÛŒÛ• Ù¾Ú• Ø¨Ú©Û•Ø±Û•ÙˆÛ•';
   return 'Please complete';
 }
 
@@ -191,22 +191,22 @@ NumberFormat _decimalFormatterGlobal(BuildContext context) {
 // Lightweight helpers for translating UI snippets not covered by AppLocalizations
 String _yesTextGlobal(BuildContext context) {
   final code = Localizations.localeOf(context).languageCode;
-  if (code == 'ar') return 'نعم';
-  if (code == 'ku') return 'بەڵێ';
+  if (code == 'ar') return 'Ù†Ø¹Ù…';
+  if (code == 'ku') return 'Ø¨Û•ÚµÛŽ';
   return 'Yes';
 }
 
 String _noTextGlobal(BuildContext context) {
   final code = Localizations.localeOf(context).languageCode;
-  if (code == 'ar') return 'لا';
-  if (code == 'ku') return 'نەخێر';
+  if (code == 'ar') return 'Ù„Ø§';
+  if (code == 'ku') return 'Ù†Û•Ø®ÛŽØ±';
   return 'No';
 }
 
 String _removedFromComparisonTextGlobal(BuildContext context) {
   final code = Localizations.localeOf(context).languageCode;
-  if (code == 'ar') return 'تمت الإزالة من المقارنة';
-  if (code == 'ku') return 'لە بەرەوردن لابرا';
+  if (code == 'ar') return 'ØªÙ…Øª Ø§Ù„Ø¥Ø²Ø§Ù„Ø© Ù…Ù† Ø§Ù„Ù…Ù‚Ø§Ø±Ù†Ø©';
+  if (code == 'ku') return 'Ù„Û• Ø¨Û•Ø±Û•ÙˆØ±Ø¯Ù† Ù„Ø§Ø¨Ø±Ø§';
   return 'Removed from comparison';
 }
 
@@ -214,128 +214,128 @@ String _addedToComparisonTextGlobal(BuildContext context, int count) {
   final code = Localizations.localeOf(context).languageCode;
   final cnt = _localizeDigitsGlobal(context, count.toString());
   final max = _localizeDigitsGlobal(context, '5');
-  if (code == 'ar') return 'تمت الإضافة إلى المقارنة ($cnt/$max)';
-  if (code == 'ku') return 'زیاد کرا بۆ بەرەوردن ($cnt/$max)';
+  if (code == 'ar') return 'ØªÙ…Øª Ø§Ù„Ø¥Ø¶Ø§ÙØ© Ø¥Ù„Ù‰ Ø§Ù„Ù…Ù‚Ø§Ø±Ù†Ø© ($cnt/$max)';
+  if (code == 'ku') return 'Ø²ÛŒØ§Ø¯ Ú©Ø±Ø§ Ø¨Û† Ø¨Û•Ø±Û•ÙˆØ±Ø¯Ù† ($cnt/$max)';
   return 'Added to comparison ($cnt/$max)';
 }
 
 String _comparisonMaxLimitTextGlobal(BuildContext context) {
   final code = Localizations.localeOf(context).languageCode;
   final five = _localizeDigitsGlobal(context, '5');
-  if (code == 'ar') return 'يمكن مقارنة $five سيارات كحد أقصى';
-  if (code == 'ku') return 'زۆرترین $five ئۆتۆمبێل دەتوانرێت بەرەورد بکرێن';
+  if (code == 'ar') return 'ÙŠÙ…ÙƒÙ† Ù…Ù‚Ø§Ø±Ù†Ø© $five Ø³ÙŠØ§Ø±Ø§Øª ÙƒØ­Ø¯ Ø£Ù‚ØµÙ‰';
+  if (code == 'ku') return 'Ø²Û†Ø±ØªØ±ÛŒÙ† $five Ø¦Û†ØªÛ†Ù…Ø¨ÛŽÙ„ Ø¯Û•ØªÙˆØ§Ù†Ø±ÛŽØª Ø¨Û•Ø±Û•ÙˆØ±Ø¯ Ø¨Ú©Ø±ÛŽÙ†';
   return 'Maximum $five cars can be compared';
 }
 
 String _compareLabelGlobal(BuildContext context) {
   final code = Localizations.localeOf(context).languageCode;
-  if (code == 'ar') return 'قارن +';
-  if (code == 'ku') return 'بەراوردکردن +';
+  if (code == 'ar') return 'Ù‚Ø§Ø±Ù† +';
+  if (code == 'ku') return 'Ø¨Û•Ø±Ø§ÙˆØ±Ø¯Ú©Ø±Ø¯Ù† +';
   return 'compare +';
 }
 
 String _addedLabelGlobal(BuildContext context) {
   final code = Localizations.localeOf(context).languageCode;
-  if (code == 'ar') return 'تمت الإضافة';
-  if (code == 'ku') return 'زیاد کرا';
+  if (code == 'ar') return 'ØªÙ…Øª Ø§Ù„Ø¥Ø¶Ø§ÙØ©';
+  if (code == 'ku') return 'Ø²ÛŒØ§Ø¯ Ú©Ø±Ø§';
   return 'Added';
 }
 
 String _clearAllTextGlobal(BuildContext context) {
   final code = Localizations.localeOf(context).languageCode;
-  if (code == 'ar') return 'مسح الكل';
-  if (code == 'ku') return 'هەموو پاک بکە';
+  if (code == 'ar') return 'Ù…Ø³Ø­ Ø§Ù„ÙƒÙ„';
+  if (code == 'ku') return 'Ù‡Û•Ù…ÙˆÙˆ Ù¾Ø§Ú© Ø¨Ú©Û•';
   return 'Clear all';
 }
 
 String _tapToSelectTextGlobal(BuildContext context) {
   final code = Localizations.localeOf(context).languageCode;
-  if (code == 'ar') return 'اختر';
-  if (code == 'ku') return 'هەلبژێرە';
+  if (code == 'ar') return 'Ø§Ø®ØªØ±';
+  if (code == 'ku') return 'Ù‡Û•Ù„Ø¨Ú˜ÛŽØ±Û•';
   return 'Tap to select';
 }
 
 String _comparisonClearedTextGlobal(BuildContext context) {
   final code = Localizations.localeOf(context).languageCode;
-  if (code == 'ar') return 'تم مسح المقارنة';
-  if (code == 'ku') return 'بەرەوردن پاک کرا';
+  if (code == 'ar') return 'ØªÙ… Ù…Ø³Ø­ Ø§Ù„Ù…Ù‚Ø§Ø±Ù†Ø©';
+  if (code == 'ku') return 'Ø¨Û•Ø±Û•ÙˆØ±Ø¯Ù† Ù¾Ø§Ú© Ú©Ø±Ø§';
   return 'Comparison cleared';
 }
 
 String _statusTitleGlobal(BuildContext context) {
   final code = Localizations.localeOf(context).languageCode;
-  if (code == 'ar') return 'الحالة';
-  if (code == 'ku') return 'دۆخ';
+  if (code == 'ar') return 'Ø§Ù„Ø­Ø§Ù„Ø©';
+  if (code == 'ku') return 'Ø¯Û†Ø®';
   return 'Status';
 }
 
 String _quickSellTextGlobal(BuildContext context) {
   final code = Localizations.localeOf(context).languageCode;
-  if (code == 'ar') return 'بيع سريع';
-  if (code == 'ku') return 'فرۆشتنی خێرا';
+  if (code == 'ar') return 'Ø¨ÙŠØ¹ Ø³Ø±ÙŠØ¹';
+  if (code == 'ku') return 'ÙØ±Û†Ø´ØªÙ†ÛŒ Ø®ÛŽØ±Ø§';
   return 'Quick Sell';
 }
 
 String _ownersLabelGlobal(BuildContext context) {
   final code = Localizations.localeOf(context).languageCode;
-  if (code == 'ar') return 'عدد الملاك';
-  if (code == 'ku') return 'ژمارەی خاوەندار';
+  if (code == 'ar') return 'Ø¹Ø¯Ø¯ Ø§Ù„Ù…Ù„Ø§Ùƒ';
+  if (code == 'ku') return 'Ú˜Ù…Ø§Ø±Û•ÛŒ Ø®Ø§ÙˆÛ•Ù†Ø¯Ø§Ø±';
   return 'Owners';
 }
 
 String _vinLabelGlobal(BuildContext context) {
   final code = Localizations.localeOf(context).languageCode;
-  if (code == 'ar') return 'رقم الشاصي (VIN)';
-  if (code == 'ku') return 'ژمارەی شاسی (VIN)';
+  if (code == 'ar') return 'Ø±Ù‚Ù… Ø§Ù„Ø´Ø§ØµÙŠ (VIN)';
+  if (code == 'ku') return 'Ú˜Ù…Ø§Ø±Û•ÛŒ Ø´Ø§Ø³ÛŒ (VIN)';
   return 'VIN';
 }
 
 String _accidentHistoryLabelGlobal(BuildContext context) {
   final code = Localizations.localeOf(context).languageCode;
-  if (code == 'ar') return 'سجل الحوادث';
-  if (code == 'ku') return 'مێژووی کارەسات';
+  if (code == 'ar') return 'Ø³Ø¬Ù„ Ø§Ù„Ø­ÙˆØ§Ø¯Ø«';
+  if (code == 'ku') return 'Ù…ÛŽÚ˜ÙˆÙˆÛŒ Ú©Ø§Ø±Û•Ø³Ø§Øª';
   return 'Accident History';
 }
 
 String _photosRequiredTitleGlobal(BuildContext context) {
   final code = Localizations.localeOf(context).languageCode;
-  if (code == 'ar') return 'الصور (إلزامية)';
-  if (code == 'ku') return 'وێنەکان (پێویستە)';
+  if (code == 'ar') return 'Ø§Ù„ØµÙˆØ± (Ø¥Ù„Ø²Ø§Ù…ÙŠØ©)';
+  if (code == 'ku') return 'ÙˆÛŽÙ†Û•Ú©Ø§Ù† (Ù¾ÛŽÙˆÛŒØ³ØªÛ•)';
   return 'Photos (Required)';
 }
 
 String _videosOptionalTitleGlobal(BuildContext context) {
   final code = Localizations.localeOf(context).languageCode;
-  if (code == 'ar') return 'الفيديوهات (اختياري)';
-  if (code == 'ku') return 'ڤیدیۆکان (هەلبژاردە)';
+  if (code == 'ar') return 'Ø§Ù„ÙÙŠØ¯ÙŠÙˆÙ‡Ø§Øª (Ø§Ø®ØªÙŠØ§Ø±ÙŠ)';
+  if (code == 'ku') return 'Ú¤ÛŒØ¯ÛŒÛ†Ú©Ø§Ù† (Ù‡Û•Ù„Ø¨Ú˜Ø§Ø±Ø¯Û•)';
   return 'Videos (Optional)';
 }
 
 String _pleaseSelectPhotoTextGlobal(BuildContext context) {
   final code = Localizations.localeOf(context).languageCode;
-  if (code == 'ar') return 'يرجى اختيار صورة واحدة على الأقل';
-  if (code == 'ku') return 'تکایە بەلایەنی کەمەوە یەک وێنە هەلبژێرە';
+  if (code == 'ar') return 'ÙŠØ±Ø¬Ù‰ Ø§Ø®ØªÙŠØ§Ø± ØµÙˆØ±Ø© ÙˆØ§Ø­Ø¯Ø© Ø¹Ù„Ù‰ Ø§Ù„Ø£Ù‚Ù„';
+  if (code == 'ku') return 'ØªÚ©Ø§ÛŒÛ• Ø¨Û•Ù„Ø§ÛŒÛ•Ù†ÛŒ Ú©Û•Ù…Û•ÙˆÛ• ÛŒÛ•Ú© ÙˆÛŽÙ†Û• Ù‡Û•Ù„Ø¨Ú˜ÛŽØ±Û•';
   return 'Please select at least one photo';
 }
 
 String _listingSubmittedSuccessTextGlobal(BuildContext context) {
   final code = Localizations.localeOf(context).languageCode;
-  if (code == 'ar') return 'تم إرسال الإعلان بنجاح!';
-  if (code == 'ku') return 'ڕێکلام بەسەركەوتوویی نێردرا!';
+  if (code == 'ar') return 'ØªÙ… Ø¥Ø±Ø³Ø§Ù„ Ø§Ù„Ø¥Ø¹Ù„Ø§Ù† Ø¨Ù†Ø¬Ø§Ø­!';
+  if (code == 'ku') return 'Ú•ÛŽÚ©Ù„Ø§Ù… Ø¨Û•Ø³Û•Ø±ÙƒÛ•ÙˆØªÙˆÙˆÛŒÛŒ Ù†ÛŽØ±Ø¯Ø±Ø§!';
   return 'Listing submitted successfully!';
 }
 
 String _couldNotLoadListingsTextGlobal(BuildContext context) {
   final code = Localizations.localeOf(context).languageCode;
-  if (code == 'ar') return 'تعذّر تحميل الإعلانات';
-  if (code == 'ku') return 'نەتوانرا ڕێکلامەکان باربکرێن';
+  if (code == 'ar') return 'ØªØ¹Ø°Ù‘Ø± ØªØ­Ù…ÙŠÙ„ Ø§Ù„Ø¥Ø¹Ù„Ø§Ù†Ø§Øª';
+  if (code == 'ku') return 'Ù†Û•ØªÙˆØ§Ù†Ø±Ø§ Ú•ÛŽÚ©Ù„Ø§Ù…Û•Ú©Ø§Ù† Ø¨Ø§Ø±Ø¨Ú©Ø±ÛŽÙ†';
   return 'Could not load listings';
 }
 
 String _photosUploadedTextGlobal(BuildContext context) {
   final code = Localizations.localeOf(context).languageCode;
-  if (code == 'ar') return 'تم تحميل الصور';
-  if (code == 'ku') return 'وێنەکان بارکران';
+  if (code == 'ar') return 'ØªÙ… ØªØ­Ù…ÙŠÙ„ Ø§Ù„ØµÙˆØ±';
+  if (code == 'ku') return 'ÙˆÛŽÙ†Û•Ú©Ø§Ù† Ø¨Ø§Ø±Ú©Ø±Ø§Ù†';
   return 'Photos uploaded';
 }
 
@@ -368,19 +368,19 @@ String? _translateValueGlobal(BuildContext context, String? raw) {
     case 'used': return loc.value_condition_used;
     case 'base':
     case 'standard':
-      return Localizations.localeOf(context).languageCode == 'ar' ? 'أساسي' : Localizations.localeOf(context).languageCode == 'ku' ? 'بنەڕەتی' : 'Base';
+      return Localizations.localeOf(context).languageCode == 'ar' ? 'Ø£Ø³Ø§Ø³ÙŠ' : Localizations.localeOf(context).languageCode == 'ku' ? 'Ø¨Ù†Û•Ú•Û•ØªÛŒ' : 'Base';
     case 'sport':
-      return Localizations.localeOf(context).languageCode == 'ar' ? 'رياضي' : Localizations.localeOf(context).languageCode == 'ku' ? 'وەرزشی' : 'Sport';
+      return Localizations.localeOf(context).languageCode == 'ar' ? 'Ø±ÙŠØ§Ø¶ÙŠ' : Localizations.localeOf(context).languageCode == 'ku' ? 'ÙˆÛ•Ø±Ø²Ø´ÛŒ' : 'Sport';
     case 'luxury':
-      return Localizations.localeOf(context).languageCode == 'ar' ? 'فاخر' : Localizations.localeOf(context).languageCode == 'ku' ? 'لوکس' : 'Luxury';
+      return Localizations.localeOf(context).languageCode == 'ar' ? 'ÙØ§Ø®Ø±' : Localizations.localeOf(context).languageCode == 'ku' ? 'Ù„ÙˆÚ©Ø³' : 'Luxury';
     case 'certified':
-      return Localizations.localeOf(context).languageCode == 'ar' ? 'معتمد' : Localizations.localeOf(context).languageCode == 'ku' ? 'سەلمێنراو' : 'certified';
+      return Localizations.localeOf(context).languageCode == 'ar' ? 'Ù…Ø¹ØªÙ…Ø¯' : Localizations.localeOf(context).languageCode == 'ku' ? 'Ø³Û•Ù„Ù…ÛŽÙ†Ø±Ø§Ùˆ' : 'certified';
     case 'automatic': return loc.value_transmission_automatic;
     case 'manual': return loc.value_transmission_manual;
     case 'semi-automatic':
     case 'semi automatic':
     case 'semi auto':
-      return Localizations.localeOf(context).languageCode == 'ar' ? 'نصف أوتوماتيك' : Localizations.localeOf(context).languageCode == 'ku' ? 'نیمە ئۆتۆماتیک' : 'semi-automatic';
+      return Localizations.localeOf(context).languageCode == 'ar' ? 'Ù†ØµÙ Ø£ÙˆØªÙˆÙ…Ø§ØªÙŠÙƒ' : Localizations.localeOf(context).languageCode == 'ku' ? 'Ù†ÛŒÙ…Û• Ø¦Û†ØªÛ†Ù…Ø§ØªÛŒÚ©' : 'semi-automatic';
     case 'gasoline': return loc.value_fuel_gasoline;
     case 'diesel': return loc.value_fuel_diesel;
     case 'electric': return loc.value_fuel_electric;
@@ -419,32 +419,32 @@ String? _translateValueGlobal(BuildContext context, String? raw) {
     case 'super bike': return loc.value_body_super_bike;
     // Colors (AR + KU)
     case 'black':
-      return Localizations.localeOf(context).languageCode == 'ar' ? 'أسود' : Localizations.localeOf(context).languageCode == 'ku' ? 'ڕەش' : 'Black';
+      return Localizations.localeOf(context).languageCode == 'ar' ? 'Ø£Ø³ÙˆØ¯' : Localizations.localeOf(context).languageCode == 'ku' ? 'Ú•Û•Ø´' : 'Black';
     case 'white':
-      return Localizations.localeOf(context).languageCode == 'ar' ? 'أبيض' : Localizations.localeOf(context).languageCode == 'ku' ? 'سپی' : 'White';
+      return Localizations.localeOf(context).languageCode == 'ar' ? 'Ø£Ø¨ÙŠØ¶' : Localizations.localeOf(context).languageCode == 'ku' ? 'Ø³Ù¾ÛŒ' : 'White';
     case 'silver':
-      return Localizations.localeOf(context).languageCode == 'ar' ? 'فضي' : Localizations.localeOf(context).languageCode == 'ku' ? 'نەقرەی' : 'Silver';
+      return Localizations.localeOf(context).languageCode == 'ar' ? 'ÙØ¶ÙŠ' : Localizations.localeOf(context).languageCode == 'ku' ? 'Ù†Û•Ù‚Ø±Û•ÛŒ' : 'Silver';
     case 'gray':
     case 'grey':
-      return Localizations.localeOf(context).languageCode == 'ar' ? 'رمادي' : Localizations.localeOf(context).languageCode == 'ku' ? 'خۆڵەپێو' : 'Gray';
+      return Localizations.localeOf(context).languageCode == 'ar' ? 'Ø±Ù…Ø§Ø¯ÙŠ' : Localizations.localeOf(context).languageCode == 'ku' ? 'Ø®Û†ÚµÛ•Ù¾ÛŽÙˆ' : 'Gray';
     case 'red':
-      return Localizations.localeOf(context).languageCode == 'ar' ? 'أحمر' : Localizations.localeOf(context).languageCode == 'ku' ? 'سۆر' : 'Red';
+      return Localizations.localeOf(context).languageCode == 'ar' ? 'Ø£Ø­Ù…Ø±' : Localizations.localeOf(context).languageCode == 'ku' ? 'Ø³Û†Ø±' : 'Red';
     case 'blue':
-      return Localizations.localeOf(context).languageCode == 'ar' ? 'أزرق' : Localizations.localeOf(context).languageCode == 'ku' ? 'شین' : 'Blue';
+      return Localizations.localeOf(context).languageCode == 'ar' ? 'Ø£Ø²Ø±Ù‚' : Localizations.localeOf(context).languageCode == 'ku' ? 'Ø´ÛŒÙ†' : 'Blue';
     case 'green':
-      return Localizations.localeOf(context).languageCode == 'ar' ? 'أخضر' : Localizations.localeOf(context).languageCode == 'ku' ? 'سەوز' : 'Green';
+      return Localizations.localeOf(context).languageCode == 'ar' ? 'Ø£Ø®Ø¶Ø±' : Localizations.localeOf(context).languageCode == 'ku' ? 'Ø³Û•ÙˆØ²' : 'Green';
     case 'yellow':
-      return Localizations.localeOf(context).languageCode == 'ar' ? 'أصفر' : Localizations.localeOf(context).languageCode == 'ku' ? 'زەرد' : 'Yellow';
+      return Localizations.localeOf(context).languageCode == 'ar' ? 'Ø£ØµÙØ±' : Localizations.localeOf(context).languageCode == 'ku' ? 'Ø²Û•Ø±Ø¯' : 'Yellow';
     case 'orange':
-      return Localizations.localeOf(context).languageCode == 'ar' ? 'برتقالي' : Localizations.localeOf(context).languageCode == 'ku' ? 'پرتەقەڵی' : 'Orange';
+      return Localizations.localeOf(context).languageCode == 'ar' ? 'Ø¨Ø±ØªÙ‚Ø§Ù„ÙŠ' : Localizations.localeOf(context).languageCode == 'ku' ? 'Ù¾Ø±ØªÛ•Ù‚Û•ÚµÛŒ' : 'Orange';
     case 'purple':
-      return Localizations.localeOf(context).languageCode == 'ar' ? 'بنفسجي' : Localizations.localeOf(context).languageCode == 'ku' ? 'مۆر' : 'Purple';
+      return Localizations.localeOf(context).languageCode == 'ar' ? 'Ø¨Ù†ÙØ³Ø¬ÙŠ' : Localizations.localeOf(context).languageCode == 'ku' ? 'Ù…Û†Ø±' : 'Purple';
     case 'brown':
-      return Localizations.localeOf(context).languageCode == 'ar' ? 'بني' : Localizations.localeOf(context).languageCode == 'ku' ? 'قاوەیی' : 'Brown';
+      return Localizations.localeOf(context).languageCode == 'ar' ? 'Ø¨Ù†ÙŠ' : Localizations.localeOf(context).languageCode == 'ku' ? 'Ù‚Ø§ÙˆÛ•ÛŒÛŒ' : 'Brown';
     case 'beige':
-      return Localizations.localeOf(context).languageCode == 'ar' ? 'بيج' : Localizations.localeOf(context).languageCode == 'ku' ? 'بێژی' : 'Beige';
+      return Localizations.localeOf(context).languageCode == 'ar' ? 'Ø¨ÙŠØ¬' : Localizations.localeOf(context).languageCode == 'ku' ? 'Ø¨ÛŽÚ˜ÛŒ' : 'Beige';
     case 'gold':
-      return Localizations.localeOf(context).languageCode == 'ar' ? 'ذهبي' : Localizations.localeOf(context).languageCode == 'ku' ? 'زێڕی' : 'Gold';
+      return Localizations.localeOf(context).languageCode == 'ar' ? 'Ø°Ù‡Ø¨ÙŠ' : Localizations.localeOf(context).languageCode == 'ku' ? 'Ø²ÛŽÚ•ÛŒ' : 'Gold';
     // Cities
     case 'baghdad':
       return Localizations.localeOf(context).languageCode == 'ar' ? loc.city_baghdad : Localizations.localeOf(context).languageCode == 'ku' ? loc.city_baghdad : 'Baghdad';
@@ -487,7 +487,7 @@ String? _translateValueGlobal(BuildContext context, String? raw) {
 // Global car card building function to ensure consistency across all pages
 Widget buildGlobalCarCard(BuildContext context, Map car) {
   final brand = car['brand'] ?? '';
-  final brandId = brandLogoFilenames[brand] ?? brand.toString().toLowerCase().replaceAll(' ', '-').replaceAll('é', 'e').replaceAll('ö', 'o');
+  final brandId = brandLogoFilenames[brand] ?? brand.toString().toLowerCase().replaceAll(' ', '-').replaceAll('Ã©', 'e').replaceAll('Ã¶', 'o');
   
   return Container(
     height: 205, // Standard height for all car cards
@@ -629,7 +629,7 @@ Widget buildGlobalCarCard(BuildContext context, Map car) {
           left: 12,
           right: 12,
           child: Text(
-            '${_localizeDigitsGlobal(context, (car['year'] ?? '').toString())} • ${_localizeDigitsGlobal(context, (car['mileage'] ?? '').toString())} ${AppLocalizations.of(context)!.unit_km}',
+            '${_localizeDigitsGlobal(context, (car['year'] ?? '').toString())} â€¢ ${_localizeDigitsGlobal(context, (car['mileage'] ?? '').toString())} ${AppLocalizations.of(context)!.unit_km}',
             style: TextStyle(color: Colors.white70, fontSize: 13),
           ),
         ),
@@ -1652,9 +1652,9 @@ final Map<String, String> brandLogoFilenames = {
   'Infiniti': 'infiniti',
   'Acura': 'acura',
   'Peugeot': 'peugeot',
-  'Citroën': 'citroen',
+  'CitroÃ«n': 'citroen',
   'Renault': 'renault',
-  'Škoda': 'skoda',
+  'Å koda': 'skoda',
   'SEAT': 'seat',
   'Opel': 'opel',
   'Saab': 'saab',
@@ -2052,12 +2052,12 @@ class _HomePageState extends State<HomePage> {
     if (selectedModel?.isNotEmpty == true) parts.add(selectedModel!);
     if (selectedCity?.isNotEmpty == true) parts.add(_translateValueGlobal(context, selectedCity) ?? selectedCity!);
     if (selectedMaxPrice?.isNotEmpty == true) parts.add('\$' + (selectedMaxPrice ?? ''));
-    return parts.isEmpty ? AppLocalizations.of(context)!.defaultSort : parts.join(' • ');
+    return parts.isEmpty ? AppLocalizations.of(context)!.defaultSort : parts.join(' â€¢ ');
   }
 
   // Static options
   final List<String> homeBrands = [
-    'Toyota', 'Volkswagen', 'Ford', 'Honda', 'Hyundai', 'Nissan', 'Chevrolet', 'Kia', 'Mercedes-Benz', 'BMW', 'Audi', 'Lexus', 'Mazda', 'Subaru', 'Volvo', 'Jeep', 'RAM', 'GMC', 'Buick', 'Cadillac', 'Lincoln', 'Mitsubishi', 'Acura', 'Infiniti', 'Tesla', 'Mini', 'Porsche', 'Land Rover', 'Jaguar', 'Fiat', 'Renault', 'Peugeot', 'Citroën', 'Škoda', 'SEAT', 'Dacia', 'Chery', 'BYD', 'Great Wall', 'FAW', 'Roewe', 'Proton', 'Perodua', 'Tata', 'Mahindra', 'Lada', 'ZAZ', 'Daewoo', 'SsangYong', 'Changan', 'Haval', 'Wuling', 'Baojun', 'Nio', 'XPeng', 'Li Auto', 'VinFast', 'Ferrari', 'Lamborghini', 'Bentley', 'Rolls-Royce', 'Aston Martin', 'McLaren', 'Maserati', 'Bugatti', 'Pagani', 'Koenigsegg', 'Polestar', 'Rivian', 'Lucid', 'Alfa Romeo', 'Lancia', 'Abarth', 'Opel', 'DS', 'MAN', 'Iran Khodro', 'Genesis', 'Isuzu', 'Datsun', 'JAC Motors', 'JAC Trucks', 'KTM', 'Alpina', 'Brabus', 'Mansory', 'Bestune', 'Hongqi', 'Dongfeng', 'FAW Jiefang', 'Foton', 'Leapmotor', 'GAC', 'SAIC', 'MG', 'Vauxhall', 'Smart'
+    'Toyota', 'Volkswagen', 'Ford', 'Honda', 'Hyundai', 'Nissan', 'Chevrolet', 'Kia', 'Mercedes-Benz', 'BMW', 'Audi', 'Lexus', 'Mazda', 'Subaru', 'Volvo', 'Jeep', 'RAM', 'GMC', 'Buick', 'Cadillac', 'Lincoln', 'Mitsubishi', 'Acura', 'Infiniti', 'Tesla', 'Mini', 'Porsche', 'Land Rover', 'Jaguar', 'Fiat', 'Renault', 'Peugeot', 'CitroÃ«n', 'Å koda', 'SEAT', 'Dacia', 'Chery', 'BYD', 'Great Wall', 'FAW', 'Roewe', 'Proton', 'Perodua', 'Tata', 'Mahindra', 'Lada', 'ZAZ', 'Daewoo', 'SsangYong', 'Changan', 'Haval', 'Wuling', 'Baojun', 'Nio', 'XPeng', 'Li Auto', 'VinFast', 'Ferrari', 'Lamborghini', 'Bentley', 'Rolls-Royce', 'Aston Martin', 'McLaren', 'Maserati', 'Bugatti', 'Pagani', 'Koenigsegg', 'Polestar', 'Rivian', 'Lucid', 'Alfa Romeo', 'Lancia', 'Abarth', 'Opel', 'DS', 'MAN', 'Iran Khodro', 'Genesis', 'Isuzu', 'Datsun', 'JAC Motors', 'JAC Trucks', 'KTM', 'Alpina', 'Brabus', 'Mansory', 'Bestune', 'Hongqi', 'Dongfeng', 'FAW Jiefang', 'Foton', 'Leapmotor', 'GAC', 'SAIC', 'MG', 'Vauxhall', 'Smart'
   ];
   final Map<String, List<String>> models = {
     'BMW': ['X3', 'X5', 'X7', '3 Series', '5 Series', '7 Series', 'M3', 'M5', 'X1', 'X6'],
@@ -2231,7 +2231,7 @@ class _HomePageState extends State<HomePage> {
   }
 
   Future<void> fetchCars({bool bypassCache = false, bool isRetry = false}) async {
-    print('🚀 fetchCars called with bypassCache: $bypassCache, isRetry: $isRetry');
+    print('ðŸš€ fetchCars called with bypassCache: $bypassCache, isRetry: $isRetry');
     // Analytics tracking for search fetch
     if (mounted) setState(() { isLoading = true; loadErrorMessage = null; });
     Map<String, String> filters = _buildFilters();
@@ -2240,9 +2240,9 @@ class _HomePageState extends State<HomePage> {
     final url = Uri.parse('${getApiBase()}/cars${query.isNotEmpty ? '?$query' : ''}');
 
     // Debug: Print the URL being called
-    print('🔍 Fetching cars from: $url');
-    print('🔍 Applied filters: $filters');
-    print('🔍 Sort parameter: ${filters['sort_by']}');
+    print('ðŸ” Fetching cars from: $url');
+    print('ðŸ” Applied filters: $filters');
+    print('ðŸ” Sort parameter: ${filters['sort_by']}');
 
     // Offline-first cache (skip cache if bypassCache is true)
     final sp = await SharedPreferences.getInstance();
@@ -2252,7 +2252,7 @@ class _HomePageState extends State<HomePage> {
       // Use cached data to improve reliability and reduce API dependency
       cached = sp.getString(cacheKey);
       if (cached != null && cached.isNotEmpty) {
-        print('📦 Using cached data for key: $cacheKey');
+        print('ðŸ“¦ Using cached data for key: $cacheKey');
         try {
           final decoded = json.decode(cached);
           final List<Map<String, dynamic>> parsed = decoded is List
@@ -2262,7 +2262,7 @@ class _HomePageState extends State<HomePage> {
         } catch (_) {}
       }
     } else {
-      print('🚫 Bypassing cache for key: $cacheKey');
+      print('ðŸš« Bypassing cache for key: $cacheKey');
     }
 
     try {
@@ -2279,8 +2279,8 @@ class _HomePageState extends State<HomePage> {
         },
       ).timeout(timeout);
       
-      print('📡 Response status: ${response.statusCode}');
-      print('📡 Response body length: ${response.body.length}');
+      print('ðŸ“¡ Response status: ${response.statusCode}');
+      print('ðŸ“¡ Response body length: ${response.body.length}');
       
       if (response.statusCode == 200) {
         final decoded = json.decode(response.body);
@@ -2292,7 +2292,7 @@ class _HomePageState extends State<HomePage> {
                 .cast<Map<String, dynamic>>()
             : <Map<String, dynamic>>[];
         
-        print('📊 Parsed ${parsed.length} cars from response');
+        print('ðŸ“Š Parsed ${parsed.length} cars from response');
         
         if (mounted) {
           setState(() {
@@ -2304,46 +2304,46 @@ class _HomePageState extends State<HomePage> {
         }
         // Save fresh cache
         unawaited(sp.setString(cacheKey, response.body));
-        print('✅ Found ${parsed.length} cars with applied filters');
+        print('âœ… Found ${parsed.length} cars with applied filters');
         // Reset retry count on success
         _fetchRetryCount = 0;
       } else {
-        print('❌ Server error: ${response.statusCode}');
-        print('❌ Response body: ${response.body}');
+        print('âŒ Server error: ${response.statusCode}');
+        print('âŒ Response body: ${response.body}');
         await _handleFetchError(bypassCache, cached, 'Server ${response.statusCode}', isRetry: isRetry);
       }
     } catch (e) {
-      print('❌ Network error: $e');
+      print('âŒ Network error: $e');
       await _handleFetchError(bypassCache, cached, 'Network error', isRetry: isRetry);
     }
   }
   
   Future<void> _handleFetchError(bool bypassCache, String? cached, String errorMessage, {bool isRetry = false}) async {
     // Don't show error immediately - try fallback strategies first
-    print('🔄 Handling fetch error: $errorMessage, isRetry: $isRetry');
+    print('ðŸ”„ Handling fetch error: $errorMessage, isRetry: $isRetry');
     
     // If sorting failed and we have a sort parameter, try without sorting first
     if (selectedSortBy != null && selectedSortBy!.isNotEmpty && !isRetry) {
-      print('🔄 Sorting failed, trying without sort parameter');
+      print('ðŸ”„ Sorting failed, trying without sort parameter');
       try {
         await _fetchWithoutSort();
         return; // Success, don't show error
       } catch (e) {
-        print('❌ Fallback without sort also failed: $e');
+        print('âŒ Fallback without sort also failed: $e');
       }
     }
     
     // Auto-retry logic for network errors
     if (_fetchRetryCount < _maxRetries && errorMessage == 'Network error' && !isRetry) {
       _fetchRetryCount++;
-      print('🔄 Auto-retrying fetch (attempt $_fetchRetryCount/$_maxRetries)');
+      print('ðŸ”„ Auto-retrying fetch (attempt $_fetchRetryCount/$_maxRetries)');
       await Future.delayed(Duration(seconds: 1)); // Shorter delay for better UX
       if (mounted) {
         try {
           await fetchCars(bypassCache: bypassCache, isRetry: true);
           return; // Success, don't show error
         } catch (e) {
-          print('❌ Auto-retry failed: $e');
+          print('âŒ Auto-retry failed: $e');
         }
       }
     }
@@ -2365,13 +2365,13 @@ class _HomePageState extends State<HomePage> {
   
   Future<void> _fetchWithAlternativeHeaders(String sortValue) async {
     try {
-      print('🔄 Attempting fetch with alternative headers for sort: $sortValue');
+      print('ðŸ”„ Attempting fetch with alternative headers for sort: $sortValue');
       Map<String, String> filters = _buildFilters();
       
       String query = Uri(queryParameters: filters).query;
       final url = Uri.parse('${getApiBase()}/cars${query.isNotEmpty ? '?$query' : ''}');
       
-      print('🔍 Alternative fetch URL: $url');
+      print('ðŸ” Alternative fetch URL: $url');
       
       final response = await http.get(
         url,
@@ -2403,25 +2403,25 @@ class _HomePageState extends State<HomePage> {
           });
         }
         
-        print('✅ Alternative fetch successful: ${parsed.length} cars loaded');
+        print('âœ… Alternative fetch successful: ${parsed.length} cars loaded');
       } else {
         throw Exception('Server error: ${response.statusCode}');
       }
     } catch (e) {
-      print('❌ Alternative fetch error: $e');
+      print('âŒ Alternative fetch error: $e');
       rethrow;
     }
   }
 
   Future<void> _fetchWithoutSort() async {
     try {
-      print('🔄 Attempting fetch without sort parameter');
+      print('ðŸ”„ Attempting fetch without sort parameter');
       Map<String, String> filters = _buildFilters(includeSort: false);
       
       String query = Uri(queryParameters: filters).query;
       final url = Uri.parse('${getApiBase()}/cars${query.isNotEmpty ? '?$query' : ''}');
       
-      print('🔍 Fallback URL: $url');
+      print('ðŸ” Fallback URL: $url');
       
       final response = await http.get(url).timeout(Duration(seconds: 10));
       if (response.statusCode == 200) {
@@ -2443,7 +2443,7 @@ class _HomePageState extends State<HomePage> {
           });
         }
         
-        print('✅ Fallback fetch successful: ${parsed.length} cars loaded');
+        print('âœ… Fallback fetch successful: ${parsed.length} cars loaded');
         
         // Show a message that sorting was disabled
         if (mounted) {
@@ -2456,7 +2456,7 @@ class _HomePageState extends State<HomePage> {
           );
         }
       } else {
-        print('❌ Fallback fetch failed: ${response.statusCode}');
+        print('âŒ Fallback fetch failed: ${response.statusCode}');
         if (mounted) {
           setState(() {
             loadErrorMessage = 'Server error: ${response.statusCode}';
@@ -2465,7 +2465,7 @@ class _HomePageState extends State<HomePage> {
         }
       }
     } catch (e) {
-      print('❌ Fallback fetch error: $e');
+      print('âŒ Fallback fetch error: $e');
       if (mounted) {
         setState(() {
           loadErrorMessage = 'Network error';
@@ -2544,7 +2544,7 @@ class _HomePageState extends State<HomePage> {
   }
   
   void onSortChanged() async {
-    print('🔄 Sort changed to: $selectedSortBy');
+    print('ðŸ”„ Sort changed to: $selectedSortBy');
     // Analytics tracking for sort changed
     
     // Cancel any pending sort operation
@@ -2571,9 +2571,9 @@ class _HomePageState extends State<HomePage> {
       final query = Uri(queryParameters: currentFilters).query;
       final cacheKey = 'cache_home_' + query.hashCode.toString();
       await sp.remove(cacheKey);
-      print('🗑️ Cleared cache for current filters: $cacheKey');
+      print('ðŸ—‘ï¸ Cleared cache for current filters: $cacheKey');
     } catch (e) {
-      print('❌ Error clearing cache: $e');
+      print('âŒ Error clearing cache: $e');
     }
     
     // Try the sort operation immediately
@@ -2583,10 +2583,10 @@ class _HomePageState extends State<HomePage> {
   Future<void> _performSortWithFallback() async {
     // Validate sort parameter before attempting
     final apiSortValue = _convertSortToApiValue(context, selectedSortBy);
-    print('🔄 Sort parameter validation: ${selectedSortBy} -> ${apiSortValue}');
+    print('ðŸ”„ Sort parameter validation: ${selectedSortBy} -> ${apiSortValue}');
     
     if (apiSortValue == null || apiSortValue.isEmpty) {
-      print('⚠️ Invalid sort parameter, skipping sort');
+      print('âš ï¸ Invalid sort parameter, skipping sort');
       await fetchCars(bypassCache: true);
       return;
     }
@@ -2602,12 +2602,12 @@ class _HomePageState extends State<HomePage> {
     
     for (int i = 0; i < strategies.length; i++) {
       try {
-        print('🔄 Trying strategy ${i + 1}/${strategies.length}');
+        print('ðŸ”„ Trying strategy ${i + 1}/${strategies.length}');
         await strategies[i]();
-        print('✅ Strategy ${i + 1} successful');
+        print('âœ… Strategy ${i + 1} successful');
         return;
       } catch (e) {
-        print('❌ Strategy ${i + 1} failed: $e');
+        print('âŒ Strategy ${i + 1} failed: $e');
         if (i < strategies.length - 1) {
           await Future.delayed(Duration(milliseconds: 200));
         }
@@ -2624,14 +2624,14 @@ class _HomePageState extends State<HomePage> {
   }
   
   Future<void> _tryDirectSort(String apiSortValue) async {
-    print('🔄 Direct sort attempt with: $apiSortValue');
+    print('ðŸ”„ Direct sort attempt with: $apiSortValue');
     
     // Try up to 5 times with increasing delays and different approaches
     for (int attempt = 1; attempt <= 5; attempt++) {
       try {
         // Use different timeout and connection settings based on attempt
         final timeout = Duration(seconds: 10 + (attempt * 5));
-        print('🔄 Attempt $attempt with ${timeout.inSeconds}s timeout');
+        print('ðŸ”„ Attempt $attempt with ${timeout.inSeconds}s timeout');
         
         Map<String, String> filters = _buildFilters();
         String query = Uri(queryParameters: filters).query;
@@ -2668,13 +2668,13 @@ class _HomePageState extends State<HomePage> {
           unawaited(sp.setString(cacheKey, response.body));
           
           unawaited(_autoSaveSearch());
-          print('✅ Direct sort successful on attempt $attempt');
+          print('âœ… Direct sort successful on attempt $attempt');
           return;
         } else {
           throw Exception('Server error: ${response.statusCode}');
         }
       } catch (e) {
-        print('❌ Direct sort attempt $attempt failed: $e');
+        print('âŒ Direct sort attempt $attempt failed: $e');
         if (attempt < 5) {
           await Future.delayed(Duration(milliseconds: 200 * attempt));
         } else {
@@ -2685,7 +2685,7 @@ class _HomePageState extends State<HomePage> {
   }
   
   Future<void> _tryAlternativeSort(String apiSortValue) async {
-    print('🔄 Alternative sort attempt with: $apiSortValue');
+    print('ðŸ”„ Alternative sort attempt with: $apiSortValue');
     
     // Try with different connection approaches
     for (int attempt = 1; attempt <= 3; attempt++) {
@@ -2722,13 +2722,13 @@ class _HomePageState extends State<HomePage> {
           }
           
           unawaited(_autoSaveSearch());
-          print('✅ Alternative sort successful on attempt $attempt');
+          print('âœ… Alternative sort successful on attempt $attempt');
           return;
         } else {
           throw Exception('Server error: ${response.statusCode}');
         }
       } catch (e) {
-        print('❌ Alternative sort attempt $attempt failed: $e');
+        print('âŒ Alternative sort attempt $attempt failed: $e');
         if (attempt < 3) {
           await Future.delayed(Duration(milliseconds: 300));
         } else {
@@ -2739,7 +2739,7 @@ class _HomePageState extends State<HomePage> {
   }
   
   Future<void> _trySimpleSort(String apiSortValue) async {
-    print('🔄 Simple sort attempt with: $apiSortValue');
+    print('ðŸ”„ Simple sort attempt with: $apiSortValue');
     // Try with minimal headers and shorter timeout
     Map<String, String> filters = _buildFilters();
     String query = Uri(queryParameters: filters).query;
@@ -2771,7 +2771,7 @@ class _HomePageState extends State<HomePage> {
   }
   
   Future<void> _tryConnectionReset(String apiSortValue) async {
-    print('🔄 Connection reset attempt with: $apiSortValue');
+    print('ðŸ”„ Connection reset attempt with: $apiSortValue');
     
     // Wait a bit longer and try with a completely fresh approach
     await Future.delayed(Duration(milliseconds: 1000));
@@ -2805,24 +2805,24 @@ class _HomePageState extends State<HomePage> {
         }
         
         unawaited(_autoSaveSearch());
-        print('✅ Connection reset successful');
+        print('âœ… Connection reset successful');
       } else {
         throw Exception('Server error: ${response.statusCode}');
       }
     } catch (e) {
-      print('❌ Connection reset failed: $e');
+      print('âŒ Connection reset failed: $e');
       rethrow;
     }
   }
 
   Future<void> _tryWithoutSort() async {
-    print('🔄 Fallback: trying without sort');
+    print('ðŸ”„ Fallback: trying without sort');
     try {
       await _fetchWithoutSort();
       // If we get here, try client-side sorting as a last resort
       await _tryClientSideSort();
     } catch (e) {
-      print('❌ Fallback also failed: $e');
+      print('âŒ Fallback also failed: $e');
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
@@ -2836,7 +2836,7 @@ class _HomePageState extends State<HomePage> {
   }
   
   Future<void> _tryClientSideSort() async {
-    print('🔄 Attempting client-side sort');
+    print('ðŸ”„ Attempting client-side sort');
     final apiSortValue = _convertSortToApiValue(context, selectedSortBy);
     if (apiSortValue == null || selectedSortBy == null) return;
     
@@ -2903,7 +2903,7 @@ class _HomePageState extends State<HomePage> {
         });
       }
       
-      print('✅ Client-side sort successful');
+      print('âœ… Client-side sort successful');
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
@@ -2914,7 +2914,7 @@ class _HomePageState extends State<HomePage> {
         );
       }
     } catch (e) {
-      print('❌ Client-side sort failed: $e');
+      print('âŒ Client-side sort failed: $e');
       rethrow;
     }
   }
@@ -3549,7 +3549,7 @@ class _HomePageState extends State<HomePage> {
                                                     itemCount: homeBrands.length,
                                                     itemBuilder: (context, index) {
                                                       final brand = homeBrands[index];
-                                                      final logoFile = brandLogoFilenames[brand] ?? brand.toLowerCase().replaceAll(' ', '-').replaceAll('é', 'e').replaceAll('ö', 'o');
+                                                      final logoFile = brandLogoFilenames[brand] ?? brand.toLowerCase().replaceAll(' ', '-').replaceAll('Ã©', 'e').replaceAll('Ã¶', 'o');
                                                       final logoUrl = getApiBase() + '/static/images/brands/' + logoFile + '.png';
                                                       return InkWell(
                                                         borderRadius: BorderRadius.circular(12),
@@ -5164,29 +5164,29 @@ class _HomePageState extends State<HomePage> {
   String _getBodyTypeEmoji(String bodyType) {
     switch (bodyType.toLowerCase()) {
       case 'sedan':
-        return '🚗';
+        return 'ðŸš—';
       case 'suv':
-        return '🚙';
+        return 'ðŸš™';
       case 'hatchback':
-        return '🚗';
+        return 'ðŸš—';
       case 'coupe':
-        return '🏎️';
+        return 'ðŸŽï¸';
       case 'wagon':
-        return '🚙';
+        return 'ðŸš™';
       case 'pickup':
-        return '🛻';
+        return 'ðŸ›»';
       case 'van':
-        return '🚐';
+        return 'ðŸš';
       case 'minivan':
-        return '🚐';
+        return 'ðŸš';
       case 'motorcycle':
-        return '🏍️';
+        return 'ðŸï¸';
       case 'utv':
-        return '🚜';
+        return 'ðŸšœ';
       case 'atv':
-        return '🏎️';
+        return 'ðŸŽï¸';
       default:
-        return '🚘';
+        return 'ðŸš˜';
     }
   }
   
@@ -5377,15 +5377,15 @@ class _SavedSearchesPageState extends State<SavedSearchesPage> {
       chips.add(_buildFilterChip('City', filters['city'].toString()));
     }
     if (filters['min_price'] != null || filters['max_price'] != null) {
-      final priceRange = '${filters['min_price'] ?? '0'} - ${filters['max_price'] ?? '∞'}';
+      final priceRange = '${filters['min_price'] ?? '0'} - ${filters['max_price'] ?? 'âˆž'}';
       chips.add(_buildFilterChip('Price', priceRange));
     }
     if (filters['min_year'] != null || filters['max_year'] != null) {
-      final yearRange = '${filters['min_year'] ?? '0'} - ${filters['max_year'] ?? '∞'}';
+      final yearRange = '${filters['min_year'] ?? '0'} - ${filters['max_year'] ?? 'âˆž'}';
       chips.add(_buildFilterChip('Year', yearRange));
     }
     if (filters['min_mileage'] != null || filters['max_mileage'] != null) {
-      final mileageRange = '${filters['min_mileage'] ?? '0'} - ${filters['max_mileage'] ?? '∞'} km';
+      final mileageRange = '${filters['min_mileage'] ?? '0'} - ${filters['max_mileage'] ?? 'âˆž'} km';
       chips.add(_buildFilterChip('Mileage', mileageRange));
     }
     if (filters['transmission'] != null) {
@@ -6992,19 +6992,19 @@ class _SellStep1PageState extends State<SellStep1Page> {
   String _brandSlug(String brand) {
     String s = brand.toLowerCase().trim();
     const replacements = {
-      'á': 'a', 'à': 'a', 'â': 'a', 'ä': 'a', 'ã': 'a', 'å': 'a',
-      'é': 'e', 'è': 'e', 'ê': 'e', 'ë': 'e',
-      'í': 'i', 'ì': 'i', 'î': 'i', 'ï': 'i',
-      'ó': 'o', 'ò': 'o', 'ô': 'o', 'ö': 'o', 'õ': 'o', 'ø': 'o',
-      'ú': 'u', 'ù': 'u', 'û': 'u', 'ü': 'u',
-      'ý': 'y', 'ÿ': 'y',
-      'ñ': 'n',
-      'ç': 'c', 'č': 'c', 'ć': 'c',
-      'š': 's', 'ß': 'ss',
-      'ž': 'z',
-      'œ': 'oe', 'æ': 'ae',
-      'đ': 'd',
-      'ł': 'l'
+      'Ã¡': 'a', 'Ã ': 'a', 'Ã¢': 'a', 'Ã¤': 'a', 'Ã£': 'a', 'Ã¥': 'a',
+      'Ã©': 'e', 'Ã¨': 'e', 'Ãª': 'e', 'Ã«': 'e',
+      'Ã­': 'i', 'Ã¬': 'i', 'Ã®': 'i', 'Ã¯': 'i',
+      'Ã³': 'o', 'Ã²': 'o', 'Ã´': 'o', 'Ã¶': 'o', 'Ãµ': 'o', 'Ã¸': 'o',
+      'Ãº': 'u', 'Ã¹': 'u', 'Ã»': 'u', 'Ã¼': 'u',
+      'Ã½': 'y', 'Ã¿': 'y',
+      'Ã±': 'n',
+      'Ã§': 'c', 'Ä': 'c', 'Ä‡': 'c',
+      'Å¡': 's', 'ÃŸ': 'ss',
+      'Å¾': 'z',
+      'Å“': 'oe', 'Ã¦': 'ae',
+      'Ä‘': 'd',
+      'Å‚': 'l'
     };
     replacements.forEach((k, v) { s = s.replaceAll(k, v); });
     s = s.replaceAll(RegExp(r"[^a-z0-9]+"), '-');
@@ -7219,8 +7219,8 @@ class _SellStep1PageState extends State<SellStep1Page> {
     'Toyota', 'Volkswagen', 'Ford', 'Honda', 'Hyundai', 'Nissan', 'Chevrolet', 'Kia', 
     'Mercedes-Benz', 'BMW', 'Audi', 'Lexus', 'Mazda', 'Subaru', 'Volvo', 'Jeep', 'RAM', 
     'GMC', 'Buick', 'Cadillac', 'Lincoln', 'Mitsubishi', 'Acura', 'Infiniti', 'Tesla', 
-    'Mini', 'Porsche', 'Land Rover', 'Jaguar', 'Fiat', 'Renault', 'Peugeot', 'Citroën', 
-    'Škoda', 'SEAT', 'Dacia', 'Chery', 'BYD', 'Great Wall', 'FAW', 'Roewe', 'Proton', 
+    'Mini', 'Porsche', 'Land Rover', 'Jaguar', 'Fiat', 'Renault', 'Peugeot', 'CitroÃ«n', 
+    'Å koda', 'SEAT', 'Dacia', 'Chery', 'BYD', 'Great Wall', 'FAW', 'Roewe', 'Proton', 
     'Perodua', 'Tata', 'Mahindra', 'Lada', 'ZAZ', 'Daewoo', 'SsangYong', 'Changan', 
     'Haval', 'Wuling', 'Baojun', 'Nio', 'XPeng', 'Li Auto', 'VinFast', 'Ferrari', 
     'Lamborghini', 'Bentley', 'Rolls-Royce', 'Aston Martin', 'McLaren', 'Maserati', 
@@ -8527,7 +8527,7 @@ class _SellStep3PageState extends State<SellStep3Page> {
                   final priceOptions = [
                     ...List.generate(600, (i) => (500 + i * 500).toString()),
                     ...List.generate(171, (i) => (300000 + (i + 1) * 10000).toString()),
-                  ].map((p) => ' ' + p).toList();
+                  ].map((p) => (selectedCurrency == 'IQD' ? 'IQD ' : '\$') + p).toList();
                   final choice = await _pickFromList('Price ($selectedCurrency)', priceOptions);
                   if (choice != null) setState(() => selectedPrice = choice);
                 },
@@ -9488,7 +9488,7 @@ class CarComparisonPage extends StatelessWidget {
               try {
                 final store = Provider.of<CarComparisonStore>(context, listen: false);
                 final cars = store.comparisonCars;
-                final text = cars.map((c) => '${c['title'] ?? ''} • ${c['year'] ?? ''} • ${c['price'] ?? ''}').join('\n');
+                final text = cars.map((c) => '${c['title'] ?? ''} â€¢ ${c['year'] ?? ''} â€¢ ${c['price'] ?? ''}').join('\n');
                 if (text.trim().isNotEmpty) Share.share(text);
               } catch (_) {}
             },
@@ -10268,7 +10268,7 @@ class CarComparisonPage extends StatelessWidget {
 
   // Use the same options as HomePage
   final List<String> addBrands = [
-    'Toyota', 'Volkswagen', 'Ford', 'Honda', 'Hyundai', 'Nissan', 'Chevrolet', 'Kia', 'Mercedes-Benz', 'BMW', 'Audi', 'Lexus', 'Mazda', 'Subaru', 'Volvo', 'Jeep', 'RAM', 'GMC', 'Buick', 'Cadillac', 'Lincoln', 'Mitsubishi', 'Acura', 'Infiniti', 'Tesla', 'Mini', 'Porsche', 'Land Rover', 'Jaguar', 'Fiat', 'Renault', 'Peugeot', 'Citroën', 'Škoda', 'SEAT', 'Dacia', 'Chery', 'BYD', 'Great Wall', 'FAW', 'Roewe', 'Proton', 'Perodua', 'Tata', 'Mahindra', 'Lada', 'ZAZ', 'Daewoo', 'SsangYong', 'Changan', 'Haval', 'Wuling', 'Baojun', 'Nio', 'XPeng', 'Li Auto', 'VinFast', 'Ferrari', 'Lamborghini', 'Bentley', 'Rolls-Royce', 'Aston Martin', 'McLaren', 'Maserati', 'Bugatti', 'Pagani', 'Koenigsegg', 'Polestar', 'Rivian', 'Lucid', 'Alfa Romeo', 'Lancia', 'Abarth', 'Opel', 'DS', 'MAN', 'Iran Khodro', 'Genesis', 'Isuzu', 'Datsun', 'JAC Motors', 'JAC Trucks', 'KTM', 'Alpina', 'Brabus', 'Mansory', 'Bestune', 'Hongqi', 'Dongfeng', 'FAW Jiefang', 'Foton', 'Leapmotor', 'GAC', 'SAIC', 'MG', 'Vauxhall', 'Smart'
+    'Toyota', 'Volkswagen', 'Ford', 'Honda', 'Hyundai', 'Nissan', 'Chevrolet', 'Kia', 'Mercedes-Benz', 'BMW', 'Audi', 'Lexus', 'Mazda', 'Subaru', 'Volvo', 'Jeep', 'RAM', 'GMC', 'Buick', 'Cadillac', 'Lincoln', 'Mitsubishi', 'Acura', 'Infiniti', 'Tesla', 'Mini', 'Porsche', 'Land Rover', 'Jaguar', 'Fiat', 'Renault', 'Peugeot', 'CitroÃ«n', 'Å koda', 'SEAT', 'Dacia', 'Chery', 'BYD', 'Great Wall', 'FAW', 'Roewe', 'Proton', 'Perodua', 'Tata', 'Mahindra', 'Lada', 'ZAZ', 'Daewoo', 'SsangYong', 'Changan', 'Haval', 'Wuling', 'Baojun', 'Nio', 'XPeng', 'Li Auto', 'VinFast', 'Ferrari', 'Lamborghini', 'Bentley', 'Rolls-Royce', 'Aston Martin', 'McLaren', 'Maserati', 'Bugatti', 'Pagani', 'Koenigsegg', 'Polestar', 'Rivian', 'Lucid', 'Alfa Romeo', 'Lancia', 'Abarth', 'Opel', 'DS', 'MAN', 'Iran Khodro', 'Genesis', 'Isuzu', 'Datsun', 'JAC Motors', 'JAC Trucks', 'KTM', 'Alpina', 'Brabus', 'Mansory', 'Bestune', 'Hongqi', 'Dongfeng', 'FAW Jiefang', 'Foton', 'Leapmotor', 'GAC', 'SAIC', 'MG', 'Vauxhall', 'Smart'
   ];
   final Map<String, List<String>> models = {
     'BMW': ['X3', 'X5', 'X7', '3 Series', '5 Series', '7 Series', 'M3', 'M5', 'X1', 'X6'],
@@ -11567,7 +11567,7 @@ class _FavoritesPageState extends State<FavoritesPage> {
                                     crossAxisAlignment: CrossAxisAlignment.start,
                                     children: [
                                       Text(
-                                        title.isEmpty ? '—' : title,
+                                        title.isEmpty ? 'â€”' : title,
                                         maxLines: 2,
                                         overflow: TextOverflow.ellipsis,
                                         style: TextStyle(fontSize: 16, fontWeight: FontWeight.w600),
@@ -12188,7 +12188,7 @@ class _ProfilePageState extends State<ProfilePage> {
                     _buildInfoRow(Icons.phone_outlined, AppLocalizations.of(context)!.phoneLabel, me!['phone'].toString()),
                   ],
                   SizedBox(height: 16),
-                  _buildInfoRow(Icons.lock_outline, AppLocalizations.of(context)!.passwordLabel, '••••••••'),
+                  _buildInfoRow(Icons.lock_outline, AppLocalizations.of(context)!.passwordLabel, 'â€¢â€¢â€¢â€¢â€¢â€¢â€¢â€¢'),
                 ],
               ),
             ),
@@ -13076,7 +13076,7 @@ class _MyListingsPageState extends State<MyListingsPage> {
   // DUPLICATED from Home page buildGlobalCarCard function
   Widget _buildMyListingsCarCard(BuildContext context, Map car) {
     final brand = car['brand'] ?? '';
-    final brandId = brandLogoFilenames[brand] ?? brand.toString().toLowerCase().replaceAll(' ', '-').replaceAll('é', 'e').replaceAll('ö', 'o');
+    final brandId = brandLogoFilenames[brand] ?? brand.toString().toLowerCase().replaceAll(' ', '-').replaceAll('Ã©', 'e').replaceAll('Ã¶', 'o');
     
     return Container(
       height: 205, // Standard height for all car cards
@@ -13218,7 +13218,7 @@ class _MyListingsPageState extends State<MyListingsPage> {
             left: 12,
             right: 12,
             child: Text(
-              '${_localizeDigitsGlobal(context, (car['year'] ?? '').toString())} • ${_localizeDigitsGlobal(context, (car['mileage'] ?? '').toString())} ${AppLocalizations.of(context)!.unit_km}',
+              '${_localizeDigitsGlobal(context, (car['year'] ?? '').toString())} â€¢ ${_localizeDigitsGlobal(context, (car['mileage'] ?? '').toString())} ${AppLocalizations.of(context)!.unit_km}',
               style: TextStyle(color: Colors.white70, fontSize: 13),
             ),
           ),
