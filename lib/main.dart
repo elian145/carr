@@ -8490,6 +8490,29 @@ class _SellStep3PageState extends State<SellStep3Page> {
                         ),
                 ),
                 SizedBox(width: 8),
+                // Currency Selector button (styled like pencil button)
+                IconButton(
+                  onPressed: () {
+                    setState(() {
+                      selectedCurrency = selectedCurrency == 'USD' ? 'IQD' : 'USD';
+                    });
+                  },
+                  icon: Text(
+                    selectedCurrency,
+                    style: TextStyle(
+                      color: Color(0xFFFF6B00),
+                      fontSize: 14,
+                      fontWeight: FontWeight.w600,
+                    ),
+                  ),
+                  style: IconButton.styleFrom(
+                    backgroundColor: Colors.grey.withOpacity(0.1),
+                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+                  ),
+                  tooltip: 'Switch to ${selectedCurrency == 'USD' ? 'IQD' : 'USD'}',
+                ),
+                SizedBox(width: 8),
+                // Pencil button
                 IconButton(
                   onPressed: () => setState(() => isPriceManualInput = !isPriceManualInput),
                   icon: Icon(isPriceManualInput ? Icons.list : Icons.edit, color: Color(0xFFFF6B00)),
@@ -8499,40 +8522,6 @@ class _SellStep3PageState extends State<SellStep3Page> {
                   ),
                   tooltip: isPriceManualInput ? 'Select from list' : 'Type manually',
                 ),
-                  ],
-                ),
-                SizedBox(height: 8),
-                // Currency Selector above pencil button
-                Row(
-                  children: [
-                    Text(
-                      'Currency:',
-                      style: TextStyle(
-                        color: Colors.white,
-                        fontSize: 14,
-                        fontWeight: FontWeight.w500,
-                      ),
-                    ),
-                    SizedBox(width: 12),
-                    Container(
-                      decoration: BoxDecoration(
-                        color: Colors.black.withOpacity(0.2),
-                        borderRadius: BorderRadius.circular(8),
-                        border: Border.all(color: Colors.white.withOpacity(0.3)),
-                      ),
-                      child: Row(
-                        mainAxisSize: MainAxisSize.min,
-                        children: [
-                          _buildCurrencyButton('USD', selectedCurrency == 'USD'),
-                          Container(
-                            width: 1,
-                            height: 32,
-                            color: Colors.white.withOpacity(0.3),
-                          ),
-                          _buildCurrencyButton('IQD', selectedCurrency == 'IQD'),
-                        ],
-                      ),
-                    ),
                   ],
                 ),
               ],
