@@ -8314,6 +8314,37 @@ class _SellStep3PageState extends State<SellStep3Page> {
   // Focus node for keyboard management
   FocusNode _priceFocusNode = FocusNode();
   
+  // Currency conversion method
+  String _convertCurrency(String price, String fromCurrency, String toCurrency) {
+    if (price.isEmpty) return price;
+    
+    // Extract numeric value from price string
+    String numericValue = price.replaceAll(RegExp(r'[^\d.]'), '');
+    double value = double.tryParse(numericValue) ?? 0;
+    
+    if (value == 0) return price;
+    
+    double convertedValue;
+    
+    if (fromCurrency == 'USD' && toCurrency == 'IQD') {
+      // Convert USD to IQD: 1 USD = 1420 IQD
+      convertedValue = value * 1420;
+    } else if (fromCurrency == 'IQD' && toCurrency == 'USD') {
+      // Convert IQD to USD: 1 IQD = 1/1420 USD
+      convertedValue = value / 1420;
+    } else {
+      // Same currency, no conversion needed
+      return price;
+    }
+    
+    // Format the converted value
+    if (toCurrency == 'IQD') {
+      return 'IQD ${convertedValue.toStringAsFixed(0)}';
+    } else {
+      return '\$${convertedValue.toStringAsFixed(0)}';
+    }
+  }
+  
   @override
   void initState() {
     super.initState();
@@ -8538,7 +8569,7 @@ class _SellStep3PageState extends State<SellStep3Page> {
                 },
                 child: buildFancySelector(
                   context,
-                  icon: Icons.attach_money,
+                  icon: selectedCurrency == 'IQD' ? Icons.currency_exchange : Icons.attach_money,
                   label: 'Price ($selectedCurrency) *',
                   value: selectedPrice != null ? _formatCurrencyGlobal(context, selectedPrice) : null,
                 ),
@@ -8550,6 +8581,11 @@ class _SellStep3PageState extends State<SellStep3Page> {
                 IconButton(
                   onPressed: () {
                     setState(() {
+                      // Convert price when switching currency
+                      if (selectedPrice != null && selectedPrice!.isNotEmpty) {
+                        String convertedPrice = _convertCurrency(selectedPrice!, selectedCurrency, selectedCurrency == 'USD' ? 'IQD' : 'USD');
+                        selectedPrice = convertedPrice;
+                      }
                       selectedCurrency = selectedCurrency == 'USD' ? 'IQD' : 'USD';
                     });
                   },
