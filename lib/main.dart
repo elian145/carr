@@ -8524,10 +8524,15 @@ class _SellStep3PageState extends State<SellStep3Page> {
               validator: (_) => (selectedPrice == null || selectedPrice!.isEmpty) ? 'Please select price' : null,
               builder: (state) => GestureDetector(
                 onTap: () async {
-                  final priceOptions = [
-                    ...List.generate(600, (i) => (500 + i * 500).toString()),
-                    ...List.generate(171, (i) => (300000 + (i + 1) * 10000).toString()),
-                  ].map((p) => (selectedCurrency == 'IQD' ? 'IQD ' : '\$') + p).toList();
+                  final priceOptions = selectedCurrency == 'IQD' 
+                    ? [
+                        ...List.generate(200, (i) => (500000 + i * 500000).toString()),
+                        ...List.generate(100, (i) => (100000000 + (i + 1) * 1000000).toString()),
+                      ].map((p) => 'IQD ' + p).toList()
+                    : [
+                        ...List.generate(600, (i) => (500 + i * 500).toString()),
+                        ...List.generate(171, (i) => (300000 + (i + 1) * 10000).toString()),
+                      ].map((p) => '\$' + p).toList();
                   final choice = await _pickFromList('Price ($selectedCurrency)', priceOptions);
                   if (choice != null) setState(() => selectedPrice = choice);
                 },
