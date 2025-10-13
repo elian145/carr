@@ -8274,6 +8274,7 @@ class _SellStep3PageState extends State<SellStep3Page> {
   String? contactPhone;
   bool isQuickSell = false;
   bool isPriceManualInput = false;
+  String selectedCurrency = 'USD';
   
   @override
   void initState() {
@@ -8286,6 +8287,32 @@ class _SellStep3PageState extends State<SellStep3Page> {
     selectedCity = null;
     contactPhone = null;
     isQuickSell = false;
+    selectedCurrency = 'USD';
+  }
+  
+  Widget _buildCurrencyButton(String currency, bool isSelected) {
+    return GestureDetector(
+      onTap: () {
+        setState(() {
+          selectedCurrency = currency;
+        });
+      },
+      child: Container(
+        padding: EdgeInsets.symmetric(horizontal: 20, vertical: 12),
+        decoration: BoxDecoration(
+          color: isSelected ? Color(0xFFFF6B00) : Colors.transparent,
+          borderRadius: BorderRadius.circular(12),
+        ),
+        child: Text(
+          currency,
+          style: TextStyle(
+            color: isSelected ? Colors.white : Colors.white70,
+            fontSize: 16,
+            fontWeight: isSelected ? FontWeight.w600 : FontWeight.w400,
+          ),
+        ),
+      ),
+    );
   }
   
   final List<String> cities = [
@@ -8403,6 +8430,41 @@ class _SellStep3PageState extends State<SellStep3Page> {
             ),
             SizedBox(height: 24),
             
+            // Currency Selector
+            Row(
+              children: [
+                Text(
+                  'Currency:',
+                  style: TextStyle(
+                    color: Colors.white,
+                    fontSize: 16,
+                    fontWeight: FontWeight.w500,
+                  ),
+                ),
+                SizedBox(width: 16),
+                Container(
+                  decoration: BoxDecoration(
+                    color: Colors.black.withOpacity(0.2),
+                    borderRadius: BorderRadius.circular(12),
+                    border: Border.all(color: Colors.white.withOpacity(0.3)),
+                  ),
+                  child: Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      _buildCurrencyButton('USD', selectedCurrency == 'USD'),
+                      Container(
+                        width: 1,
+                        height: 40,
+                        color: Colors.white.withOpacity(0.3),
+                      ),
+                      _buildCurrencyButton('IQD', selectedCurrency == 'IQD'),
+                    ],
+                  ),
+                ),
+              ],
+            ),
+            SizedBox(height: 16),
+            
             // Price (Modal or Manual Input)
             Row(
               children: [
@@ -8411,7 +8473,7 @@ class _SellStep3PageState extends State<SellStep3Page> {
                       ? TextFormField(
                           initialValue: selectedPrice,
                           decoration: InputDecoration(
-                            labelText: 'Price (USD) *',
+                            labelText: 'Price ($selectedCurrency) *',
                             hintText: 'Enter price',
                             filled: true,
                             fillColor: Colors.black.withOpacity(0.2),
@@ -8448,7 +8510,7 @@ class _SellStep3PageState extends State<SellStep3Page> {
                     ...List.generate(600, (i) => (500 + i * 500).toString()),
                     ...List.generate(171, (i) => (300000 + (i + 1) * 10000).toString()),
                   ].map((p) => ' ' + p).toList();
-                  final choice = await _pickFromList('Price (USD)', [
+                  final choice = await _pickFromList('Price ($selectedCurrency)', [
                     ...List.generate(600, (i) => (500 + i * 500).toString()),
                     ...List.generate(170, (i) => (300000 + (i + 1) * 10000).toString()),
                   ]);
@@ -8457,7 +8519,7 @@ class _SellStep3PageState extends State<SellStep3Page> {
                 child: buildFancySelector(
                   context,
                   icon: Icons.attach_money,
-                  label: 'Price (USD) *',
+                  label: 'Price ($selectedCurrency) *',
                   value: selectedPrice != null ? _formatCurrencyGlobal(context, selectedPrice) : null,
                 ),
               ),
