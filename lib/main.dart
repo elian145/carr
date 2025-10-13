@@ -152,7 +152,6 @@ Widget buildFancySelector(BuildContext context, {IconData? icon, required String
             ),
           ]),
         ),
-        Icon(Icons.keyboard_arrow_down, color: isError ? Colors.redAccent : accent),
       ],
     ),
   );
