@@ -8589,10 +8589,6 @@ class _SellStep3PageState extends State<SellStep3Page> {
                             setState(() {
                               // Store the full price with currency prefix
                               selectedPrice = value.isEmpty ? null : (selectedCurrency == 'IQD' ? 'IQD $value' : '\$$value');
-                              // Automatically switch to manual input mode when user starts typing
-                              if (!isPriceManualInput && value.isNotEmpty) {
-                                isPriceManualInput = true;
-                              }
                             });
                           },
                           validator: (value) {
@@ -8668,10 +8664,22 @@ class _SellStep3PageState extends State<SellStep3Page> {
                       // If in manual input mode, confirm the price and dismiss keyboard
                       _priceFocusNode.unfocus();
                       FocusScope.of(context).unfocus();
-                      setState(() => isPriceManualInput = false);
+                      setState(() {
+                        isPriceManualInput = false;
+                        // Ensure the selectedPrice is properly formatted
+                        if (_priceController.text.isNotEmpty) {
+                          final numericValue = _priceController.text;
+                          selectedPrice = selectedCurrency == 'IQD' ? 'IQD $numericValue' : '\$$numericValue';
+                        }
+                      });
                     } else {
                       // If in dropdown mode, switch to manual input
-                      setState(() => isPriceManualInput = true);
+                      setState(() {
+                        isPriceManualInput = true;
+                        // Clear the controller to start fresh
+                        _priceController.clear();
+                        selectedPrice = null;
+                      });
                     }
                   },
                   icon: Icon(
