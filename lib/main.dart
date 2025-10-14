@@ -110,8 +110,34 @@ String _formatCurrencyGlobal(BuildContext context, dynamic raw) {
   return symbol + _localizeDigitsGlobal(context, formatter.format(value));
 }
 
+// Custom currency icon widget that shows 'IQD' when IQD is selected
+Widget buildCurrencyIcon(String currency) {
+  if (currency == 'IQD') {
+    return Container(
+      width: 24,
+      height: 24,
+      decoration: BoxDecoration(
+        color: Color(0xFFFF6B00),
+        borderRadius: BorderRadius.circular(6),
+      ),
+      child: Center(
+        child: Text(
+          'IQD',
+          style: TextStyle(
+            color: Colors.white,
+            fontSize: 8,
+            fontWeight: FontWeight.bold,
+          ),
+        ),
+      ),
+    );
+  } else {
+    return Icon(Icons.attach_money, size: 24, color: Color(0xFFFF6B00));
+  }
+}
+
 // Fancy selector tile used in Sell page pickers
-Widget buildFancySelector(BuildContext context, {IconData? icon, required String label, required String? value, Widget? leading, bool isError = false}) {
+Widget buildFancySelector(BuildContext context, {IconData? icon, required String label, required String? value, Widget? leading, bool isError = false, String? currency}) {
   final bool isDark = Theme.of(context).brightness == Brightness.dark;
   final Color accent = const Color(0xFFFF6B00);
   final List<Color> bg = isDark
@@ -138,7 +164,9 @@ Widget buildFancySelector(BuildContext context, {IconData? icon, required String
           width: 36,
           height: 36,
           decoration: BoxDecoration(color: (isError ? Colors.redAccent : accent).withOpacity(0.12), borderRadius: BorderRadius.circular(10)),
-          child: icon != null ? Icon(icon, color: isError ? Colors.redAccent : accent) : const SizedBox.shrink(),
+          child: currency != null 
+            ? Center(child: buildCurrencyIcon(currency))
+            : (icon != null ? Icon(icon, color: isError ? Colors.redAccent : accent) : const SizedBox.shrink()),
         ),
         const SizedBox(width: 12),
         Expanded(
@@ -8593,7 +8621,7 @@ class _SellStep3PageState extends State<SellStep3Page> {
                 },
                 child: buildFancySelector(
                   context,
-                  icon: selectedCurrency == 'IQD' ? Icons.currency_exchange : Icons.attach_money,
+                  currency: selectedCurrency,
                   label: 'Price ($selectedCurrency) *',
                   value: selectedPrice != null ? _formatCurrencyGlobal(context, selectedPrice) : null,
                 ),

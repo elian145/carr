@@ -1,0 +1,6 @@
+@echo off
+echo Adding firewall rule for port 5000...
+netsh advfirewall firewall add rule name="Flask Server Port 5000" dir=in action=allow protocol=TCP localport=5000
+echo.
+echo Done! Press any key to exit...
+pause
