@@ -11969,6 +11969,7 @@ class _SignupPageState extends State<SignupPage> {
   final _otpController = TextEditingController();
   bool _loading = false;
   bool _otpSent = false;
+  String _authType = 'email'; // 'email' or 'phone'
 
   Future<void> _sendOtp() async {
     final phone = _phoneController.text.trim();
@@ -12013,13 +12014,22 @@ class _SignupPageState extends State<SignupPage> {
     setState(() { _loading = true; });
     try {
       final url = Uri.parse(getApiBase() + '/api/auth/signup');
-      final resp = await http.post(url, headers: {'Content-Type': 'application/json'}, body: json.encode({
+      
+      // Prepare request body based on auth type
+      Map<String, dynamic> requestBody = {
         'username': _usernameController.text.trim(),
-        'email': _emailController.text.trim(),
-        'phone': _phoneController.text.trim(),
-        'otp_code': _otpController.text.trim(),
         'password': _passwordController.text,
-      }));
+        'auth_type': _authType,
+      };
+      
+      if (_authType == 'email') {
+        requestBody['email'] = _emailController.text.trim();
+      } else {
+        requestBody['phone'] = _phoneController.text.trim();
+        requestBody['otp_code'] = _otpController.text.trim();
+      }
+      
+      final resp = await http.post(url, headers: {'Content-Type': 'application/json'}, body: json.encode(requestBody));
       if (resp.statusCode == 200) {
         final data = json.decode(resp.body);
         final token = data['token'] as String;
@@ -12054,47 +12064,92 @@ class _SignupPageState extends State<SignupPage> {
                 decoration: InputDecoration(labelText: AppLocalizations.of(context)!.usernameLabel),
                 validator: (v) => (v==null || v.trim().isEmpty) ? AppLocalizations.of(context)!.requiredField : null,
               ),
-              SizedBox(height: 12),
-              TextFormField(
-                controller: _emailController,
-                keyboardType: TextInputType.emailAddress,
-                decoration: InputDecoration(
-                  labelText: 'Email Address',
-                  hintText: 'Enter your email address',
-                ),
-                validator: (v) {
-                  if (v == null || v.trim().isEmpty) return 'Email is required';
-                  if (!RegExp(r'^[\w-\.]+@([\w-]+\.)+[\w-]{2,4}$').hasMatch(v.trim())) {
-                    return 'Please enter a valid email address';
-                  }
-                  return null;
-                },
+              SizedBox(height: 16),
+              
+              // Authentication Type Selection
+              Text(
+                'Choose Authentication Method:',
+                style: TextStyle(fontSize: 16, fontWeight: FontWeight.w600, color: Colors.white),
               ),
-              SizedBox(height: 12),
-              TextFormField(
-                controller: _phoneController,
-                keyboardType: TextInputType.phone,
-                decoration: InputDecoration(labelText: AppLocalizations.of(context)!.enterPhoneNumber),
-                validator: (v) => (v==null || v.trim().isEmpty) ? AppLocalizations.of(context)!.requiredField : null,
-              ),
-              SizedBox(height: 12),
+              SizedBox(height: 8),
               Row(
                 children: [
                   Expanded(
-                    child: TextFormField(
-                      controller: _otpController,
-                      decoration: InputDecoration(labelText: AppLocalizations.of(context)!.sendCode),
-                      validator: (v) => (!_otpSent) ? AppLocalizations.of(context)!.sendCodeFirst : ((v==null || v.trim().isEmpty) ? AppLocalizations.of(context)!.requiredField : null),
+                    child: RadioListTile<String>(
+                      title: Text('Email', style: TextStyle(color: Colors.white)),
+                      value: 'email',
+                      groupValue: _authType,
+                      onChanged: (value) {
+                        setState(() {
+                          _authType = value!;
+                          _otpSent = false;
+                          _otpController.clear();
+                        });
+                      },
+                      activeColor: Color(0xFFFF6B00),
                     ),
                   ),
-                  SizedBox(width: 8),
-                  ElevatedButton(
-                    onPressed: _loading ? null : _sendOtp,
-                    child: Text(_otpSent ? 'Resend' : 'Send code'),
+                  Expanded(
+                    child: RadioListTile<String>(
+                      title: Text('Phone', style: TextStyle(color: Colors.white)),
+                      value: 'phone',
+                      groupValue: _authType,
+                      onChanged: (value) {
+                        setState(() {
+                          _authType = value!;
+                          _otpSent = false;
+                          _otpController.clear();
+                        });
+                      },
+                      activeColor: Color(0xFFFF6B00),
+                    ),
                   ),
                 ],
               ),
-              SizedBox(height: 12),
+              SizedBox(height: 16),
+              
+              // Conditional fields based on auth type
+              if (_authType == 'email') ...[
+                TextFormField(
+                  controller: _emailController,
+                  keyboardType: TextInputType.emailAddress,
+                  decoration: InputDecoration(
+                    labelText: 'Email Address',
+                    hintText: 'Enter your email address',
+                  ),
+                  validator: (v) {
+                    if (v == null || v.trim().isEmpty) return 'Email is required';
+                    if (!RegExp(r'^[\w-\.]+@([\w-]+\.)+[\w-]{2,4}$').hasMatch(v.trim())) {
+                      return 'Please enter a valid email address';
+                    }
+                    return null;
+                  },
+                ),
+              ] else ...[
+                TextFormField(
+                  controller: _phoneController,
+                  keyboardType: TextInputType.phone,
+                  decoration: InputDecoration(labelText: AppLocalizations.of(context)!.enterPhoneNumber),
+                  validator: (v) => (v==null || v.trim().isEmpty) ? AppLocalizations.of(context)!.requiredField : null,
+                ),
+                SizedBox(height: 12),
+                Row(
+                  children: [
+                    Expanded(
+                      child: TextFormField(
+                        controller: _otpController,
+                        decoration: InputDecoration(labelText: AppLocalizations.of(context)!.sendCode),
+                        validator: (v) => (!_otpSent) ? AppLocalizations.of(context)!.sendCodeFirst : ((v==null || v.trim().isEmpty) ? AppLocalizations.of(context)!.requiredField : null),
+                      ),
+                    ),
+                    SizedBox(width: 8),
+                    ElevatedButton(
+                      onPressed: _loading ? null : _sendOtp,
+                      child: Text(_otpSent ? 'Resend' : 'Send code'),
+                    ),
+                  ],
+                ),
+              ],
               TextFormField(
                 controller: _passwordController,
                 obscureText: true,

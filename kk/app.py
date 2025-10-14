@@ -167,25 +167,35 @@ def get_api_user():
 def api_auth_signup_mobile():
     data = request.get_json() or {}
     username = str(data.get('username', '')).strip()
-    email = str(data.get('email', '')).strip()
-    phone_raw = str(data.get('phone', ''))
-    otp_code = str(data.get('otp_code', ''))
     password = str(data.get('password', ''))
-    phone = _normalize_phone(phone_raw)
-    if not username or not phone or not password or not otp_code:
-        return jsonify({'error': 'username, phone, password, otp_code required'}), 400
-    # Verify OTP
-    entry = PHONE_OTPS.get(phone)
-    if not entry or entry.get('code') != otp_code or entry.get('expires_at') < datetime.utcnow():
-        return jsonify({'error': 'Invalid or expired verification code'}), 400
+    auth_type = str(data.get('auth_type', 'email')).strip()
     
-    # Use provided email or generate placeholder from phone
-    if email and '@' in email:
+    if not username or not password:
+        return jsonify({'error': 'username and password required'}), 400
+    
+    user_email = None
+    phone = None
+    
+    if auth_type == 'email':
+        email = str(data.get('email', '')).strip()
+        if not email or '@' not in email:
+            return jsonify({'error': 'Valid email required for email authentication'}), 400
         user_email = email
-    else:
-        # Generate placeholder unique email from phone (to satisfy non-null/unique constraint)
+    elif auth_type == 'phone':
+        phone_raw = str(data.get('phone', ''))
+        otp_code = str(data.get('otp_code', ''))
+        phone = _normalize_phone(phone_raw)
+        if not phone or not otp_code:
+            return jsonify({'error': 'phone and otp_code required for phone authentication'}), 400
+        # Verify OTP
+        entry = PHONE_OTPS.get(phone)
+        if not entry or entry.get('code') != otp_code or entry.get('expires_at') < datetime.utcnow():
+            return jsonify({'error': 'Invalid or expired verification code'}), 400
+        # Generate placeholder email from phone
         digits_only = ''.join(ch for ch in phone if ch.isdigit())
         user_email = f"{digits_only}@phone.local"
+    else:
+        return jsonify({'error': 'Invalid auth_type. Must be "email" or "phone"'}), 400
     
     # Check for existing user with same username or email
     existing_user = User.query.filter((User.username == username) | (User.email == user_email)).first()
@@ -195,12 +205,15 @@ def api_auth_signup_mobile():
     user = User(username=username, email=user_email, password_hash=generate_password_hash(password))
     db.session.add(user)
     db.session.commit()
-    # Map phone to user (in-memory for dev/demo)
-    USER_PHONES[user.id] = phone
-    # Consume OTP
-    PHONE_OTPS.pop(phone, None)
+    
+    # Map phone to user if phone auth was used
+    if phone:
+        USER_PHONES[user.id] = phone
+        # Consume OTP
+        PHONE_OTPS.pop(phone, None)
+    
     token = create_access_token(identity=str(user.id), expires_delta=timedelta(days=30))
-    return jsonify({'token': token, 'user': {'id': user.id, 'username': user.username, 'email': user.email, 'phone': phone}})
+    return jsonify({'token': token, 'user': {'id': user.id, 'username': user.username, 'email': user.email, 'phone': phone or ''}})
 
 @app.route('/api/auth/login', methods=['POST'])
 def api_auth_login_mobile():
