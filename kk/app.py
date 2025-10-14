@@ -167,7 +167,7 @@ def get_api_user():
 def api_auth_signup_mobile():
     data = request.get_json() or {}
     username = str(data.get('username', '')).strip()
-    # Phone-based signup: accept phone + otp_code; email becomes a placeholder
+    email = str(data.get('email', '')).strip()
     phone_raw = str(data.get('phone', ''))
     otp_code = str(data.get('otp_code', ''))
     password = str(data.get('password', ''))
@@ -178,12 +178,21 @@ def api_auth_signup_mobile():
     entry = PHONE_OTPS.get(phone)
     if not entry or entry.get('code') != otp_code or entry.get('expires_at') < datetime.utcnow():
         return jsonify({'error': 'Invalid or expired verification code'}), 400
-    # Generate placeholder unique email from phone (to satisfy non-null/unique constraint)
-    digits_only = ''.join(ch for ch in phone if ch.isdigit())
-    email_placeholder = f"{digits_only}@phone.local"
-    if User.query.filter((User.username == username) | (User.email == email_placeholder)).first():
-        return jsonify({'error': 'Username or phone already exists'}), 409
-    user = User(username=username, email=email_placeholder, password=generate_password_hash(password))
+    
+    # Use provided email or generate placeholder from phone
+    if email and '@' in email:
+        user_email = email
+    else:
+        # Generate placeholder unique email from phone (to satisfy non-null/unique constraint)
+        digits_only = ''.join(ch for ch in phone if ch.isdigit())
+        user_email = f"{digits_only}@phone.local"
+    
+    # Check for existing user with same username or email
+    existing_user = User.query.filter((User.username == username) | (User.email == user_email)).first()
+    if existing_user:
+        return jsonify({'error': 'Username or email already exists'}), 409
+    
+    user = User(username=username, email=user_email, password_hash=generate_password_hash(password))
     db.session.add(user)
     db.session.commit()
     # Map phone to user (in-memory for dev/demo)
@@ -196,12 +205,17 @@ def api_auth_signup_mobile():
 @app.route('/api/auth/login', methods=['POST'])
 def api_auth_login_mobile():
     data = request.get_json() or {}
-    username = str(data.get('username', '')).strip()
+    username_or_email = str(data.get('username', '')).strip()
     password = str(data.get('password', ''))
-    if not username or not password:
-        return jsonify({'error': 'username and password required'}), 400
-    user = User.query.filter_by(username=username).first()
-    if not user or not check_password_hash(user.password, password):
+    if not username_or_email or not password:
+        return jsonify({'error': 'username/email and password required'}), 400
+    
+    # Try to find user by username first, then by email
+    user = User.query.filter_by(username=username_or_email).first()
+    if not user:
+        user = User.query.filter_by(email=username_or_email).first()
+    
+    if not user or not check_password_hash(user.password_hash, password):
         return jsonify({'error': 'Invalid credentials'}), 401
     token = create_access_token(identity=str(user.id), expires_delta=timedelta(days=30))
     # Include phone if known

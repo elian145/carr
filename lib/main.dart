@@ -11900,8 +11900,11 @@ class _LoginPageState extends State<LoginPage> {
             children: [
               TextFormField(
                 controller: _usernameController,
-                decoration: InputDecoration(labelText: AppLocalizations.of(context)!.usernameLabel),
-                validator: (v) => (v==null || v.trim().isEmpty) ? AppLocalizations.of(context)!.requiredField : null,
+                decoration: InputDecoration(
+                  labelText: 'Username or Email',
+                  hintText: 'Enter your username or email address',
+                ),
+                validator: (v) => (v==null || v.trim().isEmpty) ? 'Username or email is required' : null,
               ),
               SizedBox(height: 12),
               TextFormField(
@@ -11960,6 +11963,7 @@ class SignupPage extends StatefulWidget {
 class _SignupPageState extends State<SignupPage> {
   final _formKey = GlobalKey<FormState>();
   final _usernameController = TextEditingController();
+  final _emailController = TextEditingController();
   final _phoneController = TextEditingController();
   final _passwordController = TextEditingController();
   final _otpController = TextEditingController();
@@ -12011,6 +12015,7 @@ class _SignupPageState extends State<SignupPage> {
       final url = Uri.parse(getApiBase() + '/api/auth/signup');
       final resp = await http.post(url, headers: {'Content-Type': 'application/json'}, body: json.encode({
         'username': _usernameController.text.trim(),
+        'email': _emailController.text.trim(),
         'phone': _phoneController.text.trim(),
         'otp_code': _otpController.text.trim(),
         'password': _passwordController.text,
@@ -12048,6 +12053,22 @@ class _SignupPageState extends State<SignupPage> {
                 controller: _usernameController,
                 decoration: InputDecoration(labelText: AppLocalizations.of(context)!.usernameLabel),
                 validator: (v) => (v==null || v.trim().isEmpty) ? AppLocalizations.of(context)!.requiredField : null,
+              ),
+              SizedBox(height: 12),
+              TextFormField(
+                controller: _emailController,
+                keyboardType: TextInputType.emailAddress,
+                decoration: InputDecoration(
+                  labelText: 'Email Address',
+                  hintText: 'Enter your email address',
+                ),
+                validator: (v) {
+                  if (v == null || v.trim().isEmpty) return 'Email is required';
+                  if (!RegExp(r'^[\w-\.]+@([\w-]+\.)+[\w-]{2,4}$').hasMatch(v.trim())) {
+                    return 'Please enter a valid email address';
+                  }
+                  return null;
+                },
               ),
               SizedBox(height: 12),
               TextFormField(
