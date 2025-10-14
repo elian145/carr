@@ -7022,6 +7022,9 @@ class _SellStep1PageState extends State<SellStep1Page> {
   // Focus node for keyboard management
   FocusNode _yearFocusNode = FocusNode();
   
+  // Controller for year input
+  late TextEditingController _yearController;
+  
   String _brandSlug(String brand) {
     String s = brand.toLowerCase().trim();
     const replacements = {
@@ -7048,12 +7051,14 @@ class _SellStep1PageState extends State<SellStep1Page> {
   @override
   void initState() {
     super.initState();
+    _yearController = TextEditingController();
     _resetSellFilters();
   }
   
   @override
   void dispose() {
     _yearFocusNode.dispose();
+    _yearController.dispose();
     super.dispose();
   }
   
@@ -7437,7 +7442,7 @@ class _SellStep1PageState extends State<SellStep1Page> {
                    child: isYearManualInput
                       ? TextFormField(
                           focusNode: _yearFocusNode,
-                          initialValue: selectedYear,
+                          controller: _yearController,
                           decoration: InputDecoration(
                             labelText: 'Year *',
                             hintText: 'Enter year (e.g. 2024)',
@@ -7481,13 +7486,37 @@ class _SellStep1PageState extends State<SellStep1Page> {
                  ),
                  SizedBox(width: 8),
                  IconButton(
-                   onPressed: () => setState(() => isYearManualInput = !isYearManualInput),
-                   icon: Icon(isYearManualInput ? Icons.list : Icons.edit, color: Color(0xFFFF6B00)),
+                   onPressed: () {
+                     if (isYearManualInput) {
+                       // If in manual input mode, confirm the year and dismiss keyboard
+                       _yearFocusNode.unfocus();
+                       FocusScope.of(context).unfocus();
+                       setState(() {
+                         isYearManualInput = false;
+                         // Ensure the selectedYear is properly set
+                         if (_yearController.text.isNotEmpty) {
+                           selectedYear = _yearController.text;
+                         }
+                       });
+                     } else {
+                       // If in dropdown mode, switch to manual input
+                       setState(() {
+                         isYearManualInput = true;
+                         // Clear the controller to start fresh
+                         _yearController.clear();
+                         selectedYear = null;
+                       });
+                     }
+                   },
+                   icon: Icon(
+                     isYearManualInput ? Icons.check : Icons.edit, 
+                     color: Color(0xFFFF6B00)
+                   ),
                    style: IconButton.styleFrom(
                      backgroundColor: Colors.grey.withOpacity(0.1),
                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
                    ),
-                   tooltip: isYearManualInput ? 'Select from list' : 'Type manually',
+                   tooltip: isYearManualInput ? 'Confirm year' : 'Type manually',
                  ),
                ],
              ),
@@ -7585,15 +7614,20 @@ class _SellStep2PageState extends State<SellStep2Page> {
   // Focus node for keyboard management
   FocusNode _mileageFocusNode = FocusNode();
   
+  // Controller for mileage input
+  late TextEditingController _mileageController;
+  
   @override
   void initState() {
     super.initState();
+    _mileageController = TextEditingController();
     _resetStep2();
   }
   
   @override
   void dispose() {
     _mileageFocusNode.dispose();
+    _mileageController.dispose();
     super.dispose();
   }
   
@@ -7843,7 +7877,7 @@ class _SellStep2PageState extends State<SellStep2Page> {
                    child: isMileageManualInput
                       ? TextFormField(
                           focusNode: _mileageFocusNode,
-                          initialValue: selectedMileage,
+                          controller: _mileageController,
                           decoration: InputDecoration(
                             labelText: 'Mileage (km) *',
                             hintText: 'Enter mileage',
@@ -7899,13 +7933,37 @@ class _SellStep2PageState extends State<SellStep2Page> {
                  ),
                  SizedBox(width: 8),
                  IconButton(
-                   onPressed: () => setState(() => isMileageManualInput = !isMileageManualInput),
-                   icon: Icon(isMileageManualInput ? Icons.list : Icons.edit, color: Color(0xFFFF6B00)),
+                   onPressed: () {
+                     if (isMileageManualInput) {
+                       // If in manual input mode, confirm the mileage and dismiss keyboard
+                       _mileageFocusNode.unfocus();
+                       FocusScope.of(context).unfocus();
+                       setState(() {
+                         isMileageManualInput = false;
+                         // Ensure the selectedMileage is properly set
+                         if (_mileageController.text.isNotEmpty) {
+                           selectedMileage = _mileageController.text;
+                         }
+                       });
+                     } else {
+                       // If in dropdown mode, switch to manual input
+                       setState(() {
+                         isMileageManualInput = true;
+                         // Clear the controller to start fresh
+                         _mileageController.clear();
+                         selectedMileage = null;
+                       });
+                     }
+                   },
+                   icon: Icon(
+                     isMileageManualInput ? Icons.check : Icons.edit, 
+                     color: Color(0xFFFF6B00)
+                   ),
                    style: IconButton.styleFrom(
                      backgroundColor: Colors.grey.withOpacity(0.1),
                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
                    ),
-                   tooltip: isMileageManualInput ? 'Select from list' : 'Type manually',
+                   tooltip: isMileageManualInput ? 'Confirm mileage' : 'Type manually',
                  ),
                ],
              ),
