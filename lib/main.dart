@@ -11872,6 +11872,7 @@ class _LoginPageState extends State<LoginPage> {
         final token = data['token'] as String;
         // Store token in memory (simple for now); can add SharedPreferences later
         await AuthStore.saveToken(token);
+        await ApiService.initializeTokens(); // Sync with ApiService
         if (!mounted) return;
         Navigator.pushReplacementNamed(context, '/');
       } else {
@@ -12034,6 +12035,7 @@ class _SignupPageState extends State<SignupPage> {
         final data = json.decode(resp.body);
         final token = data['token'] as String;
         await AuthStore.saveToken(token);
+        await ApiService.initializeTokens(); // Sync with ApiService
         if (!mounted) return;
         Navigator.pushReplacementNamed(context, '/');
       } else {
@@ -12235,6 +12237,7 @@ class _ProfilePageState extends State<ProfilePage> {
 
   Future<void> _logout() async {
     await AuthStore.saveToken(null);
+    await ApiService.logout(); // Clear ApiService tokens too
     if (!mounted) return;
     Navigator.pushReplacementNamed(context, '/login');
   }
