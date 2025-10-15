@@ -202,7 +202,7 @@ def api_auth_signup_mobile():
     if existing_user:
         return jsonify({'error': 'Username or email already exists'}), 409
     
-    user = User(username=username, email=user_email, password_hash=generate_password_hash(password))
+    user = User(username=username, email=user_email, password=generate_password_hash(password))
     db.session.add(user)
     db.session.commit()
     
@@ -228,7 +228,7 @@ def api_auth_login_mobile():
     if not user:
         user = User.query.filter_by(email=username_or_email).first()
     
-    if not user or not check_password_hash(user.password_hash, password):
+    if not user or not check_password_hash(user.password, password):
         return jsonify({'error': 'Invalid credentials'}), 401
     token = create_access_token(identity=str(user.id), expires_delta=timedelta(days=30))
     # Include phone if known
