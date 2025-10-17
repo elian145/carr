@@ -218,15 +218,19 @@ def api_auth_signup_mobile():
 @app.route('/api/auth/login', methods=['POST'])
 def api_auth_login_mobile():
     data = request.get_json() or {}
-    username_or_email = str(data.get('username', '')).strip()
+    email_or_phone = str(data.get('username', '')).strip()  # Keep 'username' key for compatibility
     password = str(data.get('password', ''))
-    if not username_or_email or not password:
-        return jsonify({'error': 'username/email and password required'}), 400
+    if not email_or_phone or not password:
+        return jsonify({'error': 'email/phone and password required'}), 400
     
-    # Try to find user by username first, then by email
-    user = User.query.filter_by(username=username_or_email).first()
+    # Try to find user by email first, then by phone number
+    user = User.query.filter_by(email=email_or_phone).first()
     if not user:
-        user = User.query.filter_by(email=username_or_email).first()
+        # Try to find by phone number from USER_PHONES
+        for user_id, phone in USER_PHONES.items():
+            if phone == email_or_phone:
+                user = User.query.get(user_id)
+                break
     
     if not user or not check_password_hash(user.password, password):
         return jsonify({'error': 'Invalid credentials'}), 401

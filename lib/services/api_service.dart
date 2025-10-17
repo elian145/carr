@@ -187,12 +187,12 @@ class ApiService {
     return _handleResponse(response);
   }
 
-  static Future<Map<String, dynamic>> login(String username, String password) async {
+  static Future<Map<String, dynamic>> login(String emailOrPhone, String password) async {
     final response = await http.post(
       Uri.parse('$baseUrl/auth/login'),
       headers: _getHeaders(includeAuth: false),
       body: json.encode({
-        'username': username,
+        'username': emailOrPhone, // Backend expects 'username' key but accepts email/phone
         'password': password,
       }),
     );

@@ -11902,10 +11902,10 @@ class _LoginPageState extends State<LoginPage> {
               TextFormField(
                 controller: _usernameController,
                 decoration: InputDecoration(
-                  labelText: 'Username or Email',
-                  hintText: 'Enter your username or email address',
+                  labelText: 'Email or Phone Number',
+                  hintText: 'Enter your email address or phone number',
                 ),
-                validator: (v) => (v==null || v.trim().isEmpty) ? 'Username or email is required' : null,
+                validator: (v) => (v==null || v.trim().isEmpty) ? 'Email or phone number is required' : null,
               ),
               SizedBox(height: 12),
               TextFormField(
@@ -11963,7 +11963,6 @@ class SignupPage extends StatefulWidget {
 
 class _SignupPageState extends State<SignupPage> {
   final _formKey = GlobalKey<FormState>();
-  final _usernameController = TextEditingController();
   final _emailController = TextEditingController();
   final _phoneController = TextEditingController();
   final _passwordController = TextEditingController();
@@ -12018,16 +12017,21 @@ class _SignupPageState extends State<SignupPage> {
       
       // Prepare request body based on auth type
       Map<String, dynamic> requestBody = {
-        'username': _usernameController.text.trim(),
         'password': _passwordController.text,
         'auth_type': _authType,
       };
       
       if (_authType == 'email') {
-        requestBody['email'] = _emailController.text.trim();
+        final email = _emailController.text.trim();
+        requestBody['email'] = email;
+        // Generate username from email (part before @)
+        requestBody['username'] = email.split('@')[0];
       } else {
-        requestBody['phone'] = _phoneController.text.trim();
+        final phone = _phoneController.text.trim();
+        requestBody['phone'] = phone;
         requestBody['otp_code'] = _otpController.text.trim();
+        // Generate username from phone number
+        requestBody['username'] = 'user_${phone.replaceAll(RegExp(r'[^\d]'), '')}';
       }
       
       final resp = await http.post(url, headers: {'Content-Type': 'application/json'}, body: json.encode(requestBody));
@@ -12061,12 +12065,6 @@ class _SignupPageState extends State<SignupPage> {
           key: _formKey,
           child: ListView(
             children: [
-              TextFormField(
-                controller: _usernameController,
-                decoration: InputDecoration(labelText: AppLocalizations.of(context)!.usernameLabel),
-                validator: (v) => (v==null || v.trim().isEmpty) ? AppLocalizations.of(context)!.requiredField : null,
-              ),
-              SizedBox(height: 16),
               
               // Authentication Type Selection
               Text(

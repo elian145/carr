@@ -89,11 +89,11 @@ class AuthService extends ChangeNotifier {
   }
 
   // Login user
-  Future<Map<String, dynamic>> login(String username, String password) async {
+  Future<Map<String, dynamic>> login(String emailOrPhone, String password) async {
     _setLoading(true);
     
     try {
-      final response = await ApiService.login(username, password);
+      final response = await ApiService.login(emailOrPhone, password);
       // Save user from response or fetch via /auth/me when absent
       if (response['user'] != null && response['user'] is Map<String, dynamic>) {
         _currentUser = Map<String, dynamic>.from(response['user']);

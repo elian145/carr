@@ -119,11 +119,11 @@ def login():
         data = request.get_json()
         
         if not data.get('username') or not data.get('password'):
-            return jsonify({'message': 'Username/phone and password are required'}), 400
+            return jsonify({'message': 'Email/phone and password are required'}), 400
         
-        # Find user by username or phone number
+        # Find user by email or phone number only (no username)
         user = User.query.filter(
-            (User.username == data['username']) | (User.phone_number == data['username'])
+            (User.email == data['username']) | (User.phone_number == data['username'])
         ).first()
         
         if not user or not user.check_password(data['password']):
