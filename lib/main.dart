@@ -20,6 +20,7 @@ import 'services/api_service.dart';
 import 'models/analytics_model.dart';
 import 'globals.dart';
 import 'pages/analytics_page.dart';
+import 'pages/edit_profile_page.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'package:firebase_messaging/firebase_messaging.dart';
 import 'package:mobile_scanner/mobile_scanner.dart';
@@ -1473,6 +1474,7 @@ class MyApp extends StatelessWidget {
         '/login': (context) => LoginPage(),
         '/signup': (context) => SignupPage(),
         '/profile': (context) => ProfilePage(),
+        '/edit-profile': (context) => EditProfilePage(),
         '/payment/history': (context) => PaymentHistoryPage(),
         '/payment/initiate': (context) => PaymentInitiatePage(),
         '/car_detail': (context) {
@@ -12357,11 +12359,12 @@ class _ProfilePageState extends State<ProfilePage> {
                   _buildActionButton(
                     Icons.edit_outlined,
                     'Edit Profile',
-                    () {
-                      // TODO: Implement edit profile functionality
-                      ScaffoldMessenger.of(context).showSnackBar(
-                        SnackBar(content: Text('Edit profile feature coming soon!')),
-                      );
+                    () async {
+                      final result = await Navigator.pushNamed(context, '/edit-profile');
+                      // Refresh profile data if changes were made
+                      if (result == true) {
+                        _loadMe();
+                      }
                     },
                   ),
                   SizedBox(height: 12),
