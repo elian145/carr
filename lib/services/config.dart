@@ -2,7 +2,7 @@
 // Values come from --dart-define so we can point to a LAN server on device
 
 // Base like: http://192.168.1.50:5000 (NO trailing slash)
-const String kApiBase = String.fromEnvironment('API_BASE', defaultValue: 'http://192.168.1.16:5000');
+const String kApiBase = String.fromEnvironment('API_BASE', defaultValue: 'http://192.168.1.8:5000');
 
 String apiBase() {
   return kApiBase;

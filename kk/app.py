@@ -2853,4 +2853,9 @@ if __name__ == '__main__':
             print(f"Error initializing database: {str(e)}")
             raise e
 
+    # Serve static files
+    @app.route('/static/<path:filename>')
+    def static_files(filename):
+        return send_from_directory(os.path.join(app.root_path, 'static'), filename)
+    
     app.run(host='0.0.0.0', port=5000, debug=True)

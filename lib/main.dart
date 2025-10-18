@@ -305,19 +305,6 @@ String _quickSellTextGlobal(BuildContext context) {
   return 'Quick Sell';
 }
 
-String _ownersLabelGlobal(BuildContext context) {
-  final code = Localizations.localeOf(context).languageCode;
-  if (code == 'ar') return 'Ø¹Ø¯Ø¯ Ø§Ù„Ù…Ù„Ø§Ùƒ';
-  if (code == 'ku') return 'Ú˜Ù…Ø§Ø±Û•ÛŒ Ø®Ø§ÙˆÛ•Ù†Ø¯Ø§Ø±';
-  return 'Owners';
-}
-
-String _vinLabelGlobal(BuildContext context) {
-  final code = Localizations.localeOf(context).languageCode;
-  if (code == 'ar') return 'Ø±Ù‚Ù… Ø§Ù„Ø´Ø§ØµÙŠ (VIN)';
-  if (code == 'ku') return 'Ú˜Ù…Ø§Ø±Û•ÛŒ Ø´Ø§Ø³ÛŒ (VIN)';
-  return 'VIN';
-}
 
 String _accidentHistoryLabelGlobal(BuildContext context) {
   final code = Localizations.localeOf(context).languageCode;
@@ -1756,8 +1743,6 @@ class _HomePageState extends State<HomePage> {
   String? selectedDamagedParts;
   String? contactPhone;
   String? selectedSortBy;
-  String? selectedOwners;
-  String? selectedVIN;
   String? selectedAccidentHistory; // 'yes' | 'no'
 
   // Toggle states for unified filters
@@ -1799,8 +1784,6 @@ class _HomePageState extends State<HomePage> {
     selectedDamagedParts = null;
     contactPhone = null;
     selectedSortBy = null;
-    selectedOwners = null;
-    selectedVIN = null;
     selectedAccidentHistory = null;
   }
   Future<void> _restoreFilters() async {
@@ -1832,8 +1815,6 @@ class _HomePageState extends State<HomePage> {
         selectedTitleStatus = map['title_status'];
         selectedDamagedParts = map['damaged_parts'];
         selectedSortBy = map['sort_by'];
-        selectedOwners = map['owners'];
-        selectedVIN = map['vin'];
         selectedAccidentHistory = map['accident_history'];
       });
     } catch (_) {}
@@ -1865,8 +1846,6 @@ class _HomePageState extends State<HomePage> {
         'title_status': selectedTitleStatus,
         'damaged_parts': selectedDamagedParts,
         'sort_by': selectedSortBy,
-        'owners': selectedOwners,
-        'vin': selectedVIN,
         'accident_history': selectedAccidentHistory,
       };
       await sp.setString(_filtersKey, json.encode(map));
@@ -1901,35 +1880,6 @@ class _HomePageState extends State<HomePage> {
     } catch (_) {}
   }
 
-  Future<void> _decodeVin() async {
-    final vin = (selectedVIN ?? '').trim();
-    if (vin.isEmpty) return;
-    try {
-      final uri = Uri.parse('https://vpic.nhtsa.dot.gov/api/vehicles/DecodeVinValuesExtended/' + vin + '?format=json');
-      final resp = await http.get(uri).timeout(Duration(seconds: 12));
-      if (resp.statusCode == 200) {
-        final data = json.decode(resp.body);
-        if (data is Map && data['Results'] is List && (data['Results'] as List).isNotEmpty) {
-          final Map<String, dynamic> r = Map<String, dynamic>.from((data['Results'] as List).first as Map);
-          final make = (r['Make'] ?? '').toString().trim();
-          final model = (r['Model'] ?? '').toString().trim();
-          final year = (r['ModelYear'] ?? '').toString().trim();
-          setState(() {
-            if (make.isNotEmpty) selectedBrand = make;
-            if (model.isNotEmpty) { selectedModel = model; selectedTrim = null; }
-            if (year.isNotEmpty) { selectedMinYear = year; selectedMaxYear = year; }
-          });
-          _persistFilters();
-          onFilterChanged();
-          if (!mounted) return;
-          ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('VIN decoded')));
-        }
-      }
-    } catch (_) {
-      if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(AppLocalizations.of(context)!.error)));
-    }
-  }
 
   Future<void> _saveCurrentSearch() async {
     try {
@@ -2013,8 +1963,6 @@ class _HomePageState extends State<HomePage> {
            (selectedDriveType?.isNotEmpty == true && selectedDriveType != 'Any') ||
            (selectedCylinderCount?.isNotEmpty == true && selectedCylinderCount != 'Any') ||
            (selectedSeating?.isNotEmpty == true && selectedSeating != 'Any') ||
-           (selectedOwners?.isNotEmpty == true) ||
-           (selectedVIN?.isNotEmpty == true) ||
            (selectedAccidentHistory?.isNotEmpty == true) ||
            (selectedTitleStatus?.isNotEmpty == true);
   }
@@ -2055,8 +2003,6 @@ class _HomePageState extends State<HomePage> {
     // Convert localized sort option to backend API value
     final apiSortValue = _convertSortToApiValue(context, selectedSortBy);
     if (apiSortValue?.isNotEmpty == true) filters['sort_by'] = apiSortValue!;
-    if (selectedOwners?.isNotEmpty == true) filters['owners'] = selectedOwners!;
-    if (selectedVIN?.isNotEmpty == true) filters['vin'] = selectedVIN!;
     if (selectedAccidentHistory?.isNotEmpty == true) filters['accident_history'] = selectedAccidentHistory!;
     
     // Title status and damaged parts
@@ -2561,8 +2507,6 @@ class _HomePageState extends State<HomePage> {
       }
     }
     
-    if (selectedOwners != null && selectedOwners!.isNotEmpty) filters['owners'] = selectedOwners!;
-    if (selectedVIN != null && selectedVIN!.isNotEmpty) filters['vin'] = selectedVIN!;
     if (selectedAccidentHistory != null && selectedAccidentHistory!.isNotEmpty) filters['accident_history'] = selectedAccidentHistory!;
     
     // Title status and damaged parts
@@ -3185,8 +3129,6 @@ class _HomePageState extends State<HomePage> {
       selectedSortBy = null;
       selectedTitleStatus = null;
       selectedDamagedParts = null;
-      selectedOwners = null;
-      selectedVIN = null;
       selectedAccidentHistory = null;
     });
     onFilterChanged();
@@ -3259,12 +3201,6 @@ class _HomePageState extends State<HomePage> {
           break;
         case 'sortBy':
           selectedSortBy = null;
-          break;
-        case 'owners':
-          selectedOwners = null;
-          break;
-        case 'vin':
-          selectedVIN = null;
           break;
         case 'accident_history':
           selectedAccidentHistory = null;
@@ -3836,10 +3772,6 @@ class _HomePageState extends State<HomePage> {
                                     runSpacing: 8,
                                     children: [
                                       ..._buildActiveFilterChips(),
-                                      if ((selectedOwners ?? '').isNotEmpty)
-                                        _buildFilterChip(_ownersLabelGlobal(context), _localizeDigitsGlobal(context, selectedOwners!), 'owners', Icons.person_outline, Colors.teal),
-                                      if ((selectedVIN ?? '').isNotEmpty)
-                                        _buildFilterChip(_vinLabelGlobal(context), selectedVIN!, 'vin', Icons.qr_code_2, Colors.teal),
                                       if ((selectedAccidentHistory ?? '').isNotEmpty)
                                         _buildFilterChip(_accidentHistoryLabelGlobal(context), (selectedAccidentHistory == 'yes') ? _yesTextGlobal(context) : _noTextGlobal(context), 'accident_history', Icons.report_gmailerrorred, Colors.teal),
                                     ],
@@ -4739,49 +4671,6 @@ class _HomePageState extends State<HomePage> {
                                                   onChanged: (value) { setState(() => selectedCity = value == '' ? null : value); _persistFilters(); },
                                                 ),
                                                 SizedBox(height: 10),
-                                                // Owners
-                                                TextFormField(
-                                                  controller: TextEditingController(text: selectedOwners ?? ''),
-                                                  decoration: InputDecoration(labelText: _ownersLabelGlobal(context), filled: true, fillColor: Colors.black.withOpacity(0.2), labelStyle: TextStyle(color: Colors.white), border: OutlineInputBorder(borderRadius: BorderRadius.circular(12))),
-                                                  keyboardType: TextInputType.number,
-                                                  onChanged: (v) { setState(() => selectedOwners = v.trim().isEmpty ? null : v.trim()); _persistFilters(); },
-                                                ),
-                                                SizedBox(height: 10),
-                                                // VIN
-                                                TextFormField(
-                                                  controller: TextEditingController(text: selectedVIN ?? ''),
-                                                  decoration: InputDecoration(labelText: _vinLabelGlobal(context), filled: true, fillColor: Colors.black.withOpacity(0.2), labelStyle: TextStyle(color: Colors.white), border: OutlineInputBorder(borderRadius: BorderRadius.circular(12))),
-                                                  keyboardType: TextInputType.text,
-                                                  inputFormatters: [
-                                                    services.FilteringTextInputFormatter.allow(RegExp(r'[A-HJ-NPR-Z0-9]')),
-                                                    services.LengthLimitingTextInputFormatter(17),
-                                                  ],
-                                                  onChanged: (v) { setState(() => selectedVIN = v.trim().isEmpty ? null : v.trim()); _persistFilters(); },
-                                                ),
-                                                Align(
-                                                  alignment: Alignment.centerRight,
-                                                  child: TextButton.icon(
-                                                    onPressed: _decodeVin,
-                                                    icon: Icon(Icons.qr_code, color: Color(0xFFFF6B00)),
-                                                    label: Text(_vinLabelGlobal(context), style: TextStyle(color: Color(0xFFFF6B00))),
-                                                  ),
-                                                ),
-                                                Align(
-                                                  alignment: Alignment.centerRight,
-                                                  child: TextButton.icon(
-                                                    onPressed: () async {
-                                                      final vin = await Navigator.push<String>(context, MaterialPageRoute(builder: (_) => VinScanPage()));
-                                                      if (vin != null && vin.trim().isNotEmpty) {
-                                                        setState(() => selectedVIN = vin.trim());
-                                                        await _persistFilters();
-                                                        await _decodeVin();
-                                                      }
-                                                    },
-                                                    icon: Icon(Icons.camera_alt_outlined, color: Color(0xFFFF6B00)),
-                                                    label: Text(_vinLabelGlobal(context)),
-                                                  ),
-                                                ),
-                                                SizedBox(height: 10),
                                                 DropdownButtonFormField<String>(
                                                   value: selectedAccidentHistory ?? '',
                                                   decoration: InputDecoration(labelText: _accidentHistoryLabelGlobal(context), filled: true, fillColor: Colors.black.withOpacity(0.2), labelStyle: TextStyle(color: Colors.white), border: OutlineInputBorder(borderRadius: BorderRadius.circular(12))),
@@ -5546,8 +5435,6 @@ class _SavedSearchesPageState extends State<SavedSearchesPage> {
         widget.parentState!.selectedTitleStatus = filters['title_status'];
         widget.parentState!.selectedDamagedParts = filters['damaged_parts'];
         widget.parentState!.selectedSortBy = filters['sort_by'];
-        widget.parentState!.selectedOwners = filters['owners'];
-        widget.parentState!.selectedVIN = filters['vin'];
         widget.parentState!.selectedAccidentHistory = filters['accident_history'];
       });
       
@@ -6643,8 +6530,6 @@ final String raw = car!['contact_phone'].toString();
               ? (AppLocalizations.of(context)!.value_title_damaged + (car!['damaged_parts'] != null ? ' (${_localizeDigitsGlobal(context, car!['damaged_parts'].toString())} ${AppLocalizations.of(context)!.damagedParts})' : ''))
               : AppLocalizations.of(context)!.value_title_clean)
           : null),
-      _detailRow(icon: Icons.person_outline, label: _ownersLabelGlobal(context), value: _localizeDigitsGlobal(context, _getFirstNonEmpty(car!, ['owners', 'owner_count', 'ownerCount']) ?? '')),
-      _detailRow(icon: Icons.qr_code_2, label: _vinLabelGlobal(context), value: _getFirstNonEmpty(car!, ['vin'])),
       _detailRow(icon: Icons.report_gmailerrorred, label: _accidentHistoryLabelGlobal(context), value: (() {
         final v = _getFirstNonEmpty(car!, ['accident_history', 'accidentHistory']);
         if (v == null) return null;
@@ -10173,8 +10058,6 @@ class CarComparisonPage extends StatelessWidget {
           {'label': AppLocalizations.of(context)!.titleStatus, 'key': 'title_status', 'icon': Icons.assignment},
           {'label': AppLocalizations.of(context)!.damagedParts, 'key': 'damaged_parts', 'suffix': '', 'icon': Icons.build},
           {'label': _quickSellTextGlobal(context), 'key': 'is_quick_sell', 'isBoolean': true, 'icon': Icons.flash_on},
-          {'label': _ownersLabelGlobal(context), 'key': 'owners', 'icon': Icons.person_outline},
-          {'label': _vinLabelGlobal(context), 'key': 'vin', 'icon': Icons.qr_code_2},
           {'label': _accidentHistoryLabelGlobal(context), 'key': 'accident_history', 'icon': Icons.report_gmailerrorred},
         ],
       },
@@ -12868,57 +12751,6 @@ class SettingsPage extends StatefulWidget {
   State<SettingsPage> createState() => _SettingsPageState();
 }
 
-class VinScanPage extends StatefulWidget {
-  @override
-  State<VinScanPage> createState() => _VinScanPageState();
-}
-
-class _VinScanPageState extends State<VinScanPage> {
-  final MobileScannerController _controller = MobileScannerController();
-  bool _done = false;
-
-  @override
-  void dispose() {
-    _controller.dispose();
-    super.dispose();
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(title: Text(_vinLabelGlobal(context))),
-      body: Stack(
-        children: [
-          MobileScanner(
-            controller: _controller,
-            onDetect: (capture) {
-              if (_done) return;
-              final barcodes = capture.barcodes;
-              if (barcodes.isEmpty) return;
-              final raw = barcodes.first.rawValue ?? '';
-              final vin = raw.replaceAll(RegExp(r'[^A-Za-z0-9]'), '').toUpperCase();
-              if (vin.length >= 11) {
-                _done = true;
-                Navigator.pop(context, vin);
-              }
-            },
-          ),
-          Align(
-            alignment: Alignment.bottomCenter,
-            child: Padding(
-              padding: EdgeInsets.all(16),
-              child: Container(
-                padding: EdgeInsets.all(12),
-                decoration: BoxDecoration(color: Colors.black54, borderRadius: BorderRadius.circular(12)),
-                child: Text(_vinLabelGlobal(context), style: TextStyle(color: Colors.white)),
-              ),
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-}
 
 class _SettingsPageState extends State<SettingsPage> {
   bool _pushEnabled = true;
