@@ -306,12 +306,6 @@ String _quickSellTextGlobal(BuildContext context) {
 }
 
 
-String _accidentHistoryLabelGlobal(BuildContext context) {
-  final code = Localizations.localeOf(context).languageCode;
-  if (code == 'ar') return 'Ø³Ø¬Ù„ Ø§Ù„Ø­ÙˆØ§Ø¯Ø«';
-  if (code == 'ku') return 'Ù…ÛŽÚ˜ÙˆÙˆÛŒ Ú©Ø§Ø±Û•Ø³Ø§Øª';
-  return 'Accident History';
-}
 
 String _photosRequiredTitleGlobal(BuildContext context) {
   final code = Localizations.localeOf(context).languageCode;
@@ -1743,7 +1737,6 @@ class _HomePageState extends State<HomePage> {
   String? selectedDamagedParts;
   String? contactPhone;
   String? selectedSortBy;
-  String? selectedAccidentHistory; // 'yes' | 'no'
 
   // Toggle states for unified filters
   bool isPriceDropdown = true;
@@ -1784,7 +1777,6 @@ class _HomePageState extends State<HomePage> {
     selectedDamagedParts = null;
     contactPhone = null;
     selectedSortBy = null;
-    selectedAccidentHistory = null;
   }
   Future<void> _restoreFilters() async {
     try {
@@ -1815,7 +1807,6 @@ class _HomePageState extends State<HomePage> {
         selectedTitleStatus = map['title_status'];
         selectedDamagedParts = map['damaged_parts'];
         selectedSortBy = map['sort_by'];
-        selectedAccidentHistory = map['accident_history'];
       });
     } catch (_) {}
   }
@@ -1846,7 +1837,6 @@ class _HomePageState extends State<HomePage> {
         'title_status': selectedTitleStatus,
         'damaged_parts': selectedDamagedParts,
         'sort_by': selectedSortBy,
-        'accident_history': selectedAccidentHistory,
       };
       await sp.setString(_filtersKey, json.encode(map));
     } catch (_) {}
@@ -1963,7 +1953,6 @@ class _HomePageState extends State<HomePage> {
            (selectedDriveType?.isNotEmpty == true && selectedDriveType != 'Any') ||
            (selectedCylinderCount?.isNotEmpty == true && selectedCylinderCount != 'Any') ||
            (selectedSeating?.isNotEmpty == true && selectedSeating != 'Any') ||
-           (selectedAccidentHistory?.isNotEmpty == true) ||
            (selectedTitleStatus?.isNotEmpty == true);
   }
 
@@ -2003,7 +1992,6 @@ class _HomePageState extends State<HomePage> {
     // Convert localized sort option to backend API value
     final apiSortValue = _convertSortToApiValue(context, selectedSortBy);
     if (apiSortValue?.isNotEmpty == true) filters['sort_by'] = apiSortValue!;
-    if (selectedAccidentHistory?.isNotEmpty == true) filters['accident_history'] = selectedAccidentHistory!;
     
     // Title status and damaged parts
     if (selectedTitleStatus?.isNotEmpty == true) {
@@ -2507,7 +2495,6 @@ class _HomePageState extends State<HomePage> {
       }
     }
     
-    if (selectedAccidentHistory != null && selectedAccidentHistory!.isNotEmpty) filters['accident_history'] = selectedAccidentHistory!;
     
     // Title status and damaged parts
     if (selectedTitleStatus != null && selectedTitleStatus!.isNotEmpty) {
@@ -3129,7 +3116,6 @@ class _HomePageState extends State<HomePage> {
       selectedSortBy = null;
       selectedTitleStatus = null;
       selectedDamagedParts = null;
-      selectedAccidentHistory = null;
     });
     onFilterChanged();
   }
@@ -3201,9 +3187,6 @@ class _HomePageState extends State<HomePage> {
           break;
         case 'sortBy':
           selectedSortBy = null;
-          break;
-        case 'accident_history':
-          selectedAccidentHistory = null;
           break;
       }
     });
@@ -3772,8 +3755,6 @@ class _HomePageState extends State<HomePage> {
                                     runSpacing: 8,
                                     children: [
                                       ..._buildActiveFilterChips(),
-                                      if ((selectedAccidentHistory ?? '').isNotEmpty)
-                                        _buildFilterChip(_accidentHistoryLabelGlobal(context), (selectedAccidentHistory == 'yes') ? _yesTextGlobal(context) : _noTextGlobal(context), 'accident_history', Icons.report_gmailerrorred, Colors.teal),
                                     ],
                                   ),
                                 ],
@@ -4670,17 +4651,6 @@ class _HomePageState extends State<HomePage> {
                                                   items: [DropdownMenuItem(value: '', child: Text(AppLocalizations.of(context)!.any, style: TextStyle(color: Colors.grey))), ...cities.map((c) => DropdownMenuItem(value: c, child: Text(_translateValueGlobal(context, c) ?? c))).toList()],
                                                   onChanged: (value) { setState(() => selectedCity = value == '' ? null : value); _persistFilters(); },
                                                 ),
-                                                SizedBox(height: 10),
-                                                DropdownButtonFormField<String>(
-                                                  value: selectedAccidentHistory ?? '',
-                                                  decoration: InputDecoration(labelText: _accidentHistoryLabelGlobal(context), filled: true, fillColor: Colors.black.withOpacity(0.2), labelStyle: TextStyle(color: Colors.white), border: OutlineInputBorder(borderRadius: BorderRadius.circular(12))),
-                                                  items: [
-                                                    DropdownMenuItem(value: '', child: Text(AppLocalizations.of(context)!.any, style: TextStyle(color: Colors.grey))),
-                                                    DropdownMenuItem(value: 'yes', child: Text(_yesTextGlobal(context))),
-                                                    DropdownMenuItem(value: 'no', child: Text(_noTextGlobal(context))),
-                                                  ],
-                                                  onChanged: (v) { setState(() => selectedAccidentHistory = (v == null || v.isEmpty) ? null : v); _persistFilters(); },
-                                                ),
                                               ],
                                             ),
                                           ),
@@ -5435,7 +5405,6 @@ class _SavedSearchesPageState extends State<SavedSearchesPage> {
         widget.parentState!.selectedTitleStatus = filters['title_status'];
         widget.parentState!.selectedDamagedParts = filters['damaged_parts'];
         widget.parentState!.selectedSortBy = filters['sort_by'];
-        widget.parentState!.selectedAccidentHistory = filters['accident_history'];
       });
       
       // Persist the applied filters
@@ -6530,14 +6499,6 @@ final String raw = car!['contact_phone'].toString();
               ? (AppLocalizations.of(context)!.value_title_damaged + (car!['damaged_parts'] != null ? ' (${_localizeDigitsGlobal(context, car!['damaged_parts'].toString())} ${AppLocalizations.of(context)!.damagedParts})' : ''))
               : AppLocalizations.of(context)!.value_title_clean)
           : null),
-      _detailRow(icon: Icons.report_gmailerrorred, label: _accidentHistoryLabelGlobal(context), value: (() {
-        final v = _getFirstNonEmpty(car!, ['accident_history', 'accidentHistory']);
-        if (v == null) return null;
-        final s = v.toString().toLowerCase();
-        if (s == '1' || s == 'true' || s == 'yes') return _yesTextGlobal(context);
-        if (s == '0' || s == 'false' || s == 'no') return _noTextGlobal(context);
-        return v.toString();
-      })()),
       _detailRow(icon: Icons.phone, label: AppLocalizations.of(context)!.phoneLabel, value: _getFirstNonEmpty(car!, ['contact_phone'])),
     ];
 
@@ -10058,7 +10019,6 @@ class CarComparisonPage extends StatelessWidget {
           {'label': AppLocalizations.of(context)!.titleStatus, 'key': 'title_status', 'icon': Icons.assignment},
           {'label': AppLocalizations.of(context)!.damagedParts, 'key': 'damaged_parts', 'suffix': '', 'icon': Icons.build},
           {'label': _quickSellTextGlobal(context), 'key': 'is_quick_sell', 'isBoolean': true, 'icon': Icons.flash_on},
-          {'label': _accidentHistoryLabelGlobal(context), 'key': 'accident_history', 'icon': Icons.report_gmailerrorred},
         ],
       },
     ];
