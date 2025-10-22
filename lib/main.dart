@@ -11,12 +11,14 @@ import 'dart:ui' as ui;
 import 'dart:async';
 import 'dart:typed_data';
 import 'package:image_picker/image_picker.dart';
+import 'package:video_thumbnail/video_thumbnail.dart';
 import 'dart:io';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:share_plus/share_plus.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'services/analytics_service.dart';
 import 'services/api_service.dart';
+import 'services/auth_service.dart';
 import 'models/analytics_model.dart';
 import 'globals.dart';
 import 'pages/analytics_page.dart';
@@ -653,6 +655,38 @@ Widget buildGlobalCarCard(BuildContext context, Map car) {
             style: TextStyle(color: Colors.white70, fontSize: 13),
           ),
         ),
+        // Video indicator in top-right corner
+        if (car['videos'] != null && (car['videos'] as List).isNotEmpty)
+          Positioned(
+            top: 12,
+            right: 12,
+            child: Container(
+              padding: EdgeInsets.all(6),
+              decoration: BoxDecoration(
+                color: Colors.black54,
+                borderRadius: BorderRadius.circular(8),
+              ),
+              child: Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Icon(
+                    Icons.videocam,
+                    color: Colors.white,
+                    size: 16,
+                  ),
+                  SizedBox(width: 4),
+                  Text(
+                    '${(car['videos'] as List).length}',
+                    style: TextStyle(
+                      color: Colors.white,
+                      fontSize: 12,
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ),
       ],
     ),
   );
@@ -1174,6 +1208,282 @@ final Map<String, Map<String, Map<String, Map<String, dynamic>>>> globalVehicleS
   },
 };
 
+// Search Dialog Widget
+class _SearchDialog extends StatefulWidget {
+  final Function(String) onBrandSelected;
+  final Function(String, String) onModelSelected;
+  final List<String> brands;
+  final Map<String, List<String>> models;
+
+  const _SearchDialog({
+    required this.onBrandSelected,
+    required this.onModelSelected,
+    required this.brands,
+    required this.models,
+  });
+
+  @override
+  _SearchDialogState createState() => _SearchDialogState();
+}
+
+class _SearchDialogState extends State<_SearchDialog> {
+  final TextEditingController _searchController = TextEditingController();
+  List<String> _filteredBrands = [];
+  List<Map<String, String>> _filteredModels = [];
+  bool _isSearchingBrands = true;
+
+  @override
+  void initState() {
+    super.initState();
+    _filteredBrands = List.from(widget.brands);
+    _searchController.addListener(_onSearchChanged);
+  }
+
+  @override
+  void dispose() {
+    _searchController.dispose();
+    super.dispose();
+  }
+
+  void _onSearchChanged() {
+    final query = _searchController.text.toLowerCase();
+    setState(() {
+      if (_isSearchingBrands) {
+        _filteredBrands = widget.brands.where((brand) => 
+          brand.toLowerCase().contains(query)
+        ).toList();
+      } else {
+        _filteredModels = [];
+        for (final brand in widget.brands) {
+          if (brand.toLowerCase().contains(query)) {
+            final brandModels = widget.models[brand] ?? [];
+            for (final model in brandModels) {
+              _filteredModels.add({'brand': brand, 'model': model});
+            }
+          }
+          // Also search within models
+          final brandModels = widget.models[brand] ?? [];
+          for (final model in brandModels) {
+            if (model.toLowerCase().contains(query)) {
+              _filteredModels.add({'brand': brand, 'model': model});
+            }
+          }
+        }
+      }
+    });
+  }
+
+  void _toggleSearchMode() {
+    setState(() {
+      _isSearchingBrands = !_isSearchingBrands;
+      _searchController.clear();
+      if (_isSearchingBrands) {
+        _filteredBrands = List.from(widget.brands);
+        _filteredModels.clear();
+      } else {
+        _filteredModels.clear();
+      }
+    });
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Dialog(
+      backgroundColor: Colors.grey[900]?.withOpacity(0.98),
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+      child: Container(
+        width: 500,
+        height: 600,
+        padding: EdgeInsets.all(20),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            // Header
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                Text(
+                  'Search Cars',
+                  style: GoogleFonts.orbitron(
+                    color: Color(0xFFFF6B00),
+                    fontWeight: FontWeight.bold,
+                    fontSize: 24,
+                  ),
+                ),
+                IconButton(
+                  icon: Icon(Icons.close, color: Colors.white),
+                  onPressed: () => Navigator.pop(context),
+                ),
+              ],
+            ),
+            SizedBox(height: 20),
+
+            // Search Toggle
+            Row(
+              children: [
+                Expanded(
+                  child: ElevatedButton(
+                    onPressed: _isSearchingBrands ? null : _toggleSearchMode,
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: _isSearchingBrands ? Color(0xFFFF6B00) : Colors.grey[700],
+                      foregroundColor: Colors.white,
+                    ),
+                    child: Text('Search by Brand'),
+                  ),
+                ),
+                SizedBox(width: 10),
+                Expanded(
+                  child: ElevatedButton(
+                    onPressed: _isSearchingBrands ? _toggleSearchMode : null,
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: !_isSearchingBrands ? Color(0xFFFF6B00) : Colors.grey[700],
+                      foregroundColor: Colors.white,
+                    ),
+                    child: Text('Search by Model'),
+                  ),
+                ),
+              ],
+            ),
+            SizedBox(height: 20),
+
+            // Search Field
+            TextField(
+              controller: _searchController,
+              style: TextStyle(color: Colors.white),
+              decoration: InputDecoration(
+                hintText: _isSearchingBrands ? 'Search brands...' : 'Search models...',
+                hintStyle: TextStyle(color: Colors.grey[400]),
+                prefixIcon: Icon(Icons.search, color: Color(0xFFFF6B00)),
+                border: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(12),
+                  borderSide: BorderSide(color: Colors.grey[600]!),
+                ),
+                enabledBorder: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(12),
+                  borderSide: BorderSide(color: Colors.grey[600]!),
+                ),
+                focusedBorder: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(12),
+                  borderSide: BorderSide(color: Color(0xFFFF6B00), width: 2),
+                ),
+                filled: true,
+                fillColor: Colors.grey[800],
+              ),
+            ),
+            SizedBox(height: 20),
+
+            // Results
+            Expanded(
+              child: _isSearchingBrands ? _buildBrandsList() : _buildModelsList(),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildBrandsList() {
+    return ListView.builder(
+      itemCount: _filteredBrands.length,
+      itemBuilder: (context, index) {
+        final brand = _filteredBrands[index];
+        final logoFile = brandLogoFilenames[brand] ?? brand.toLowerCase().replaceAll(' ', '-').replaceAll('Ã©', 'e').replaceAll('Ã¶', 'o');
+        final logoUrl = getApiBase() + '/static/images/brands/' + logoFile + '.png';
+        
+        return ListTile(
+          leading: Container(
+            width: 40,
+            height: 40,
+            decoration: BoxDecoration(
+              color: Colors.white,
+              borderRadius: BorderRadius.circular(8),
+            ),
+            padding: EdgeInsets.all(4),
+            child: CachedNetworkImage(
+              imageUrl: logoUrl,
+              placeholder: (context, url) => SizedBox(
+                width: 32, 
+                height: 32, 
+                child: CircularProgressIndicator(strokeWidth: 2)
+              ),
+              errorWidget: (context, url, error) => Icon(
+                Icons.directions_car, 
+                size: 24, 
+                color: Color(0xFFFF6B00)
+              ),
+              fit: BoxFit.contain,
+            ),
+          ),
+          title: Text(
+            brand,
+            style: TextStyle(
+              color: Colors.white,
+              fontSize: 16,
+              fontWeight: FontWeight.bold,
+            ),
+          ),
+          onTap: () => widget.onBrandSelected(brand),
+        );
+      },
+    );
+  }
+
+  Widget _buildModelsList() {
+    return ListView.builder(
+      itemCount: _filteredModels.length,
+      itemBuilder: (context, index) {
+        final item = _filteredModels[index];
+        final brand = item['brand']!;
+        final model = item['model']!;
+        final logoFile = brandLogoFilenames[brand] ?? brand.toLowerCase().replaceAll(' ', '-').replaceAll('Ã©', 'e').replaceAll('Ã¶', 'o');
+        final logoUrl = getApiBase() + '/static/images/brands/' + logoFile + '.png';
+        
+        return ListTile(
+          leading: Container(
+            width: 40,
+            height: 40,
+            decoration: BoxDecoration(
+              color: Colors.white,
+              borderRadius: BorderRadius.circular(8),
+            ),
+            padding: EdgeInsets.all(4),
+            child: CachedNetworkImage(
+              imageUrl: logoUrl,
+              placeholder: (context, url) => SizedBox(
+                width: 32, 
+                height: 32, 
+                child: CircularProgressIndicator(strokeWidth: 2)
+              ),
+              errorWidget: (context, url, error) => Icon(
+                Icons.directions_car, 
+                size: 24, 
+                color: Color(0xFFFF6B00)
+              ),
+              fit: BoxFit.contain,
+            ),
+          ),
+          title: Text(
+            '$brand $model',
+            style: TextStyle(
+              color: Colors.white,
+              fontSize: 16,
+              fontWeight: FontWeight.bold,
+            ),
+          ),
+          subtitle: Text(
+            brand,
+            style: TextStyle(
+              color: Colors.grey[400],
+              fontSize: 14,
+            ),
+          ),
+          onTap: () => widget.onModelSelected(brand, model),
+        );
+      },
+    );
+  }
+}
+
 void main() {
   runZonedGuarded(() async {
     WidgetsFlutterBinding.ensureInitialized();
@@ -1194,6 +1504,7 @@ void main() {
     // Keychain access can fail for sideloaded builds; don't crash.
     try { await ApiService.initializeTokens(); } catch (_) {}
     try { await LocaleController.loadSavedLocale(); } catch (_) {}
+    try { await AuthService().initialize(); } catch (_) {}
     
     // Initialize global currency symbol
     globalSymbol = r'$';
@@ -1430,6 +1741,7 @@ class MyApp extends StatelessWidget {
       providers: [
         ChangeNotifierProvider(create: (context) => ThemeProvider()),
         ChangeNotifierProvider(create: (context) => CarComparisonStore()),
+        ChangeNotifierProvider(create: (context) => AuthService()),
       ],
       child: ValueListenableBuilder<Locale?>(
         valueListenable: LocaleController.currentLocale,
@@ -1624,6 +1936,23 @@ Future<ui.Image> _decodePngWithWhiteTransparent(String assetPath) async {
     (ui.Image img) => completer.complete(img),
   );
   return completer.future;
+}
+
+// Helper function to generate video thumbnail
+Future<String?> generateVideoThumbnail(String videoPath) async {
+  try {
+    final thumbnailPath = await VideoThumbnail.thumbnailFile(
+      video: videoPath,
+      thumbnailPath: (await Directory.systemTemp.createTemp()).path,
+      imageFormat: ImageFormat.JPEG,
+      maxWidth: 200,
+      quality: 75,
+    );
+    return thumbnailPath;
+  } catch (e) {
+    print('Error generating video thumbnail: $e');
+    return null;
+  }
 }
 
 // Global brand logo filenames map accessible to all classes
@@ -3448,12 +3777,15 @@ class _HomePageState extends State<HomePage> {
                             children: [
                               Icon(Icons.search, color: Color(0xFFFF6B00)),
                               SizedBox(width: 8),
-                              Text(
-                                AppLocalizations.of(context)!.appTitle,
-                                style: GoogleFonts.orbitron(
-                                  color: Color(0xFFFF6B00),
-                                  fontWeight: FontWeight.bold,
-                                  fontSize: 20,
+                              GestureDetector(
+                                onTap: () => _showSearchDialog(context),
+                                child: Text(
+                                  AppLocalizations.of(context)!.appTitle,
+                                  style: GoogleFonts.orbitron(
+                                    color: Color(0xFFFF6B00),
+                                    fontWeight: FontWeight.bold,
+                                    fontSize: 20,
+                                  ),
                                 ),
                               ),
                             ],
@@ -5083,6 +5415,36 @@ class _HomePageState extends State<HomePage> {
         return 'ðŸš˜';
     }
   }
+
+  void _showSearchDialog(BuildContext context) {
+    showDialog(
+      context: context,
+      builder: (context) => _SearchDialog(
+        brands: homeBrands,
+        models: models,
+        onBrandSelected: (brand) {
+          setState(() {
+            selectedBrand = brand;
+            selectedModel = null;
+            selectedTrim = null;
+            clearFiltersOnVehicleChange();
+          });
+          onFilterChanged();
+          Navigator.pop(context);
+        },
+        onModelSelected: (brand, model) {
+          setState(() {
+            selectedBrand = brand;
+            selectedModel = model;
+            selectedTrim = null;
+            clearFiltersOnVehicleChange();
+          });
+          onFilterChanged();
+          Navigator.pop(context);
+        },
+      ),
+    );
+  }
   
   @override
   void dispose() {
@@ -6281,10 +6643,36 @@ final String raw = car!['contact_phone'].toString();
                                             width: double.infinity,
                                             height: double.infinity,
                                             color: Colors.grey[800],
-                                            child: Icon(
-                                              Icons.videocam,
-                                              size: 48,
-                                              color: Colors.grey[400],
+                                            child: Stack(
+                                              children: [
+                                                Center(
+                                                  child: Icon(
+                                                    Icons.videocam,
+                                                    size: 48,
+                                                    color: Colors.grey[400],
+                                                  ),
+                                                ),
+                                                // Video duration or info overlay
+                                                Positioned(
+                                                  top: 8,
+                                                  right: 8,
+                                                  child: Container(
+                                                    padding: EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                                                    decoration: BoxDecoration(
+                                                      color: Colors.black54,
+                                                      borderRadius: BorderRadius.circular(4),
+                                                    ),
+                                                    child: Text(
+                                                      'VIDEO',
+                                                      style: TextStyle(
+                                                        color: Colors.white,
+                                                        fontSize: 10,
+                                                        fontWeight: FontWeight.bold,
+                                                      ),
+                                                    ),
+                                                  ),
+                                                ),
+                                              ],
                                             ),
                                           ),
                                           Container(
@@ -6732,6 +7120,9 @@ class _SellCarPageState extends State<SellCarPage> {
   // Car data that will be passed between steps
   Map<String, dynamic> carData = {};
   
+  // Track completed steps
+  Set<int> completedSteps = {};
+  
   final List<Widget> steps = [
     SellStep1Page(),
     SellStep2Page(),
@@ -6750,19 +7141,7 @@ class _SellCarPageState extends State<SellCarPage> {
         elevation: 0,
         leading: IconButton(
           icon: Icon(Icons.arrow_back),
-          onPressed: () {
-            if (currentStep > 0) {
-              setState(() {
-                currentStep--;
-              });
-              _pageController.previousPage(
-                duration: Duration(milliseconds: 300),
-                curve: Curves.easeInOut,
-              );
-            } else {
-              Navigator.pop(context);
-            }
-          },
+          onPressed: _goToPreviousStep,
         ),
       ),
       body: Column(
@@ -6772,14 +7151,22 @@ class _SellCarPageState extends State<SellCarPage> {
             padding: EdgeInsets.all(16),
             child: Row(
               children: List.generate(5, (index) {
+                bool isCompleted = completedSteps.contains(index);
+                bool isCurrent = index == currentStep;
+                bool isAccessible = index <= currentStep || isCompleted;
+                
                 return Expanded(
                   child: Container(
                     margin: EdgeInsets.symmetric(horizontal: 4),
                     height: 4,
                     decoration: BoxDecoration(
-                      color: index <= currentStep 
-                        ? Color(0xFFFF6B00) 
-                        : Colors.grey[300],
+                      color: isCompleted 
+                        ? Colors.green
+                        : isCurrent 
+                          ? Color(0xFFFF6B00)
+                          : isAccessible
+                            ? Color(0xFFFF6B00).withOpacity(0.5)
+                            : Colors.grey[300],
                       borderRadius: BorderRadius.circular(2),
                     ),
                   ),
@@ -6816,6 +7203,7 @@ class _SellCarPageState extends State<SellCarPage> {
           Expanded(
             child: PageView.builder(
               controller: _pageController,
+              physics: NeverScrollableScrollPhysics(), // Disable swipe scrolling
               onPageChanged: (index) {
                 setState(() {
                   currentStep = index;
@@ -6840,6 +7228,75 @@ class _SellCarPageState extends State<SellCarPage> {
       case 3: return 'Photos & Videos';
       case 4: return 'Review & Submit';
       default: return '';
+    }
+  }
+  
+  // Method to validate if a step is completed
+  bool _isStepCompleted(int step) {
+    switch (step) {
+      case 0: // Basic Information
+        return carData['brand'] != null && carData['brand'].toString().isNotEmpty &&
+               carData['model'] != null && carData['model'].toString().isNotEmpty &&
+               carData['trim'] != null && carData['trim'].toString().isNotEmpty &&
+               carData['year'] != null && carData['year'].toString().isNotEmpty;
+      case 1: // Car Details
+        return carData['mileage'] != null && carData['mileage'].toString().isNotEmpty &&
+               carData['condition'] != null && carData['condition'].toString().isNotEmpty &&
+               carData['transmission'] != null && carData['transmission'].toString().isNotEmpty &&
+               carData['fuel_type'] != null && carData['fuel_type'].toString().isNotEmpty &&
+               carData['body_type'] != null && carData['body_type'].toString().isNotEmpty &&
+               carData['color'] != null && carData['color'].toString().isNotEmpty &&
+               carData['seating'] != null && carData['seating'].toString().isNotEmpty &&
+               carData['drive_type'] != null && carData['drive_type'].toString().isNotEmpty &&
+               carData['title_status'] != null && carData['title_status'].toString().isNotEmpty;
+      case 2: // Pricing & Contact
+        return carData['price'] != null && carData['price'].toString().isNotEmpty &&
+               carData['city'] != null && carData['city'].toString().isNotEmpty &&
+               carData['contact_phone'] != null && carData['contact_phone'].toString().isNotEmpty;
+      case 3: // Photos & Videos
+        return carData['images'] != null && (carData['images'] as List).isNotEmpty;
+      case 4: // Review & Submit
+        return true; // This step is always accessible for review
+      default:
+        return false;
+    }
+  }
+  
+  // Method to navigate to next step with validation
+  void _goToNextStep() {
+    if (currentStep < steps.length - 1) {
+      if (_isStepCompleted(currentStep)) {
+        completedSteps.add(currentStep);
+        setState(() {
+          currentStep++;
+        });
+        _pageController.nextPage(
+          duration: Duration(milliseconds: 300),
+          curve: Curves.easeInOut,
+        );
+      } else {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Please complete all required fields before proceeding'),
+            backgroundColor: Colors.red,
+          ),
+        );
+      }
+    }
+  }
+  
+  // Method to navigate to previous step
+  void _goToPreviousStep() {
+    if (currentStep > 0) {
+      setState(() {
+        currentStep--;
+      });
+      _pageController.previousPage(
+        duration: Duration(milliseconds: 300),
+        curve: Curves.easeInOut,
+      );
+    } else {
+      Navigator.pop(context);
     }
   }
   
@@ -7399,12 +7856,12 @@ class _SellStep1PageState extends State<SellStep1Page> {
                     // Save data and navigate to next step
                     final parentState = context.findAncestorStateOfType<_SellCarPageState>();
                     if (parentState != null) {
-                      parentState.carData['brand'] = selectedBrand;
-                      parentState.carData['model'] = selectedModel;
-                      parentState.carData['trim'] = selectedTrim;
-                      parentState.carData['year'] = selectedYear;
+                    parentState.carData['brand'] = selectedBrand;
+                    parentState.carData['model'] = selectedModel;
+                    parentState.carData['trim'] = selectedTrim;
+                    parentState.carData['year'] = selectedYear;
                     setState(() { errBrand = errModel = errTrim = errYear = false; });
-                    parentState._pageController.nextPage(duration: Duration(milliseconds: 300), curve: Curves.easeInOut);
+                    parentState._goToNextStep();
                   }
                 },
                 style: ElevatedButton.styleFrom(
@@ -8135,10 +8592,7 @@ class _SellStep2PageState extends State<SellStep2Page> {
                       onPressed: () {
                         final parentState = context.findAncestorStateOfType<_SellCarPageState>();
                         if (parentState != null) {
-                          parentState._pageController.previousPage(
-                            duration: Duration(milliseconds: 300),
-                            curve: Curves.easeInOut,
-                          );
+                          parentState._goToPreviousStep();
                         }
                       },
                       style: OutlinedButton.styleFrom(
@@ -8205,10 +8659,10 @@ class _SellStep2PageState extends State<SellStep2Page> {
                             parentState.carData['seating'] = selectedSeating;
                             parentState.carData['engine_size'] = selectedEngineSize;
                             parentState.carData['cylinder_count'] = selectedCylinderCount;
-                            parentState.carData['title_status'] = selectedTitleStatus;
-                            parentState.carData['damaged_parts'] = selectedDamagedParts;
+                          parentState.carData['title_status'] = selectedTitleStatus;
+                          parentState.carData['damaged_parts'] = selectedDamagedParts;
                           setState(() { errMileage = errCondition = errTransmission = errFuelType = errBodyType = errColor = errDrive = errSeating = errTitle = errDamagedParts = false; });
-                          parentState._pageController.nextPage(duration: Duration(milliseconds: 300), curve: Curves.easeInOut);
+                          parentState._goToNextStep();
                         }
                       },
                       style: ElevatedButton.styleFrom(
@@ -8623,7 +9077,13 @@ class _SellStep3PageState extends State<SellStep3Page> {
               onTap: () => _dismissKeyboard(),
               decoration: InputDecoration(
                 labelText: 'WhatsApp/Phone Number *',
-                hintText: '+964 7XX XXX XXXX',
+                hintText: '7XX XXX XXXX',
+                prefixText: '+964 ',
+                prefixStyle: TextStyle(
+                  color: Color(0xFFFF6B00),
+                  fontWeight: FontWeight.bold,
+                  fontSize: 16,
+                ),
                 border: OutlineInputBorder(
                   borderRadius: BorderRadius.circular(12),
                 ),
@@ -8631,15 +9091,13 @@ class _SellStep3PageState extends State<SellStep3Page> {
               ),
               keyboardType: TextInputType.phone,
               inputFormatters: [
-                services.FilteringTextInputFormatter.allow(RegExp(r'[0-9+ ]')),
-                services.LengthLimitingTextInputFormatter(20),
+                services.FilteringTextInputFormatter.allow(RegExp(r'[0-9]')),
+                services.LengthLimitingTextInputFormatter(10),
               ],
-              onChanged: (value) => contactPhone = value,
+              onChanged: (value) => contactPhone = '+964' + value,
               validator: (value) {
                 if (value == null || value.trim().isEmpty) return 'Please enter phone number';
-                final s = value.trim();
-                final bool looksOk = s.startsWith('+') ? RegExp(r'^\+\d{7,}$').hasMatch(s) : RegExp(r'^\d{7,}$').hasMatch(s);
-                if (!looksOk) return 'Please use international format';
+                if (value.trim().length < 10) return 'Please enter a valid phone number';
                 return null;
               },
             ),
@@ -8703,10 +9161,7 @@ class _SellStep3PageState extends State<SellStep3Page> {
                       onPressed: () {
                         final parentState = context.findAncestorStateOfType<_SellCarPageState>();
                         if (parentState != null) {
-                          parentState._pageController.previousPage(
-                            duration: Duration(milliseconds: 300),
-                            curve: Curves.easeInOut,
-                          );
+                          parentState._goToPreviousStep();
                         }
                       },
                       style: OutlinedButton.styleFrom(
@@ -8748,7 +9203,7 @@ class _SellStep3PageState extends State<SellStep3Page> {
                             parentState.carData['city'] = selectedCity;
                             parentState.carData['contact_phone'] = contactPhone;
                             parentState.carData['is_quick_sell'] = isQuickSell;
-                          parentState._pageController.nextPage(duration: Duration(milliseconds: 300), curve: Curves.easeInOut);
+                          parentState._goToNextStep();
                         }
                       },
                       style: ElevatedButton.styleFrom(
@@ -8944,25 +9399,53 @@ class _SellStep4PageState extends State<SellStep4Page> {
                             border: Border.all(color: Colors.white24),
                           ),
                           clipBehavior: Clip.antiAlias,
-                          child: Stack(
-                            children: [
-                              Container(
-                                color: Colors.grey[800],
-                                child: Center(
-                                  child: Icon(Icons.videocam, color: Colors.white, size: 32),
-                                ),
-                              ),
-                              Center(
-                                child: Container(
-                                  decoration: BoxDecoration(
-                                    color: Colors.black54,
-                                    shape: BoxShape.circle,
-                                  ),
-                                  padding: EdgeInsets.all(8),
-                                  child: Icon(Icons.play_arrow, color: Colors.white, size: 24),
-                                ),
-                              ),
-                            ],
+                          child: FutureBuilder<String?>(
+                            future: generateVideoThumbnail(video.path),
+                            builder: (context, snapshot) {
+                              if (snapshot.hasData && snapshot.data != null) {
+                                return Stack(
+                                  children: [
+                                    Image.file(
+                                      File(snapshot.data!),
+                                      width: 120,
+                                      height: 120,
+                                      fit: BoxFit.cover,
+                                    ),
+                                    Center(
+                                      child: Container(
+                                        decoration: BoxDecoration(
+                                          color: Colors.black54,
+                                          shape: BoxShape.circle,
+                                        ),
+                                        padding: EdgeInsets.all(8),
+                                        child: Icon(Icons.play_arrow, color: Colors.white, size: 24),
+                                      ),
+                                    ),
+                                  ],
+                                );
+                              } else {
+                                return Stack(
+                                  children: [
+                                    Container(
+                                      color: Colors.grey[800],
+                                      child: Center(
+                                        child: Icon(Icons.videocam, color: Colors.white, size: 32),
+                                      ),
+                                    ),
+                                    Center(
+                                      child: Container(
+                                        decoration: BoxDecoration(
+                                          color: Colors.black54,
+                                          shape: BoxShape.circle,
+                                        ),
+                                        padding: EdgeInsets.all(8),
+                                        child: Icon(Icons.play_arrow, color: Colors.white, size: 24),
+                                      ),
+                                    ),
+                                  ],
+                                );
+                              }
+                            },
                           ),
                         ),
                         Positioned(
@@ -9060,10 +9543,7 @@ class _SellStep4PageState extends State<SellStep4Page> {
                         parentState.carData['images'] = _selectedImages;
                         parentState.carData['videos'] = _selectedVideos;
                         
-                        parentState._pageController.nextPage(
-                          duration: Duration(milliseconds: 300),
-                          curve: Curves.easeInOut,
-                        );
+                        parentState._goToNextStep();
                       }
                     },
                     style: ElevatedButton.styleFrom(
@@ -10935,14 +11415,25 @@ class CarComparisonPage extends StatelessWidget {
               ),
               SizedBox(height: 12),
               TextFormField(
-                decoration: InputDecoration(labelText: AppLocalizations.of(context)!.whatsappLabel, hintText: AppLocalizations.of(context)!.whatsappHint),
+                decoration: InputDecoration(
+                  labelText: AppLocalizations.of(context)!.whatsappLabel, 
+                  hintText: '7XX XXX XXXX',
+                  prefixText: '+964 ',
+                  prefixStyle: TextStyle(
+                    color: Color(0xFFFF6B00),
+                    fontWeight: FontWeight.bold,
+                    fontSize: 16,
+                  ),
+                ),
                 keyboardType: TextInputType.phone,
-                onChanged: (v) => setState(() => contactPhone = v.trim()),
+                inputFormatters: [
+                  services.FilteringTextInputFormatter.allow(RegExp(r'[0-9]')),
+                  services.LengthLimitingTextInputFormatter(10),
+                ],
+                onChanged: (v) => setState(() => contactPhone = '+964' + v.trim()),
                 validator: (v) {
                   if (v == null || v.trim().isEmpty) return AppLocalizations.of(context)!.enterWhatsAppNumber;
-                  final s = v.trim();
-                  final bool looksOk = s.startsWith('+') ? RegExp(r'^\+\d{7,}$').hasMatch(s) : RegExp(r'^\d{7,}$').hasMatch(s);
-                  if (!looksOk) return AppLocalizations.of(context)!.useInternationalFormat;
+                  if (v.trim().length < 10) return 'Please enter a valid phone number';
                   return null;
                 },
                 onSaved: (_) {},
@@ -11019,27 +11510,53 @@ class CarComparisonPage extends StatelessWidget {
                             border: Border.all(color: Colors.white24),
                           ),
                           clipBehavior: Clip.antiAlias,
-                          child: Stack(
-                            children: [
-                              // Video thumbnail placeholder
-                              Container(
-                                color: Colors.grey[800],
-                                child: Center(
-                                  child: Icon(Icons.videocam, color: Colors.white, size: 32),
-                                ),
-                              ),
-                              // Play button overlay
-                              Center(
-                                child: Container(
-                                  decoration: BoxDecoration(
-                                    color: Colors.black54,
-                                    shape: BoxShape.circle,
-                                  ),
-                                  padding: EdgeInsets.all(8),
-                                  child: Icon(Icons.play_arrow, color: Colors.white, size: 24),
-                                ),
-                              ),
-                            ],
+                          child: FutureBuilder<String?>(
+                            future: generateVideoThumbnail(x.path),
+                            builder: (context, snapshot) {
+                              if (snapshot.hasData && snapshot.data != null) {
+                                return Stack(
+                                  children: [
+                                    Image.file(
+                                      File(snapshot.data!),
+                                      width: 90,
+                                      height: 90,
+                                      fit: BoxFit.cover,
+                                    ),
+                                    Center(
+                                      child: Container(
+                                        decoration: BoxDecoration(
+                                          color: Colors.black54,
+                                          shape: BoxShape.circle,
+                                        ),
+                                        padding: EdgeInsets.all(8),
+                                        child: Icon(Icons.play_arrow, color: Colors.white, size: 24),
+                                      ),
+                                    ),
+                                  ],
+                                );
+                              } else {
+                                return Stack(
+                                  children: [
+                                    Container(
+                                      color: Colors.grey[800],
+                                      child: Center(
+                                        child: Icon(Icons.videocam, color: Colors.white, size: 32),
+                                      ),
+                                    ),
+                                    Center(
+                                      child: Container(
+                                        decoration: BoxDecoration(
+                                          color: Colors.black54,
+                                          shape: BoxShape.circle,
+                                        ),
+                                        padding: EdgeInsets.all(8),
+                                        child: Icon(Icons.play_arrow, color: Colors.white, size: 24),
+                                      ),
+                                    ),
+                                  ],
+                                );
+                              }
+                            },
                           ),
                         ),
                         Positioned(
@@ -11825,7 +12342,7 @@ class _SignupPageState extends State<SignupPage> {
     setState(() { _loading = true; });
     try {
       final url = Uri.parse(getApiBase() + '/api/auth/send_otp');
-      final resp = await http.post(url, headers: {'Content-Type': 'application/json'}, body: json.encode({'phone': phone}));
+      final resp = await http.post(url, headers: {'Content-Type': 'application/json'}, body: json.encode({'phone': '+964' + phone}));
       if (resp.statusCode == 200) {
         final data = json.decode(resp.body);
         final bool sent = data['sent'] == true;
@@ -11873,7 +12390,7 @@ class _SignupPageState extends State<SignupPage> {
         requestBody['username'] = email.split('@')[0];
       } else {
         final phone = _phoneController.text.trim();
-        requestBody['phone'] = phone;
+        requestBody['phone'] = '+964' + phone;
         requestBody['otp_code'] = _otpController.text.trim();
         // Generate username from phone number
         requestBody['username'] = 'user_${phone.replaceAll(RegExp(r'[^\d]'), '')}';
@@ -11974,7 +12491,20 @@ class _SignupPageState extends State<SignupPage> {
                 TextFormField(
                   controller: _phoneController,
                   keyboardType: TextInputType.phone,
-                  decoration: InputDecoration(labelText: AppLocalizations.of(context)!.enterPhoneNumber),
+                  decoration: InputDecoration(
+                    labelText: AppLocalizations.of(context)!.enterPhoneNumber,
+                    hintText: '7XX XXX XXXX',
+                    prefixText: '+964 ',
+                    prefixStyle: TextStyle(
+                      color: Color(0xFFFF6B00),
+                      fontWeight: FontWeight.bold,
+                      fontSize: 16,
+                    ),
+                  ),
+                  inputFormatters: [
+                    services.FilteringTextInputFormatter.allow(RegExp(r'[0-9]')),
+                    services.LengthLimitingTextInputFormatter(10),
+                  ],
                   validator: (v) => (v==null || v.trim().isEmpty) ? AppLocalizations.of(context)!.requiredField : null,
                 ),
                 SizedBox(height: 12),
@@ -12060,6 +12590,20 @@ class _ProfilePageState extends State<ProfilePage> {
   void initState() {
     super.initState();
     _loadMe();
+    // Listen to auth service changes
+    Provider.of<AuthService>(context, listen: false).addListener(_onAuthChange);
+  }
+
+  @override
+  void dispose() {
+    Provider.of<AuthService>(context, listen: false).removeListener(_onAuthChange);
+    super.dispose();
+  }
+
+  void _onAuthChange() {
+    if (mounted) {
+      _loadMe();
+    }
   }
 
   Future<void> _loadMe() async {
@@ -12076,6 +12620,10 @@ class _ProfilePageState extends State<ProfilePage> {
       }
     } catch (_) {}
     if (mounted) setState(() { _loading = false; });
+  }
+
+  void refreshProfile() {
+    _loadMe();
   }
 
   Future<void> _logout() async {
@@ -12224,11 +12772,17 @@ class _ProfilePageState extends State<ProfilePage> {
                       color: Color(0xFFFF6B00).withOpacity(0.1),
                       shape: BoxShape.circle,
                     ),
-                    child: Icon(
-                      Icons.person,
-                      size: 48,
-                      color: Color(0xFFFF6B00),
-                    ),
+                    child: (me?['profile_picture'] != null && me!['profile_picture'].toString().isNotEmpty)
+                        ? CircleAvatar(
+                            radius: 24,
+                            backgroundImage: NetworkImage(getApiBase() + '/static/' + me!['profile_picture'].toString()),
+                            backgroundColor: Colors.grey[200],
+                          )
+                        : Icon(
+                            Icons.person,
+                            size: 48,
+                            color: Color(0xFFFF6B00),
+                          ),
                   ),
                   SizedBox(height: 16),
                   Text(
@@ -12365,17 +12919,6 @@ class _ProfilePageState extends State<ProfilePage> {
                       if (result == true) {
                         _loadMe();
                       }
-                    },
-                  ),
-                  SizedBox(height: 12),
-                  _buildActionButton(
-                    Icons.settings_outlined,
-                    'Settings',
-                    () {
-                      // TODO: Implement settings functionality
-                      ScaffoldMessenger.of(context).showSnackBar(
-                        SnackBar(content: Text('Settings feature coming soon!')),
-                      );
                     },
                   ),
                   SizedBox(height: 12),

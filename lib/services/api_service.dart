@@ -384,7 +384,7 @@ class ApiService {
 
     // Add files
     for (final file in videoFiles) {
-      request.files.add(await http.MultipartFile.fromPath('files', file.path));
+      request.files.add(await http.MultipartFile.fromPath('video', file.path));
     }
 
     final response = await request.send();
