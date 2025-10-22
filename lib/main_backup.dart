@@ -74,7 +74,7 @@ String getApiBase() {
       return 'http://10.0.2.2:5000';
     }
   } catch (_) {}
-  return 'http://localhost:5000';
+  return 'http://10.0.2.2:5000';
 }
 
 String _localizeDigitsGlobal(BuildContext context, String input) {

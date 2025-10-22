@@ -15,7 +15,7 @@ import hmac
 import base64
 import secrets
 from urllib.parse import urlencode
-from flask_jwt_extended import JWTManager, create_access_token, get_jwt_identity, verify_jwt_in_request
+from flask_jwt_extended import JWTManager, create_access_token, get_jwt_identity, verify_jwt_in_request, jwt_required
 
 # Optional Twilio import for SMS delivery; fallback to dev mode if unavailable
 try:
@@ -91,6 +91,10 @@ class User(UserMixin, db.Model):
     username = db.Column(db.String(80), unique=True, nullable=False)
     email = db.Column(db.String(120), unique=True, nullable=False)
     password = db.Column(db.String(120), nullable=False)
+    first_name = db.Column(db.String(80), nullable=True)
+    last_name = db.Column(db.String(80), nullable=True)
+    phone_number = db.Column(db.String(20), nullable=True)
+    profile_picture = db.Column(db.String(200), nullable=True)
     created_at = db.Column(db.DateTime, nullable=False, default=datetime.utcnow)
 
 @login_manager.user_loader
@@ -213,7 +217,16 @@ def api_auth_signup_mobile():
         PHONE_OTPS.pop(phone, None)
     
     token = create_access_token(identity=str(user.id), expires_delta=timedelta(days=30))
-    return jsonify({'token': token, 'user': {'id': user.id, 'username': user.username, 'email': user.email, 'phone': phone or ''}})
+    return jsonify({
+        'token': token, 
+        'user': {
+            'id': user.id, 
+            'username': user.username, 
+            'email': user.email, 
+            'phone': phone or '',
+            'profile_picture': getattr(user, 'profile_picture', '')
+        }
+    })
 
 @app.route('/api/auth/login', methods=['POST'])
 def api_auth_login_mobile():
@@ -237,7 +250,16 @@ def api_auth_login_mobile():
     token = create_access_token(identity=str(user.id), expires_delta=timedelta(days=30))
     # Include phone if known
     phone = USER_PHONES.get(user.id, '')
-    return jsonify({'token': token, 'user': {'id': user.id, 'username': user.username, 'email': user.email, 'phone': phone}})
+    return jsonify({
+        'token': token, 
+        'user': {
+            'id': user.id, 
+            'username': user.username, 
+            'email': user.email, 
+            'phone': phone,
+            'profile_picture': getattr(user, 'profile_picture', '')
+        }
+    })
 
 @app.route('/api/auth/me', methods=['GET'])
 def api_auth_me_mobile():
@@ -251,7 +273,13 @@ def api_auth_me_mobile():
         phone = ''
     if not phone:
         phone = USER_PHONES.get(user.id, '')
-    return jsonify({'id': user.id, 'username': user.username, 'email': user.email, 'phone': phone})
+    return jsonify({
+        'id': user.id, 
+        'username': user.username, 
+        'email': user.email, 
+        'phone': phone,
+        'profile_picture': getattr(user, 'profile_picture', '')
+    })
 
 # Send OTP to phone (dev/demo: returns code in response; replace with SMS integration)
 @app.route('/api/auth/send_otp', methods=['POST'])
@@ -2036,6 +2064,108 @@ def api_user():
         'email': current_user.email,
         'created_at': current_user.created_at.isoformat() if current_user.created_at else None,
     })
+
+@app.route('/api/user/profile', methods=['GET', 'PUT'])
+@jwt_required()
+def profile():
+    """Get or update user profile"""
+    if request.method == 'GET':
+        # Return current user profile
+        user = get_api_user()
+        return jsonify({
+            'user': {
+                'id': user.id,
+                'username': user.username,
+                'email': user.email,
+                'first_name': getattr(user, 'first_name', ''),
+                'last_name': getattr(user, 'last_name', ''),
+                'phone_number': getattr(user, 'phone_number', ''),
+                'profile_picture': getattr(user, 'profile_picture', ''),
+                'created_at': user.created_at.isoformat() if user.created_at else None,
+            }
+        }), 200
+    
+    elif request.method == 'PUT':
+        # Update user profile
+        try:
+            user = get_api_user()
+            data = request.get_json()
+            if not data:
+                return jsonify({'message': 'No data provided'}), 400
+            
+            # Update fields if provided
+            if 'first_name' in data:
+                user.first_name = data['first_name']
+            if 'last_name' in data:
+                user.last_name = data['last_name']
+            if 'phone_number' in data:
+                user.phone_number = data['phone_number']
+            if 'username' in data:
+                user.username = data['username']
+            if 'email' in data and data['email'] != user.email:
+                # Check if email is already taken
+                existing_user = User.query.filter_by(email=data['email']).first()
+                if existing_user and existing_user.id != user.id:
+                    return jsonify({'message': 'Email already exists'}), 400
+                user.email = data['email']
+            
+            db.session.commit()
+            
+            return jsonify({
+                'message': 'Profile updated successfully',
+                'user': {
+                    'id': user.id,
+                    'username': user.username,
+                    'email': user.email,
+                    'first_name': getattr(user, 'first_name', ''),
+                    'last_name': getattr(user, 'last_name', ''),
+                    'phone_number': getattr(user, 'phone_number', ''),
+                    'profile_picture': getattr(user, 'profile_picture', ''),
+                }
+            }), 200
+            
+        except Exception as e:
+            print(f"Update profile error: {str(e)}")
+            return jsonify({'message': 'Failed to update profile'}), 500
+
+@app.route('/api/user/upload-profile-picture', methods=['POST'])
+@jwt_required()
+def upload_profile_picture():
+    """Upload profile picture"""
+    try:
+        if 'file' not in request.files:
+            return jsonify({'message': 'No file provided'}), 400
+        
+        file = request.files['file']
+        if file.filename == '':
+            return jsonify({'message': 'No file selected'}), 400
+        
+        # Generate secure filename
+        filename = secure_filename(file.filename)
+        if not filename:
+            return jsonify({'message': 'Invalid filename'}), 400
+        
+        # Create upload directory if it doesn't exist
+        upload_dir = os.path.join(app.root_path, 'static', 'uploads', 'profile_pictures')
+        os.makedirs(upload_dir, exist_ok=True)
+        
+        # Save file
+        file_path = os.path.join(upload_dir, filename)
+        file.save(file_path)
+        
+        # Update user profile picture
+        user = get_api_user()
+        user.profile_picture = f"uploads/profile_pictures/{filename}"
+        db.session.commit()
+        
+        return jsonify({
+            'message': 'Profile picture uploaded successfully',
+            'profile_picture': user.profile_picture
+        }), 200
+        
+    except Exception as e:
+        print(f"Upload profile picture error: {str(e)}")
+        return jsonify({'message': 'Failed to upload profile picture'}), 500
 
 # Analytics endpoints
 @app.route('/api/analytics/listings', methods=['GET'])
