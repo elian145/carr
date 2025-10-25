@@ -4,17 +4,21 @@ workflows:
     max_build_duration: 60
     instance_type: mac_mini_m1
     cache:
-      cache_paths: []
+      cache_paths:
+        - $HOME/.pub-cache
+        - ios/Pods
+        - $HOME/Library/Caches/CocoaPods
   ios-workflow:
     name: iOS Workflow
     max_build_duration: 60
+    instance_type: mac_mini_m1
     triggering:
       events:
         - push
       branch_patterns:
         - pattern: 'revert-exact-6b82de9'
           include: true
-          source: true
+          # source is only for PR source branches; omit for push
     environment:
       flutter: stable
       xcode: latest
@@ -36,19 +40,12 @@ workflows:
           rm -rf ios/Pods ios/Podfile.lock
           rm -rf "$HOME/Library/Developer/Xcode/DerivedData" || true
           flutter pub get
-      - name: Set up local.properties
-        script: |
-          echo "flutter.sdk=$HOME/programs/flutter" > "$CM_BUILD_DIR/android/local.properties"
-      - name: Get Flutter packages
-        script: |
-          flutter packages pub get
-      - name: Bootstrap iOS build settings
-        script: |
-          flutter pub get
           flutter precache --ios
       - name: Install CocoaPods dependencies
         script: |
-          cd ios && pod install
+          cd ios
+          pod repo update
+          pod install
       - name: Flutter analyze
         script: |
           dart analyze --no-fatal-warnings --no-fatal-infos || true
@@ -66,9 +63,14 @@ workflows:
           GIT_SHA=$(git rev-parse --short=8 HEAD)
           if [ -n "$DEFINE_API_BASE" ]; then
             echo "Using API_BASE=$DEFINE_API_BASE"
-            flutter build ipa --release --no-codesign --dart-define=SIDELOAD_BUILD=true --dart-define=BUILD_COMMIT_SHA=$GIT_SHA --dart-define=API_BASE=$DEFINE_API_BASE || true
+            flutter build ipa --release --no-codesign \
+              --dart-define=SIDELOAD_BUILD=true \
+              --dart-define=BUILD_COMMIT_SHA=$GIT_SHA \
+              --dart-define=API_BASE=$DEFINE_API_BASE
           else
-            flutter build ipa --release --no-codesign --dart-define=SIDELOAD_BUILD=true --dart-define=BUILD_COMMIT_SHA=$GIT_SHA || true
+            flutter build ipa --release --no-codesign \
+              --dart-define=SIDELOAD_BUILD=true \
+              --dart-define=BUILD_COMMIT_SHA=$GIT_SHA
           fi
       - name: Package unsigned IPA from xcarchive
         script: |
