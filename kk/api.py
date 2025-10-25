@@ -568,6 +568,14 @@ def api_my_listings():
     cars = Car.query.filter_by(user_id=uid).order_by(Car.created_at.desc()).all()
     result = []
     for car in cars:
+        # Get all images for scrollable functionality
+        images = []
+        for img in car.images:
+            if img.image_url:
+                # Remove 'uploads/' prefix if present for consistency
+                image_path = img.image_url[8:] if img.image_url.startswith('uploads/') else img.image_url
+                images.append(image_path)
+        
         result.append({
             "id": car.id,
             "title": car.title,
@@ -582,6 +590,7 @@ def api_my_listings():
             "fuel_type": car.fuel_type,
             "color": car.color,
             "image_url": car.image_url,
+            "images": images,  # Add images array for scrollable functionality
             "city": car.city,
             "status": car.status
         })

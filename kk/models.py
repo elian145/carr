@@ -134,6 +134,17 @@ class Car(db.Model):
     created_at = db.Column(db.DateTime, default=datetime.utcnow, index=True)
     updated_at = db.Column(db.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
     
+    # AI Analysis fields
+    ai_analyzed = db.Column(db.Boolean, default=False)
+    ai_detected_brand = db.Column(db.String(50), nullable=True)
+    ai_detected_model = db.Column(db.String(50), nullable=True)
+    ai_detected_color = db.Column(db.String(20), nullable=True)
+    ai_detected_body_type = db.Column(db.String(20), nullable=True)
+    ai_detected_condition = db.Column(db.String(20), nullable=True)
+    ai_confidence_score = db.Column(db.Float, nullable=True)
+    ai_analysis_timestamp = db.Column(db.DateTime, nullable=True)
+    license_plates_blurred = db.Column(db.Boolean, default=False)
+    
     # Relationships
     images = db.relationship('CarImage', backref='car', lazy=True, cascade='all, delete-orphan')
     videos = db.relationship('CarVideo', backref='car', lazy=True, cascade='all, delete-orphan')
@@ -165,7 +176,17 @@ class Car(db.Model):
             'updated_at': self.updated_at.isoformat() if self.updated_at else None,
             'images': [img.to_dict() for img in self.images],
             'videos': [video.to_dict() for video in self.videos],
-            'seller': self.seller.to_dict() if self.seller else None
+            'seller': self.seller.to_dict() if self.seller else None,
+            # AI Analysis fields
+            'ai_analyzed': self.ai_analyzed,
+            'ai_detected_brand': self.ai_detected_brand,
+            'ai_detected_model': self.ai_detected_model,
+            'ai_detected_color': self.ai_detected_color,
+            'ai_detected_body_type': self.ai_detected_body_type,
+            'ai_detected_condition': self.ai_detected_condition,
+            'ai_confidence_score': self.ai_confidence_score,
+            'ai_analysis_timestamp': self.ai_analysis_timestamp.isoformat() if self.ai_analysis_timestamp else None,
+            'license_plates_blurred': self.license_plates_blurred
         }
         
         if include_private:

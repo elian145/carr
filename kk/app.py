@@ -1,4 +1,5 @@
 import os
+import base64
 from flask import Flask, render_template, request, redirect, url_for, flash, jsonify, send_from_directory, abort, session, request as flask_request
 from flask_sqlalchemy import SQLAlchemy
 from werkzeug.utils import secure_filename
@@ -55,7 +56,7 @@ if db_url.startswith('postgresql'):
 app.config['SQLALCHEMY_ENGINE_OPTIONS'] = engine_opts
 app.config['UPLOAD_FOLDER'] = os.path.join(app.root_path, 'static', 'uploads')
 app.config['MAX_CONTENT_LENGTH'] = 100 * 1024 * 1024  # 100MB max file size for videos
-ALLOWED_EXTENSIONS = {'png', 'jpg', 'jpeg', 'gif'}
+ALLOWED_EXTENSIONS = {'png', 'jpg', 'jpeg', 'gif', 'webp'}
 ALLOWED_VIDEO_EXTENSIONS = {'mp4', 'mov', 'avi', 'mkv', 'webm'}
 app.config['PERMANENT_SESSION_LIFETIME'] = timedelta(days=30)
 app.config['JWT_SECRET_KEY'] = os.environ.get('JWT_SECRET_KEY', app.config['SECRET_KEY'])
@@ -2014,6 +2015,13 @@ def api_my_listings():
             return path[8:] if path.startswith('uploads/') else path
         return (c.image_url or '').lstrip('/')
 
+    def images_rel_paths(c: Car):
+        out = []
+        for im in c.images:
+            p = (im.image_url or '')
+            out.append(p[8:] if p.startswith('uploads/') else p)
+        return out
+
     result = [{
         'id': c.id,
         'title': c.title,
@@ -2028,6 +2036,7 @@ def api_my_listings():
         'fuel_type': c.fuel_type,
         'color': c.color,
         'image_url': first_image_rel_path(c),
+        'images': images_rel_paths(c),  # Add images array for scrollable functionality
         'city': c.city,
         'status': c.status
     } for c in cars]
@@ -2987,5 +2996,216 @@ if __name__ == '__main__':
     @app.route('/static/<path:filename>')
     def static_files(filename):
         return send_from_directory(os.path.join(app.root_path, 'static'), filename)
+    
+    # AI Analysis endpoints
+    @app.route('/api/analyze-car-image', methods=['POST'])
+    @jwt_required()
+    def analyze_car_image():
+        """Analyze uploaded car image using AI"""
+        try:
+            current_user = get_current_user()
+            if not current_user:
+                return jsonify({'error': 'User not found'}), 404
+            
+            if 'image' not in request.files:
+                return jsonify({'error': 'No image file provided'}), 400
+            
+            file = request.files['image']
+            if file.filename == '':
+                return jsonify({'error': 'No image file selected'}), 400
+            
+            if file and allowed_file(file.filename):
+                # Save uploaded image temporarily
+                filename = secure_filename(file.filename)
+                timestamp = datetime.now().strftime('%Y%m%d_%H%M%S')
+                filename = f"ai_analysis_{timestamp}_{filename}"
+                temp_path = os.path.join(app.config['UPLOAD_FOLDER'], 'temp', filename)
+                os.makedirs(os.path.dirname(temp_path), exist_ok=True)
+                file.save(temp_path)
+                
+                try:
+                    # Import AI service
+                    from ai_service import car_analysis_service
+                    
+                    # Analyze the image using AI
+                    analysis_result = car_analysis_service.analyze_car_image(temp_path)
+                    
+                    # Clean up temporary file
+                    os.remove(temp_path)
+                    
+                    if 'error' in analysis_result:
+                        return jsonify({'error': analysis_result['error']}), 500
+                    
+                    return jsonify({
+                        'success': True,
+                        'analysis': analysis_result,
+                        'message': 'Car image analyzed successfully'
+                    }), 200
+                    
+                except Exception as e:
+                    # Clean up temporary file on error
+                    if os.path.exists(temp_path):
+                        os.remove(temp_path)
+                    raise e
+            else:
+                return jsonify({'error': 'Invalid file type'}), 400
+                
+        except Exception as e:
+            print(f"Error analyzing car image: {str(e)}")
+            return jsonify({'error': 'Failed to analyze car image'}), 500
+
+    @app.route('/api/test-ai', methods=['GET'])
+    def test_ai():
+        """Test endpoint to verify AI service is working"""
+        try:
+            from ai_service import car_analysis_service
+            return jsonify({
+                'success': True,
+                'message': 'AI service is working',
+                'service_initialized': car_analysis_service.initialized
+            }), 200
+        except Exception as e:
+            return jsonify({
+                'success': False,
+                'error': str(e)
+            }), 500
+
+    @app.route('/api/process-car-images-test', methods=['POST'])
+    def process_car_images_test():
+        """Process multiple car images and blur license plates (test version without auth)"""
+        try:
+            files = request.files.getlist('images')
+            if not files:
+                return jsonify({'error': 'No image files provided'}), 400
+            
+            processed_images = []
+            processed_images_base64 = []
+            
+            for file in files:
+                if file and allowed_file(file.filename):
+                    # Save uploaded image temporarily
+                    filename = secure_filename(file.filename)
+                    timestamp = datetime.now().strftime('%Y%m%d_%H%M%S')
+                    filename = f"processed_{timestamp}_{filename}"
+                    temp_path = os.path.join(app.config['UPLOAD_FOLDER'], 'temp', filename)
+                    os.makedirs(os.path.dirname(temp_path), exist_ok=True)
+                    file.save(temp_path)
+                    
+                    try:
+                        # Import AI service
+                        from ai_service import car_analysis_service
+                        
+                        # Process image (blur license plates)
+                        processed_path = car_analysis_service._blur_license_plates(temp_path)
+                        
+                        # Move processed image to permanent location
+                        final_filename = f"processed_{timestamp}_{secure_filename(file.filename)}"
+                        final_path = os.path.join(app.config['UPLOAD_FOLDER'], 'car_photos', final_filename)
+                        os.makedirs(os.path.dirname(final_path), exist_ok=True)
+                        
+                        # Copy processed image to final location
+                        import shutil
+                        shutil.copy2(processed_path, final_path)
+                        
+                        # Optionally encode processed image to base64 (only if requested to keep payloads small)
+                        try:
+                            if request.args.get('inline_base64') == '1':
+                                with open(final_path, 'rb') as f:
+                                    encoded = base64.b64encode(f.read()).decode('utf-8')
+                                    ext = os.path.splitext(final_filename)[1].lower().lstrip('.')
+                                    mime = 'image/jpeg' if ext in ['jpg', 'jpeg'] else ('image/png' if ext == 'png' else ('image/webp' if ext == 'webp' else 'image/*'))
+                                    processed_images_base64.append(f"data:{mime};base64,{encoded}")
+                        except Exception as e:
+                            print(f"Error encoding image to base64: {str(e)}")
+                        
+                        # Clean up temporary files
+                        os.remove(temp_path)
+                        if processed_path != temp_path:
+                            os.remove(processed_path)
+                        
+                        processed_images.append(f"uploads/car_photos/{final_filename}")
+                        
+                    except Exception as e:
+                        # Clean up on error
+                        if os.path.exists(temp_path):
+                            os.remove(temp_path)
+                        print(f"Error processing image {file.filename}: {str(e)}")
+                        continue
+            
+            return jsonify({
+                'success': True,
+                'processed_images': processed_images,
+                'processed_images_base64': processed_images_base64,
+                'message': f'Processed {len(processed_images)} images successfully'
+            }), 200
+            
+        except Exception as e:
+            print(f"Error processing car images: {str(e)}")
+            return jsonify({'error': 'Failed to process car images'}), 500
+
+    @app.route('/api/process-car-images', methods=['POST'])
+    @jwt_required()
+    def process_car_images():
+        """Process multiple car images and blur license plates"""
+        try:
+            current_user = get_current_user()
+            if not current_user:
+                return jsonify({'error': 'User not found'}), 404
+            
+            files = request.files.getlist('images')
+            if not files:
+                return jsonify({'error': 'No image files provided'}), 400
+            
+            processed_images = []
+            
+            for file in files:
+                if file and allowed_file(file.filename):
+                    # Save uploaded image temporarily
+                    filename = secure_filename(file.filename)
+                    timestamp = datetime.now().strftime('%Y%m%d_%H%M%S')
+                    filename = f"processed_{timestamp}_{filename}"
+                    temp_path = os.path.join(app.config['UPLOAD_FOLDER'], 'temp', filename)
+                    os.makedirs(os.path.dirname(temp_path), exist_ok=True)
+                    file.save(temp_path)
+                    
+                    try:
+                        # Import AI service
+                        from ai_service import car_analysis_service
+                        
+                        # Process image (blur license plates)
+                        processed_path = car_analysis_service._blur_license_plates(temp_path)
+                        
+                        # Move processed image to permanent location
+                        final_filename = f"processed_{timestamp}_{secure_filename(file.filename)}"
+                        final_path = os.path.join(app.config['UPLOAD_FOLDER'], 'car_photos', final_filename)
+                        os.makedirs(os.path.dirname(final_path), exist_ok=True)
+                        
+                        # Copy processed image to final location
+                        import shutil
+                        shutil.copy2(processed_path, final_path)
+                        
+                        # Clean up temporary files
+                        os.remove(temp_path)
+                        if processed_path != temp_path:
+                            os.remove(processed_path)
+                        
+                        processed_images.append(f"uploads/car_photos/{final_filename}")
+                        
+                    except Exception as e:
+                        # Clean up on error
+                        if os.path.exists(temp_path):
+                            os.remove(temp_path)
+                        print(f"Error processing image {file.filename}: {str(e)}")
+                        continue
+            
+            return jsonify({
+                'success': True,
+                'processed_images': processed_images,
+                'message': f'Processed {len(processed_images)} images successfully'
+            }), 200
+            
+        except Exception as e:
+            print(f"Error processing car images: {str(e)}")
+            return jsonify({'error': 'Failed to process car images'}), 500
     
     app.run(host='0.0.0.0', port=5000, debug=True)

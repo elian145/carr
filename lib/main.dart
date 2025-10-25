@@ -33,6 +33,7 @@ import 'package:provider/provider.dart';
 import 'theme_provider.dart';
 import 'widgets/theme_toggle_widget.dart';
 import 'services/config.dart';
+import 'services/ai_service.dart';
 // Sideload build flag to disable services that require entitlements on iOS
 const bool kSideloadBuild = bool.fromEnvironment('SIDELOAD_BUILD', defaultValue: false);
 // Build commit SHA for on-device verification
@@ -9239,6 +9240,10 @@ class _SellStep4PageState extends State<SellStep4Page> {
   final ImagePicker _imagePicker = ImagePicker();
   List<XFile> _selectedImages = [];
   List<XFile> _selectedVideos = [];
+  Map<String, dynamic>? _aiAnalysisResult;
+  bool _isAnalyzing = false;
+  bool _isProcessingImages = false;
+  bool _imagesProcessed = false;
   
   Future<void> _pickImages() async {
     try {
@@ -9246,9 +9251,167 @@ class _SellStep4PageState extends State<SellStep4Page> {
       if (files.isNotEmpty) {
         setState(() {
           _selectedImages = files;
+          _aiAnalysisResult = null; // Reset analysis when new images are selected
+          _imagesProcessed = false; // Reset processed flag when new images are selected
         });
+        
+        // Automatically analyze the first image
+        if (files.isNotEmpty) {
+          _analyzeFirstImage(files.first);
+        }
       }
     } catch (_) {}
+  }
+  
+  Future<void> _analyzeFirstImage(XFile imageFile) async {
+    setState(() {
+      _isAnalyzing = true;
+    });
+    
+    try {
+      final result = await AiService.analyzeCarImage(imageFile);
+      if (result != null && result['success'] == true) {
+        setState(() {
+          _aiAnalysisResult = result['analysis'];
+        });
+        
+        // Show analysis results to user
+        _showAnalysisResults(result['analysis']);
+      }
+    } catch (e) {
+      print('Error analyzing image: $e');
+    } finally {
+      setState(() {
+        _isAnalyzing = false;
+      });
+    }
+  }
+  
+  void _showAnalysisResults(Map<String, dynamic> analysis) {
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: Text('AI Analysis Results'),
+        content: SingleChildScrollView(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              if (analysis['car_info'] != null) ...[
+                Text('Detected Information:', style: TextStyle(fontWeight: FontWeight.bold)),
+                SizedBox(height: 8),
+                if (analysis['car_info']['color'] != null)
+                  Text('Color: ${analysis['car_info']['color']}'),
+                if (analysis['car_info']['body_type'] != null)
+                  Text('Body Type: ${analysis['car_info']['body_type']}'),
+                if (analysis['car_info']['condition'] != null)
+                  Text('Condition: ${analysis['car_info']['condition']}'),
+                if (analysis['car_info']['doors'] != null)
+                  Text('Doors: ${analysis['car_info']['doors']}'),
+              ],
+              if (analysis['brand_model'] != null) ...[
+                SizedBox(height: 16),
+                Text('Brand/Model Detection:', style: TextStyle(fontWeight: FontWeight.bold)),
+                SizedBox(height: 8),
+                if (analysis['brand_model']['brand'] != null)
+                  Text('Brand: ${analysis['brand_model']['brand']}'),
+                if (analysis['brand_model']['model'] != null)
+                  Text('Model: ${analysis['brand_model']['model']}'),
+                if (analysis['brand_model']['confidence'] != null)
+                  Text('Confidence: ${(analysis['brand_model']['confidence'] * 100).toStringAsFixed(1)}%'),
+              ],
+              SizedBox(height: 16),
+              Text('License plates have been automatically blurred for privacy.'),
+            ],
+          ),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(context).pop(),
+            child: Text('OK'),
+          ),
+          ElevatedButton(
+            onPressed: () {
+              Navigator.of(context).pop();
+              _useAnalysisResults(analysis);
+            },
+            child: Text('Use These Values'),
+          ),
+        ],
+      ),
+    );
+  }
+  
+  void _useAnalysisResults(Map<String, dynamic> analysis) {
+    // Navigate back to previous step with AI-detected values
+    // This would populate the form fields with detected values
+    final parentState = context.findAncestorStateOfType<_SellCarPageState>();
+    if (parentState != null) {
+      // Store AI analysis results in car data
+      parentState.carData['ai_analysis'] = analysis;
+      
+      // Navigate back to step 2 to show detected values
+      parentState._goToPreviousStep();
+    }
+  }
+  
+  Future<void> _processImages() async {
+    if (_selectedImages.isEmpty) {
+      print('AI UI: No images selected for processing');
+      return;
+    }
+    
+    print('AI UI: Starting image processing for ${_selectedImages.length} images');
+    
+    setState(() {
+      _isProcessingImages = true;
+    });
+    
+    try {
+      print('AI UI: Calling AiService.processCarImages...');
+      final processedImages = await AiService.processCarImages(_selectedImages);
+      
+      if (processedImages != null) {
+        print('AI UI: Images processed successfully, received ${processedImages.length} processed images');
+        print('AI UI: Original images count: ${_selectedImages.length}');
+        print('AI UI: Processed images count: ${processedImages.length}');
+        
+        // Log the paths of processed images
+        for (int i = 0; i < processedImages.length; i++) {
+          print('AI UI: Processed image $i: ${processedImages[i].path}');
+        }
+        
+        // Replace the original images with the processed ones
+        setState(() {
+          _selectedImages = processedImages;
+          _imagesProcessed = true;
+        });
+        
+        print('AI UI: Updated _selectedImages count: ${_selectedImages.length}');
+        
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Images processed successfully! License plates have been blurred.')),
+        );
+      } else {
+        print('AI UI: Image processing failed');
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Failed to process images. Please check your internet connection and try again.'),
+            backgroundColor: Colors.red,
+            duration: Duration(seconds: 4),
+          ),
+        );
+      }
+    } catch (e) {
+      print('AI UI: Error processing images: $e');
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Error processing images: $e')),
+      );
+    } finally {
+      setState(() {
+        _isProcessingImages = false;
+      });
+    }
   }
   
   Future<void> _pickVideos() async {
@@ -9311,6 +9474,74 @@ class _SellStep4PageState extends State<SellStep4Page> {
           ),
           SizedBox(height: 24),
           
+          // AI Analysis Status
+          if (_isAnalyzing)
+            Card(
+              child: Padding(
+                padding: EdgeInsets.all(16),
+                child: Row(
+                  children: [
+                    CircularProgressIndicator(),
+                    SizedBox(width: 16),
+                    Text('Analyzing car image with AI...'),
+                  ],
+                ),
+              ),
+            ),
+          
+          // AI Analysis Results
+          if (_aiAnalysisResult != null)
+            Card(
+              color: Colors.green.shade50,
+              child: Padding(
+                padding: EdgeInsets.all(16),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Row(
+                      children: [
+                        Icon(Icons.auto_awesome, color: Colors.green),
+                        SizedBox(width: 8),
+                        Text(
+                          'AI Analysis Complete',
+                          style: TextStyle(fontWeight: FontWeight.bold, color: Colors.green),
+                        ),
+                      ],
+                    ),
+                    SizedBox(height: 8),
+                    Text('Tap "View Results" to see detected car information'),
+                    SizedBox(height: 8),
+                    ElevatedButton.icon(
+                      onPressed: () => _showAnalysisResults(_aiAnalysisResult!),
+                      icon: Icon(Icons.visibility),
+                      label: Text('View Results'),
+                    ),
+                  ],
+                ),
+              ),
+            ),
+          
+          // Image Processing Status
+          if (_imagesProcessed)
+            Card(
+              color: Colors.blue.shade50,
+              child: Padding(
+                padding: EdgeInsets.all(16),
+                child: Row(
+                  children: [
+                    Icon(Icons.blur_on, color: Colors.blue),
+                    SizedBox(width: 8),
+                    Text(
+                      'Images Processed',
+                      style: TextStyle(fontWeight: FontWeight.bold, color: Colors.blue),
+                    ),
+                    SizedBox(width: 8),
+                    Text('License plates will be blurred when uploaded'),
+                  ],
+                ),
+              ),
+            ),
+          
           // Photos Section
           Text(_photosRequiredTitleGlobal(context), style: TextStyle(fontWeight: FontWeight.bold, fontSize: 18)),
           SizedBox(height: 12),
@@ -9359,8 +9590,9 @@ class _SellStep4PageState extends State<SellStep4Page> {
               ),
             ),
           SizedBox(height: 12),
-          SizedBox(
-            width: double.infinity,
+          Row(
+            children: [
+              Expanded(
             child: ElevatedButton.icon(
               onPressed: _pickImages,
               icon: Icon(Icons.photo_library),
@@ -9373,6 +9605,27 @@ class _SellStep4PageState extends State<SellStep4Page> {
                 ),
               ),
             ),
+              ),
+              SizedBox(width: 8),
+                      ElevatedButton.icon(
+                        onPressed: _selectedImages.isNotEmpty && !_imagesProcessed ? _processImages : null,
+                        icon: _isProcessingImages 
+                            ? SizedBox(width: 16, height: 16, child: CircularProgressIndicator(strokeWidth: 2))
+                            : Icon(_imagesProcessed ? Icons.check : Icons.blur_on),
+                        label: Text(_isProcessingImages 
+                            ? 'Processing...' 
+                            : _imagesProcessed 
+                                ? 'Processed' 
+                                : 'Blur Plates'),
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: _imagesProcessed ? Colors.green : Colors.blue,
+                          foregroundColor: Colors.white,
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(12),
+                          ),
+                        ),
+                      ),
+            ],
           ),
           SizedBox(height: 24),
           
@@ -13661,275 +13914,9 @@ class _MyListingsPageState extends State<MyListingsPage> {
       'is_quick_sell': listing['is_quick_sell'] ?? false,
     };
     
-    // DUPLICATE the exact Home page card design (not shared component)
-    return _buildMyListingsCarCard(context, car);
+    // Use the same global car card as home page for consistency
+    return buildGlobalCarCard(context, car);
   }
 
-  // DUPLICATED from Home page buildGlobalCarCard function
-  Widget _buildMyListingsCarCard(BuildContext context, Map car) {
-    final brand = car['brand'] ?? '';
-    final brandId = brandLogoFilenames[brand] ?? brand.toString().toLowerCase().replaceAll(' ', '-').replaceAll('Ã©', 'e').replaceAll('Ã¶', 'o');
-    
-    return Container(
-      height: 205, // Standard height for all car cards
-      decoration: BoxDecoration(
-        color: Colors.white.withOpacity(0.10),
-        borderRadius: BorderRadius.circular(20),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withOpacity(0.2),
-            blurRadius: 8,
-            offset: Offset(0, 4),
-          ),
-        ],
-      ),
-      child: Stack(
-        children: [
-          InkWell(
-            borderRadius: BorderRadius.circular(20),
-            onTap: () {
-              Navigator.pushNamed(
-                context,
-                '/car_detail',
-                arguments: {'carId': car['id']},
-              );
-            },
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                // Quick Sell Banner (conditional height)
-                if (car['is_quick_sell'] == true || car['is_quick_sell'] == 'true')
-                  Container(
-                    width: double.infinity,
-                    height: 35, // Fixed height for banner
-                    padding: EdgeInsets.symmetric(vertical: 8, horizontal: 12),
-                    decoration: BoxDecoration(
-                      gradient: LinearGradient(
-                        colors: [Colors.orange, Colors.deepOrange],
-                        begin: Alignment.centerLeft,
-                        end: Alignment.centerRight,
-                      ),
-                      borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
-                    ),
-                    child: Row(
-                      mainAxisAlignment: MainAxisAlignment.center,
-                      children: [
-                        Icon(Icons.flash_on, color: Colors.white, size: 16),
-                        SizedBox(width: 6),
-                        Text(
-                          'QUICK SELL',
-                          style: TextStyle(
-                            color: Colors.white,
-                            fontWeight: FontWeight.bold,
-                            fontSize: 12,
-                            letterSpacing: 1.2,
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
-                // Image section
-                Container(
-                  height: (car['is_quick_sell'] == true || car['is_quick_sell'] == 'true') ? 120 : 170,
-                  child: ClipRRect(
-                    borderRadius: BorderRadius.vertical(
-                      top: (car['is_quick_sell'] == true || car['is_quick_sell'] == 'true') 
-                        ? Radius.zero 
-                        : Radius.circular(20),
-                      bottom: Radius.zero,
-                    ),
-                    child: _buildMyListingsCardImageCarousel(context, car),
-                  ),
-                ),
-                // Content section
-                Container(
-                  height: 85, // Standard height for content
-                  padding: EdgeInsets.fromLTRB(12, 8, 12, 0),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    mainAxisSize: MainAxisSize.max,
-                    mainAxisAlignment: MainAxisAlignment.start,
-                    children: [
-                      Row(
-                        children: [
-                          if (car['brand'] != null && car['brand'].toString().isNotEmpty)
-                            SizedBox(
-                              width: 28,
-                              height: 28,
-                              child: Container(
-                                width: 28,
-                                height: 28,
-                                padding: EdgeInsets.all(4),
-                                decoration: BoxDecoration(
-                                  color: Colors.white,
-                                  borderRadius: BorderRadius.circular(8),
-                                ),
-                                child: CachedNetworkImage(
-                                  imageUrl: getApiBase() + '/static/images/brands/' + brandId + '.png',
-                                  placeholder: (context, url) => SizedBox(width: 24, height: 24, child: CircularProgressIndicator(strokeWidth: 2)),
-                                  errorWidget: (context, url, error) => Icon(Icons.directions_car, size: 20, color: Color(0xFFFF6B00)),
-                                  fit: BoxFit.contain,
-                                ),
-                              ),
-                            ),
-                          SizedBox(width: 8),
-                          Expanded(
-                            child: Text(
-                              car['title'] ?? '',
-                              style: TextStyle(
-                                fontWeight: FontWeight.bold,
-                                color: Color(0xFFFF6B00),
-                                fontSize: 15,
-                                height: 1.1,
-                              ),
-                              maxLines: 2,
-                              overflow: TextOverflow.ellipsis,
-                            ),
-                          ),
-                        ],
-                      ),
-                      SizedBox(height: 6),
-                      Text(
-                        _formatCurrencyGlobal(context, car['price']),
-                        style: TextStyle(
-                          color: Color(0xFFFF6B00),
-                          fontWeight: FontWeight.w600,
-                          fontSize: 15,
-                        ),
-                      ),
-                      SizedBox(height: 16),
-                    ],
-                  ),
-                ),
-              ],
-            ),
-          ),
-          // Bottom info positioned relative to entire card
-          Positioned(
-            bottom: 35,
-            left: 12,
-            right: 12,
-            child: Text(
-              '${_localizeDigitsGlobal(context, (car['year'] ?? '').toString())} • ${_localizeDigitsGlobal(context, (car['mileage'] ?? '').toString())} ${AppLocalizations.of(context)!.unit_km}',
-              style: TextStyle(color: Colors.white70, fontSize: 13),
-            ),
-          ),
-          // City name at bottom
-          Positioned(
-            bottom: 15,
-            left: 12,
-            child: Text(
-              '${_translateValueGlobal(context, car['city']?.toString()) ?? (car['city'] ?? '')}',
-              style: TextStyle(color: Colors.white70, fontSize: 13),
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-
-  // DUPLICATED from Home page _buildGlobalCardImageCarousel function
-  Widget _buildMyListingsCardImageCarousel(BuildContext context, Map car) {
-    final List<String> urls = () {
-      final List<String> u = [];
-      final String primary = (car['image_url'] ?? '').toString();
-      final List<dynamic> imgs = (car['images'] is List) ? (car['images'] as List) : const [];
-      if (primary.isNotEmpty) {
-        u.add(getApiBase() + '/static/uploads/' + primary);
-      }
-      for (final dynamic it in imgs) {
-        final s = it.toString();
-        if (s.isNotEmpty) {
-          final full = getApiBase() + '/static/uploads/' + s;
-          if (!u.contains(full)) u.add(full);
-        }
-      }
-      return u;
-    }();
-
-    if (urls.isEmpty) {
-      return Container(
-        color: Colors.grey[900],
-        width: double.infinity,
-        child: Icon(Icons.directions_car, size: 60, color: Colors.grey[400]),
-      );
-    }
-
-    final PageController controller = PageController();
-    int currentIndex = 0;
-
-    return StatefulBuilder(
-      builder: (context, setState) {
-        return Stack(
-          fit: StackFit.expand,
-          children: [
-            GestureDetector(
-              onTap: () {
-                Navigator.pushNamed(
-                  context,
-                  '/car_detail',
-                  arguments: {'carId': car['id']},
-                );
-              },
-              child: PageView.builder(
-                controller: controller,
-                onPageChanged: (i) => setState(() => currentIndex = i),
-                itemCount: urls.length,
-                itemBuilder: (context, i) {
-                  final url = urls[i];
-                  return CachedNetworkImage(
-                    imageUrl: url,
-                    fit: BoxFit.cover,
-                    placeholder: (context, url) => Container(
-                      color: Colors.white10,
-                      child: Center(
-                        child: SizedBox(
-                          width: 20,
-                          height: 20,
-                          child: CircularProgressIndicator(
-                            strokeWidth: 2,
-                            valueColor: AlwaysStoppedAnimation<Color>(Color(0xFFFF6B00)),
-                          ),
-                        ),
-                      ),
-                    ),
-                    errorWidget: (context, url, error) => Container(
-                      color: Colors.grey[900],
-                      child: Icon(Icons.directions_car, size: 60, color: Colors.grey[400]),
-                    ),
-                  );
-                },
-              ),
-            ),
-            if (urls.length > 1)
-              Positioned(
-                bottom: 8,
-                left: 0,
-                right: 0,
-                child: SingleChildScrollView(
-                  scrollDirection: Axis.horizontal,
-                  child: Row(
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    children: List.generate(urls.length, (i) {
-                    final active = i == currentIndex;
-                    return AnimatedContainer(
-                      duration: Duration(milliseconds: 200),
-                      margin: EdgeInsets.symmetric(horizontal: 3),
-                      width: active ? 8 : 6,
-                      height: active ? 8 : 6,
-                      decoration: BoxDecoration(
-                        color: active ? Colors.white : Colors.white70,
-                        shape: BoxShape.circle,
-                      ),
-                    );
-                  }),
-                  ),
-                ),
-              ),
-          ],
-        );
-      },
-    );
-  }
 
 }
