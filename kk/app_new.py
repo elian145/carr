@@ -10,6 +10,7 @@ from config import config
 from models import *
 from auth import *
 from security import rate_limit, validate_input_sanitization, secure_headers
+import pathlib
 import os
 import json
 import logging
@@ -20,6 +21,10 @@ from functools import wraps
 # Initialize Flask app
 app = Flask(__name__)
 app.config.from_object(config['development'])
+# Force SQLite DB to live under the app's instance directory, regardless of CWD
+instance_db_abs = os.path.join(app.root_path, 'instance', 'car_listings_dev.db')
+os.makedirs(os.path.dirname(instance_db_abs), exist_ok=True)
+app.config['SQLALCHEMY_DATABASE_URI'] = f"sqlite:///{instance_db_abs}"
 
 # Initialize extensions
 db.init_app(app)
@@ -531,7 +536,7 @@ def get_cars():
         
     except Exception as e:
         logger.error(f"Get cars error: {str(e)}")
-        return jsonify({'message': 'Failed to get cars'}), 500
+        return jsonify({'message': 'Failed to get cars', 'error': str(e)}), 500
 
 # Alias routes compatible with older mobile client expectations
 @app.route('/cars', methods=['GET'])
@@ -628,7 +633,7 @@ def get_cars_alias():
         return jsonify(cars), 200
     except Exception as e:
         logger.error(f"Get cars alias error: {str(e)}")
-        return jsonify({'message': 'Failed to get cars'}), 500
+        return jsonify({'message': 'Failed to get cars', 'error': str(e)}), 500
 
 # Compatibility auth endpoints for the mobile client
 @app.route('/api/auth/send_otp', methods=['POST'])
@@ -1418,8 +1423,80 @@ def internal_error(error):
 
 # Database initialization is handled at process start below for Flask 3 compatibility
 
+# Lightweight health check for connectivity/monitoring
+@app.route('/health', methods=['GET'])
+def health():
+    return jsonify({'status': 'ok'}), 200
+
+# Debug info (safe to keep in development only)
+@app.route('/debug/info', methods=['GET'])
+def debug_info():
+    try:
+        cwd = os.getcwd()
+        root_path = app.root_path
+        uri = app.config.get('SQLALCHEMY_DATABASE_URI')
+        try:
+            from sqlalchemy import inspect
+            db_file = db.engine.url.database
+        except Exception:
+            db_file = None
+        root_db = str(pathlib.Path(root_path).parent.joinpath('car_listings_dev.db'))
+        kk_db = str(pathlib.Path(root_path).joinpath('car_listings_dev.db'))
+        return jsonify({
+            'cwd': cwd,
+            'app_root': root_path,
+            'db_uri': uri,
+            'db_file': db_file,
+            'root_db_exists': os.path.exists(root_db),
+            'kk_db_exists': os.path.exists(kk_db),
+            'root_db': root_db,
+            'kk_db': kk_db,
+        }), 200
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
+
+# Development-only reset and seed
+@app.route('/dev/reinit', methods=['POST', 'GET'])
+def dev_reinit():
+    try:
+        with app.app_context():
+            db.drop_all()
+            db.create_all()
+            # Create demo user
+            user = User(
+                username='demo',
+                email='demo@example.com',
+                phone_number='07000000001',
+                first_name='Demo',
+                last_name='User'
+            )
+            user.set_password('password123')
+            db.session.add(user)
+            db.session.flush()
+            # Add a couple cars
+            sample_cars = [
+                dict(brand='toyota', model='camry', year=2020, mileage=25000, engine_type='gasoline', transmission='automatic', drive_type='fwd', condition='used', body_type='sedan', price=21000.0, location='baghdad'),
+                dict(brand='bmw', model='x5', year=2021, mileage=15000, engine_type='gasoline', transmission='automatic', drive_type='awd', condition='used', body_type='suv', price=55000.0, location='erbil'),
+            ]
+            for s in sample_cars:
+                db.session.add(Car(seller_id=user.id, **s))
+            db.session.commit()
+        return jsonify({'status': 'reinit_ok'}), 200
+    except Exception as e:
+        db.session.rollback()
+        return jsonify({'status': 'reinit_failed', 'error': str(e)}), 500
+
 if __name__ == '__main__':
     with app.app_context():
         db.create_all()
     
-    socketio.run(app, debug=True, host='0.0.0.0', port=5000, allow_unsafe_werkzeug=True)
+    # Allow overriding port via environment and disable reloader to avoid duplicate processes
+    port = int(os.environ.get('PORT', '5000'))
+    socketio.run(
+        app,
+        debug=True,
+        host='0.0.0.0',
+        port=port,
+        allow_unsafe_werkzeug=True,
+        use_reloader=False,
+    )

@@ -70,7 +70,8 @@ class Config:
 
 class DevelopmentConfig(Config):
     DEBUG = True
-    SQLALCHEMY_DATABASE_URI = os.environ.get('DEV_DATABASE_URL') or 'sqlite:///car_listings_dev.db'
+    # Use instance folder explicitly to avoid stale root DBs and ensure correct schema
+    SQLALCHEMY_DATABASE_URI = os.environ.get('DEV_DATABASE_URL') or 'sqlite:///instance/car_listings_dev.db'
 
 class ProductionConfig(Config):
     DEBUG = False
