@@ -178,8 +178,11 @@ class ApiService {
       headers: _getHeaders(includeAuth: false),
       body: json.encode({
         'username': username,
-        'phone': phoneNumber ?? '',
+        'email': email,
+        'phone': (phoneNumber ?? '').replaceAll(RegExp(r'[^0-9]'), ''),
         'password': password,
+        'first_name': firstName,
+        'last_name': lastName,
         'otp_code': otp,
       }),
     );
@@ -192,13 +195,16 @@ class ApiService {
       Uri.parse('$baseUrl/auth/login'),
       headers: _getHeaders(includeAuth: false),
       body: json.encode({
-        'username': emailOrPhone, // Backend expects 'username' key but accepts email/phone
+        'username': emailOrPhone,
         'password': password,
       }),
     );
 
+    // Accept either legacy {'token': '<jwt>'} or new {'access_token': '...', 'refresh_token': '...'}
     final data = _handleResponse(response);
-    final String? token = (data['token'] as String?)?.trim();
+    final String? legacyToken = (data['token'] as String?)?.trim();
+    final String? access = (data['access_token'] as String?)?.trim();
+    final token = (legacyToken != null && legacyToken.isNotEmpty) ? legacyToken : access;
     if (token != null && token.isNotEmpty) {
       await _saveAccessToken(token);
     }
@@ -345,9 +351,39 @@ class ApiService {
   }
 
   static Future<Map<String, dynamic>> uploadCarImages(String carId, List<XFile> imageFiles) async {
+    // If Ai pipeline saved server-side processed images, attach them without re-uploading
+    final attach = _lastProcessedServerPaths;
+    if (attach != null && attach.isNotEmpty) {
+      try {
+        final url = Uri.parse('$baseUrl/cars/$carId/images/attach');
+        final headers = _getHeaders(includeAuth: true);
+        final resp = await http.post(
+          url,
+          headers: headers,
+          body: json.encode({'paths': attach}),
+        );
+        // Clear after use to avoid reattaching on subsequent calls
+        _lastProcessedServerPaths = null;
+        final data = _handleResponse(resp);
+        if (!data.containsKey('images') && data.containsKey('uploaded')) {
+          data['images'] = List.from(data['uploaded'] as List);
+        }
+        return data;
+      } catch (_) {
+        // If attach fails, fall back to upload path
+        _lastProcessedServerPaths = null;
+      }
+    }
+
+    // If all files look pre-blurred (our convention), tell backend to skip blur and just store.
+    final bool allPreBlurred = imageFiles.isNotEmpty &&
+        imageFiles.every((f) => f.path.toLowerCase().endsWith('_blurred.jpg'));
+    // Let the backend run its full multi-pass YOLO+OCR pipeline for best recall.
+    // Keep skip_blur for pre-blurred assets.
+    final query = allPreBlurred ? '?skip_blur=1' : '?mode=auto';
     final request = http.MultipartRequest(
       'POST',
-      Uri.parse('$baseUrl/cars/$carId/images'),
+      Uri.parse('$baseUrl/cars/$carId/images$query'),
     );
 
     // Add authorization header
@@ -364,11 +400,26 @@ class ApiService {
     final responseBody = await response.stream.bytesToString();
 
     if (response.statusCode >= 200 && response.statusCode < 300) {
-      return json.decode(responseBody);
+      // Backend compatibility: some endpoints return { uploaded: [...] }
+      // Normalize to { images: [...] } expected by UI services
+      final Map<String, dynamic> data = json.decode(responseBody);
+      if (!data.containsKey('images') && data.containsKey('uploaded')) {
+        data['images'] = List.from(data['uploaded'] as List);
+      }
+      return data;
     } else {
       final error = json.decode(responseBody);
       throw Exception(error['message'] ?? 'Upload failed');
     }
+  }
+
+  // Store server-side processed paths from AI pipeline for instant attach on submit
+  static List<String>? _lastProcessedServerPaths;
+  static void setLastProcessedServerPaths(List<String> paths) {
+    _lastProcessedServerPaths = List<String>.from(paths);
+  }
+  static List<String>? getLastProcessedServerPaths() {
+    return _lastProcessedServerPaths == null ? null : List<String>.from(_lastProcessedServerPaths!);
   }
 
   static Future<Map<String, dynamic>> uploadCarVideos(String carId, List<XFile> videoFiles) async {
@@ -391,7 +442,12 @@ class ApiService {
     final responseBody = await response.stream.bytesToString();
 
     if (response.statusCode >= 200 && response.statusCode < 300) {
-      return json.decode(responseBody);
+      // Normalize { uploaded: [...] } -> { videos: [...] }
+      final Map<String, dynamic> data = json.decode(responseBody);
+      if (!data.containsKey('videos') && data.containsKey('uploaded')) {
+        data['videos'] = List.from(data['uploaded'] as List);
+      }
+      return data;
     } else {
       final error = json.decode(responseBody);
       throw Exception(error['message'] ?? 'Upload failed');
