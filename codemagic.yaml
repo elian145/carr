@@ -27,7 +27,7 @@ workflows:
         BUNDLE_ID: com.carzo.app
         # Development API endpoint for sideload builds (no trailing slash)
         # Updated to match your actual server IP
-        API_BASE: http://192.168.1.23:5000
+        API_BASE: https://thy-die-roster-comic.trycloudflare.com
     scripts:
       - name: Print commit used for this build
         script: |

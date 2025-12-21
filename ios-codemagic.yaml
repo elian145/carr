@@ -14,7 +14,7 @@ workflows:
       xcode: latest
       cocoapods: default
       vars:
-        API_BASE: http://192.168.1.23:5000
+        API_BASE: https://thy-die-roster-comic.trycloudflare.com
     scripts:
       - name: Print commit used for this build
         script: |
