@@ -7,7 +7,7 @@ import time
 from functools import wraps
 from flask import request, jsonify, current_app
 from flask_jwt_extended import get_jwt_identity, get_jwt
-from models import User, UserAction, db
+from .models import User, UserAction, db
 from datetime import datetime, timedelta
 
 # Rate limiting storage (in production, use Redis)
@@ -259,7 +259,7 @@ def validate_ownership(resource_type, resource_id_field='id'):
                 
                 # Check ownership based on resource type
                 if resource_type == 'car':
-                    from models import Car
+                    from .models import Car
                     resource = Car.query.filter_by(public_id=resource_id).first()
                     if not resource:
                         return jsonify({'message': 'Car not found'}), 404

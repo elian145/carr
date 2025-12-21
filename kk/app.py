@@ -1,9 +1,12 @@
 import os
 import base64
-from flask import Flask, render_template, request, redirect, url_for, flash, jsonify, send_from_directory, abort, session, request as flask_request
+import sys
+import traceback
+from flask import Flask, render_template, request, redirect, url_for, flash, jsonify, send_from_directory, abort, session, request as flask_request, Response
 from flask_sqlalchemy import SQLAlchemy
 from werkzeug.utils import secure_filename
 from datetime import datetime, timedelta
+import time
 import random
 from flask_login import LoginManager, UserMixin, login_user, login_required, logout_user, current_user
 from flask_migrate import Migrate
@@ -17,6 +20,7 @@ import base64
 import secrets
 from urllib.parse import urlencode
 from flask_jwt_extended import JWTManager, create_access_token, get_jwt_identity, verify_jwt_in_request, jwt_required
+from .auth import generate_secure_filename
 
 # Optional Twilio import for SMS delivery; fallback to dev mode if unavailable
 try:
@@ -39,6 +43,8 @@ DB_PATH = os.path.join(BASE_DIR, 'instance', 'cars.db')
 
 app = Flask(__name__)
 app.config['SECRET_KEY'] = 'your-secret-key'
+app.config['PROPAGATE_EXCEPTIONS'] = True
+app.config['DEBUG'] = True
 # Database configuration: Force use of cars.db to avoid schema mismatch
 db_url = f'sqlite:///{DB_PATH}'
 app.config['SQLALCHEMY_DATABASE_URI'] = db_url
@@ -60,6 +66,19 @@ ALLOWED_EXTENSIONS = {'png', 'jpg', 'jpeg', 'gif', 'webp'}
 ALLOWED_VIDEO_EXTENSIONS = {'mp4', 'mov', 'avi', 'mkv', 'webm'}
 app.config['PERMANENT_SESSION_LIFETIME'] = timedelta(days=30)
 app.config['JWT_SECRET_KEY'] = os.environ.get('JWT_SECRET_KEY', app.config['SECRET_KEY'])
+app.config['JSON_AS_ASCII'] = False  # allow non-ASCII and large payloads safely
+
+# Increase Werkzeug dev server timeout to reduce closed connections on slow model work
+try:
+    from werkzeug.serving import WSGIRequestHandler
+    _srv_to = int(os.environ.get('FLASK_SERVER_TIMEOUT', '120'))
+    WSGIRequestHandler.timeout = _srv_to
+    print(f"[SERVER] WSGIRequestHandler timeout set to {_srv_to}s")
+except Exception as _e:
+    try:
+        print(f"[SERVER] Could not set WSGIRequestHandler timeout: {_e}")
+    except Exception:
+        pass
 
 # Google OAuth config (replace with your credentials)
 app.config['GOOGLE_OAUTH_CLIENT_ID'] = os.environ.get('GOOGLE_OAUTH_CLIENT_ID', 'your-google-client-id')
@@ -484,6 +503,60 @@ def allowed_file(filename):
 
 def allowed_video_file(filename):
     return '.' in filename and filename.rsplit('.', 1)[1].lower() in ALLOWED_VIDEO_EXTENSIONS
+
+def _process_and_store_image(file_storage, inline_base64: bool):
+    """Process an uploaded image by blurring license plates, store it under uploads, and optionally return base64.
+
+    Returns tuple (relative_path_under_static, base64_data_or_None)
+    Example relative path: 'uploads/car_photos/processed_YYYYMMDD_HHMMSS_xxx.jpg'
+    """
+    # Generate a secure filename and save to a temp location first
+    filename = generate_secure_filename(file_storage.filename)
+    timestamp = datetime.utcnow().strftime('%Y%m%d_%H%M%S')
+    temp_rel = f"temp/processed_{timestamp}_{filename}"
+    temp_abs = os.path.join(app.config['UPLOAD_FOLDER'], temp_rel)
+    os.makedirs(os.path.dirname(temp_abs), exist_ok=True)
+    file_storage.save(temp_abs)
+
+    try:
+        # Blur license plates using the AI service
+        from ai_service import car_analysis_service  # local import to avoid heavy import at module load
+        processed_abs = car_analysis_service._blur_license_plates(temp_abs)
+
+        # Move/copy processed file to final destination under uploads/car_photos
+        final_filename = f"processed_{timestamp}_{filename}"
+        # Relative path stored in DB/returned to client
+        final_rel = os.path.join('uploads', 'car_photos', final_filename).replace('\\', '/')
+        # Absolute filesystem path under static/uploads (do NOT duplicate 'uploads')
+        final_abs = os.path.join(app.config['UPLOAD_FOLDER'], 'car_photos', final_filename)
+        os.makedirs(os.path.dirname(final_abs), exist_ok=True)
+
+        import shutil
+        shutil.copy2(processed_abs, final_abs)
+
+        b64_data = None
+        if inline_base64:
+            try:
+                with open(final_abs, 'rb') as f:
+                    encoded = base64.b64encode(f.read()).decode('utf-8')
+                ext = os.path.splitext(final_filename)[1].lower().lstrip('.')
+                mime = 'image/jpeg' if ext in ('jpg', 'jpeg') else ('image/png' if ext == 'png' else ('image/webp' if ext == 'webp' else 'image/*'))
+                b64_data = f"data:{mime};base64,{encoded}"
+            except Exception as _e:
+                try:
+                    print(f"inline base64 encode failed: {_e}")
+                except Exception:
+                    pass
+
+        return final_rel, b64_data
+    finally:
+        # Clean up temporary files
+        for p in (temp_abs, processed_abs if 'processed_abs' in locals() else None):
+            try:
+                if p and os.path.exists(p):
+                    os.remove(p)
+            except Exception:
+                pass
 
 @app.route('/')
 def home():
@@ -1871,27 +1944,31 @@ def upload_car_images(car_id):
     if not api_user or car.user_id != api_user.id:
         return jsonify({'error': 'Unauthorized'}), 403
     try:
-        files = request.files.getlist('image')  # supports repeated 'image' fields
+        # Accept multiple common field names and array-style keys
+        files = []
+        for key in ('image', 'images', 'file', 'files', 'photo', 'photos', 'file[]', 'images[]', 'photos[]'):
+            files.extend(request.files.getlist(key))
+        # Fallback: include any remaining file objects
+        if not files and request.files:
+            try:
+                for _k in request.files.keys():
+                    files.extend(request.files.getlist(_k))
+            except Exception:
+                pass
         if not files:
             return jsonify({'error': 'No image files provided'}), 400
 
         saved_paths = []
         for file in files:
             if file and allowed_file(file.filename):
-                filename = secure_filename(file.filename)
-                timestamp = datetime.now().strftime('%Y%m%d_%H%M%S')
-                filename = f"{timestamp}_{filename}"
-                target_path = os.path.join(app.config['UPLOAD_FOLDER'], 'car_photos', filename)
-                os.makedirs(os.path.dirname(target_path), exist_ok=True)
-                file.save(target_path)
-
-                rel_path = f"uploads/car_photos/{filename}"
+                # Process with license plate blur and store to uploads path
+                rel_path, _ = _process_and_store_image(file, False)
                 car_image = CarImage(car_id=car.id, image_url=rel_path)
                 db.session.add(car_image)
                 saved_paths.append(rel_path)
 
-        # If no primary image set, use the first uploaded
-        if (not car.image_url) and saved_paths:
+        # Set primary image to the first uploaded (ensures immediate display in listings)
+        if saved_paths:
             # Store trimmed so API consistency: DB holds relative-under-uploads path without prefix
             first_trimmed = saved_paths[0][8:] if saved_paths[0].startswith('uploads/') else saved_paths[0]
             car.image_url = first_trimmed
@@ -1900,7 +1977,7 @@ def upload_car_images(car_id):
 
         # Return paths without the leading 'uploads/' to match the /cars JSON API
         trimmed = [p[8:] if p.startswith('uploads/') else p for p in saved_paths]
-        return jsonify({'uploaded': trimmed, 'image_url': car.image_url or ''}), 201
+        return jsonify({'uploaded': trimmed, 'images': trimmed, 'image_url': car.image_url or ''}), 201
     except Exception as e:
         db.session.rollback()
         return jsonify({'error': str(e)}), 500
@@ -2041,6 +2118,280 @@ def api_my_listings():
         'status': c.status
     } for c in cars]
     return jsonify(result)
+
+@app.route('/api/cars', methods=['GET'])
+def api_cars_list():
+    """Public cars list with simple pagination and filtering used by the Flutter app.
+    Responds with { cars: [...], pagination: { has_next: bool } }
+    """
+    try:
+        page = int(request.args.get('page', 1))
+        per_page = int(request.args.get('per_page', 20))
+
+        query = Car.query
+        # Optional filters
+        brand = request.args.get('brand')
+        model = request.args.get('model')
+        if brand:
+            query = query.filter(Car.brand == brand)
+        if model:
+            query = query.filter(Car.model == model)
+        if request.args.get('year_min'):
+            query = query.filter(Car.year >= int(request.args.get('year_min')))
+        if request.args.get('year_max'):
+            query = query.filter(Car.year <= int(request.args.get('year_max')))
+        if request.args.get('price_min'):
+            query = query.filter(Car.price >= float(request.args.get('price_min')))
+        if request.args.get('price_max'):
+            query = query.filter(Car.price <= float(request.args.get('price_max')))
+        if request.args.get('location'):
+            query = query.filter(Car.city == request.args.get('location'))
+
+        query = query.order_by(Car.created_at.desc())
+        items = query.limit(per_page + 1).offset((page - 1) * per_page).all()
+        has_next = len(items) > per_page
+        cars = items[:per_page]
+
+        def first_image_rel_path(c: Car) -> str:
+            """
+            Resolve the first image path for a car, normalizing to a relative path that exists
+            under static/uploads. Some historical rows store values like 'uploads/xyz.png' or
+            plain 'xyz.png'. We also fallback to car_photos if the stored path doesn't exist.
+            """
+            import os as _os
+            rel = ''
+            if c.images and len(c.images) > 0:
+                path = c.images[0].image_url or ''
+                rel = path[8:] if path.startswith('uploads/') else path.lstrip('/')
+            else:
+                rel = (c.image_url or '').lstrip('/')
+                if rel.startswith('uploads/'):
+                    rel = rel[8:]
+            # If we have a candidate, ensure it exists; otherwise fallback to car_photos/<basename>
+            if rel:
+                abs_path = _os.path.join(app.config['UPLOAD_FOLDER'], rel)
+                if not _os.path.isfile(abs_path):
+                    # Try under uploads/car_photos with same basename
+                    base = _os.path.basename(rel)
+                    rel_candidate = _os.path.join('uploads', 'car_photos', base).replace('\\', '/')
+                    abs_candidate = _os.path.join(app.config['UPLOAD_FOLDER'], rel_candidate.replace('uploads/', ''))
+                    # Note: app.config['UPLOAD_FOLDER'] already points to static/uploads
+                    # rel without leading 'uploads/' pairs with '/static/uploads/' on the client
+                    if not _os.path.isfile(abs_candidate):
+                        # As a last resort, leave rel empty to avoid broken URLs
+                        rel = ''
+                    else:
+                        # Keep 'uploads/...' prefix so mobile prefixes with /static/
+                        rel = rel_candidate
+                else:
+                    # If stored rel had no 'uploads/' prefix, keep as-is; client handles both
+                    pass
+            return f"{rel}?v={int(time.time())}" if rel else ''
+
+        def images_rel_paths(c: Car):
+            """
+            Normalize each image path and only include ones that exist on disk.
+            """
+            import os as _os
+            out = []
+            for im in c.images:
+                p = (im.image_url or '')
+                rel = p[8:] if p.startswith('uploads/') else p.lstrip('/')
+                if not rel:
+                    continue
+                abs_path = _os.path.join(app.config['UPLOAD_FOLDER'], rel)
+                if not _os.path.isfile(abs_path):
+                    base = _os.path.basename(rel)
+                    rel_candidate = _os.path.join('uploads', 'car_photos', base).replace('\\', '/')
+                    abs_candidate = _os.path.join(app.config['UPLOAD_FOLDER'], rel_candidate.replace('uploads/', ''))
+                    if _os.path.isfile(abs_candidate):
+                        rel = rel_candidate
+                    else:
+                        continue
+                out.append(f"{rel}?v={int(time.time())}")
+            return out
+
+        data = [{
+            'id': c.id,
+            'title': c.title,
+            'brand': c.brand,
+            'model': c.model,
+            'trim': getattr(c, 'trim', None),
+            'year': c.year,
+            'price': c.price,
+            'mileage': c.mileage,
+            'condition': getattr(c, 'condition', None),
+            'transmission': getattr(c, 'transmission', None),
+            'fuel_type': getattr(c, 'fuel_type', None),
+            'color': getattr(c, 'color', None),
+            'image_url': first_image_rel_path(c),
+            'images': images_rel_paths(c),
+            'city': c.city,
+            'status': getattr(c, 'status', None)
+        } for c in cars]
+
+        return jsonify({'cars': data, 'pagination': {'has_next': has_next}})
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
+
+@app.route('/api/cars/<int:car_id>', methods=['GET'])
+def api_get_car(car_id: int):
+    """Public car detail used by the Flutter app."""
+    c = Car.query.get_or_404(car_id)
+
+    def images_rel_paths(car: Car):
+        out = []
+        for im in car.images:
+            p = (im.image_url or '')
+            rel = p[8:] if p.startswith('uploads/') else p
+            if rel:
+                out.append(f"{rel}?v={int(time.time())}")
+        return out
+
+    result = {
+        'car': {
+            'id': c.id,
+            'title': c.title,
+            'brand': c.brand,
+            'model': c.model,
+            'trim': getattr(c, 'trim', None),
+            'year': c.year,
+            'price': c.price,
+            'mileage': c.mileage,
+            'condition': getattr(c, 'condition', None),
+            'transmission': getattr(c, 'transmission', None),
+            'fuel_type': getattr(c, 'fuel_type', None),
+            'color': getattr(c, 'color', None),
+            'city': c.city,
+            # Extended specs expected by the mobile app
+            'body_type': getattr(c, 'body_type', None),
+            'drive_type': getattr(c, 'drive_type', None),
+            'seating': getattr(c, 'seating', None),
+            'cylinder_count': getattr(c, 'cylinder_count', None),
+            'engine_size': getattr(c, 'engine_size', None),
+            'title_status': getattr(c, 'title_status', None),
+            'damaged_parts': getattr(c, 'damaged_parts', None),
+            'contact_phone': getattr(c, 'contact_phone', None),
+            'image_url': (lambda rel: f"{rel}?v={int(time.time())}" if rel else '')((c.image_url or '').lstrip('/')),
+            'images': images_rel_paths(c),
+        }
+    }
+    return jsonify(result)
+
+@app.route('/api/cars', methods=['POST'])
+@jwt_required()
+def api_create_car():
+    """Create a new car listing. Expects JSON body from the Flutter app."""
+    try:
+        user = get_api_user()
+        if not user:
+            return jsonify({'error': 'Unauthorized'}), 401
+        data = request.get_json() or {}
+        # Minimal set expected from the client; add sane defaults for the rest so DB constraints pass
+        required_fields = ['brand', 'model', 'year', 'mileage', 'price']
+        missing = [f for f in required_fields if data.get(f) in (None, '')]
+        if missing:
+            return jsonify({'message': 'Validation failed', 'errors': {f: 'required' for f in missing}}), 400
+
+        # Normalize/derive fields to match the Car model defined in this file
+        def _as_int(v, d=0):
+            try:
+                return int(v)
+            except Exception:
+                return d
+
+        def _as_float(v, d=None):
+            try:
+                return float(v)
+            except Exception:
+                return d
+
+        title = (data.get('title') or f"{str(data.get('brand') or '').title()} {data.get('model') or ''} {data.get('trim') or ''}").strip()
+        car = Car(
+            user_id=user.id,
+            title=title if title else 'Car Listing',
+            title_status=str(data.get('title_status') or 'clean').lower(),
+            damaged_parts=_as_int(data.get('damaged_parts')) if data.get('damaged_parts') not in (None, '') else None,
+            brand=str(data.get('brand')),
+            model=str(data.get('model')),
+            trim=str(data.get('trim') or 'Base'),
+            year=_as_int(data.get('year')),
+            price=_as_float(data.get('price')),
+            mileage=_as_int(data.get('mileage')),
+            condition=str(data.get('condition') or 'used').lower(),
+            transmission=str(data.get('transmission') or 'automatic').lower(),
+            fuel_type=str((data.get('engine_type') or data.get('fuel_type') or 'gasoline')).lower(),
+            color=str(data.get('color') or 'black').lower(),
+            body_type=str(data.get('body_type') or 'sedan').lower(),
+            seating=_as_int(data.get('seating') or 5, 5),
+            drive_type=str(data.get('drive_type') or 'fwd').lower(),
+            cylinder_count=_as_int(data.get('cylinder_count')) if data.get('cylinder_count') not in (None, '') else None,
+            engine_size=_as_float(data.get('engine_size')) if data.get('engine_size') not in (None, '') else None,
+            import_country=(str(data.get('import_country')).lower() if data.get('import_country') else None),
+            license_plate_type=(str(data.get('license_plate_type')).lower() if data.get('license_plate_type') else None),
+            city=str((data.get('location') or data.get('city') or 'baghdad')).lower(),
+            contact_phone=str(data.get('contact_phone') or '').strip(),
+            is_quick_sell=bool(data.get('is_quick_sell', False)),
+            status='active'
+        )
+        db.session.add(car)
+        db.session.commit()
+
+        # Minimal response structure expected by the app
+        response = {
+            'message': 'Car listing created successfully',
+            'car': {
+                'id': car.id,
+                'title': car.title,
+                'brand': car.brand,
+                'model': car.model,
+                'year': car.year,
+                'price': car.price,
+                'mileage': car.mileage,
+                'city': car.city,
+                'images': [],
+                'image_url': (car.image_url or '').lstrip('/'),
+            }
+        }
+        return jsonify(response), 201
+    except Exception as e:
+        db.session.rollback()
+        return jsonify({'message': 'Failed to create car listing', 'error': str(e)}), 500
+
+@app.route('/api/cars/<int:car_id>', methods=['PUT'])
+@jwt_required()
+def api_update_car(car_id: int):
+    try:
+        user = get_api_user()
+        if not user:
+            return jsonify({'error': 'Unauthorized'}), 401
+        car = Car.query.get_or_404(car_id)
+        if getattr(car, 'user_id', None) not in (None, user.id) and getattr(car, 'seller_id', None) not in (None, user.id):
+            return jsonify({'message': 'Not authorized to update this listing'}), 403
+        data = request.get_json() or {}
+        for key in ['brand','model','year','mileage','transmission','condition','body_type','fuel_type','price','city','color','description']:
+            if key in data:
+                setattr(car, key, data[key])
+        db.session.commit()
+        return jsonify({'message': 'Car listing updated successfully'})
+    except Exception as e:
+        return jsonify({'message': 'Failed to update car listing', 'error': str(e)}), 500
+
+@app.route('/api/cars/<int:car_id>', methods=['DELETE'])
+@jwt_required()
+def api_delete_car(car_id: int):
+    try:
+        user = get_api_user()
+        if not user:
+            return jsonify({'error': 'Unauthorized'}), 401
+        car = Car.query.get_or_404(car_id)
+        if getattr(car, 'user_id', None) not in (None, user.id) and getattr(car, 'seller_id', None) not in (None, user.id):
+            return jsonify({'message': 'Not authorized to delete this listing'}), 403
+        db.session.delete(car)
+        db.session.commit()
+        return jsonify({'message': 'Car listing deleted successfully'})
+    except Exception as e:
+        return jsonify({'message': 'Failed to delete car listing', 'error': str(e)}), 500
 
 @app.route('/api/chats', methods=['GET'])
 @login_required
@@ -3072,76 +3423,146 @@ if __name__ == '__main__':
 
     @app.route('/api/process-car-images-test', methods=['POST'])
     def process_car_images_test():
-        """Process multiple car images and blur license plates (test version without auth)"""
+        """Process multiple car images and blur license plates (test version without auth).
+        Robust to missing/unknown file extensions and always returns processed entries if possible.
+        """
         try:
             files = request.files.getlist('images')
             if not files:
                 return jsonify({'error': 'No image files provided'}), 400
-            
+
+            want_b64 = request.args.get('inline_base64') == '1'
             processed_images = []
             processed_images_base64 = []
-            
+            summaries = []
+            print(f"[BLUR] /api/process-car-images-test start: files={len(files)} want_b64={want_b64}")
+
             for file in files:
-                if file and allowed_file(file.filename):
-                    # Save uploaded image temporarily
-                    filename = secure_filename(file.filename)
-                    timestamp = datetime.now().strftime('%Y%m%d_%H%M%S')
-                    filename = f"processed_{timestamp}_{filename}"
-                    temp_path = os.path.join(app.config['UPLOAD_FOLDER'], 'temp', filename)
-                    os.makedirs(os.path.dirname(temp_path), exist_ok=True)
+                if not file:
+                    continue
+                # Derive a safe filename and extension; default to .jpg when unknown
+                raw_name = (file.filename or 'upload.jpg')
+                name_only, ext = os.path.splitext(raw_name)
+                ext_l = (ext.lower().lstrip('.') or 'jpg')
+                if ext_l not in ALLOWED_EXTENSIONS:
+                    ext_l = 'jpg'
+                safe_base = secure_filename(name_only) or 'upload'
+                timestamp = datetime.now().strftime('%Y%m%d_%H%M%S')
+                temp_filename = f"processed_{timestamp}_{safe_base}.{ext_l}"
+                temp_path = os.path.join(app.config['UPLOAD_FOLDER'], 'temp', temp_filename)
+                os.makedirs(os.path.dirname(temp_path), exist_ok=True)
+                try:
+                    print(f"[BLUR] Saving upload: name={raw_name} -> {temp_path}")
                     file.save(temp_path)
-                    
                     try:
-                        # Import AI service
-                        from ai_service import car_analysis_service
-                        
-                        # Process image (blur license plates)
-                        processed_path = car_analysis_service._blur_license_plates(temp_path)
-                        
-                        # Move processed image to permanent location
-                        final_filename = f"processed_{timestamp}_{secure_filename(file.filename)}"
-                        final_path = os.path.join(app.config['UPLOAD_FOLDER'], 'car_photos', final_filename)
-                        os.makedirs(os.path.dirname(final_path), exist_ok=True)
-                        
-                        # Copy processed image to final location
-                        import shutil
-                        shutil.copy2(processed_path, final_path)
-                        
-                        # Optionally encode processed image to base64 (only if requested to keep payloads small)
+                        sz = os.path.getsize(temp_path)
+                        print(f"[BLUR] Saved temp size={sz} bytes")
+                    except Exception:
+                        pass
+                except Exception as e:
+                    print(f"[BLUR] Error saving upload {raw_name}: {e}")
+                    summaries.append({'file': raw_name, 'status': 'save_error', 'error': str(e)})
+                    continue
+
+                try:
+                    # Import AI service
+                    from ai_service import car_analysis_service
+                    # Process image (blur license plates)
+                    print(f"[BLUR] Processing with AI: {temp_path}")
+                    strict = (request.args.get('strict') == '1' or request.args.get('strict_blur') == '1')
+                    mode = request.args.get('mode', 'auto')
+                    # Optional: force OCR-only via debug flag
+                    debug_force = request.args.get('debug_force', '')
+                    # Always enable debug overlays if requested
+                    if debug_force == 'ocr':
+                        mode = 'ocr_only_debug'
+                    processed_path = car_analysis_service._blur_license_plates(temp_path, strict=strict, mode=mode)
+                    print(f"[BLUR] AI processed -> {processed_path}")
+
+                    # Move processed image to permanent location
+                    final_filename = f"processed_{timestamp}_{safe_base}.{ext_l}"
+                    final_path = os.path.join(app.config['UPLOAD_FOLDER'], 'car_photos', final_filename)
+                    os.makedirs(os.path.dirname(final_path), exist_ok=True)
+
+                    import shutil
+                    shutil.copy2(processed_path, final_path)
+
+                    # Inline base64 if requested (or always include to help emulator)
+                    if True:
                         try:
-                            if request.args.get('inline_base64') == '1':
-                                with open(final_path, 'rb') as f:
-                                    encoded = base64.b64encode(f.read()).decode('utf-8')
-                                    ext = os.path.splitext(final_filename)[1].lower().lstrip('.')
-                                    mime = 'image/jpeg' if ext in ['jpg', 'jpeg'] else ('image/png' if ext == 'png' else ('image/webp' if ext == 'webp' else 'image/*'))
-                                    processed_images_base64.append(f"data:{mime};base64,{encoded}")
+                            with open(final_path, 'rb') as f:
+                                encoded = base64.b64encode(f.read()).decode('utf-8')
+                                mime = 'image/jpeg' if ext_l in ['jpg', 'jpeg'] else ('image/png' if ext_l == 'png' else ('image/webp' if ext_l == 'webp' else 'image/*'))
+                                processed_images_base64.append(f"data:{mime};base64,{encoded}")
                         except Exception as e:
-                            print(f"Error encoding image to base64: {str(e)}")
-                        
-                        # Clean up temporary files
-                        os.remove(temp_path)
-                        if processed_path != temp_path:
-                            os.remove(processed_path)
-                        
-                        processed_images.append(f"uploads/car_photos/{final_filename}")
-                        
-                    except Exception as e:
-                        # Clean up on error
+                            print(f"[BLUR] Error encoding image to base64: {str(e)}")
+
+                    # Clean up temporary files
+                    try:
                         if os.path.exists(temp_path):
                             os.remove(temp_path)
-                        print(f"Error processing image {file.filename}: {str(e)}")
-                        continue
-            
-            return jsonify({
+                        if processed_path != temp_path and os.path.exists(processed_path):
+                            os.remove(processed_path)
+                    except Exception:
+                        pass
+
+                    processed_images.append(f"uploads/car_photos/{final_filename}")
+                    summaries.append({'file': raw_name, 'status': 'processed', 'output': f"uploads/car_photos/{final_filename}"})
+
+                except Exception as e:
+                    # Clean up on error and still try to return original saved file
+                    print(f"[BLUR] Error processing image {raw_name}: {str(e)}")
+                    try:
+                        final_filename = f"processed_{timestamp}_{safe_base}.{ext_l}"
+                        final_path = os.path.join(app.config['UPLOAD_FOLDER'], 'car_photos', final_filename)
+                        os.makedirs(os.path.dirname(final_path), exist_ok=True)
+                        import shutil
+                        shutil.copy2(temp_path, final_path)
+                        processed_images.append(f"uploads/car_photos/{final_filename}")
+                        # ALSO include base64 on fallback so client never has to download
+                        try:
+                            with open(final_path, 'rb') as f:
+                                encoded = base64.b64encode(f.read()).decode('utf-8')
+                                mime = 'image/jpeg' if ext_l in ['jpg', 'jpeg'] else ('image/png' if ext_l == 'png' else ('image/webp' if ext_l == 'webp' else 'image/*'))
+                                processed_images_base64.append(f"data:{mime};base64,{encoded}")
+                        except Exception as e3:
+                            print(f"[BLUR] Error encoding fallback base64: {e3}")
+                        summaries.append({'file': raw_name, 'status': 'fallback_copy', 'output': f"uploads/car_photos/{final_filename}", 'error': str(e)})
+                    except Exception as e2:
+                        print(f"[BLUR] Error copying fallback image {raw_name}: {e2}")
+                        summaries.append({'file': raw_name, 'status': 'fallback_error', 'error': str(e2)})
+                    finally:
+                        try:
+                            if os.path.exists(temp_path):
+                                os.remove(temp_path)
+                        except Exception:
+                            pass
+
+            print(f"[BLUR] Completed: processed={len(processed_images)}")
+            sys.stdout.flush()
+            result_payload = {
                 'success': True,
                 'processed_images': processed_images,
                 'processed_images_base64': processed_images_base64,
+                'summary': summaries,
                 'message': f'Processed {len(processed_images)} images successfully'
-            }), 200
-            
+            }
+            body = json.dumps(result_payload, ensure_ascii=False)
+            print("[API] Successfully sending JSON response")
+            print("[DONE] Response sent successfully")
+            sys.stdout.flush()
+            return Response(body, status=200, mimetype='application/json')
+
         except Exception as e:
-            print(f"Error processing car images: {str(e)}")
-            return jsonify({'error': 'Failed to process car images'}), 500
+            try:
+                traceback.print_exc()
+            except Exception:
+                pass
+            print(f"[BLUR] Fatal error processing car images: {str(e)}")
+            sys.stdout.flush()
+            err = {'error': str(e)}
+            body = json.dumps(err, ensure_ascii=False)
+            return Response(body, status=500, mimetype='application/json')
 
     @app.route('/api/process-car-images', methods=['POST'])
     @jwt_required()
@@ -3172,8 +3593,13 @@ if __name__ == '__main__':
                         # Import AI service
                         from ai_service import car_analysis_service
                         
-                        # Process image (blur license plates)
-                        processed_path = car_analysis_service._blur_license_plates(temp_path)
+                        # Process image (blur license plates) with optional params
+                        strict = (request.args.get('strict') == '1' or request.args.get('strict_blur') == '1')
+                        mode = request.args.get('mode', 'auto')
+                        debug_force = request.args.get('debug_force', '')
+                        if debug_force == 'ocr':
+                            mode = 'ocr_only_debug'
+                        processed_path = car_analysis_service._blur_license_plates(temp_path, strict=strict, mode=mode)
                         
                         # Move processed image to permanent location
                         final_filename = f"processed_{timestamp}_{secure_filename(file.filename)}"
@@ -3208,4 +3634,5 @@ if __name__ == '__main__':
             print(f"Error processing car images: {str(e)}")
             return jsonify({'error': 'Failed to process car images'}), 500
     
-    app.run(host='0.0.0.0', port=5000, debug=True)
+    # Run without debug/reloader to avoid mid-request restarts; enable threads for concurrency
+    app.run(host='0.0.0.0', port=5000, debug=False, use_reloader=False, threaded=True)

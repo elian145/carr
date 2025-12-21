@@ -2,7 +2,7 @@ import argparse
 import random
 from datetime import datetime, timedelta
 
-from app import app, db, Car
+from app import app, db, Car, CarImage
 from app import populate_car_models, seed_example_listings
 
 
@@ -55,8 +55,52 @@ def clone_near_existing(base_count: int = 40) -> None:
                 created_at=datetime.utcnow() - timedelta(days=created_offset_days),
             )
             db.session.add(clone)
+            db.session.flush()
+
+            # Ensure cloned listings have images: copy from base_car if present, otherwise pick from uploads
+            try:
+                if getattr(base_car, 'images', None):
+                    for img in base_car.images[:3]:
+                        rel = (img.image_url or '').lstrip('/')
+                        if rel.startswith('static/'):
+                            rel = rel[len('static/'):]
+                        db.session.add(CarImage(car_id=clone.id, image_url=rel))
+                else:
+                    import os
+                    photos_dir = os.path.join(app.root_path, 'static', 'uploads', 'car_photos')
+                    if os.path.isdir(photos_dir):
+                        # Pick up to 3 random jpgs
+                        jpgs = [f for f in os.listdir(photos_dir) if f.lower().endswith('.jpg')]
+                        random.shuffle(jpgs)
+                        for fname in jpgs[:3]:
+                            rel = f"uploads/car_photos/{fname}"
+                            db.session.add(CarImage(car_id=clone.id, image_url=rel))
+            except Exception:
+                # Non-fatal; proceed without images if something goes wrong
+                pass
         db.session.commit()
 
+
+def backfill_images_for_cars_without() -> None:
+    """Assign at least one image to any car that currently has none."""
+    import os
+    with app.app_context():
+        photos_dir = os.path.join(app.root_path, 'static', 'uploads', 'car_photos')
+        jpgs = []
+        if os.path.isdir(photos_dir):
+            jpgs = [f for f in os.listdir(photos_dir) if f.lower().endswith('.jpg')]
+        if not jpgs:
+            return
+        cars: list[Car] = db.session.query(Car).all()
+        for car in cars:
+            if not getattr(car, 'images', None):
+                # Attach 1-3 random images
+                random.shuffle(jpgs)
+                count = random.randint(1, 3)
+                for fname in jpgs[:count]:
+                    rel = f"uploads/car_photos/{fname}"
+                    db.session.add(CarImage(car_id=car.id, image_url=rel))
+        db.session.commit()
 
 def main() -> None:
     parser = argparse.ArgumentParser(description="Seed more listings for development")
@@ -66,6 +110,7 @@ def main() -> None:
 
     top_up_minimum(args.min)
     clone_near_existing(args.clone)
+    backfill_images_for_cars_without()
     with app.app_context():
         total = db.session.query(Car).count()
         print(f"Seeding complete. Total cars: {total}")

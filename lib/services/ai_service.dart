@@ -4,12 +4,13 @@ import 'dart:async';
 import 'package:http/http.dart' as http;
 import 'package:image_picker/image_picker.dart';
 import 'package:path/path.dart' as p;
+import 'package:path_provider/path_provider.dart';
 import 'config.dart';
 import 'api_service.dart';
 
 class AiService {
   static const String _baseUrl = 'api/analyze-car-image';
-  static const String _processImagesUrl = 'api/process-car-images-test';
+  static const String _processApi = 'api/process-car-images-test';
   
   /// Analyze a single car image and extract vehicle information
   static Future<Map<String, dynamic>?> analyzeCarImage(XFile imageFile) async {
@@ -46,93 +47,89 @@ class AiService {
     try {
       print('AI Service: Starting image processing for ${imageFiles.length} images');
       
-      final url = Uri.parse(apiBase() + '/' + _processImagesUrl + '?inline_base64=1');
+      // Prefer paths first (smaller payload); we will fall back to base64 if downloads fail
+      // Prefer accurate multi-pass mode by default to maximize plate detection.
+      final noInlineUrl = Uri.parse('${apiBase()}/$_processApi?mode=auto');
+      final inlineUrl = Uri.parse('${apiBase()}/$_processApi?inline_base64=1&mode=auto');
+      final fallbackInlineUrl = Uri.parse('${apiBase()}/$_processApi?inline_base64=1&fallback_only=1&mode=auto');
       print('AI Service: API Base: ${apiBase()}');
-      print('AI Service: Process Images URL: $_processImagesUrl');
-      print('AI Service: Request URL: $url');
+      print('AI Service: Process Images URL: $_processApi');
+      print('AI Service: Initial Request URL: $noInlineUrl');
       
-      final request = http.MultipartRequest('POST', url);
+      http.MultipartRequest _buildRequest(Uri targetUrl) {
+        final req = http.MultipartRequest('POST', targetUrl);
+        return req;
+      }
       
       // Add authorization header if available
       final token = await _getAuthToken();
       print('AI Service: Auth token: ${token != null ? "Present" : "Not available"}');
       
-      if (token != null) {
-        request.headers['Authorization'] = 'Bearer $token';
-      }
-      
-      // Add image files
-      for (final imageFile in imageFiles) {
-        print('AI Service: Adding image: ${imageFile.path}');
-        request.files.add(await http.MultipartFile.fromPath('images', imageFile.path));
-      }
-      
       print('AI Service: Sending request...');
-      // Send with retry and a longer timeout
+
+      // BULK NON-INLINE FIRST: returns server-side paths for instant attach on submit
       http.StreamedResponse? response;
       http.Response? responseBody;
-      String? lastError;
-      for (int attempt = 1; attempt <= 3; attempt++) {
-        try {
-          response = await request.send().timeout(
-            Duration(seconds: 90),
-            onTimeout: () {
-              throw TimeoutException('AI upload timeout after 90s');
-            },
-          );
-          responseBody = await http.Response.fromStream(response);
-          lastError = null;
-          break;
-        } catch (e) {
-          print('AI Service: Upload attempt $attempt failed: $e');
-          lastError = e.toString();
-          if (attempt < 3) {
-            await Future.delayed(Duration(seconds: attempt));
-          }
-        }
-      }
-      if (lastError != null || response == null) {
-        print('AI Service: Error processing car images (inline_base64=1): ${lastError ?? 'Unknown error'}');
-        print('AI Service: Falling back to inline_base64=0...');
-        
-        // Build a new request without base64 to reduce payload size
-        final fallbackUrl = Uri.parse(apiBase() + '/' + _processImagesUrl);
-        final fallbackRequest = http.MultipartRequest('POST', fallbackUrl);
-        if (token != null) {
-          fallbackRequest.headers['Authorization'] = 'Bearer $token';
-        }
+      try {
+        final request = http.MultipartRequest('POST', noInlineUrl);
+        if (token != null) request.headers['Authorization'] = 'Bearer $token';
+        // Avoid emulator keep-alive and streaming quirks
+        request.headers['Connection'] = 'close';
+        request.headers['Accept-Encoding'] = 'identity';
         for (final imageFile in imageFiles) {
-          fallbackRequest.files.add(await http.MultipartFile.fromPath('images', imageFile.path));
+          request.files.add(await http.MultipartFile.fromPath('images', imageFile.path));
         }
-        
-        http.StreamedResponse? fbResp;
-        http.Response? fbBody;
-        String? fbErr;
-        for (int attempt = 1; attempt <= 3; attempt++) {
-          try {
-            fbResp = await fallbackRequest.send().timeout(
-              Duration(seconds: 90),
-              onTimeout: () => throw TimeoutException('AI upload timeout after 90s (fallback)'),
-            );
-            fbBody = await http.Response.fromStream(fbResp);
-            fbErr = null;
-            break;
-          } catch (e) {
-            print('AI Service: Fallback upload attempt $attempt failed: $e');
-            fbErr = e.toString();
-            if (attempt < 3) {
-              await Future.delayed(Duration(seconds: attempt));
+        response = await request.send().timeout(
+          const Duration(seconds: 120),
+          onTimeout: () => throw TimeoutException('AI bulk non-inline timeout after 120s'),
+        );
+        responseBody = await http.Response.fromStream(response);
+      } catch (e) {
+        print('AI Service: Bulk non-inline failed, falling back to parallel per-image inline (single attempt): $e');
+        // Parallel per-image inline (single attempt each, concurrency=3)
+        final int maxConcurrent = 3;
+        final List<XFile> parallelOut = List<XFile>.filled(imageFiles.length, XFile(''), growable: false);
+        Future<void> processOne(int idx) async {
+            try {
+              final req = http.MultipartRequest('POST', inlineUrl);
+              if (token != null) req.headers['Authorization'] = 'Bearer $token';
+              req.headers['Connection'] = 'close';
+              req.headers['Accept-Encoding'] = 'identity';
+            req.files.add(await http.MultipartFile.fromPath('images', imageFiles[idx].path));
+              final resp = await req.send().timeout(
+              const Duration(seconds: 60),
+              onTimeout: () => throw TimeoutException('AI per-image inline timeout after 60s'),
+              );
+              final body = await http.Response.fromStream(resp);
+              if (resp.statusCode == 200) {
+                final data = json.decode(body.body);
+                final b64s = (data['processed_images_base64'] is List)
+                    ? List<String>.from(data['processed_images_base64'])
+                    : <String>[];
+                if (b64s.isNotEmpty && b64s[0].startsWith('data:')) {
+                  final bytes = base64.decode(b64s[0].split(',').last);
+                final out = '${imageFiles[idx].path}_blurred.jpg';
+                  await File(out).writeAsBytes(bytes);
+                parallelOut[idx] = XFile(out);
+                return;
+              }
             }
+            parallelOut[idx] = imageFiles[idx];
+          } catch (_) {
+            parallelOut[idx] = imageFiles[idx];
           }
         }
-        if (fbErr != null || fbResp == null) {
-          print('AI Service: Fallback error processing car images: ${fbErr ?? 'Unknown error'}');
-          return null;
+        for (int start = 0; start < imageFiles.length; start += maxConcurrent) {
+          final end = (start + maxConcurrent) > imageFiles.length ? imageFiles.length : (start + maxConcurrent);
+          final tasks = <Future<void>>[];
+          for (int i = start; i < end; i++) {
+            tasks.add(processOne(i));
+          }
+          await Future.wait(tasks);
         }
-        response = fbResp;
-        responseBody = fbBody;
+        return parallelOut;
       }
-      
+
       print('AI Service: Response status: ${response.statusCode}');
       print('AI Service: Response body: ${responseBody!.body}');
       print('AI Service: Response headers: ${response.headers}');
@@ -144,206 +141,135 @@ class AiService {
         final processedImagesBase64 = (result['processed_images_base64'] is List)
             ? List<String>.from(result['processed_images_base64'])
             : <String>[];
-        
-        // Build a map processedPath -> base64 (aligned by index with processedImagePaths)
-        final Map<String, String> pathToBase64 = {};
-        if (processedImagesBase64.isNotEmpty && processedImagesBase64.length == processedImagePaths.length) {
-          for (int i = 0; i < processedImagePaths.length; i++) {
-            pathToBase64[processedImagePaths[i]] = processedImagesBase64[i];
-          }
+
+        // Save server-side paths so submit can attach without re-uploading
+        if (processedImagePaths.isNotEmpty) {
+          try { ApiService.setLastProcessedServerPaths(processedImagePaths); } catch (_) {}
         }
-        print('AI Service: Successfully processed ${processedImagePaths.length} images');
-        
-        // Download the processed images and return them as XFile objects
-        // Create a map to match processed images to original images by filename
-        final processedImages = <XFile>[];
-        final processedFilenameMap = <String, String>{};
-        
-        // Build a map of processed filenames to their paths
-        for (final processedPath in processedImagePaths) {
-          // Extract original filename from processed path
-          // Format: "uploads/car_photos/processed_YYYYMMDD_HHMMSS_original.jpg"
-          final filename = processedPath.split('/').last;
-          // Remove "processed_TIMESTAMP_" prefix to get original filename (case-insensitive)
-          final originalFilename = filename.replaceFirst(RegExp(r'processed_\d{8}_\d{6}_', caseSensitive: false), '');
-          processedFilenameMap[originalFilename.toLowerCase()] = processedPath;
-          print('AI Service: Mapped ${originalFilename.toLowerCase()} -> $processedPath');
-        }
-        
-        // We will consult pathToBase64 per processed path, if present
-        
-        // Process each original image in order
-        for (int i = 0; i < imageFiles.length; i++) {
+
+        // If no base64 returned, process per-image inline with limited concurrency (single attempt).
+        if (processedImagesBase64.isEmpty) {
           try {
-            final originalFile = imageFiles[i];
-            // Use cross-platform filename extraction
-            final originalFilename = p.basename(originalFile.path);
-            final originalFilenameKey = originalFilename.toLowerCase();
-            
-            // Check if this image was processed
-            // Prefer index-aligned base64 when lengths match (most robust)
-            String? inlineB64ForThis;
-            if (processedImagesBase64.isNotEmpty && processedImagesBase64.length == imageFiles.length) {
-              inlineB64ForThis = processedImagesBase64[i];
+            print('AI Service: Running per-image inline in parallel (concurrency=3)...');
+            final int maxConcurrent = 3;
+            final List<XFile> parallelOut = List<XFile>.filled(imageFiles.length, XFile(''), growable: false);
+
+            Future<void> processOne(int idx) async {
+              try {
+                final req = http.MultipartRequest('POST', inlineUrl);
+                if (token != null) req.headers['Authorization'] = 'Bearer $token';
+                req.headers['Connection'] = 'close';
+                req.headers['Accept-Encoding'] = 'identity';
+                req.files.add(await http.MultipartFile.fromPath('images', imageFiles[idx].path));
+                final resp = await req.send().timeout(
+                  const Duration(seconds: 60),
+                  onTimeout: () => throw TimeoutException('AI per-image inline timeout after 60s'),
+                );
+                final body = await http.Response.fromStream(resp);
+                if (resp.statusCode == 200) {
+                  final data = json.decode(body.body);
+                  final b64s = (data['processed_images_base64'] is List)
+                      ? List<String>.from(data['processed_images_base64'])
+                      : <String>[];
+                  if (b64s.isNotEmpty && b64s[0].startsWith('data:')) {
+                    final bytes = base64.decode(b64s[0].split(',').last);
+                    final out = '${imageFiles[idx].path}_blurred.jpg';
+                    await File(out).writeAsBytes(bytes);
+                    parallelOut[idx] = XFile(out);
+                    return;
+                  }
+                }
+                // Fallback to original if inline not returned
+                parallelOut[idx] = imageFiles[idx];
+              } catch (_) {
+                parallelOut[idx] = imageFiles[idx];
+              }
             }
 
-            final processedPath = processedFilenameMap[originalFilenameKey];
-            
-            if (processedPath == null && inlineB64ForThis == null) {
-              print('AI Service: No processed version for $originalFilename, using original');
-              processedImages.add(originalFile);
-              continue;
+            for (int start = 0; start < imageFiles.length; start += maxConcurrent) {
+              final end = (start + maxConcurrent) > imageFiles.length ? imageFiles.length : (start + maxConcurrent);
+              final tasks = <Future<void>>[];
+              for (int i = start; i < end; i++) {
+                tasks.add(processOne(i));
+              }
+              await Future.wait(tasks);
             }
-            
-            // If base64 for this processed path is present, use it directly
-            final b64 = inlineB64ForThis ?? (processedPath != null ? pathToBase64[processedPath] : null);
-            if (b64 != null && b64.startsWith('data:')) {
+
+            print('AI Service: Parallel inline completed. Returning ${parallelOut.length} images.');
+            return parallelOut;
+          } catch (e) {
+            print('AI Service: Parallel per-image inline failed: $e');
+          }
+
+          // As a final step before giving up, try downloading server-processed images by path
+          try {
+            if (processedImagePaths.isNotEmpty) {
+              print('AI Service: Attempting to download processed images by path...');
+              final tmpDir = await getTemporaryDirectory();
+              final List<XFile> downloaded = <XFile>[];
+              for (int i = 0; i < processedImagePaths.length && i < imageFiles.length; i++) {
+                final rel = processedImagePaths[i];
+                final url = Uri.parse('${apiBase()}/static/${rel.startsWith('/') ? rel.substring(1) : rel}');
+                final resp = await http.get(url);
+                if (resp.statusCode == 200 && resp.bodyBytes.isNotEmpty) {
+                  final base = p.basename(imageFiles[i].path);
+                  final outPath = p.join(tmpDir.path, '${base}_blurred.jpg');
+                  final f = File(outPath);
+                  await f.writeAsBytes(resp.bodyBytes);
+                  downloaded.add(XFile(outPath));
+                } else {
+                  downloaded.add(imageFiles[i]); // fallback to original on failure
+                }
+              }
+              // If lengths mismatch, append originals for the rest
+              for (int i = downloaded.length; i < imageFiles.length; i++) {
+                downloaded.add(imageFiles[i]);
+              }
+              if (downloaded.isNotEmpty) {
+                print('AI Service: Downloaded ${downloaded.length} processed images by path.');
+                return downloaded;
+              }
+            }
+          } catch (e) {
+            print('AI Service: Download-by-path fallback failed: $e');
+          }
+        }
+
+        // Fast-path: if inline base64 is present, decode and return immediately
+        if (processedImagesBase64.isNotEmpty) {
+          final List<XFile> inlineFiles = <XFile>[];
+          final int m = processedImagesBase64.length < imageFiles.length
+              ? processedImagesBase64.length
+              : imageFiles.length;
+          for (int i = 0; i < m; i++) {
+            final b64 = processedImagesBase64[i];
+            if (b64.startsWith('data:')) {
               try {
                 final base64Data = b64.split(',').last;
                 final bytes = base64.decode(base64Data);
-                final processedImagePath = '${originalFile.path}_blurred.jpg';
+                final processedImagePath = '${imageFiles[i].path}_blurred.jpg';
                 final file = File(processedImagePath);
                 await file.writeAsBytes(bytes);
-                processedImages.add(XFile(processedImagePath));
-                print('AI Service: Wrote base64 image to: $processedImagePath (${bytes.length} bytes)');
-                continue;
+                inlineFiles.add(XFile(processedImagePath));
               } catch (e) {
-                print('AI Service: Failed to write base64 image for index $i: $e');
-                // Fall through to HTTP download
-              }
-            }
-
-            // Construct the full URL to access the processed image
-            final imageUrl = processedPath != null ? '${apiBase()}/static/$processedPath' : '';
-            print('AI Service: Downloading processed image from: $imageUrl');
-            print('AI Service: Processed path: $processedPath');
-            
-            // Retry logic for failed downloads (increased to 5 attempts with longer delays)
-            http.Response? imageResponse;
-            bool downloadSuccess = false;
-            
-            for (int retry = 0; retry < 5; retry++) {
-              try {
-                // Try using a client with a longer timeout for larger files
-                final client = http.Client();
-                try {
-                  final request = http.Request('GET', Uri.parse(imageUrl));
-                  // Increase timeout to 60 seconds for large files
-                  final streamedResponse = await client.send(request).timeout(
-                    Duration(seconds: 60),
-                    onTimeout: () {
-                      throw TimeoutException('Download timeout after 60 seconds');
-                    },
-                  );
-                  
-                  if (streamedResponse.statusCode == 200) {
-                    // Read the response as bytes with streaming and timeout
-                    final bytes = await streamedResponse.stream.toBytes().timeout(
-                      Duration(seconds: 60),
-                      onTimeout: () {
-                        throw TimeoutException('Stream read timeout after 60 seconds');
-                      },
-                    );
-                    imageResponse = http.Response.bytes(bytes, streamedResponse.statusCode);
-                    downloadSuccess = true;
-                    print('AI Service: Successfully downloaded ${bytes.length} bytes');
-                    break; // Success, exit retry loop
-                  } else {
-                    print('AI Service: Download failed with status: ${streamedResponse.statusCode}');
-                  }
-                } finally {
-                  client.close();
-                }
-              } catch (e) {
-                print('AI Service: Download attempt ${retry + 1} failed: $e');
-                if (retry < 4) {
-                  // Exponential backoff: 1s, 2s, 3s, 4s
-                  await Future.delayed(Duration(seconds: retry + 1));
-                }
-              }
-            }
-            
-            if (!downloadSuccess || imageResponse == null) {
-              print('AI Service: All download attempts failed for $originalFilename, attempting per-image inline fallback...');
-              // Per-image inline fallback: reprocess just this image with inline_base64=1
-              try {
-                final singleUrl = Uri.parse(apiBase() + '/' + _processImagesUrl + '?inline_base64=1');
-                final singleReq = http.MultipartRequest('POST', singleUrl);
-                if (token != null) {
-                  singleReq.headers['Authorization'] = 'Bearer $token';
-                }
-                singleReq.files.add(await http.MultipartFile.fromPath('images', originalFile.path));
-                final singleResp = await singleReq.send().timeout(
-                  Duration(seconds: 90),
-                  onTimeout: () => throw TimeoutException('AI single upload timeout after 90s'),
-                );
-                final singleBody = await http.Response.fromStream(singleResp);
-                if (singleResp.statusCode == 200) {
-                  final singleData = json.decode(singleBody.body);
-                  final singlesB64 = (singleData['processed_images_base64'] is List)
-                      ? List<String>.from(singleData['processed_images_base64'])
-                      : <String>[];
-                  if (singlesB64.isNotEmpty && singlesB64[0].startsWith('data:')) {
-                    final base64Data = singlesB64[0].split(',').last;
-                    final bytes = base64.decode(base64Data);
-                    final processedImagePath = '${originalFile.path}_blurred.jpg';
-                    final file = File(processedImagePath);
-                    await file.writeAsBytes(bytes);
-                    processedImages.add(XFile(processedImagePath));
-                    print('AI Service: Per-image inline fallback succeeded for $originalFilename');
-                    continue;
-                  }
-                }
-                // If inline base64 still not provided, fall back to original
-                print('AI Service: Per-image inline fallback did not return base64 for $originalFilename; using original');
-                processedImages.add(originalFile);
-                continue;
-              } catch (e) {
-                print('AI Service: Per-image inline fallback failed for $originalFilename: $e');
-                processedImages.add(originalFile);
-                continue;
-              }
-            }
-            
-            print('AI Service: Download response status: ${imageResponse.statusCode}');
-            
-            if (imageResponse.statusCode == 200) {
-              // Save the processed image locally
-              final processedImagePath = '${imageFiles[i].path}_blurred.jpg';
-              final file = File(processedImagePath);
-              await file.writeAsBytes(imageResponse.bodyBytes);
-              processedImages.add(XFile(processedImagePath));
-              print('AI Service: Downloaded processed image to: $processedImagePath');
-              print('AI Service: File size: ${imageResponse.bodyBytes.length} bytes');
-              print('AI Service: File exists: ${await file.exists()}');
-              print('AI Service: XFile path: ${XFile(processedImagePath).path}');
-              
-              // Compare with original file size
-              final originalFile = File(imageFiles[i].path);
-              if (await originalFile.exists()) {
-                final originalSize = await originalFile.length();
-                print('AI Service: Original file size: $originalSize bytes');
-                print('AI Service: Processed file size: ${imageResponse.bodyBytes.length} bytes');
-                if (originalSize != imageResponse.bodyBytes.length) {
-                  print('AI Service: SUCCESS - File sizes different, blurring applied!');
-                } else {
-                  print('AI Service: WARNING - File sizes same, may not be blurred');
-                }
+                // If a single decode fails, fall back to original for that index
+                inlineFiles.add(imageFiles[i]);
               }
             } else {
-              print('AI Service: Failed to download processed image: ${imageResponse.statusCode}');
-              print('AI Service: Response body: ${imageResponse.body}');
-              // Fallback to original image
-              processedImages.add(imageFiles[i]);
+              inlineFiles.add(imageFiles[i]);
             }
-          } catch (e) {
-            print('AI Service: Error downloading processed image: $e');
-            // Fallback to original image
-            processedImages.add(imageFiles[i]);
           }
+          // If there are more originals than returned base64 entries, append originals for the remainder
+          for (int i = m; i < imageFiles.length; i++) {
+            inlineFiles.add(imageFiles[i]);
+          }
+          print('AI Service: Returned ${inlineFiles.length} images from inline base64 fast-path');
+          return inlineFiles;
         }
         
-        return processedImages;
+        // If we got here without base64, return originals (no extra processing).
+        print('AI Service: No inline base64 available; returning originals.');
+        return imageFiles;
       } else {
         print('AI Service: Image processing failed: ${response.statusCode} - ${responseBody.body}');
         // Try to parse error message
@@ -366,8 +292,6 @@ class AiService {
   }
   
   static Future<String?> _getAuthToken() async {
-    // Get auth token from ApiService
-    await ApiService.initializeTokens();
     return ApiService.accessToken;
   }
   

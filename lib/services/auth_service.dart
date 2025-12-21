@@ -182,8 +182,8 @@ class AuthService extends ChangeNotifier {
       final response = await ApiService.updateProfile(profileData);
       
       // Update current user data
-      if (response['user'] != null) {
-        _currentUser = response['user'];
+      if (response['user'] != null && response['user'] is Map<String, dynamic>) {
+        _currentUser = Map<String, dynamic>.from(response['user']);
         notifyListeners();
       }
       
@@ -232,7 +232,7 @@ class AuthService extends ChangeNotifier {
 
   // Get user name
   String get userName => _currentUser != null 
-      ? '${_currentUser!['first_name']} ${_currentUser!['last_name']}'
+      ? '${_currentUser!['first_name'] ?? ''} ${_currentUser!['last_name'] ?? ''}'.trim()
       : '';
 
   // Get user email

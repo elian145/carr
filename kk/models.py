@@ -28,6 +28,7 @@ class User(db.Model):
     public_id = db.Column(db.String(50), unique=True, default=lambda: str(uuid.uuid4()))
     username = db.Column(db.String(80), unique=True, nullable=False, index=True)
     email = db.Column(db.String(120), unique=True, nullable=True, index=True)  # Made optional
+    password = db.Column(db.String(120), nullable=True)  # Legacy field - deprecated, kept for compatibility
     password_hash = db.Column(db.String(128), nullable=False)
     phone_number = db.Column(db.String(20), unique=True, nullable=False, index=True)  # Made required and unique
     first_name = db.Column(db.String(50), nullable=False)
@@ -104,20 +105,26 @@ class Car(db.Model):
     seller_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False)
     
     # Basic car information
+    title = db.Column(db.String(200), nullable=False, default='')  # Some legacy DBs require NOT NULL
+    title_status = db.Column(db.String(20), nullable=False, default='active')
     brand = db.Column(db.String(50), nullable=False, index=True)
     model = db.Column(db.String(50), nullable=False, index=True)
+    trim = db.Column(db.String(50), nullable=False, default='base')
     year = db.Column(db.Integer, nullable=False, index=True)
     mileage = db.Column(db.Integer, nullable=False)
     engine_type = db.Column(db.String(50), nullable=False)  # Gas, Diesel, Electric, Hybrid
+    fuel_type = db.Column(db.String(20), nullable=False, default='gasoline')
     transmission = db.Column(db.String(20), nullable=False)  # Manual, Automatic, CVT
     drive_type = db.Column(db.String(20), nullable=False)  # FWD, RWD, AWD, 4WD
     condition = db.Column(db.String(20), nullable=False)  # New, Used, Certified
     body_type = db.Column(db.String(30), nullable=False)  # Sedan, SUV, Hatchback, etc.
+    status = db.Column(db.String(20), nullable=False, default='active')
     
     # Pricing and location
     price = db.Column(db.Float, nullable=False, index=True)
     currency = db.Column(db.String(3), default='USD')
     location = db.Column(db.String(100), nullable=False, index=True)
+    seating = db.Column(db.Integer, nullable=False, default=5)
     latitude = db.Column(db.Float, nullable=True)
     longitude = db.Column(db.Float, nullable=True)
     

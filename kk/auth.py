@@ -1,7 +1,7 @@
 from functools import wraps
 from flask import request, jsonify, current_app
 from flask_jwt_extended import jwt_required, get_jwt_identity, get_jwt
-from models import User, db, PasswordReset, EmailVerification
+from .models import User, db, PasswordReset, EmailVerification
 from datetime import datetime, timedelta
 import secrets
 import re
@@ -139,7 +139,7 @@ def verify_email_verification_token(token):
 def log_user_action(user, action_type, target_type=None, target_id=None, metadata=None):
     """Log user action for analytics"""
     try:
-        from models import UserAction
+        from .models import UserAction
         
         action = UserAction(
             user_id=user.id,
@@ -204,7 +204,7 @@ def sanitize_input(data):
 def rate_limit_check(user_id, action, limit=10, window_minutes=60):
     """Check if user has exceeded rate limit for an action"""
     try:
-        from models import UserAction
+        from .models import UserAction
         from datetime import datetime, timedelta
         
         window_start = datetime.utcnow() - timedelta(minutes=window_minutes)

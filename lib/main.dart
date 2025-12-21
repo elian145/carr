@@ -34,6 +34,7 @@ import 'theme_provider.dart';
 import 'widgets/theme_toggle_widget.dart';
 import 'services/config.dart';
 import 'services/ai_service.dart';
+import 'services/car_service.dart';
 // Sideload build flag to disable services that require entitlements on iOS
 const bool kSideloadBuild = bool.fromEnvironment('SIDELOAD_BUILD', defaultValue: false);
 // Build commit SHA for on-device verification
@@ -82,6 +83,27 @@ class KuWidgetsLocalizationsDelegate extends LocalizationsDelegate<WidgetsLocali
 
 String getApiBase() {
   return apiBase();
+}
+
+// Normalize relative image path into a full URL that works across
+// different backend responses (uploads/, car_photos/, static/, http)
+String _buildFullImageUrl(String rel) {
+  String s = (rel ?? '').toString().trim();
+  if (s.isEmpty) return s;
+  if (s.startsWith('http://') || s.startsWith('https://')) return s;
+  // drop leading '/'
+  if (s.startsWith('/')) s = s.substring(1);
+  if (s.startsWith('static/')) {
+    return getApiBase() + '/' + s;
+  }
+  if (s.startsWith('uploads/')) {
+    return getApiBase() + '/static/' + s;
+  }
+  if (s.startsWith('car_photos/')) {
+    return getApiBase() + '/static/uploads/' + s;
+  }
+  // default: assume already a path under uploads (e.g. make, dir/file.jpg)
+  return getApiBase() + '/static/uploads/' + s;
 }
 
 String _localizeDigitsGlobal(BuildContext context, String input) {
@@ -700,14 +722,26 @@ Widget _buildGlobalCardImageCarousel(BuildContext context, Map car) {
     final String primary = (car['image_url'] ?? '').toString();
     final List<dynamic> imgs = (car['images'] is List) ? (car['images'] as List) : const [];
     if (primary.isNotEmpty) {
-      u.add(getApiBase() + '/static/uploads/' + primary);
+      u.add(_buildFullImageUrl(primary));
     }
     for (final dynamic it in imgs) {
-      final s = it.toString();
+      String s;
+      if (it is Map) {
+        s = (it['image_url'] ?? it['url'] ?? it['path'] ?? it['src'] ?? '').toString();
+      } else {
+        s = it.toString();
+      }
       if (s.isNotEmpty) {
-        final full = getApiBase() + '/static/uploads/' + s;
+        final full = _buildFullImageUrl(s);
         if (!u.contains(full)) u.add(full);
       }
+    }
+    if (u.isEmpty && imgs.isNotEmpty) {
+      final dynamic first = imgs.first;
+      final String s = first is Map
+          ? (first['image_url'] ?? first['url'] ?? first['path'] ?? first['src'] ?? '').toString()
+          : first.toString();
+      if (s.isNotEmpty) u.add(_buildFullImageUrl(s));
     }
     return u;
   }();
@@ -719,6 +753,8 @@ Widget _buildGlobalCardImageCarousel(BuildContext context, Map car) {
       child: Icon(Icons.directions_car, size: 60, color: Colors.grey[400]),
     );
   }
+
+  
 
   final PageController controller = PageController();
   int currentIndex = 0;
@@ -742,6 +778,8 @@ Widget _buildGlobalCardImageCarousel(BuildContext context, Map car) {
               itemCount: urls.length,
               itemBuilder: (context, i) {
                 final url = urls[i];
+                // ignore: avoid_print
+                print('IMG home-carousel -> ' + url);
                 return CachedNetworkImage(
                   imageUrl: url,
                   fit: BoxFit.cover,
@@ -1496,21 +1534,26 @@ void main() {
       } catch (_) {}
     };
 
-    // Skip Firebase/Push init for sideload builds on iOS to avoid entitlement crashes
-    if (!(kSideloadBuild && Platform.isIOS)) {
-      try { await Firebase.initializeApp(); } catch (_) {}
-      try { await _initPushToken(); } catch (_) {}
-    }
-
-    // Keychain access can fail for sideloaded builds; don't crash.
+    // Minimal pre-run init only (fast): load tokens if available.
+    // Heavier work is deferred until after first frame to avoid splash hangs.
     try { await ApiService.initializeTokens(); } catch (_) {}
-    try { await LocaleController.loadSavedLocale(); } catch (_) {}
-    try { await AuthService().initialize(); } catch (_) {}
-    
+        
     // Initialize global currency symbol
     globalSymbol = r'$';
     
     runApp(MyApp());
+
+    // Defer heavy initializations to post-frame to avoid blocking first paint
+    // Firebase, locale, and auth init can take time on emulators
+    Future.microtask(() async {
+      // Skip Firebase/Push init for sideload builds on iOS to avoid entitlement crashes
+      if (!(kSideloadBuild && Platform.isIOS)) {
+        try { await Firebase.initializeApp(); } catch (_) {}
+        try { await _initPushToken(); } catch (_) {}
+      }
+      try { await LocaleController.loadSavedLocale(); } catch (_) {}
+      try { await AuthService().initialize(); } catch (_) {}
+    });
   }, (error, stack) async {
     try {
       final sp = await SharedPreferences.getInstance();
@@ -1551,7 +1594,7 @@ class CarComparisonStore extends ChangeNotifier {
   CarComparisonStore() {
     _loadFromPrefs();
   }
-  
+
   List<Map<String, dynamic>> get comparisonCars => List.unmodifiable(_comparisonCars);
   
   bool get canAddMore => _comparisonCars.length < 5;
@@ -1792,7 +1835,7 @@ class MyApp extends StatelessWidget {
         '/payment/initiate': (context) => PaymentInitiatePage(),
         '/car_detail': (context) {
           final args = ModalRoute.of(context)!.settings.arguments as Map<String, dynamic>;
-          return CarDetailsPage(carId: args['carId']);
+          return CarDetailsPage(carId: args['carId'].toString());
         },
         '/chat/conversation': (context) {
           final args = ModalRoute.of(context)!.settings.arguments as Map<String, dynamic>;
@@ -2080,6 +2123,11 @@ class _HomePageState extends State<HomePage> {
  
   // Listings layout
   int listingColumns = 2;
+  // Infinite scroll state
+  final ScrollController _homeScrollController = ScrollController();
+  int _page = 1;
+  bool _hasNext = true;
+  bool _isLoadingMore = false;
 
   // Bottom bar tab selection for inline pages (payments, chat, saved, etc.)
   int? _selectedBottomTabIndex;
@@ -2474,6 +2522,22 @@ class _HomePageState extends State<HomePage> {
     WidgetsBinding.instance.addPostFrameCallback((_) {
       fetchCars();
     });
+    // Hook up infinite scroll
+    _homeScrollController.addListener(() {
+      try {
+        final pos = _homeScrollController.position;
+        if (_hasNext && !_isLoadingMore && pos.pixels >= (pos.maxScrollExtent - 400)) {
+          _loadMore();
+        }
+      } catch (_) {}
+    });
+  }
+
+  @override
+  void dispose() {
+    _sortDebounceTimer?.cancel();
+    try { _homeScrollController.dispose(); } catch (_) {}
+    super.dispose();
   }
 
   Future<void> _loadBodyTypesFromAssets() async {
@@ -2534,9 +2598,14 @@ class _HomePageState extends State<HomePage> {
     // Analytics tracking for search fetch
     if (mounted) setState(() { isLoading = true; loadErrorMessage = null; });
     Map<String, String> filters = _buildFilters();
+    // Reset pagination
+    _page = 1;
+    _hasNext = true;
+    filters['page'] = _page.toString();
+    filters['per_page'] = '20';
     
     String query = Uri(queryParameters: filters).query;
-    final url = Uri.parse('${getApiBase()}/cars${query.isNotEmpty ? '?$query' : ''}');
+    final url = Uri.parse('${getApiBase()}/api/cars${query.isNotEmpty ? '?$query' : ''}');
 
     // Debug: Print the URL being called
     print('ðŸ” Fetching cars from: $url');
@@ -2554,9 +2623,19 @@ class _HomePageState extends State<HomePage> {
         print('ðŸ“¦ Using cached data for key: $cacheKey');
         try {
           final decoded = json.decode(cached);
-          final List<Map<String, dynamic>> parsed = decoded is List
-              ? decoded.whereType<Map>().map((e) => e.map((k, v) => MapEntry(k.toString(), v))).toList().cast<Map<String, dynamic>>()
-              : <Map<String, dynamic>>[];
+          List<dynamic> listSource;
+          if (decoded is List) {
+            listSource = decoded;
+          } else if (decoded is Map && decoded['cars'] is List) {
+            listSource = decoded['cars'] as List;
+          } else {
+            listSource = const [];
+          }
+          final List<Map<String, dynamic>> parsed = listSource
+              .whereType<Map>()
+              .map((e) => e.map((k, v) => MapEntry(k.toString(), v)))
+              .toList()
+              .cast<Map<String, dynamic>>();
           if (mounted) setState(() { cars = parsed; isLoading = false; hasLoadedOnce = true; loadErrorMessage = null; });
         } catch (_) {}
       }
@@ -2583,13 +2662,25 @@ class _HomePageState extends State<HomePage> {
       
       if (response.statusCode == 200) {
         final decoded = json.decode(response.body);
-        final List<Map<String, dynamic>> parsed = decoded is List
-            ? decoded
-                .whereType<Map>()
-                .map((e) => e.map((k, v) => MapEntry(k.toString(), v)))
-                .toList()
-                .cast<Map<String, dynamic>>()
-            : <Map<String, dynamic>>[];
+        List<dynamic> listSource;
+        if (decoded is List) {
+          listSource = decoded;
+        } else if (decoded is Map && decoded['cars'] is List) {
+          listSource = decoded['cars'] as List;
+          try {
+            final pg = (decoded['pagination'] as Map?);
+            if (pg != null && pg['has_next'] is bool) {
+              _hasNext = pg['has_next'] as bool;
+            }
+          } catch (_) {}
+        } else {
+          listSource = const [];
+        }
+        final List<Map<String, dynamic>> parsed = listSource
+            .whereType<Map>()
+            .map((e) => e.map((k, v) => MapEntry(k.toString(), v)))
+            .toList()
+            .cast<Map<String, dynamic>>();
         
         print('ðŸ“Š Parsed ${parsed.length} cars from response');
         
@@ -2604,6 +2695,7 @@ class _HomePageState extends State<HomePage> {
         // Save fresh cache
         unawaited(sp.setString(cacheKey, response.body));
         print('âœ… Found ${parsed.length} cars with applied filters');
+        _page = 2; // next page to request
         // Reset retry count on success
         _fetchRetryCount = 0;
       } else {
@@ -2621,6 +2713,12 @@ class _HomePageState extends State<HomePage> {
     // Don't show error immediately - try fallback strategies first
     print('ðŸ”„ Handling fetch error: $errorMessage, isRetry: $isRetry');
     
+    // First, attempt the alternative endpoint /api/cars (server returns { cars: [...], pagination: {...} })
+    try {
+      final ok = await _fetchFromApiCars(includeSort: true);
+      if (ok) return; // Success via /api/cars; stop handling error
+    } catch (_) {}
+
     // If sorting failed and we have a sort parameter, try without sorting first
     if (selectedSortBy != null && selectedSortBy!.isNotEmpty && !isRetry) {
       print('ðŸ”„ Sorting failed, trying without sort parameter');
@@ -2661,6 +2759,79 @@ class _HomePageState extends State<HomePage> {
       });
     }
   }
+
+  Future<void> _loadMore() async {
+    if (_isLoadingMore || !_hasNext) return;
+    _isLoadingMore = true;
+    try {
+      final Map<String, String> filters = _buildFilters();
+      filters['page'] = _page.toString();
+      filters['per_page'] = '20';
+      final query = Uri(queryParameters: filters).query;
+      final url = Uri.parse('${getApiBase()}/api/cars${query.isNotEmpty ? '?$query' : ''}');
+      final resp = await http.get(url, headers: {'Accept': 'application/json'}).timeout(Duration(seconds: 20));
+      if (resp.statusCode == 200) {
+        final decoded = json.decode(resp.body);
+        List<dynamic> listSource;
+        if (decoded is Map && decoded['cars'] is List) {
+          listSource = decoded['cars'] as List;
+          try {
+            final pg = (decoded['pagination'] as Map?);
+            if (pg != null && pg['has_next'] is bool) _hasNext = pg['has_next'] as bool;
+          } catch (_) {}
+        } else if (decoded is List) {
+          listSource = decoded;
+        } else {
+          listSource = const [];
+        }
+        final List<Map<String, dynamic>> more = listSource
+            .whereType<Map>()
+            .map((e) => e.map((k, v) => MapEntry(k.toString(), v)))
+            .toList()
+            .cast<Map<String, dynamic>>();
+        if (mounted && more.isNotEmpty) {
+          setState(() { cars.addAll(more); });
+        }
+        _page += 1;
+      }
+    } catch (_) {}
+    _isLoadingMore = false;
+  }
+
+  // Fallback fetch using /api/cars which wraps results in { cars: [...], pagination: { has_next: bool } }
+  Future<bool> _fetchFromApiCars({bool includeSort = true}) async {
+    try {
+      Map<String, String> filters = _buildFilters(includeSort: includeSort);
+      final query = Uri(queryParameters: filters).query;
+      final url = Uri.parse('${getApiBase()}/api/cars${query.isNotEmpty ? '?$query' : ''}');
+      final resp = await http.get(
+        url,
+        headers: {
+          'Accept': 'application/json',
+          'Connection': 'close',
+          'Cache-Control': 'no-cache',
+        },
+      ).timeout(Duration(seconds: 20));
+      if (resp.statusCode == 200) {
+        final decoded = json.decode(resp.body);
+        if (decoded is Map && decoded['cars'] is List) {
+          final List<Map<String, dynamic>> parsed = List<Map<String, dynamic>>.from(
+            (decoded['cars'] as List).whereType<Map>().map((e) => e.map((k, v) => MapEntry(k.toString(), v))),
+          );
+          if (mounted) {
+            setState(() {
+              cars = parsed;
+              isLoading = false;
+              hasLoadedOnce = true;
+              loadErrorMessage = null;
+            });
+          }
+          return true;
+        }
+      }
+    } catch (_) {}
+    return false;
+  }
   
   Future<void> _fetchWithAlternativeHeaders(String sortValue) async {
     try {
@@ -2668,7 +2839,7 @@ class _HomePageState extends State<HomePage> {
       Map<String, String> filters = _buildFilters();
       
       String query = Uri(queryParameters: filters).query;
-      final url = Uri.parse('${getApiBase()}/cars${query.isNotEmpty ? '?$query' : ''}');
+      final url = Uri.parse('${getApiBase()}/api/cars${query.isNotEmpty ? '?$query' : ''}');
       
       print('ðŸ” Alternative fetch URL: $url');
       
@@ -2685,13 +2856,19 @@ class _HomePageState extends State<HomePage> {
       
       if (response.statusCode == 200) {
         final decoded = json.decode(response.body);
-        final List<Map<String, dynamic>> parsed = decoded is List
-            ? decoded
-                .whereType<Map>()
-                .map((e) => e.map((k, v) => MapEntry(k.toString(), v)))
-                .toList()
-                .cast<Map<String, dynamic>>()
-            : <Map<String, dynamic>>[];
+        List<dynamic> listSource;
+        if (decoded is List) {
+          listSource = decoded;
+        } else if (decoded is Map && decoded['cars'] is List) {
+          listSource = decoded['cars'] as List;
+        } else {
+          listSource = const [];
+        }
+        final List<Map<String, dynamic>> parsed = listSource
+            .whereType<Map>()
+            .map((e) => e.map((k, v) => MapEntry(k.toString(), v)))
+            .toList()
+            .cast<Map<String, dynamic>>();
         
         if (mounted) {
           setState(() {
@@ -2718,20 +2895,26 @@ class _HomePageState extends State<HomePage> {
       Map<String, String> filters = _buildFilters(includeSort: false);
       
       String query = Uri(queryParameters: filters).query;
-      final url = Uri.parse('${getApiBase()}/cars${query.isNotEmpty ? '?$query' : ''}');
+      final url = Uri.parse('${getApiBase()}/api/cars${query.isNotEmpty ? '?$query' : ''}');
       
       print('ðŸ” Fallback URL: $url');
       
       final response = await http.get(url).timeout(Duration(seconds: 10));
       if (response.statusCode == 200) {
         final decoded = json.decode(response.body);
-        final List<Map<String, dynamic>> parsed = decoded is List
-            ? decoded
-                .whereType<Map>()
-                .map((e) => e.map((k, v) => MapEntry(k.toString(), v)))
-                .toList()
-                .cast<Map<String, dynamic>>()
-            : <Map<String, dynamic>>[];
+        List<dynamic> listSource;
+        if (decoded is List) {
+          listSource = decoded;
+        } else if (decoded is Map && decoded['cars'] is List) {
+          listSource = decoded['cars'] as List;
+        } else {
+          listSource = const [];
+        }
+        final List<Map<String, dynamic>> parsed = listSource
+            .whereType<Map>()
+            .map((e) => e.map((k, v) => MapEntry(k.toString(), v)))
+            .toList()
+            .cast<Map<String, dynamic>>();
         
         if (mounted) {
           setState(() {
@@ -2931,7 +3114,7 @@ class _HomePageState extends State<HomePage> {
         
         Map<String, String> filters = _buildFilters();
         String query = Uri(queryParameters: filters).query;
-        final url = Uri.parse('${getApiBase()}/cars${query.isNotEmpty ? '?$query' : ''}');
+        final url = Uri.parse('${getApiBase()}/api/cars${query.isNotEmpty ? '?$query' : ''}');
         
         final response = await http.get(
           url,
@@ -2988,7 +3171,7 @@ class _HomePageState extends State<HomePage> {
       try {
         Map<String, String> filters = _buildFilters();
         String query = Uri(queryParameters: filters).query;
-        final url = Uri.parse('${getApiBase()}/cars${query.isNotEmpty ? '?$query' : ''}');
+        final url = Uri.parse('${getApiBase()}/api/cars${query.isNotEmpty ? '?$query' : ''}');
         
         final response = await http.get(
           url,
@@ -3039,7 +3222,7 @@ class _HomePageState extends State<HomePage> {
     // Try with minimal headers and shorter timeout
     Map<String, String> filters = _buildFilters();
     String query = Uri(queryParameters: filters).query;
-    final url = Uri.parse('${getApiBase()}/cars${query.isNotEmpty ? '?$query' : ''}');
+    final url = Uri.parse('${getApiBase()}/api/cars${query.isNotEmpty ? '?$query' : ''}');
     
     final response = await http.get(
       url,
@@ -3075,7 +3258,7 @@ class _HomePageState extends State<HomePage> {
     try {
       Map<String, String> filters = _buildFilters();
       String query = Uri(queryParameters: filters).query;
-      final url = Uri.parse('${getApiBase()}/cars${query.isNotEmpty ? '?$query' : ''}');
+      final url = Uri.parse('${getApiBase()}/api/cars${query.isNotEmpty ? '?$query' : ''}');
       
       // Try with a very simple request
       final response = await http.get(
@@ -5148,8 +5331,17 @@ class _HomePageState extends State<HomePage> {
                                             crossAxisSpacing: 8,
                                             mainAxisSpacing: 8,
                                           ),
-                                          itemCount: cars.length,
+                                          controller: _homeScrollController,
+                                          itemCount: cars.length + (_hasNext ? 1 : 0),
                                           itemBuilder: (context, index) {
+                                            if (index >= cars.length) {
+                                              return Center(
+                                                child: Padding(
+                                                  padding: EdgeInsets.all(12),
+                                                  child: CircularProgressIndicator(strokeWidth: 2),
+                                                ),
+                                              );
+                                            }
                                             final car = cars[index];
                                             return buildGlobalCarCard(context, car);
                                           },
@@ -5173,19 +5365,19 @@ class _HomePageState extends State<HomePage> {
 
   Widget _buildCardImageCarousel(BuildContext context, Map car) {
     final List<String> urls = () {
-      final List<String> u = [];
-      final String primary = (car['image_url'] ?? '').toString();
-      final List<dynamic> imgs = (car['images'] is List) ? (car['images'] as List) : const [];
-      if (primary.isNotEmpty) {
-        u.add(getApiBase() + '/static/uploads/' + primary);
+    final List<String> u = [];
+    final String primary = (car['image_url'] ?? '').toString();
+    final List<dynamic> imgs = (car['images'] is List) ? (car['images'] as List) : const [];
+    if (primary.isNotEmpty) {
+      u.add(_buildFullImageUrl(primary));
+    }
+    for (final dynamic it in imgs) {
+      final s = it.toString();
+      if (s.isNotEmpty) {
+        final full = _buildFullImageUrl(s);
+        if (!u.contains(full)) u.add(full);
       }
-      for (final dynamic it in imgs) {
-        final s = it.toString();
-        if (s.isNotEmpty) {
-          final full = getApiBase() + '/static/uploads/' + s;
-          if (!u.contains(full)) u.add(full);
-        }
-      }
+    }
       return u;
     }();
 
@@ -5447,11 +5639,7 @@ class _HomePageState extends State<HomePage> {
     );
   }
   
-  @override
-  void dispose() {
-    _sortDebounceTimer?.cancel();
-    super.dispose();
-  }
+  
 }
 
 class SavedSearchesPage extends StatefulWidget {
@@ -6082,7 +6270,7 @@ String _getBodyTypeAsset(String bodyType) {
 
 // Placeholder classes for other pages
 class CarDetailsPage extends StatefulWidget {
-  final int carId;
+  final String carId;
   CarDetailsPage({required this.carId});
   @override
   _CarDetailsPageState createState() => _CarDetailsPageState();
@@ -6135,14 +6323,27 @@ class _CarDetailsPageState extends State<CarDetailsPage> {
       final String primary = (car!['image_url'] ?? '').toString();
       final List<dynamic> imgs = (car!['images'] is List) ? (car!['images'] as List) : const [];
       if (primary.isNotEmpty) {
-        urls.add(getApiBase() + '/static/uploads/' + primary);
+        urls.add(_buildFullImageUrl(primary));
       }
       for (final dynamic it in imgs) {
-        final s = it.toString();
+        String s;
+        if (it is Map) {
+          s = (it['image_url'] ?? it['url'] ?? it['path'] ?? it['src'] ?? '').toString();
+        } else {
+          s = it.toString();
+        }
         if (s.isNotEmpty) {
-          final full = getApiBase() + '/static/uploads/' + s;
+          final full = _buildFullImageUrl(s);
           if (!urls.contains(full)) urls.add(full);
         }
+      }
+      // If no explicit primary but images exist, treat first as primary
+      if (urls.isEmpty && imgs.isNotEmpty) {
+        final dynamic first = imgs.first;
+        final String s = first is Map
+            ? (first['image_url'] ?? first['url'] ?? first['path'] ?? first['src'] ?? '').toString()
+            : first.toString();
+        if (s.isNotEmpty) urls.add(_buildFullImageUrl(s));
       }
     }
     return urls;
@@ -6155,7 +6356,7 @@ class _CarDetailsPageState extends State<CarDetailsPage> {
       for (final dynamic it in videos) {
         final s = it.toString();
         if (s.isNotEmpty) {
-          final full = getApiBase() + '/static/uploads/' + s;
+          final full = _buildFullImageUrl(s);
           if (!urls.contains(full)) urls.add(full);
         }
       }
@@ -6187,7 +6388,7 @@ class _CarDetailsPageState extends State<CarDetailsPage> {
           else if (data is List && data.isNotEmpty) { setState(() { car = Map<String, dynamic>.from(data.first); loading = false; }); }
         } catch (_) {}
       }
-      final url = Uri.parse(getApiBase() + '/cars?id=${widget.carId}');
+      final url = Uri.parse(getApiBase() + '/api/cars/' + widget.carId.toString());
       final resp = await http.get(url);
       if (resp.statusCode == 200) {
         final data = json.decode(resp.body);
@@ -6195,13 +6396,16 @@ class _CarDetailsPageState extends State<CarDetailsPage> {
           setState(() { car = Map<String, dynamic>.from(data.first); loading = false; });
           _loadSimilarAndRelated();
           unawaited(sp.setString(cacheKey, json.encode(car)));
-          // Track view for analytics
           _trackView();
         } else if (data is Map) {
-          setState(() { car = Map<String, dynamic>.from(data); loading = false; });
+          final Map<String, dynamic> map = Map<String, dynamic>.from(data);
+          final dynamic inner = map['car'];
+          final Map<String, dynamic> normalized = inner is Map
+              ? Map<String, dynamic>.from(inner as Map)
+              : map;
+          setState(() { car = normalized; loading = false; });
           _loadSimilarAndRelated();
           unawaited(sp.setString(cacheKey, json.encode(car)));
-          // Track view for analytics
           _trackView();
         } else {
           setState(() { loading = false; });
@@ -6284,7 +6488,7 @@ class _CarDetailsPageState extends State<CarDetailsPage> {
             final list = simData
                 .cast<dynamic>()
                 .map<Map<String, dynamic>>((e) => Map<String, dynamic>.from(e))
-                .where((e) => e['id'] != widget.carId)
+                .where((e) => e['id']?.toString() != widget.carId.toString())
                 .toList();
             setState(() { similarCars = list.take(12).toList(); });
             unawaited(sp.setString(simKey, json.encode(similarCars)));
@@ -6333,7 +6537,7 @@ class _CarDetailsPageState extends State<CarDetailsPage> {
           final list = relData
               .cast<dynamic>()
               .map<Map<String, dynamic>>((e) => Map<String, dynamic>.from(e))
-              .where((e) => e['id'] != widget.carId)
+              .where((e) => e['id']?.toString() != widget.carId.toString())
               .toList();
           setState(() { relatedCars = list.take(12).toList(); });
           unawaited(sp.setString(relKey, json.encode(relatedCars)));
@@ -6917,6 +7121,20 @@ final String raw = car!['contact_phone'].toString();
       ],
     );
   }
+  Widget _detailRowAlways({required IconData icon, required String label, String? value}) {
+    final String shown = (value == null || value.isEmpty) ? '—' : value;
+    return Padding(
+      padding: const EdgeInsets.symmetric(vertical: 6.0),
+      child: Row(
+        children: [
+          Icon(icon, color: Colors.white70, size: 18),
+          SizedBox(width: 8),
+          SizedBox(width: 120, child: Text(label, style: TextStyle(color: Colors.white70))),
+          Expanded(child: Text(shown, style: TextStyle(color: Colors.white))),
+        ],
+      ),
+    );
+  }
   Widget _buildSpecCard(_SpecItem item) {
     return Container(
       padding: EdgeInsets.symmetric(horizontal: 12, vertical: 12),
@@ -7046,8 +7264,12 @@ final String raw = car!['contact_phone'].toString();
                     ? primary
                     : (imgs.isNotEmpty ? imgs.first.toString() : '');
                 if (rel.isNotEmpty) {
+                  final built = _buildFullImageUrl(rel);
+                  // Debug: log image URL being loaded
+                  // ignore: avoid_print
+                  print('IMG small-card -> ' + built);
                   return CachedNetworkImage(
-                    imageUrl: getApiBase() + '/static/uploads/' + rel,
+                    imageUrl: built,
                     height: 110,
                     width: 160,
                     fit: BoxFit.cover,
@@ -9247,7 +9469,8 @@ class _SellStep4PageState extends State<SellStep4Page> {
   
   Future<void> _pickImages() async {
     try {
-      final files = await _imagePicker.pickMultiImage(imageQuality: 85, maxWidth: 1920);
+      // Upload full-resolution images to improve YOLO/OCR accuracy
+      final files = await _imagePicker.pickMultiImage();
       if (files.isNotEmpty) {
         setState(() {
           _selectedImages = files;
@@ -9264,6 +9487,7 @@ class _SellStep4PageState extends State<SellStep4Page> {
   }
   
   Future<void> _analyzeFirstImage(XFile imageFile) async {
+    if (!mounted) return;
     setState(() {
       _isAnalyzing = true;
     });
@@ -9271,9 +9495,10 @@ class _SellStep4PageState extends State<SellStep4Page> {
     try {
       final result = await AiService.analyzeCarImage(imageFile);
       if (result != null && result['success'] == true) {
-        setState(() {
-          _aiAnalysisResult = result['analysis'];
-        });
+      if (!mounted) return;
+      setState(() {
+        _aiAnalysisResult = result['analysis'];
+      });
         
         // Show analysis results to user
         _showAnalysisResults(result['analysis']);
@@ -9281,6 +9506,7 @@ class _SellStep4PageState extends State<SellStep4Page> {
     } catch (e) {
       print('Error analyzing image: $e');
     } finally {
+      if (!mounted) return;
       setState(() {
         _isAnalyzing = false;
       });
@@ -9363,6 +9589,7 @@ class _SellStep4PageState extends State<SellStep4Page> {
     
     print('AI UI: Starting image processing for ${_selectedImages.length} images');
     
+    if (!mounted) return;
     setState(() {
       _isProcessingImages = true;
     });
@@ -9382,6 +9609,7 @@ class _SellStep4PageState extends State<SellStep4Page> {
         }
         
         // Replace the original images with the processed ones
+        if (!mounted) return;
         setState(() {
           _selectedImages = processedImages;
           _imagesProcessed = true;
@@ -9389,11 +9617,13 @@ class _SellStep4PageState extends State<SellStep4Page> {
         
         print('AI UI: Updated _selectedImages count: ${_selectedImages.length}');
         
+        if (!mounted) return;
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(content: Text('Images processed successfully! License plates have been blurred.')),
         );
       } else {
         print('AI UI: Image processing failed');
+        if (!mounted) return;
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
             content: Text('Failed to process images. Please check your internet connection and try again.'),
@@ -9404,10 +9634,12 @@ class _SellStep4PageState extends State<SellStep4Page> {
       }
     } catch (e) {
       print('AI UI: Error processing images: $e');
+      if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(content: Text('Error processing images: $e')),
       );
     } finally {
+      if (!mounted) return;
       setState(() {
         _isProcessingImages = false;
       });
@@ -10030,15 +10262,23 @@ class _SellStep5PageState extends State<SellStep5Page> {
                         await _submitListing(carData);
                         
                         // Show success message
-                        ScaffoldMessenger.of(context).showSnackBar(
-                          SnackBar(
-                            content: Text(_listingSubmittedSuccessTextGlobal(context)),
-                            backgroundColor: Colors.green,
-                          ),
-                        );
+                        if (!mounted) return;
+                        try {
+                          ScaffoldMessenger.of(context).showSnackBar(
+                            SnackBar(
+                              content: Text(_listingSubmittedSuccessTextGlobal(context)),
+                              backgroundColor: Colors.green,
+                            ),
+                          );
+                        } catch (_) {}
                         
                         // Navigate back to home
-                        Navigator.pushReplacementNamed(context, '/');
+                        try {
+                          Navigator.of(context, rootNavigator: true).pushNamedAndRemoveUntil('/', (route) => false);
+                        } catch (_) {
+                          // Fallback
+                          Navigator.pushReplacementNamed(context, '/');
+                        }
                       } catch (e) {
                         ScaffoldMessenger.of(context).showSnackBar(
                           SnackBar(
@@ -10143,17 +10383,25 @@ class _SellStep5PageState extends State<SellStep5Page> {
     final city = (carData['city']?.toString() ?? 'Baghdad').toLowerCase();
     final title = '$brand $model $trim'.trim();
 
+    // Normalize payload to match backend expectations
+    final String priceStr = (carData['price']?.toString() ?? '').replaceAll(RegExp(r'[^0-9\.-]'), '');
+    final dynamic priceValue = priceStr.isEmpty ? null : (int.tryParse(priceStr) ?? double.tryParse(priceStr) ?? price);
+    final String engineType = (carData['engine_type']?.toString() ?? carData['fuel_type']?.toString() ?? fuelType ?? '').toString();
+    final String location = (carData['location']?.toString() ?? city).toString();
+
     final payload = {
       'title': title,
       'brand': brand.toLowerCase().replaceAll(' ', '-'),
       'model': model,
       'trim': trim,
       'year': year,
-      'price': price,
+      'price': priceValue,
       'mileage': mileage,
       'condition': condition,
       'transmission': transmission,
-      'fuel_type': fuelType,
+      // send both keys so either backend variant accepts the field
+      'engine_type': engineType.isNotEmpty ? engineType : null,
+      'fuel_type': engineType.isNotEmpty ? engineType : null,
       'color': color,
       'body_type': bodyType,
       'seating': seating,
@@ -10162,13 +10410,14 @@ class _SellStep5PageState extends State<SellStep5Page> {
       'damaged_parts': damagedParts,
       'cylinder_count': cylinderCount,
       'engine_size': engineSize,
+      'location': location,
       'city': city,
       'contact_phone': (carData['contact_phone']?.toString() ?? '').trim(),
       'is_quick_sell': carData['is_quick_sell'] ?? false,
-    };
+    }..removeWhere((k, v) => v == null || (v is String && v.trim().isEmpty));
 
     try {
-      final url = Uri.parse(getApiBase() + '/cars');
+      final url = Uri.parse(getApiBase() + '/api/cars');
       final headers = {
         'Content-Type': 'application/json',
         if (existingToken != null) 'Authorization': 'Bearer $existingToken',
@@ -10183,36 +10432,43 @@ class _SellStep5PageState extends State<SellStep5Page> {
       if (response.statusCode == 201) {
         // Success - listing created
         final Map<String, dynamic> created = json.decode(response.body);
-        final int carId = created['id'];
-        // Upload images if any were selected in the form flow
+        // Backend returns { message, car: {...} } where car.id is the public_id (string)
+        final dynamic carObj = (created['car'] is Map) ? created['car'] : created;
+        final String carId = (carObj['id']?.toString() ?? '').toString();
+        // Enrich created car with processed image paths immediately for UI
         try {
-          final dynamic maybeImgs = carData['images'];
-          final List<dynamic> imgs = (maybeImgs is List) ? maybeImgs : const [];
-          if (imgs.isNotEmpty) {
-            final uploadUrl = Uri.parse(getApiBase() + '/api/cars/' + carId.toString() + '/images');
-            final request = http.MultipartRequest('POST', uploadUrl);
-            final tok = ApiService.accessToken;
-            if (tok != null) request.headers['Authorization'] = 'Bearer ' + tok;
-            for (final dynamic img in imgs) {
-              try {
-                String? path;
-                if (img is XFile) {
-                  path = img.path;
-                } else if (img is String) {
-                  path = img;
-                }
-                if (path != null && path.isNotEmpty) {
-                  request.files.add(await http.MultipartFile.fromPath('image', path));
-                }
-              } catch (_) {}
-            }
-            final uploadResp = await request.send();
-            if (uploadResp.statusCode != 201) {
-              final uploadHttpResp = await http.Response.fromStream(uploadResp);
-              throw Exception('Image upload failed: ' + uploadResp.statusCode.toString() + ' ' + uploadHttpResp.body);
-            }
+          final paths = ApiService.getLastProcessedServerPaths();
+          if (paths != null && paths.isNotEmpty) {
+            carObj['images'] = List<String>.from(paths);
+            carObj['image_url'] = paths.first;
+            // Reflect in local store so lists/detail show images right away
+            try { CarService().addCarLocal(Map<String, dynamic>.from(carObj)); } catch (_) {}
           }
         } catch (_) {}
+        // Optimistic background image attach/upload: don't block submit
+        Future.microtask(() async {
+          try {
+            final dynamic maybeImgs = carData['images'];
+            final List<dynamic> imgs = (maybeImgs is List) ? maybeImgs : const [];
+            if (imgs.isEmpty) return;
+            final List<XFile> toUpload = <XFile>[];
+            for (final dynamic img in imgs) {
+              if (img is XFile) {
+                toUpload.add(img);
+              } else if (img is String) {
+                try { toUpload.add(XFile(img)); } catch (_) {}
+              }
+            }
+            if (toUpload.isEmpty) return;
+            await CarService().uploadCarImages(carId, toUpload);
+          } catch (e) {
+            try {
+              ScaffoldMessenger.of(context).showSnackBar(
+                SnackBar(content: Text(AppLocalizations.of(context)!.listingUploadPartialFail(e.toString()))),
+              );
+            } catch (_) {}
+          }
+        });
         print('Listing created successfully');
         return;
       } else if (response.statusCode == 401) {
@@ -10220,8 +10476,20 @@ class _SellStep5PageState extends State<SellStep5Page> {
         throw Exception('Authentication failed. Please log in again.');
       } else {
         print('Submission failed: ${response.statusCode} - ${response.body}');
-        final errorData = json.decode(response.body);
-        throw Exception(errorData['error'] ?? 'Failed to create listing');
+        dynamic errorData;
+        try { errorData = json.decode(response.body); } catch (_) { errorData = null; }
+        String? msg;
+        if (errorData is Map<String, dynamic>) {
+          final List<dynamic>? errs = (errorData['errors'] is List) ? List<dynamic>.from(errorData['errors']) : null;
+          if (errs != null && errs.isNotEmpty) {
+            msg = errs.map((e) => e.toString()).join(', ');
+          } else {
+            msg = (errorData['message']?.toString()) ?? (errorData['error']?.toString());
+          }
+        } else if (errorData is List) {
+          msg = errorData.map((e) => e.toString()).join(', ');
+        }
+        throw Exception(msg ?? 'Failed to create listing');
       }
     } catch (e) {
       if (e.toString().contains('SocketException') || e.toString().contains('HandshakeException')) {
@@ -10695,8 +10963,11 @@ class CarComparisonPage extends StatelessWidget {
   Widget _buildCarImage(Map<String, dynamic> car) {
     final imageUrl = car['image_url']?.toString();
     if (imageUrl != null && imageUrl.isNotEmpty) {
+      final built = _buildFullImageUrl(imageUrl);
+      // ignore: avoid_print
+      print('IMG detail-primary -> ' + built);
       return CachedNetworkImage(
-        imageUrl: '${getApiBase()}/static/uploads/$imageUrl',
+        imageUrl: built,
         fit: BoxFit.cover,
         placeholder: (context, url) => Container(color: Colors.white10),
         errorWidget: (context, url, error) => Container(
@@ -10991,7 +11262,8 @@ class CarComparisonPage extends StatelessWidget {
   List<XFile> _selectedImages = [];
   Future<void> _pickImages() async {
     try {
-      final files = await _imagePicker.pickMultiImage(imageQuality: 85, maxWidth: 1920);
+      // Upload full-resolution images to improve YOLO/OCR accuracy
+      final files = await _imagePicker.pickMultiImage();
       if (files.isNotEmpty) {
         setState(() {
           _selectedImages = files;
@@ -11985,7 +12257,7 @@ class CarComparisonPage extends StatelessWidget {
                   };
 
                   try {
-                    final url = Uri.parse(getApiBase() + '/cars');
+                    final url = Uri.parse(getApiBase() + '/api/cars');
                     final headers = {
                       'Content-Type': 'application/json',
                       if (ApiService.accessToken != null) 'Authorization': 'Bearer ' + ApiService.accessToken!,
@@ -12321,9 +12593,7 @@ class _FavoritesPageState extends State<FavoritesPage> {
                           final String? rel = imageUrl.isEmpty ? null : imageUrl;
                           final String fullImg = rel == null
                               ? ''
-                              : (rel.startsWith('http')
-                                  ? rel
-                                  : (getApiBase() + '/static/uploads/' + rel));
+                              : _buildFullImageUrl(rel);
                           return InkWell(
                             onTap: () {
                               final int? id = car['id'] is int ? car['id'] as int : int.tryParse(car['id']?.toString() ?? '');
@@ -12482,12 +12752,17 @@ class _LoginPageState extends State<LoginPage> {
         'username': _usernameController.text.trim(),
         'password': _passwordController.text,
       }));
-      if (resp.statusCode == 200) {
+      if (resp.statusCode >= 200 && resp.statusCode < 300) {
         final data = json.decode(resp.body);
-        final token = data['token'] as String;
-        // Store token in memory (simple for now); can add SharedPreferences later
-        await AuthStore.saveToken(token);
-        await ApiService.initializeTokens(); // Sync with ApiService
+        // Support both legacy {token} and new {access_token}
+        final String? legacyToken = (data['token'] as String?)?.trim();
+        final String? access = (data['access_token'] as String?)?.trim();
+        final String? token = (legacyToken != null && legacyToken.isNotEmpty) ? legacyToken : access;
+        if (token != null && token.isNotEmpty) {
+          // Store token in memory (simple for now); can add SharedPreferences later
+          await AuthStore.saveToken(token);
+          await ApiService.initializeTokens(); // Sync with ApiService
+        }
         if (!mounted) return;
         Navigator.pushReplacementNamed(context, '/');
       } else {
@@ -12650,13 +12925,22 @@ class _SignupPageState extends State<SignupPage> {
       }
       
       final resp = await http.post(url, headers: {'Content-Type': 'application/json'}, body: json.encode(requestBody));
-      if (resp.statusCode == 200) {
+      if (resp.statusCode >= 200 && resp.statusCode < 300) {
         final data = json.decode(resp.body);
-        final token = data['token'] as String;
-        await AuthStore.saveToken(token);
-        await ApiService.initializeTokens(); // Sync with ApiService
-        if (!mounted) return;
-        Navigator.pushReplacementNamed(context, '/');
+        // Support both legacy {token} and new {access_token}; or no token (email verification flow)
+        final String? legacyToken = (data['token'] as String?)?.trim();
+        final String? access = (data['access_token'] as String?)?.trim();
+        final String? token = (legacyToken != null && legacyToken.isNotEmpty) ? legacyToken : access;
+        if (token != null && token.isNotEmpty) {
+          await AuthStore.saveToken(token);
+          await ApiService.initializeTokens(); // Sync with ApiService
+          if (!mounted) return;
+          Navigator.pushReplacementNamed(context, '/');
+        } else {
+          // No token returned: direct user to login after successful registration
+          if (!mounted) return;
+          Navigator.pushReplacementNamed(context, '/login');
+        }
       } else {
         final msg = resp.body.length > 0 ? resp.body : AppLocalizations.of(context)!.couldNotSubmitListing;
         if (!mounted) return;

@@ -112,6 +112,15 @@ class CarService extends ChangeNotifier {
 
     try {
       final response = await ApiService.createCar(carData);
+
+      // If AI just processed images on server, attach paths immediately to the local car object
+      try {
+        final paths = ApiService.getLastProcessedServerPaths();
+        if (paths != null && paths.isNotEmpty && response['car'] is Map<String, dynamic>) {
+          response['car']['images'] = List<String>.from(paths);
+          response['car']['image_url'] = paths.first;
+        }
+      } catch (_) {}
       
       // Add to local list
       if (response['car'] != null) {
@@ -126,6 +135,12 @@ class CarService extends ChangeNotifier {
     } finally {
       _setLoading(false);
     }
+  }
+
+  // Add a created car to local store (used for optimistic UI on submit flows)
+  void addCarLocal(Map<String, dynamic> car) {
+    _cars.insert(0, car);
+    notifyListeners();
   }
 
   // Update car listing
@@ -194,18 +209,33 @@ class CarService extends ChangeNotifier {
       final response = await ApiService.uploadCarImages(carId, imageFiles);
       
       // Update local car data
-      if (response['images'] != null) {
-        final newImages = response['images'];
+      // Accept either { images: [...] } or { uploaded: [...] } from backend
+      final dynamic imagesField = response['images'] ?? response['uploaded'];
+      if (imagesField != null) {
+        final newImages = imagesField;
         
         // Update in cars list
         final carIndex = _cars.indexWhere((car) => car['id'] == carId);
         if (carIndex != -1) {
           _cars[carIndex]['images'] = [..._cars[carIndex]['images'], ...newImages];
+          // Update primary image if backend provided one and we don't have it yet
+          final String? newPrimary = (response['image_url'] as String?)?.trim();
+          if ((newPrimary != null && newPrimary.isNotEmpty)) {
+            _cars[carIndex]['image_url'] = newPrimary;
+          } else if ((_cars[carIndex]['image_url'] == null || (_cars[carIndex]['image_url'] as String).isEmpty) && newImages is List && newImages.isNotEmpty) {
+            _cars[carIndex]['image_url'] = newImages.first.toString();
+          }
         }
         
         // Update current car if it's the same
         if (_currentCar?['id'] == carId) {
           _currentCar!['images'] = [..._currentCar!['images'], ...newImages];
+          final String? newPrimary = (response['image_url'] as String?)?.trim();
+          if ((newPrimary != null && newPrimary.isNotEmpty)) {
+            _currentCar!['image_url'] = newPrimary;
+          } else if ((_currentCar!['image_url'] == null || (_currentCar!['image_url'] as String).isEmpty) && newImages is List && newImages.isNotEmpty) {
+            _currentCar!['image_url'] = newImages.first.toString();
+          }
         }
         
         notifyListeners();
@@ -351,10 +381,24 @@ class CarService extends ChangeNotifier {
   // Get price range
   Map<String, double> getPriceRange() {
     if (_cars.isEmpty) return {'min': 0.0, 'max': 0.0};
-    
-    final prices = _cars.map((car) => car['price'] as double).toList();
+
+    // Be robust to price coming as String or num
+    final List<double> prices = [];
+    for (final car in _cars) {
+      final dynamic raw = car['price'];
+      if (raw == null) continue;
+      if (raw is num) {
+        prices.add(raw.toDouble());
+      } else {
+        final parsed = double.tryParse(raw.toString().replaceAll(RegExp(r'[^0-9.-]'), ''));
+        if (parsed != null) prices.add(parsed);
+      }
+    }
+
+    if (prices.isEmpty) return {'min': 0.0, 'max': 0.0};
+
     prices.sort();
-    
+
     return {
       'min': prices.first,
       'max': prices.last,
@@ -364,10 +408,26 @@ class CarService extends ChangeNotifier {
   // Get year range
   Map<String, int> getYearRange() {
     if (_cars.isEmpty) return {'min': 0, 'max': 0};
-    
-    final years = _cars.map((car) => car['year'] as int).toList();
+
+    // Be robust to year coming as String or num
+    final List<int> years = [];
+    for (final car in _cars) {
+      final dynamic raw = car['year'];
+      if (raw == null) continue;
+      if (raw is int) {
+        years.add(raw);
+      } else if (raw is num) {
+        years.add(raw.toInt());
+      } else {
+        final parsed = int.tryParse(raw.toString().replaceAll(RegExp(r'[^0-9-]'), ''));
+        if (parsed != null) years.add(parsed);
+      }
+    }
+
+    if (years.isEmpty) return {'min': 0, 'max': 0};
+
     years.sort();
-    
+
     return {
       'min': years.first,
       'max': years.last,

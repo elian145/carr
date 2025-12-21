@@ -56,13 +56,13 @@ class CarAnalysisService:
                 return
             # Optional small expansion to ensure borders are included
             try:
-                pad_ratio = float(str(_os.getenv('PLATE_VERIFY_PAD_RATIO', '0.10')).strip())
+                pad_ratio = float(str(_os.getenv('PLATE_VERIFY_PAD_RATIO', '0.15')).strip())
             except Exception:
-                pad_ratio = 0.10
+                pad_ratio = 0.15
             try:
-                vpad_ratio = float(str(_os.getenv('PLATE_VERIFY_VPAD_RATIO', '0.16')).strip())
+                vpad_ratio = float(str(_os.getenv('PLATE_VERIFY_VPAD_RATIO', '0.20')).strip())
             except Exception:
-                vpad_ratio = 0.16
+                vpad_ratio = 0.20
             w_rect = xb - xa; h_rect = yb - ya
             pad_x = max(2, int(w_rect * pad_ratio))
             pad_y = max(2, int(h_rect * vpad_ratio))
@@ -73,18 +73,18 @@ class CarAnalysisService:
                 return
             rgb = cv2.cvtColor(roi, cv2.COLOR_BGR2RGB)
             try:
-                conf_th = float(str(os.getenv('PLATE_VERIFY_CONF', '0.35')))
+                conf_th = float(str(os.getenv('PLATE_VERIFY_CONF', '0.25')))
             except Exception:
-                conf_th = 0.35
+                conf_th = 0.25
             def looks_like_plate(_tx: str) -> bool:
                 s = ''.join([c for c in str(_tx).upper() if c.isalnum()])
                 return (3 <= len(s) <= 10) and any(ch.isalpha() for ch in s) and any(ch.isdigit() for ch in s)
             # Repeatable strengthening passes (configurable)
-            _passes = 3
+            _passes = 5
             try:
-                _passes = int(os.getenv('PLATE_VERIFY_PASSES', '3'))
+                _passes = int(os.getenv('PLATE_VERIFY_PASSES', '5'))
             except Exception:
-                _passes = 3
+                _passes = 5
             _passes = max(1, min(5, _passes))
             for _ in range(_passes):
                 any_plate = False
@@ -124,6 +124,397 @@ class CarAnalysisService:
         except Exception:
             # Never fail the pipeline due to verification
             return
+
+    def _post_blur_verify_mask(self, processed_image, xa: int, ya: int, xb: int, yb: int, mask_roi) -> None:
+        """
+        Post-blur verification constrained to a mask:
+        - Runs OCR on the masked area only
+        - If plate-like text still readable, strengthen blur ONLY inside mask
+        - Repeat up to PLATE_VERIFY_PASSES (default 5)
+        - Final fallback: solid block inside mask if still readable
+        """
+        try:
+            if not self._env_flag('PLATE_POST_VERIFY', True):
+                return
+            if self.ocr_reader is None:
+                return
+            import cv2
+            import numpy as np
+            import os as _os
+            H, W = processed_image.shape[:2]
+            xa = max(0, min(W - 1, xa)); xb = max(0, min(W, xb))
+            ya = max(0, min(H - 1, ya)); yb = max(0, min(H, yb))
+            if xb <= xa or yb <= ya:
+                return
+            roi = processed_image[ya:yb, xa:xb]
+            if roi.size == 0:
+                return
+            mask = (mask_roi.astype(np.uint8) > 0).astype(np.uint8)
+            if mask.shape[:2] != roi.shape[:2]:
+                try:
+                    mask = cv2.resize(mask, (roi.shape[1], roi.shape[0]), interpolation=cv2.INTER_NEAREST)
+                except Exception:
+                    return
+            # OCR conf threshold and passes
+            try:
+                conf_th = float(str(os.getenv('PLATE_VERIFY_CONF', '0.25')))
+            except Exception:
+                conf_th = 0.25
+            passes = 5
+            try:
+                passes = int(os.getenv('PLATE_VERIFY_PASSES', '5'))
+            except Exception:
+                passes = 5
+            passes = max(1, min(5, passes))
+            # Helper: run OCR on masked area only
+            def masked_ocr_readable(img_bgr) -> bool:
+                masked = img_bgr.copy()
+                inv = (mask == 0)
+                masked[inv] = 0
+                rgb = cv2.cvtColor(masked, cv2.COLOR_BGR2RGB)
+                for (_bb, _tx, _cf) in self.ocr_reader.readtext(rgb):
+                    cf = 0.0 if _cf is None else float(_cf)
+                    s = ''.join([c for c in str(_tx).upper() if c.isalnum()])
+                    if cf >= conf_th and (3 <= len(s) <= 10) and any(ch.isalpha() for ch in s) and any(ch.isdigit() for ch in s):
+                        return True
+                return False
+            # Escalate blur only inside mask
+            k_base = max(31, int(min(roi.shape[0], roi.shape[1]) * 0.50))
+            if k_base % 2 == 0: k_base += 1
+            for i in range(passes):
+                if not masked_ocr_readable(roi):
+                    return
+                k = min(231, k_base + i * 20)
+                if k % 2 == 0: k += 1
+                stronger = cv2.GaussianBlur(roi, (k, k), 0)
+                # Optional pixelation overlay
+                try:
+                    pw = max(8, roi.shape[1] // max(8, 10 - i))
+                    ph = max(6, roi.shape[0] // max(8, 10 - i))
+                    tmp_small = cv2.resize(stronger, (pw, ph), interpolation=cv2.INTER_AREA)
+                    stronger = cv2.resize(tmp_small, (roi.shape[1], roi.shape[0]), interpolation=cv2.INTER_NEAREST)
+                except Exception:
+                    pass
+                try:
+                    stronger = self._apply_plate_obfuscation(roi, stronger)
+                except Exception:
+                    pass
+                m3 = cv2.merge([mask * 255, mask * 255, mask * 255])
+                roi = np.where(m3 == 255, stronger, roi)
+                processed_image[ya:yb, xa:xb] = roi
+            # Final fallback: solid block inside mask
+            if self._env_flag('PLATE_VERIFY_SOLID', True) and masked_ocr_readable(roi):
+                try:
+                    med = np.median(roi.reshape(-1, roi.shape[2]), axis=0).astype(np.uint8)
+                    solid = np.full_like(roi, med)
+                except Exception:
+                    solid = np.zeros_like(roi)
+                m3 = cv2.merge([mask * 255, mask * 255, mask * 255])
+                roi = np.where(m3 == 255, solid, roi)
+                processed_image[ya:yb, xa:xb] = roi
+        except Exception:
+            return
+
+    def _refine_plate_quad(self, roi) -> Optional[object]:
+        """
+        Try to locate the physical plate border inside a candidate ROI using edge/contour analysis
+        and return a 4x2 float32 array of corner points (in ROI coordinates) representing a
+        rotated rectangle tightly covering the plate. Returns None if not found.
+        """
+        try:
+            import cv2
+            import numpy as np
+            h, w = roi.shape[:2]
+            if h < 15 or w < 40:
+                return None
+            gray = cv2.cvtColor(roi, cv2.COLOR_BGR2GRAY)
+            # Enhance contrast, suppress noise
+            clahe = cv2.createSSRGBlike(256) if hasattr(cv2, 'createSSRGBlike') else None
+            if hasattr(cv2, 'createCLAHE'):
+                clahe = cv2.createCLAHE(clipLimit=2.0, tileSize=(8, 8))
+            if clahe is not None:
+                gray = clahe.apply(gray)
+            blur = cv2.GaussianBlur(gray, (5, 5), 0)
+            # Edge detection
+            edges = cv2.Canny(blur, 50, 150)
+            kernel = cv2.getStructuringElement(cv2.MORPH_RECT, (5, 3))
+            edges = cv2.morphologyEx(edges, cv2.MORPH_CLOSE, kernel, iterations=1)
+            contours, _ = cv2.findContours(edges, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
+            if not contours:
+                return None
+            best = None
+            best_score = 0.0
+            area_img = float(h * w)
+            for cnt in contours:
+                if len(cnt) < 4:
+                    continue
+                rect = cv2.minAreaRect(cnt)
+                (cx, cy), (rw, rh), ang = rect
+                if rw < 1 or rh < 1:
+                    continue
+                wlen, hlen = (rw, rh) if rw >= rh else (rh, rw)
+                ar = (wlen / max(1e-3, hlen))
+                # plate-like aspect ratio and reasonable area within ROI
+                area_rect = rw * rh
+                fill_ratio = area_rect / max(1.0, area_img)
+                # Accept roughly 1.6–7.5 aspect and sufficient area coverage
+                if 1.5 <= ar <= 7.5 and 0.05 <= fill_ratio <= 0.9:
+                    # prefer larger area and aspect closer to mid-range (~3)
+                    score = min(fill_ratio, 0.5) * 0.7 + (1.0 - abs(ar - 3.0) / 3.0) * 0.3
+                    if score > best_score:
+                        best = rect
+                        best_score = score
+            if best is None:
+                return None
+            box = cv2.boxPoints(best).astype(np.float32)
+            # Slightly expand the rectangle to cover borders (3–6% of size)
+            (cx, cy), (rw, rh), ang = best
+            scale = 1.06
+            M = cv2.getRotationMatrix2D((cx, cy), 0, 1.0)  # identity
+            # Expand by scaling about center
+            box_centered = box - np.array([[cx, cy]])
+            box_scaled = box_centered * scale + np.array([[cx, cy]])
+            # Clamp to ROI bounds
+            box_scaled[:, 0] = np.clip(box_scaled[:, 0], 0, w - 1)
+            box_scaled[:, 1] = np.clip(box_scaled[:, 1], 0, h - 1)
+            return box_scaled
+        except Exception:
+            return None
+
+    def _build_plate_surface_mask(self, roi) -> Optional["np.ndarray"]:
+        """
+        Generate a binary mask for the plate surface inside ROI using:
+        - grayscale + CLAHE
+        - adaptive thresholding (binary and inverted)
+        - morphology to close gaps between glyphs and fill the plate area
+        - largest plausible contour → minAreaRect polygon → slight dilation
+        Returns mask (uint8, 0/1) in ROI size, or None if it fails.
+        """
+        try:
+            import cv2
+            import numpy as np
+            h, w = roi.shape[:2]
+            if h < 12 or w < 30:
+                return None
+            gray = cv2.cvtColor(roi, cv2.COLOR_BGR2GRAY)
+            # Contrast enhance to fight glare/reflections
+            clahe = cv2.createCLAHE(clipLimit=2.0, tileGridSize=(8, 8))
+            gray = clahe.apply(gray)
+            blur = cv2.GaussianBlur(gray, (5, 5), 0)
+            # Two candidates: bright-plate and dark-plate scenarios
+            th1 = cv2.adaptiveThreshold(blur, 255, cv2.ADAPTIVE_THRESH_GAUSSIAN_C,
+                                        cv2.THRESH_BINARY, 31, 5)
+            th2 = cv2.adaptiveThreshold(blur, 255, cv2.ADAPTIVE_THRESH_GAUSSIAN_C,
+                                        cv2.THRESH_BINARY_INV, 31, 5)
+            def refine(bin_img):
+                k_close = cv2.getStructuringElement(cv2.MORPH_RECT, (7, 3))
+                k_open  = cv2.getStructuringElement(cv2.MORPH_RECT, (3, 3))
+                m = cv2.morphologyEx(bin_img, cv2.MORPH_CLOSE, k_close, iterations=2)
+                m = cv2.morphologyEx(m, cv2.MORPH_OPEN,  k_open,  iterations=1)
+                return m
+            th1 = refine(th1)
+            th2 = refine(th2)
+            # Choose the candidate whose filled area is plausible (5%..80% of ROI)
+            a1 = float(cv2.countNonZero(th1)) / float(h * w)
+            a2 = float(cv2.countNonZero(th2)) / float(h * w)
+            cand = th1 if (0.05 <= a1 <= 0.80 and (a1 >= a2 or not (0.05 <= a2 <= 0.80))) else th2
+            if not (0.02 <= float(cv2.countNonZero(cand)) / float(h * w) <= 0.90):
+                return None
+            # Find largest contour and use its minAreaRect polygon as mask
+            contours, _ = cv2.findContours(cand, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
+            if not contours:
+                return None
+            best = max(contours, key=lambda c: cv2.contourArea(c))
+            if cv2.contourArea(best) < (h * w * 0.01):
+                return None
+            rect = cv2.minAreaRect(best)
+            box = cv2.boxPoints(rect).astype(np.int32)
+            mask = np.zeros((h, w), dtype=np.uint8)
+            cv2.fillPoly(mask, [box], 1)
+            # Tiny dilation to fully cover borders/corners (2–3%)
+            try:
+                dw = max(1, int(w * 0.03)) | 1
+                dh = max(1, int(h * 0.03)) | 1
+                ker = cv2.getStructuringElement(cv2.MORPH_RECT, (dw, dh))
+                mask = cv2.dilate(mask, ker, iterations=1)
+            except Exception:
+                pass
+            return mask
+        except Exception:
+            return None
+
+    def _homography_plate_mask(self, roi) -> Optional["np.ndarray"]:
+        """
+        Build a mask by rectifying a skewed/rotated plate to a canonical
+        rectangle with perspective transform, thresholding there, then
+        warping the mask back. This improves coverage on angled plates.
+        """
+        try:
+            import cv2
+            import numpy as np
+            h, w = roi.shape[:2]
+            if h < 12 or w < 30:
+                return None
+            gray = cv2.cvtColor(roi, cv2.COLOR_BGR2GRAY)
+            gray = cv2.GaussianBlur(gray, (3, 3), 0)
+            edges = cv2.Canny(gray, 50, 150)
+            contours, _ = cv2.findContours(edges, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
+            if not contours:
+                return None
+            cnt = max(contours, key=cv2.contourArea)
+            if cv2.contourArea(cnt) < (h * w * 0.005):
+                return None
+            rect = cv2.minAreaRect(cnt)
+            box = cv2.boxPoints(rect).astype(np.float32)
+            s = box.sum(axis=1)
+            diff = np.diff(box, axis=1).ravel()
+            tl = box[np.argmin(s)]; br = box[np.argmax(s)]
+            tr = box[np.argmin(diff)]; bl = box[np.argmax(diff)]
+            src = np.array([tl, tr, br, bl], dtype=np.float32)
+            Wt = int(max(60, np.linalg.norm(tr - tl)))
+            Ht = int(max(20, Wt // 3))
+            dst = np.array([[0, 0], [Wt - 1, 0], [Wt - 1, Ht - 1], [0, Ht - 1]], dtype=np.float32)
+            M = cv2.getPerspectiveTransform(src, dst)
+            Mi = cv2.getPerspectiveTransform(dst, src)
+            rectified = cv2.warpPerspective(roi, M, (Wt, Ht), flags=cv2.INTER_LINEAR)
+            g = cv2.cvtColor(rectified, cv2.COLOR_BGR2GRAY)
+            clahe = cv2.createCLAHE(clipLimit=2.0, tileGridSize=(8, 8))
+            g = clahe.apply(g)
+            th = cv2.adaptiveThreshold(g, 255, cv2.ADAPTIVE_THRESH_GAUSSIAN_C, cv2.THRESH_BINARY, 31, 5)
+            k = cv2.getStructuringElement(cv2.MORPH_RECT, (7, 3))
+            th = cv2.morphologyEx(th, cv2.MORPH_CLOSE, k, iterations=2)
+            rect_mask = (th > 0).astype(np.uint8) * 255
+            back = cv2.warpPerspective(rect_mask, Mi, (w, h), flags=cv2.INTER_NEAREST)
+            back = (back > 0).astype(np.uint8)
+            # tiny 2–3% dilation to seal edges
+            dw = max(1, int(w * 0.03)) | 1
+            dh = max(1, int(h * 0.03)) | 1
+            ker = cv2.getStructuringElement(cv2.MORPH_RECT, (dw, dh))
+            back = cv2.dilate(back, ker, iterations=1)
+            return back
+        except Exception:
+            return None
+
+    def _shrink_mask_polygon(self, mask01: "np.ndarray", scale_xy: float = 0.96) -> "np.ndarray":
+        """
+        Shrink a mask by fitting minAreaRect and scaling polygon around its center.
+        Keeps mask tight to avoid over-blurring. scale_xy in (0,1].
+        """
+        try:
+            import cv2
+            import numpy as np
+            h, w = mask01.shape[:2]
+            if h < 2 or w < 2:
+                return mask01
+            cnts, _ = cv2.findContours((mask01 > 0).astype(np.uint8), cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
+            if not cnts:
+                return mask01
+            cnt = max(cnts, key=cv2.contourArea)
+            if cv2.contourArea(cnt) <= 0:
+                return mask01
+            rect = cv2.minAreaRect(cnt)
+            box = cv2.boxPoints(rect).astype(np.float32)
+            cx = box[:, 0].mean(); cy = box[:, 1].mean()
+            centered = box - np.array([cx, cy], dtype=np.float32)
+            scaled = centered * float(scale_xy) + np.array([cx, cy], dtype=np.float32)
+            scaled[:, 0] = np.clip(scaled[:, 0], 0, w - 1)
+            scaled[:, 1] = np.clip(scaled[:, 1], 0, h - 1)
+            out = np.zeros((h, w), dtype=np.uint8)
+            cv2.fillPoly(out, [scaled.astype(np.int32)], 1)
+            return out
+        except Exception:
+            return mask01
+
+    def _edge_rect_mask(self, roi) -> Optional["np.ndarray"]:
+        """
+        Edge-driven rectangle mask fallback: find largest contour and draw its minAreaRect.
+        Adds a tiny 2–3% edge dilation. Returns uint8 0/1 mask or None.
+        """
+        try:
+            import cv2
+            import numpy as np
+            h, w = roi.shape[:2]
+            if h < 12 or w < 30:
+                return None
+            gray = cv2.cvtColor(roi, cv2.COLOR_BGR2GRAY)
+            gray = cv2.GaussianBlur(gray, (3, 3), 0)
+            edges = cv2.Canny(gray, 60, 180)
+            cnts, _ = cv2.findContours(edges, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
+            if not cnts:
+                return None
+            cnt = max(cnts, key=cv2.contourArea)
+            if cv2.contourArea(cnt) < (h * w * 0.01):
+                return None
+            rect = cv2.minAreaRect(cnt)
+            box = cv2.boxPoints(rect).astype(np.int32)
+            m = np.zeros((h, w), dtype=np.uint8)
+            cv2.fillPoly(m, [box], 1)
+            dw = max(1, int(w * 0.03)) | 1
+            dh = max(1, int(h * 0.03)) | 1
+            ker = cv2.getStructuringElement(cv2.MORPH_RECT, (dw, dh))
+            m = cv2.dilate(m, ker, iterations=1)
+            return m
+        except Exception:
+            return None
+
+    def _predict_seg_multiscale(self, image, base_conf: float, iou: float = 0.6):
+        """
+        Run the segmentation model at multiple input scales and return masks
+        mapped back to the original image size.
+        Returns list of (mask_HxW_uint8, (x1,y1,x2,y2), conf).
+        """
+        try:
+            import cv2
+            import numpy as np
+            H, W = image.shape[:2]
+            passes = [(image, 1280, 1.0)]
+            min_dim = min(H, W)
+            if min_dim < 900:
+                up15 = cv2.resize(image, None, fx=1.5, fy=1.5, interpolation=cv2.INTER_CUBIC)
+                passes.append((up15, 1280, 1.5))
+            if min_dim < 600:
+                up20 = cv2.resize(image, None, fx=2.0, fy=2.0, interpolation=cv2.INTER_CUBIC)
+                passes.append((up20, 1536, 2.0))
+            out = []
+            for im, imgsz, scale in passes:
+                try:
+                    res = self.license_plate_seg_model.predict(im, conf=base_conf, iou=iou, imgsz=imgsz, verbose=False)
+                    if not res:
+                        continue
+                    r0 = res[0]
+                    boxes = getattr(r0, 'boxes', None)
+                    masks = getattr(r0, 'masks', None)
+                    if masks is None or not hasattr(masks, 'data') or boxes is None:
+                        continue
+                    mdata = masks.data
+                    xyxy = boxes.xyxy
+                    confs = boxes.conf if hasattr(boxes, 'conf') else None
+                    mdata = mdata.cpu().numpy() if hasattr(mdata, 'cpu') else mdata
+                    xyxy = xyxy.cpu().numpy() if hasattr(xyxy, 'cpu') else xyxy
+                    confs = confs.cpu().numpy() if (confs is not None and hasattr(confs, 'cpu')) else confs
+                    for i in range(min(len(mdata), len(xyxy))):
+                        c = float(confs[i]) if confs is not None else base_conf
+                        x1, y1, x2, y2 = [int(v / scale) for v in xyxy[i]]
+                        x1 = max(0, x1); y1 = max(0, y1); x2 = min(W, x2); y2 = min(H, y2)
+                        if x2 <= x1 or y2 <= y1:
+                            continue
+                        m = mdata[i].astype('uint8')
+                        try:
+                            # resize mask to original HxW
+                            if m.shape[0] != int(H*scale) or m.shape[1] != int(W*scale):
+                                m = cv2.resize(m, (im.shape[1], im.shape[0]), interpolation=cv2.INTER_NEAREST)
+                            if scale != 1.0:
+                                m = cv2.resize(m, (W, H), interpolation=cv2.INTER_NEAREST)
+                            else:
+                                m = cv2.resize(m, (W, H), interpolation=cv2.INTER_NEAREST)
+                        except Exception:
+                            m = cv2.resize(m, (W, H), interpolation=cv2.INTER_NEAREST)
+                        out.append((m, (x1, y1, x2, y2), c))
+                except Exception:
+                    continue
+            return out
+        except Exception:
+            return []
     
     @staticmethod
     def _env_flag(name: str, default: bool=False) -> bool:
@@ -146,9 +537,9 @@ class CarAnalysisService:
             import os as _os
             style = str(_os.getenv('PLATE_BLUR_STYLE', 'gauss_pixelate')).lower().strip()
             try:
-                strength = float(_os.getenv('PLATE_BLUR_STRENGTH', '1.0'))
+                strength = float(_os.getenv('PLATE_BLUR_STRENGTH', '3.0'))
             except Exception:
-                strength = 1.0
+                strength = 3.0
             strength = max(1.0, min(4.0, strength))  # clamp for safety
             roi = current_roi if current_roi is not None else original_roi
             if roi is None or roi.size == 0:
@@ -252,6 +643,7 @@ class CarAnalysisService:
             
             # Initialize YOLO for license plate detection (prefer local specialized model)
             self.license_plate_model = None
+            self.license_plate_seg_model = None
             self.model_is_generic = False
             try:
                 _root = _os.path.abspath(_os.path.join(_os.path.dirname(__file__), '..'))
@@ -268,6 +660,21 @@ class CarAnalysisService:
                         print(f"AI Service: Loaded local license-plate model: {_p}")
                         break
 
+                # Try to load a segmentation model for license plates (preferred when available)
+                _local_lp_seg_candidates = [
+                    _os.path.join(_root, 'kk', 'weights', 'yolov8n-license-plate-seg.pt'),
+                    _os.path.join(_root, 'weights', 'yolov8n-license-plate-seg.pt'),
+                    _os.path.join(_root, 'yolov8n-license-plate-seg.pt'),
+                ]
+                for _p in _local_lp_seg_candidates:
+                    if self.license_plate_seg_model is None and _os.path.exists(_p):
+                        try:
+                            self.license_plate_seg_model = YOLO(_p)
+                            print(f"AI Service: Loaded local license-plate SEG model: {_p}")
+                            break
+                        except Exception:
+                            pass
+
                 # If no local specialized model, try remote specialized repos
                 if self.license_plate_model is None:
                     try:
@@ -275,6 +682,15 @@ class CarAnalysisService:
                     except Exception:
                         try:
                             self.license_plate_model = YOLO('keremberke/yolov8m-license-plate')
+                        except Exception:
+                            pass
+
+                if self.license_plate_seg_model is None:
+                    try:
+                        self.license_plate_seg_model = YOLO('keremberke/yolov8n-license-plate-seg')
+                    except Exception:
+                        try:
+                            self.license_plate_seg_model = YOLO('keremberke/yolov8m-license-plate-seg')
                         except Exception:
                             pass
 
@@ -377,16 +793,335 @@ class CarAnalysisService:
                     print(f"AI Service: Failed to convert WebP: {str(e)}")
                     return image_path
 
-            # Load the image
-            image = cv2.imread(image_path)
-            if image is None:
-                logger.error(f"Could not load image: {image_path}")
-                return image_path
+            # Load image and normalize EXIF orientation BEFORE detection
+            try:
+                from PIL import ExifTags
+                pil_img = Image.open(image_path)
+                exif = getattr(pil_img, "_getexif", lambda: None)() or {}
+                orientation_key = None
+                for k, v in ExifTags.TAGS.items():
+                    if v == 'Orientation':
+                        orientation_key = k
+                        break
+                if orientation_key is not None and orientation_key in exif:
+                    ori = exif.get(orientation_key, 1)
+                    # Rotate to upright; PIL.rotate is counter-clockwise
+                    if ori == 3:
+                        pil_img = pil_img.rotate(180, expand=True)
+                    elif ori == 6:
+                        pil_img = pil_img.rotate(270, expand=True)  # 90 CW
+                    elif ori == 8:
+                        pil_img = pil_img.rotate(90, expand=True)   # 90 CCW
+                # Ensure RGB then convert to OpenCV BGR
+                pil_img = pil_img.convert('RGB')
+                image = cv2.cvtColor(np.array(pil_img), cv2.COLOR_RGB2BGR)
+            except Exception:
+                # Fallback to OpenCV if EXIF handling fails
+                image = cv2.imread(image_path)
+                if image is None:
+                    logger.error(f"Could not load image: {image_path}")
+                    return image_path
             
-            # Create a copy for processing
+            # Working copy
             processed_image = image.copy()
             H, W = image.shape[:2]
             image_area = H * W
+
+            # Ensure a LICENSE-PLATE-ONLY detector (replace generic if needed)
+            try:
+                if self.license_plate_model is None:
+                    pass
+                elif getattr(self, 'model_is_generic', False):
+                    from ultralytics import YOLO as _Y
+                    try:
+                        self.license_plate_model = _Y('keremberke/yolov8n-license-plate')
+                        self.model_is_generic = False
+                    except Exception:
+                        try:
+                            self.license_plate_model = _Y('keremberke/yolov8m-license-plate')
+                            self.model_is_generic = False
+                        except Exception:
+                            # keep existing model if replacement fails
+                            pass
+            except Exception:
+                pass
+
+            # LETTERBOX-AWARE YOLO DETECTION ON UPRIGHT IMAGE (no manual resizing)
+            blurred_count = 0
+            # Preferred path: segmentation model (mask-based blur)
+            if self.license_plate_seg_model is not None:
+                try:
+                    import os as _os2
+                    # Adaptive conf by image size
+                    try:
+                        base_conf = float(_os2.getenv('PLATE_CONF_THRESHOLD', '0.30') or 0.30)
+                    except Exception:
+                        base_conf = 0.30
+                    min_dim = min(H, W)
+                    if min_dim < 500:
+                        conf_th = max(0.18, base_conf - 0.12)
+                    elif min_dim < 800:
+                        conf_th = max(0.22, base_conf - 0.08)
+                    else:
+                        conf_th = base_conf
+                    # Run multi-scale segmentation and blur inside masks
+                    seg_dets = self._predict_seg_multiscale(image, base_conf=conf_th, iou=0.6)
+                    for idx, (mask, (x1, y1, x2, y2), c) in enumerate(seg_dets):
+                        if c < conf_th:
+                            continue
+                        # Restrict mask to bbox and seal edges
+                        mclip = np.zeros_like(mask, dtype=np.uint8)
+                        mclip[y1:y2, x1:x2] = mask[y1:y2, x1:x2]
+                        if np.count_nonzero(mclip) == 0:
+                            continue
+                        try:
+                            ker_w = max(1, int((x2 - x1) * 0.03)) | 1
+                            ker_h = max(1, int((y2 - y1) * 0.03)) | 1
+                            ker = cv2.getStructuringElement(cv2.MORPH_ELLIPSE, (ker_w, ker_h))
+                            mclip = cv2.dilate(mclip.astype(np.uint8), ker, iterations=1)
+                        except Exception:
+                            pass
+                        # Shrink oversized masks to avoid spill
+                        try:
+                            cov2 = float((mclip[y1:y2, x1:x2] > 0).sum()) / max(1, (x2 - x1) * (y2 - y1))
+                            if cov2 > 0.80:
+                                local = self._shrink_mask_polygon(mclip[y1:y2, x1:x2], 0.96)
+                                mclip[y1:y2, x1:x2] = local
+                        except Exception:
+                            pass
+                        if np.count_nonzero(mclip) == 0:
+                            continue
+                        # Blur only inside mask
+                        bw = max(1, x2 - x1); bh = max(1, y2 - y1)
+                        k = int(max(31, min(211, int(min(bw, bh) * 0.50))))
+                        if k % 2 == 0:
+                            k += 1
+                        blurred = cv2.GaussianBlur(processed_image, (k, k), 0)
+                        mask3 = cv2.merge([mclip * 255, mclip * 255, mclip * 255])
+                        processed_image = np.where(mask3 == 255, blurred, processed_image)
+                        # Debug save
+                        try:
+                            _dbg = os.getenv('PLATE_DEBUG_DIR', '').strip()
+                            if _dbg:
+                                os.makedirs(_dbg, exist_ok=True)
+                                base = os.path.splitext(os.path.basename(image_path))[0]
+                                dbg_mask = (mclip * 255).astype('uint8')
+                                cv2.imwrite(os.path.join(_dbg, f"{base}_segmask_{idx}.png"), dbg_mask)
+                        except Exception:
+                            pass
+                        try:
+                            self._post_blur_verify_mask(processed_image, x1, y1, x2, y2, mclip[y1:y2, x1:x2])
+                        except Exception:
+                            pass
+                        blurred_count += 1
+                    if blurred_count > 0:
+                        out_path = self._build_output_path(image_path)
+                        root, ext = os.path.splitext(out_path)
+                        if not root.lower().endswith('_blurred'):
+                            out_path = f"{root}_blurred{ext or '.jpg'}"
+                        try:
+                            os.makedirs(os.path.dirname(out_path), exist_ok=True)
+                        except Exception:
+                            pass
+                        cv2.imwrite(out_path, processed_image)
+                        return out_path
+                except Exception as _e_seg:
+                    print(f"AI Service: Segmentation pipeline error: {_e_seg}")
+
+            # Fallback path: detection model with ROI-generated mask or rectangle
+            if self.license_plate_model is not None:
+                try:
+                    import os as _os2
+                    # Adaptive conf by image size
+                    try:
+                        base_conf = float(_os2.getenv('PLATE_CONF_THRESHOLD', '0.30') or 0.30)
+                    except Exception:
+                        base_conf = 0.30
+                    min_dim = min(H, W)
+                    if min_dim < 500:
+                        conf_th = max(0.18, base_conf - 0.12)
+                    elif min_dim < 800:
+                        conf_th = max(0.22, base_conf - 0.08)
+                    else:
+                        conf_th = base_conf
+                    res = self.license_plate_model.predict(image, conf=conf_th, iou=0.6, imgsz=1280, verbose=False)
+                    if res:
+                        r0 = res[0]
+                        boxes = getattr(r0, 'boxes', None)
+                        if boxes is not None and hasattr(boxes, 'xyxy'):
+                            # xyxy from Ultralytics are already scaled back to the original image coordinates,
+                            # accounting for the internal letterbox (no manual scaling needed).
+                            try:
+                                xyxy = boxes.xyxy.cpu().numpy() if hasattr(boxes.xyxy, 'cpu') else boxes.xyxy
+                                confs = boxes.conf.cpu().numpy() if hasattr(boxes, 'conf') and hasattr(boxes.conf, 'cpu') else None
+                            except Exception:
+                                xyxy, confs = None, None
+                            dets = []
+                            if xyxy is not None:
+                                for i, b in enumerate(xyxy):
+                                    c = float(confs[i]) if confs is not None and i < len(confs) else conf_th
+                                    if c < conf_th:
+                                        continue
+                                    x1, y1, x2, y2 = [int(v) for v in b]
+                                    # Clamp to image boundaries
+                                    x1 = max(0, min(W - 1, x1)); x2 = max(0, min(W, x2))
+                                    y1 = max(0, min(H - 1, y1)); y2 = max(0, min(H, y2))
+                                    if x2 <= x1 or y2 <= y1:
+                                        continue
+                                    dets.append((c, x1, y1, x2, y2))
+                            if dets:
+                                dets.sort(key=lambda t: t[0], reverse=True)
+                                dets = dets[:2]  # max 2 plates
+                                for c, x1, y1, x2, y2 in dets:
+                                    # No extra padding; use YOLO box directly and build mask within it
+                                    xa, ya, xb, yb = x1, y1, x2, y2
+                                    if xb <= xa or yb <= ya:
+                                        continue
+                                    roi = processed_image[ya:yb, xa:xb]
+                                    if roi.size == 0:
+                                        continue
+                                    # Primary: build plate-surface mask; fallback to homography mask if weak
+                                    mask01 = self._build_plate_surface_mask(roi)
+                                    cov = (float((mask01 > 0).sum()) / (mask01.shape[0] * mask01.shape[1])) if (mask01 is not None and mask01.size) else 0.0
+                                    if mask01 is None or cov < 0.35:
+                                        mask01 = self._homography_plate_mask(roi)
+                                    if mask01 is not None and np.count_nonzero(mask01) > 0:
+                                        import cv2 as _cv2
+                                        # Guard against oversized masks: shrink if coverage > 80%
+                                        try:
+                                            cov2 = float((mask01 > 0).sum()) / float(mask01.shape[0] * mask01.shape[1])
+                                            if cov2 > 0.80:
+                                                mask01 = self._shrink_mask_polygon(mask01, scale_xy=0.96)
+                                        except Exception:
+                                            pass
+                                        k = int(max(31, min(211, int(min(roi.shape[0], roi.shape[1]) * 0.50))))
+                                        if k % 2 == 0:
+                                            k += 1
+                                        blurred_roi = _cv2.GaussianBlur(roi, (k, k), 0)
+                                        try:
+                                            blurred_roi = self._apply_plate_obfuscation(roi, blurred_roi)
+                                        except Exception:
+                                            pass
+                                        # Keep mask-only coverage; no bbox union per spec
+                                        mask255 = (mask01.astype(np.uint8) * 255)
+                                        mask3 = _cv2.merge([mask255, mask255, mask255])
+                                        composited = np.where(mask3 == 255, blurred_roi, roi)
+                                        processed_image[ya:yb, xa:xb] = composited
+                                        # Debug save
+                                        try:
+                                            _dbg = os.getenv('PLATE_DEBUG_DIR', '').strip()
+                                            if _dbg:
+                                                os.makedirs(_dbg, exist_ok=True)
+                                                base = os.path.splitext(os.path.basename(image_path))[0]
+                                                cv2.imwrite(os.path.join(_dbg, f"{base}_roi_mask_{x1}_{y1}.png"), mask255)
+                                        except Exception:
+                                            pass
+                                    else:
+                                        # Fallback: try edge-rect mask before rectangle blur
+                                        emask = self._edge_rect_mask(roi)
+                                        if emask is not None and np.count_nonzero(emask) > 0:
+                                            import cv2 as _cv2
+                                            k = int(max(31, min(211, int(min(roi.shape[0], roi.shape[1]) * 0.50))))
+                                            if k % 2 == 0:
+                                                k += 1
+                                            blurred_roi = _cv2.GaussianBlur(roi, (k, k), 0)
+                                            m255 = (emask.astype(np.uint8) * 255)
+                                            m3 = _cv2.merge([m255, m255, m255])
+                                            comp = np.where(m3 == 255, blurred_roi, roi)
+                                            processed_image[ya:yb, xa:xb] = comp
+                                            try:
+                                                self._post_blur_verify_mask(processed_image, xa, ya, xb, yb, emask)
+                                            except Exception:
+                                                pass
+                                        else:
+                                            # Last resort: rectangle blur with masked verification
+                                            k = int(max(31, min(211, int(min(roi.shape[0], roi.shape[1]) * 0.50))))
+                                            if k % 2 == 0:
+                                                k += 1
+                                            processed_image[ya:yb, xa:xb] = cv2.GaussianBlur(roi, (k, k), 0)
+                                            try:
+                                                full_mask = np.ones((roi.shape[0], roi.shape[1]), dtype=np.uint8)
+                                                self._post_blur_verify_mask(processed_image, xa, ya, xb, yb, full_mask)
+                                            except Exception:
+                                                pass
+                                    try:
+                                        self._post_blur_verify_mask(processed_image, xa, ya, xb, yb, mask01 if mask01 is not None and np.count_nonzero(mask01)>0 else np.ones((roi.shape[0], roi.shape[1]), dtype=np.uint8))
+                                    except Exception:
+                                        pass
+                                    blurred_count += 1
+                    if blurred_count > 0:
+                        # OCR residual sweep: blur any remaining plate-like text not caught by YOLO/seg
+                        try:
+                            if self.ocr_reader is not None:
+                                rgb_full = cv2.cvtColor(image, cv2.COLOR_BGR2RGB)
+                                candidates = []
+                                for _scale in [1.0, 1.5, 2.0, 3.0]:
+                                    src = rgb_full if _scale == 1.0 else cv2.resize(rgb_full, None, fx=_scale, fy=_scale, interpolation=cv2.INTER_CUBIC)
+                                    _res = self.ocr_reader.readtext(src) or []
+                                    for (bbox, text, conf) in _res:
+                                        if _scale != 1.0:
+                                            bbox = [[int(pt[0] / _scale), int(pt[1] / _scale)] for pt in bbox]
+                                        candidates.append((bbox, text, conf))
+                                for (bbox, text, conf) in candidates:
+                                    try:
+                                        clean = ''.join([c for c in str(text).upper() if c.isalnum()])
+                                    except Exception:
+                                        clean = ""
+                                    if (conf or 0) < 0.25:
+                                        continue
+                                    if not self._is_likely_license_plate(clean):
+                                        continue
+                                    xs = [int(p[0]) for p in bbox]
+                                    ys = [int(p[1]) for p in bbox]
+                                    x1r, x2r = max(0, min(xs)), min(W, max(xs))
+                                    y1r, y2r = max(0, min(ys)), min(H, max(ys))
+                                    if x2r <= x1r or y2r <= y1r:
+                                        continue
+                                    xa, ya, xb, yb = x1r, y1r, x2r, y2r
+                                    roi = processed_image[ya:yb, xa:xb]
+                                    if roi.size == 0:
+                                        continue
+                                    mask01 = self._build_plate_surface_mask(roi)
+                                    cov = (float((mask01 > 0).sum()) / (mask01.shape[0] * mask01.shape[1])) if (mask01 is not None and mask01.size) else 0.0
+                                    if mask01 is None or cov < 0.35:
+                                        mask01 = self._homography_plate_mask(roi)
+                                    if mask01 is None or np.count_nonzero(mask01) == 0:
+                                        # Rectangle blur fallback
+                                        k = int(max(31, min(211, int(min(roi.shape[0], roi.shape[1]) * 0.50))))
+                                        if k % 2 == 0: k += 1
+                                        processed_image[ya:yb, xa:xb] = cv2.GaussianBlur(roi, (k, k), 0)
+                                    else:
+                                        import cv2 as _cv2
+                                        # Tiny edge seal already done by builders; keep mask-only coverage
+                                        k = int(max(31, min(211, int(min(roi.shape[0], roi.shape[1]) * 0.50))))
+                                        if k % 2 == 0: k += 1
+                                        blurred_roi = _cv2.GaussianBlur(roi, (k, k), 0)
+                                        try:
+                                            blurred_roi = self._apply_plate_obfuscation(roi, blurred_roi)
+                                        except Exception:
+                                            pass
+                                        m255 = (mask01.astype(np.uint8) * 255)
+                                        m3 = _cv2.merge([m255, m255, m255])
+                                        comp = np.where(m3 == 255, blurred_roi, roi)
+                                        processed_image[ya:yb, xa:xb] = comp
+                                    try:
+                                        self._post_blur_verify_mask(processed_image, xa, ya, xb, yb, mask01 if mask01 is not None and np.count_nonzero(mask01)>0 else np.ones((roi.shape[0], roi.shape[1]), dtype=np.uint8))
+                                    except Exception:
+                                        pass
+                        except Exception:
+                            pass
+                        out_path = self._build_output_path(image_path)
+                        root, ext = os.path.splitext(out_path)
+                        if not root.lower().endswith('_blurred'):
+                            out_path = f"{root}_blurred{ext or '.jpg'}"
+                        try:
+                            os.makedirs(os.path.dirname(out_path), exist_ok=True)
+                        except Exception:
+                            pass
+                        cv2.imwrite(out_path, processed_image)
+                        return out_path
+                except Exception as _e_letterbox:
+                    print(f"AI Service: Letterbox-aware YOLO pipeline error: {_e_letterbox}")
             
             # Helper: refine a coarse box to tighter plate-like rectangle within it
             def _refine_plate_box(xa: int, ya: int, xb: int, yb: int) -> Tuple[int, int, int, int]:
@@ -707,8 +1442,7 @@ class CarAnalysisService:
                                 # Recompute ROI after clamp
                                 roi = processed_image[ya:yb, xa:xb]
                                 roi_h, roi_w = roi.shape[:2]
-                                # Obfuscation kernel (stronger for reliability)
-                                # Allow operator override via PLATE_BLUR_MULT (applies to all modes)
+                                # Compute blur kernel (strong for reliability)
                                 try:
                                     _m_env = os.getenv('PLATE_BLUR_MULT', '').strip()
                                     mult_override = float(_m_env) if _m_env else None
@@ -720,22 +1454,45 @@ class CarAnalysisService:
                                 k = int(max(21, min(151, int(min(roi_w, roi_h) * mult))))
                                 if k % 2 == 0:
                                     k += 1
-                                blurred_roi = cv2.GaussianBlur(roi, (k, k), 0)
-                                # Optional pixelation pass (skip in speed mode)
-                                if not is_speed:
+                                # Try refined rotated rectangle mask inside ROI for exact coverage
+                                quad = self._refine_plate_quad(roi)
+                                if quad is not None:
+                                    import cv2 as _cv2
+                                    mask = np.zeros((roi_h, roi_w), dtype=np.uint8)
+                                    _cv2.fillPoly(mask, [quad.astype(np.int32)], 255)
+                                    # Light dilation to ensure corners/edges are fully covered
                                     try:
-                                        px_w = max(8, roi_w // 8)
-                                        px_h = max(6, roi_h // 8)
-                                        small = cv2.resize(blurred_roi, (px_w, px_h), interpolation=cv2.INTER_AREA)
-                                        blurred_roi = cv2.resize(small, (roi_w, roi_h), interpolation=cv2.INTER_NEAREST)
+                                        _dw = max(1, int(roi_w * float(os.getenv('PLATE_MASK_DILATE_W_RATIO', '0.03'))))
+                                        _dh = max(1, int(roi_h * float(os.getenv('PLATE_MASK_DILATE_H_RATIO', '0.05'))))
+                                        ker = _cv2.getStructuringElement(_cv2.MORPH_RECT, ((_dw | 1), (_dh | 1)))
+                                        mask = _cv2.dilate(mask, ker, iterations=1)
                                     except Exception:
                                         pass
-                                # Extra operator-controlled obfuscation
-                                try:
-                                    blurred_roi = self._apply_plate_obfuscation(roi, blurred_roi)
-                                except Exception:
-                                    pass
-                                processed_image[ya:yb, xa:xb] = blurred_roi
+                                    blurred_roi = _cv2.GaussianBlur(roi, (k, k), 0)
+                                    # Extra operator-controlled obfuscation
+                                    try:
+                                        blurred_roi = self._apply_plate_obfuscation(roi, blurred_roi)
+                                    except Exception:
+                                        pass
+                                    mask3 = _cv2.merge([mask, mask, mask])
+                                    composited = np.where(mask3 == 255, blurred_roi, roi)
+                                    processed_image[ya:yb, xa:xb] = composited
+                                else:
+                                    # Fallback: rectangular blur within refined ROI
+                                    blurred_roi = cv2.GaussianBlur(roi, (k, k), 0)
+                                    if not is_speed:
+                                        try:
+                                            px_w = max(8, roi_w // 8)
+                                            px_h = max(6, roi_h // 8)
+                                            small = cv2.resize(blurred_roi, (px_w, px_h), interpolation=cv2.INTER_AREA)
+                                            blurred_roi = cv2.resize(small, (roi_w, roi_h), interpolation=cv2.INTER_NEAREST)
+                                        except Exception:
+                                            pass
+                                    try:
+                                        blurred_roi = self._apply_plate_obfuscation(roi, blurred_roi)
+                                    except Exception:
+                                        pass
+                                    processed_image[ya:yb, xa:xb] = blurred_roi
                                 # Post-blur verification to avoid partial/insufficient blur
                                 try:
                                     self._post_blur_verify(processed_image, xa, ya, xb, yb)
@@ -781,25 +1538,27 @@ class CarAnalysisService:
                                 xs1.append(x1b); ys1.append(y1b); xs2.append(x2b); ys2.append(y2b)
                             if xs1 and ys1 and xs2 and ys2:
                                 ux1, uy1, ux2, uy2 = min(xs1), min(ys1), max(xs2), max(ys2)
-                                try:
-                                    upad = float(os.getenv('PLATE_UNION_PAD_RATIO', '0.10') or 0.10)
-                                except Exception:
-                                    upad = 0.10
-                                pw = ux2 - ux1; ph = uy2 - uy1
-                                ux1 = max(0, ux1 - int(pw * upad)); uy1 = max(0, uy1 - int(ph * upad))
-                                ux2 = min(W, ux2 + int(pw * upad)); uy2 = min(H, uy2 + int(ph * upad))
+                                # No padding; keep tight union box
                                 uroi = processed_image[uy1:uy2, ux1:ux2]
                                 if uroi.size > 0:
-                                    k = int(max(31, min(211, int(min(uroi.shape[0], uroi.shape[1]) * 0.50)))) 
-                                    if (k % 2) == 0: k += 1
-                                    ublur = cv2.GaussianBlur(uroi, (k, k), 0)
-                                    try:
-                                        ublur = self._apply_plate_obfuscation(uroi, ublur)
-                                    except Exception:
-                                        pass
-                                    processed_image[uy1:uy2, ux1:ux2] = ublur
-                                    blurred_count += 1
-                                    print(f"AI Service: YOLO union-rectangle fallback blur at ({ux1},{uy1})-({ux2},{uy2})")
+                                    umask = self._build_plate_surface_mask(uroi)
+                                    if umask is not None and np.count_nonzero(umask) > 0:
+                                        k = int(max(31, min(211, int(min(uroi.shape[0], uroi.shape[1]) * 0.50)))) 
+                                        if (k % 2) == 0: k += 1
+                                        ublur = cv2.GaussianBlur(uroi, (k, k), 0)
+                                        try:
+                                            ublur = self._apply_plate_obfuscation(uroi, ublur)
+                                        except Exception:
+                                            pass
+                                        m3 = cv2.merge([(umask*255).astype('uint8')]*3)
+                                        comp = np.where(m3 == 255, ublur, uroi)
+                                        processed_image[uy1:uy2, ux1:ux2] = comp
+                                        try:
+                                            self._post_blur_verify_mask(processed_image, ux1, uy1, ux2, uy2, umask)
+                                        except Exception:
+                                            pass
+                                        blurred_count += 1
+                                        print(f"AI Service: YOLO union mask fallback blur at ({ux1},{uy1})-({ux2},{uy2})")
                 except Exception as _u_e:
                     print(f"AI Service: YOLO union fallback error: {_u_e}")
 
@@ -2216,7 +2975,7 @@ class CarAnalysisService:
         
         # Skip common car model names and words that are definitely not license plates
         # Check both original and normalized versions
-        skip_words = ['PRADO', 'TOYOTA', 'LAND', 'CRUISER', 'SUV', 'CAR', 'AUTO', 'VEHICLE', 'GRIDSERVE', 'GRISERVE', 'GR1DSERVE', 'GR15ERVE', 'SUSTAINABLE', 'ENERGY', 'KIA', 'EV9', 'BMW', 'MERCEDES', 'DMONOTS', 'FADS', 'DEMONS', 'DEMONST']
+        skip_words = ['PRADO', 'TOYOTA', 'LAND', 'CRUISER', 'SUV', 'CAR', 'AUTO', 'VEHICLE', 'GRIDSERVE', 'GRISERVE', 'GR1DSERVE', 'GR15ERVE', 'SUSTAINABLE', 'ENERGY', 'KIA', 'EV9', 'BMW', 'MERCEDES', 'DMONOTS', 'FADS', 'DEMONS', 'DEMONST', 'GETTY', 'GETTYIMAGES', 'IMAGES', 'CREDIT', 'COOPER', 'LEXUS', 'DODGE', 'MINI']
         
         # Special case: If text is all digits and 8-9 characters long, try replacing middle '1' with 'A'
         # This handles cases like "241483878" which should be "24A83878"
@@ -2293,19 +3052,18 @@ class CarAnalysisService:
         # Check all text variants (including normalized versions)
         for text_variant in texts_to_check:
             # Require minimum 5 characters to avoid false positives like "E6X"
-            if len(text_variant) >= 4 and len(text_variant) <= 9:
+            if len(text_variant) >= 5 and len(text_variant) <= 9:
                 # Check if it has letters and numbers
                 has_letters = any(c.isalpha() for c in text_variant)
                 has_numbers = any(c.isdigit() for c in text_variant)
 
-                # Only blur when digits are present (avoid pure words like PRADO, ARBIL)
-                if has_numbers and (has_letters or True):
+                # Only accept when BOTH letters and digits are present (avoid badges/words/numbers-only)
+                if has_numbers and has_letters:
                     letter_count = sum(1 for c in text_variant if c.isalpha())
                     number_count = sum(1 for c in text_variant if c.isdigit())
 
-                    # Very flexible ratios for low-resolution images
-                    # Accept almost any combination of letters and numbers
-                    if (0 <= letter_count <= 5 and 1 <= number_count <= 9):
+                    # Reasonable bounds for low-resolution plates
+                    if (1 <= letter_count <= 5 and 1 <= number_count <= 6):
                         logger.info(f"License plate heuristic matched: '{text}' -> '{text_variant}' (letters: {letter_count}, numbers: {number_count})")
                         print(f"AI Service: License plate heuristic matched: '{text}' -> '{text_variant}' (letters: {letter_count}, numbers: {number_count})")
                         return True
