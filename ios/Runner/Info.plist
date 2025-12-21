@@ -64,10 +64,21 @@
 	<string>Microphone access is needed for video capture when adding listings.</string>
 	<key>NSAppTransportSecurity</key>
 	<dict>
+		<key>NSAllowsArbitraryLoads</key>
+		<true/>
 		<key>NSAllowsArbitraryLoadsInWebContent</key>
 		<true/>
 		<key>NSExceptionDomains</key>
 		<dict>
+			<key>10.0.2.2</key>
+			<dict>
+				<key>NSIncludesSubdomains</key>
+				<true/>
+				<key>NSExceptionAllowsInsecureHTTPLoads</key>
+				<true/>
+				<key>NSExceptionRequiresForwardSecrecy</key>
+				<false/>
+			</dict>
 			<key>192.168.1.13</key>
 			<dict>
 				<key>NSIncludesSubdomains</key>
