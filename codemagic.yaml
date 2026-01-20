@@ -12,7 +12,7 @@ workflows:
       - flutter --version
       - flutter clean
       - flutter pub get
-      - flutter build ipa --flavor dev --dart-define=API_BASE=$API_BASE --dart-define=FORCE_SKIP_BLUR=$FORCE_SKIP_BLUR
+      - flutter build ipa --release --no-codesign --dart-define=API_BASE=$API_BASE --dart-define=FORCE_SKIP_BLUR=$FORCE_SKIP_BLUR
     artifacts:
       - build/ios/ipa/*.ipa
     cache:
