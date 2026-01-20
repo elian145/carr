@@ -20,6 +20,26 @@ workflows:
         - "$FLUTTER_ROOT/.pub-cache"
         - "~/.pub-cache"
         - "build/"
+  ios_workflow:
+    name: iOS Workflow
+    environment:
+      flutter: stable
+      xcode: latest
+      vars:
+        API_BASE: "https://reactions-seattle-now-scanners.trycloudflare.com"
+        FORCE_SKIP_BLUR: "false"
+    scripts:
+      - flutter --version
+      - flutter clean
+      - flutter pub get
+      - flutter build ipa --flavor dev --dart-define=API_BASE=$API_BASE --dart-define=FORCE_SKIP_BLUR=$FORCE_SKIP_BLUR
+    artifacts:
+      - build/ios/ipa/*.ipa
+    cache:
+      cache_paths:
+        - "$FLUTTER_ROOT/.pub-cache"
+        - "~/.pub-cache"
+        - "build/"
 workflows:
   default-workflow:
     name: Default Workflow
