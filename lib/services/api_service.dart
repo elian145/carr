@@ -375,9 +375,11 @@ class ApiService {
       }
     }
 
-    // Force skip_blur for reliability in dev: store originals on server without Watermarkly.
-    // This avoids 403 failures from the external API and guarantees images are saved.
-    final String query = '?skip_blur=1';
+    // Prefer full server blur when available; allow forcing skip via build flag.
+    final bool allPreBlurred = imageFiles.isNotEmpty &&
+        imageFiles.every((f) => f.path.toLowerCase().endsWith('_blurred.jpg'));
+    final bool forceSkip = forceSkipBlur();
+    final String query = (forceSkip || allPreBlurred) ? '?skip_blur=1' : '?mode=auto';
     final request = http.MultipartRequest(
       'POST',
       Uri.parse('$baseUrl/cars/$carId/images$query'),
