@@ -13,6 +13,35 @@ workflows:
       - flutter clean
       - flutter pub get
       - flutter build ipa --release --no-codesign --dart-define=API_BASE=$API_BASE --dart-define=FORCE_SKIP_BLUR=$FORCE_SKIP_BLUR
+      - name: Package unsigned IPA (if Flutter didn't create one)
+        script: |
+          set -e
+          DEST_DIR="$CM_BUILD_DIR/build/ios/ipa"
+          mkdir -p "$DEST_DIR"
+          # If Flutter already produced an IPA, keep it
+          if ls "$DEST_DIR"/*.ipa >/dev/null 2>&1; then
+            echo "IPA already exists in $DEST_DIR"
+            exit 0
+          fi
+          # Try common app locations
+          APP_PATH_ARCHIVE="$CM_BUILD_DIR/build/ios/archive/Runner.xcarchive/Products/Applications/Runner.app"
+          APP_PATH_IPHONEOS="$CM_BUILD_DIR/build/ios/iphoneos/Runner.app"
+          if [ -d "$APP_PATH_ARCHIVE" ]; then
+            APP_SRC="$APP_PATH_ARCHIVE"
+          elif [ -d "$APP_PATH_IPHONEOS" ]; then
+            APP_SRC="$APP_PATH_IPHONEOS"
+          else
+            echo "Runner.app not found in expected locations."
+            echo "Listing build/ios:"
+            ls -la "$CM_BUILD_DIR/build/ios" || true
+            exit 1
+          fi
+          TMP_DIR=$(mktemp -d)
+          mkdir -p "$TMP_DIR/Payload"
+          cp -R "$APP_SRC" "$TMP_DIR/Payload/Runner.app"
+          (cd "$TMP_DIR" && zip -qry Runner-unsigned.ipa Payload)
+          mv "$TMP_DIR/Runner-unsigned.ipa" "$DEST_DIR/Runner-unsigned.ipa"
+          echo "Created unsigned IPA at $DEST_DIR/Runner-unsigned.ipa"
     artifacts:
       - build/ios/ipa/*.ipa
     cache:
