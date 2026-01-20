@@ -473,9 +473,11 @@ def login():
         if not data.get('username') or not data.get('password'):
             return jsonify({'message': 'Email/phone and password are required'}), 400
         
-        # Find user by email or phone number only (no username)
+        # Find user by email, phone number, or username (support legacy clients)
+        from sqlalchemy import or_
+        ident = data['username']
         user = User.query.filter(
-            (User.email == data['username']) | (User.phone_number == data['username'])
+            or_(User.email == ident, User.phone_number == ident, User.username == ident)
         ).first()
         
         if not user or not user.check_password(data['password']):
