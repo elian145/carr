@@ -10427,7 +10427,9 @@ class _SellStep5PageState extends State<SellStep5Page> {
         url,
         headers: headers,
         body: json.encode(payload),
-      );
+      ).timeout(const Duration(seconds: 25), onTimeout: () {
+        throw Exception('Network timeout. Please check the server and try again.');
+      });
 
       if (response.statusCode == 201) {
         // Success - listing created
@@ -10446,11 +10448,11 @@ class _SellStep5PageState extends State<SellStep5Page> {
           }
         } catch (_) {}
         // Optimistic background image attach/upload: don't block submit
+        // Use the currently selected (and possibly processed) images directly.
         Future.microtask(() async {
           try {
             final dynamic maybeImgs = carData['images'];
             final List<dynamic> imgs = (maybeImgs is List) ? maybeImgs : const [];
-            if (imgs.isEmpty) return;
             final List<XFile> toUpload = <XFile>[];
             for (final dynamic img in imgs) {
               if (img is XFile) {
@@ -10461,6 +10463,8 @@ class _SellStep5PageState extends State<SellStep5Page> {
             }
             if (toUpload.isEmpty) return;
             await CarService().uploadCarImages(carId, toUpload);
+            // Force listings refresh so new images appear immediately
+            try { await CarService().getCars(refresh: true); } catch (_) {}
           } catch (e) {
             try {
               ScaffoldMessenger.of(context).showSnackBar(

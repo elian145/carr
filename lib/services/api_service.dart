@@ -375,12 +375,9 @@ class ApiService {
       }
     }
 
-    // If all files look pre-blurred (our convention), tell backend to skip blur and just store.
-    final bool allPreBlurred = imageFiles.isNotEmpty &&
-        imageFiles.every((f) => f.path.toLowerCase().endsWith('_blurred.jpg'));
-    // Let the backend run its full multi-pass YOLO+OCR pipeline for best recall.
-    // Keep skip_blur for pre-blurred assets.
-    final query = allPreBlurred ? '?skip_blur=1' : '?mode=auto';
+    // Force skip_blur for reliability in dev: store originals on server without Watermarkly.
+    // This avoids 403 failures from the external API and guarantees images are saved.
+    final String query = '?skip_blur=1';
     final request = http.MultipartRequest(
       'POST',
       Uri.parse('$baseUrl/cars/$carId/images$query'),

@@ -14,3 +14,5 @@ String apiBaseApi() {
   return base.endsWith('/api') ? base : base + '/api';
 }
 
+// No third-party plate API keys are exposed to the client.
+// All license plate blurring is performed server-side via the backend.

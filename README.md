@@ -1,3 +1,61 @@
+## License Plate Blur Proxy (Express)
+
+This is a minimal Node.js Express backend that proxies the Watermarkly Blur API (EU) to blur license plates in uploaded images. It does not use any ML/OCR/YOLO; it only forwards your image to Watermarkly and returns the blurred result.
+
+### Requirements
+- Node.js 18+
+- A Watermarkly API key (`WATERMARKLY_API_KEY`)
+
+### Install
+1. In the project folder, install dependencies:
+
+```bash
+npm install
+```
+
+2. Configure your environment variable:
+
+- Windows PowerShell:
+
+```powershell
+$env:WATERMARKLY_API_KEY="YOUR_API_KEY"
+```
+
+- Or create a `.env` file with:
+
+```
+WATERMARKLY_API_KEY=YOUR_API_KEY
+PORT=3000
+```
+
+### Run
+
+```bash
+npm start
+```
+
+Server runs at `http://localhost:3000`.
+
+### Endpoint
+
+`POST /blur-license-plate`
+
+- Accepts `multipart/form-data` with a single file field named `image`.
+- Forwards the image to `https://blur-api-eu1.watermarkly.com/v1/blur` with Bearer auth from `WATERMARKLY_API_KEY`.
+- Streams the blurred image back to the client and also saves it under `./outputs`.
+- Temporary uploaded files are cleaned up.
+
+### cURL example
+
+```bash
+curl -X POST http://localhost:3000/blur-license-plate ^
+  -H "Accept: */*" ^
+  -F "image=@path\to\your\car-photo.jpg" ^
+  --output blurred.jpg
+```
+
+The blurred image will be saved as `blurred.jpg` locally from the response, and a copy will be stored in the server's `outputs` folder.
+
 ## Android release quickstart
 
 1. Create a keystore (one time):

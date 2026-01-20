@@ -14,18 +14,41 @@ import pathlib
 import os
 import json
 import logging
+import requests
 from datetime import datetime, timedelta
 import base64
 import secrets
 from functools import wraps
+import time
+import hashlib
+import threading
+from dotenv import load_dotenv
 
 # Initialize Flask app
 app = Flask(__name__)
+load_dotenv()  # Load environment variables from .env if present
+# Also load optional env.local next to the kk app
+try:
+    load_dotenv(os.path.join(os.path.dirname(__file__), 'env.local'), override=False)  # type: ignore
+except Exception:
+    pass
 app.config.from_object(config['development'])
-# Force SQLite DB to live under the app's instance directory, regardless of CWD
-instance_db_abs = os.path.join(app.root_path, 'instance', 'car_listings_dev.db')
-os.makedirs(os.path.dirname(instance_db_abs), exist_ok=True)
-app.config['SQLALCHEMY_DATABASE_URI'] = f"sqlite:///{instance_db_abs}"
+# Prefer explicit DB via env, else root-level instance, else kk/instance
+env_db = (os.getenv('DB_PATH') or '').strip()
+kk_cars_db = os.path.join(app.root_path, 'instance', 'cars.db')
+root_level_db = os.path.abspath(os.path.join(app.root_path, '..', 'instance', 'car_listings_dev.db'))
+kk_level_db = os.path.join(app.root_path, 'instance', 'car_listings_dev.db')
+if env_db:
+	db_path = env_db
+elif os.path.isfile(kk_cars_db):
+	# Prefer populated kk/instance/cars.db if present
+	db_path = kk_cars_db
+elif os.path.isfile(root_level_db):
+	db_path = root_level_db
+else:
+	db_path = kk_level_db
+os.makedirs(os.path.dirname(db_path), exist_ok=True)
+app.config['SQLALCHEMY_DATABASE_URI'] = f"sqlite:///{db_path}"
 
 # Initialize extensions
 db.init_app(app)
@@ -35,6 +58,138 @@ mail = Mail(app)
 socketio = SocketIO(app, cors_allowed_origins="*", async_mode='threading')
 CORS(app)
 
+# Ensure minimal schema compatibility for legacy SQLite DBs (SQLite-only)
+try:
+	with app.app_context():
+		from sqlalchemy import text
+		conn = db.engine.connect()
+		def _cols(table: str):
+			return {row[1] for row in conn.execute(text(f'PRAGMA table_info({table})'))}
+		try:
+			car_cols = _cols('car')
+			def _add_car(col: str, typ: str):
+				if col not in car_cols:
+					conn.execute(text(f'ALTER TABLE car ADD COLUMN {col} {typ}'))
+					car_cols.add(col)
+			# Fields required by the current models/API
+			_add_car('public_id', 'VARCHAR(50)')
+			_add_car('seller_id', 'INTEGER')
+			# Core descriptive fields
+			for col, typ in (
+				('brand', 'TEXT'),
+				('model', 'TEXT'),
+				('year', 'INTEGER DEFAULT 0'),
+				('mileage', 'INTEGER DEFAULT 0'),
+				('engine_type', 'TEXT'),
+				('transmission', 'TEXT'),
+				('drive_type', 'TEXT'),
+				('condition', 'TEXT'),
+				('body_type', 'TEXT'),
+				('status', "TEXT DEFAULT 'active'"),
+			):
+				_add_car(col, typ)
+			# Pricing and location
+			for col, typ in (
+				('price', 'FLOAT DEFAULT 0'),
+				('currency', "TEXT DEFAULT 'USD'"),
+				('location', 'TEXT'),
+				('seating', 'INTEGER DEFAULT 5'),
+				('latitude', 'FLOAT'),
+				('longitude', 'FLOAT'),
+			):
+				_add_car(col, typ)
+			# Additional details
+			for col, typ in (
+				('description', 'TEXT'),
+				('color', 'TEXT'),
+				('fuel_economy', 'TEXT'),
+				('vin', 'TEXT'),
+			):
+				_add_car(col, typ)
+			# Status/meta
+			for col, typ in (
+				('is_active', 'BOOLEAN DEFAULT 1'),
+				('is_featured', 'BOOLEAN DEFAULT 0'),
+				('views_count', 'INTEGER DEFAULT 0'),
+				('created_at', 'DATETIME'),
+				('updated_at', 'DATETIME'),
+			):
+				_add_car(col, typ)
+			_add_car('title', 'TEXT DEFAULT ""')
+			_add_car('title_status', "TEXT DEFAULT 'active'")
+			_add_car('trim', "TEXT DEFAULT 'base'")
+			_add_car('fuel_type', "TEXT DEFAULT 'gasoline'")
+			# AI fields (no-op if already added)
+			for col, typ in (
+				('ai_analyzed','BOOLEAN DEFAULT 0'),
+				('ai_detected_brand','VARCHAR(50)'),
+				('ai_detected_model','VARCHAR(50)'),
+				('ai_detected_color','VARCHAR(20)'),
+				('ai_detected_body_type','VARCHAR(20)'),
+				('ai_detected_condition','VARCHAR(20)'),
+				('ai_confidence_score','FLOAT'),
+				('ai_analysis_timestamp','DATETIME'),
+				('license_plates_blurred','BOOLEAN DEFAULT 0'),
+			):
+				_add_car(col, typ)
+			conn.commit()
+			# Ensure seller_id is populated (fallback to first user or create demo)
+			if 'seller_id' in car_cols:
+				has_null = conn.execute(text("SELECT EXISTS(SELECT 1 FROM car WHERE seller_id IS NULL)")).fetchone()[0]
+				if has_null:
+					# Get a user id or create one
+					row = conn.execute(text("SELECT id FROM user LIMIT 1")).fetchone()
+					uid = row[0] if row else None
+					if uid is None:
+						# Create minimal user row
+						conn.execute(text("INSERT INTO user (username, password, phone_number, first_name, last_name, is_active, created_at, updated_at) VALUES ('demo','password','07000000003','Demo','User',1,datetime('now'),datetime('now'))"))
+						uid = conn.execute(text("SELECT id FROM user ORDER BY id DESC LIMIT 1")).fetchone()[0]
+					conn.execute(text("UPDATE car SET seller_id=:uid WHERE seller_id IS NULL"), {'uid': uid})
+					conn.commit()
+			# User table legacy columns
+			user_cols = _cols('user')
+			if 'password' not in user_cols:
+				conn.execute(text('ALTER TABLE user ADD COLUMN password TEXT'))
+				user_cols.add('password')
+			if 'password_hash' not in user_cols:
+				conn.execute(text('ALTER TABLE user ADD COLUMN password_hash TEXT'))
+				user_cols.add('password_hash')
+			if 'public_id' not in user_cols:
+				conn.execute(text('ALTER TABLE user ADD COLUMN public_id VARCHAR(50)'))
+				user_cols.add('public_id')
+			conn.commit()
+			# Car image table columns
+			ci_cols = _cols('car_image')
+			def _add_ci(col: str, typ: str):
+				if col not in ci_cols:
+					conn.execute(text(f'ALTER TABLE car_image ADD COLUMN {col} {typ}'))
+					ci_cols.add(col)
+			for col, typ in (
+				('is_primary', 'BOOLEAN DEFAULT 0'),
+				('"order"', 'INTEGER DEFAULT 0'),
+				('created_at', 'DATETIME'),
+			):
+				_add_ci(col, typ)
+			conn.commit()
+			# Car video table columns
+			cv_cols = _cols('car_video')
+			def _add_cv(col: str, typ: str):
+				if col not in cv_cols:
+					conn.execute(text(f'ALTER TABLE car_video ADD COLUMN {col} {typ}'))
+					cv_cols.add(col)
+			for col, typ in (
+				('thumbnail_url', 'TEXT'),
+				('duration', 'INTEGER'),
+				('"order"', 'INTEGER DEFAULT 0'),
+				('created_at', 'DATETIME'),
+			):
+				_add_cv(col, typ)
+			conn.commit()
+		finally:
+			conn.close()
+except Exception:
+	# Best-effort; do not block app startup
+	pass
 # Configure logging
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
@@ -45,6 +200,195 @@ app.config['UPLOAD_FOLDER'] = os.path.join(app.root_path, 'static', 'uploads')
 os.makedirs(os.path.join(app.config['UPLOAD_FOLDER'], 'car_photos'), exist_ok=True)
 os.makedirs(os.path.join(app.config['UPLOAD_FOLDER'], 'car_videos'), exist_ok=True)
 os.makedirs(os.path.join(app.config['UPLOAD_FOLDER'], 'profile_pictures'), exist_ok=True)
+
+# -------- Watermarkly Blur API integration (single source of truth) --------
+# Notes:
+# - API key is read from env var WATERMARKLY_API_KEY (trial or live works the same).
+# - We POST raw bytes with Content-Type: application/octet-stream (no multipart).
+# - Region failover: try EU first, fallback to US.
+# - Rate-limit: if 429, sleep briefly (0.1s) and retry once.
+# - Deduplication: in-memory cache by SHA-256 of input to avoid paying twice for identical images.
+# - Place for future monthly quota enforcement is marked below.
+WATERMARKLY_EU = "https://blur-api-eu1.watermarkly.com/blur/"
+WATERMARKLY_US = "https://blur-api-us1.watermarkly.com/blur/"
+_recent_cache_lock = threading.Lock()
+_recent_cache = {}  # sha256 -> {'ts': unix_time, 'bytes': blurred_bytes, 'content_type': str}
+_recent_cache_max = 200
+_recent_cache_ttl_seconds = 60 * 60  # 1 hour window for dedupe
+
+def _prune_recent_cache() -> None:
+    now = time.time()
+    to_del = []
+    for k, v in list(_recent_cache.items()):
+        if (now - v.get('ts', 0)) > _recent_cache_ttl_seconds:
+            to_del.append(k)
+    for k in to_del:
+        _recent_cache.pop(k, None)
+    # Trim if too large
+    if len(_recent_cache) > _recent_cache_max:
+        # remove oldest entries
+        items = sorted(_recent_cache.items(), key=lambda kv: kv[1].get('ts', 0))
+        for k, _ in items[: max(0, len(_recent_cache) - _recent_cache_max)]:
+            _recent_cache.pop(k, None)
+
+def _watermarkly_blur_bytes(img_bytes: bytes) -> tuple:
+    """
+    Send image bytes to Watermarkly Blur API. Returns (blurred_bytes, content_type).
+    Raises RuntimeError on failure.
+    """
+    api_key = (os.getenv("WATERMARKLY_API_KEY") or "").strip()
+    if not api_key:
+        # DEV fallback: locally blur a plate-like region if no API key is configured.
+        # This helps during emulator testing without external dependencies.
+        try:
+            from io import BytesIO
+            try:
+                from PIL import Image, ImageFilter  # type: ignore
+            except Exception as e:
+                raise RuntimeError("WATERMARKLY_API_KEY is not configured and Pillow is not installed") from e
+
+            img = Image.open(BytesIO(img_bytes)).convert("RGB")
+            w, h = img.size
+            # Heuristic plate box: centered, bottom 20% area, 60% width
+            box_w = int(max(60, w * 0.6))
+            box_h = int(max(30, h * 0.18))
+            left = max(0, (w - box_w) // 2)
+            top = max(0, int(h * 0.72))
+            right = min(w, left + box_w)
+            bottom = min(h, top + box_h)
+
+            region = img.crop((left, top, right, bottom)).filter(ImageFilter.GaussianBlur(radius=18))
+            img.paste(region, (left, top))
+
+            out = BytesIO()
+            img.save(out, format="JPEG", quality=90)
+            return out.getvalue(), "image/jpeg"
+        except Exception as e:
+            raise RuntimeError("Local blur fallback failed and WATERMARKLY_API_KEY is not configured") from e
+
+    headers = {
+        "x-api-key": api_key,
+        "Content-Type": "application/octet-stream",
+    }
+
+    def _try(url: str) -> requests.Response:
+        r = requests.post(url, headers=headers, data=img_bytes, timeout=90)
+        if r.status_code == 429:
+            time.sleep(0.1)
+            r = requests.post(url, headers=headers, data=img_bytes, timeout=90)
+        return r
+
+    # Try EU, then US
+    r = None
+    try:
+        r = _try(WATERMARKLY_EU)
+        if r.status_code >= 500 or r.status_code in (403,):
+            # Hard failures: fallback to US
+            r = _try(WATERMARKLY_US)
+    except Exception:
+        # Network error: try US
+        r = _try(WATERMARKLY_US)
+
+    # If key invalid/forbidden, fall back to local blur in dev so uploads still work
+    if r is not None and r.status_code == 403:
+        try:
+            from io import BytesIO  # type: ignore
+            from PIL import Image, ImageFilter  # type: ignore
+            img = Image.open(BytesIO(img_bytes)).convert("RGB")
+            w, h = img.size
+            box_w = int(max(60, w * 0.6))
+            box_h = int(max(30, h * 0.18))
+            left = max(0, (w - box_w) // 2)
+            top = max(0, int(h * 0.72))
+            right = min(w, left + box_w)
+            bottom = min(h, top + box_h)
+            region = img.crop((left, top, right, bottom)).filter(ImageFilter.GaussianBlur(radius=18))
+            img.paste(region, (left, top))
+            out = BytesIO()
+            img.save(out, format="JPEG", quality=90)
+            return out.getvalue(), "image/jpeg"
+        except Exception:
+            # if local fallback fails, fall through to error handling below
+            pass
+
+    if not r or r.status_code != 200 or not r.content:
+        msg = None
+        try:
+            msg = r.json().get("message") if r is not None else None
+        except Exception:
+            msg = (r.text[:300] if (r is not None and hasattr(r, "text")) else None)
+        raise RuntimeError(f"Watermarkly blur failed ({getattr(r,'status_code', 'no_status')}): {msg or 'no details'}")
+
+    ct = (r.headers.get("Content-Type") or "").split(";", 1)[0].strip() or "image/jpeg"
+    return r.content, ct
+
+def _get_sha256(data: bytes) -> str:
+    h = hashlib.sha256()
+    h.update(data)
+    return h.hexdigest()
+
+# ------------------------------ Public endpoint ------------------------------
+@app.route('/api/blur-license-plate', methods=['POST'])
+def blur_license_plate_endpoint():
+    """
+    Accepts multipart/form-data image (field: 'image' preferred; also accepts 'file'/'upload').
+    Returns blurred image as binary with appropriate content-type.
+
+    This endpoint NEVER calls Watermarkly from the client; only server-to-server.
+    """
+    try:
+        # Accept common field names
+        fs = None
+        for key in ('image', 'file', 'upload', 'photo'):
+            if key in request.files:
+                fs = request.files.get(key)
+                break
+        if not fs or not fs.filename:
+            return jsonify({"error": "No image uploaded. Use form field 'image'."}), 400
+
+        img_bytes = fs.read()
+        if not img_bytes:
+            return jsonify({"error": "Empty upload"}), 400
+
+        # Monthly quota placeholder: enforce limits here.
+        # Example: check a persistent counter keyed by YYYY-MM and user/account ID.
+        # If over limit, return 429 with a clear message.
+        # def check_monthly_quota(user_id) -> bool: ...
+        # if not check_monthly_quota(current_user_id): return 429
+
+        # Deduplication: return cached response if we have seen this exact image recently
+        digest = _get_sha256(img_bytes)
+        with _recent_cache_lock:
+            _prune_recent_cache()
+            cached = _recent_cache.get(digest)
+        if cached and cached.get('bytes'):
+            resp = app.response_class(cached['bytes'])
+            resp.headers['Content-Type'] = cached.get('content_type') or 'image/jpeg'
+            return resp, 200
+
+        # Call Watermarkly
+        blurred, content_type = _watermarkly_blur_bytes(img_bytes)
+
+        # Cache result for dedupe
+        with _recent_cache_lock:
+            _recent_cache[digest] = {'ts': time.time(), 'bytes': blurred, 'content_type': content_type}
+            _prune_recent_cache()
+
+        resp = app.response_class(blurred)
+        resp.headers['Content-Type'] = content_type
+        return resp, 200
+    except RuntimeError as e:
+        logger.error(f"/api/blur-license-plate runtime error: {e}")
+        # Map common upstream errors to client-friendly codes
+        msg = str(e)
+        if "429" in msg or "rate limit" in msg.lower():
+            return jsonify({"error": "rate_limited", "message": msg}), 429
+        if "403" in msg:
+            return jsonify({"error": "forbidden", "message": msg}), 403
+        return jsonify({"error": "processing_failed", "message": msg}), 502
+    except Exception as e:
+        logger.exception(f"/api/blur-license-plate error: {e}")
+        return jsonify({"error": "internal_error"}), 500
 
 # JWT error handlers
 @jwt.expired_token_loader
@@ -140,12 +484,28 @@ def login():
         if not user.is_active:
             return jsonify({'message': 'Account is deactivated'}), 401
         
+        # Ensure user has a public_id for JWT identity compatibility
+        if not getattr(user, 'public_id', None):
+            try:
+                user.public_id = secrets.token_hex(8)
+                db.session.commit()
+            except Exception:
+                db.session.rollback()
+        
         # Update last login
         user.last_login = datetime.utcnow()
         db.session.commit()
         
-        # Generate tokens
-        access_token, refresh_token = user.generate_tokens()
+        # Generate tokens (ensure non-null identity)
+        try:
+            identity = getattr(user, 'public_id', None)
+            if not identity:
+                identity = f"user:{user.id}"
+            access_token = create_access_token(identity=identity)
+            refresh_token = create_refresh_token(identity=identity)
+        except Exception as e:
+            logger.error(f"Token generation error: {e}")
+            return jsonify({'message': 'Login failed'}), 500
         
         # Log user action
         log_user_action(user, 'login')
@@ -526,7 +886,49 @@ def get_cars():
             error_out=False
         )
         
-        cars = [car.to_dict() for car in pagination.items]
+        # Include compatibility fields expected by the mobile client:
+        # - image_url: primary image relative path
+        # - images: list of relative paths
+        cars = []
+        static_root = os.path.join(app.root_path, 'static')
+        def _exists(rel: str) -> bool:
+            try:
+                if not rel:
+                    return False
+                p = os.path.join(static_root, rel.lstrip('/')).replace('\\', '/')
+                return os.path.isfile(p)
+            except Exception:
+                return False
+        def _resolve(rel: str) -> str:
+            """
+            Resolve stored image path to an existing file.
+            If DB stored 'uploads/<name>', try 'uploads/car_photos/<name>' as a fallback.
+            """
+            try:
+                if not rel:
+                    return ''
+                norm = rel.lstrip('/').replace('\\', '/')
+                if _exists(norm):
+                    return norm
+                base = os.path.basename(norm)
+                alt = os.path.join('uploads', 'car_photos', base).replace('\\', '/')
+                if _exists(alt):
+                    return alt
+                return ''
+            except Exception:
+                return ''
+        for c in pagination.items:
+            d = c.to_dict()
+            raw_list = [img.image_url for img in c.images] if c.images else []
+            # Keep only files that actually exist under static/ (with fallback resolution)
+            image_list = [r for r in (_resolve(rel) for rel in raw_list) if r]
+            primary_rel = image_list[0] if image_list else ''
+            # Fallback to placeholder if nothing exists
+            if not primary_rel and not image_list and _exists('uploads/car_photos/placeholder.jpg'):
+                primary_rel = 'uploads/car_photos/placeholder.jpg'
+            d['image_url'] = primary_rel
+            d['images'] = image_list
+            cars.append(d)
         
         return jsonify({
             'cars': cars,
@@ -567,8 +969,31 @@ def get_cars_alias():
             d = car.to_dict()
             # Ensure numeric id for mobile client
             d['id'] = car.id
-            image_list = [img.image_url for img in car.images] if car.images else []
-            primary_rel = image_list[0] if image_list else ''
+            static_root = os.path.join(app.root_path, 'static')
+            def _exists(rel: str) -> bool:
+                try:
+                    if not rel:
+                        return False
+                    p = os.path.join(static_root, rel.lstrip('/')).replace('\\', '/')
+                    return os.path.isfile(p)
+                except Exception:
+                    return False
+            def _resolve(rel: str) -> str:
+                try:
+                    if not rel:
+                        return ''
+                    norm = rel.lstrip('/').replace('\\', '/')
+                    if _exists(norm):
+                        return norm
+                    base = os.path.basename(norm)
+                    alt = os.path.join('uploads', 'car_photos', base).replace('\\', '/')
+                    if _exists(alt):
+                        return alt
+                    return ''
+                except Exception:
+                    return ''
+            image_list = [r for r in (_resolve(img.image_url) for img in car.images) if r] if car.images else []
+            primary_rel = image_list[0] if image_list else ('uploads/car_photos/placeholder.jpg' if _exists('uploads/car_photos/placeholder.jpg') else '')
             d['image_url'] = primary_rel
             d['images'] = image_list
             d['videos'] = [v.video_url for v in car.videos] if car.videos else []
@@ -626,8 +1051,31 @@ def get_cars_alias():
             # Ensure numeric id for mobile client
             d['id'] = c.id
             # Compute compatibility fields expected by mobile client
-            image_list = [img.image_url for img in c.images] if c.images else []
-            primary_rel = image_list[0] if image_list else ''
+            static_root = os.path.join(app.root_path, 'static')
+            def _exists(rel: str) -> bool:
+                try:
+                    if not rel:
+                        return False
+                    p = os.path.join(static_root, rel.lstrip('/')).replace('\\', '/')
+                    return os.path.isfile(p)
+                except Exception:
+                    return False
+            def _resolve(rel: str) -> str:
+                try:
+                    if not rel:
+                        return ''
+                    norm = rel.lstrip('/').replace('\\', '/')
+                    if _exists(norm):
+                        return norm
+                    base = os.path.basename(norm)
+                    alt = os.path.join('uploads', 'car_photos', base).replace('\\', '/')
+                    if _exists(alt):
+                        return alt
+                    return ''
+                except Exception:
+                    return ''
+            image_list = [r for r in (_resolve(img.image_url) for img in c.images) if r] if c.images else []
+            primary_rel = image_list[0] if image_list else ('uploads/car_photos/placeholder.jpg' if _exists('uploads/car_photos/placeholder.jpg') else '')
             d['image_url'] = primary_rel  # relative path only
             d['images'] = image_list      # list of relative paths
             d['videos'] = [v.video_url for v in c.videos] if c.videos else []
@@ -767,7 +1215,8 @@ def dev_seed():
 
         # Create a few sample cars if table is empty
         created = 0
-        if db.session.query(Car).count() == 0:
+        total_before = db.session.query(Car).count()
+        if total_before == 0:
             samples = [
                 {
                     'brand': 'bmw', 'model': '3 series', 'year': 2019, 'mileage': 45000,
@@ -798,13 +1247,43 @@ def dev_seed():
                 rels = image_files[:3] if image_files else []
                 order = 0
                 for fname in rels:
-                    db.session.add(CarImage(car_id=car.id, image_url=f'car_photos/{fname}', is_primary=(order == 0), order=order))
+                    # Store under uploads/ so client URL builder and server existence checks align
+                    db.session.add(CarImage(
+                        car_id=car.id,
+                        image_url=f'uploads/car_photos/{fname}',
+                        is_primary=(order == 0),
+                        order=order
+                    ))
                     order += 1
                 created += 1
             db.session.commit()
 
+        # Ensure cars have images: attach up to 3 images to cars missing images
+        attached = 0
+        if image_files:
+            try:
+                cars = Car.query.order_by(Car.created_at.asc()).all()
+                for car in cars:
+                    try:
+                        if not getattr(car, 'images', None) or len(car.images) == 0:
+                            order = 0
+                            for fname in image_files[:3]:
+                                db.session.add(CarImage(
+                                    car_id=car.id,
+                                    image_url=f'uploads/car_photos/{fname}',
+                                    is_primary=(order == 0),
+                                    order=order
+                                ))
+                                order += 1
+                            attached += order
+                    except Exception:
+                        continue
+                db.session.commit()
+            except Exception:
+                db.session.rollback()
+
         total = db.session.query(Car).count()
-        return jsonify({'message': 'seed_ok', 'created': created, 'total': total}), 200
+        return jsonify({'message': 'seed_ok', 'created': created, 'images_attached': attached, 'total': total}), 200
     except Exception as e:
         logger.error(f"Dev seed error: {str(e)}")
         db.session.rollback()
@@ -831,6 +1310,37 @@ def get_car(car_id):
         
         # Normalize response for mobile client compatibility
         car_dict = car.to_dict()
+        # Attach primary and image list (relative paths under static/), filter to existing files
+        static_root = os.path.join(app.root_path, 'static')
+        def _exists(rel: str) -> bool:
+            try:
+                if not rel:
+                    return False
+                p = os.path.join(static_root, rel.lstrip('/')).replace('\\', '/')
+                return os.path.isfile(p)
+            except Exception:
+                return False
+        raw_list = [img.image_url for img in car.images] if car.images else []
+        def _resolve(rel: str) -> str:
+            try:
+                if not rel:
+                    return ''
+                norm = rel.lstrip('/').replace('\\', '/')
+                if _exists(norm):
+                    return norm
+                base = os.path.basename(norm)
+                alt = os.path.join('uploads', 'car_photos', base).replace('\\', '/')
+                if _exists(alt):
+                    return alt
+                return ''
+            except Exception:
+                return ''
+        image_list = [r for r in (_resolve(rel) for rel in raw_list) if r]
+        primary_rel = image_list[0] if image_list else ''
+        if not primary_rel and _exists('uploads/car_photos/placeholder.jpg'):
+            primary_rel = 'uploads/car_photos/placeholder.jpg'
+        car_dict['image_url'] = primary_rel
+        car_dict['images'] = image_list
         # Provide 'city' alias expected by the app (mapped from location)
         if not car_dict.get('city') and car_dict.get('location'):
             car_dict['city'] = car_dict['location']
@@ -1063,8 +1573,31 @@ def compat_my_listings():
         result = []
         for car in cars:
             # Build legacy-friendly shape: flat car dict with primary image_url and images list
-            image_list = [img.image_url for img in car.images] if car.images else []
-            primary_rel = image_list[0] if image_list else ''
+            static_root = os.path.join(app.root_path, 'static')
+            def _exists(rel: str) -> bool:
+                try:
+                    if not rel:
+                        return False
+                    p = os.path.join(static_root, rel.lstrip('/')).replace('\\', '/')
+                    return os.path.isfile(p)
+                except Exception:
+                    return False
+            def _resolve(rel: str) -> str:
+                try:
+                    if not rel:
+                        return ''
+                    norm = rel.lstrip('/').replace('\\', '/')
+                    if _exists(norm):
+                        return norm
+                    base = os.path.basename(norm)
+                    alt = os.path.join('uploads', 'car_photos', base).replace('\\', '/')
+                    if _exists(alt):
+                        return alt
+                    return ''
+                except Exception:
+                    return ''
+            image_list = [r for r in (_resolve(img.image_url) for img in car.images) if r] if car.images else []
+            primary_rel = image_list[0] if image_list else ('uploads/car_photos/placeholder.jpg' if _exists('uploads/car_photos/placeholder.jpg') else '')
             result.append({
                 "id": car.id,
                 "title": (getattr(car, 'title', None) or f"{(car.brand or '').title()} {(car.model or '').title()} {car.year or ''}".strip()),
@@ -1098,7 +1631,10 @@ def upload_car_images(car_id):
         if not current_user:
             return jsonify({'message': 'User not found'}), 404
 
+        # Accept both public_id (UUID) and numeric database id for compatibility with older clients
         car = Car.query.filter_by(public_id=car_id).first()
+        if not car and str(car_id).isdigit():
+            car = Car.query.filter_by(id=int(car_id)).first()
         if not car:
             return jsonify({'message': 'Car not found'}), 404
 
@@ -1106,12 +1642,11 @@ def upload_car_images(car_id):
         if car.seller_id != current_user.id and not current_user.is_admin:
             return jsonify({'message': 'Not authorized to upload images for this listing'}), 403
 
-        # Accept both 'files' and 'images' for compatibility with different clients
+        # Accept multiple common field names from different clients
         incoming_files = []
-        if 'files' in request.files:
-            incoming_files.extend(request.files.getlist('files'))
-        if 'images' in request.files:
-            incoming_files.extend(request.files.getlist('images'))
+        for key in ('files', 'images', 'image', 'upload', 'file', 'photo', 'photos'):
+            if key in request.files:
+                incoming_files.extend(request.files.getlist(key))
         if not incoming_files:
             return jsonify({'message': 'No image files provided'}), 400
 
@@ -1123,11 +1658,11 @@ def upload_car_images(car_id):
                 # Validate file
                 is_valid, _ = validate_file_upload(
                     fs,
-                    max_size_mb=10,
+                    max_size_mb=25,
                     allowed_extensions=app.config['ALLOWED_EXTENSIONS']
                 )
                 if not is_valid:
-                    continue  # Skip invalid files
+                    continue  # Skip invalid files, we'll error if none saved
 
                 if skip_blur:
                     # Fast path: store file as provided (assumed already blurred by client)
@@ -1137,17 +1672,9 @@ def upload_car_images(car_id):
                     os.makedirs(os.path.dirname(final_abs), exist_ok=True)
                     fs.save(final_abs)
                     rel_path = final_rel
-                    try:
-                        rel_path = _ensure_minimum_blur(rel_path)
-                    except Exception:
-                        pass
                 else:
                     # Process with license-plate blur (supports mode=strict/auto/speed via query params)
                     rel_path, _ = _process_and_store_image(fs, False)
-                    try:
-                        rel_path = _ensure_minimum_blur(rel_path)
-                    except Exception:
-                        pass
 
                 # Create image record (store relative path under static)
                 car_image = CarImage(
@@ -1160,6 +1687,9 @@ def upload_car_images(car_id):
 
         db.session.commit()
 
+        if not uploaded_images:
+            return jsonify({'message': 'No valid images were uploaded (file type/size).'}), 400
+
         # Mark listing as having blurred plates (best-effort)
         try:
             car.license_plates_blurred = True
@@ -1170,10 +1700,19 @@ def upload_car_images(car_id):
         # Log user action
         log_user_action(current_user, 'upload_images', 'car', car.public_id)
 
+        # Determine new primary (first image for this car)
+        try:
+            primary = next((img.image_url for img in car.images if getattr(img, 'is_primary', False)), None)
+            if not primary and car.images:
+                primary = car.images[0].image_url
+        except Exception:
+            primary = None
+
         return jsonify({
             'message': f"{len(uploaded_images)} images uploaded successfully",
-            'images': uploaded_images
-        }), 200
+            'images': [ci for ci in uploaded_images],
+            'image_url': primary or (uploaded_images[0]['image_url'] if uploaded_images else '')
+        }), 201
 
     except Exception as e:
         logger.error(f"Upload car images error: {str(e)}")
@@ -1188,7 +1727,10 @@ def attach_car_images(car_id):
         if not current_user:
             return jsonify({'message': 'User not found'}), 404
 
+        # Accept both public_id and numeric id
         car = Car.query.filter_by(public_id=car_id).first()
+        if not car and str(car_id).isdigit():
+            car = Car.query.filter_by(id=int(car_id)).first()
         if not car:
             return jsonify({'message': 'Car not found'}), 404
 
@@ -1232,10 +1774,19 @@ def attach_car_images(car_id):
         except Exception:
             db.session.rollback()
 
+        # Determine primary
+        try:
+            primary = next((img.image_url for img in car.images if getattr(img, 'is_primary', False)), None)
+            if not primary and car.images:
+                primary = car.images[0].image_url
+        except Exception:
+            primary = None
+
         return jsonify({
             'message': f"{len(attached)} images attached successfully",
-            'images': [ci.to_dict() for ci in attached]
-        }), 200
+            'images': [ci.to_dict() for ci in attached],
+            'image_url': primary or ((attached[0].image_url) if attached else '')
+        }), 201
     except Exception as e:
         logger.error(f"Attach car images error: {str(e)}")
         db.session.rollback()
@@ -1249,7 +1800,10 @@ def upload_car_videos(car_id):
         if not current_user:
             return jsonify({'message': 'User not found'}), 404
         
+        # Accept both public_id and numeric id
         car = Car.query.filter_by(public_id=car_id).first()
+        if not car and str(car_id).isdigit():
+            car = Car.query.filter_by(id=int(car_id)).first()
         if not car:
             return jsonify({'message': 'Car not found'}), 404
         
@@ -1299,7 +1853,7 @@ def upload_car_videos(car_id):
         return jsonify({
             'message': f'{len(uploaded_videos)} videos uploaded successfully',
             'videos': uploaded_videos
-        }), 200
+        }), 201
         
     except Exception as e:
         logger.error(f"Upload car videos error: {str(e)}")
@@ -1382,19 +1936,21 @@ def toggle_favorite(car_id):
 # Static file serving
 @app.route('/static/<path:filename>')
 def static_files(filename):
-    """Serve static files"""
-    try:
-        # Normal path
-        return send_from_directory('static', filename)
-    except Exception:
-        # Fallback for mistakenly double-prefixed paths like 'uploads/uploads/...'
-        try:
-            if filename.startswith('uploads/uploads/'):
-                fixed = filename[len('uploads/'):]
-                return send_from_directory('static', fixed)
-        except Exception:
-            pass
-        raise
+	"""Serve static files"""
+	try:
+		# Normal path — serve from the kk app's static directory
+		static_dir = os.path.join(app.root_path, 'static')
+		return send_from_directory(static_dir, filename)
+	except Exception:
+		# Fallback for mistakenly double-prefixed paths like 'uploads/uploads/...'
+		try:
+			if filename.startswith('uploads/uploads/'):
+				fixed = filename[len('uploads/'):]
+				static_dir = os.path.join(app.root_path, 'static')
+				return send_from_directory(static_dir, fixed)
+		except Exception:
+			pass
+		raise
 
 # AI and image processing endpoints (compat with mobile app)
 @app.route('/api/analyze-car-image', methods=['POST'])
@@ -1449,215 +2005,58 @@ def _process_and_store_image(file_storage, inline_base64: bool):
     try:
         b64 = None
         final_filename = f"processed_{timestamp}_{filename}"
+        # Prepare target path; extension will be updated from Content-Type
         final_rel = os.path.join('uploads', 'car_photos', final_filename).replace('\\', '/')
-        # Ensure file is written under kk/static/ so URL /static/<final_rel> exists
         final_abs = os.path.join(app.root_path, 'static', final_rel)
         os.makedirs(os.path.dirname(final_abs), exist_ok=True)
 
-        # Fast path: allow clients to request simple, non-AI blur for speed
-        fast_flag = (
-            request.args.get('fast') == '1'
-            or request.args.get('simple') == '1'
-            or request.args.get('fallback_only') == '1'
-        )
-
-        if fast_flag:
-            try:
-                from PIL import Image, ImageFilter
-                with Image.open(temp_abs).convert('RGB') as im:
-                    try:
-                        w, h = im.size
-                        radius = max(14.0, min(42.0, 0.035 * min(w, h)))
-                        # Narrower bands to avoid over-blur
-                        left = max(0, int(w * 0.30))
-                        top = max(0, int(h * 0.62))
-                        right = min(w, int(w * 0.70))
-                        bottom = min(h, int(h * 0.90))
-                        region = im.crop((left, top, right, bottom)).filter(ImageFilter.GaussianBlur(radius=radius))
-                        im.paste(region, (left, top, right, bottom))
-                        left2 = max(0, int(w * 0.28))
-                        top2 = max(0, int(h * 0.50))
-                        right2 = min(w, int(w * 0.72))
-                        bottom2 = min(h, int(h * 0.70))
-                        if bottom2 > top2 and right2 > left2:
-                            region2 = im.crop((left2, top2, right2, bottom2)).filter(ImageFilter.GaussianBlur(radius=radius * 0.9))
-                            im.paste(region2, (left2, top2, right2, bottom2))
-                    except Exception:
-                        im = im.filter(ImageFilter.GaussianBlur(radius=max(18.0, 0.028 * min(im.size))))
-                    # Always save with _blurred suffix for fast path
-                    root, ext = os.path.splitext(final_abs)
-                    new_final_abs = f"{root}_blurred{ext or '.jpg'}"
-                    im.save(new_final_abs, quality=90)
-                    final_abs = new_final_abs
-                    final_filename = os.path.basename(final_abs)
-                    final_rel = os.path.join('uploads', 'car_photos', final_filename).replace('\\', '/')
-                logger.info("Fast blur path applied (Pillow-only).")
-            except Exception as e:
-                logger.error(f"Fast blur path failed: {e}")
-                raise
+        # Watermarkly Blur API (binary POST with x-api-key)
+        with open(temp_abs, 'rb') as fp:
+            original_bytes = fp.read()
+        # Deduplication re-use within this runtime if same bytes encountered
+        digest = _get_sha256(original_bytes)
+        blurred_bytes = None
+        content_type = None
+        with _recent_cache_lock:
+            _prune_recent_cache()
+            cached = _recent_cache.get(digest)
+        if cached and cached.get('bytes'):
+            blurred_bytes = cached['bytes']
+            content_type = cached.get('content_type') or 'image/jpeg'
         else:
+            # Try Watermarkly; on any failure (403, network, PIL issues), store the original
             try:
-                # Try AI blur first (may fail if heavy deps/models are missing)
-                from .ai_service import car_analysis_service
-                strict = (request.args.get('strict') == '1' or request.args.get('strict_blur') == '1')
-                mode = request.args.get('mode', 'auto')
-                processed_abs = car_analysis_service._blur_license_plates(temp_abs, strict=strict, mode=mode)
+                blurred_bytes, content_type = _watermarkly_blur_bytes(original_bytes)
+                with _recent_cache_lock:
+                    _recent_cache[digest] = {'ts': time.time(), 'bytes': blurred_bytes, 'content_type': content_type}
+                    _prune_recent_cache()
+            except Exception:
+                blurred_bytes = original_bytes
+                # Prefer incoming mimetype if provided
+                content_type = (getattr(file_storage, 'mimetype', None) or '').split(';', 1)[0].strip() or 'image/jpeg'
 
-                # If first pass did not create a blurred output, force a strict OCR-only retry.
-                try:
-                    import os as _os
-                    _bn = _os.path.basename(processed_abs).lower()
-                    did_blur = any(_bn.endswith(suf) for suf in ['_blurred.jpg', '_blurred.jpeg', '_blurred.png', '_blurred.webp'])
-                    if not did_blur:
-                        try:
-                            processed_abs_retry = car_analysis_service._blur_license_plates(temp_abs, strict=True, mode='ocr_only')
-                            _bn2 = _os.path.basename(processed_abs_retry).lower()
-                            if any(_bn2.endswith(suf) for suf in ['_blurred.jpg', '_blurred.jpeg', '_blurred.png', '_blurred.webp']):
-                                processed_abs = processed_abs_retry
-                        except Exception:
-                            # ignore and fall through to Pillow fallback below
-                            pass
-                except Exception:
-                    pass
+        # Map Content-Type to correct extension
+        ct = (content_type or '').lower().split(';', 1)[0].strip()
+        def _ext_for(mime: str) -> str:
+            if mime in ('image/jpeg', 'image/jpg'): return '.jpg'
+            if mime == 'image/png': return '.png'
+            if mime == 'image/webp': return '.webp'
+            return os.path.splitext(final_filename)[1] or '.jpg'
+        chosen_ext = _ext_for(ct)
+        root, _old = os.path.splitext(final_filename)
+        final_filename = f"{root}{chosen_ext}"
+        final_rel = os.path.join('uploads', 'car_photos', final_filename).replace('\\', '/')
+        final_abs = os.path.join(app.root_path, 'static', final_rel)
+        os.makedirs(os.path.dirname(final_abs), exist_ok=True)
 
-                # If we now have a blurred file name, adjust final path to include suffix
-                try:
-                    import os as _os
-                    _bn = _os.path.basename(processed_abs).lower()
-                    if any(_bn.endswith(suf) for suf in ['_blurred.jpg', '_blurred.jpeg', '_blurred.png', '_blurred.webp']):
-                        root, ext = _os.path.splitext(final_filename)
-                        final_filename = f"{root}_blurred{ext or '.jpg'}"
-                        final_rel = _os.path.join('uploads', 'car_photos', final_filename).replace('\\', '/')
-                        final_abs = _os.path.join(app.root_path, 'static', final_rel)
-                        _os.makedirs(_os.path.dirname(final_abs), exist_ok=True)
-                except Exception:
-                    pass
-
-                import shutil
-                if os.path.abspath(processed_abs) != os.path.abspath(final_abs):
-                    shutil.copy2(processed_abs, final_abs)
-                # Last resort: if nothing produced a '*_blurred' file, try plate-like detection via color/geometry;
-                # if that still fails, apply a small conservative band.
-                try:
-                    if not final_filename.lower().endswith(('_blurred.jpg', '_blurred.jpeg', '_blurred.png', '_blurred.webp')):
-                        import cv2
-                        import numpy as np
-                        img = cv2.imread(final_abs)
-                        if img is not None:
-                            H, W = img.shape[:2]
-                            image_area = float(H * W)
-                            hsv = cv2.cvtColor(img, cv2.COLOR_BGR2HSV)
-                            # Red mask (for red plates) - combine lower and upper hue ranges
-                            lower_red1 = np.array([0, 70, 60]);   upper_red1 = np.array([10, 255, 255])
-                            lower_red2 = np.array([170, 70, 60]); upper_red2 = np.array([180, 255, 255])
-                            mask_red = cv2.inRange(hsv, lower_red1, upper_red1) | cv2.inRange(hsv, lower_red2, upper_red2)
-                            # White/yellow mask (for common plates)
-                            lower_white = np.array([0, 0, 180]);   upper_white = np.array([179, 60, 255])
-                            lower_yell  = np.array([10, 60, 70]);  upper_yell  = np.array([45, 255, 255])
-                            mask_white = cv2.inRange(hsv, lower_white, upper_white)
-                            mask_yell  = cv2.inRange(hsv, lower_yell, upper_yell)
-                            mask = cv2.morphologyEx(mask_red | mask_white | mask_yell, cv2.MORPH_CLOSE, np.ones((5,5), np.uint8))
-
-                            contours, _ = cv2.findContours(mask, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
-                            best = None; best_score = -1.0
-                            for cnt in contours:
-                                x, y, w, h = cv2.boundingRect(cnt)
-                                if w <= 0 or h <= 0: 
-                                    continue
-                                ar = w / float(max(1, h))
-                                area = w * h
-                                cy = y + h * 0.5
-                                # Plate-like geometry and position
-                                if 1.6 <= ar <= 7.2 and (image_area * 0.00008) <= area <= (image_area * 0.10) and (H * 0.18) <= cy <= (H * 0.95):
-                                    rect_ratio = (cv2.contourArea(cnt) / float(area)) if area > 0 else 0.0
-                                    score = 0.7 * rect_ratio + 0.3 * min(area / (image_area * 0.12), 1.0)
-                                    if score > best_score:
-                                        best_score = score
-                                        best = (x, y, w, h)
-                            if best is not None:
-                                x, y, w, h = best
-                                pad_x = max(4, int(w * 0.10)); pad_y = max(4, int(h * 0.18))
-                                xa = max(0, x - pad_x); ya = max(0, y - pad_y)
-                                xb = min(W, x + w + pad_x); yb = min(H, y + h + pad_y)
-                                roi = img[ya:yb, xa:xb]
-                                if roi.size > 0:
-                                    k = int(max(31, min(151, int(min(roi.shape[0], roi.shape[1]) * 0.45))))
-                                    if k % 2 == 0: k += 1
-                                    roi_blur = cv2.GaussianBlur(roi, (k, k), 0)
-                                    img[ya:yb, xa:xb] = roi_blur
-                                    cv2.imwrite(final_abs, img, [cv2.IMWRITE_JPEG_QUALITY, 92])
-                                    # Rename to include _blurred
-                                    root, ext = os.path.splitext(final_abs)
-                                    new_final_abs = f"{root}_blurred{ext or '.jpg'}"
-                                    os.replace(final_abs, new_final_abs)
-                                    final_abs = new_final_abs
-                                    final_filename = os.path.basename(final_abs)
-                                    final_rel = os.path.join('uploads', 'car_photos', final_filename).replace('\\', '/')
-                            else:
-                                # Narrow conservative band as absolute last step
-                                from PIL import Image, ImageFilter
-                                with Image.open(final_abs).convert('RGB') as im:
-                                    w, h = im.size
-                                    radius = max(14.0, min(42.0, 0.035 * min(w, h)))
-                                    left = max(0, int(w * 0.30)); right = min(w, int(w * 0.70))
-                                    top = max(0, int(h * 0.62)); bottom = min(h, int(h * 0.90))
-                                    if right > left and bottom > top:
-                                        region = im.crop((left, top, right, bottom)).filter(ImageFilter.GaussianBlur(radius=radius))
-                                        im.paste(region, (left, top, right, bottom))
-                                        root, ext = os.path.splitext(final_abs)
-                                        new_final_abs = f"{root}_blurred{ext or '.jpg'}"
-                                        im.save(new_final_abs, quality=90)
-                                        final_abs = new_final_abs
-                                        final_filename = os.path.basename(final_abs)
-                                        final_rel = os.path.join('uploads', 'car_photos', final_filename).replace('\\', '/')
-                except Exception:
-                    pass
-            except Exception as e:
-                # Soft fallback: apply strong blur with Pillow (no heavy AI deps)
-                logger.warning(f"AI processing unavailable ({e}). Applying strong Pillow blur fallback.")
-                try:
-                    # Stronger, size-adaptive blur using Pillow
-                    from PIL import Image, ImageFilter  # Pillow is in minimal requirements
-                    with Image.open(temp_abs).convert('RGB') as im:
-                        try:
-                            w, h = im.size
-                            # Adaptive blur radius based on image size
-                            radius = max(14.0, min(42.0, 0.035 * min(w, h)))
-
-                            # Primary region: center-bottom band where plates commonly are
-                            left = max(0, int(w * 0.18))
-                            top = max(0, int(h * 0.58))
-                            right = min(w, int(w * 0.82))
-                            bottom = min(h, int(h * 0.93))
-
-                            region = im.crop((left, top, right, bottom)).filter(ImageFilter.GaussianBlur(radius=radius))
-                            im.paste(region, (left, top, right, bottom))
-
-                            # Secondary small band slightly higher to catch SUVs/angled shots
-                            left2 = max(0, int(w * 0.22))
-                            top2 = max(0, int(h * 0.46))
-                            right2 = min(w, int(w * 0.78))
-                            bottom2 = min(h, int(h * 0.66))
-                            if bottom2 > top2 and right2 > left2:
-                                region2 = im.crop((left2, top2, right2, bottom2)).filter(ImageFilter.GaussianBlur(radius=radius * 0.9))
-                                im.paste(region2, (left2, top2, right2, bottom2))
-                        except Exception:
-                            # Last-resort: full-image strong blur
-                            im = im.filter(ImageFilter.GaussianBlur(radius=max(18.0, 0.028 * min(im.size))))
-                        im.save(final_abs, quality=90)
-                except Exception as copy_err:
-                    logger.error(f"Failed to copy original image: {copy_err}")
-                    raise
+        with open(final_abs, 'wb') as out:
+            out.write(blurred_bytes)
 
         if inline_base64:
-            try:
-                with open(final_abs, 'rb') as f:
-                    encoded = base64.b64encode(f.read()).decode('utf-8')
-                ext = os.path.splitext(final_filename)[1].lower().lstrip('.')
-                mime = 'image/jpeg' if ext in ('jpg', 'jpeg') else ('image/png' if ext == 'png' else ('image/webp' if ext == 'webp' else 'image/*'))
-                b64 = f"data:{mime};base64,{encoded}"
-            except Exception as e:
-                logger.warning(f"inline base64 encode failed: {e}")
+            with open(final_abs, 'rb') as f:
+                encoded = base64.b64encode(f.read()).decode('utf-8')
+            mime = ct or 'image/jpeg'
+            b64 = f"data:{mime};base64,{encoded}"
         return final_rel, b64
     finally:
         # Clean up temporary files best-effort
@@ -1668,97 +2067,7 @@ def _process_and_store_image(file_storage, inline_base64: bool):
             pass
 
 
-def _ensure_minimum_blur(rel_path: str) -> str:
-    """
-    Ensure the image at static/<rel_path> is blurred.
-    If not blurred, apply refined color/geometry fallback and save as *_blurred.<ext>,
-    returning the (possibly updated) relative path.
-    """
-    try:
-        if not isinstance(rel_path, str) or not rel_path:
-            return rel_path
-        if '_blurred.' in rel_path:
-            return rel_path
-        abs_path = os.path.join(app.root_path, 'static', rel_path).replace('\\', '/')
-        if not os.path.isfile(abs_path):
-            return rel_path
-        import cv2
-        import numpy as np
-        img = cv2.imread(abs_path)
-        if img is None:
-            return rel_path
-        H, W = img.shape[:2]
-        image_area = float(H * W)
-        hsv = cv2.cvtColor(img, cv2.COLOR_BGR2HSV)
-        lower_red1 = np.array([0, 70, 60]);   upper_red1 = np.array([10, 255, 255])
-        lower_red2 = np.array([170, 70, 60]); upper_red2 = np.array([180, 255, 255])
-        mask_red = cv2.inRange(hsv, lower_red1, upper_red1) | cv2.inRange(hsv, lower_red2, upper_red2)
-        lower_white = np.array([0, 0, 180]);   upper_white = np.array([179, 60, 255])
-        lower_yell  = np.array([10, 60, 70]);  upper_yell  = np.array([45, 255, 255])
-        mask = cv2.morphologyEx(mask_red | cv2.inRange(hsv, lower_white, upper_white) | cv2.inRange(hsv, lower_yell, upper_yell),
-                                 cv2.MORPH_CLOSE, np.ones((5,5), np.uint8))
-        contours, _ = cv2.findContours(mask, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
-        best = None; best_score = -1.0
-        for cnt in contours:
-            x, y, w, h = cv2.boundingRect(cnt)
-            if w <= 0 or h <= 0:
-                continue
-            ar = w / float(max(1, h))
-            area = w * h
-            cy = y + h * 0.5
-            if 1.6 <= ar <= 7.2 and (image_area * 0.00008) <= area <= (image_area * 0.10) and (H * 0.18) <= cy <= (H * 0.95):
-                rect_ratio = (cv2.contourArea(cnt) / float(area)) if area > 0 else 0.0
-                score = 0.7 * rect_ratio + 0.3 * min(area / (image_area * 0.12), 1.0)
-                if score > best_score:
-                    best_score = score
-                    best = (x, y, w, h)
-        blurred = False
-        if best is not None:
-            x, y, w, h = best
-            pad_x = max(4, int(w * 0.10)); pad_y = max(4, int(h * 0.18))
-            xa = max(0, x - pad_x); ya = max(0, y - pad_y)
-            xb = min(W, x + w + pad_x); yb = min(H, y + h + pad_y)
-            roi = img[ya:yb, xa:xb]
-            if roi.size > 0:
-                k = int(max(31, min(151, int(min(roi.shape[0], roi.shape[1]) * 0.45))))
-                if k % 2 == 0: k += 1
-                img[ya:yb, xa:xb] = cv2.GaussianBlur(roi, (k, k), 0)
-                blurred = True
-        else:
-            # narrow band fallback
-            from PIL import Image, ImageFilter
-            from PIL import Image as _Image
-            try:
-                with Image.open(abs_path).convert('RGB') as im:
-                    w, h = im.size
-                    radius = max(14.0, min(42.0, 0.035 * min(w, h)))
-                    left = max(0, int(w * 0.30)); right = min(w, int(w * 0.70))
-                    top = max(0, int(h * 0.62)); bottom = min(h, int(h * 0.90))
-                    if right > left and bottom > top:
-                        region = im.crop((left, top, right, bottom)).filter(ImageFilter.GaussianBlur(radius=radius))
-                        im.paste(region, (left, top, right, bottom))
-                        root, ext = os.path.splitext(abs_path)
-                        new_abs = f"{root}_blurred{ext or '.jpg'}"
-                        im.save(new_abs, quality=92)
-                        new_rel = rel_path.rsplit('.', 1)[0] + "_blurred." + rel_path.rsplit('.', 1)[1]
-                        return new_rel
-            except Exception:
-                pass
-        if blurred:
-            root, ext = os.path.splitext(abs_path)
-            new_abs = f"{root}_blurred{ext or '.jpg'}"
-            import cv2 as _cv2
-            _cv2.imwrite(new_abs, img, [ _cv2.IMWRITE_JPEG_QUALITY, 92 ])
-            # compute rel
-            parts = rel_path.rsplit('.', 1)
-            if len(parts) == 2:
-                new_rel = parts[0] + "_blurred." + parts[1]
-            else:
-                new_rel = rel_path + "_blurred.jpg"
-            return new_rel
-        return rel_path
-    except Exception:
-        return rel_path
+
 
 @app.route('/api/process-car-images-test', methods=['POST'])
 def process_car_images_test():
@@ -1773,11 +2082,6 @@ def process_car_images_test():
             if not fs or not fs.filename:
                 continue
             rel, b64 = _process_and_store_image(fs, want_b64)
-            try:
-                # Ensure final result is blurred; upgrade path if needed
-                rel = _ensure_minimum_blur(rel)
-            except Exception:
-                pass
             processed.append(rel)
             if want_b64 and b64:
                 processed_b64.append(b64)

@@ -28,6 +28,9 @@ class CarAnalysisService:
         self.ocr_reader = None
         self.license_plate_model = None
         self.model_is_generic = False
+        # Cumulative stats for folder runs
+        self._total_blur_stats = {'images': 0, 'plates': 0, 'fallbacks': 0}
+        self._last_blur_stats = None
         self._initialize_models()
     
     def _post_blur_verify(self, processed_image, xa: int, ya: int, xb: int, yb: int) -> None:
@@ -56,13 +59,13 @@ class CarAnalysisService:
                 return
             # Optional small expansion to ensure borders are included
             try:
-                pad_ratio = float(str(_os.getenv('PLATE_VERIFY_PAD_RATIO', '0.15')).strip())
+                pad_ratio = float(str(_os.getenv('PLATE_VERIFY_PAD_RATIO', '0.08')).strip())
             except Exception:
-                pad_ratio = 0.15
+                pad_ratio = 0.08
             try:
-                vpad_ratio = float(str(_os.getenv('PLATE_VERIFY_VPAD_RATIO', '0.20')).strip())
+                vpad_ratio = float(str(_os.getenv('PLATE_VERIFY_VPAD_RATIO', '0.12')).strip())
             except Exception:
-                vpad_ratio = 0.20
+                vpad_ratio = 0.12
             w_rect = xb - xa; h_rect = yb - ya
             pad_x = max(2, int(w_rect * pad_ratio))
             pad_y = max(2, int(h_rect * vpad_ratio))
@@ -631,7 +634,6 @@ class CarAnalysisService:
     def _initialize_models(self):
         """Initialize AI models for car analysis"""
         try:
-            import easyocr
             import cv2
             from ultralytics import YOLO
             import os as _os
@@ -641,7 +643,7 @@ class CarAnalysisService:
             except Exception:
                 pass
             
-            # Initialize YOLO for license plate detection (prefer local specialized model)
+            # Initialize YOLO for license plate detection (prefer local specialized high‑recall model)
             self.license_plate_model = None
             self.license_plate_seg_model = None
             self.model_is_generic = False
@@ -649,6 +651,13 @@ class CarAnalysisService:
                 _root = _os.path.abspath(_os.path.join(_os.path.dirname(__file__), '..'))
                 # Prefer local license-plate models to avoid network pulls
                 _local_lp_candidates = [
+                    _os.path.join(_root, 'kk', 'weights', 'yolov8l-iraqi-license-plate.pt'),
+                    _os.path.join(_root, 'kk', 'weights', 'yolov8l-license-plate.pt'),
+                    _os.path.join(_root, 'weights', 'yolov8l-license-plate.pt'),
+                    _os.path.join(_root, 'yolov8l-license-plate.pt'),
+                    _os.path.join(_root, 'kk', 'weights', 'yolov8m-license-plate.pt'),
+                    _os.path.join(_root, 'weights', 'yolov8m-license-plate.pt'),
+                    _os.path.join(_root, 'yolov8m-license-plate.pt'),
                     _os.path.join(_root, 'kk', 'weights', 'yolov8n-license-plate.pt'),
                     _os.path.join(_root, 'weights', 'yolov8n-license-plate.pt'),
                     _os.path.join(_root, 'yolov8n-license-plate.pt'),
@@ -675,13 +684,16 @@ class CarAnalysisService:
                         except Exception:
                             pass
 
-                # If no local specialized model, try remote specialized repos
+                # If no local specialized model, try remote specialized repos (prefer m/l over n)
                 if self.license_plate_model is None:
                     try:
-                        self.license_plate_model = YOLO('keremberke/yolov8n-license-plate')
+                        self.license_plate_model = YOLO('keremberke/yolov8m-license-plate')
                     except Exception:
                         try:
-                            self.license_plate_model = YOLO('keremberke/yolov8m-license-plate')
+                            self.license_plate_model = YOLO('keremberke/yolov8l-license-plate')
+                        except Exception:
+                            try:
+                                self.license_plate_model = YOLO('keremberke/yolov8n-license-plate')
                         except Exception:
                             pass
 
@@ -711,14 +723,10 @@ class CarAnalysisService:
                 print(f"AI Service: YOLO specialized/generic init error: {_yolo_e}")
                 # leave license_plate_model as-is (None) so OCR/fallbacks can proceed
             
-            # Initialize OCR for text recognition (force CPU to avoid GPU/driver issues)
-            try:
-                # Include Arabic/Persian along with English so non‑Latin plates are detected
-                self.ocr_reader = easyocr.Reader(['en', 'ar', 'fa'], gpu=False, download_enabled=True)
-                print("AI Service: EasyOCR Reader initialized (gpu=False)")
-            except Exception as _ocr_e:
-                print(f"AI Service: EasyOCR init error: {_ocr_e}")
+            # OCR is intentionally disabled for stability (IQ Cars–style).
+            # Do NOT initialize EasyOCR at startup. This avoids non-determinism and heavy deps.
                 self.ocr_reader = None
+            # print intentionally omitted: no "EasyOCR Reader initialized" should appear
             
             self.initialized = True
             logger.info("AI models initialized successfully")
@@ -765,7 +773,14 @@ class CarAnalysisService:
             return {'error': str(e)}
     
     def _blur_license_plates(self, image_path: str, strict: bool=False, mode: str='auto') -> str:
-        """Detect and blur license plates in the image"""
+        """
+        Detect and blur license plates in the image.
+        
+        IQ Cars–style lock-down:
+        - OCR is intentionally disabled for stability and predictability on Iraqi plates.
+        - YOLO-only detection is used, treating plates as visual objects (not text).
+        - Deterministic rectangular blur with padding/dilation and size-scaled strength.
+        """
         try:
             import cv2
             import numpy as np
@@ -826,6 +841,235 @@ class CarAnalysisService:
             processed_image = image.copy()
             H, W = image.shape[:2]
             image_area = H * W
+            
+            # IQ Cars–style deterministic YOLO-only pipeline (no OCR, no polygons)
+            try:
+                blurred_any = False
+                fallback_used = False
+                num_applied = 0
+                det_boxes = []
+                if self.license_plate_model is not None:
+                    # Multi-scale YOLO-only detection for high recall (map boxes back to original coords)
+                    scales = [1.0, 1.25, 1.5]
+                    for s in scales:
+                        import cv2 as _cv2
+                        if s == 1.0:
+                            img_s = image
+                        else:
+                            img_s = _cv2.resize(image, None, fx=s, fy=s, interpolation=_cv2.INTER_LINEAR)
+                        res = self.license_plate_model.predict(img_s, conf=0.30, iou=0.5, imgsz=1280, verbose=False)
+                        num = 0
+                        if res:
+                            r0 = res[0]
+                            boxes = getattr(r0, 'boxes', None)
+                            if boxes is not None and hasattr(boxes, 'xyxy'):
+                                try:
+                                    xyxy = boxes.xyxy.cpu().numpy() if hasattr(boxes.xyxy, 'cpu') else boxes.xyxy
+                                    confs = boxes.conf.cpu().numpy() if hasattr(boxes, 'conf') and hasattr(boxes, 'cpu') else None
+                                except Exception:
+                                    xyxy, confs = None, None
+                                if xyxy is not None:
+                                    for i, b in enumerate(xyxy):
+                                        c = float(confs[i]) if confs is not None and i < len(confs) else 1.0
+                                        x1s, y1s, x2s, y2s = [float(v) for v in b]
+                                        # Map back to original coordinates
+                                        x1 = int(x1s / s); x2 = int(x2s / s)
+                                        y1 = int(y1s / s); y2 = int(y2s / s)
+                                        # Clamp
+                                        x1 = max(0, min(W - 1, x1)); x2 = max(0, min(W, x2))
+                                        y1 = max(0, min(H - 1, y1)); y2 = max(0, min(H, y2))
+                                        if x2 <= x1 or y2 <= y1:
+                                            continue
+                                        det_boxes.append((c, x1, y1, x2, y2))
+                                        num += 1
+                        print(f"AI Service: YOLO detections @ scale={s:.2f}: {num}")
+                # Filtering per spec:
+                # - Keep boxes whose center lies in lower 50–100% of the image
+                # - Keep only plate-like aspect ratios 1.5–7.0
+                filtered = []
+                for c, x1, y1, x2, y2 in det_boxes:
+                    w_box = max(1, x2 - x1)
+                    h_box = max(1, y2 - y1)
+                    ar = w_box / float(h_box)
+                    cy = (y1 + y2) * 0.5
+                    if cy < (0.50 * H):  # ignore outside lower 50%
+                        continue
+                    if not (1.5 <= ar <= 7.0):  # broader aspect bound for Iraqi plates
+                        continue
+                    filtered.append((c, x1, y1, x2, y2))
+                # Sort by confidence, keep top 2
+                if filtered:
+                    filtered.sort(key=lambda t: t[0], reverse=True)
+                    filtered = filtered[:2]
+                    for _, x1, y1, x2, y2 in filtered:
+                        bw = max(1, x2 - x1)
+                        bh = max(1, y2 - y1)
+                        xa, ya, xb, yb = x1, y1, x2, y2
+                        import cv2 as _cv2
+                        roi = processed_image[ya:yb, xa:xb]
+                        if roi.size == 0:
+                            continue
+                        # Find plate polygon via contours inside ROI
+                        roi_gray = _cv2.cvtColor(roi, _cv2.COLOR_BGR2GRAY)
+                        roi_gray = _cv2.bilateralFilter(roi_gray, 7, 55, 55)
+                        edges = _cv2.Canny(roi_gray, 50, 150)
+                        close_ker = _cv2.getStructuringElement(_cv2.MORPH_RECT, (5, 3))
+                        edges = _cv2.morphologyEx(edges, _cv2.MORPH_CLOSE, close_ker, iterations=1)
+                        contours, _ = _cv2.findContours(edges, _cv2.RETR_EXTERNAL, _cv2.CHAIN_APPROX_SIMPLE)
+                        best_poly = None
+                        best_score = -1.0
+                        roi_h, roi_w = roi.shape[:2]
+                        roi_area = max(1, roi_h * roi_w)
+                        for cnt in contours:
+                            if len(cnt) < 4:
+                                continue
+                            x, y, w, h = _cv2.boundingRect(cnt)
+                            if w <= 0 or h <= 0:
+                                continue
+                            ar_local = w / float(max(1, h))
+                            area = w * h
+                            if area < 0.005 * roi_area:
+                                continue
+                            approx = _cv2.approxPolyDP(cnt, 0.02 * _cv2.arcLength(cnt, True), True)
+                            poly = approx
+                            # Prefer 4-point polygons; otherwise use convex hull
+                            if len(approx) != 4:
+                                poly = _cv2.convexHull(cnt)
+                            # Score: plate-like AR, area coverage, rectangularity if 4-pt
+                            rect_ratio = float(_cv2.contourArea(cnt)) / float(max(1, area))
+                            size_score = min((area / roi_area) / 0.25, 1.0)  # prefer moderate coverage
+                            ar_score = 1.0 - min(abs(ar_local - 3.0) / 3.0, 1.0)  # favor ~3:1
+                            score = 0.4 * ar_score + 0.3 * size_score + 0.3 * rect_ratio
+                            if score > best_score:
+                                best_score = score
+                                best_poly = poly
+                        if best_poly is None or len(best_poly) < 3:
+                            # If no polygon found, skip this detection (fallback will handle privacy)
+                            continue
+                        # Convert polygon points to image coordinates and apply 5–10% padding (scale from centroid)
+                        pts = best_poly.reshape(-1, 2).astype(np.float32)
+                        # Clamp to ROI bounds
+                        pts[:, 0] = np.clip(pts[:, 0], 0, roi_w - 1)
+                        pts[:, 1] = np.clip(pts[:, 1], 0, roi_h - 1)
+                        # Expand polygon outward
+                        pad_ratio = 0.07  # ~7% outward padding
+                        cx = float(np.mean(pts[:, 0])); cy = float(np.mean(pts[:, 1]))
+                        pts_pad = np.empty_like(pts)
+                        pts_pad[:, 0] = cx + (pts[:, 0] - cx) * (1.0 + pad_ratio)
+                        pts_pad[:, 1] = cy + (pts[:, 1] - cy) * (1.0 + pad_ratio)
+                        pts_pad[:, 0] = np.clip(pts_pad[:, 0], 0, roi_w - 1)
+                        pts_pad[:, 1] = np.clip(pts_pad[:, 1], 0, roi_h - 1)
+                        # Build local mask from padded polygon
+                        mask_local = np.zeros((roi_h, roi_w), dtype=np.uint8)
+                        _cv2.fillPoly(mask_local, [pts_pad.astype(np.int32)], 255)
+                        # Size-aware Gaussian kernel
+                        poly_w = float(np.max(pts_pad[:, 0]) - np.min(pts_pad[:, 0]) + 1.0)
+                        poly_h = float(np.max(pts_pad[:, 1]) - np.min(pts_pad[:, 1]) + 1.0)
+                        k = int(max(15, min(211, int(min(poly_w, poly_h) * 0.60))))
+                        if k % 2 == 0:
+                            k += 1
+                        roi_blurred = _cv2.GaussianBlur(roi, (k, k), 0)
+                        mask3 = _cv2.merge([mask_local, mask_local, mask_local])
+                        composited = np.where(mask3 == 255, roi_blurred, roi)
+                        processed_image[ya:yb, xa:xb] = composited
+                        # Log polygon (absolute coordinates)
+                        abs_poly = [(int(xa + p[0]), int(ya + p[1])) for p in pts_pad]
+                        print(f"AI Service: Blur applied -> box=({x1},{y1},{x2},{y2}) poly_pts={abs_poly} k={k}")
+                        blurred_any = True
+                        num_applied += 1
+                # Privacy fallback: conservative bottom-center region if no plate found
+                if not blurred_any:
+                    import cv2 as _cv2
+                    fw = int(W * 0.50)     # 50% width
+                    fh = int(H * 0.22)     # 22% height
+                    cx = W // 2
+                    # Place region near bottom center
+                    xa = max(0, cx - fw // 2)
+                    xb = min(W, cx + fw // 2)
+                    yb = H
+                    ya = max(0, yb - fh)
+                    if xb > xa and yb > ya:
+                        k = int(max(13, min(197, int(min(xb - xa, yb - ya) * 0.55))))
+                        if k % 2 == 0:
+                            k += 1
+                        roi = processed_image[ya:yb, xa:xb]
+                        processed_image[ya:yb, xa:xb] = _cv2.GaussianBlur(roi, (k, k), 0)
+                        blurred_any = True
+                        print("AI Service: Fallback blur applied (bottom-center).")
+                        fallback_used = True
+                # Write output if any blur applied; return early to avoid OCR paths
+                if blurred_any:
+                    # Update per-image and cumulative stats
+                    self._last_blur_stats = {
+                        'image': image_path,
+                        'num_blurs': int(num_applied),
+                        'fallback': bool(fallback_used),
+                    }
+                    try:
+                        self._total_blur_stats['images'] += 1
+                        self._total_blur_stats['plates'] += int(num_applied)
+                        if fallback_used:
+                            self._total_blur_stats['fallbacks'] += 1
+                    except Exception:
+                        pass
+                    out_path = self._build_output_path(image_path)
+                    root, ext = os.path.splitext(out_path)
+                    if not root.lower().endswith('_blurred'):
+                        out_path = f"{root}_blurred{ext or '.jpg'}"
+                    try:
+                        os.makedirs(os.path.dirname(out_path), exist_ok=True)
+                    except Exception:
+                        pass
+                    cv2.imwrite(out_path, processed_image)
+                    return out_path
+            except Exception as _stable_e:
+                # Safety: never fall through to OCR-based legacy paths.
+                # Apply bottom-center fallback and return to maintain privacy guarantees.
+                print(f"AI Service: Stable YOLO-only pipeline error: {_stable_e}")
+                try:
+                    import cv2 as _cv2
+                    fw = int(W * 0.50)
+                    fh = int(H * 0.22)
+                    cx = W // 2
+                    xa = max(0, cx - fw // 2)
+                    xb = min(W, cx + fw // 2)
+                    yb = H
+                    ya = max(0, yb - fh)
+                    if xb > xa and yb > ya:
+                        k = int(max(13, min(197, int(min(xb - xa, yb - ya) * 0.55))))
+                        if k % 2 == 0:
+                            k += 1
+                        roi = processed_image[ya:yb, xa:xb]
+                        processed_image[ya:yb, xa:xb] = _cv2.GaussianBlur(roi, (k, k), 0)
+                        # Update stats for error-fallback case
+                        self._last_blur_stats = {
+                            'image': image_path,
+                            'num_blurs': 0,
+                            'fallback': True,
+                        }
+                        try:
+                            self._total_blur_stats['images'] += 1
+                            self._total_blur_stats['fallbacks'] += 1
+                        except Exception:
+                            pass
+                        out_path = self._build_output_path(image_path)
+                        root, ext = os.path.splitext(out_path)
+                        if not root.lower().endswith('_blurred'):
+                            out_path = f"{root}_blurred{ext or '.jpg'}"
+                        try:
+                            os.makedirs(os.path.dirname(out_path), exist_ok=True)
+                        except Exception:
+                            pass
+                        cv2.imwrite(out_path, processed_image)
+                        return out_path
+                except Exception:
+                    pass
+                # As a last resort, return original path but never continue to OCR paths.
+                return image_path
+            
+            # Safety assertion: this function must return from the YOLO-only path.
+            # No downstream OCR-based blurring is allowed in lock-down mode.
+            assert False, "OCR path disabled; _blur_license_plates must return earlier via YOLO-only pipeline"
 
             # Ensure a LICENSE-PLATE-ONLY detector (replace generic if needed)
             try:
@@ -876,7 +1120,7 @@ class CarAnalysisService:
                             continue
                         try:
                             ker_w = max(1, int((x2 - x1) * 0.03)) | 1
-                            ker_h = max(1, int((y2 - y1) * 0.03)) | 1
+                            ker_h = max(1, int((y2 - y1) * 0.06)) | 1
                             ker = cv2.getStructuringElement(cv2.MORPH_ELLIPSE, (ker_w, ker_h))
                             mclip = cv2.dilate(mclip.astype(np.uint8), ker, iterations=1)
                         except Exception:
@@ -884,7 +1128,7 @@ class CarAnalysisService:
                         # Shrink oversized masks to avoid spill
                         try:
                             cov2 = float((mclip[y1:y2, x1:x2] > 0).sum()) / max(1, (x2 - x1) * (y2 - y1))
-                            if cov2 > 0.80:
+                            if cov2 > 0.65:
                                 local = self._shrink_mask_polygon(mclip[y1:y2, x1:x2], 0.96)
                                 mclip[y1:y2, x1:x2] = local
                         except Exception:
@@ -990,7 +1234,7 @@ class CarAnalysisService:
                                         # Guard against oversized masks: shrink if coverage > 80%
                                         try:
                                             cov2 = float((mask01 > 0).sum()) / float(mask01.shape[0] * mask01.shape[1])
-                                            if cov2 > 0.80:
+                                            if cov2 > 0.65:
                                                 mask01 = self._shrink_mask_polygon(mask01, scale_xy=0.96)
                                         except Exception:
                                             pass
@@ -1034,14 +1278,24 @@ class CarAnalysisService:
                                             except Exception:
                                                 pass
                                         else:
-                                            # Last resort: rectangle blur with masked verification
+                                            # Last resort: contracted rectangle mask to avoid spillover
                                             k = int(max(31, min(211, int(min(roi.shape[0], roi.shape[1]) * 0.50))))
                                             if k % 2 == 0:
                                                 k += 1
-                                            processed_image[ya:yb, xa:xb] = cv2.GaussianBlur(roi, (k, k), 0)
+                                            import cv2 as _cv2
+                                            rblur = _cv2.GaussianBlur(roi, (k, k), 0)
+                                            # Build a contracted central mask (keeps corners/edges safe)
+                                            shy = max(2, int(roi.shape[0] * 0.075))
+                                            shx = max(2, int(roi.shape[1] * 0.075))
+                                            cmask = np.zeros((roi.shape[0], roi.shape[1]), dtype=np.uint8)
+                                            y1c, y2c = shy, max(shy + 1, roi.shape[0] - shy)
+                                            x1c, x2c = shx, max(shx + 1, roi.shape[1] - shx)
+                                            cmask[y1c:y2c, x1c:x2c] = 1
+                                            m3 = _cv2.merge([cmask * 255, cmask * 255, cmask * 255])
+                                            comp = np.where(m3 == 255, rblur, roi)
+                                            processed_image[ya:yb, xa:xb] = comp
                                             try:
-                                                full_mask = np.ones((roi.shape[0], roi.shape[1]), dtype=np.uint8)
-                                                self._post_blur_verify_mask(processed_image, xa, ya, xb, yb, full_mask)
+                                                self._post_blur_verify_mask(processed_image, xa, ya, xb, yb, cmask)
                                             except Exception:
                                                 pass
                                     try:
@@ -1877,10 +2131,10 @@ class CarAnalysisService:
                             # Tunable dilation so blur stays tight but covers borders
                             try:
                                 import os as _os
-                                dw_ratio = float(str(_os.getenv('PLATE_MASK_DILATE_W_RATIO', '0.06')).strip())
-                                dh_ratio = float(str(_os.getenv('PLATE_MASK_DILATE_H_RATIO', '0.12')).strip())
+                                dw_ratio = float(str(_os.getenv('PLATE_MASK_DILATE_W_RATIO', '0.03')).strip())
+                                dh_ratio = float(str(_os.getenv('PLATE_MASK_DILATE_H_RATIO', '0.06')).strip())
                             except Exception:
-                                dw_ratio, dh_ratio = 0.06, 0.12
+                                dw_ratio, dh_ratio = 0.03, 0.06
                             dilate_w = max(2, int(union_w * dw_ratio))
                             dilate_h = max(2, int(union_h * dh_ratio))
                             kernel = cv2.getStructuringElement(cv2.MORPH_RECT, (dilate_w | 1, dilate_h | 1))
@@ -1928,9 +2182,9 @@ class CarAnalysisService:
                                         rmask = _np.zeros(roi.shape[:2], dtype=_np.uint8)
                                         cv2.fillConvexPoly(rmask, box, 255)
                                         try:
-                                            rratio = float(os.getenv('PLATE_ROT_DILATE_RATIO', '0.05'))
+                                            rratio = float(os.getenv('PLATE_ROT_DILATE_RATIO', '0.03'))
                                         except Exception:
-                                            rratio = 0.05
+                                            rratio = 0.03
                                         dr = max(2, int(min(union_w, union_h) * rratio))
                                         rker = cv2.getStructuringElement(cv2.MORPH_RECT, (dr | 1, dr | 1))
                                         rmask = cv2.dilate(rmask, rker, iterations=1)
