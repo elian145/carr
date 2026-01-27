@@ -231,6 +231,55 @@ def _prune_recent_cache() -> None:
         for k, _ in items[: max(0, len(_recent_cache) - _recent_cache_max)]:
             _recent_cache.pop(k, None)
 
+def _normalize_for_blur(img_bytes: bytes) -> bytes:
+    """
+    Normalize uploaded image to mirror Watermarkly website preprocessing:
+    - Decode with Pillow
+    - Apply EXIF orientation via ImageOps.exif_transpose
+    - Convert to RGB
+    - Adaptive downscaling with LANCZOS:
+        * longest > 2200px  -> resize so longest == 1600px
+        * 1400px <= longest <= 2200px -> no downscale
+        * longest < 1400px -> unchanged
+    - Re-encode JPEG quality=85, optimize=True
+    - Strip EXIF metadata in output
+    Returns normalized JPEG bytes. If normalization fails, returns original bytes.
+    """
+    try:
+        from io import BytesIO  # type: ignore
+        try:
+            from PIL import Image, ImageOps  # type: ignore
+        except Exception:
+            return img_bytes
+        img = Image.open(BytesIO(img_bytes))
+        # Correct orientation using EXIF if present
+        exif_transpose = getattr(ImageOps, "exif_transpose", None)
+        if callable(exif_transpose):
+            try:
+                img = exif_transpose(img)
+            except Exception:
+                pass
+        # Convert to RGB
+        img = img.convert("RGB")
+        w, h = img.size
+        longest = max(w, h)
+        if longest > 2200:
+            scale = 1600.0 / float(longest)
+            new_w = max(1, int(round(w * scale)))
+            new_h = max(1, int(round(h * scale)))
+            try:
+                resample = Image.Resampling.LANCZOS  # Pillow >= 9.1
+            except Exception:
+                resample = getattr(Image, "LANCZOS", getattr(Image, "BICUBIC", Image.NEAREST))
+            img = img.resize((new_w, new_h), resample=resample)
+        # For 1400px–2200px and <=1400px, leave size unchanged
+        out = BytesIO()
+        # Do NOT pass EXIF to ensure metadata is stripped
+        img.save(out, format="JPEG", quality=85, optimize=True)
+        return out.getvalue()
+    except Exception:
+        return img_bytes
+
 def _watermarkly_blur_bytes(img_bytes: bytes) -> tuple:
     """
     Send image bytes to Watermarkly Blur API. Returns (blurred_bytes, content_type).
@@ -266,16 +315,19 @@ def _watermarkly_blur_bytes(img_bytes: bytes) -> tuple:
         except Exception as e:
             raise RuntimeError("Local blur fallback failed and WATERMARKLY_API_KEY is not configured") from e
 
+    # Preprocess before calling Watermarkly: normalize to RGB, <=1600px longest side, JPEG q=85 optimize
+    normalized_bytes = _normalize_for_blur(img_bytes)
+
     headers = {
         "x-api-key": api_key,
         "Content-Type": "application/octet-stream",
     }
 
     def _try(url: str) -> requests.Response:
-        r = requests.post(url, headers=headers, data=img_bytes, timeout=90)
+        r = requests.post(url, headers=headers, data=normalized_bytes, timeout=90)
         if r.status_code == 429:
             time.sleep(0.1)
-            r = requests.post(url, headers=headers, data=img_bytes, timeout=90)
+            r = requests.post(url, headers=headers, data=normalized_bytes, timeout=90)
         return r
 
     # Try EU, then US
@@ -319,13 +371,356 @@ def _watermarkly_blur_bytes(img_bytes: bytes) -> tuple:
             msg = (r.text[:300] if (r is not None and hasattr(r, "text")) else None)
         raise RuntimeError(f"Watermarkly blur failed ({getattr(r,'status_code', 'no_status')}): {msg or 'no details'}")
 
-    ct = (r.headers.get("Content-Type") or "").split(";", 1)[0].strip() or "image/jpeg"
-    return r.content, ct
+    # Postprocess after Watermarkly: decode and re-encode to JPEG q=85 optimize to match website output
+    try:
+        from io import BytesIO  # type: ignore
+        from PIL import Image  # type: ignore
+        img_out = Image.open(BytesIO(r.content)).convert("RGB")
+        out = BytesIO()
+        img_out.save(out, format="JPEG", quality=85, optimize=True)
+        processed = out.getvalue()
+        return processed, "image/jpeg"
+    except Exception:
+        # If Pillow fails, fall back to upstream content and content-type
+        ct = (r.headers.get("Content-Type") or "").split(";", 1)[0].strip() or "image/jpeg"
+        return r.content, ct
 
 def _get_sha256(data: bytes) -> str:
     h = hashlib.sha256()
     h.update(data)
     return h.hexdigest()
+
+# ------------------------------ Auto blur (WM -> YOLO verify/fallback -> logo) ------------------------------
+def _load_logo_bgra():
+    """
+    Load a logo image (prefer backend/logo.png if present) with alpha when available.
+    Returns cv2 image (BGRA/BGR) or None.
+    """
+    try:
+        import cv2  # type: ignore
+        # Prefer explicit path via env, else backend/logo.png, else None
+        p = (os.getenv("LOGO_PATH") or "").strip()
+        if p.startswith(("'", '"')) and p.endswith(("'", '"')) and len(p) >= 2:
+            p = p[1:-1]
+        if not p:
+            # repo has backend/logo.png; use it for stamping
+            p = os.path.abspath(os.path.join(os.path.dirname(__file__), "..", "backend", "logo.png"))
+        if os.path.exists(p):
+            img = cv2.imread(p, cv2.IMREAD_UNCHANGED)
+            return img
+    except Exception:
+        return None
+    return None
+
+
+_LOGO_CACHE = None
+
+
+def _get_logo_cached():
+    global _LOGO_CACHE
+    if _LOGO_CACHE is None:
+        _LOGO_CACHE = _load_logo_bgra()
+    return _LOGO_CACHE
+
+
+def _detect_plate_boxes_yolo(img_bgr):
+    """
+    Detect plate boxes using the local YOLO model from kk.ai_service.
+    Returns list of (conf, x1, y1, x2, y2) in original image coords.
+    """
+    try:
+        import numpy as np  # type: ignore
+        import cv2  # type: ignore
+        from kk.ai_service import car_analysis_service  # type: ignore
+
+        model = getattr(car_analysis_service, "license_plate_model", None)
+        if model is None:
+            return []
+        H, W = img_bgr.shape[:2]
+        det_boxes = []
+        for s in (1.0, 1.25, 1.5):
+            if s == 1.0:
+                img_s = img_bgr
+            else:
+                img_s = cv2.resize(img_bgr, None, fx=s, fy=s, interpolation=cv2.INTER_LINEAR)
+            res = model.predict(img_s, conf=0.30, iou=0.5, imgsz=1280, verbose=False)
+            if not res:
+                continue
+            r0 = res[0]
+            boxes = getattr(r0, "boxes", None)
+            if boxes is None or not hasattr(boxes, "xyxy"):
+                continue
+            try:
+                xyxy = boxes.xyxy.cpu().numpy() if hasattr(boxes.xyxy, "cpu") else np.array(boxes.xyxy)
+                confs = boxes.conf.cpu().numpy() if hasattr(boxes, "conf") and hasattr(boxes.conf, "cpu") else None
+            except Exception:
+                continue
+            for i, b in enumerate(xyxy):
+                try:
+                    c = float(confs[i]) if confs is not None and i < len(confs) else 1.0
+                    x1s, y1s, x2s, y2s = [float(v) for v in b]
+                    x1 = int(x1s / s)
+                    y1 = int(y1s / s)
+                    x2 = int(x2s / s)
+                    y2 = int(y2s / s)
+                    x1 = max(0, min(W - 1, x1))
+                    y1 = max(0, min(H - 1, y1))
+                    x2 = max(0, min(W, x2))
+                    y2 = max(0, min(H, y2))
+                    if x2 <= x1 or y2 <= y1:
+                        continue
+                    det_boxes.append((c, x1, y1, x2, y2))
+                except Exception:
+                    continue
+
+        # Filter to plate-ish geometry (same spirit as ai_service)
+        filtered = []
+        for c, x1, y1, x2, y2 in det_boxes:
+            w_box = max(1, x2 - x1)
+            h_box = max(1, y2 - y1)
+            ar = w_box / float(h_box)
+            cy = (y1 + y2) * 0.5
+            if cy < (0.50 * H):
+                continue
+            if not (1.5 <= ar <= 7.0):
+                continue
+            filtered.append((c, x1, y1, x2, y2))
+        filtered.sort(key=lambda t: t[0], reverse=True)
+        return filtered[:2]
+    except Exception:
+        return []
+
+
+def _boxes_to_mask(img_bgr, boxes):
+    try:
+        import numpy as np  # type: ignore
+        import cv2  # type: ignore
+        H, W = img_bgr.shape[:2]
+        m = np.zeros((H, W), dtype=np.uint8)
+        for (_c, x1, y1, x2, y2) in boxes:
+            cv2.rectangle(m, (int(x1), int(y1)), (int(x2), int(y2)), 255, -1)
+        return m
+    except Exception:
+        return None
+
+
+def _apply_extra_blur_on_boxes(img_bgr, boxes, pad=0.15):
+    try:
+        import cv2  # type: ignore
+        H, W = img_bgr.shape[:2]
+        out = img_bgr.copy()
+        for (_c, x1, y1, x2, y2) in boxes:
+            bw = max(1, x2 - x1)
+            bh = max(1, y2 - y1)
+            px, py = int(bw * pad), int(bh * pad)
+            xa = max(0, x1 - px)
+            ya = max(0, y1 - py)
+            xb = min(W, x2 + px)
+            yb = min(H, y2 + py)
+            roi = out[ya:yb, xa:xb]
+            if roi.size == 0:
+                continue
+            k = int(max(31, min(151, int(min(xb - xa, yb - ya) * 0.55))))
+            if k % 2 == 0:
+                k += 1
+            out[ya:yb, xa:xb] = cv2.GaussianBlur(roi, (k, k), 0)
+        return out
+    except Exception:
+        return img_bgr
+
+
+def _check_blur_quality(orig_bgr, blurred_bgr, boxes, thresh=15.0):
+    """Return list of boxes that still look sharp."""
+    try:
+        import cv2  # type: ignore
+        go = cv2.cvtColor(orig_bgr, cv2.COLOR_BGR2GRAY)
+        gb = cv2.cvtColor(blurred_bgr, cv2.COLOR_BGR2GRAY)
+        bad = []
+        H, W = go.shape[:2]
+        for (c, x1, y1, x2, y2) in boxes:
+            x1 = max(0, min(W - 1, int(x1)))
+            y1 = max(0, min(H - 1, int(y1)))
+            x2 = max(0, min(W, int(x2)))
+            y2 = max(0, min(H, int(y2)))
+            ro = go[y1:y2, x1:x2]
+            rb = gb[y1:y2, x1:x2]
+            if ro.size == 0 or rb.size == 0:
+                continue
+            so = cv2.Laplacian(ro, cv2.CV_64F).var()
+            sb = cv2.Laplacian(rb, cv2.CV_64F).var()
+            if sb > thresh and sb > so * 0.3:
+                bad.append((c, x1, y1, x2, y2))
+        return bad
+    except Exception:
+        return []
+
+
+def _stamp_logo_on_mask(img_bgr, mask_u8):
+    """
+    Stamp logo centered within the mask's bounding rect.
+    Returns (out_img, stamped_bool).
+    """
+    try:
+        import cv2  # type: ignore
+        import numpy as np  # type: ignore
+        logo = _get_logo_cached()
+        if logo is None or mask_u8 is None:
+            return img_bgr, False
+        if not mask_u8.any():
+            return img_bgr, False
+        ys, xs = np.where(mask_u8 > 0)
+        if xs.size == 0 or ys.size == 0:
+            return img_bgr, False
+        x1, x2 = int(xs.min()), int(xs.max())
+        y1, y2 = int(ys.min()), int(ys.max())
+        bw, bh = max(1, x2 - x1), max(1, y2 - y1)
+        if bw < 20 or bh < 10:
+            return img_bgr, False
+
+        out = img_bgr.copy()
+        logo_h, logo_w = logo.shape[:2]
+        target_w = int(bw * 0.70)
+        scale = target_w / float(max(1, logo_w))
+        target_h = int(logo_h * scale)
+        if target_h > bh * 0.60:
+            target_h = int(bh * 0.60)
+            scale = target_h / float(max(1, logo_h))
+            target_w = int(logo_w * scale)
+        if target_w < 10 or target_h < 5:
+            return img_bgr, False
+
+        logo_rs = cv2.resize(logo, (target_w, target_h), interpolation=cv2.INTER_AREA)
+        cx = x1 + (bw - target_w) // 2
+        cy = y1 + (bh - target_h) // 2
+        H, W = out.shape[:2]
+        if cx < 0 or cy < 0 or (cx + target_w) > W or (cy + target_h) > H:
+            return img_bgr, False
+
+        if logo_rs.shape[2] == 4:
+            alpha = (logo_rs[:, :, 3].astype(np.float32) / 255.0)
+            alpha = np.clip(alpha * 0.85, 0.0, 1.0)  # 85% opacity
+            for c in range(3):
+                out[cy:cy + target_h, cx:cx + target_w, c] = (
+                    alpha * logo_rs[:, :, c] +
+                    (1.0 - alpha) * out[cy:cy + target_h, cx:cx + target_w, c]
+                ).astype(np.uint8)
+        else:
+            a = 0.85
+            out[cy:cy + target_h, cx:cx + target_w] = (
+                a * logo_rs[:, :, :3] + (1.0 - a) * out[cy:cy + target_h, cx:cx + target_w]
+            ).astype(np.uint8)
+        return out, True
+    except Exception:
+        return img_bgr, False
+
+
+def _blur_license_plate_auto_bytes(img_bytes: bytes):
+    """
+    Auto pipeline:
+    - Watermarkly blur first
+    - Verify with local YOLO detection + sharpness check
+    - If still sharp, apply extra blur on those boxes
+    - Stamp logo over the (union) plate mask when possible
+    Returns (out_bytes, content_type, blur_path, logo_stamped_bool)
+    """
+    try:
+        import numpy as np  # type: ignore
+        import cv2  # type: ignore
+    except Exception:
+        # If OpenCV/NumPy unavailable, fall back to Watermarkly only
+        out, ct = _watermarkly_blur_bytes(img_bytes)
+        return out, ct, "wm", False
+
+    # Step 1: Watermarkly
+    wm_bytes, ct = _watermarkly_blur_bytes(img_bytes)
+    blur_path = "wm"
+    logo_stamped = False
+
+    orig = cv2.imdecode(np.frombuffer(img_bytes, dtype=np.uint8), cv2.IMREAD_COLOR)
+    wm = cv2.imdecode(np.frombuffer(wm_bytes, dtype=np.uint8), cv2.IMREAD_COLOR)
+    if orig is None or wm is None:
+        return wm_bytes, ct or "image/jpeg", blur_path, False
+
+    # Step 2: detect plates on WM output (fallback to orig if none)
+    boxes = _detect_plate_boxes_yolo(wm)
+    if not boxes:
+        boxes = _detect_plate_boxes_yolo(orig)
+
+    # Step 3: verify blur quality; if any still sharp -> extra blur
+    if boxes:
+        leftover = _check_blur_quality(orig, wm, boxes, thresh=15.0)
+        if leftover:
+            wm = _apply_extra_blur_on_boxes(wm, leftover, pad=0.15)
+            blur_path = "wm+override"
+
+        # Step 4: logo stamp using union mask of boxes (best-effort)
+        m = _boxes_to_mask(wm, boxes)
+        if m is not None and m.any():
+            # Slight erosion so logo stays within blurred region
+            try:
+                ker = cv2.getStructuringElement(cv2.MORPH_ELLIPSE, (3, 3))
+                m = cv2.erode(m, ker, iterations=1)
+            except Exception:
+                pass
+            wm, logo_stamped = _stamp_logo_on_mask(wm, m)
+
+    ok, enc = cv2.imencode(".jpg", wm, [int(cv2.IMWRITE_JPEG_QUALITY), 92])
+    if not ok:
+        return wm_bytes, ct or "image/jpeg", blur_path, logo_stamped
+    return enc.tobytes(), "image/jpeg", blur_path, logo_stamped
+
+
+@app.route('/api/blur-license-plate-auto', methods=['POST'])
+def blur_license_plate_auto_endpoint():
+    """
+    Accepts multipart/form-data image (field: 'image' preferred; also accepts 'file'/'upload'/'photo').
+    Returns blurred image bytes:
+      Watermarkly first -> YOLO verify/fallback -> logo stamp
+    """
+    try:
+        fs = None
+        for key in ('image', 'file', 'upload', 'photo'):
+            if key in request.files:
+                fs = request.files.get(key)
+                break
+        if not fs or not fs.filename:
+            return jsonify({"error": "No image uploaded. Use form field 'image'."}), 400
+        img_bytes = fs.read()
+        if not img_bytes:
+            return jsonify({"error": "Empty upload"}), 400
+
+        # Cache by sha to avoid re-processing identical inputs in this runtime
+        digest = _get_sha256(img_bytes + b":auto")
+        with _recent_cache_lock:
+            _prune_recent_cache()
+            cached = _recent_cache.get(digest)
+        if cached and cached.get('bytes'):
+            resp = app.response_class(cached['bytes'])
+            resp.headers['Content-Type'] = cached.get('content_type') or 'image/jpeg'
+            resp.headers['X-Blur-Path'] = cached.get('blur_path') or 'wm'
+            resp.headers['X-Logo-Stamped'] = '1' if cached.get('logo') else '0'
+            return resp, 200
+
+        out_bytes, ct, blur_path, logo_stamped = _blur_license_plate_auto_bytes(img_bytes)
+        with _recent_cache_lock:
+            _recent_cache[digest] = {
+                'ts': time.time(),
+                'bytes': out_bytes,
+                'content_type': ct,
+                'blur_path': blur_path,
+                'logo': bool(logo_stamped),
+            }
+            _prune_recent_cache()
+
+        resp = app.response_class(out_bytes)
+        resp.headers['Content-Type'] = ct or 'image/jpeg'
+        resp.headers['X-Blur-Path'] = blur_path
+        resp.headers['X-Logo-Stamped'] = '1' if logo_stamped else '0'
+        return resp, 200
+    except Exception as e:
+        logger.exception(f"/api/blur-license-plate-auto error: {e}")
+        return jsonify({"error": "internal_error"}), 500
+
 
 # ------------------------------ Public endpoint ------------------------------
 @app.route('/api/blur-license-plate', methods=['POST'])
@@ -1654,6 +2049,7 @@ def upload_car_images(car_id):
 
         uploaded_images = []
         skip_blur = request.args.get('skip_blur') == '1'
+        mode = (request.args.get('mode') or 'auto').strip().lower()
 
         for fs in incoming_files:
             if fs and fs.filename:
@@ -1676,7 +2072,7 @@ def upload_car_images(car_id):
                     rel_path = final_rel
                 else:
                     # Process with license-plate blur (supports mode=strict/auto/speed via query params)
-                    rel_path, _ = _process_and_store_image(fs, False)
+                    rel_path, _ = _process_and_store_image(fs, False, mode=mode)
 
                 # Create image record (store relative path under static)
                 car_image = CarImage(
@@ -1996,7 +2392,7 @@ def analyze_car_image():
         return jsonify({'error': 'Failed to analyze car image'}), 500
 
 
-def _process_and_store_image(file_storage, inline_base64: bool):
+def _process_and_store_image(file_storage, inline_base64: bool, mode: str = "auto"):
     filename = generate_secure_filename(file_storage.filename)
     timestamp = datetime.utcnow().strftime('%Y%m%d_%H%M%S')
     temp_rel = f"temp/processed_{timestamp}_{filename}"
@@ -2012,11 +2408,11 @@ def _process_and_store_image(file_storage, inline_base64: bool):
         final_abs = os.path.join(app.root_path, 'static', final_rel)
         os.makedirs(os.path.dirname(final_abs), exist_ok=True)
 
-        # Watermarkly Blur API (binary POST with x-api-key)
+        # Read uploaded bytes once
         with open(temp_abs, 'rb') as fp:
             original_bytes = fp.read()
         # Deduplication re-use within this runtime if same bytes encountered
-        digest = _get_sha256(original_bytes)
+        digest = _get_sha256(original_bytes + (f":{mode}".encode("utf-8")))
         blurred_bytes = None
         content_type = None
         with _recent_cache_lock:
@@ -2026,9 +2422,12 @@ def _process_and_store_image(file_storage, inline_base64: bool):
             blurred_bytes = cached['bytes']
             content_type = cached.get('content_type') or 'image/jpeg'
         else:
-            # Try Watermarkly; on any failure (403, network, PIL issues), store the original
             try:
-                blurred_bytes, content_type = _watermarkly_blur_bytes(original_bytes)
+                if (mode or "auto").lower().strip() == "auto":
+                    blurred_bytes, content_type, _bp, _logo = _blur_license_plate_auto_bytes(original_bytes)
+                else:
+                    # Default/legacy: Watermarkly-only
+                    blurred_bytes, content_type = _watermarkly_blur_bytes(original_bytes)
                 with _recent_cache_lock:
                     _recent_cache[digest] = {'ts': time.time(), 'bytes': blurred_bytes, 'content_type': content_type}
                     _prune_recent_cache()
@@ -2080,10 +2479,11 @@ def process_car_images_test():
         want_b64 = request.args.get('inline_base64') == '1'
         processed = []
         processed_b64 = []
+        mode = (request.args.get('mode') or 'auto').strip().lower()
         for fs in files:
             if not fs or not fs.filename:
                 continue
-            rel, b64 = _process_and_store_image(fs, want_b64)
+            rel, b64 = _process_and_store_image(fs, want_b64, mode=mode)
             processed.append(rel)
             if want_b64 and b64:
                 processed_b64.append(b64)
@@ -2104,10 +2504,11 @@ def process_car_images():
         if not files:
             return jsonify({'error': 'No image files provided'}), 400
         processed = []
+        mode = (request.args.get('mode') or 'auto').strip().lower()
         for fs in files:
             if not fs or not fs.filename:
                 continue
-            rel, _ = _process_and_store_image(fs, False)
+            rel, _ = _process_and_store_image(fs, False, mode=mode)
             processed.append(rel)
         return jsonify({'success': True, 'processed_images': processed}), 200
     except Exception as e:

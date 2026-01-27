@@ -42,8 +42,9 @@ class AiService {
   /// Process multiple images and blur license plates
   static Future<List<XFile>?> processCarImages(List<XFile> imageFiles) async {
     try {
-      // Call backend-only Watermarkly proxy. Client NEVER calls Watermarkly directly.
-      final Uri blurUri = Uri.parse('${apiBaseApi()}/blur-license-plate');
+      // Call backend blur route (Watermarkly first -> YOLO verify/fallback -> logo stamp).
+      // Client NEVER calls third-party plate services directly.
+      final Uri blurUri = Uri.parse('${apiBaseApi()}/blur-license-plate-auto');
       final List<XFile> outputs = <XFile>[];
       for (final imageFile in imageFiles) {
         try {
@@ -57,8 +58,8 @@ class AiService {
           req.files.add(await http.MultipartFile.fromPath('image', imageFile.path));
 
           final resp = await req.send().timeout(
-            const Duration(seconds: 60),
-            onTimeout: () => throw TimeoutException('Blur timeout after 60s'),
+            const Duration(seconds: 120),
+            onTimeout: () => throw TimeoutException('Blur timeout after 120s'),
           );
           if (resp.statusCode >= 200 && resp.statusCode < 300) {
             final body = await http.Response.fromStream(resp);

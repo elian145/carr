@@ -75,6 +75,7 @@ workflows:
   ios-sideloadly-unsigned:
     name: iOS (Unsigned IPA for Sideloadly)
     max_build_duration: 90
+    instance_type: mac_mini_m1
     environment:
       flutter: stable
       xcode: latest
