@@ -1,0 +1,10 @@
+Flask==3.0.3
+Werkzeug==3.0.3
+requests==2.32.3
+python-dotenv==1.0.1
+gunicorn==21.2.0
+waitress==3.0.0
+numpy==1.26.4
+opencv-python==4.10.0.84
+
+

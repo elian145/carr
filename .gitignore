@@ -26,3 +26,10 @@ Thumbs.db
 # Python cache
 __pycache__/
 *.pyc
+
+# Backend local virtualenv and secrets
+backend/.venv/
+backend/env.local
+backend/blurred_*.jpg
+backend/blurred_one.jpg
+backend/*.bin
