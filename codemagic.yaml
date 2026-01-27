@@ -1,37 +1,116 @@
 workflows:
-  ios-workflow:
-    name: iOS Workflow
+  android-dev-debug:
+    name: Android (dev) - Debug
+    max_build_duration: 60
+    instance_type: linux_x2
+    environment:
+      flutter: stable
+      vars:
+        FLAVOR: dev
+    cache:
+      cache_paths:
+        - $HOME/.pub-cache
+        - $HOME/.gradle/caches
+        - $HOME/.gradle/wrapper
+    scripts:
+      - name: Flutter pub get
+        script: flutter pub get
+      - name: Analyze
+        script: flutter analyze
+      - name: Tests
+        script: flutter test --no-pub
+      - name: Build APK (debug)
+        script: flutter build apk --debug --no-pub --flavor "$FLAVOR"
+    artifacts:
+      - build/app/outputs/flutter-apk/*.apk
+
+  android-prod-release:
+    name: Android (prod) - Release APK/AAB
+    max_build_duration: 90
+    instance_type: linux_x2
+    environment:
+      flutter: stable
+      vars:
+        FLAVOR: prod
+      # Configure these in Codemagic UI (Environment variables / Secure):
+      # - CM_KEYSTORE (base64 of your .jks)
+      # - CM_KEYSTORE_PASSWORD
+      # - CM_KEY_ALIAS
+      # - CM_KEY_PASSWORD
+    cache:
+      cache_paths:
+        - $HOME/.pub-cache
+        - $HOME/.gradle/caches
+        - $HOME/.gradle/wrapper
+    scripts:
+      - name: Flutter pub get
+        script: flutter pub get
+      - name: Write Android signing files (optional)
+        script: |
+          if [ -n "$CM_KEYSTORE" ]; then
+            echo "Signing config detected; writing keystore + signing.properties"
+            KEYSTORE_PATH="$CM_BUILD_DIR/android/upload-keystore.jks"
+            echo "$CM_KEYSTORE" | base64 --decode > "$KEYSTORE_PATH"
+            cat > "$CM_BUILD_DIR/signing.properties" <<EOF
+          STORE_FILE=$KEYSTORE_PATH
+          STORE_PASSWORD=$CM_KEYSTORE_PASSWORD
+          KEY_ALIAS=$CM_KEY_ALIAS
+          KEY_PASSWORD=$CM_KEY_PASSWORD
+          EOF
+          else
+            echo "No signing env vars set; building a release signed with debug key (not store-ready)."
+          fi
+      - name: Analyze
+        script: flutter analyze
+      - name: Tests
+        script: flutter test --no-pub
+      - name: Build APK (release)
+        script: flutter build apk --release --no-pub --flavor "$FLAVOR"
+      - name: Build App Bundle (release)
+        script: flutter build appbundle --release --no-pub --flavor "$FLAVOR"
+    artifacts:
+      - build/app/outputs/flutter-apk/*.apk
+      - build/app/outputs/bundle/*/*.aab
+
+  ios-sideloadly-unsigned:
+    name: iOS (Unsigned IPA for Sideloadly)
+    max_build_duration: 90
     environment:
       flutter: stable
       xcode: latest
+      cocoapods: default
       vars:
-        # Update this if you restart the tunnel (URL changes each run)
-        API_BASE: "https://battle-consent-cricket-patrick.trycloudflare.com"
+        # For iPhone testing on the same Wi‑Fi, use your PC LAN IP:
+        #   API_BASE: "http://192.168.1.10:5000"
+        # For remote testing, use your Cloudflare tunnel URL (must be HTTPS):
+        #   API_BASE: "https://<your-tunnel>.trycloudflare.com"
+        # Set to your current PC LAN IP (your backend is currently advertising 192.168.1.10).
+        API_BASE: "http://192.168.1.10:5000"
         FORCE_SKIP_BLUR: "false"
     scripts:
-      - flutter --version
-      - flutter clean
-      - flutter pub get
-      - flutter build ipa --release --no-codesign --dart-define=API_BASE=$API_BASE --dart-define=FORCE_SKIP_BLUR=$FORCE_SKIP_BLUR
-      - name: Package unsigned IPA (if Flutter didn't create one)
+      - name: Flutter version
+        script: flutter --version
+      - name: Clean + pub get
+        script: |
+          flutter clean
+          flutter pub get
+      - name: Analyze + tests
+        script: |
+          flutter analyze
+          flutter test
+      - name: Build iOS app (no codesign)
+        script: |
+          flutter build ios --release --no-codesign \
+            --dart-define=API_BASE="$API_BASE" \
+            --dart-define=FORCE_SKIP_BLUR="$FORCE_SKIP_BLUR"
+      - name: Package unsigned IPA for Sideloadly
         script: |
           set -e
           DEST_DIR="$CM_BUILD_DIR/build/ios/ipa"
           mkdir -p "$DEST_DIR"
-          # If Flutter already produced an IPA, keep it
-          if ls "$DEST_DIR"/*.ipa >/dev/null 2>&1; then
-            echo "IPA already exists in $DEST_DIR"
-            exit 0
-          fi
-          # Try common app locations
-          APP_PATH_ARCHIVE="$CM_BUILD_DIR/build/ios/archive/Runner.xcarchive/Products/Applications/Runner.app"
-          APP_PATH_IPHONEOS="$CM_BUILD_DIR/build/ios/iphoneos/Runner.app"
-          if [ -d "$APP_PATH_ARCHIVE" ]; then
-            APP_SRC="$APP_PATH_ARCHIVE"
-          elif [ -d "$APP_PATH_IPHONEOS" ]; then
-            APP_SRC="$APP_PATH_IPHONEOS"
-          else
-            echo "Runner.app not found in expected locations."
+          APP_SRC="$CM_BUILD_DIR/build/ios/iphoneos/Runner.app"
+          if [ ! -d "$APP_SRC" ]; then
+            echo "Runner.app not found at $APP_SRC"
             echo "Listing build/ios:"
             ls -la "$CM_BUILD_DIR/build/ios" || true
             exit 1
