@@ -1,4 +1,57 @@
 workflows:
+  ios_adhoc_unsigned:
+    name: iOS Ad-hoc (unsigned IPA for Sideloadly)
+    environment:
+      flutter: stable
+      xcode: 15.2
+      vars:
+        # Set this in Codemagic UI → Environment variables (e.g. http://192.168.1.10:5003/api or HTTPS tunnel)
+        API_BASE: ${API_BASE}
+    scripts:
+      - name: Flutter pub get
+        script: |
+          flutter --version
+          flutter pub get
+      - name: Build iOS (no codesign)
+        script: |
+          flutter build ios --release --no-codesign --dart-define=API_BASE=${API_BASE}
+      - name: Create unsigned IPA
+        script: |
+          cd build/ios/iphoneos
+          rm -rf Payload
+          mkdir -p Payload
+          # Runner.app is the default Flutter product name
+          mv Runner.app Payload/
+          zip -qry app-unsigned.ipa Payload
+    artifacts:
+      - build/ios/iphoneos/app-unsigned.ipa
+      - build/ios/iphoneos/Payload/Runner.app
+    publishing:
+      email:
+        recipients:
+          - ${CM_EMAIL?}
+
+  android_release_unsigned:
+    name: Android APK (release, unsigned)
+    environment:
+      flutter: stable
+      vars:
+        API_BASE: ${API_BASE}
+    scripts:
+      - name: Flutter pub get
+        script: |
+          flutter --version
+          flutter pub get
+      - name: Build APK
+        script: |
+          flutter build apk --release --dart-define=API_BASE=${API_BASE}
+    artifacts:
+      - build/app/outputs/flutter-apk/app-release.apk
+    publishing:
+      email:
+        recipients:
+          - ${CM_EMAIL?}
+workflows:
   android-dev-debug:
     name: Android (dev) - Debug
     max_build_duration: 60
