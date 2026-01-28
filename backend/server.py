@@ -974,6 +974,56 @@ def proxy_api(subpath: str):
 		logger.exception("Proxy error")
 		return jsonify({"error": "ProxyError", "message": str(e)}), 502
 
+@app.route("/static/<path:subpath>", methods=["GET", "HEAD"])
+def proxy_static(subpath: str):
+	if not LISTINGS_API_BASE:
+		return jsonify({"error": "ProxyNotConfigured", "message": "Set LISTINGS_API_BASE to your listings API base (no /api)."}), 500
+	try:
+		import requests as _rq
+		target = f"{LISTINGS_API_BASE}/static/{subpath}"
+		resp = _rq.request(request.method, target, headers={k: v for k, v in request.headers.items() if k.lower() != "host"}, timeout=60, stream=False)
+		from flask import Response as _FlaskResp
+		exclude = {"Content-Encoding", "Transfer-Encoding", "Connection"}
+		resp_headers = [(k, v) for k, v in resp.headers.items() if k not in exclude]
+		return _FlaskResp(resp.content, status=resp.status_code, headers=resp_headers)
+	except Exception as e:
+		logger.exception("Static proxy error")
+		return jsonify({"error": "ProxyError", "message": str(e)}), 502
+
+@app.route("/uploads/<path:subpath>", methods=["GET", "HEAD"])
+def proxy_uploads(subpath: str):
+	# Convenience: map /uploads/* -> listings /static/uploads/*
+	if not LISTINGS_API_BASE:
+		return jsonify({"error": "ProxyNotConfigured", "message": "Set LISTINGS_API_BASE to your listings API base (no /api)."}), 500
+	try:
+		import requests as _rq
+		target = f"{LISTINGS_API_BASE}/static/uploads/{subpath}"
+		resp = _rq.request(request.method, target, headers={k: v for k, v in request.headers.items() if k.lower() != "host"}, timeout=60, stream=False)
+		from flask import Response as _FlaskResp
+		exclude = {"Content-Encoding", "Transfer-Encoding", "Connection"}
+		resp_headers = [(k, v) for k, v in resp.headers.items() if k not in exclude]
+		return _FlaskResp(resp.content, status=resp.status_code, headers=resp_headers)
+	except Exception as e:
+		logger.exception("Uploads proxy error")
+		return jsonify({"error": "ProxyError", "message": str(e)}), 502
+
+@app.route("/car_photos/<path:subpath>", methods=["GET", "HEAD"])
+def proxy_car_photos(subpath: str):
+	# Convenience: map /car_photos/* -> listings /static/uploads/car_photos/*
+	if not LISTINGS_API_BASE:
+		return jsonify({"error": "ProxyNotConfigured", "message": "Set LISTINGS_API_BASE to your listings API base (no /api)."}), 500
+	try:
+		import requests as _rq
+		target = f"{LISTINGS_API_BASE}/static/uploads/car_photos/{subpath}"
+		resp = _rq.request(request.method, target, headers={k: v for k, v in request.headers.items() if k.lower() != "host"}, timeout=60, stream=False)
+		from flask import Response as _FlaskResp
+		exclude = {"Content-Encoding", "Transfer-Encoding", "Connection"}
+		resp_headers = [(k, v) for k, v in resp.headers.items() if k not in exclude]
+		return _FlaskResp(resp.content, status=resp.status_code, headers=resp_headers)
+	except Exception as e:
+		logger.exception("Car photos proxy error")
+		return jsonify({"error": "ProxyError", "message": str(e)}), 502
+
 def create_app():
 	return app
 
