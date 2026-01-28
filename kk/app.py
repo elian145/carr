@@ -529,7 +529,7 @@ def _process_and_store_image(file_storage, inline_base64: bool):
         try:
             import requests as _rq
             blur_base = os.getenv('BLUR_API_BASE') or 'http://127.0.0.1:5003'
-            url = f\"{blur_base.rstrip('/')}/blur-license-plate-auto\"
+            url = f"{blur_base.rstrip('/')}/blur-license-plate-auto"
             with open(temp_abs, 'rb') as fh:
                 rv = _rq.post(url, files={'image': (filename, fh, 'application/octet-stream')}, timeout=120)
             if rv is not None and rv.status_code == 200 and rv.content:
