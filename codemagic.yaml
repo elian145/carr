@@ -27,10 +27,6 @@ workflows:
     artifacts:
       - build/ios/iphoneos/app-unsigned.ipa
       - build/ios/iphoneos/Payload/Runner.app
-    publishing:
-      email:
-        recipients:
-          - ${CM_EMAIL?}
 
   android_release_unsigned:
     name: Android APK (release, unsigned)
@@ -49,10 +45,6 @@ workflows:
           flutter build apk --release --dart-define=API_BASE=${API_BASE}
     artifacts:
       - build/app/outputs/flutter-apk/app-release.apk
-    publishing:
-      email:
-        recipients:
-          - ${CM_EMAIL?}
 
   android-dev-debug:
     name: Android (dev) - Debug
