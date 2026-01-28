@@ -519,20 +519,32 @@ def _process_and_store_image(file_storage, inline_base64: bool):
     file_storage.save(temp_abs)
 
     try:
-        # Blur license plates using the AI service
-        from .ai_service import car_analysis_service  # local import to avoid heavy import at module load
-        processed_abs = car_analysis_service._blur_license_plates(temp_abs)
-
-        # Move/copy processed file to final destination under uploads/car_photos
+        # Prefer WM-first then YOLO-override blur via dedicated backend service
         final_filename = f"processed_{timestamp}_{filename}"
-        # Relative path stored in DB/returned to client
         final_rel = os.path.join('uploads', 'car_photos', final_filename).replace('\\', '/')
-        # Absolute filesystem path under static/uploads (do NOT duplicate 'uploads')
         final_abs = os.path.join(app.config['UPLOAD_FOLDER'], 'car_photos', final_filename)
         os.makedirs(os.path.dirname(final_abs), exist_ok=True)
 
-        import shutil
-        shutil.copy2(processed_abs, final_abs)
+        used_remote = False
+        try:
+            import requests as _rq
+            blur_base = os.getenv('BLUR_API_BASE') or 'http://127.0.0.1:5003'
+            url = f\"{blur_base.rstrip('/')}/blur-license-plate-auto\"
+            with open(temp_abs, 'rb') as fh:
+                rv = _rq.post(url, files={'image': (filename, fh, 'application/octet-stream')}, timeout=120)
+            if rv is not None and rv.status_code == 200 and rv.content:
+                with open(final_abs, 'wb') as out:
+                    out.write(rv.content)
+                used_remote = True
+        except Exception:
+            used_remote = False
+
+        if not used_remote:
+            # Fallback to local YOLO-only pipeline
+            from .ai_service import car_analysis_service  # local import to avoid heavy import at module load
+            processed_abs = car_analysis_service._blur_license_plates(temp_abs)
+            import shutil
+            shutil.copy2(processed_abs, final_abs)
 
         b64_data = None
         if inline_base64:
