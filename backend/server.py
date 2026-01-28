@@ -974,6 +974,28 @@ def proxy_api(subpath: str):
 		logger.exception("Proxy error")
 		return jsonify({"error": "ProxyError", "message": str(e)}), 502
 
+@app.route("/static/uploads/<path:subpath>", methods=["GET", "HEAD"])
+def static_uploads_local(subpath: str):
+	"""
+	Serve images directly from local filesystem if present to avoid 404s due to
+	mismatched static roots. Falls back to proxying to the listings server.
+	Checks both repo_root/static/uploads and kk/static/uploads.
+	"""
+	try:
+		repo_root = os.path.abspath(os.path.join(os.path.dirname(__file__), ".."))
+		candidates = [
+			os.path.join(repo_root, "static", "uploads", subpath),
+			os.path.join(repo_root, "kk", "static", "uploads", subpath),
+		]
+		for p in candidates:
+			if os.path.isfile(p):
+				# Best-effort content type based on extension; let client sniff otherwise
+				return send_file(p, as_attachment=False, download_name=os.path.basename(p))
+	except Exception:
+		pass
+	# Fallback to proxy to listings server static
+	return proxy_uploads(subpath)
+
 @app.route("/static/<path:subpath>", methods=["GET", "HEAD"])
 def proxy_static(subpath: str):
 	if not LISTINGS_API_BASE:
