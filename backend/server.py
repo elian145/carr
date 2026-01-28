@@ -955,6 +955,7 @@ def proxy_api(subpath: str):
 		data = None
 		json_body = None
 		if request.files:
+			logger.info(f"[proxy] incoming multipart fields: {list(request.files.keys())} to {target}")
 			# Compatibility: some clients send images[]/files[]; also backend expects 'image' or 'images'
 			files = []
 			for key in request.files.keys():
@@ -984,7 +985,8 @@ def proxy_api(subpath: str):
 				json_body = request.get_json(silent=True)
 			else:
 				data = request.get_data()
-		resp = _rq.request(method, target, params=params, headers=hdrs, data=data, json=json_body, files=files, timeout=60, stream=False)
+		logger.info(f"[proxy] forwarding file parts: {0 if files is None else len(files)} to {target}")
+		resp = _rq.request(method, target, params=params, headers=hdrs, data=data, json=json_body, files=files, timeout=120, stream=False)
 		from flask import Response as _FlaskResp
 		exclude = {"Content-Encoding", "Transfer-Encoding", "Connection"}
 		resp_headers = [(k, v) for k, v in resp.headers.items() if k not in exclude]
