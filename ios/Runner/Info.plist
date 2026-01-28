@@ -70,15 +70,15 @@
 		<true/>
 		<key>NSExceptionDomains</key>
 		<dict>
-			\t<key>192.168.1.10</key>
-			\t<dict>
-			\t\t<key>NSIncludesSubdomains</key>
-			\t\t<true/>
-			\t\t<key>NSExceptionAllowsInsecureHTTPLoads</key>
-			\t\t<true/>
-			\t\t<key>NSExceptionRequiresForwardSecrecy</key>
-			\t\t<false/>
-			\t</dict>
+			<key>192.168.1.10</key>
+			<dict>
+				<key>NSIncludesSubdomains</key>
+				<true/>
+				<key>NSExceptionAllowsInsecureHTTPLoads</key>
+				<true/>
+				<key>NSExceptionRequiresForwardSecrecy</key>
+				<false/>
+			</dict>
 			<key>10.0.2.2</key>
 			<dict>
 				<key>NSIncludesSubdomains</key>
