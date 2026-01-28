@@ -955,9 +955,27 @@ def proxy_api(subpath: str):
 		data = None
 		json_body = None
 		if request.files:
+			# Compatibility: some clients send images[]/files[]; also backend expects 'image' or 'images'
 			files = []
-			for key, storage in request.files.items():
-				files.append((key, (storage.filename, storage.stream, storage.mimetype)))
+			for key in request.files.keys():
+				for storage in request.files.getlist(key):
+					try:
+						# Read file content to ensure forwarding is not empty
+						content = storage.read()
+						if hasattr(storage, "seek"):
+							try:
+								storage.seek(0)
+							except Exception:
+								pass
+					except Exception:
+						content = storage.stream
+					fn = storage.filename or "upload.jpg"
+					mt = storage.mimetype or "application/octet-stream"
+					# Attach with original key
+					files.append((key, (fn, content, mt)))
+					# Also attach a duplicate under 'image' to satisfy strict servers
+					if key not in ("image", "images"):
+						files.append(("image", (fn, content, mt)))
 			data = request.form.to_dict(flat=False)
 		else:
 			ctype = request.headers.get("Content-Type", "")
