@@ -981,7 +981,8 @@ def proxy_static(subpath: str):
 	try:
 		import requests as _rq
 		target = f"{LISTINGS_API_BASE}/static/{subpath}"
-		resp = _rq.request(request.method, target, headers={k: v for k, v in request.headers.items() if k.lower() != "host"}, timeout=60, stream=False)
+		params = request.args.to_dict(flat=False)
+		resp = _rq.request(request.method, target, params=params, headers={k: v for k, v in request.headers.items() if k.lower() != "host"}, timeout=60, stream=False)
 		from flask import Response as _FlaskResp
 		exclude = {"Content-Encoding", "Transfer-Encoding", "Connection"}
 		resp_headers = [(k, v) for k, v in resp.headers.items() if k not in exclude]
@@ -998,7 +999,8 @@ def proxy_uploads(subpath: str):
 	try:
 		import requests as _rq
 		target = f"{LISTINGS_API_BASE}/static/uploads/{subpath}"
-		resp = _rq.request(request.method, target, headers={k: v for k, v in request.headers.items() if k.lower() != "host"}, timeout=60, stream=False)
+		params = request.args.to_dict(flat=False)
+		resp = _rq.request(request.method, target, params=params, headers={k: v for k, v in request.headers.items() if k.lower() != "host"}, timeout=60, stream=False)
 		from flask import Response as _FlaskResp
 		exclude = {"Content-Encoding", "Transfer-Encoding", "Connection"}
 		resp_headers = [(k, v) for k, v in resp.headers.items() if k not in exclude]
@@ -1015,7 +1017,8 @@ def proxy_car_photos(subpath: str):
 	try:
 		import requests as _rq
 		target = f"{LISTINGS_API_BASE}/static/uploads/car_photos/{subpath}"
-		resp = _rq.request(request.method, target, headers={k: v for k, v in request.headers.items() if k.lower() != "host"}, timeout=60, stream=False)
+		params = request.args.to_dict(flat=False)
+		resp = _rq.request(request.method, target, params=params, headers={k: v for k, v in request.headers.items() if k.lower() != "host"}, timeout=60, stream=False)
 		from flask import Response as _FlaskResp
 		exclude = {"Content-Encoding", "Transfer-Encoding", "Connection"}
 		resp_headers = [(k, v) for k, v in resp.headers.items() if k not in exclude]
