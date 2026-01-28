@@ -558,6 +558,10 @@ def blur_license_plate_auto():
 	"""
 	Try Watermarkly first. If it fails (non-200 or empty), fallback to Roboflow model-based blurring.
 	"""
+	# Strict mode: always apply YOLO override on top of WM (to match CLI behavior)
+	strict_q = (request.args.get("strict") or "").strip().lower() in ("1", "true", "yes")
+	strict_env = (os.getenv("FORCE_YOLO_OVERRIDE") or "0").strip().lower() in ("1", "true", "yes")
+	force_override = strict_q or strict_env
 	file = request.files.get("image") or request.files.get("file") or request.files.get("upload")
 	if not file:
 		return jsonify({"error": "No file provided. Use form field 'image'."}), 400
@@ -683,8 +687,8 @@ def blur_license_plate_auto():
 									if leftover: break
 								except Exception:
 									continue
-							# If no leftover sharp regions -> accept Watermarkly immediately
-							if not leftover:
+							# If no leftover sharp regions -> accept Watermarkly unless strict override requested
+							if not leftover and not force_override:
 								ct = (resp.headers.get("Content-Type") or "image/jpeg").split(";", 1)[0].strip()
 								try:
 									# stamp logo using union of verify detections
@@ -947,8 +951,12 @@ def proxy_api(subpath: str):
 		import requests as _rq
 		target = f"{LISTINGS_API_BASE}/api/{subpath}"
 		params = request.args.to_dict(flat=False)
-		# Build headers but avoid hop-by-hop/host
-		hdrs = {k: v for k, v in request.headers.items() if k.lower() not in ("host", "content-length", "transfer-encoding")}
+		# Build headers but avoid hop-by-hop/host and DO NOT forward content-type for multipart; requests will set it with boundary
+		hdrs = {
+			k: v
+			for k, v in request.headers.items()
+			if k.lower() not in ("host", "content-length", "transfer-encoding", "content-type")
+		}
 		method = request.method.upper()
 		# Handle multipart forms
 		files = None

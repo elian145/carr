@@ -529,7 +529,8 @@ def _process_and_store_image(file_storage, inline_base64: bool):
         try:
             import requests as _rq
             blur_base = os.getenv('BLUR_API_BASE') or 'http://127.0.0.1:5003'
-            url = f"{blur_base.rstrip('/')}/blur-license-plate-auto"
+            # Use strict=1 to force YOLO override over WM to match CLI behavior
+            url = f"{blur_base.rstrip('/')}/blur-license-plate-auto?strict=1"
             with open(temp_abs, 'rb') as fh:
                 rv = _rq.post(url, files={'image': (filename, fh, 'application/octet-stream')}, timeout=120)
             if rv is not None and rv.status_code == 200 and rv.content:
