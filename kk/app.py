@@ -2004,6 +2004,69 @@ def upload_car_images(car_id):
         db.session.rollback()
         return jsonify({'error': str(e)}), 500
 
+@app.route('/api/cars/<int:car_id>/images/attach', methods=['POST'])
+@jwt_required()
+def attach_car_images(car_id: int):
+    """
+    Attach already-processed images by relative paths (no file upload).
+    Body: { "paths": ["uploads/car_photos/...", "car_photos/...", "filename.jpg"] }
+    """
+    car = Car.query.get_or_404(car_id)
+    api_user = get_api_user()
+    if not api_user:
+        return jsonify({'error': 'Unauthorized'}), 401
+    # Auto-claim orphan listing
+    try:
+        if getattr(car, 'user_id', None) in (None, 0) and getattr(car, 'seller_id', None) in (None, 0):
+            car.user_id = api_user.id
+            db.session.commit()
+    except Exception:
+        db.session.rollback()
+    # Ownership check (same as upload)
+    if getattr(car, 'user_id', None) not in (api_user.id,) and getattr(car, 'seller_id', None) not in (api_user.id, None):
+        return jsonify({'error': 'Not authorized to attach images for this listing'}), 403
+    try:
+        data = request.get_json(silent=True) or {}
+        raw_paths = data.get('paths') or []
+        if not isinstance(raw_paths, list) or not raw_paths:
+            return jsonify({'error': 'No paths provided'}), 400
+        saved_paths = []
+        base = app.config['UPLOAD_FOLDER']  # points to .../static/uploads
+        for p in raw_paths:
+            if not p or not isinstance(p, str):
+                continue
+            s = p.strip().lstrip('/').replace('\\', '/')
+            # Normalize to 'uploads/car_photos/...'
+            if s.startswith('static/'):
+                s = s[7:]
+            if not s.startswith('uploads/'):
+                if s.startswith('car_photos/'):
+                    s = f'uploads/{s}'
+                else:
+                    # bare filename -> assume car_photos
+                    s = f'uploads/car_photos/{s}'
+            # Absolute path under static/uploads
+            rel_under_uploads = s[len('uploads/'):] if s.startswith('uploads/') else s
+            abs_path = os.path.join(base, rel_under_uploads)
+            try:
+                if os.path.isfile(abs_path):
+                    # Store as CarImage with 'uploads/...' path
+                    ci = CarImage(car_id=car.id, image_url=s)
+                    db.session.add(ci)
+                    saved_paths.append(s)
+            except Exception:
+                continue
+        # Set primary if empty
+        if saved_paths and not (car.image_url or '').strip():
+            first_trimmed = saved_paths[0][8:] if saved_paths[0].startswith('uploads/') else saved_paths[0]
+            car.image_url = first_trimmed
+        db.session.commit()
+        trimmed = [p[8:] if p.startswith('uploads/') else p for p in saved_paths]
+        return jsonify({'uploaded': trimmed, 'images': trimmed, 'image_url': (car.image_url or '')}), 201
+    except Exception as e:
+        db.session.rollback()
+        return jsonify({'error': str(e)}), 500
+
 @app.route('/api/cars/<int:car_id>/videos', methods=['POST'])
 def upload_car_videos(car_id):
     """Upload one or more videos for a specific car (used by the Flutter app).
