@@ -520,7 +520,7 @@ def _process_and_store_image(file_storage, inline_base64: bool):
 
     try:
         # Blur license plates using the AI service
-        from ai_service import car_analysis_service  # local import to avoid heavy import at module load
+        from .ai_service import car_analysis_service  # local import to avoid heavy import at module load
         processed_abs = car_analysis_service._blur_license_plates(temp_abs)
 
         # Move/copy processed file to final destination under uploads/car_photos
@@ -1939,10 +1939,19 @@ def upload_car_images(car_id):
     Returns JSON with uploaded relative paths.
     """
     car = Car.query.get_or_404(car_id)
-    # Only the owner (from token or session) can upload images
+    # Only the owner (from token or session) can upload images; if listing has no owner yet,
+    # let the first authenticated uploader claim it.
     api_user = get_api_user()
-    if not api_user or car.user_id != api_user.id:
-        return jsonify({'error': 'Unauthorized'}), 403
+    if not api_user:
+        return jsonify({'error': 'Unauthorized'}), 401
+    try:
+        if getattr(car, 'user_id', None) in (None, 0) and getattr(car, 'seller_id', None) in (None, 0):
+            car.user_id = api_user.id
+            db.session.commit()
+    except Exception:
+        db.session.rollback()
+    if getattr(car, 'user_id', None) not in (api_user.id,) and getattr(car, 'seller_id', None) not in (api_user.id, None):
+        return jsonify({'error': 'Not authorized to upload images for this listing'}), 403
     try:
         # Accept multiple common field names and array-style keys
         files = []
@@ -3376,7 +3385,7 @@ if __name__ == '__main__':
                 
                 try:
                     # Import AI service
-                    from ai_service import car_analysis_service
+                    from .ai_service import car_analysis_service
                     
                     # Analyze the image using AI
                     analysis_result = car_analysis_service.analyze_car_image(temp_path)
@@ -3409,7 +3418,7 @@ if __name__ == '__main__':
     def test_ai():
         """Test endpoint to verify AI service is working"""
         try:
-            from ai_service import car_analysis_service
+            from .ai_service import car_analysis_service
             return jsonify({
                 'success': True,
                 'message': 'AI service is working',
@@ -3466,7 +3475,7 @@ if __name__ == '__main__':
 
                 try:
                     # Import AI service
-                    from ai_service import car_analysis_service
+                    from .ai_service import car_analysis_service
                     # Process image (blur license plates)
                     print(f"[BLUR] Processing with AI: {temp_path}")
                     strict = (request.args.get('strict') == '1' or request.args.get('strict_blur') == '1')
@@ -3591,7 +3600,7 @@ if __name__ == '__main__':
                     
                     try:
                         # Import AI service
-                        from ai_service import car_analysis_service
+                        from .ai_service import car_analysis_service
                         
                         # Process image (blur license plates) with optional params
                         strict = (request.args.get('strict') == '1' or request.args.get('strict_blur') == '1')
