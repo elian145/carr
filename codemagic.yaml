@@ -5,7 +5,8 @@ workflows:
       flutter: stable
       xcode: 15.2
       vars:
-        # Set this in Codemagic UI → Environment variables (e.g. http://192.168.1.10:5003/api or HTTPS tunnel)
+        # Set this in Codemagic UI → Environment variables (e.g. http://192.168.1.10:5003 or HTTPS tunnel)
+        # IMPORTANT: Do NOT include /api in API_BASE. The app adds /api itself.
         API_BASE: ${API_BASE}
     scripts:
       - name: Flutter pub get
@@ -36,6 +37,7 @@ workflows:
     environment:
       flutter: stable
       vars:
+        # IMPORTANT: Do NOT include /api in API_BASE. The app adds /api itself.
         API_BASE: ${API_BASE}
     scripts:
       - name: Flutter pub get
@@ -51,7 +53,7 @@ workflows:
       email:
         recipients:
           - ${CM_EMAIL?}
-workflows:
+
   android-dev-debug:
     name: Android (dev) - Debug
     max_build_duration: 60
@@ -135,11 +137,12 @@ workflows:
       cocoapods: default
       vars:
         # For iPhone testing on the same Wi‑Fi, use your PC LAN IP:
-        #   API_BASE: "http://192.168.1.10:5000"
+        #   API_BASE: "http://192.168.1.10:5003"
         # For remote testing, use your Cloudflare tunnel URL (must be HTTPS):
         #   API_BASE: "https://<your-tunnel>.trycloudflare.com"
         # Set to your current PC LAN IP (your backend is currently advertising 192.168.1.10).
-        API_BASE: "http://192.168.1.10:5000"
+        # IMPORTANT: Do NOT include /api in API_BASE. The app adds /api itself.
+        API_BASE: "http://192.168.1.10:5003"
         FORCE_SKIP_BLUR: "false"
     scripts:
       - name: Flutter version
