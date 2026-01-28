@@ -19,6 +19,8 @@ app = Flask(__name__)
 logging.basicConfig(level=logging.INFO, format="%(asctime)s %(levelname)s [%(name)s] %(message)s")
 logger = logging.getLogger("watermarkly-backend")
 
+LISTINGS_API_BASE = (os.getenv("LISTINGS_API_BASE") or "").strip().rstrip("/")
+
 EU_URL = "https://blur-api-eu1.watermarkly.com/blur/"
 US_URL = "https://blur-api-us1.watermarkly.com/blur/"
 
@@ -927,6 +929,50 @@ def blur_license_plate_auto():
 		return rsp_fb
 	except Exception as e:
 		return jsonify({"error": "AutoRouteError", "message": str(e)}), 500
+
+# API alias so clients calling /api/blur-license-plate-auto hit the same handler
+@app.route("/api/blur-license-plate-auto", methods=["POST"])
+def blur_license_plate_auto_alias():
+	return blur_license_plate_auto()
+
+# Transparent proxy for all other API requests so the app can use one API_BASE
+@app.route("/api/<path:subpath>", methods=["GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"])
+def proxy_api(subpath: str):
+	# Do NOT proxy the local blur endpoint here (it is handled above)
+	if subpath == "blur-license-plate-auto":
+		return blur_license_plate_auto_alias()
+	if not LISTINGS_API_BASE:
+		return jsonify({"error": "ProxyNotConfigured", "message": "Set LISTINGS_API_BASE to your listings API base (no /api)."}), 500
+	try:
+		import requests as _rq
+		target = f"{LISTINGS_API_BASE}/api/{subpath}"
+		params = request.args.to_dict(flat=False)
+		# Build headers but avoid hop-by-hop/host
+		hdrs = {k: v for k, v in request.headers.items() if k.lower() not in ("host", "content-length", "transfer-encoding")}
+		method = request.method.upper()
+		# Handle multipart forms
+		files = None
+		data = None
+		json_body = None
+		if request.files:
+			files = []
+			for key, storage in request.files.items():
+				files.append((key, (storage.filename, storage.stream, storage.mimetype)))
+			data = request.form.to_dict(flat=False)
+		else:
+			ctype = request.headers.get("Content-Type", "")
+			if "application/json" in ctype:
+				json_body = request.get_json(silent=True)
+			else:
+				data = request.get_data()
+		resp = _rq.request(method, target, params=params, headers=hdrs, data=data, json=json_body, files=files, timeout=60, stream=False)
+		from flask import Response as _FlaskResp
+		exclude = {"Content-Encoding", "Transfer-Encoding", "Connection"}
+		resp_headers = [(k, v) for k, v in resp.headers.items() if k not in exclude]
+		return _FlaskResp(resp.content, status=resp.status_code, headers=resp_headers)
+	except Exception as e:
+		logger.exception("Proxy error")
+		return jsonify({"error": "ProxyError", "message": str(e)}), 502
 
 def create_app():
 	return app
