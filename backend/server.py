@@ -962,20 +962,21 @@ def proxy_api(subpath: str):
 					try:
 						# Read file content to ensure forwarding is not empty
 						content = storage.read()
-						if hasattr(storage, "seek"):
-							try:
-								storage.seek(0)
-							except Exception:
-								pass
+						import io as _io
+						buf = _io.BytesIO(content if isinstance(content, (bytes, bytearray)) else storage.stream.read())
 					except Exception:
-						content = storage.stream
+						try:
+							import io as _io
+							buf = _io.BytesIO(storage.stream.read())
+						except Exception:
+							buf = None
 					fn = storage.filename or "upload.jpg"
 					mt = storage.mimetype or "application/octet-stream"
-					# Attach with original key
-					files.append((key, (fn, content, mt)))
-					# Also attach a duplicate under 'image' to satisfy strict servers
-					if key not in ("image", "images"):
-						files.append(("image", (fn, content, mt)))
+					if buf is not None:
+						# Attach with canonical 'images' key and original key
+						files.append(("images", (fn, buf, mt)))
+						buf2 = _io.BytesIO(buf.getvalue())
+						files.append((key, (fn, buf2, mt)))
 			data = request.form.to_dict(flat=False)
 		else:
 			ctype = request.headers.get("Content-Type", "")
