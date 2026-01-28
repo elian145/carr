@@ -996,6 +996,39 @@ def static_uploads_local(subpath: str):
 	# Fallback to proxy to listings server static
 	return proxy_uploads(subpath)
 
+@app.route("/static/images/<path:subpath>", methods=["GET", "HEAD"])
+def static_images_local(subpath: str):
+	"""
+	Serve brand and other images from local repo paths before proxying.
+	Looks under static/images and kk/static/images.
+	"""
+	try:
+		repo_root = os.path.abspath(os.path.join(os.path.dirname(__file__), ".."))
+		candidates = [
+			os.path.join(repo_root, "static", "images", subpath),
+			os.path.join(repo_root, "kk", "static", "images", subpath),
+		]
+		for p in candidates:
+			if os.path.isfile(p):
+				return send_file(p, as_attachment=False, download_name=os.path.basename(p))
+	except Exception:
+		pass
+	# Fallback to proxy to listings server static/images
+	if not LISTINGS_API_BASE:
+		return jsonify({"error": "ProxyNotConfigured", "message": "Set LISTINGS_API_BASE to your listings API base (no /api)."}), 500
+	try:
+		import requests as _rq
+		target = f"{LISTINGS_API_BASE}/static/images/{subpath}"
+		params = request.args.to_dict(flat=False)
+		resp = _rq.request(request.method, target, params=params, headers={k: v for k, v in request.headers.items() if k.lower() != "host"}, timeout=60, stream=False)
+		from flask import Response as _FlaskResp
+		exclude = {"Content-Encoding", "Transfer-Encoding", "Connection"}
+		resp_headers = [(k, v) for k, v in resp.headers.items() if k not in exclude]
+		return _FlaskResp(resp.content, status=resp.status_code, headers=resp_headers)
+	except Exception as e:
+		logger.exception("Static images proxy error")
+		return jsonify({"error": "ProxyError", "message": str(e)}), 502
+
 @app.route("/static/<path:subpath>", methods=["GET", "HEAD"])
 def proxy_static(subpath: str):
 	if not LISTINGS_API_BASE:
@@ -1048,6 +1081,16 @@ def proxy_car_photos(subpath: str):
 	except Exception as e:
 		logger.exception("Car photos proxy error")
 		return jsonify({"error": "ProxyError", "message": str(e)}), 502
+
+# No-op analytics endpoint to avoid 500s blocking UI if upstream lacks it
+@app.route("/api/analytics/track/view", methods=["POST"])
+def analytics_track_view_noop():
+	try:
+		payload = request.get_json(silent=True) or {}
+		logger.info(f"[analytics] view: {payload}")
+	except Exception:
+		pass
+	return jsonify({"ok": True}), 200
 
 def create_app():
 	return app
