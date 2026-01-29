@@ -368,7 +368,11 @@ class ApiService {
 
     // Add files
     for (final file in imageFiles) {
-      request.files.add(await http.MultipartFile.fromPath('files', file.path));
+      // Send under multiple common field names for maximum backend compatibility
+      final multipart = await http.MultipartFile.fromPath('image', file.path);
+      request.files.add(multipart);
+      // Also add as 'images' to support array-style parsers
+      request.files.add(await http.MultipartFile.fromPath('images', file.path));
     }
 
     final response = await request.send();
