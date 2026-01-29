@@ -558,10 +558,11 @@ def blur_license_plate_auto():
 	"""
 	Try Watermarkly first. If it fails (non-200 or empty), fallback to Roboflow model-based blurring.
 	"""
-	# Strict mode: always apply YOLO override on top of WM (to match CLI behavior)
+	# Force YOLO override after WM by default to ensure robust plate masking and stamping
+	# (matches desired production behavior). Can be disabled with strict=0 if needed.
 	strict_q = (request.args.get("strict") or "").strip().lower() in ("1", "true", "yes")
-	strict_env = (os.getenv("FORCE_YOLO_OVERRIDE") or "0").strip().lower() in ("1", "true", "yes")
-	force_override = strict_q or strict_env
+	env_force = (os.getenv("FORCE_YOLO_OVERRIDE") or "1").strip().lower() in ("1", "true", "yes")
+	force_override = True if env_force or strict_q else False
 	file = request.files.get("image") or request.files.get("file") or request.files.get("upload")
 	if not file:
 		return jsonify({"error": "No file provided. Use form field 'image'."}), 400
