@@ -7,7 +7,7 @@ workflows:
       vars:
         # IMPORTANT: Do NOT include /api in API_BASE. The app adds /api itself.
         # Hardcoded to your LAN IP so you don't need to set it in Codemagic UI.
-        API_BASE: "http://192.168.1.10:5003"
+        API_BASE: "http://192.168.1.14:5003"
     scripts:
       - name: Flutter pub get
         script: |
@@ -35,7 +35,7 @@ workflows:
       vars:
         # IMPORTANT: Do NOT include /api in API_BASE. The app adds /api itself.
         # Hardcoded to your LAN IP so you don't need to set it in Codemagic UI.
-        API_BASE: "http://192.168.1.10:5003"
+        API_BASE: "http://192.168.1.14:5003"
     scripts:
       - name: Flutter pub get
         script: |
@@ -130,12 +130,12 @@ workflows:
       cocoapods: default
       vars:
         # For iPhone testing on the same Wi‑Fi, use your PC LAN IP:
-        #   API_BASE: "http://192.168.1.10:5003"
+        #   API_BASE: "http://192.168.1.14:5003"
         # For remote testing, use your Cloudflare tunnel URL (must be HTTPS):
         #   API_BASE: "https://<your-tunnel>.trycloudflare.com"
-        # Set to your current PC LAN IP (your backend is currently advertising 192.168.1.10).
+        # Set to your current PC LAN IP (your backend is currently advertising 192.168.1.14).
         # IMPORTANT: Do NOT include /api in API_BASE. The app adds /api itself.
-        API_BASE: "http://192.168.1.10:5003"
+        API_BASE: "http://192.168.1.14:5003"
         FORCE_SKIP_BLUR: "false"
     scripts:
       - name: Flutter version
