@@ -558,11 +558,13 @@ def blur_license_plate_auto():
 	"""
 	Try Watermarkly first. If it fails (non-200 or empty), fallback to Roboflow model-based blurring.
 	"""
-	# Force YOLO override after WM by default to ensure robust plate masking and stamping
-	# (matches desired production behavior). Can be disabled with strict=0 if needed.
+	# Desired behavior:
+	# - Watermarkly first
+	# - ONLY if plate still readable/sharp after WM -> YOLO override
+	# - Stamp logo exactly on the blur mask (no extra/bottom-center stamping)
 	strict_q = (request.args.get("strict") or "").strip().lower() in ("1", "true", "yes")
-	env_force = (os.getenv("FORCE_YOLO_OVERRIDE") or "1").strip().lower() in ("1", "true", "yes")
-	force_override = True if env_force or strict_q else False
+	env_force = (os.getenv("FORCE_YOLO_OVERRIDE") or "0").strip().lower() in ("1", "true", "yes")
+	force_override = (env_force or strict_q)
 	file = request.files.get("image") or request.files.get("file") or request.files.get("upload")
 	if not file:
 		return jsonify({"error": "No file provided. Use form field 'image'."}), 400
@@ -707,6 +709,9 @@ def blur_license_plate_auto():
 									if leftover: break
 								except Exception:
 									continue
+							# If verification produced no mask at all, treat as leftover -> require override
+							if not mask_logo.any():
+								leftover = True
 							# If no leftover sharp regions -> accept Watermarkly unless strict override requested
 							if not leftover and not force_override:
 								ct = (resp.headers.get("Content-Type") or "image/jpeg").split(";", 1)[0].strip()
@@ -721,23 +726,6 @@ def blur_license_plate_auto():
 											pass
 										img_out2 = _stamp_logo_on_mask(img_wm, mask_logo)
 										stamped = True
-									else:
-										# fallback: detect on ORIGINAL just to place logo
-										m_alt = _build_mask_from_rf(img_orig, conf_override=conf)
-										if m_alt is not None:
-											try:
-												ker2 = _cv2.getStructuringElement(_cv2.MORPH_ELLIPSE, (3, 3))
-												m_alt = _cv2.erode(m_alt, ker2, iterations=1)
-											except Exception:
-												pass
-											img_out2 = _stamp_logo_on_mask(img_wm, m_alt)
-											stamped = True
-									# Final fallback: estimate blur region from diff
-									if not stamped:
-										m_diff = _estimate_blur_mask_from_diff(img_orig, img_wm)
-										if m_diff is not None:
-											img_out2 = _stamp_logo_on_mask(img_wm, m_diff)
-											stamped = True
 									if stamped:
 										ext = ".png" if "png" in ct else ".jpg"
 										enc_mime = "image/png" if ext == ".png" else "image/jpeg"
@@ -748,28 +736,6 @@ def blur_license_plate_auto():
 											rsp_ok2.headers["X-WM-Region"] = (os.getenv("WATERMARKLY_REGION") or "auto").upper()
 											rsp_ok2.headers["X-Logo-Stamped"] = "1"
 											return rsp_ok2
-								except Exception:
-									pass
-								# As a last resort, force a conservative bottom-center bbox for stamping
-								try:
-									img_wm2 = _cv2.imdecode(_np.frombuffer(resp.content, dtype=_np.uint8), _cv2.IMREAD_COLOR)
-									if img_wm2 is not None:
-										H2, W2 = img_wm2.shape[:2]
-										bw = int(0.38 * W2); bh = int(0.14 * H2)
-										xa = max(0, (W2 // 2) - bw // 2)
-										xb = min(W2, xa + bw)
-										yb = H2; ya = max(0, yb - bh)
-										if xb > xa and yb > ya:
-											mask_force = _np.zeros((H2, W2), _np.uint8)
-											_cv2.rectangle(mask_force, (xa, ya), (xb, yb), 255, -1)
-											img_forced = _stamp_logo_on_mask(img_wm2, mask_force)
-											okf, encf = _cv2.imencode(".jpg", img_forced, [int(_cv2.IMWRITE_JPEG_QUALITY), 92])
-											if okf:
-												rsp_forced = send_file(io.BytesIO(encf.tobytes()), mimetype="image/jpeg", as_attachment=False, download_name=f"blurred_{filename}")
-												rsp_forced.headers["X-Blur-Path"] = "wm"
-												rsp_forced.headers["X-WM-Region"] = (os.getenv("WATERMARKLY_REGION") or "auto").upper()
-												rsp_forced.headers["X-Logo-Stamped"] = "1"
-												return rsp_forced
 								except Exception:
 									pass
 								# Return raw WM result if all stamping attempts failed
@@ -860,11 +826,6 @@ def blur_license_plate_auto():
 						if img_wm is not None:
 							out_try = _try_stamp_logo_using_rf_on_image(img_wm)
 							stamped = not _np.array_equal(out_try, img_wm)
-							if not stamped and img_orig is not None:
-								m_diff = _estimate_blur_mask_from_diff(img_orig, img_wm)
-								if m_diff is not None:
-									out_try = _stamp_logo_on_mask(img_wm, m_diff)
-									stamped = True
 							okx, encx = _cv2.imencode(".jpg", out_try, [int(_cv2.IMWRITE_JPEG_QUALITY), 92])
 							if okx:
 								rsp_ok = send_file(io.BytesIO(encx.tobytes()), mimetype="image/jpeg", as_attachment=False, download_name=f"blurred_{filename}")
