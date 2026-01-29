@@ -1,4 +1,4 @@
-﻿import 'package:flutter/material.dart';
+import 'package:flutter/material.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:http/http.dart' as http;
 import 'dart:convert';
@@ -10447,32 +10447,29 @@ class _SellStep5PageState extends State<SellStep5Page> {
             try { CarService().addCarLocal(Map<String, dynamic>.from(carObj)); } catch (_) {}
           }
         } catch (_) {}
-        // Optimistic background image attach/upload: don't block submit
-        // Use the currently selected (and possibly processed) images directly.
-        Future.microtask(() async {
-          try {
-            final dynamic maybeImgs = carData['images'];
-            final List<dynamic> imgs = (maybeImgs is List) ? maybeImgs : const [];
-            final List<XFile> toUpload = <XFile>[];
-            for (final dynamic img in imgs) {
-              if (img is XFile) {
-                toUpload.add(img);
-              } else if (img is String) {
-                try { toUpload.add(XFile(img)); } catch (_) {}
-              }
+        // Upload images now and refresh so the listing shows photos immediately
+        try {
+          final dynamic maybeImgs = carData['images'];
+          final List<dynamic> imgs = (maybeImgs is List) ? maybeImgs : const [];
+          final List<XFile> toUpload = <XFile>[];
+          for (final dynamic img in imgs) {
+            if (img is XFile) {
+              toUpload.add(img);
+            } else if (img is String) {
+              try { toUpload.add(XFile(img)); } catch (_) {}
             }
-            if (toUpload.isEmpty) return;
-            await CarService().uploadCarImages(carId, toUpload);
-            // Force listings refresh so new images appear immediately
-            try { await CarService().getCars(refresh: true); } catch (_) {}
-          } catch (e) {
-            try {
-              ScaffoldMessenger.of(context).showSnackBar(
-                SnackBar(content: Text(AppLocalizations.of(context)!.listingUploadPartialFail(e.toString()))),
-              );
-            } catch (_) {}
           }
-        });
+          if (toUpload.isNotEmpty) {
+            await CarService().uploadCarImages(carId, toUpload);
+            try { await CarService().getCars(refresh: true); } catch (_) {}
+          }
+        } catch (e) {
+          try {
+            ScaffoldMessenger.of(context).showSnackBar(
+              SnackBar(content: Text(AppLocalizations.of(context)!.listingUploadPartialFail(e.toString()))),
+            );
+          } catch (_) {}
+        }
         print('Listing created successfully');
         return;
       } else if (response.statusCode == 401) {
