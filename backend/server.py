@@ -994,7 +994,10 @@ def proxy_api(subpath: str):
 			else:
 				data = request.get_data()
 		logger.info(f"[proxy] forwarding file parts: {0 if files is None else len(files)} to {target}")
-		resp = _rq.request(method, target, params=params, headers=hdrs, data=data, json=json_body, files=files, timeout=120, stream=False)
+		# Longer timeout for multipart uploads; standard for others
+		_has_multipart = (files is not None) or ("multipart/form-data" in (request.headers.get("Content-Type") or ""))
+		_timeout_s = 600 if (method == "POST" and _has_multipart) else 60
+		resp = _rq.request(method, target, params=params, headers=hdrs, data=data, json=json_body, files=files, timeout=_timeout_s, stream=False)
 		from flask import Response as _FlaskResp
 		exclude = {"Content-Encoding", "Transfer-Encoding", "Connection"}
 		resp_headers = [(k, v) for k, v in resp.headers.items() if k not in exclude]

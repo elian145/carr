@@ -1970,6 +1970,17 @@ def upload_car_images(car_id):
         files = []
         for key in ('image', 'images', 'file', 'files', 'photo', 'photos', 'file[]', 'images[]', 'photos[]'):
             files.extend(request.files.getlist(key))
+        # Deduplicate by filename to avoid double-processing when client sends same file under multiple keys
+        if files:
+            seen_names = set()
+            unique_files = []
+            for f in files:
+                fname = (getattr(f, 'filename', '') or '').strip().lower()
+                if fname and fname in seen_names:
+                    continue
+                seen_names.add(fname)
+                unique_files.append(f)
+            files = unique_files
         # Fallback: include any remaining file objects
         if not files and request.files:
             try:
