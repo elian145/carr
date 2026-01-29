@@ -567,6 +567,25 @@ def blur_license_plate_auto():
 		return jsonify({"error": "No file provided. Use form field 'image'."}), 400
 	filename = secure_filename(file.filename or "upload.jpg")
 	img_bytes = file.read()
+	# HEIC/HEIF support: convert to JPEG bytes before processing
+	try:
+		ext = os.path.splitext(filename)[1].lower()
+		cth = (file.mimetype or "").lower()
+		if ext in (".heic", ".heif") or "image/heic" in cth or "image/heif" in cth:
+			from io import BytesIO as _BytesIO
+			try:
+				import pillow_heif as _pheif  # type: ignore
+				_pheif.register_heif_opener()
+			except Exception:
+				pass
+			from PIL import Image as _PILImage  # type: ignore
+			_img = _PILImage.open(_BytesIO(img_bytes)).convert("RGB")
+			_buf = _BytesIO()
+			_img.save(_buf, format="JPEG", quality=95)
+			img_bytes = _buf.getvalue()
+			filename = (os.path.splitext(filename)[0] or "upload") + ".jpg"
+	except Exception:
+		pass
 	if not img_bytes:
 		return jsonify({"error": "Empty file upload"}), 400
 
@@ -730,6 +749,29 @@ def blur_license_plate_auto():
 											return rsp_ok2
 								except Exception:
 									pass
+								# As a last resort, force a conservative bottom-center bbox for stamping
+								try:
+									img_wm2 = _cv2.imdecode(_np.frombuffer(resp.content, dtype=_np.uint8), _cv2.IMREAD_COLOR)
+									if img_wm2 is not None:
+										H2, W2 = img_wm2.shape[:2]
+										bw = int(0.38 * W2); bh = int(0.14 * H2)
+										xa = max(0, (W2 // 2) - bw // 2)
+										xb = min(W2, xa + bw)
+										yb = H2; ya = max(0, yb - bh)
+										if xb > xa and yb > ya:
+											mask_force = _np.zeros((H2, W2), _np.uint8)
+											_cv2.rectangle(mask_force, (xa, ya), (xb, yb), 255, -1)
+											img_forced = _stamp_logo_on_mask(img_wm2, mask_force)
+											okf, encf = _cv2.imencode(".jpg", img_forced, [int(_cv2.IMWRITE_JPEG_QUALITY), 92])
+											if okf:
+												rsp_forced = send_file(io.BytesIO(encf.tobytes()), mimetype="image/jpeg", as_attachment=False, download_name=f"blurred_{filename}")
+												rsp_forced.headers["X-Blur-Path"] = "wm"
+												rsp_forced.headers["X-WM-Region"] = (os.getenv("WATERMARKLY_REGION") or "auto").upper()
+												rsp_forced.headers["X-Logo-Stamped"] = "1"
+												return rsp_forced
+								except Exception:
+									pass
+								# Return raw WM result if all stamping attempts failed
 								rsp_ok = send_file(io.BytesIO(resp.content), mimetype=ct, as_attachment=False, download_name=f"blurred_{filename}")
 								rsp_ok.headers["X-Blur-Path"] = "wm"
 								rsp_ok.headers["X-WM-Region"] = (os.getenv("WATERMARKLY_REGION") or "auto").upper()
