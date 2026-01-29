@@ -389,7 +389,8 @@ class ApiService {
   }
   
   static List<String>? getLastProcessedServerPaths() {
-    return _lastProcessedServerPaths == null ? null : List<String>.from(_lastProcessedServerPaths!);
+    // Attach-based flow removed; always return null so callers skip.
+    return null;
   }
 
   static Future<Map<String, dynamic>> uploadCarVideos(String carId, List<XFile> videoFiles) async {
