@@ -44,7 +44,7 @@ class AiService {
     try {
       // Call backend blur route (Watermarkly first -> YOLO verify/fallback -> logo stamp).
       // Client NEVER calls third-party plate services directly.
-      final Uri blurUri = Uri.parse('${apiBaseApi()}/blur-license-plate-auto');
+      final Uri blurUri = Uri.parse('${apiBaseApi()}/blur-license-plate-auto?strict=1');
       final List<XFile> outputs = <XFile>[];
       for (final imageFile in imageFiles) {
         try {

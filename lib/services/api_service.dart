@@ -351,30 +351,6 @@ class ApiService {
   }
 
   static Future<Map<String, dynamic>> uploadCarImages(String carId, List<XFile> imageFiles) async {
-    // If Ai pipeline saved server-side processed images, attach them without re-uploading
-    final attach = _lastProcessedServerPaths;
-    if (attach != null && attach.isNotEmpty) {
-      try {
-        final url = Uri.parse('$baseUrl/cars/$carId/images/attach');
-        final headers = _getHeaders(includeAuth: true);
-        final resp = await http.post(
-          url,
-          headers: headers,
-          body: json.encode({'paths': attach}),
-        );
-        // Clear after use to avoid reattaching on subsequent calls
-        _lastProcessedServerPaths = null;
-        final data = _handleResponse(resp);
-        if (!data.containsKey('images') && data.containsKey('uploaded')) {
-          data['images'] = List.from(data['uploaded'] as List);
-        }
-        return data;
-      } catch (_) {
-        // If attach fails, fall back to upload path
-        _lastProcessedServerPaths = null;
-      }
-    }
-
     // Prefer full server blur when available; allow forcing skip via build flag.
     final bool allPreBlurred = imageFiles.isNotEmpty &&
         imageFiles.every((f) => f.path.toLowerCase().endsWith('_blurred.jpg'));
@@ -411,12 +387,7 @@ class ApiService {
       throw Exception(error['message'] ?? 'Upload failed');
     }
   }
-
-  // Store server-side processed paths from AI pipeline for instant attach on submit
-  static List<String>? _lastProcessedServerPaths;
-  static void setLastProcessedServerPaths(List<String> paths) {
-    _lastProcessedServerPaths = List<String>.from(paths);
-  }
+  
   static List<String>? getLastProcessedServerPaths() {
     return _lastProcessedServerPaths == null ? null : List<String>.from(_lastProcessedServerPaths!);
   }
