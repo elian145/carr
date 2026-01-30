@@ -11,7 +11,9 @@ import tempfile
 load_dotenv()
 env_local_path = os.path.join(os.path.dirname(__file__), "env.local")
 if os.path.exists(env_local_path):
-	load_dotenv(env_local_path, override=False)
+	# Use override=True so env.local can repair empty/incorrect inherited env vars.
+	# This makes behavior reproducible when the OS has stale/blank ROBOFLOW_*/LOGO_* vars.
+	load_dotenv(env_local_path, override=True)
 
 app = Flask(__name__)
 
@@ -23,6 +25,101 @@ LISTINGS_API_BASE = (os.getenv("LISTINGS_API_BASE") or "").strip().rstrip("/")
 
 EU_URL = "https://blur-api-eu1.watermarkly.com/blur/"
 US_URL = "https://blur-api-us1.watermarkly.com/blur/"
+
+_LOCAL_YOLO_MODEL = None
+_LOCAL_YOLO_MODEL_PATH = None
+
+def _get_local_yolo_model():
+	"""
+	Best-effort local Ultralytics YOLO model loader for license-plate detection.
+	Only uses local .pt weights (no network downloads).
+	Returns YOLO model or None.
+	"""
+	global _LOCAL_YOLO_MODEL, _LOCAL_YOLO_MODEL_PATH
+	if _LOCAL_YOLO_MODEL is not None:
+		return _LOCAL_YOLO_MODEL
+	try:
+		from ultralytics import YOLO  # type: ignore
+	except Exception:
+		return None
+	try:
+		repo_root = os.path.abspath(os.path.join(os.path.dirname(__file__), ".."))
+		candidates = [
+			os.path.join(repo_root, "kk", "weights", "yolov8n-license-plate.pt"),
+			os.path.join(repo_root, "kk", "weights", "yolov8m-license-plate.pt"),
+			os.path.join(repo_root, "kk", "weights", "yolov8l-license-plate.pt"),
+			os.path.join(repo_root, "weights", "yolov8n-license-plate.pt"),
+			os.path.join(repo_root, "yolov8n-license-plate.pt"),
+			# Generic local models as last resort (still local-only)
+			os.path.join(repo_root, "kk", "yolov8n.pt"),
+			os.path.join(repo_root, "yolov8n.pt"),
+		]
+		for p in candidates:
+			if p and os.path.exists(p):
+				_LOCAL_YOLO_MODEL = YOLO(p)
+				_LOCAL_YOLO_MODEL_PATH = p
+				logger.info(f"[local-yolo] loaded weights: {p}")
+				return _LOCAL_YOLO_MODEL
+	except Exception as e:
+		logger.info(f"[local-yolo] init failed: {e}")
+	return None
+
+def _local_yolo_plate_mask(img_bgr):
+	"""
+	Build a union mask (uint8 HxW) from local YOLO detections.
+	Returns None if unavailable or no detections.
+	"""
+	try:
+		import numpy as _np
+		import cv2 as _cv2
+		model = _get_local_yolo_model()
+		if model is None or img_bgr is None:
+			return None
+		H, W = img_bgr.shape[:2]
+		conf = float(os.getenv("LOCAL_YOLO_CONFIDENCE") or "0.20")
+		iou = float(os.getenv("LOCAL_YOLO_IOU") or "0.50")
+		imgsz = int(float(os.getenv("LOCAL_YOLO_IMGSZ") or "1280"))
+		res = model.predict(img_bgr, conf=conf, iou=iou, imgsz=imgsz, verbose=False)
+		if not res:
+			return None
+		r0 = res[0]
+		boxes = getattr(r0, "boxes", None)
+		if boxes is None or not hasattr(boxes, "xyxy"):
+			return None
+		try:
+			xyxy = boxes.xyxy.cpu().numpy() if hasattr(boxes.xyxy, "cpu") else boxes.xyxy
+		except Exception:
+			xyxy = boxes.xyxy
+		if xyxy is None:
+			return None
+		mask = _np.zeros((H, W), _np.uint8)
+		for b in xyxy:
+			try:
+				x1, y1, x2, y2 = [int(round(float(v))) for v in b[:4]]
+				x1 = max(0, min(W - 1, x1))
+				y1 = max(0, min(H - 1, y1))
+				x2 = max(0, min(W, x2))
+				y2 = max(0, min(H, y2))
+				if x2 <= x1 or y2 <= y1:
+					continue
+				# Basic plate-like sanity: avoid absurdly large masks
+				area_frac = float((x2 - x1) * (y2 - y1)) / float(max(1, H * W))
+				if area_frac > float(os.getenv("LOCAL_YOLO_MAX_AREA_FRAC") or "0.35"):
+					continue
+				_cv2.rectangle(mask, (x1, y1), (x2, y2), 255, -1)
+			except Exception:
+				continue
+		if not mask.any():
+			return None
+		try:
+			ker = _cv2.getStructuringElement(_cv2.MORPH_ELLIPSE, (5, 5))
+			mask = _cv2.morphologyEx(mask, _cv2.MORPH_CLOSE, ker, iterations=2)
+			mask = _cv2.dilate(mask, ker, iterations=1)
+		except Exception:
+			pass
+		return mask if mask.any() else None
+	except Exception:
+		return None
 
 def _get_api_key() -> str:
 	key = (os.getenv("WATERMARKLY_API_KEY") or "").strip()
@@ -626,7 +723,10 @@ def blur_license_plate_auto():
 						if img_wm is not None and img_orig is not None:
 							H, W = img_wm.shape[:2]
 							# Step A: strict verify on WM image with multi-scale and OCR+sharpness gate
-							verify_conf = 0.22
+							try:
+								verify_conf = float(os.getenv("ROBOFLOW_VERIFY_CONFIDENCE") or "0.18")
+							except Exception:
+								verify_conf = 0.18
 							verify_params_base = f"?api_key={api_key}&confidence={verify_conf:.2f}&overlap={overlap}&format=json"
 							if include_mask:
 								verify_params_base += "&include_mask=true"
@@ -653,8 +753,8 @@ def blur_license_plate_auto():
 								for (_bb, _tx, _cf) in hits:
 									_cf = 0.0 if _cf is None else float(_cf)
 									txt = ''.join([c for c in str(_tx) if c.isalnum()])
-									# More permissive: any alphanumeric ≥3 with conf ≥0.30 triggers override
-									if _cf >= 0.30 and len(txt) >= 3:
+									# More permissive: any alphanumeric ≥3 with conf ≥0.25 triggers override
+									if _cf >= 0.25 and len(txt) >= 3:
 										return True
 								return False
 							leftover = False
@@ -704,7 +804,7 @@ def blur_license_plate_auto():
 											except Exception:
 												leftover = True; break
 										# gate: OCR or sharpness (lower sharpness threshold)
-										if _roi_sharp(gray_wm, x1, y1, x2, y2) > 15.0 or _roi_has_text(x1,y1,x2,y2):
+										if _roi_sharp(gray_wm, x1, y1, x2, y2) > 5.0 or _roi_has_text(x1,y1,x2,y2):
 											leftover = True; break
 									if leftover: break
 								except Exception:
@@ -738,12 +838,22 @@ def blur_license_plate_auto():
 											return rsp_ok2
 								except Exception:
 									pass
-								# Return raw WM result if all stamping attempts failed
-								rsp_ok = send_file(io.BytesIO(resp.content), mimetype=ct, as_attachment=False, download_name=f"blurred_{filename}")
-								rsp_ok.headers["X-Blur-Path"] = "wm"
-								rsp_ok.headers["X-WM-Region"] = (os.getenv("WATERMARKLY_REGION") or "auto").upper()
-								rsp_ok.headers["X-Logo-Stamped"] = "0"
-								return rsp_ok
+								# Final fallback: estimate blurred region by diff(ORIG vs WM) and stamp exactly on that region
+								try:
+									m_diff = _estimate_blur_mask_from_diff(img_orig, img_wm)
+									if m_diff is not None and m_diff.any():
+										img_out2 = _stamp_logo_on_mask(img_wm, m_diff)
+										ok_out2, enc_out2 = _cv2.imencode(".jpg", img_out2, [int(_cv2.IMWRITE_JPEG_QUALITY), 92])
+										if ok_out2:
+											rsp_ok2 = send_file(io.BytesIO(enc_out2.tobytes()), mimetype="image/jpeg", as_attachment=False, download_name=f"blurred_{filename}")
+											rsp_ok2.headers["X-Blur-Path"] = "wm"
+											rsp_ok2.headers["X-WM-Region"] = (os.getenv("WATERMARKLY_REGION") or "auto").upper()
+											rsp_ok2.headers["X-Logo-Stamped"] = "1"
+											return rsp_ok2
+								except Exception:
+									pass
+								# If stamping failed entirely, treat as leftover so YOLO override kicks in
+								leftover = True
 							# Step B: detect on ORIGINAL (pre-WM) to create union mask; lower conf to catch weak plates
 							try:
 								_conf_f = max(0.18, float(conf))
@@ -814,7 +924,38 @@ def blur_license_plate_auto():
 									rsp2.headers["X-Blur-Path"] = "wm+override"
 									rsp2.headers["X-WM-Region"] = (os.getenv("WATERMARKLY_REGION") or "auto").upper()
 									rsp2.headers["X-Logo-Stamped"] = "1"
+									rsp2.headers["X-Override-Source"] = "roboflow"
 									return rsp2
+							# If Roboflow produced no detections, fallback to local YOLO weights (Ultralytics)
+							try:
+								m_local = _local_yolo_plate_mask(img_orig)
+								if m_local is not None and m_local.any():
+									# Ensure mask matches WM image size if needed
+									if m_local.shape[0] != H or m_local.shape[1] != W:
+										m_local = _cv2.resize(m_local, (W, H), interpolation=_cv2.INTER_NEAREST)
+									try:
+										ker5 = _cv2.getStructuringElement(_cv2.MORPH_ELLIPSE, (5, 5))
+										m_local = _cv2.morphologyEx(m_local, _cv2.MORPH_CLOSE, ker5, iterations=2)
+										m_local = _cv2.dilate(m_local, ker5, iterations=1)
+									except Exception:
+										pass
+									k = max(31, int(min(H, W) * 0.07)) | 1
+									blurred = _cv2.GaussianBlur(img_wm, (k, k), 0)
+									out = _np.where(_cv2.merge([m_local]*3) == 255, blurred, img_wm)
+									try:
+										out = _stamp_logo_on_mask(out, m_local)
+									except Exception:
+										pass
+									ok3, enc3 = _cv2.imencode(".jpg", out, [int(_cv2.IMWRITE_JPEG_QUALITY), 92])
+									if ok3:
+										rsp2 = send_file(io.BytesIO(enc3.tobytes()), mimetype="image/jpeg", as_attachment=False, download_name=f"blurred_{filename}")
+										rsp2.headers["X-Blur-Path"] = "wm+override"
+										rsp2.headers["X-WM-Region"] = (os.getenv("WATERMARKLY_REGION") or "auto").upper()
+										rsp2.headers["X-Logo-Stamped"] = "1"
+										rsp2.headers["X-Override-Source"] = "local-yolo"
+										return rsp2
+							except Exception:
+								pass
 				except Exception:
 					# If verify fails, still try to stamp logo on WM result
 					try:
@@ -826,6 +967,58 @@ def blur_license_plate_auto():
 						if img_wm is not None:
 							out_try = _try_stamp_logo_using_rf_on_image(img_wm)
 							stamped = not _np.array_equal(out_try, img_wm)
+							# If Roboflow stamping finds nothing, try local YOLO/diff-mask override before returning WM.
+							if not stamped and (os.getenv("LOCAL_YOLO_FALLBACK") or "1").strip().lower() in ("1", "true", "yes"):
+								try:
+									Ht, Wt = img_wm.shape[:2]
+									# Prefer local YOLO mask on original
+									if img_orig is not None:
+										m_local = _local_yolo_plate_mask(img_orig)
+									else:
+										m_local = None
+									if m_local is not None and m_local.any():
+										if m_local.shape[0] != Ht or m_local.shape[1] != Wt:
+											m_local = _cv2.resize(m_local, (Wt, Ht), interpolation=_cv2.INTER_NEAREST)
+										k = max(31, int(min(Ht, Wt) * 0.07)) | 1
+										blurred = _cv2.GaussianBlur(img_wm, (k, k), 0)
+										out2 = _np.where(_cv2.merge([m_local]*3) == 255, blurred, img_wm)
+										try:
+											out2 = _stamp_logo_on_mask(out2, m_local)
+										except Exception:
+											pass
+										ok2, enc2 = _cv2.imencode(".jpg", out2, [int(_cv2.IMWRITE_JPEG_QUALITY), 92])
+										if ok2:
+											rsp2 = send_file(io.BytesIO(enc2.tobytes()), mimetype="image/jpeg", as_attachment=False, download_name=f"blurred_{filename}")
+											rsp2.headers["X-Blur-Path"] = "wm+override"
+											rsp2.headers["X-WM-Region"] = (os.getenv("WATERMARKLY_REGION") or "auto").upper()
+											rsp2.headers["X-Logo-Stamped"] = "1"
+											rsp2.headers["X-Override-Source"] = "local-yolo"
+											return rsp2
+									# Final fallback: diff mask
+									if img_orig is not None:
+										m_diff = _estimate_blur_mask_from_diff(img_orig, img_wm)
+									else:
+										m_diff = None
+									if m_diff is not None and m_diff.any():
+										if m_diff.shape[0] != Ht or m_diff.shape[1] != Wt:
+											m_diff = _cv2.resize(m_diff, (Wt, Ht), interpolation=_cv2.INTER_NEAREST)
+										k = max(31, int(min(Ht, Wt) * 0.07)) | 1
+										blurred = _cv2.GaussianBlur(img_wm, (k, k), 0)
+										out2 = _np.where(_cv2.merge([m_diff]*3) == 255, blurred, img_wm)
+										try:
+											out2 = _stamp_logo_on_mask(out2, m_diff)
+										except Exception:
+											pass
+										ok2, enc2 = _cv2.imencode(".jpg", out2, [int(_cv2.IMWRITE_JPEG_QUALITY), 92])
+										if ok2:
+											rsp2 = send_file(io.BytesIO(enc2.tobytes()), mimetype="image/jpeg", as_attachment=False, download_name=f"blurred_{filename}")
+											rsp2.headers["X-Blur-Path"] = "wm+override"
+											rsp2.headers["X-WM-Region"] = (os.getenv("WATERMARKLY_REGION") or "auto").upper()
+											rsp2.headers["X-Logo-Stamped"] = "1"
+											rsp2.headers["X-Override-Source"] = "diff-mask"
+											return rsp2
+								except Exception:
+									pass
 							okx, encx = _cv2.imencode(".jpg", out_try, [int(_cv2.IMWRITE_JPEG_QUALITY), 92])
 							if okx:
 								rsp_ok = send_file(io.BytesIO(encx.tobytes()), mimetype="image/jpeg", as_attachment=False, download_name=f"blurred_{filename}")
@@ -836,10 +1029,69 @@ def blur_license_plate_auto():
 					except Exception:
 						pass
 				ct = (resp.headers.get("Content-Type") or "image/jpeg").split(";", 1)[0].strip()
+				# Last-chance: if Roboflow gave no detections (common failure mode),
+				# try local YOLO weights, then diff-mask, before returning raw WM output.
+				_attempted_last_chance = False
+				try:
+					if (os.getenv("LOCAL_YOLO_FALLBACK") or "1").strip().lower() in ("1", "true", "yes"):
+						_attempted_last_chance = True
+						import numpy as _np
+						import cv2 as _cv2
+						img_wm2 = _cv2.imdecode(_np.frombuffer(resp.content, dtype=_np.uint8), _cv2.IMREAD_COLOR)
+						img_orig2 = _cv2.imdecode(_np.frombuffer(img_bytes, dtype=_np.uint8), _cv2.IMREAD_COLOR)
+						if img_wm2 is not None and img_orig2 is not None:
+							H2, W2 = img_wm2.shape[:2]
+							# 1) Local YOLO mask on original
+							m_local2 = _local_yolo_plate_mask(img_orig2)
+							if m_local2 is not None and m_local2.any():
+								if m_local2.shape[0] != H2 or m_local2.shape[1] != W2:
+									m_local2 = _cv2.resize(m_local2, (W2, H2), interpolation=_cv2.INTER_NEAREST)
+								k = max(31, int(min(H2, W2) * 0.07)) | 1
+								blurred2 = _cv2.GaussianBlur(img_wm2, (k, k), 0)
+								out2 = _np.where(_cv2.merge([m_local2]*3) == 255, blurred2, img_wm2)
+								try:
+									out2 = _stamp_logo_on_mask(out2, m_local2)
+								except Exception:
+									pass
+								ok2, enc2 = _cv2.imencode(".jpg", out2, [int(_cv2.IMWRITE_JPEG_QUALITY), 92])
+								if ok2:
+									rsp2 = send_file(io.BytesIO(enc2.tobytes()), mimetype="image/jpeg", as_attachment=False, download_name=f"blurred_{filename}")
+									rsp2.headers["X-Blur-Path"] = "wm+override"
+									rsp2.headers["X-WM-Region"] = (os.getenv("WATERMARKLY_REGION") or "auto").upper()
+									rsp2.headers["X-Logo-Stamped"] = "1"
+									rsp2.headers["X-Override-Source"] = "local-yolo"
+									return rsp2
+							# 2) Diff-based mask as final safety net
+							try:
+								m_diff2 = _estimate_blur_mask_from_diff(img_orig2, img_wm2)
+							except Exception:
+								m_diff2 = None
+							if m_diff2 is not None and m_diff2.any():
+								if m_diff2.shape[0] != H2 or m_diff2.shape[1] != W2:
+									m_diff2 = _cv2.resize(m_diff2, (W2, H2), interpolation=_cv2.INTER_NEAREST)
+								k = max(31, int(min(H2, W2) * 0.07)) | 1
+								blurred2 = _cv2.GaussianBlur(img_wm2, (k, k), 0)
+								out2 = _np.where(_cv2.merge([m_diff2]*3) == 255, blurred2, img_wm2)
+								try:
+									out2 = _stamp_logo_on_mask(out2, m_diff2)
+								except Exception:
+									pass
+								ok2, enc2 = _cv2.imencode(".jpg", out2, [int(_cv2.IMWRITE_JPEG_QUALITY), 92])
+								if ok2:
+									rsp2 = send_file(io.BytesIO(enc2.tobytes()), mimetype="image/jpeg", as_attachment=False, download_name=f"blurred_{filename}")
+									rsp2.headers["X-Blur-Path"] = "wm+override"
+									rsp2.headers["X-WM-Region"] = (os.getenv("WATERMARKLY_REGION") or "auto").upper()
+									rsp2.headers["X-Logo-Stamped"] = "1"
+									rsp2.headers["X-Override-Source"] = "diff-mask"
+									return rsp2
+				except Exception:
+					pass
 				rsp_ok = send_file(io.BytesIO(resp.content), mimetype=ct, as_attachment=False, download_name=f"blurred_{filename}")
 				rsp_ok.headers["X-Blur-Path"] = "wm"
 				rsp_ok.headers["X-WM-Region"] = (os.getenv("WATERMARKLY_REGION") or "auto").upper()
 				rsp_ok.headers["X-Logo-Stamped"] = "0"
+				if _attempted_last_chance:
+					rsp_ok.headers["X-Override-Attempted"] = "1"
 				return rsp_ok
 		except Exception:
 			pass  # fall through to Roboflow
