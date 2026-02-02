@@ -1,9 +1,9 @@
 // Centralized runtime configuration for API endpoints and assets
 // Values come from --dart-define so we can point to a LAN server on device
 
-// Base like: http://192.168.1.14:5003 (NO trailing slash)
-// Default to PC LAN IP for iPhone testing; override with --dart-define for emulator (10.0.2.2)
-const String kApiBase = String.fromEnvironment('API_BASE', defaultValue: 'http://192.168.1.14:5003');
+// Base like: http://192.168.1.7:5003 (NO trailing slash)
+// Default to this PC's LAN IP; override with --dart-define for emulator (10.0.2.2) or other device
+const String kApiBase = String.fromEnvironment('API_BASE', defaultValue: 'http://192.168.1.7:5003');
 const bool kForceSkipBlur = bool.fromEnvironment('FORCE_SKIP_BLUR', defaultValue: false);
 
 String apiBase() {

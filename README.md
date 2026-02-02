@@ -53,6 +53,23 @@ A comprehensive car listing application with real-time chat, notifications, user
 - **Responsive Design**: Modern UI with smooth animations
 - **Multi-language**: English, Arabic, and Kurdish support
 
+## Listings not loading?
+
+If the app shows "Loading listings..." forever or "Failed to load listings":
+
+1. **Start both servers** (from repo root):
+   - Windows: `.\start_servers.ps1`
+   - Or manually: start **kk** on port **5000** (`python -m kk.app_new`), then **proxy** on **5003** (`python backend/server.py` from repo root; needs `backend/env.local` with `PORT=5003` and `LISTINGS_API_BASE=http://127.0.0.1:5000`).
+
+2. **Check API URL**: The app calls `http://<API_BASE>/api/cars`. Default is `http://192.168.1.7:5003`. Your PC must be reachable at that IP:
+   - On PC: run `ipconfig` (Windows) and use the IPv4 address of your Wi‑Fi adapter. If your IP changes, rebuild with `--dart-define=API_BASE=http://YOUR_IP:5003` or set that in Codemagic env vars.
+
+3. **Same network**: Phone/emulator and PC must be on the same Wi‑Fi. Emulator: use `10.0.2.2:5003` (Android) or `localhost:5003` (iOS sim) and build with that as `API_BASE`.
+
+4. **Quick test**: On the PC, open a browser: `http://127.0.0.1:5003/health` should show `{"status":"ok"}` and `http://127.0.0.1:5003/api/cars` should return JSON with `"cars": [...]`. If `/api/cars` returns 500, the kk DB may need the User table columns (e.g. `is_verified`, `is_active`); the app adds them on startup.
+
+5. **Firewall**: Allow inbound TCP on ports **5000** and **5003** for your local network (or temporarily disable firewall to test).
+
 ## 📋 Requirements
 
 ### Backend Requirements

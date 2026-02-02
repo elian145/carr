@@ -2752,7 +2752,8 @@ class _HomePageState extends State<HomePage> {
         hasLoadedOnce = true; 
         // Only show error if bypassing cache OR no cached data is available
         if (bypassCache || cached == null) {
-          loadErrorMessage = errorMessage;
+          final base = getApiBase();
+          loadErrorMessage = '$errorMessage. Check server at $base and same Wi‑Fi.';
         } else {
           loadErrorMessage = null; // Clear error when using cached data
         }

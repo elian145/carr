@@ -156,6 +156,24 @@ try:
 			if 'public_id' not in user_cols:
 				conn.execute(text('ALTER TABLE user ADD COLUMN public_id VARCHAR(50)'))
 				user_cols.add('public_id')
+			if 'is_verified' not in user_cols:
+				conn.execute(text('ALTER TABLE user ADD COLUMN is_verified BOOLEAN DEFAULT 0'))
+				user_cols.add('is_verified')
+			if 'is_active' not in user_cols:
+				conn.execute(text('ALTER TABLE user ADD COLUMN is_active BOOLEAN DEFAULT 1'))
+				user_cols.add('is_active')
+			if 'is_admin' not in user_cols:
+				conn.execute(text('ALTER TABLE user ADD COLUMN is_admin BOOLEAN DEFAULT 0'))
+				user_cols.add('is_admin')
+			if 'updated_at' not in user_cols:
+				conn.execute(text('ALTER TABLE user ADD COLUMN updated_at DATETIME'))
+				user_cols.add('updated_at')
+			if 'last_login' not in user_cols:
+				conn.execute(text('ALTER TABLE user ADD COLUMN last_login DATETIME'))
+				user_cols.add('last_login')
+			if 'firebase_token' not in user_cols:
+				conn.execute(text('ALTER TABLE user ADD COLUMN firebase_token TEXT'))
+				user_cols.add('firebase_token')
 			conn.commit()
 			# Car image table columns
 			ci_cols = _cols('car_image')
