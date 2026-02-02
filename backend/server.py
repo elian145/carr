@@ -104,14 +104,16 @@ def static_uploads_local(subpath: str):
 	Checks both repo_root/static/uploads and kk/static/uploads.
 	"""
 	try:
+		# Normalize path (forward slashes from URL work on Windows when joined)
+		norm = subpath.replace("\\", "/").strip("/")
+		parts = norm.split("/")
 		repo_root = os.path.abspath(os.path.join(os.path.dirname(__file__), ".."))
 		candidates = [
-			os.path.join(repo_root, "static", "uploads", subpath),
-			os.path.join(repo_root, "kk", "static", "uploads", subpath),
+			os.path.join(repo_root, "static", "uploads", *parts),
+			os.path.join(repo_root, "kk", "static", "uploads", *parts),
 		]
 		for p in candidates:
 			if os.path.isfile(p):
-				# Best-effort content type based on extension; let client sniff otherwise
 				return send_file(p, as_attachment=False, download_name=os.path.basename(p))
 	except Exception:
 		pass

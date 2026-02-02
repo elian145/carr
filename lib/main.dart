@@ -88,7 +88,7 @@ String getApiBase() {
 // Normalize relative image path into a full URL that works across
 // different backend responses (uploads/, car_photos/, static/, http)
 String _buildFullImageUrl(String rel) {
-  String s = (rel ?? '').toString().trim();
+  String s = (rel ?? '').toString().trim().replaceAll(r'\', '/');
   if (s.isEmpty) return s;
   if (s.startsWith('http://') || s.startsWith('https://')) return s;
   // drop leading '/'

@@ -721,18 +721,24 @@ def get_cars():
         # - images: list of relative paths
         cars = []
         static_root = os.path.join(app.root_path, 'static')
+        repo_static = os.path.abspath(os.path.join(app.root_path, '..', 'static'))
         def _exists(rel: str) -> bool:
             try:
                 if not rel:
                     return False
-                p = os.path.join(static_root, rel.lstrip('/')).replace('\\', '/')
-                return os.path.isfile(p)
+                norm = rel.lstrip('/').replace('\\', '/')
+                for root in (static_root, repo_static):
+                    p = os.path.join(root, norm)
+                    if os.path.isfile(p):
+                        return True
+                return False
             except Exception:
                 return False
         def _resolve(rel: str) -> str:
             """
             Resolve stored image path to an existing file.
             If DB stored 'uploads/<name>', try 'uploads/car_photos/<name>' as a fallback.
+            Checks both kk/static and repo_root/static so images in either place are found.
             """
             try:
                 if not rel:
