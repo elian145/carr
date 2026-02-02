@@ -505,7 +505,7 @@ def allowed_video_file(filename):
     return '.' in filename and filename.rsplit('.', 1)[1].lower() in ALLOWED_VIDEO_EXTENSIONS
 
 def _process_and_store_image(file_storage, inline_base64: bool):
-    """Process an uploaded image by blurring license plates, store it under uploads, and optionally return base64.
+    """Store an uploaded image under uploads and optionally return base64.
 
     Returns tuple (relative_path_under_static, base64_data_or_None)
     Example relative path: 'uploads/car_photos/processed_YYYYMMDD_HHMMSS_xxx.jpg'
@@ -519,33 +519,56 @@ def _process_and_store_image(file_storage, inline_base64: bool):
     file_storage.save(temp_abs)
 
     try:
-        # Prefer WM-first then YOLO-override blur via dedicated backend service
         final_filename = f"processed_{timestamp}_{filename}"
         final_rel = os.path.join('uploads', 'car_photos', final_filename).replace('\\', '/')
         final_abs = os.path.join(app.config['UPLOAD_FOLDER'], 'car_photos', final_filename)
         os.makedirs(os.path.dirname(final_abs), exist_ok=True)
+        # Detect and blur license plates before saving (fallback to original on any failure).
+        with open(temp_abs, 'rb') as fp:
+            raw_bytes = fp.read()
 
-        used_remote = False
+        out_bytes = raw_bytes
         try:
-            import requests as _rq
-            blur_base = os.getenv('BLUR_API_BASE') or 'http://127.0.0.1:5003'
-            # Use strict=1 to force YOLO override over WM to match CLI behavior
-            url = f"{blur_base.rstrip('/')}/blur-license-plate-auto?strict=1"
-            with open(temp_abs, 'rb') as fh:
-                rv = _rq.post(url, files={'image': (filename, fh, 'application/octet-stream')}, timeout=120)
-            if rv is not None and rv.status_code == 200 and rv.content:
-                with open(final_abs, 'wb') as out:
-                    out.write(rv.content)
-                used_remote = True
-        except Exception:
-            used_remote = False
+            enabled = (os.getenv('PLATE_BLUR_ENABLED', '1').strip() != '0')
+            if enabled:
+                from .license_plate_blur import blur_license_plates, get_plate_detector
 
-        if not used_remote:
-            # Fallback to local YOLO-only pipeline
-            from .ai_service import car_analysis_service  # local import to avoid heavy import at module load
-            processed_abs = car_analysis_service._blur_license_plates(temp_abs)
-            import shutil
-            shutil.copy2(processed_abs, final_abs)
+                detector = get_plate_detector()
+                if detector.is_configured():
+                    # No expansion by default: blur exactly within Roboflow's detected box.
+                    expand = float(os.getenv('PLATE_BLUR_EXPAND', '0') or '0')
+                    ext = os.path.splitext(final_filename)[1].lower()
+                    out_bytes, meta = blur_license_plates(
+                        image_bytes=raw_bytes,
+                        output_ext=ext,
+                        detector=detector,
+                        expand_ratio=expand,
+                    )
+                    try:
+                        if meta.get('status') not in ('no_plates', 'blurred'):
+                            print(f"[PLATE_BLUR] status={meta.get('status')} meta={meta}")
+                    except Exception:
+                        pass
+        except Exception as _e:
+            try:
+                print(f"[PLATE_BLUR] failed, saving original: {_e}")
+            except Exception:
+                pass
+            out_bytes = raw_bytes
+
+        # Optionally keep original alongside the blurred output (off by default for privacy).
+        keep_original = (os.getenv('PLATE_BLUR_KEEP_ORIGINAL', '0').strip() == '1')
+        if keep_original:
+            try:
+                original_name = f"original_{final_filename}"
+                original_abs = os.path.join(app.config['UPLOAD_FOLDER'], 'car_photos', original_name)
+                with open(original_abs, 'wb') as f:
+                    f.write(raw_bytes)
+            except Exception:
+                pass
+
+        with open(final_abs, 'wb') as out:
+            out.write(out_bytes)
 
         b64_data = None
         if inline_base64:
@@ -564,7 +587,7 @@ def _process_and_store_image(file_storage, inline_base64: bool):
         return final_rel, b64_data
     finally:
         # Clean up temporary files
-        for p in (temp_abs, processed_abs if 'processed_abs' in locals() else None):
+        for p in (temp_abs,):
             try:
                 if p and os.path.exists(p):
                     os.remove(p)
@@ -656,15 +679,11 @@ def add_car():
         if images and images[0].filename:
             for image in images:
                 if image and allowed_file(image.filename):
-                    filename = secure_filename(image.filename)
-                    timestamp = datetime.now().strftime('%Y%m%d_%H%M%S')
-                    filename = f"{timestamp}_{filename}"
-                    image_path = os.path.join(app.config['UPLOAD_FOLDER'], 'car_photos', filename)
-                    os.makedirs(os.path.dirname(image_path), exist_ok=True)
-                    image.save(image_path)
+                    # Always run through the same processing pipeline (Roboflow + OpenCV blur).
+                    rel_path, _ = _process_and_store_image(image, False)
                     car_image = CarImage(
                         car_id=car.id,
-                        image_url=f"uploads/car_photos/{filename}"
+                        image_url=rel_path
                     )
                     db.session.add(car_image)
             db.session.commit()
@@ -3519,7 +3538,7 @@ if __name__ == '__main__':
 
     @app.route('/api/process-car-images-test', methods=['POST'])
     def process_car_images_test():
-        """Process multiple car images and blur license plates (test version without auth).
+        """Process multiple car images (test version without auth).
         Robust to missing/unknown file extensions and always returns processed entries if possible.
         """
         try:
@@ -3561,27 +3580,13 @@ if __name__ == '__main__':
                     continue
 
                 try:
-                    # Import AI service
-                    from .ai_service import car_analysis_service
-                    # Process image (blur license plates)
-                    print(f"[BLUR] Processing with AI: {temp_path}")
-                    strict = (request.args.get('strict') == '1' or request.args.get('strict_blur') == '1')
-                    mode = request.args.get('mode', 'auto')
-                    # Optional: force OCR-only via debug flag
-                    debug_force = request.args.get('debug_force', '')
-                    # Always enable debug overlays if requested
-                    if debug_force == 'ocr':
-                        mode = 'ocr_only_debug'
-                    processed_path = car_analysis_service._blur_license_plates(temp_path, strict=strict, mode=mode)
-                    print(f"[BLUR] AI processed -> {processed_path}")
-
-                    # Move processed image to permanent location
+                    # Move image to permanent location (no processing)
                     final_filename = f"processed_{timestamp}_{safe_base}.{ext_l}"
                     final_path = os.path.join(app.config['UPLOAD_FOLDER'], 'car_photos', final_filename)
                     os.makedirs(os.path.dirname(final_path), exist_ok=True)
 
                     import shutil
-                    shutil.copy2(processed_path, final_path)
+                    shutil.copy2(temp_path, final_path)
 
                     # Inline base64 if requested (or always include to help emulator)
                     if True:
@@ -3597,8 +3602,6 @@ if __name__ == '__main__':
                     try:
                         if os.path.exists(temp_path):
                             os.remove(temp_path)
-                        if processed_path != temp_path and os.path.exists(processed_path):
-                            os.remove(processed_path)
                     except Exception:
                         pass
 
@@ -3663,7 +3666,7 @@ if __name__ == '__main__':
     @app.route('/api/process-car-images', methods=['POST'])
     @jwt_required()
     def process_car_images():
-        """Process multiple car images and blur license plates"""
+        """Process multiple car images"""
         try:
             current_user = get_current_user()
             if not current_user:
@@ -3686,30 +3689,16 @@ if __name__ == '__main__':
                     file.save(temp_path)
                     
                     try:
-                        # Import AI service
-                        from .ai_service import car_analysis_service
-                        
-                        # Process image (blur license plates) with optional params
-                        strict = (request.args.get('strict') == '1' or request.args.get('strict_blur') == '1')
-                        mode = request.args.get('mode', 'auto')
-                        debug_force = request.args.get('debug_force', '')
-                        if debug_force == 'ocr':
-                            mode = 'ocr_only_debug'
-                        processed_path = car_analysis_service._blur_license_plates(temp_path, strict=strict, mode=mode)
-                        
-                        # Move processed image to permanent location
+                        # Move image to permanent location (no processing)
                         final_filename = f"processed_{timestamp}_{secure_filename(file.filename)}"
                         final_path = os.path.join(app.config['UPLOAD_FOLDER'], 'car_photos', final_filename)
                         os.makedirs(os.path.dirname(final_path), exist_ok=True)
                         
-                        # Copy processed image to final location
                         import shutil
-                        shutil.copy2(processed_path, final_path)
+                        shutil.copy2(temp_path, final_path)
                         
                         # Clean up temporary files
                         os.remove(temp_path)
-                        if processed_path != temp_path:
-                            os.remove(processed_path)
                         
                         processed_images.append(f"uploads/car_photos/{final_filename}")
                         

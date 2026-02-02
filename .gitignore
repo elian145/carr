@@ -33,3 +33,14 @@ backend/env.local
 backend/blurred_*.jpg
 backend/blurred_one.jpg
 backend/*.bin
+
+# Repo-root Python venvs and local tools
+.venv/
+.venv_plate/
+kk/env.local
+kk/instance/*.bak*
+kk/backend_run.log
+cloudflared.exe
+python310.exe
+releases_windows.json
+android/.kotlin/

@@ -23,4 +23,6 @@ phonenumbers==8.13.26
 python-jose[cryptography]==3.3.0
 cryptography==45.0.7
 requests==2.31.0
-# AI libs omitted for minimal server run: opencv-python, tensorflow, torch, torchvision, transformers, ultralytics, easyocr, numpy, scikit-learn
+# Needed for Roboflow plate blurring
+opencv-python-headless
+numpy

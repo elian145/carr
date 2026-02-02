@@ -23,14 +23,6 @@ phonenumbers==8.13.26
 python-jose[cryptography]==3.3.0
 cryptography==45.0.7
 requests==2.31.0
-# AI/ML dependencies for car analysis
-opencv-python==4.8.1.78
-# TensorFlow not required for plate blur path; skip for Python 3.13/Windows
-# tensorflow==2.15.0
-torch==2.1.0
-torchvision==0.16.0
-transformers==4.35.0
-ultralytics==8.0.196
-easyocr==1.7.0
-numpy==1.24.3
-scikit-learn==1.3.2
+# License plate detection + blurring
+opencv-python-headless
+numpy

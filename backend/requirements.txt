@@ -4,9 +4,3 @@ requests==2.32.3
 python-dotenv==1.0.1
 gunicorn==21.2.0
 waitress==3.0.0
-numpy==2.0.2
-opencv-python==4.10.0.84
-Pillow==11.2.1
-pillow-heif==1.2.0
-
-

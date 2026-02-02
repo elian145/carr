@@ -150,7 +150,6 @@ class Car(db.Model):
     ai_detected_condition = db.Column(db.String(20), nullable=True)
     ai_confidence_score = db.Column(db.Float, nullable=True)
     ai_analysis_timestamp = db.Column(db.DateTime, nullable=True)
-    license_plates_blurred = db.Column(db.Boolean, default=False)
     
     # Relationships
     images = db.relationship('CarImage', backref='car', lazy=True, cascade='all, delete-orphan')
@@ -192,8 +191,7 @@ class Car(db.Model):
             'ai_detected_body_type': self.ai_detected_body_type,
             'ai_detected_condition': self.ai_detected_condition,
             'ai_confidence_score': self.ai_confidence_score,
-            'ai_analysis_timestamp': self.ai_analysis_timestamp.isoformat() if self.ai_analysis_timestamp else None,
-            'license_plates_blurred': self.license_plates_blurred
+            'ai_analysis_timestamp': self.ai_analysis_timestamp.isoformat() if self.ai_analysis_timestamp else None
         }
         
         if include_private:

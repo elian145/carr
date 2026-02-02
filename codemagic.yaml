@@ -129,11 +129,10 @@ workflows:
       xcode: latest
       cocoapods: default
       vars:
-        # For iPhone testing on the same Wi‑Fi, use your PC LAN IP:
-        #   API_BASE: "http://192.168.1.14:5003"
-        # For remote testing, use your Cloudflare tunnel URL (must be HTTPS):
+        # For iPhone on same Wi‑Fi: API_BASE: "http://192.168.1.14:5003"
+        # For real device over internet or ATS: use HTTPS (e.g. Cloudflare tunnel):
         #   API_BASE: "https://<your-tunnel>.trycloudflare.com"
-        # Set to your current PC LAN IP (your backend is currently advertising 192.168.1.14).
+        # Override in Codemagic UI (Environment variables) if needed.
         # IMPORTANT: Do NOT include /api in API_BASE. The app adds /api itself.
         API_BASE: "http://192.168.1.14:5003"
         FORCE_SKIP_BLUR: "false"
