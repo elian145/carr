@@ -170,6 +170,13 @@ def _normalize_image_bytes_for_inference(image_bytes: bytes, output_ext: str) ->
 		return image_bytes, {"normalize_status": "pillow_missing", "normalize_error": str(e)}
 
 	try:
+		# Allow PIL to open HEIC (iPhone) if pillow-heif is installed.
+		try:
+			import pillow_heif  # type: ignore
+			pillow_heif.register_heif_opener()
+		except Exception:
+			pass
+
 		ext = (output_ext or "").strip().lower()
 		if not ext.startswith("."):
 			ext = f".{ext}" if ext else ".jpg"
@@ -180,6 +187,10 @@ def _normalize_image_bytes_for_inference(image_bytes: bytes, output_ext: str) ->
 			fmt = "WEBP"
 		elif ext in (".jpg", ".jpeg"):
 			fmt = "JPEG"
+		elif ext in (".heic", ".heif"):
+			# HEIC decode only; we output JPEG for inference/saving.
+			fmt = "JPEG"
+			ext = ".jpg"
 
 		im = Image.open(BytesIO(image_bytes))
 		im2 = ImageOps.exif_transpose(im)

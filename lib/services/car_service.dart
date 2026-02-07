@@ -250,6 +250,51 @@ class CarService extends ChangeNotifier {
     }
   }
 
+  // Attach already-processed images by server paths (used after "Blur Plates")
+  Future<Map<String, dynamic>> attachCarImages(String carId, List<String> paths) async {
+    _setLoading(true);
+    try {
+      final response = await ApiService.attachCarImages(carId, paths);
+
+      final dynamic imagesField = response['images'] ?? response['uploaded'];
+      if (imagesField != null) {
+        final newImages = imagesField;
+        final carIndex = _cars.indexWhere((car) => car['id'] == carId);
+        if (carIndex != -1) {
+          _cars[carIndex]['images'] = [...(_cars[carIndex]['images'] ?? const []), ...newImages];
+          final String? newPrimary = (response['image_url'] as String?)?.trim();
+          if (newPrimary != null && newPrimary.isNotEmpty) {
+            _cars[carIndex]['image_url'] = newPrimary;
+          } else if ((_cars[carIndex]['image_url'] == null || (_cars[carIndex]['image_url'] as String).isEmpty) &&
+              newImages is List &&
+              newImages.isNotEmpty) {
+            _cars[carIndex]['image_url'] = newImages.first.toString();
+          }
+        }
+
+        if (_currentCar?['id'] == carId) {
+          _currentCar!['images'] = [...(_currentCar!['images'] ?? const []), ...newImages];
+          final String? newPrimary = (response['image_url'] as String?)?.trim();
+          if (newPrimary != null && newPrimary.isNotEmpty) {
+            _currentCar!['image_url'] = newPrimary;
+          } else if ((_currentCar!['image_url'] == null || (_currentCar!['image_url'] as String).isEmpty) &&
+              newImages is List &&
+              newImages.isNotEmpty) {
+            _currentCar!['image_url'] = newImages.first.toString();
+          }
+        }
+        notifyListeners();
+      }
+
+      return response;
+    } catch (e) {
+      developer.log('Attach car images error: $e', name: 'CarService');
+      rethrow;
+    } finally {
+      _setLoading(false);
+    }
+  }
+
   // Upload car videos
   Future<Map<String, dynamic>> uploadCarVideos(String carId, List<XFile> videoFiles) async {
     _setLoading(true);

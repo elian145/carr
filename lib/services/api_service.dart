@@ -351,11 +351,9 @@ class ApiService {
   }
 
   static Future<Map<String, dynamic>> uploadCarImages(String carId, List<XFile> imageFiles) async {
-    // Prefer full server blur when available; allow forcing skip via build flag.
-    final bool allPreBlurred = imageFiles.isNotEmpty &&
-        imageFiles.every((f) => f.path.toLowerCase().endsWith('_blurred.jpg'));
-    final bool forceSkip = forceSkipBlur();
-    final String query = (forceSkip || allPreBlurred) ? '?skip_blur=1' : '?mode=auto';
+    // IMPORTANT: Do not blur on submit. Blurring only happens when user taps "Blur Plates"
+    // which uses /api/process-car-images. Here we always skip blur.
+    const String query = '?skip_blur=1';
     final request = http.MultipartRequest(
       'POST',
       Uri.parse('$baseUrl/cars/$carId/images$query'),
@@ -366,12 +364,8 @@ class ApiService {
       request.headers['Authorization'] = 'Bearer $_accessToken';
     }
 
-    // Add files
+    // Add files once under 'images' (backend accepts 'files', 'images', 'image', etc. and extends one list — do not send same file under multiple keys or backend gets duplicates)
     for (final file in imageFiles) {
-      // Send under multiple common field names for maximum backend compatibility
-      final multipart = await http.MultipartFile.fromPath('image', file.path);
-      request.files.add(multipart);
-      // Also add as 'images' to support array-style parsers
       request.files.add(await http.MultipartFile.fromPath('images', file.path));
     }
 
@@ -390,6 +384,12 @@ class ApiService {
       final error = json.decode(responseBody);
       throw Exception(error['message'] ?? 'Upload failed');
     }
+  }
+
+  static Future<Map<String, dynamic>> attachCarImages(String carId, List<String> paths) async {
+    return await _makeAuthenticatedRequest('POST', '/cars/$carId/images/attach', body: {
+      'paths': paths,
+    });
   }
   
   static List<String>? getLastProcessedServerPaths() {

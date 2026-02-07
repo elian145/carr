@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:http/http.dart' as http;
 import 'dart:convert';
+import 'dart:developer' as developer;
 import 'package:google_fonts/google_fonts.dart';
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter_svg/flutter_svg.dart';
@@ -82,15 +83,32 @@ class KuWidgetsLocalizationsDelegate extends LocalizationsDelegate<WidgetsLocali
  
 
 String getApiBase() {
-  return apiBase();
+  final base = apiBase();
+  // On Android emulator, default LAN base is unreachable; use host alias so images load
+  if (Platform.isAndroid && base == 'http://192.168.1.7:5003') return 'http://10.0.2.2:5000';
+  return base;
 }
 
 // Normalize relative image path into a full URL that works across
-// different backend responses (uploads/, car_photos/, static/, http)
+// different backend responses (uploads/, car_photos/, static/, http).
+// Absolute URLs that point to our backend are rewritten to use getApiBase()
+// so they work on emulator (10.0.2.2) and real device (LAN IP).
 String _buildFullImageUrl(String rel) {
   String s = (rel ?? '').toString().trim().replaceAll(r'\', '/');
+  // Guard against backend sending null-like values in lists/maps.
+  if (s.toLowerCase() == 'null' || s.toLowerCase() == 'none') return '';
   if (s.isEmpty) return s;
-  if (s.startsWith('http://') || s.startsWith('https://')) return s;
+  if (s.startsWith('http://') || s.startsWith('https://')) {
+    try {
+      final uri = Uri.parse(s);
+      // If this is our static path, use getApiBase() so device/emulator can reach it
+      if (uri.path.startsWith('/static/')) {
+        final path = uri.path + (uri.query.isNotEmpty ? '?${uri.query}' : '');
+        return getApiBase() + path;
+      }
+    } catch (_) {}
+    return s;
+  }
   // drop leading '/'
   if (s.startsWith('/')) s = s.substring(1);
   if (s.startsWith('static/')) {
@@ -104,6 +122,120 @@ String _buildFullImageUrl(String rel) {
   }
   // default: assume already a path under uploads (e.g. make, dir/file.jpg)
   return getApiBase() + '/static/uploads/' + s;
+}
+
+/// Listing image widget using Image.network (avoids CachedNetworkImage HTTP issues on Android).
+/// Includes a small auto-retry to reduce transient "connection closed" failures.
+Widget _listingNetworkImage(String url, {BoxFit fit = BoxFit.cover, double? width, double? height}) {
+  if (url.isEmpty) {
+    return Container(
+      color: Colors.grey[900],
+      child: Center(child: Icon(Icons.directions_car, size: 60, color: Colors.grey[400])),
+    );
+  }
+  return _RetryingListingNetworkImage(url: url, fit: fit, width: width, height: height);
+}
+
+class _RetryingListingNetworkImage extends StatefulWidget {
+  final String url;
+  final BoxFit fit;
+  final double? width;
+  final double? height;
+  const _RetryingListingNetworkImage({required this.url, required this.fit, this.width, this.height});
+
+  @override
+  State<_RetryingListingNetworkImage> createState() => _RetryingListingNetworkImageState();
+}
+
+class _RetryingListingNetworkImageState extends State<_RetryingListingNetworkImage> {
+  int _attempt = 0;
+  bool _retryScheduled = false;
+  // Connection drops can happen when serving many large images; retry a bit more with backoff.
+  static const int _maxRetries = 5;
+
+  String _fallbackUrl(String url) {
+    try {
+      final uri = Uri.parse(url);
+      final path = uri.path;
+      // If we got a bare filename under /static/uploads/, it often actually lives in /static/uploads/car_photos/.
+      // Example wrong:  /static/uploads/processed_x.jpg
+      // Example right:   /static/uploads/car_photos/processed_x.jpg
+      if (path.contains('/static/uploads/') &&
+          !path.contains('/static/uploads/car_photos/')) {
+        final idx = path.indexOf('/static/uploads/');
+        final after = path.substring(idx + '/static/uploads/'.length);
+        if (after.isNotEmpty && !after.contains('/')) {
+          final newPath = path.substring(0, idx) + '/static/uploads/car_photos/' + after;
+          return uri.replace(path: newPath).toString();
+        }
+      }
+    } catch (_) {}
+    return url;
+  }
+
+  String get _effectiveUrl {
+    // Attempt 0: original
+    // Attempt 1: fallback path variant (fixes some backend path variants)
+    if (_attempt == 1) return _fallbackUrl(widget.url);
+    return widget.url;
+  }
+
+  void _scheduleRetry() {
+    if (_attempt >= _maxRetries) return;
+    if (_retryScheduled) return;
+    _retryScheduled = true;
+    final delayMs = 700 * (1 << _attempt).clamp(1, 8); // 700ms, 1.4s, 2.8s... capped
+    Future.delayed(Duration(milliseconds: delayMs), () {
+      if (!mounted) return;
+      setState(() {
+        _attempt += 1;
+        _retryScheduled = false;
+      });
+    });
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final url = _effectiveUrl;
+    return Image.network(
+      url,
+      key: ValueKey('$url#$_attempt'),
+      fit: widget.fit,
+      width: widget.width,
+      height: widget.height,
+      loadingBuilder: (context, child, loadingProgress) {
+        if (loadingProgress == null) return child;
+        return Container(
+          color: Colors.white10,
+          child: Center(
+            child: SizedBox(
+              width: 24,
+              height: 24,
+              child: CircularProgressIndicator(
+                strokeWidth: 2,
+                valueColor: AlwaysStoppedAnimation<Color>(Color(0xFFFF6B00)),
+                value: loadingProgress.expectedTotalBytes != null
+                    ? loadingProgress.cumulativeBytesLoaded / (loadingProgress.expectedTotalBytes ?? 1)
+                    : null,
+              ),
+            ),
+          ),
+        );
+      },
+      errorBuilder: (context, error, stackTrace) {
+        try {
+          debugPrint('Listing image failed (attempt=$_attempt): $url :: $error');
+        } catch (_) {}
+        _scheduleRetry();
+        return Container(
+          color: Colors.grey[900],
+          child: Center(
+            child: Icon(Icons.directions_car, size: 60, color: Colors.grey[400]),
+          ),
+        );
+      },
+    );
+  }
 }
 
 String _localizeDigitsGlobal(BuildContext context, String input) {
@@ -778,29 +910,7 @@ Widget _buildGlobalCardImageCarousel(BuildContext context, Map car) {
               itemCount: urls.length,
               itemBuilder: (context, i) {
                 final url = urls[i];
-                // ignore: avoid_print
-                print('IMG home-carousel -> ' + url);
-                return CachedNetworkImage(
-                  imageUrl: url,
-                  fit: BoxFit.cover,
-                  placeholder: (context, url) => Container(
-                    color: Colors.white10,
-                    child: Center(
-                      child: SizedBox(
-                        width: 20,
-                        height: 20,
-                        child: CircularProgressIndicator(
-                          strokeWidth: 2,
-                          valueColor: AlwaysStoppedAnimation<Color>(Color(0xFFFF6B00)),
-                        ),
-                      ),
-                    ),
-                  ),
-                  errorWidget: (context, url, error) => Container(
-                    color: Colors.grey[900],
-                    child: Icon(Icons.directions_car, size: 60, color: Colors.grey[400]),
-                  ),
-                );
+                return _listingNetworkImage(url, fit: BoxFit.cover);
               },
             ),
           ),
@@ -953,12 +1063,9 @@ class _FullScreenGalleryPageState extends State<FullScreenGalleryPage> {
                 minScale: 0.8,
                 maxScale: 4.0,
                 child: Center(
-                  child: CachedNetworkImage(
-                    imageUrl: url,
-                    fit: BoxFit.contain,
-                    placeholder: (_, __) => Container(color: Colors.black, alignment: Alignment.center, child: CircularProgressIndicator()),
-                    errorWidget: (_, __, ___) => Container(color: Colors.black, alignment: Alignment.center, child: Icon(Icons.broken_image, color: Colors.white70, size: 48)),
-                  ),
+                  child: url.isEmpty
+                      ? Icon(Icons.directions_car, size: 48, color: Colors.white38)
+                      : _listingNetworkImage(url, fit: BoxFit.contain),
                 ),
               );
             },
@@ -986,6 +1093,111 @@ class _FullScreenGalleryPageState extends State<FullScreenGalleryPage> {
                     ),
                   );
                 }),
+                ),
+              ),
+            ),
+        ],
+      ),
+    );
+  }
+}
+
+/// Full-screen gallery for listing preview: supports both local XFile and URL strings.
+class ListingPreviewGalleryPage extends StatefulWidget {
+  final List<dynamic> imageFilesOrUrls;
+  final int initialIndex;
+
+  const ListingPreviewGalleryPage({
+    Key? key,
+    required this.imageFilesOrUrls,
+    this.initialIndex = 0,
+  }) : super(key: key);
+
+  @override
+  State<ListingPreviewGalleryPage> createState() => _ListingPreviewGalleryPageState();
+}
+
+class _ListingPreviewGalleryPageState extends State<ListingPreviewGalleryPage> {
+  late final PageController _controller;
+  late int _index;
+
+  @override
+  void initState() {
+    super.initState();
+    _index = widget.initialIndex.clamp(0, (widget.imageFilesOrUrls.length - 1).clamp(0, 1 << 62));
+    _controller = PageController(initialPage: _index);
+  }
+
+  @override
+  void dispose() {
+    _controller.dispose();
+    super.dispose();
+  }
+
+  Widget _buildImage(BuildContext context, dynamic item) {
+    if (item is XFile) {
+      return Image.file(
+        File(item.path),
+        fit: BoxFit.contain,
+      );
+    }
+    final url = item.toString().trim();
+    final fullUrl = url.startsWith('http') ? url : _buildFullImageUrl(url);
+    return _listingNetworkImage(fullUrl, fit: BoxFit.contain);
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final items = widget.imageFilesOrUrls;
+    if (items.isEmpty) {
+      return Scaffold(
+        backgroundColor: Colors.black,
+        appBar: AppBar(backgroundColor: Colors.black, iconTheme: IconThemeData(color: Colors.white)),
+        body: Center(child: Icon(Icons.directions_car, size: 64, color: Colors.white38)),
+      );
+    }
+    return Scaffold(
+      backgroundColor: Colors.black,
+      appBar: AppBar(
+        backgroundColor: Colors.black,
+        elevation: 0,
+        iconTheme: IconThemeData(color: Colors.white),
+      ),
+      body: Stack(
+        children: [
+          PageView.builder(
+            controller: _controller,
+            onPageChanged: (i) => setState(() => _index = i),
+            itemCount: items.length,
+            itemBuilder: (context, i) {
+              return InteractiveViewer(
+                minScale: 0.8,
+                maxScale: 4.0,
+                child: Center(child: _buildImage(context, items[i])),
+              );
+            },
+          ),
+          if (items.length > 1)
+            Positioned(
+              bottom: 24,
+              left: 0,
+              right: 0,
+              child: Center(
+                child: Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: List.generate(items.length, (i) {
+                    final active = i == _index;
+                    return AnimatedContainer(
+                      duration: Duration(milliseconds: 200),
+                      margin: EdgeInsets.symmetric(horizontal: 4),
+                      width: active ? 10 : 6,
+                      height: active ? 10 : 6,
+                      decoration: BoxDecoration(
+                        color: active ? Colors.white : Colors.white70,
+                        shape: BoxShape.circle,
+                      ),
+                    );
+                  }),
                 ),
               ),
             ),
@@ -3945,11 +4157,13 @@ class _HomePageState extends State<HomePage> {
           ),
           Padding(
             padding: const EdgeInsets.only(top: 0.0),
-            child: Column(
-              children: [
-                Padding(
-                  padding: const EdgeInsets.symmetric(horizontal: 8.0, vertical: 8.0),
-                  child: Card(
+            child: CustomScrollView(
+              controller: _homeScrollController,
+              slivers: [
+                SliverToBoxAdapter(
+                  child: Padding(
+                    padding: const EdgeInsets.symmetric(horizontal: 8.0, vertical: 8.0),
+                    child: Card(
                     elevation: 12,
                     shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
                     color: Colors.white.withOpacity(0.06),
@@ -5200,160 +5414,164 @@ class _HomePageState extends State<HomePage> {
                     ),
                   ),
                 ),
-                Expanded(
-                  child: isLoading
-                      ? Center(
-                          child: Column(
-                            mainAxisAlignment: MainAxisAlignment.center,
+                ), // SliverToBoxAdapter
+                if (isLoading)
+                  SliverFillRemaining(
+                    hasScrollBody: false,
+                    child: Center(
+                      child: Column(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          CircularProgressIndicator(
+                            valueColor: AlwaysStoppedAnimation<Color>(Color(0xFFFF6B00)),
+                          ),
+                          SizedBox(height: 16),
+                          Text(
+                            selectedSortBy != null
+                                ? 'Sorting listings...'
+                                : 'Loading listings...',
+                            style: TextStyle(color: Colors.white70, fontSize: 16),
+                          ),
+                        ],
+                      ),
+                    ),
+                  )
+                else if (loadErrorMessage != null && cars.isEmpty)
+                  SliverFillRemaining(
+                    hasScrollBody: false,
+                    child: Center(
+                      child: Column(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          Text(_couldNotLoadListingsTextGlobal(context), style: TextStyle(color: Colors.white70)),
+                          SizedBox(height: 8),
+                          Wrap(
+                            spacing: 8,
                             children: [
-                              CircularProgressIndicator(
-                                valueColor: AlwaysStoppedAnimation<Color>(Color(0xFFFF6B00)),
+                              OutlinedButton(
+                                onPressed: () {
+                                  _fetchRetryCount = 0;
+                                  fetchCars(bypassCache: true);
+                                },
+                                child: Text('Retry'),
                               ),
-                              SizedBox(height: 16),
-                              Text(
-                                selectedSortBy != null 
-                                  ? 'Sorting listings...' 
-                                  : 'Loading listings...',
-                                style: TextStyle(
-                                  color: Colors.white70,
-                                  fontSize: 16,
-                                ),
-                              ),
+                              OutlinedButton(onPressed: () => onFilterChanged(), child: Text(AppLocalizations.of(context)!.clearFilters)),
                             ],
                           ),
-                        )
-                      : (loadErrorMessage != null && cars.isEmpty)
-                          ? Center(
-                              child: Column(
-                                mainAxisSize: MainAxisSize.min,
-                                children: [
-                                  Text(_couldNotLoadListingsTextGlobal(context), style: TextStyle(color: Colors.white70)),
-                                  SizedBox(height: 8),
-                                  Wrap(spacing: 8, children: [
-                                    OutlinedButton(
-                                      onPressed: () {
-                                        _fetchRetryCount = 0; // Reset retry count
-                                        fetchCars(bypassCache: true);
-                                      }, 
-                                      child: Text('Retry')
-                                    ),
-                                    OutlinedButton(onPressed: () => onFilterChanged(), child: Text(AppLocalizations.of(context)!.clearFilters)),
-                                  ]),
-                                ],
+                        ],
+                      ),
+                    ),
+                  )
+                else if (cars.isEmpty)
+                  SliverFillRemaining(
+                    hasScrollBody: false,
+                    child: Center(
+                      child: Column(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          Text(AppLocalizations.of(context)!.noCarsFound, style: TextStyle(color: Colors.white70)),
+                          SizedBox(height: 8),
+                          OutlinedButton(onPressed: () => onFilterChanged(), child: Text(AppLocalizations.of(context)!.applyFilters)),
+                        ],
+                      ),
+                    ),
+                  )
+                else ...[
+                  SliverToBoxAdapter(
+                    child: Padding(
+                      padding: EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                      child: Row(
+                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                        children: [
+                          PopupMenuButton<String>(
+                            tooltip: AppLocalizations.of(context)!.sortBy,
+                            icon: Icon(Icons.sort, size: 20),
+                            onSelected: (value) {
+                              setState(() => selectedSortBy = value == '' ? null : value);
+                              _persistFilters();
+                              onSortChanged();
+                            },
+                            itemBuilder: (context) => [
+                              PopupMenuItem(value: '', child: Text(AppLocalizations.of(context)!.defaultSort)),
+                              ...getLocalizedSortOptions(context).skip(1).map((s) => PopupMenuItem(value: s, child: Text(s))).toList(),
+                            ],
+                          ),
+                          ToggleButtons(
+                            isSelected: [listingColumns == 1, listingColumns == 2],
+                            onPressed: (index) {
+                              setState(() {
+                                listingColumns = index == 0 ? 1 : 2;
+                              });
+                            },
+                            children: const [
+                              Icon(Icons.view_agenda),
+                              Icon(Icons.grid_view),
+                            ],
+                          ),
+                        ],
+                      ),
+                    ),
+                  ),
+                  if (loadErrorMessage != null && cars.isNotEmpty)
+                    SliverToBoxAdapter(
+                      child: Container(
+                        width: double.infinity,
+                        padding: EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                        margin: EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                        decoration: BoxDecoration(
+                          color: Colors.orange.withOpacity(0.1),
+                          borderRadius: BorderRadius.circular(8),
+                          border: Border.all(color: Colors.orange.withOpacity(0.3), width: 1),
+                        ),
+                        child: Row(
+                          children: [
+                            Icon(Icons.offline_bolt, color: Colors.orange, size: 16),
+                            SizedBox(width: 8),
+                            Expanded(
+                              child: Text(
+                                'Showing cached results',
+                                style: TextStyle(color: Colors.orange, fontSize: 12),
                               ),
-                            )
-                          : cars.isEmpty
-                              ? Center(
-                                  child: Column(
-                                    mainAxisSize: MainAxisSize.min,
-                                    children: [
-                                      Text(AppLocalizations.of(context)!.noCarsFound, style: TextStyle(color: Colors.white70)),
-                                      SizedBox(height: 8),
-                                      OutlinedButton(onPressed: () => onFilterChanged(), child: Text(AppLocalizations.of(context)!.applyFilters)),
-                                    ],
-                                  ),
-                                )
-                              : Column(
-                              children: [
-                                Padding(
-                                  padding: EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-                                  child: Row(
-                                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                                    children: [
-                                      PopupMenuButton<String>(
-                                        tooltip: AppLocalizations.of(context)!.sortBy,
-                                        icon: Icon(Icons.sort, size: 20),
-                                        onSelected: (value) {
-                                          setState(() => selectedSortBy = value == '' ? null : value);
-                                          _persistFilters();
-                                          onSortChanged();
-                                        },
-                                        itemBuilder: (context) => [
-                                          PopupMenuItem(value: '', child: Text(AppLocalizations.of(context)!.defaultSort)),
-                                          ...getLocalizedSortOptions(context).skip(1).map((s) => PopupMenuItem(value: s, child: Text(s))).toList(),
-                                        ],
-                                      ),
-                                      ToggleButtons(
-                                        isSelected: [listingColumns == 1, listingColumns == 2],
-                                        onPressed: (index) {
-                                          setState(() {
-                                            listingColumns = index == 0 ? 1 : 2;
-                                          });
-                                        },
-                                        children: const [
-                                          Icon(Icons.view_agenda),
-                                          Icon(Icons.grid_view),
-                                        ],
-                                      ),
-                                    ],
-                                  ),
-                                ),
-                                Expanded(
-                                  child: Column(
-                                    children: [
-                                      // Show a subtle indicator when there's cached data with an error
-                                      if (loadErrorMessage != null && cars.isNotEmpty)
-                                        Container(
-                                          width: double.infinity,
-                                          padding: EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-                                          margin: EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-                                          decoration: BoxDecoration(
-                                            color: Colors.orange.withOpacity(0.1),
-                                            borderRadius: BorderRadius.circular(8),
-                                            border: Border.all(color: Colors.orange.withOpacity(0.3), width: 1),
-                                          ),
-                                          child: Row(
-                                            children: [
-                                              Icon(Icons.offline_bolt, color: Colors.orange, size: 16),
-                                              SizedBox(width: 8),
-                                              Expanded(
-                                                child: Text(
-                                                  'Showing cached results',
-                                                  style: TextStyle(color: Colors.orange, fontSize: 12),
-                                                ),
-                                              ),
-                                              TextButton(
-                                                onPressed: fetchCars,
-                                                style: TextButton.styleFrom(
-                                                  padding: EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-                                                  minimumSize: Size(0, 0),
-                                                ),
-                                                child: Text('Refresh', style: TextStyle(color: Colors.orange, fontSize: 12)),
-                                              ),
-                                            ],
-                                          ),
-                                        ),
-                                      Expanded(
-                                        child: GridView.builder(
-                                          padding: EdgeInsets.all(8),
-                                          gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
-                                            crossAxisCount: listingColumns,
-                                            childAspectRatio: listingColumns == 2 ? 0.65 : 1.32, // Adjusted for taller cards (205px height)
-                                            crossAxisSpacing: 8,
-                                            mainAxisSpacing: 8,
-                                          ),
-                                          controller: _homeScrollController,
-                                          itemCount: cars.length + (_hasNext ? 1 : 0),
-                                          itemBuilder: (context, index) {
-                                            if (index >= cars.length) {
-                                              return Center(
-                                                child: Padding(
-                                                  padding: EdgeInsets.all(12),
-                                                  child: CircularProgressIndicator(strokeWidth: 2),
-                                                ),
-                                              );
-                                            }
-                                            final car = cars[index];
-                                            return buildGlobalCarCard(context, car);
-                                          },
-                                        ),
-                                      ),
-                                    ],
-                                  ),
-                                ),
-                              ],
                             ),
-                ),
+                            TextButton(
+                              onPressed: fetchCars,
+                              style: TextButton.styleFrom(
+                                padding: EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                                minimumSize: Size(0, 0),
+                              ),
+                              child: Text('Refresh', style: TextStyle(color: Colors.orange, fontSize: 12)),
+                            ),
+                          ],
+                        ),
+                      ),
+                    ),
+                  SliverPadding(
+                    padding: EdgeInsets.all(8),
+                    sliver: SliverGrid(
+                      gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
+                        crossAxisCount: listingColumns,
+                        childAspectRatio: listingColumns == 2 ? 0.65 : 1.32,
+                        crossAxisSpacing: 8,
+                        mainAxisSpacing: 8,
+                      ),
+                      delegate: SliverChildBuilderDelegate(
+                        (context, index) {
+                          if (index >= cars.length) {
+                            return Center(
+                              child: Padding(
+                                padding: EdgeInsets.all(12),
+                                child: CircularProgressIndicator(strokeWidth: 2),
+                              ),
+                            );
+                          }
+                          final car = cars[index];
+                          return buildGlobalCarCard(context, car);
+                        },
+                        childCount: cars.length + (_hasNext ? 1 : 0),
+                      ),
+                    ),
+                  ),
+                ],
               ],
             ),
           ),
@@ -5373,11 +5591,23 @@ class _HomePageState extends State<HomePage> {
       u.add(_buildFullImageUrl(primary));
     }
     for (final dynamic it in imgs) {
-      final s = it.toString();
+      String s;
+      if (it is Map) {
+        s = (it['image_url'] ?? it['url'] ?? it['path'] ?? it['src'] ?? '').toString();
+      } else {
+        s = it.toString();
+      }
       if (s.isNotEmpty) {
         final full = _buildFullImageUrl(s);
         if (!u.contains(full)) u.add(full);
       }
+    }
+    if (u.isEmpty && imgs.isNotEmpty) {
+      final dynamic first = imgs.first;
+      final String s = first is Map
+          ? (first['image_url'] ?? first['url'] ?? first['path'] ?? first['src'] ?? '').toString()
+          : first.toString();
+      if (s.isNotEmpty) u.add(_buildFullImageUrl(s));
     }
       return u;
     }();
@@ -5412,13 +5642,7 @@ class _HomePageState extends State<HomePage> {
                 itemCount: urls.length,
                 itemBuilder: (context, i) {
                   final url = urls[i];
-                  return CachedNetworkImage(
-                    imageUrl: url,
-                    fit: BoxFit.cover,
-                    width: double.infinity,
-                    placeholder: (_, __) => Container(color: Colors.white10),
-                    errorWidget: (_, __, ___) => Container(color: Colors.grey[900], child: Icon(Icons.directions_car, size: 60, color: Colors.grey[400])),
-                  );
+                  return _listingNetworkImage(url, fit: BoxFit.cover, width: double.infinity);
                 },
               ),
             ),
@@ -6377,6 +6601,19 @@ class _CarDetailsPageState extends State<CarDetailsPage> {
     super.dispose();
   }
 
+  /// Start loading all listing images into cache so they appear immediately when the user views the carousel.
+  void _precacheListingImages() {
+    if (!mounted || car == null) return;
+    final urls = _imageUrls;
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (!mounted) return;
+      for (final url in urls) {
+        if (url.isEmpty) continue;
+        precacheImage(NetworkImage(url), context);
+      }
+    });
+  }
+
   Future<void> _loadCar() async {
     try {
       final sp = await SharedPreferences.getInstance();
@@ -6385,8 +6622,8 @@ class _CarDetailsPageState extends State<CarDetailsPage> {
       if (cached != null && cached.isNotEmpty) {
         try {
           final data = json.decode(cached);
-          if (data is Map) { setState(() { car = Map<String, dynamic>.from(data); loading = false; }); }
-          else if (data is List && data.isNotEmpty) { setState(() { car = Map<String, dynamic>.from(data.first); loading = false; }); }
+          if (data is Map) { setState(() { car = Map<String, dynamic>.from(data); loading = false; }); _precacheListingImages(); }
+          else if (data is List && data.isNotEmpty) { setState(() { car = Map<String, dynamic>.from(data.first); loading = false; }); _precacheListingImages(); }
         } catch (_) {}
       }
       final url = Uri.parse(getApiBase() + '/api/cars/' + widget.carId.toString());
@@ -6395,6 +6632,7 @@ class _CarDetailsPageState extends State<CarDetailsPage> {
         final data = json.decode(resp.body);
         if (data is List && data.isNotEmpty) {
           setState(() { car = Map<String, dynamic>.from(data.first); loading = false; });
+          _precacheListingImages();
           _loadSimilarAndRelated();
           unawaited(sp.setString(cacheKey, json.encode(car)));
           _trackView();
@@ -6405,6 +6643,7 @@ class _CarDetailsPageState extends State<CarDetailsPage> {
               ? Map<String, dynamic>.from(inner as Map)
               : map;
           setState(() { car = normalized; loading = false; });
+          _precacheListingImages();
           _loadSimilarAndRelated();
           unawaited(sp.setString(cacheKey, json.encode(car)));
           _trackView();
@@ -6605,13 +6844,7 @@ class _CarDetailsPageState extends State<CarDetailsPage> {
                                         itemCount: _imageUrls.length,
                                         itemBuilder: (context, index) {
                                           final url = _imageUrls[index];
-                                          return CachedNetworkImage(
-                                            imageUrl: url,
-                                            fit: BoxFit.cover,
-                                            width: double.infinity,
-                                            placeholder: (_, __) => Container(color: Colors.white10),
-                                            errorWidget: (_, __, ___) => Container(color: Colors.grey[900], child: Icon(Icons.directions_car, size: 60, color: Colors.grey[400])),
-                                          );
+                                          return _listingNetworkImage(url, fit: BoxFit.cover, width: double.infinity);
                                         },
                                       )
                                     : Container(
@@ -7266,17 +7499,7 @@ final String raw = car!['contact_phone'].toString();
                     : (imgs.isNotEmpty ? imgs.first.toString() : '');
                 if (rel.isNotEmpty) {
                   final built = _buildFullImageUrl(rel);
-                  // Debug: log image URL being loaded
-                  // ignore: avoid_print
-                  print('IMG small-card -> ' + built);
-                  return CachedNetworkImage(
-                    imageUrl: built,
-                    height: 110,
-                    width: 160,
-                    fit: BoxFit.cover,
-                    placeholder: (_, __) => Container(height: 110, width: 160, color: Colors.white10),
-                    errorWidget: (_, __, ___) => Container(height: 110, width: 160, color: Colors.black26, child: Icon(Icons.directions_car, color: Colors.white38)),
-                  );
+                  return _listingNetworkImage(built, height: 110, width: 160, fit: BoxFit.cover);
                 }
                 return Container(height: 110, width: 160, color: Colors.black26, child: Icon(Icons.directions_car, color: Colors.white38));
               }(),
@@ -7354,7 +7577,14 @@ class _SellCarPageState extends State<SellCarPage> {
     SellStep4Page(),
     SellStep5Page(),
   ];
-  
+
+  /// Key that changes when carData['images'] changes so Step 5 (summary) rebuilds with blurred images.
+  String get _step5ImagesKey {
+    final imgs = carData['images'];
+    if (imgs == null || imgs is! List || imgs.isEmpty) return '0';
+    return imgs.map((e) => e is XFile ? e.path : e.toString()).join('|');
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -7435,6 +7665,7 @@ class _SellCarPageState extends State<SellCarPage> {
               },
               itemCount: steps.length,
               itemBuilder: (context, index) {
+                if (index == 4) return SellStep5Page(key: ValueKey(_step5ImagesKey));
                 return steps[index];
               },
             ),
@@ -9454,6 +9685,51 @@ class _SellStep3PageState extends State<SellStep3Page> {
   }
 }
 
+/// Full-screen video preview (thumbnail + play icon) when tapping a video on the sell step.
+class _VideoPreviewPage extends StatelessWidget {
+  final String videoPath;
+
+  const _VideoPreviewPage({required this.videoPath});
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      backgroundColor: Colors.black,
+      appBar: AppBar(
+        backgroundColor: Colors.black,
+        elevation: 0,
+        iconTheme: IconThemeData(color: Colors.white),
+      ),
+      body: FutureBuilder<String?>(
+        future: generateVideoThumbnail(videoPath),
+        builder: (context, snapshot) {
+          if (snapshot.hasData && snapshot.data != null) {
+            return Stack(
+              fit: StackFit.expand,
+              children: [
+                Image.file(File(snapshot.data!), fit: BoxFit.contain),
+                Center(
+                  child: Container(
+                    decoration: BoxDecoration(
+                      color: Colors.black54,
+                      shape: BoxShape.circle,
+                    ),
+                    padding: EdgeInsets.all(24),
+                    child: Icon(Icons.play_arrow, color: Colors.white, size: 64),
+                  ),
+                ),
+              ],
+            );
+          }
+          return Center(
+            child: Icon(Icons.videocam, color: Colors.white54, size: 80),
+          );
+        },
+      ),
+    );
+  }
+}
+
 // Step 4: Photos & Videos
 class SellStep4Page extends StatefulWidget {
   @override
@@ -9461,7 +9737,8 @@ class SellStep4Page extends StatefulWidget {
 }
 class _SellStep4PageState extends State<SellStep4Page> {
   final ImagePicker _imagePicker = ImagePicker();
-  List<XFile> _selectedImages = [];
+  // Can contain either local XFile (original picks) or server-relative paths (after "Blur Plates").
+  List<dynamic> _selectedImages = [];
   List<XFile> _selectedVideos = [];
   Map<String, dynamic>? _aiAnalysisResult;
   bool _isAnalyzing = false;
@@ -9596,43 +9873,76 @@ class _SellStep4PageState extends State<SellStep4Page> {
     });
     
     try {
-      print('AI UI: Calling AiService.processCarImages...');
-      final processedImages = await AiService.processCarImages(_selectedImages);
-      
-      if (processedImages != null) {
-        print('AI UI: Images processed successfully, received ${processedImages.length} processed images');
-        print('AI UI: Original images count: ${_selectedImages.length}');
-        print('AI UI: Processed images count: ${processedImages.length}');
-        
-        // Log the paths of processed images
-        for (int i = 0; i < processedImages.length; i++) {
-          print('AI UI: Processed image $i: ${processedImages[i].path}');
-        }
-        
-        // Replace the original images with the processed ones
+      // Blur only when user taps "Blur Plates": process/store images on the server
+      // and replace the local picks with server paths for preview + later attach.
+      final local = _selectedImages.whereType<XFile>().toList();
+      if (local.isEmpty) {
         if (!mounted) return;
         setState(() {
-          _selectedImages = processedImages;
           _imagesProcessed = true;
         });
-        
-        print('AI UI: Updated _selectedImages count: ${_selectedImages.length}');
-        
-        if (!mounted) return;
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Images processed successfully! License plates have been blurred.')),
-        );
-      } else {
-        print('AI UI: Image processing failed');
+        return;
+      }
+
+      print('AI UI: Calling AiService.processCarImagesToServerPayload...');
+      final payload = await AiService.processCarImagesToServerPayload(local);
+      final paths = payload?['paths'] ?? const <String>[];
+      final b64 = payload?['base64'] ?? const <String>[];
+
+      if (paths == null || paths.isEmpty) {
         if (!mounted) return;
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: Text('Failed to process images. Please check your internet connection and try again.'),
+            content: Text('Failed to blur plates. Please try again.'),
             backgroundColor: Colors.red,
             duration: Duration(seconds: 4),
           ),
         );
+        return;
       }
+
+      // Build local preview files from base64 (avoids loading many /static/ URLs concurrently, which can drop connections)
+      final List<XFile> blurredLocal = <XFile>[];
+      final List<String> okPaths = <String>[];
+      try {
+        final dir = Directory.systemTemp;
+        final int n = paths.length;
+        for (int i = 0; i < n; i++) {
+          final String path = paths[i].toString();
+          final String? dataUri = (i < b64.length) ? b64[i].toString() : null;
+          if (dataUri != null && dataUri.startsWith('data:') && dataUri.contains('base64,')) {
+            final idx = dataUri.indexOf('base64,');
+            final raw = base64Decode(dataUri.substring(idx + 7));
+            final outFile = File('${dir.path}/blurred_preview_${DateTime.now().millisecondsSinceEpoch}_$i.jpg');
+            await outFile.writeAsBytes(raw);
+            blurredLocal.add(XFile(outFile.path));
+            okPaths.add(path);
+          } else {
+            // Fallback: keep original local image for preview if we didn't get base64 for this one.
+            if (i < local.length) blurredLocal.add(local[i]);
+          }
+        }
+      } catch (e) {
+        print('AI UI: Failed to build local previews from base64: $e');
+      }
+
+      if (!mounted) return;
+      setState(() {
+        _selectedImages = blurredLocal.isNotEmpty ? blurredLocal : List<String>.from(paths);
+        _imagesProcessed = true;
+      });
+
+      final parentState = context.findAncestorStateOfType<_SellCarPageState>();
+      if (parentState != null) {
+        // Keep local files for the Step 5 preview, but store server paths separately for attaching on submit.
+        parentState.carData['images'] = blurredLocal.isNotEmpty ? List<XFile>.from(blurredLocal) : List<String>.from(paths);
+        parentState.carData['processed_image_paths'] = List<String>.from(okPaths.isNotEmpty ? okPaths : paths);
+        parentState.setState(() {});
+      }
+
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Plates blurred successfully.')),
+      );
     } catch (e) {
       print('AI UI: Error processing images: $e');
       if (!mounted) return;
@@ -9769,40 +10079,83 @@ class _SellStep4PageState extends State<SellStep4Page> {
                       style: TextStyle(fontWeight: FontWeight.bold, color: Colors.blue),
                     ),
                     SizedBox(width: 8),
-                    Text('License plates will be blurred when uploaded'),
+                    Expanded(
+                      child: Text('License plates have been blurred.'),
+                    ),
                   ],
                 ),
               ),
             ),
           
-          // Photos Section
+          // Photos Section — 2 per row, full width (like home listing cards), tap to open full-screen
           Text(_photosRequiredTitleGlobal(context), style: TextStyle(fontWeight: FontWeight.bold, fontSize: 18)),
           SizedBox(height: 12),
           if (_selectedImages.isNotEmpty)
-            Container(
-              height: 120,
-              child: ListView.builder(
-                scrollDirection: Axis.horizontal,
-                itemCount: _selectedImages.length,
-                itemBuilder: (context, index) {
-                  final image = _selectedImages[index];
-                  return Container(
-                    margin: EdgeInsets.only(right: 8),
-                    child: Stack(
+            LayoutBuilder(
+              builder: (context, constraints) {
+                final spacing = 8.0;
+                return GridView.builder(
+                  key: ValueKey(_selectedImages.map((e) => e is XFile ? e.path : e.toString()).join('|')),
+                  shrinkWrap: true,
+                  physics: NeverScrollableScrollPhysics(),
+                  gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
+                    crossAxisCount: 2,
+                    mainAxisSpacing: spacing,
+                    crossAxisSpacing: spacing,
+                    childAspectRatio: 1.25,
+                  ),
+                  itemCount: _selectedImages.length,
+                  itemBuilder: (context, index) {
+                    final image = _selectedImages[index];
+                    final keyStr = image is XFile ? image.path : image.toString();
+                    return Stack(
+                      key: ValueKey(keyStr),
                       children: [
-                        Container(
-                          width: 120,
-                          height: 120,
-                          decoration: BoxDecoration(
-                            borderRadius: BorderRadius.circular(8),
-                            border: Border.all(color: Colors.white24),
+                        GestureDetector(
+                          onTap: () {
+                            Navigator.of(context).push(
+                              MaterialPageRoute(
+                                builder: (_) => ListingPreviewGalleryPage(
+                                  imageFilesOrUrls: _selectedImages,
+                                  initialIndex: index,
+                                ),
+                              ),
+                            );
+                          },
+                          child: Container(
+                            decoration: BoxDecoration(
+                              borderRadius: BorderRadius.circular(12),
+                              border: Border.all(color: Colors.grey.shade700),
+                              boxShadow: [
+                                BoxShadow(
+                                  color: Colors.black26,
+                                  blurRadius: 6,
+                                  offset: Offset(0, 2),
+                                ),
+                              ],
+                            ),
+                            clipBehavior: Clip.antiAlias,
+                            child: (image is XFile)
+                                ? Image.file(
+                                    File(image.path),
+                                    fit: BoxFit.cover,
+                                    width: double.infinity,
+                                    height: double.infinity,
+                                    key: ValueKey(image.path),
+                                  )
+                                : _listingNetworkImage(
+                                    (image.toString().trim().startsWith('http'))
+                                        ? image.toString().trim()
+                                        : _buildFullImageUrl(image.toString()),
+                                    fit: BoxFit.cover,
+                                    width: double.infinity,
+                                    height: double.infinity,
+                                  ),
                           ),
-                          clipBehavior: Clip.antiAlias,
-                          child: Image.file(File(image.path), fit: BoxFit.cover),
                         ),
                         Positioned(
-                          right: 4,
-                          top: 4,
+                          right: 6,
+                          top: 6,
                           child: InkWell(
                             onTap: () {
                               setState(() {
@@ -9810,17 +10163,20 @@ class _SellStep4PageState extends State<SellStep4Page> {
                               });
                             },
                             child: Container(
-                              decoration: BoxDecoration(color: Colors.black54, shape: BoxShape.circle),
-                              padding: EdgeInsets.all(4),
-                              child: Icon(Icons.close, size: 16, color: Colors.white),
+                              decoration: BoxDecoration(
+                                color: Colors.black54,
+                                shape: BoxShape.circle,
+                              ),
+                              padding: EdgeInsets.all(6),
+                              child: Icon(Icons.close, size: 18, color: Colors.white),
                             ),
                           ),
-                        )
+                        ),
                       ],
-                    ),
-                  );
-                },
-              ),
+                    );
+                  },
+                );
+              },
             ),
           SizedBox(height: 12),
           Row(
@@ -9862,99 +10218,101 @@ class _SellStep4PageState extends State<SellStep4Page> {
           ),
           SizedBox(height: 24),
           
-          // Videos Section
+          // Videos Section — 2 per row, same card layout as photos, tap to open full-screen thumbnail
           Text(_videosOptionalTitleGlobal(context), style: TextStyle(fontWeight: FontWeight.bold, fontSize: 18)),
           SizedBox(height: 12),
           if (_selectedVideos.isNotEmpty)
-            Container(
-              height: 120,
-              child: ListView.builder(
-                scrollDirection: Axis.horizontal,
-                itemCount: _selectedVideos.length,
-                itemBuilder: (context, index) {
-                  final video = _selectedVideos[index];
-                  return Container(
-                    margin: EdgeInsets.only(right: 8),
-                    child: Stack(
-                      children: [
-                        Container(
-                          width: 120,
-                          height: 120,
-                          decoration: BoxDecoration(
-                            borderRadius: BorderRadius.circular(8),
-                            border: Border.all(color: Colors.white24),
-                          ),
-                          clipBehavior: Clip.antiAlias,
-                          child: FutureBuilder<String?>(
-                            future: generateVideoThumbnail(video.path),
-                            builder: (context, snapshot) {
-                              if (snapshot.hasData && snapshot.data != null) {
-                                return Stack(
-                                  children: [
-                                    Image.file(
-                                      File(snapshot.data!),
-                                      width: 120,
-                                      height: 120,
-                                      fit: BoxFit.cover,
-                                    ),
-                                    Center(
-                                      child: Container(
-                                        decoration: BoxDecoration(
-                                          color: Colors.black54,
-                                          shape: BoxShape.circle,
-                                        ),
-                                        padding: EdgeInsets.all(8),
-                                        child: Icon(Icons.play_arrow, color: Colors.white, size: 24),
-                                      ),
-                                    ),
-                                  ],
-                                );
-                              } else {
-                                return Stack(
-                                  children: [
-                                    Container(
-                                      color: Colors.grey[800],
-                                      child: Center(
-                                        child: Icon(Icons.videocam, color: Colors.white, size: 32),
-                                      ),
-                                    ),
-                                    Center(
-                                      child: Container(
-                                        decoration: BoxDecoration(
-                                          color: Colors.black54,
-                                          shape: BoxShape.circle,
-                                        ),
-                                        padding: EdgeInsets.all(8),
-                                        child: Icon(Icons.play_arrow, color: Colors.white, size: 24),
-                                      ),
-                                    ),
-                                  ],
-                                );
-                              }
-                            },
-                          ),
-                        ),
-                        Positioned(
-                          right: 4,
-                          top: 4,
-                          child: InkWell(
-                            onTap: () {
-                              setState(() {
-                                _selectedVideos.removeAt(index);
-                              });
-                            },
-                            child: Container(
-                              decoration: BoxDecoration(color: Colors.black54, shape: BoxShape.circle),
-                              padding: EdgeInsets.all(4),
-                              child: Icon(Icons.close, size: 16, color: Colors.white),
-                            ),
-                          ),
-                        )
-                      ],
-                    ),
-                  );
-                },
+            GridView.builder(
+              shrinkWrap: true,
+              physics: NeverScrollableScrollPhysics(),
+              gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
+                crossAxisCount: 2,
+                mainAxisSpacing: 8,
+                crossAxisSpacing: 8,
+                childAspectRatio: 1.25,
               ),
+              itemCount: _selectedVideos.length,
+              itemBuilder: (context, index) {
+                final video = _selectedVideos[index];
+                return Stack(
+                  children: [
+                    GestureDetector(
+                      onTap: () {
+                        Navigator.of(context).push(
+                          MaterialPageRoute(
+                            builder: (_) => _VideoPreviewPage(videoPath: video.path),
+                          ),
+                        );
+                      },
+                      child: Container(
+                        decoration: BoxDecoration(
+                          borderRadius: BorderRadius.circular(12),
+                          border: Border.all(color: Colors.grey.shade700),
+                          boxShadow: [
+                            BoxShadow(
+                              color: Colors.black26,
+                              blurRadius: 6,
+                              offset: Offset(0, 2),
+                            ),
+                          ],
+                        ),
+                        clipBehavior: Clip.antiAlias,
+                        child: FutureBuilder<String?>(
+                          future: generateVideoThumbnail(video.path),
+                          builder: (context, snapshot) {
+                            if (snapshot.hasData && snapshot.data != null) {
+                              return Stack(
+                                fit: StackFit.expand,
+                                children: [
+                                  Image.file(
+                                    File(snapshot.data!),
+                                    fit: BoxFit.cover,
+                                  ),
+                                  Center(
+                                    child: Container(
+                                      decoration: BoxDecoration(
+                                        color: Colors.black54,
+                                        shape: BoxShape.circle,
+                                      ),
+                                      padding: EdgeInsets.all(16),
+                                      child: Icon(Icons.play_arrow, color: Colors.white, size: 40),
+                                    ),
+                                  ),
+                                ],
+                              );
+                            }
+                            return Container(
+                              color: Colors.grey[800],
+                              child: Center(
+                                child: Icon(Icons.videocam, color: Colors.white, size: 48),
+                              ),
+                            );
+                          },
+                        ),
+                      ),
+                    ),
+                    Positioned(
+                      right: 6,
+                      top: 6,
+                      child: InkWell(
+                        onTap: () {
+                          setState(() {
+                            _selectedVideos.removeAt(index);
+                          });
+                        },
+                        child: Container(
+                          decoration: BoxDecoration(
+                            color: Colors.black54,
+                            shape: BoxShape.circle,
+                          ),
+                          padding: EdgeInsets.all(6),
+                          child: Icon(Icons.close, size: 18, color: Colors.white),
+                        ),
+                      ),
+                    ),
+                  ],
+                );
+              },
             ),
           SizedBox(height: 12),
           SizedBox(
@@ -10055,8 +10413,376 @@ class _SellStep4PageState extends State<SellStep4Page> {
   }
 }
 
+// Preview of how the listing will look after submission (used in SellStep5).
+class ListingPreviewWidget extends StatefulWidget {
+  final Map<String, dynamic> carData;
+  final List<dynamic> imageFilesOrUrls;
+  /// When true, renders edge-to-edge like the real listing page (no rounded corners/border).
+  final bool fullPage;
+
+  const ListingPreviewWidget({
+    Key? key,
+    required this.carData,
+    required this.imageFilesOrUrls,
+    this.fullPage = false,
+  }) : super(key: key);
+
+  @override
+  State<ListingPreviewWidget> createState() => _ListingPreviewWidgetState();
+}
+
+class _ListingPreviewWidgetState extends State<ListingPreviewWidget> {
+  final PageController _imagePageController = PageController();
+  int _currentImageIndex = 0;
+
+  @override
+  void dispose() {
+    _imagePageController.dispose();
+    super.dispose();
+  }
+
+  static String? _getFirstNonEmpty(Map<String, dynamic> map, List<String> keys) {
+    for (final key in keys) {
+      final dynamic value = map[key];
+      if (value == null) continue;
+      final String stringValue = value.toString().trim();
+      if (stringValue.isNotEmpty) return stringValue;
+    }
+    return null;
+  }
+
+  String _formatPrice(BuildContext context, String raw) {
+    try {
+      final num? value = num.tryParse(raw.replaceAll(RegExp(r'[^0-9\.-]'), ''));
+      if (value == null) return raw;
+      final formatter = _decimalFormatterGlobal(context);
+      return formatter.format(value);
+    } catch (_) {
+      return raw;
+    }
+  }
+
+  Widget _buildSpecCard(_SpecItem item) {
+    return Container(
+      padding: EdgeInsets.symmetric(horizontal: 12, vertical: 12),
+      constraints: BoxConstraints(minHeight: 84),
+      decoration: BoxDecoration(
+        color: Color(0xFFFF6B00),
+        borderRadius: BorderRadius.circular(12),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          Row(
+            children: [
+              Icon(item.icon, size: 16, color: Colors.black87),
+              SizedBox(width: 6),
+              Expanded(
+                child: Text(
+                  item.label,
+                  maxLines: 2,
+                  overflow: TextOverflow.ellipsis,
+                  style: TextStyle(
+                    fontSize: 11,
+                    color: Colors.black,
+                    fontWeight: FontWeight.w800,
+                    letterSpacing: 0.2,
+                    height: 1.1,
+                  ),
+                ),
+              ),
+            ],
+          ),
+          SizedBox(height: 6),
+          Text(
+            item.value!,
+            maxLines: 2,
+            overflow: TextOverflow.ellipsis,
+            style: TextStyle(
+              fontSize: 15,
+              height: 1.15,
+              color: Colors.black,
+              fontWeight: FontWeight.w700,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _detailRow({required IconData icon, required String label, required String? value}) {
+    if (value == null || value.isEmpty) return SizedBox.shrink();
+    return Container(
+      margin: EdgeInsets.only(bottom: 8),
+      padding: EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+      decoration: BoxDecoration(
+        color: Colors.white.withOpacity(0.06),
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(color: Colors.white12),
+      ),
+      child: Row(
+        children: [
+          Container(
+            padding: EdgeInsets.all(8),
+            decoration: BoxDecoration(
+              color: Color(0xFFFF6B00),
+              borderRadius: BorderRadius.circular(10),
+            ),
+            child: Icon(icon, size: 18, color: Colors.black),
+          ),
+          SizedBox(width: 12),
+          Expanded(
+            child: Text(
+              label,
+              style: TextStyle(color: Colors.white70, fontSize: 14, fontWeight: FontWeight.w600),
+            ),
+          ),
+          Container(
+            padding: EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+            decoration: BoxDecoration(
+              color: Color(0xFFFF6B00),
+              borderRadius: BorderRadius.circular(999),
+            ),
+            child: Text(
+              value,
+              style: TextStyle(color: Colors.black, fontWeight: FontWeight.w800),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildSpecsFromData(Map<String, dynamic> data) {
+    final loc = AppLocalizations.of(context)!;
+    final List<_SpecItem> primary = [
+      _SpecItem(icon: Icons.calendar_month, label: loc.yearLabel, value: data['year'] != null ? _localizeDigitsGlobal(context, data['year'].toString()) : null),
+      _SpecItem(icon: Icons.speed, label: loc.mileageLabel, value: data['mileage'] != null ? '${_localizeDigitsGlobal(context, _formatPrice(context, data['mileage'].toString()))} ${loc.unit_km}' : null),
+      _SpecItem(icon: Icons.settings, label: loc.transmissionLabel, value: _translateValueGlobal(context, _getFirstNonEmpty(data, ['transmission']))),
+      _SpecItem(icon: Icons.location_city, label: loc.cityLabel, value: data['city'] != null ? (_translateValueGlobal(context, data['city'].toString()) ?? data['city'].toString()) : null),
+      _SpecItem(icon: Icons.assignment_turned_in, label: loc.titleStatus, value: data['title_status'] != null
+          ? (data['title_status'].toString().toLowerCase() == 'damaged'
+              ? (loc.value_title_damaged + (data['damaged_parts'] != null ? ' (${_localizeDigitsGlobal(context, data['damaged_parts'].toString())} ${loc.damagedParts})' : ''))
+              : loc.value_title_clean)
+          : null),
+      _SpecItem(icon: Icons.local_gas_station, label: loc.detail_fuel, value: _translateValueGlobal(context, _getFirstNonEmpty(data, ['fuel_type']))),
+    ];
+    final String? engineSize = _getFirstNonEmpty(data, ['engine_size', 'engineSize', 'engine']);
+    final List<Widget> details = [
+      _detailRow(icon: Icons.place, label: loc.cityLabel, value: _translateValueGlobal(context, _getFirstNonEmpty(data, ['city']))),
+      _detailRow(icon: Icons.check_circle, label: loc.detail_condition, value: _translateValueGlobal(context, _getFirstNonEmpty(data, ['condition']))),
+      _detailRow(icon: Icons.settings, label: loc.transmissionLabel, value: _translateValueGlobal(context, _getFirstNonEmpty(data, ['transmission']))),
+      _detailRow(icon: Icons.local_gas_station, label: loc.detail_fuel, value: _translateValueGlobal(context, _getFirstNonEmpty(data, ['fuel_type', 'fuelType', 'fuel']))),
+      _detailRow(icon: Icons.directions_car_filled, label: loc.detail_body, value: _translateValueGlobal(context, _getFirstNonEmpty(data, ['body_type', 'bodyType', 'body']))),
+      _detailRow(icon: Icons.color_lens, label: loc.detail_color, value: _translateValueGlobal(context, _getFirstNonEmpty(data, ['color']))),
+      _detailRow(icon: Icons.drive_eta, label: loc.detail_drive, value: _translateValueGlobal(context, _getFirstNonEmpty(data, ['drive_type', 'driveType', 'drivetrain', 'drive']))),
+      _detailRow(icon: Icons.settings_input_component, label: loc.detail_cylinders, value: _localizeDigitsGlobal(context, _getFirstNonEmpty(data, ['cylinder_count', 'cylinders', 'cylinderCount']) ?? '')),
+      _detailRow(icon: Icons.straighten, label: loc.detail_engine, value: engineSize != null ? '${_localizeDigitsGlobal(context, engineSize.toString())}${loc.unit_liter_suffix}' : null),
+      _detailRow(icon: Icons.airline_seat_recline_normal, label: loc.detail_seating, value: _localizeDigitsGlobal(context, _getFirstNonEmpty(data, ['seating', 'seats', 'seatCount']) ?? '')),
+      _detailRow(icon: Icons.assignment_turned_in, label: loc.titleStatus, value: data['title_status'] != null
+          ? (data['title_status'].toString().toLowerCase() == 'damaged'
+              ? (loc.value_title_damaged + (data['damaged_parts'] != null ? ' (${_localizeDigitsGlobal(context, data['damaged_parts'].toString())} ${loc.damagedParts})' : ''))
+              : loc.value_title_clean)
+          : null),
+      _detailRow(icon: Icons.phone, label: loc.phoneLabel, value: _getFirstNonEmpty(data, ['contact_phone'])),
+    ];
+    final primItems = primary.where((i) => i.value != null && i.value!.isNotEmpty).toList();
+    final primGrid = GridView.builder(
+      shrinkWrap: true,
+      physics: NeverScrollableScrollPhysics(),
+      gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
+        crossAxisCount: 3,
+        crossAxisSpacing: 12,
+        mainAxisSpacing: 12,
+        childAspectRatio: 1.5,
+      ),
+      itemCount: primItems.length,
+      itemBuilder: (context, index) => _buildSpecCard(primItems[index]),
+    );
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        primGrid,
+        SizedBox(height: 12),
+        ...details,
+      ],
+    );
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final data = widget.carData;
+    final images = widget.imageFilesOrUrls;
+    final hasImages = images.isNotEmpty;
+
+    final String title = (data['title']?.toString() ?? '').trim().isNotEmpty
+        ? data['title'].toString().trim()
+        : '${data['brand'] ?? ''} ${data['model'] ?? ''} ${data['trim'] ?? ''}'.trim();
+    final String yearStr = data['year'] != null ? data['year'].toString() : '';
+    final String titleWithYear = yearStr.isNotEmpty ? '$title ($yearStr)' : (title.isEmpty ? 'Your listing' : title);
+
+    final bool fullPage = widget.fullPage;
+    return Container(
+      decoration: BoxDecoration(
+        color: Colors.grey[900],
+        borderRadius: fullPage ? BorderRadius.zero : BorderRadius.circular(16),
+        border: fullPage ? null : Border.all(color: Colors.grey[700]!),
+      ),
+      clipBehavior: Clip.antiAlias,
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          // Image carousel (taller in full-page mode like real listing) — tap to open full-screen
+          SizedBox(
+            height: fullPage ? 300 : 260,
+            width: double.infinity,
+            child: Stack(
+              fit: StackFit.expand,
+              children: [
+                if (hasImages)
+                  GestureDetector(
+                    onTap: () {
+                      Navigator.of(context).push(
+                        MaterialPageRoute(
+                          builder: (_) => ListingPreviewGalleryPage(
+                            imageFilesOrUrls: images,
+                            initialIndex: _currentImageIndex,
+                          ),
+                        ),
+                      );
+                    },
+                    child: PageView.builder(
+                      controller: _imagePageController,
+                      onPageChanged: (idx) => setState(() => _currentImageIndex = idx),
+                      itemCount: images.length,
+                      itemBuilder: (context, index) {
+                        final item = images[index];
+                        if (item is XFile) {
+                          return Image.file(
+                            File(item.path),
+                            fit: BoxFit.cover,
+                            width: double.infinity,
+                          );
+                        }
+                        final url = item.toString().trim();
+                        final fullUrl = url.startsWith('http') ? url : _buildFullImageUrl(url);
+                        return _listingNetworkImage(fullUrl, fit: BoxFit.cover, width: double.infinity);
+                      },
+                    ),
+                  )
+                else
+                  Container(
+                    color: Colors.grey[800],
+                    child: Icon(Icons.directions_car, size: 64, color: Colors.grey[500]),
+                  ),
+                if (hasImages && images.length > 1)
+                  Positioned(
+                    bottom: 12,
+                    left: 0,
+                    right: 0,
+                    child: Center(
+                      child: Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: List.generate(images.length, (i) {
+                          final active = i == _currentImageIndex;
+                          return AnimatedContainer(
+                            duration: Duration(milliseconds: 200),
+                            margin: EdgeInsets.symmetric(horizontal: 4),
+                            width: active ? 10 : 6,
+                            height: active ? 10 : 6,
+                            decoration: BoxDecoration(
+                              color: active ? Colors.white : Colors.white70,
+                              shape: BoxShape.circle,
+                            ),
+                          );
+                        }),
+                      ),
+                    ),
+                  ),
+              ],
+            ),
+          ),
+          // Content (title, price, specs)
+          Padding(
+            padding: EdgeInsets.fromLTRB(16, 20, 16, 24),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                if (data['is_quick_sell'] == true || data['is_quick_sell'] == 'true')
+                  Container(
+                    width: double.infinity,
+                    padding: EdgeInsets.symmetric(vertical: 12, horizontal: 16),
+                    margin: EdgeInsets.only(bottom: 16),
+                    decoration: BoxDecoration(
+                      gradient: LinearGradient(
+                        colors: [Colors.orange, Colors.deepOrange],
+                        begin: Alignment.centerLeft,
+                        end: Alignment.centerRight,
+                      ),
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                    child: Row(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        Icon(Icons.flash_on, color: Colors.white, size: 20),
+                        SizedBox(width: 8),
+                        Text(
+                          AppLocalizations.of(context)!.quickSell,
+                          style: TextStyle(
+                            color: Colors.white,
+                            fontWeight: FontWeight.bold,
+                            fontSize: 16,
+                            letterSpacing: 1.5,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                Text(
+                  titleWithYear,
+                  style: TextStyle(
+                    fontSize: 22,
+                    fontWeight: FontWeight.bold,
+                    color: Colors.white,
+                  ),
+                  maxLines: 2,
+                  overflow: TextOverflow.ellipsis,
+                ),
+                SizedBox(height: 8),
+                if (data['price'] != null)
+                  Text(
+                    _formatCurrencyGlobal(context, data['price']),
+                    style: TextStyle(
+                      fontSize: 18,
+                      fontWeight: FontWeight.w700,
+                      color: Color(0xFFFF6B00),
+                    ),
+                  ),
+                SizedBox(height: 16),
+                Text(
+                  AppLocalizations.of(context)!.specificationsLabel,
+                  style: TextStyle(
+                    fontSize: 16,
+                    fontWeight: FontWeight.bold,
+                    color: Color(0xFFFF6B00),
+                  ),
+                ),
+                SizedBox(height: 12),
+                _buildSpecsFromData(data),
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
 // Step 5: Review & Submit
 class SellStep5Page extends StatefulWidget {
+  const SellStep5Page({Key? key}) : super(key: key);
   @override
   _SellStep5PageState createState() => _SellStep5PageState();
 }
@@ -10069,119 +10795,25 @@ class _SellStep5PageState extends State<SellStep5Page> {
     final parentState = context.findAncestorStateOfType<_SellCarPageState>();
     final carData = parentState?.carData ?? {};
     
-    return SingleChildScrollView(
-      padding: EdgeInsets.all(20),
+    return Container(
+      color: Colors.grey[900],
       child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          // Header
-          Container(
-            width: double.infinity,
-            padding: EdgeInsets.all(20),
-            decoration: BoxDecoration(
-              gradient: LinearGradient(
-                colors: [Color(0xFFFF6B00).withOpacity(0.1), Colors.white],
-                begin: Alignment.topLeft,
-                end: Alignment.bottomRight,
+          Expanded(
+            child: SingleChildScrollView(
+              child: ListingPreviewWidget(
+                carData: carData,
+                imageFilesOrUrls: carData['images'] is List ? (carData['images'] as List) : [],
+                fullPage: true,
               ),
-              borderRadius: BorderRadius.circular(16),
-              border: Border.all(color: Color(0xFFFF6B00).withOpacity(0.2)),
-            ),
-            child: Column(
-              children: [
-                Icon(Icons.check_circle, size: 48, color: Color(0xFFFF6B00)),
-                SizedBox(height: 12),
-                Text(
-                  'Review & Submit',
-                  style: TextStyle(
-                    fontSize: 24,
-                    fontWeight: FontWeight.bold,
-                    color: Colors.grey[800],
-                  ),
-                ),
-                SizedBox(height: 8),
-                Text(
-                  'Review your listing before submitting',
-                  style: TextStyle(
-                    fontSize: 16,
-                    color: Colors.grey[600],
-                  ),
-                  textAlign: TextAlign.center,
-                ),
-              ],
             ),
           ),
-          SizedBox(height: 24),
-          
-          // Car Summary
           Container(
-            padding: EdgeInsets.all(16),
-            decoration: BoxDecoration(
-              color: Colors.grey[50],
-              borderRadius: BorderRadius.circular(12),
-              border: Border.all(color: Colors.grey[300]!),
-            ),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  'Car Summary',
-                  style: TextStyle(
-                    fontSize: 18,
-                    fontWeight: FontWeight.bold,
-                    color: Colors.grey[800],
-                  ),
-                ),
-                SizedBox(height: 12),
-                _buildSummaryRow('Brand', carData['brand']),
-                _buildSummaryRow('Model', carData['model']),
-                _buildSummaryRow('Trim', carData['trim']),
-                _buildSummaryRow('Year', carData['year']),
-                _buildSummaryRow('Mileage', '${carData['mileage']} km'),
-                _buildSummaryRow('Condition', carData['condition']),
-                _buildSummaryRow('Transmission', carData['transmission']),
-                _buildSummaryRow('Fuel Type', carData['fuel_type']),
-                _buildSummaryRow('Body Type', carData['body_type']),
-                _buildSummaryRow('Color', carData['color']),
-                _buildSummaryRow('Price', '\$${carData['price']}'),
-                _buildSummaryRow('City', carData['city']),
-                _buildSummaryRow('Contact', carData['contact_phone']),
-                if (carData['is_quick_sell'] == true)
-                  _buildSummaryRow('Quick Sell', 'Enabled', isHighlight: true),
-              ],
-            ),
-          ),
-          SizedBox(height: 24),
-          
-          // Photos Summary
-          Container(
-            padding: EdgeInsets.all(16),
-            decoration: BoxDecoration(
-              color: Colors.grey[50],
-              borderRadius: BorderRadius.circular(12),
-              border: Border.all(color: Colors.grey[300]!),
-            ),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  'Media',
-                  style: TextStyle(
-                    fontSize: 18,
-                    fontWeight: FontWeight.bold,
-                    color: Colors.grey[800],
-                  ),
-                ),
-                SizedBox(height: 12),
-                _buildSummaryRow('Photos', '${carData['images']?.length ?? 0} selected'),
-                _buildSummaryRow('Videos', '${carData['videos']?.length ?? 0} selected'),
-              ],
-            ),
-          ),
-          SizedBox(height: 32),
-          
-          // Navigation Buttons
-          Row(
+            padding: EdgeInsets.fromLTRB(16, 12, 16, 12),
+            color: Colors.grey[900],
+            child: SafeArea(
+              top: false,
+              child: Row(
             children: [
               Expanded(
                 child: SizedBox(
@@ -10322,33 +10954,6 @@ class _SellStep5PageState extends State<SellStep5Page> {
                 ),
               ),
             ],
-          ),
-        ],
-      ),
-    );
-  }
-  
-  Widget _buildSummaryRow(String label, String? value, {bool isHighlight = false}) {
-    return Padding(
-      padding: EdgeInsets.symmetric(vertical: 4),
-      child: Row(
-        children: [
-          SizedBox(
-            width: 100,
-            child: Text(
-              label,
-              style: TextStyle(
-                color: Colors.grey[600],
-                fontWeight: FontWeight.w500,
-              ),
-            ),
-          ),
-          Expanded(
-            child: Text(
-              value ?? 'Not specified',
-              style: TextStyle(
-                color: isHighlight ? Colors.orange : Colors.grey[800],
-                fontWeight: isHighlight ? FontWeight.bold : FontWeight.normal,
               ),
             ),
           ),
@@ -10438,31 +11043,70 @@ class _SellStep5PageState extends State<SellStep5Page> {
         // Backend returns { message, car: {...} } where car.id is the public_id (string)
         final dynamic carObj = (created['car'] is Map) ? created['car'] : created;
         final String carId = (carObj['id']?.toString() ?? '').toString();
-        // Enrich created car with processed image paths immediately for UI
-        try {
-          final paths = ApiService.getLastProcessedServerPaths();
-          if (paths != null && paths.isNotEmpty) {
-            carObj['images'] = List<String>.from(paths);
-            carObj['image_url'] = paths.first;
-            // Reflect in local store so lists/detail show images right away
-            try { CarService().addCarLocal(Map<String, dynamic>.from(carObj)); } catch (_) {}
-          }
-        } catch (_) {}
-        // Upload images now and refresh so the listing shows photos immediately
+        // Upload/attach images and wait for list refresh so the new listing has all image URLs before we show success
         try {
           final dynamic maybeImgs = carData['images'];
           final List<dynamic> imgs = (maybeImgs is List) ? maybeImgs : const [];
           final List<XFile> toUpload = <XFile>[];
+          final List<String> toAttach = <String>[];
           for (final dynamic img in imgs) {
             if (img is XFile) {
               toUpload.add(img);
             } else if (img is String) {
-              try { toUpload.add(XFile(img)); } catch (_) {}
+              final s = img.trim();
+              // If it's a server-relative path (from "Blur Plates"), attach it; don't treat it as a local file.
+              if (s.startsWith('uploads/') || s.startsWith('static/') || s.startsWith('/static/')) {
+                toAttach.add(s);
+              } else if (s.startsWith('http://') || s.startsWith('https://')) {
+                // We don't attach absolute URLs; if you ever store them, keep them as-is in DB via other flow.
+                // For now, ignore.
+              } else {
+                // Local filesystem path string
+                try { toUpload.add(XFile(s)); } catch (_) {}
+              }
             }
           }
-          if (toUpload.isNotEmpty) {
+          if (toAttach.isNotEmpty) {
+            await CarService().attachCarImages(carId, toAttach);
+          } else if (toUpload.isNotEmpty) {
+            // No blur on submit; backend is called with skip_blur=1
             await CarService().uploadCarImages(carId, toUpload);
-            try { await CarService().getCars(refresh: true); } catch (_) {}
+          }
+          // Refresh list so new listing has server-confirmed image_url/images before success/navigation
+          try { await CarService().getCars(refresh: true); } catch (_) {}
+          // Precache all listing images so they appear instantly when user views the listing (no placeholder wait)
+          if (mounted) {
+            final svc = CarService();
+            final createdCar = svc.cars.where((c) => c['id']?.toString() == carId).toList();
+            final Map<String, dynamic>? car = createdCar.isNotEmpty ? createdCar.first : null;
+            if (car != null) {
+              final List<String> urls = <String>[];
+              final String primary = (car['image_url'] ?? '').toString();
+              final List<dynamic> imgs = (car['images'] is List) ? (car['images'] as List) : const [];
+              if (primary.isNotEmpty) urls.add(_buildFullImageUrl(primary));
+              for (final dynamic it in imgs) {
+                final String s = it is Map
+                    ? (it['image_url'] ?? it['url'] ?? it['path'] ?? it['src'] ?? '').toString()
+                    : it.toString();
+                if (s.isNotEmpty) {
+                  final full = _buildFullImageUrl(s);
+                  if (!urls.contains(full)) urls.add(full);
+                }
+              }
+              if (urls.isEmpty && imgs.isNotEmpty) {
+                final dynamic first = imgs.first;
+                final String s = first is Map
+                    ? (first['image_url'] ?? first['url'] ?? first['path'] ?? first['src'] ?? '').toString()
+                    : first.toString();
+                if (s.isNotEmpty) urls.add(_buildFullImageUrl(s));
+              }
+              for (final url in urls) {
+                if (url.isEmpty || !mounted) continue;
+                try {
+                  await precacheImage(NetworkImage(url), context);
+                } catch (_) {}
+              }
+            }
           }
         } catch (e) {
           try {
@@ -10966,17 +11610,7 @@ class CarComparisonPage extends StatelessWidget {
     final imageUrl = car['image_url']?.toString();
     if (imageUrl != null && imageUrl.isNotEmpty) {
       final built = _buildFullImageUrl(imageUrl);
-      // ignore: avoid_print
-      print('IMG detail-primary -> ' + built);
-      return CachedNetworkImage(
-        imageUrl: built,
-        fit: BoxFit.cover,
-        placeholder: (context, url) => Container(color: Colors.white10),
-        errorWidget: (context, url, error) => Container(
-          color: Colors.white10,
-          child: Icon(Icons.directions_car, color: Colors.white24),
-        ),
-      );
+      return _listingNetworkImage(built, fit: BoxFit.cover);
     }
     return Container(
       color: Colors.white10,
@@ -12610,14 +13244,7 @@ class _FavoritesPageState extends State<FavoritesPage> {
                                 ClipRRect(
                                   borderRadius: BorderRadius.circular(10),
                                   child: (fullImg.isNotEmpty)
-                                      ? CachedNetworkImage(
-                                          imageUrl: fullImg,
-                                          width: 110,
-                                          height: 78,
-                                          fit: BoxFit.cover,
-                                          placeholder: (_, __) => Container(width: 110, height: 78, color: Colors.white10),
-                                          errorWidget: (_, __, ___) => Container(width: 110, height: 78, color: Colors.grey[900], child: Icon(Icons.directions_car, color: Colors.grey[500])),
-                                        )
+                                      ? _listingNetworkImage(fullImg, width: 110, height: 78, fit: BoxFit.cover)
                                       : Container(
                                           width: 110,
                                           height: 78,
