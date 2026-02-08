@@ -32,6 +32,18 @@ class ApiService {
     }
   }
 
+  /// Set the current access token (best-effort persisted).
+  /// Use this when the app obtains a token outside of [ApiService.login],
+  /// e.g. after signup or external auth.
+  static Future<void> setAccessToken(String? token) async {
+    final t = (token ?? '').trim();
+    if (t.isEmpty) {
+      await clearTokens();
+      return;
+    }
+    await _saveAccessToken(t);
+  }
+
   // Clear tokens
   static Future<void> clearTokens() async {
     try {
@@ -436,6 +448,11 @@ class ApiService {
 
   static Future<Map<String, dynamic>> toggleFavorite(String carId) async {
     return await _makeAuthenticatedRequest('POST', '/cars/$carId/favorite');
+  }
+
+  static Future<bool> isCarFavorited(String carId) async {
+    final res = await _makeAuthenticatedRequest('GET', '/cars/$carId/favorite');
+    return (res['is_favorited'] == true) || (res['favorited'] == true);
   }
 
   // Check if user is authenticated

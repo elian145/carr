@@ -6511,6 +6511,38 @@ class _CarDetailsPageState extends State<CarDetailsPage> {
   final PageController _imagePageController = PageController();
   int _currentImageIndex = 0;
 
+  String _displayCarTitle() {
+    if (car == null) return '';
+    final raw = (car!['title'] ?? '').toString().trim();
+    if (raw.isNotEmpty && raw.toLowerCase() != 'null') return raw;
+
+    final brand = (car!['brand'] ?? '').toString().trim();
+    final model = (car!['model'] ?? '').toString().trim();
+    final year = (car!['year'] ?? '').toString().trim();
+    final trim = (car!['trim'] ?? '').toString().trim();
+
+    // Prefer: Brand Model Year, falling back to whatever is available.
+    final parts = <String>[];
+    if (brand.isNotEmpty) parts.add(brand);
+    if (model.isNotEmpty) parts.add(model);
+    if (trim.isNotEmpty && trim.toLowerCase() != 'base') parts.add(trim);
+    if (year.isNotEmpty) parts.add(year);
+    return parts.join(' ').trim();
+  }
+
+  Future<void> _loadFavoriteStatus() async {
+    try {
+      final tok = ApiService.accessToken;
+      if (tok == null || tok.isEmpty) return;
+      // Prefer the loaded car's id (public_id) when available.
+      final targetId = (car?['public_id'] ?? car?['id'] ?? widget.carId).toString();
+      final fav = await ApiService.isCarFavorited(targetId);
+      if (mounted) setState(() => isFavorite = fav);
+    } catch (_) {
+      // ignore: keep existing UI state
+    }
+  }
+
   Future<void> _toggleFavoriteOnServer() async {
     try {
       final tok = ApiService.accessToken;
@@ -6519,22 +6551,13 @@ class _CarDetailsPageState extends State<CarDetailsPage> {
         ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(AppLocalizations.of(context)!.loginRequired)));
         return;
       }
-      final url = Uri.parse(getApiBase() + '/api/favorite/' + widget.carId.toString());
-      final resp = await http.post(url, headers: { 'Authorization': 'Bearer ' + tok });
-      if (resp.statusCode == 200) {
-        final Map<String, dynamic> data = json.decode(resp.body);
-        final bool favorited = data['favorited'] == true;
-        if (mounted) setState(() { isFavorite = favorited; });
-        // Track favorite for analytics
-        if (favorited) {
-          unawaited(AnalyticsService.trackFavorite(widget.carId.toString()));
-        }
-      } else if (resp.statusCode == 401) {
-        if (!mounted) return;
-        ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(AppLocalizations.of(context)!.loginRequired)));
-      } else {
-        if (!mounted) return;
-        ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(AppLocalizations.of(context)!.couldNotSubmitListing)));
+      // Backend expects: POST /api/cars/<car_id>/favorite and returns { is_favorited: bool }
+      final targetId = (car?['public_id'] ?? car?['id'] ?? widget.carId).toString();
+      final res = await ApiService.toggleFavorite(targetId);
+      final bool favorited = (res['is_favorited'] == true) || (res['favorited'] == true);
+      if (mounted) setState(() { isFavorite = favorited; });
+      if (favorited) {
+        unawaited(AnalyticsService.trackFavorite(targetId));
       }
     } catch (e) {
       if (!mounted) return;
@@ -6622,8 +6645,8 @@ class _CarDetailsPageState extends State<CarDetailsPage> {
       if (cached != null && cached.isNotEmpty) {
         try {
           final data = json.decode(cached);
-          if (data is Map) { setState(() { car = Map<String, dynamic>.from(data); loading = false; }); _precacheListingImages(); }
-          else if (data is List && data.isNotEmpty) { setState(() { car = Map<String, dynamic>.from(data.first); loading = false; }); _precacheListingImages(); }
+          if (data is Map) { setState(() { car = Map<String, dynamic>.from(data); loading = false; }); _precacheListingImages(); unawaited(_loadFavoriteStatus()); }
+          else if (data is List && data.isNotEmpty) { setState(() { car = Map<String, dynamic>.from(data.first); loading = false; }); _precacheListingImages(); unawaited(_loadFavoriteStatus()); }
         } catch (_) {}
       }
       final url = Uri.parse(getApiBase() + '/api/cars/' + widget.carId.toString());
@@ -6633,6 +6656,7 @@ class _CarDetailsPageState extends State<CarDetailsPage> {
         if (data is List && data.isNotEmpty) {
           setState(() { car = Map<String, dynamic>.from(data.first); loading = false; });
           _precacheListingImages();
+          unawaited(_loadFavoriteStatus());
           _loadSimilarAndRelated();
           unawaited(sp.setString(cacheKey, json.encode(car)));
           _trackView();
@@ -6644,6 +6668,7 @@ class _CarDetailsPageState extends State<CarDetailsPage> {
               : map;
           setState(() { car = normalized; loading = false; });
           _precacheListingImages();
+          unawaited(_loadFavoriteStatus());
           _loadSimilarAndRelated();
           unawaited(sp.setString(cacheKey, json.encode(car)));
           _trackView();
@@ -6671,7 +6696,7 @@ class _CarDetailsPageState extends State<CarDetailsPage> {
     try {
       if (car == null) return;
       
-      final String title = car!['title']?.toString() ?? 'Car Listing';
+      final String title = _displayCarTitle().isNotEmpty ? _displayCarTitle() : 'Car Listing';
       final String brand = car!['brand']?.toString() ?? '';
       final String model = car!['model']?.toString() ?? '';
       final String year = car!['year']?.toString() ?? '';
@@ -6929,7 +6954,7 @@ class _CarDetailsPageState extends State<CarDetailsPage> {
                               ),
                             // Title and price moved below the image header
                             Text(
-                              car!['title']?.toString() ?? '',
+                              _displayCarTitle(),
                               style: TextStyle(
                                 fontSize: 22,
                                 fontWeight: FontWeight.bold,
@@ -6966,7 +6991,7 @@ class _CarDetailsPageState extends State<CarDetailsPage> {
                                   onPressed: () async {
 final String raw = car!['contact_phone'].toString();
                                     final String digits = raw.replaceAll(RegExp(r'[^0-9]'), '');
-                                    final String msg = Uri.encodeComponent('Hi, I am interested in your ${car!['title'] ?? 'car'}');
+                                    final String msg = Uri.encodeComponent('Hi, I am interested in your ${_displayCarTitle().isNotEmpty ? _displayCarTitle() : 'car'}');
 
                                     final Uri waApp = Uri.parse('whatsapp://send?phone=$digits&text=$msg');
                                     final Uri waWeb = Uri.parse('https://wa.me/$digits?text=$msg');
@@ -13152,10 +13177,14 @@ class _FavoritesPageState extends State<FavoritesPage> {
           }
         } catch (_) {}
       }
-      final url = Uri.parse(getApiBase() + '/api/favorites');
+      // Backend endpoint is /api/user/favorites
+      final url = Uri.parse(getApiBase() + '/api/user/favorites');
       final resp = await http.get(url, headers: { 'Authorization': 'Bearer ' + tok });
       if (resp.statusCode == 200) {
-        final data = json.decode(resp.body);
+        final decoded = json.decode(resp.body);
+        final data = (decoded is Map && decoded['cars'] is List)
+            ? decoded['cars']
+            : ((decoded is Map && decoded['favorites'] is List) ? decoded['favorites'] : decoded);
         if (data is List) {
           setState(() { _favorites = data.cast<Map<String, dynamic>>(); });
           unawaited(sp.setString(cacheKey, json.encode(_favorites)));
@@ -13172,26 +13201,22 @@ class _FavoritesPageState extends State<FavoritesPage> {
     }
   }
 
-  Future<void> _toggleFavorite(int carId) async {
+  Future<void> _toggleFavorite(String carId) async {
     try {
       final tok = ApiService.accessToken;
       if (tok == null || tok.isEmpty) return;
-      final url = Uri.parse(getApiBase() + '/api/favorite/' + carId.toString());
-      final resp = await http.post(url, headers: { 'Authorization': 'Bearer ' + tok });
-      if (resp.statusCode == 200) {
-        // Remove if unfavorited; keep if favorited
-        final Map<String, dynamic> res = json.decode(resp.body);
-        final bool favorited = res['favorited'] == true;
-        if (!favorited) {
-          setState(() { _favorites.removeWhere((c) => c['id'] == carId); });
-        } else {
-          // If favorited, ensure it exists (no-op if already in list)
-          // Could fetch full car if needed; skip for now
-        }
-        // Track favorite for analytics
-        if (favorited) {
-          unawaited(AnalyticsService.trackFavorite(carId.toString()));
-        }
+      // Use API service so endpoint + auth stays consistent.
+      final res = await ApiService.toggleFavorite(carId);
+      final bool favorited = (res['is_favorited'] == true) || (res['favorited'] == true);
+      if (!favorited) {
+        setState(() {
+          _favorites.removeWhere((c) {
+            final cid = (c['public_id'] ?? c['id'] ?? '').toString();
+            return cid == carId;
+          });
+        });
+      } else {
+        unawaited(AnalyticsService.trackFavorite(carId));
       }
     } catch (_) {}
   }
@@ -13224,18 +13249,38 @@ class _FavoritesPageState extends State<FavoritesPage> {
                         padding: const EdgeInsets.all(12),
                         itemBuilder: (context, index) {
                           final car = _favorites[index];
-                          final String title = (car['title']?.toString() ?? '').trim();
-                          final String imageUrl = (car['image_url']?.toString() ?? '').trim();
+                          final String carId = (car['public_id'] ?? car['id'] ?? '').toString();
+
+                          String title = (car['title']?.toString() ?? '').trim();
+                          if (title.isEmpty) {
+                            final brand = (car['brand'] ?? '').toString().trim();
+                            final model = (car['model'] ?? '').toString().trim();
+                            final year = (car['year'] ?? '').toString().trim();
+                            final pieces = [brand, model, year].where((s) => s.isNotEmpty).toList();
+                            title = pieces.join(' ');
+                          }
+
+                          String imageUrl = (car['image_url']?.toString() ?? '').trim();
+                          if (imageUrl.isEmpty && car['images'] is List) {
+                            final List imgs = car['images'] as List;
+                            if (imgs.isNotEmpty) {
+                              final first = imgs.first;
+                              if (first is Map) {
+                                imageUrl = (first['image_url'] ?? first['url'] ?? first['path'] ?? '').toString().trim();
+                              } else {
+                                imageUrl = first.toString().trim();
+                              }
+                            }
+                          }
+
                           final String? rel = imageUrl.isEmpty ? null : imageUrl;
                           final String fullImg = rel == null
                               ? ''
                               : _buildFullImageUrl(rel);
                           return InkWell(
                             onTap: () {
-                              final int? id = car['id'] is int ? car['id'] as int : int.tryParse(car['id']?.toString() ?? '');
-                              if (id != null) {
-                                // Analytics tracking for view listing
-                                Navigator.pushNamed(context, '/car_detail', arguments: {'carId': id});
+                              if (carId.isNotEmpty) {
+                                Navigator.pushNamed(context, '/car_detail', arguments: {'carId': carId});
                               }
                             },
                             child: Row(
@@ -13258,7 +13303,7 @@ class _FavoritesPageState extends State<FavoritesPage> {
                                     crossAxisAlignment: CrossAxisAlignment.start,
                                     children: [
                                       Text(
-                                        title.isEmpty ? 'â€”' : title,
+                                        title.isEmpty ? '—' : title,
                                         maxLines: 2,
                                         overflow: TextOverflow.ellipsis,
                                         style: TextStyle(fontSize: 16, fontWeight: FontWeight.w600),
@@ -13275,10 +13320,7 @@ class _FavoritesPageState extends State<FavoritesPage> {
                                 IconButton(
                                   icon: Icon(Icons.favorite, color: Color(0xFFFF6B00)),
                                   onPressed: () {
-                                    final int? id = car['id'] is int ? car['id'] as int : int.tryParse(car['id']?.toString() ?? '');
-                                    if (id != null) {
-                                      _toggleFavorite(id);
-                                    }
+                                    if (carId.isNotEmpty) _toggleFavorite(carId);
                                   },
                                 )
                               ],
@@ -13390,7 +13432,7 @@ class _LoginPageState extends State<LoginPage> {
         if (token != null && token.isNotEmpty) {
           // Store token in memory (simple for now); can add SharedPreferences later
           await AuthStore.saveToken(token);
-          await ApiService.initializeTokens(); // Sync with ApiService
+          await ApiService.setAccessToken(token); // Sync even if storage fails
         }
         if (!mounted) return;
         Navigator.pushReplacementNamed(context, '/');
@@ -13482,6 +13524,7 @@ class SignupPage extends StatefulWidget {
 
 class _SignupPageState extends State<SignupPage> {
   final _formKey = GlobalKey<FormState>();
+  final _usernameController = TextEditingController();
   final _emailController = TextEditingController();
   final _phoneController = TextEditingController();
   final _passwordController = TextEditingController();
@@ -13489,6 +13532,16 @@ class _SignupPageState extends State<SignupPage> {
   bool _loading = false;
   bool _otpSent = false;
   String _authType = 'email'; // 'email' or 'phone'
+
+  @override
+  void dispose() {
+    _usernameController.dispose();
+    _emailController.dispose();
+    _phoneController.dispose();
+    _passwordController.dispose();
+    _otpController.dispose();
+    super.dispose();
+  }
 
   Future<void> _sendOtp() async {
     final phone = _phoneController.text.trim();
@@ -13543,15 +13596,27 @@ class _SignupPageState extends State<SignupPage> {
       if (_authType == 'email') {
         final email = _emailController.text.trim();
         requestBody['email'] = email;
-        // Generate username from email (part before @)
-        requestBody['username'] = email.split('@')[0];
       } else {
         final phone = _phoneController.text.trim();
         requestBody['phone'] = '+964' + phone;
         requestBody['otp_code'] = _otpController.text.trim();
-        // Generate username from phone number
-        requestBody['username'] = 'user_${phone.replaceAll(RegExp(r'[^\d]'), '')}';
       }
+
+      // Username (required)
+      final username = _usernameController.text.trim();
+      if (username.isEmpty) {
+        if (!mounted) return;
+        showDialog(
+          context: context,
+          builder: (_) => AlertDialog(
+            title: Text(AppLocalizations.of(context)!.errorTitle),
+            content: Text('${AppLocalizations.of(context)!.usernameLabel} is required'),
+            actions: [TextButton(onPressed: () => Navigator.pop(context), child: Text(AppLocalizations.of(context)!.okAction))],
+          ),
+        );
+        return;
+      }
+      requestBody['username'] = username;
       
       final resp = await http.post(url, headers: {'Content-Type': 'application/json'}, body: json.encode(requestBody));
       if (resp.statusCode >= 200 && resp.statusCode < 300) {
@@ -13562,13 +13627,53 @@ class _SignupPageState extends State<SignupPage> {
         final String? token = (legacyToken != null && legacyToken.isNotEmpty) ? legacyToken : access;
         if (token != null && token.isNotEmpty) {
           await AuthStore.saveToken(token);
-          await ApiService.initializeTokens(); // Sync with ApiService
+          await ApiService.setAccessToken(token); // Sync even if storage fails
           if (!mounted) return;
           Navigator.pushReplacementNamed(context, '/');
         } else {
-          // No token returned: direct user to login after successful registration
-          if (!mounted) return;
-          Navigator.pushReplacementNamed(context, '/login');
+          // No token returned: try logging in automatically
+          final loginUrl = Uri.parse(getApiBase() + '/api/auth/login');
+          final loginResp = await http.post(
+            loginUrl,
+            headers: {'Content-Type': 'application/json'},
+            body: json.encode({
+              'username': _usernameController.text.trim(),
+              'password': _passwordController.text,
+            }),
+          );
+          if (loginResp.statusCode >= 200 && loginResp.statusCode < 300) {
+            final loginData = json.decode(loginResp.body);
+            final String? lLegacy = (loginData['token'] as String?)?.trim();
+            final String? lAccess = (loginData['access_token'] as String?)?.trim();
+            final String? loginToken = (lLegacy != null && lLegacy.isNotEmpty) ? lLegacy : lAccess;
+            if (loginToken != null && loginToken.isNotEmpty) {
+              await AuthStore.saveToken(loginToken);
+              await ApiService.setAccessToken(loginToken);
+              if (!mounted) return;
+              Navigator.pushReplacementNamed(context, '/');
+            } else {
+              if (!mounted) return;
+              showDialog(
+                context: context,
+                builder: (_) => AlertDialog(
+                  title: Text(AppLocalizations.of(context)!.errorTitle),
+                  content: Text('Signup succeeded but login token was not provided.'),
+                  actions: [TextButton(onPressed: () => Navigator.pop(context), child: Text(AppLocalizations.of(context)!.okAction))],
+                ),
+              );
+            }
+          } else {
+            final msg = loginResp.body.isNotEmpty ? loginResp.body : AppLocalizations.of(context)!.couldNotSubmitListing;
+            if (!mounted) return;
+            showDialog(
+              context: context,
+              builder: (_) => AlertDialog(
+                title: Text(AppLocalizations.of(context)!.errorTitle),
+                content: Text(msg),
+                actions: [TextButton(onPressed: () => Navigator.pop(context), child: Text(AppLocalizations.of(context)!.okAction))],
+              ),
+            );
+          }
         }
       } else {
         final msg = resp.body.length > 0 ? resp.body : AppLocalizations.of(context)!.couldNotSubmitListing;
@@ -13691,6 +13796,20 @@ class _SignupPageState extends State<SignupPage> {
                   ],
                 ),
               ],
+              SizedBox(height: 12),
+              TextFormField(
+                controller: _usernameController,
+                decoration: InputDecoration(
+                  labelText: AppLocalizations.of(context)!.usernameLabel,
+                  hintText: 'Choose a username',
+                ),
+                validator: (v) {
+                  final value = (v ?? '').trim();
+                  if (value.isEmpty) return '${AppLocalizations.of(context)!.usernameLabel} is required';
+                  if (value.length < 3) return 'Username must be at least 3 characters';
+                  return null;
+                },
+              ),
               TextFormField(
                 controller: _passwordController,
                 obscureText: true,
@@ -13794,6 +13913,7 @@ class _ProfilePageState extends State<ProfilePage> {
 
   Future<void> _logout() async {
     await AuthStore.saveToken(null);
+    await ApiService.setAccessToken(null);
     await ApiService.logout(); // Clear ApiService tokens too
     if (!mounted) return;
     Navigator.pushReplacementNamed(context, '/login');

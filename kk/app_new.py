@@ -970,8 +970,8 @@ def compat_signup():
         phone_digits = ''.join(ch for ch in raw_phone if ch.isdigit())
         if len(phone_digits) > 11:
             phone_digits = phone_digits[-11:]
-        # Choose username preferring email, then provided, then phone
-        username = (email or raw_username or phone_digits or f"user_{secrets.token_hex(3)}").lower()
+        # Choose username preferring provided username, then email local-part, then phone
+        username = (raw_username or (email.split('@')[0] if email and '@' in email else '') or phone_digits or f"user_{secrets.token_hex(3)}").lower()
         if not phone_digits:
             phone_digits = f"070{secrets.randbelow(10**8):08d}"
         if not password:
@@ -998,8 +998,25 @@ def compat_signup():
             if last_name and not existing.last_name:
                 existing.last_name = last_name
             existing.is_active = True
+            # If user was previously created with an auto username (e.g. email),
+            # allow updating to the explicitly provided username.
+            if raw_username and raw_username.strip() and existing.username != username:
+                existing.username = username
+            # Ensure user has public_id for JWT identity compatibility
+            if not getattr(existing, 'public_id', None):
+                existing.public_id = secrets.token_hex(8)
             db.session.commit()
-            return jsonify({'message': 'Signup successful', 'user': existing.to_dict()}), 200
+            # Issue token for immediate login (mobile client expects this)
+            identity = existing.public_id
+            access_token = create_access_token(identity=identity)
+            refresh_token = create_refresh_token(identity=identity)
+            return jsonify({
+                'message': 'Signup successful',
+                'token': access_token,
+                'access_token': access_token,
+                'refresh_token': refresh_token,
+                'user': existing.to_dict()
+            }), 200
 
         # Create fresh user
         logger.info(f"Creating new user: {username}")
@@ -1010,6 +1027,7 @@ def compat_signup():
             last_name=last_name,
             email=email if email else '',
             is_active=True,
+            public_id=secrets.token_hex(8),
         )
         user.set_password(password)
         # Keep old password field updated for backward compatibility
@@ -1017,7 +1035,17 @@ def compat_signup():
         db.session.add(user)
         db.session.commit()
         logger.info(f"User created successfully: {user.public_id}")
-        return jsonify({'message': 'Signup successful', 'user': user.to_dict()}), 201
+        # Issue token for immediate login
+        identity = user.public_id
+        access_token = create_access_token(identity=identity)
+        refresh_token = create_refresh_token(identity=identity)
+        return jsonify({
+            'message': 'Signup successful',
+            'token': access_token,
+            'access_token': access_token,
+            'refresh_token': refresh_token,
+            'user': user.to_dict()
+        }), 201
     except Exception as e:
         import traceback
         error_details = traceback.format_exc()
@@ -1726,18 +1754,26 @@ def get_favorites():
         logger.error(f"Get favorites error: {str(e)}")
         return jsonify({'message': 'Failed to get favorites'}), 500
 
-@app.route('/api/cars/<car_id>/favorite', methods=['POST'])
+@app.route('/api/cars/<car_id>/favorite', methods=['GET', 'POST'])
 @jwt_required()
 def toggle_favorite(car_id):
-    """Toggle favorite status for a car"""
+    """Toggle favorite status for a car (POST) or check status (GET)."""
     try:
         current_user = get_current_user()
         if not current_user:
             return jsonify({'message': 'User not found'}), 404
         
+        # Accept either public_id (uuid-ish) or numeric database id (mobile client uses numeric ids in lists)
         car = Car.query.filter_by(public_id=car_id, is_active=True).first()
+        if not car and str(car_id).isdigit():
+            car = Car.query.filter_by(id=int(car_id), is_active=True).first()
         if not car:
             return jsonify({'message': 'Car not found'}), 404
+
+        # Status check without mutating state
+        if request.method == 'GET':
+            is_favorited = current_user.favorites.filter_by(id=car.id).first() is not None
+            return jsonify({'is_favorited': is_favorited}), 200
         
         # Check if already favorited
         if current_user.favorites.filter_by(id=car.id).first():
