@@ -6,7 +6,7 @@ from flask_cors import CORS
 from flask_mail import Mail, Message
 from flask_socketio import SocketIO, emit, join_room, leave_room
 from werkzeug.utils import secure_filename
-from .config import config
+from .config import config, get_app_env, validate_required_secrets
 from .models import *
 from .auth import *
 from .security import rate_limit, validate_input_sanitization, secure_headers
@@ -32,7 +32,10 @@ try:
     load_dotenv(os.path.join(os.path.dirname(__file__), 'env.local'), override=False)  # type: ignore
 except Exception:
     pass
-app.config.from_object(config['development'])
+env_name = get_app_env()
+app.config.from_object(config.get(env_name, config['development']))
+# Fail fast if production secrets are missing
+validate_required_secrets(env_name)
 # Prefer explicit DB via env, else root-level instance, else kk/instance
 env_db = (os.getenv('DB_PATH') or '').strip()
 kk_cars_db = os.path.join(app.root_path, 'instance', 'cars.db')
@@ -55,8 +58,23 @@ db.init_app(app)
 migrate = Migrate(app, db)
 jwt = JWTManager(app)
 mail = Mail(app)
-socketio = SocketIO(app, cors_allowed_origins="*", async_mode='threading')
-CORS(app)
+
+def _parse_cors_origins() -> list[str]:
+    raw = (os.environ.get('CORS_ORIGINS') or '').strip()
+    if not raw:
+        return []
+    return [o.strip() for o in raw.split(',') if o.strip()]
+
+_cors_origins = _parse_cors_origins()
+if env_name == 'production':
+    # Production: never allow wildcard; only allow explicitly configured origins.
+    socketio = SocketIO(app, cors_allowed_origins=_cors_origins, async_mode='threading')
+    if _cors_origins:
+        CORS(app, origins=_cors_origins)
+else:
+    # Development: default to permissive CORS unless explicitly constrained.
+    socketio = SocketIO(app, cors_allowed_origins=_cors_origins or "*", async_mode='threading')
+    CORS(app, origins=_cors_origins or "*")
 
 # Ensure minimal schema compatibility for legacy SQLite DBs (SQLite-only)
 try:
@@ -942,17 +960,6 @@ def get_cars_alias():
         logger.error(f"Get cars alias error: {str(e)}")
         return jsonify({'message': 'Failed to get cars', 'error': str(e)}), 500
 
-# Compatibility auth endpoints for the mobile client
-@app.route('/api/auth/send_otp', methods=['POST'])
-def compat_send_otp():
-    try:
-        data = request.get_json(silent=True) or {}
-        phone = data.get('phone') or data.get('phone_number') or ''
-        # In development, return a fixed code
-        return jsonify({'dev_code': '000000', 'phone': phone}), 200
-    except Exception:
-        return jsonify({'dev_code': '000000'}), 200
-
 @app.route('/api/auth/signup', methods=['POST'])
 def compat_signup():
     try:
@@ -975,7 +982,7 @@ def compat_signup():
         if not phone_digits:
             phone_digits = f"070{secrets.randbelow(10**8):08d}"
         if not password:
-            password = 'password123'
+            return jsonify({'message': 'Password is required'}), 400
 
         logger.info(f"Processing signup: username={username}, phone={phone_digits}, email={email}")
 
@@ -1030,8 +1037,6 @@ def compat_signup():
             public_id=secrets.token_hex(8),
         )
         user.set_password(password)
-        # Keep old password field updated for backward compatibility
-        user.password = password  
         db.session.add(user)
         db.session.commit()
         logger.info(f"User created successfully: {user.public_id}")
@@ -1060,115 +1065,6 @@ def compat_signup():
         else:
             return jsonify({'message': 'Signup failed. Please try again.'}), 500
 
-
-# Development seed endpoint
-@app.route('/dev/seed', methods=['POST', 'GET'])
-def dev_seed():
-    if not app.config.get('DEBUG', False):
-        return jsonify({'message': 'Not available'}), 404
-    try:
-        # Ensure a demo user exists
-        user = User.query.filter_by(username='demo').first()
-        if not user:
-            user = User(
-                username='demo',
-                phone_number='07000000000',
-                first_name='Demo',
-                last_name='User',
-                email=None,
-            )
-            user.set_password('password123')
-            db.session.add(user)
-            db.session.commit()
-
-        # Pick a few images from static uploads
-        photos_dir = os.path.join('kk', 'static', 'uploads', 'car_photos')
-        if not os.path.isdir(photos_dir):
-            photos_dir = os.path.join('static', 'uploads', 'car_photos')
-        image_files = []
-        try:
-            for name in os.listdir(photos_dir):
-                if name.lower().endswith(('.jpg', '.jpeg', '.png', '.webp')):
-                    image_files.append(name)
-        except Exception:
-            pass
-        image_files = sorted(image_files)[:8]
-
-        # Create a few sample cars if table is empty
-        created = 0
-        total_before = db.session.query(Car).count()
-        if total_before == 0:
-            samples = [
-                {
-                    'brand': 'bmw', 'model': '3 series', 'year': 2019, 'mileage': 45000,
-                    'engine_type': 'gasoline', 'transmission': 'automatic', 'drive_type': 'rwd',
-                    'condition': 'used', 'body_type': 'sedan', 'price': 21000.0, 'location': 'baghdad'
-                },
-                {
-                    'brand': 'toyota', 'model': 'camry', 'year': 2021, 'mileage': 30000,
-                    'engine_type': 'gasoline', 'transmission': 'automatic', 'drive_type': 'fwd',
-                    'condition': 'used', 'body_type': 'sedan', 'price': 24000.0, 'location': 'erbil'
-                },
-                {
-                    'brand': 'mercedes-benz', 'model': 'c-class', 'year': 2020, 'mileage': 22000,
-                    'engine_type': 'gasoline', 'transmission': 'automatic', 'drive_type': 'rwd',
-                    'condition': 'used', 'body_type': 'sedan', 'price': 32000.0, 'location': 'basra'
-                }
-            ]
-            for s in samples:
-                car = Car(
-                    seller_id=user.id,
-                    brand=s['brand'], model=s['model'], year=s['year'], mileage=s['mileage'],
-                    engine_type=s['engine_type'], transmission=s['transmission'], drive_type=s['drive_type'],
-                    condition=s['condition'], body_type=s['body_type'], price=s['price'], location=s['location']
-                )
-                db.session.add(car)
-                db.session.flush()
-                # attach up to 3 images
-                rels = image_files[:3] if image_files else []
-                order = 0
-                for fname in rels:
-                    # Store under uploads/ so client URL builder and server existence checks align
-                    db.session.add(CarImage(
-                        car_id=car.id,
-                        image_url=f'uploads/car_photos/{fname}',
-                        is_primary=(order == 0),
-                        order=order
-                    ))
-                    order += 1
-                created += 1
-            db.session.commit()
-
-        # Ensure cars have images: attach up to 3 images to cars missing images
-        attached = 0
-        if image_files:
-            try:
-                cars = Car.query.order_by(Car.created_at.asc()).all()
-                for car in cars:
-                    try:
-                        if not getattr(car, 'images', None) or len(car.images) == 0:
-                            order = 0
-                            for fname in image_files[:3]:
-                                db.session.add(CarImage(
-                                    car_id=car.id,
-                                    image_url=f'uploads/car_photos/{fname}',
-                                    is_primary=(order == 0),
-                                    order=order
-                                ))
-                                order += 1
-                            attached += order
-                    except Exception:
-                        continue
-                db.session.commit()
-            except Exception:
-                db.session.rollback()
-
-        total = db.session.query(Car).count()
-        return jsonify({'message': 'seed_ok', 'created': created, 'images_attached': attached, 'total': total}), 200
-    except Exception as e:
-        logger.error(f"Dev seed error: {str(e)}")
-        db.session.rollback()
-        return jsonify({'message': 'seed_failed'}), 500
 
 @app.route('/api/cars/<car_id>', methods=['GET'])
 def get_car(car_id):
@@ -2357,75 +2253,19 @@ def internal_error(error):
 def health():
     return jsonify({'status': 'ok'}), 200
 
-# Debug info (safe to keep in development only)
-@app.route('/debug/info', methods=['GET'])
-def debug_info():
-    try:
-        cwd = os.getcwd()
-        root_path = app.root_path
-        uri = app.config.get('SQLALCHEMY_DATABASE_URI')
-        try:
-            from sqlalchemy import inspect
-            db_file = db.engine.url.database
-        except Exception:
-            db_file = None
-        root_db = str(pathlib.Path(root_path).parent.joinpath('car_listings_dev.db'))
-        kk_db = str(pathlib.Path(root_path).joinpath('car_listings_dev.db'))
-        return jsonify({
-            'cwd': cwd,
-            'app_root': root_path,
-            'db_uri': uri,
-            'db_file': db_file,
-            'root_db_exists': os.path.exists(root_db),
-            'kk_db_exists': os.path.exists(kk_db),
-            'root_db': root_db,
-            'kk_db': kk_db,
-        }), 200
-    except Exception as e:
-        return jsonify({'error': str(e)}), 500
-
-# Development-only reset and seed
-@app.route('/dev/reinit', methods=['POST', 'GET'])
-def dev_reinit():
-    try:
-        with app.app_context():
-            db.drop_all()
-            db.create_all()
-            # Create demo user
-            user = User(
-                username='demo',
-                email='demo@example.com',
-                phone_number='07000000001',
-                first_name='Demo',
-                last_name='User'
-            )
-            user.set_password('password123')
-            db.session.add(user)
-            db.session.flush()
-            # Add a couple cars
-            sample_cars = [
-                dict(brand='toyota', model='camry', year=2020, mileage=25000, engine_type='gasoline', transmission='automatic', drive_type='fwd', condition='used', body_type='sedan', price=21000.0, location='baghdad'),
-                dict(brand='bmw', model='x5', year=2021, mileage=15000, engine_type='gasoline', transmission='automatic', drive_type='awd', condition='used', body_type='suv', price=55000.0, location='erbil'),
-            ]
-            for s in sample_cars:
-                db.session.add(Car(seller_id=user.id, **s))
-            db.session.commit()
-        return jsonify({'status': 'reinit_ok'}), 200
-    except Exception as e:
-        db.session.rollback()
-        return jsonify({'status': 'reinit_failed', 'error': str(e)}), 500
-
 if __name__ == '__main__':
     with app.app_context():
         db.create_all()
     
     # Allow overriding port via environment and disable reloader to avoid duplicate processes
     port = int(os.environ.get('PORT', '5000'))
+    # Never run in debug mode by default (production-safe). Enable explicitly via env for local development.
+    debug = (os.environ.get('FLASK_DEBUG', '').strip().lower() in ('1', 'true', 'yes', 'on'))
     socketio.run(
         app,
-        debug=True,
+        debug=debug,
         host='0.0.0.0',
         port=port,
-        allow_unsafe_werkzeug=True,
+        allow_unsafe_werkzeug=debug,
         use_reloader=False,
     )

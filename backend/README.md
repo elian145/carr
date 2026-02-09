@@ -2,6 +2,8 @@
 
 Small Flask service used for local development and API proxying.
 
+This proxy is intended for **local development**. For production/public deployments, run the canonical listings backend (`kk/app_new.py`) behind HTTPS and a reverse proxy.
+
 ## Endpoints
 
 - `GET /health`: health check
@@ -32,3 +34,8 @@ Environment variables:
 LISTINGS_API_BASE=http://localhost:5000
 PORT=5000
 ```
+
+Production note:
+
+- Use `APP_ENV=production` on the canonical backend and set `SECRET_KEY` / `JWT_SECRET_KEY`.
+- Prefer HTTPS in production; do not proxy auth tokens over plain HTTP.

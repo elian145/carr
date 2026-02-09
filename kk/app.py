@@ -44,7 +44,7 @@ DB_PATH = os.path.join(BASE_DIR, 'instance', 'cars.db')
 app = Flask(__name__)
 app.config['SECRET_KEY'] = 'your-secret-key'
 app.config['PROPAGATE_EXCEPTIONS'] = True
-app.config['DEBUG'] = True
+app.config['DEBUG'] = (os.environ.get('FLASK_DEBUG', '').strip().lower() in ('1', 'true', 'yes', 'on'))
 # Database configuration: Force use of cars.db to avoid schema mismatch
 db_url = f'sqlite:///{DB_PATH}'
 app.config['SQLALCHEMY_DATABASE_URI'] = db_url
@@ -3396,8 +3396,8 @@ def google_login():
         if user:
             flash("An account with this Google email already exists. Please log in instead.", "warning")
             return redirect(url_for('login'))
-        # Create a new user
-        user = User(username=username, email=email, password="google-oauth")
+        # Create a new user. Store a hashed random password (no plaintext).
+        user = User(username=username, email=email, password=generate_password_hash(secrets.token_urlsafe(24)))
         db.session.add(user)
         db.session.commit()
         login_user(user)
@@ -3405,8 +3405,8 @@ def google_login():
         return redirect(url_for('home'))
     else:
         if not user:
-            # Create a new user
-            user = User(username=username, email=email, password="google-oauth")
+            # Create a new user. Store a hashed random password (no plaintext).
+            user = User(username=username, email=email, password=generate_password_hash(secrets.token_urlsafe(24)))
             db.session.add(user)
             db.session.commit()
         login_user(user)

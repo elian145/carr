@@ -20,11 +20,6 @@ def set_password_for(user_key: str, new_password: str) -> None:
 		except Exception:
 			pass
 		user.username = user.username or user_key
-		# Update both hash and legacy plaintext password column if present
-		try:
-			user.password = new_password
-		except Exception:
-			pass
 		user.set_password(new_password)
 		user.is_active = True
 		db.session.commit()

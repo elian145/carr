@@ -7,11 +7,19 @@ outputs/*.tmp
 # Ignore local uploads and temp outputs
 kk/static/uploads/
 kk/instance/*.db
+static/uploads/
+instance/
+kk/instance/
+**/*.db
+**/*.db-journal
+**/*.sqlite
+**/*.sqlite3
 
 # Model weights and large binaries
 *.pt
 
 # Flutter/Build outputs
+.flutter-plugins-dependencies
 build/
 **/DerivedData/
 **/.dart_tool/
@@ -44,3 +52,11 @@ cloudflared.exe
 python310.exe
 releases_windows.json
 android/.kotlin/
+
+# Accidental CLI artifact files (repo root)
+Get
+Run
+Process
+tatus
+tash list
+e -Name*

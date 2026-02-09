@@ -23,7 +23,7 @@ class CarAnalysisService:
         """
         try:
             self.initialized = True
-			logger.info("AI service initialized.")
+            logger.info("AI service initialized.")
         except Exception as e:
             self.initialized = False
             logger.error(f"Failed to initialize AI service: {e}")

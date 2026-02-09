@@ -70,6 +70,27 @@ If the app shows "Loading listings..." forever or "Failed to load listings":
 
 5. **Firewall**: Allow inbound TCP on ports **5000** and **5003** for your local network (or temporarily disable firewall to test).
 
+## Production (public internet) deployment notes
+
+If you deploy the backend to the public internet, do **not** run it in debug mode and do **not** rely on development defaults.
+
+- **Set required environment variables** (at minimum):
+  - `APP_ENV=production`
+  - `SECRET_KEY=<long-random>`
+  - `JWT_SECRET_KEY=<long-random>`
+  - `DATABASE_URL=<postgres://...>` (recommended) or `DB_PATH=<path-to-sqlite>`
+- **CORS (browser clients only)**:
+  - Set `CORS_ORIGINS=https://yourdomain.com,https://admin.yourdomain.com`
+  - In production, wildcard CORS is disabled by default.
+- **HTTPS**:
+  - Put the backend behind a reverse proxy (nginx/Caddy) with HTTPS. Do not send auth tokens over plain HTTP.
+- **Dev/debug endpoints**:
+  - Dev endpoints like `/dev/reinit`, `/dev/seed`, `/debug/info`, and dev OTP responses are removed/disabled for safety.
+
+## Repo hygiene
+
+- Local databases and uploads are ignored (see `.gitignore`). If you previously committed `*.db` files, they have been removed from tracking to avoid shipping private/local data.
+
 ## 📋 Requirements
 
 ### Backend Requirements

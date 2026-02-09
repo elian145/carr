@@ -1,5 +1,7 @@
 from app import app, db, User
 from werkzeug.security import generate_password_hash
+import os
+import secrets
 
 def create_test_users():
     """Create test users for payment integration testing"""
@@ -17,12 +19,10 @@ def create_test_users():
             {
                 'username': 'buyer_test',
                 'email': 'buyer@test.com',
-                'password': 'password123'
             },
             {
                 'username': 'seller_test',
                 'email': 'seller@test.com',
-                'password': 'password123'
             }
         ]
         
@@ -36,7 +36,9 @@ def create_test_users():
             user = User(
                 username=user_data['username'],
                 email=user_data['email'],
-                password=generate_password_hash(user_data['password'])
+                password=generate_password_hash(
+                    (os.environ.get('TEST_USER_PASSWORD') or '').strip() or secrets.token_urlsafe(12)
+                )
             )
             db.session.add(user)
             print(f"Created user: {user_data['username']} ({user_data['email']})")

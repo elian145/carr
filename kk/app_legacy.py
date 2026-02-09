@@ -2552,8 +2552,8 @@ def google_login():
         if user:
             flash("An account with this Google email already exists. Please log in instead.", "warning")
             return redirect(url_for('login'))
-        # Create a new user
-        user = User(username=username, email=email, password="google-oauth")
+        # Create a new user. Store a hashed random password (no plaintext).
+        user = User(username=username, email=email, password=generate_password_hash(secrets.token_urlsafe(24)))
         db.session.add(user)
         db.session.commit()
         login_user(user)
@@ -2561,8 +2561,8 @@ def google_login():
         return redirect(url_for('home'))
     else:
         if not user:
-            # Create a new user
-            user = User(username=username, email=email, password="google-oauth")
+            # Create a new user. Store a hashed random password (no plaintext).
+            user = User(username=username, email=email, password=generate_password_hash(secrets.token_urlsafe(24)))
             db.session.add(user)
             db.session.commit()
         login_user(user)
@@ -2614,4 +2614,5 @@ if __name__ == '__main__':
             print(f"Error initializing database: {str(e)}")
             raise e
 
-    app.run(host='0.0.0.0', port=5000, debug=True)
+    debug = (os.environ.get('FLASK_DEBUG', '').strip().lower() in ('1', 'true', 'yes', 'on'))
+    app.run(host='0.0.0.0', port=int(os.environ.get('PORT', '5000')), debug=debug)

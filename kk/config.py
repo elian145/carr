@@ -4,9 +4,38 @@ from dotenv import load_dotenv
 
 load_dotenv()
 
+def get_app_env() -> str:
+    """
+    Determine the runtime environment.
+
+    Preferred: APP_ENV=development|production|testing
+    Fallbacks: FLASK_ENV (legacy), then development.
+    """
+    env = (os.environ.get('APP_ENV') or os.environ.get('FLASK_ENV') or 'development').strip().lower()
+    return env or 'development'
+
+def validate_required_secrets(env: str | None = None) -> None:
+    """
+    Fail fast in production if critical secrets are missing.
+    """
+    env_name = (env or get_app_env()).strip().lower()
+    if env_name != 'production':
+        return
+    missing: list[str] = []
+    for key in ('SECRET_KEY', 'JWT_SECRET_KEY'):
+        if not (os.environ.get(key) or '').strip():
+            missing.append(key)
+    if missing:
+        raise RuntimeError(
+            "Missing required environment variables for production: "
+            + ", ".join(missing)
+            + ". Set them (and restart) before running with APP_ENV=production."
+        )
+
 class Config:
     # Basic Flask Configuration
-    SECRET_KEY = os.environ.get('SECRET_KEY') or 'dev-secret-key-change-in-production'
+    # In production, secrets are REQUIRED (validated via validate_required_secrets()).
+    SECRET_KEY = os.environ.get('SECRET_KEY') or 'dev-only-insecure-secret'
     
     # Database Configuration
     SQLALCHEMY_DATABASE_URI = os.environ.get('DATABASE_URL') or 'sqlite:///car_listings.db'
@@ -24,7 +53,7 @@ class Config:
         SQLALCHEMY_DATABASE_URI = f'postgresql://{POSTGRES_USER}:{POSTGRES_PASSWORD}@{POSTGRES_HOST}:{POSTGRES_PORT}/{POSTGRES_DB}'
     
     # JWT Configuration
-    JWT_SECRET_KEY = os.environ.get('JWT_SECRET_KEY') or 'jwt-secret-string'
+    JWT_SECRET_KEY = os.environ.get('JWT_SECRET_KEY') or 'dev-only-insecure-jwt-secret'
     JWT_ACCESS_TOKEN_EXPIRES = timedelta(hours=24)
     JWT_REFRESH_TOKEN_EXPIRES = timedelta(days=30)
     JWT_BLACKLIST_ENABLED = True

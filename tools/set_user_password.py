@@ -37,20 +37,10 @@ def main() -> None:
 			db.session.add(user)
 			# Ensure password_hash is set before any flush to satisfy NOT NULL constraint
 			user.set_password(args.password)
-			# Also set legacy plaintext 'password' column for older datasets with NOT NULL constraint
-			try:
-				user.password = args.password
-			except Exception:
-				pass
 			db.session.flush()
 
 		# Ensure username equals email so legacy login matches on username
 		user.username = args.email
-		# Update both hash and legacy password column
-		try:
-			user.password = args.password
-		except Exception:
-			pass
 		user.set_password(args.password)
 		user.is_active = True
 		db.session.commit()

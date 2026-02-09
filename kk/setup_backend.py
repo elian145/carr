@@ -34,7 +34,10 @@ def create_app():
     bcrypt = Bcrypt(app)
     jwt = JWTManager(app)
     mail = Mail(app)
-    socketio = SocketIO(app, cors_allowed_origins="*")
+    # Keep dev-friendly defaults, but allow restricting via env (comma-separated).
+    raw = (os.environ.get('CORS_ORIGINS') or '').strip()
+    origins = [o.strip() for o in raw.split(',') if o.strip()] if raw else "*"
+    socketio = SocketIO(app, cors_allowed_origins=origins)
     
     return app
 
@@ -70,14 +73,15 @@ def create_admin_user(app):
             is_verified=True,
             is_active=True
         )
-        admin.set_password('admin123')  # Change this in production!
+        admin_password = (os.environ.get('ADMIN_PASSWORD') or '').strip() or generate_secret_key()
+        admin.set_password(admin_password)
         
         db.session.add(admin)
         db.session.commit()
         
         print("✓ Admin user created")
         print("  Username: admin")
-        print("  Password: admin123")
+        print(f"  Password: {admin_password}")
         print("  Email: admin@carlistings.com")
         
         return admin
@@ -121,7 +125,8 @@ def create_sample_users(app):
                 continue
             
             user = User(**user_data)
-            user.set_password('password123')  # Default password for demo
+            sample_password = (os.environ.get('SAMPLE_USER_PASSWORD') or '').strip() or generate_secret_key()
+            user.set_password(sample_password)
             user.is_verified = True
             
             db.session.add(user)
@@ -448,7 +453,7 @@ def main():
         print("4. Access admin panel at: http://localhost:5000/api/admin/dashboard")
         print("\nAdmin credentials:")
         print("  Username: admin")
-        print("  Password: admin123")
+        print("  Password: (printed when created; or set via ADMIN_PASSWORD env var)")
         print("  Email: admin@carlistings.com")
         
     except Exception as e:

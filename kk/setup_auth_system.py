@@ -78,14 +78,18 @@ def create_admin_user(app):
                 is_verified=True,
                 is_active=True
             )
-            admin.set_password('admin123')
+            admin_password = (os.environ.get('ADMIN_PASSWORD') or '').strip()
+            if not admin_password:
+                import secrets as _secrets
+                admin_password = _secrets.token_urlsafe(12)
+            admin.set_password(admin_password)
             
             db.session.add(admin)
             db.session.commit()
             
             print("✅ Admin user created:")
             print("   Username: admin")
-            print("   Password: admin123")
+            print(f"   Password: {admin_password}")
             print("   Phone: +1234567890")
             
         except Exception as e:
@@ -113,14 +117,18 @@ def create_test_user(app):
                 is_verified=True,
                 is_active=True
             )
-            test_user.set_password('test123')
+            test_password = (os.environ.get('TEST_USER_PASSWORD') or '').strip()
+            if not test_password:
+                import secrets as _secrets
+                test_password = _secrets.token_urlsafe(12)
+            test_user.set_password(test_password)
             
             db.session.add(test_user)
             db.session.commit()
             
             print("✅ Test user created:")
             print("   Username: testuser")
-            print("   Password: test123")
+            print(f"   Password: {test_password}")
             print("   Phone: +1234567891")
             
         except Exception as e:
