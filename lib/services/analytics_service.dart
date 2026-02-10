@@ -33,7 +33,8 @@ class AnalyticsService {
           final List<dynamic> data = json.decode(response.body);
           return data.map((json) {
             // Ensure image URLs are full URLs
-            if (json['image_url'] != null && json['image_url'].toString().isNotEmpty) {
+            if (json['image_url'] != null &&
+                json['image_url'].toString().isNotEmpty) {
               final imageUrl = json['image_url'].toString();
               if (!imageUrl.startsWith('http')) {
                 json['image_url'] = '$_imageBaseUrl/static/uploads/$imageUrl';
@@ -43,7 +44,10 @@ class AnalyticsService {
           }).toList();
         }
       } catch (e) {
-        developer.log('Analytics endpoint failed, falling back to my_listings: $e', name: 'AnalyticsService');
+        developer.log(
+          'Analytics endpoint failed, falling back to my_listings: $e',
+          name: 'AnalyticsService',
+        );
       }
 
       // Fallback: Get user's listings and create analytics data
@@ -57,7 +61,7 @@ class AnalyticsService {
 
       if (response.statusCode == 200) {
         final List<dynamic> listings = json.decode(response.body);
-        
+
         // Convert listings to analytics format
         return listings.map((listing) {
           int? parseMileage(dynamic v) {
@@ -68,13 +72,14 @@ class AnalyticsService {
             if (s.isEmpty) return null;
             return int.tryParse(s);
           }
+
           // Construct full image URL if image_url exists
           String? fullImageUrl;
           final imageUrl = listing['image_url']?.toString();
           if (imageUrl != null && imageUrl.isNotEmpty) {
             fullImageUrl = '$_imageBaseUrl/static/uploads/$imageUrl';
           }
-          
+
           return ListingAnalytics(
             listingId: listing['id'].toString(),
             title: listing['title'] ?? '',
@@ -83,14 +88,19 @@ class AnalyticsService {
             year: listing['year'] ?? 0,
             price: (listing['price'] ?? 0).toDouble(),
             imageUrl: fullImageUrl,
-            mileage: parseMileage(listing['mileage'] ?? listing['odometer'] ?? listing['miles']),
-            city: listing['city']?.toString() ?? listing['location']?.toString(),
+            mileage: parseMileage(
+              listing['mileage'] ?? listing['odometer'] ?? listing['miles'],
+            ),
+            city:
+                listing['city']?.toString() ?? listing['location']?.toString(),
             views: 0, // Will be populated when analytics are tracked
             messages: 0,
             calls: 0,
             shares: 0,
             favorites: 0,
-            createdAt: DateTime.now().subtract(Duration(days: 30)), // Default to 30 days ago
+            createdAt: DateTime.now().subtract(
+              Duration(days: 30),
+            ), // Default to 30 days ago
             lastUpdated: DateTime.now(),
           );
         }).toList();
@@ -128,7 +138,9 @@ class AnalyticsService {
       } else if (response.statusCode == 404) {
         throw Exception('Listing not found');
       } else {
-        throw Exception('Failed to fetch listing analytics: ${response.statusCode}');
+        throw Exception(
+          'Failed to fetch listing analytics: ${response.statusCode}',
+        );
       }
     } catch (e) {
       throw Exception('Error fetching listing analytics: $e');
@@ -245,7 +257,7 @@ class AnalyticsService {
   static Future<List<ListingAnalytics>> getMockAnalytics() async {
     // This is for development when backend analytics endpoints are not ready
     await Future.delayed(Duration(seconds: 1)); // Simulate network delay
-    
+
     return [
       ListingAnalytics(
         listingId: '1',

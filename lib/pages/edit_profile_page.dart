@@ -11,8 +11,10 @@ String getApiBase() {
 }
 
 class EditProfilePage extends StatefulWidget {
+  const EditProfilePage({super.key});
+
   @override
-  _EditProfilePageState createState() => _EditProfilePageState();
+  State<EditProfilePage> createState() => _EditProfilePageState();
 }
 
 class _EditProfilePageState extends State<EditProfilePage> {
@@ -22,7 +24,7 @@ class _EditProfilePageState extends State<EditProfilePage> {
   final _emailController = TextEditingController();
   final _phoneController = TextEditingController();
   final _usernameController = TextEditingController();
-  
+
   bool _isLoading = false;
   bool _isSaving = false;
   XFile? _profileImage;
@@ -48,7 +50,7 @@ class _EditProfilePageState extends State<EditProfilePage> {
 
   Future<void> _loadUserData() async {
     if (!mounted) return;
-    
+
     setState(() {
       _isLoading = true;
       _errorMessage = null;
@@ -57,7 +59,7 @@ class _EditProfilePageState extends State<EditProfilePage> {
     try {
       final authService = Provider.of<AuthService>(context, listen: false);
       final currentUser = authService.currentUser;
-      
+
       if (currentUser != null) {
         _firstNameController.text = currentUser['first_name'] ?? '';
         _lastNameController.text = currentUser['last_name'] ?? '';
@@ -124,13 +126,13 @@ class _EditProfilePageState extends State<EditProfilePage> {
 
     try {
       final authService = Provider.of<AuthService>(context, listen: false);
-      
+
       // Prepare profile data
       final profileData = {
         'first_name': _firstNameController.text.trim(),
         'last_name': _lastNameController.text.trim(),
         'email': _emailController.text.trim(),
-        'phone_number': '+964' + _phoneController.text.trim(),
+        'phone_number': '+964${_phoneController.text.trim()}',
         'username': _usernameController.text.trim(),
       };
 
@@ -139,11 +141,14 @@ class _EditProfilePageState extends State<EditProfilePage> {
 
       // Upload profile picture if selected
       if (_profileImage != null) {
-        final uploadResponse = await authService.uploadProfilePicture(_profileImage!);
+        final uploadResponse = await authService.uploadProfilePicture(
+          _profileImage!,
+        );
         if (uploadResponse['profile_picture'] != null) {
           setState(() {
             _currentProfilePicture = uploadResponse['profile_picture'];
-            _profileImage = null; // Clear the local image since it's now uploaded
+            _profileImage =
+                null; // Clear the local image since it's now uploaded
           });
         }
       }
@@ -163,9 +168,11 @@ class _EditProfilePageState extends State<EditProfilePage> {
         );
 
         // Navigate back immediately after successful update
-        Navigator.pop(context, true); // Return true to indicate successful update
+        Navigator.pop(
+          context,
+          true,
+        ); // Return true to indicate successful update
       }
-
     } catch (e) {
       if (mounted) {
         setState(() {
@@ -214,11 +221,16 @@ class _EditProfilePageState extends State<EditProfilePage> {
                 backgroundColor: Colors.grey[200],
                 backgroundImage: _profileImage != null
                     ? FileImage(File(_profileImage!.path))
-                    : (_currentProfilePicture != null && _currentProfilePicture!.isNotEmpty)
-                        ? NetworkImage(getApiBase() + '/static/' + _currentProfilePicture!)
-                        : null,
-                child: (_profileImage == null && 
-                       (_currentProfilePicture == null || _currentProfilePicture!.isEmpty))
+                    : (_currentProfilePicture != null &&
+                          _currentProfilePicture!.isNotEmpty)
+                    ? NetworkImage(
+                        '${getApiBase()}/static/${_currentProfilePicture!}',
+                      )
+                    : null,
+                child:
+                    (_profileImage == null &&
+                        (_currentProfilePicture == null ||
+                            _currentProfilePicture!.isEmpty))
                     ? Icon(Icons.person, size: 60, color: Colors.grey[400])
                     : null,
               ),
@@ -242,10 +254,7 @@ class _EditProfilePageState extends State<EditProfilePage> {
           SizedBox(height: 16),
           Text(
             'Tap the camera icon to change your profile picture',
-            style: TextStyle(
-              fontSize: 14,
-              color: Colors.grey[600],
-            ),
+            style: TextStyle(fontSize: 14, color: Colors.grey[600]),
             textAlign: TextAlign.center,
           ),
         ],
@@ -283,10 +292,7 @@ class _EditProfilePageState extends State<EditProfilePage> {
             inputFormatters: inputFormatters,
             validator: validator,
             enabled: enabled,
-            style: TextStyle(
-              color: Colors.black,
-              fontSize: 16,
-            ),
+            style: TextStyle(color: Colors.black, fontSize: 16),
             decoration: InputDecoration(
               prefixIcon: Icon(icon, color: Color(0xFFFF6B00)),
               prefixText: prefixText,
@@ -317,7 +323,10 @@ class _EditProfilePageState extends State<EditProfilePage> {
               ),
               filled: true,
               fillColor: Colors.grey[50],
-              contentPadding: EdgeInsets.symmetric(horizontal: 16, vertical: 16),
+              contentPadding: EdgeInsets.symmetric(
+                horizontal: 16,
+                vertical: 16,
+              ),
             ),
           ),
         ],
@@ -366,7 +375,10 @@ class _EditProfilePageState extends State<EditProfilePage> {
                 gradient: LinearGradient(
                   begin: Alignment.topCenter,
                   end: Alignment.bottomCenter,
-                  colors: [Color(0xFFFF6B00).withOpacity(0.1), Colors.grey[50]!],
+                  colors: [
+                    Color(0xFFFF6B00).withOpacity(0.1),
+                    Colors.grey[50]!,
+                  ],
                 ),
               ),
               child: SingleChildScrollView(
@@ -418,7 +430,10 @@ class _EditProfilePageState extends State<EditProfilePage> {
                           ),
                           child: Row(
                             children: [
-                              Icon(Icons.check_circle_outline, color: Colors.green),
+                              Icon(
+                                Icons.check_circle_outline,
+                                color: Colors.green,
+                              ),
                               SizedBox(width: 8),
                               Expanded(
                                 child: Text(
@@ -510,7 +525,9 @@ class _EditProfilePageState extends State<EditProfilePage> {
                                 if (value == null || value.trim().isEmpty) {
                                   return 'Email is required';
                                 }
-                                if (!RegExp(r'^[\w-\.]+@([\w-]+\.)+[\w-]{2,4}$').hasMatch(value.trim())) {
+                                if (!RegExp(
+                                  r'^[\w-\.]+@([\w-]+\.)+[\w-]{2,4}$',
+                                ).hasMatch(value.trim())) {
                                   return 'Please enter a valid email address';
                                 }
                                 return null;
@@ -525,7 +542,9 @@ class _EditProfilePageState extends State<EditProfilePage> {
                               keyboardType: TextInputType.phone,
                               prefixText: '+964 ',
                               inputFormatters: [
-                                FilteringTextInputFormatter.allow(RegExp(r'[0-9]')),
+                                FilteringTextInputFormatter.allow(
+                                  RegExp(r'[0-9]'),
+                                ),
                                 LengthLimitingTextInputFormatter(10),
                               ],
                               validator: (value) {
@@ -566,7 +585,10 @@ class _EditProfilePageState extends State<EditProfilePage> {
                                       height: 20,
                                       child: CircularProgressIndicator(
                                         strokeWidth: 2,
-                                        valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
+                                        valueColor:
+                                            AlwaysStoppedAnimation<Color>(
+                                              Colors.white,
+                                            ),
                                       ),
                                     ),
                                     SizedBox(width: 12),

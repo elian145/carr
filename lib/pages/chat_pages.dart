@@ -8,10 +8,12 @@ import '../theme_provider.dart';
 String _digitsLocalized(BuildContext context, String input) {
   final code = Localizations.localeOf(context).languageCode;
   if (code == 'ar' || code == 'ku') {
-    const western = ['0','1','2','3','4','5','6','7','8','9'];
-    const eastern = ['٠','١','٢','٣','٤','٥','٦','٧','٨','٩'];
+    const western = ['0', '1', '2', '3', '4', '5', '6', '7', '8', '9'];
+    const eastern = ['٠', '١', '٢', '٣', '٤', '٥', '٦', '٧', '٨', '٩'];
     var out = input;
-    for (int i = 0; i < western.length; i++) { out = out.replaceAll(western[i], eastern[i]); }
+    for (int i = 0; i < western.length; i++) {
+      out = out.replaceAll(western[i], eastern[i]);
+    }
     return out;
   }
   return input;
@@ -40,8 +42,6 @@ String _relativeTime(BuildContext context, DateTime dateTime) {
   return 'Just now';
 }
 
- 
-
 String _noMessagesText(BuildContext context) {
   final code = Localizations.localeOf(context).languageCode;
   if (code == 'ar') return 'لا رسائل بعد. ابدأ محادثة!';
@@ -50,7 +50,7 @@ String _noMessagesText(BuildContext context) {
 }
 
 class _ThemeToggleAction extends StatelessWidget {
-  const _ThemeToggleAction({Key? key}) : super(key: key);
+  const _ThemeToggleAction({super.key});
 
   @override
   Widget build(BuildContext context) {
@@ -64,7 +64,9 @@ class _ThemeToggleAction extends StatelessWidget {
           onPressed: () {
             themeProvider.toggleTheme();
           },
-          tooltip: themeProvider.isDarkMode ? 'Switch to Light Mode' : 'Switch to Dark Mode',
+          tooltip: themeProvider.isDarkMode
+              ? 'Switch to Light Mode'
+              : 'Switch to Dark Mode',
         );
       },
     );
@@ -75,7 +77,7 @@ class ChatListPage extends StatefulWidget {
   const ChatListPage({super.key});
 
   @override
-  _ChatListPageState createState() => _ChatListPageState();
+  State<ChatListPage> createState() => _ChatListPageState();
 }
 
 class _ChatListPageState extends State<ChatListPage> {
@@ -83,7 +85,6 @@ class _ChatListPageState extends State<ChatListPage> {
   final TextEditingController _messageController = TextEditingController();
   final ScrollController _scrollController = ScrollController();
   String? _currentCarId;
-  bool _isLoading = false;
 
   @override
   void initState() {
@@ -161,14 +162,22 @@ class _ChatListPageState extends State<ChatListPage> {
                     itemCount: _messages.length,
                     itemBuilder: (context, index) {
                       final message = _messages[index];
-                      final authService = Provider.of<AuthService>(context, listen: false);
+                      final authService = Provider.of<AuthService>(
+                        context,
+                        listen: false,
+                      );
                       final isMe = message.senderId == authService.userId;
 
                       return Align(
-                        alignment: isMe ? Alignment.centerRight : Alignment.centerLeft,
+                        alignment: isMe
+                            ? Alignment.centerRight
+                            : Alignment.centerLeft,
                         child: Container(
                           margin: const EdgeInsets.symmetric(vertical: 4),
-                          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: 16,
+                            vertical: 12,
+                          ),
                           decoration: BoxDecoration(
                             color: isMe
                                 ? Theme.of(context).primaryColor
@@ -210,9 +219,7 @@ class _ChatListPageState extends State<ChatListPage> {
             decoration: BoxDecoration(
               color: Theme.of(context).cardColor,
               border: Border(
-                top: BorderSide(
-                  color: Theme.of(context).dividerColor,
-                ),
+                top: BorderSide(color: Theme.of(context).dividerColor),
               ),
             ),
             child: Row(
@@ -223,7 +230,10 @@ class _ChatListPageState extends State<ChatListPage> {
                     decoration: InputDecoration(
                       hintText: AppLocalizations.of(context)!.typeMessage,
                       border: OutlineInputBorder(),
-                      contentPadding: EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                      contentPadding: EdgeInsets.symmetric(
+                        horizontal: 16,
+                        vertical: 12,
+                      ),
                     ),
                     maxLines: null,
                     onSubmitted: (_) => _sendMessage(),
@@ -245,29 +255,22 @@ class _ChatListPageState extends State<ChatListPage> {
       ),
     );
   }
-
-  
 }
 
 class ChatConversationPage extends StatefulWidget {
   final String carId;
   final String? receiverId;
 
-  const ChatConversationPage({
-    super.key,
-    required this.carId,
-    this.receiverId,
-  });
+  const ChatConversationPage({super.key, required this.carId, this.receiverId});
 
   @override
-  _ChatConversationPageState createState() => _ChatConversationPageState();
+  State<ChatConversationPage> createState() => _ChatConversationPageState();
 }
 
 class _ChatConversationPageState extends State<ChatConversationPage> {
   final List<ChatMessage> _messages = [];
   final TextEditingController _messageController = TextEditingController();
   final ScrollController _scrollController = ScrollController();
-  bool _isLoading = false;
 
   @override
   void initState() {
@@ -332,21 +335,30 @@ class _ChatConversationPageState extends State<ChatConversationPage> {
         children: [
           // Chat messages
           Expanded(
-            child: _messages.isEmpty ? Center(child: Text(_noMessagesText(context)))
+            child: _messages.isEmpty
+                ? Center(child: Text(_noMessagesText(context)))
                 : ListView.builder(
                     controller: _scrollController,
                     padding: const EdgeInsets.all(16),
                     itemCount: _messages.length,
                     itemBuilder: (context, index) {
                       final message = _messages[index];
-                      final authService = Provider.of<AuthService>(context, listen: false);
+                      final authService = Provider.of<AuthService>(
+                        context,
+                        listen: false,
+                      );
                       final isMe = message.senderId == authService.userId;
 
                       return Align(
-                        alignment: isMe ? Alignment.centerRight : Alignment.centerLeft,
+                        alignment: isMe
+                            ? Alignment.centerRight
+                            : Alignment.centerLeft,
                         child: Container(
                           margin: const EdgeInsets.symmetric(vertical: 4),
-                          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: 16,
+                            vertical: 12,
+                          ),
                           decoration: BoxDecoration(
                             color: isMe
                                 ? Theme.of(context).primaryColor
@@ -388,9 +400,7 @@ class _ChatConversationPageState extends State<ChatConversationPage> {
             decoration: BoxDecoration(
               color: Theme.of(context).cardColor,
               border: Border(
-                top: BorderSide(
-                  color: Theme.of(context).dividerColor,
-                ),
+                top: BorderSide(color: Theme.of(context).dividerColor),
               ),
             ),
             child: Row(
@@ -401,7 +411,10 @@ class _ChatConversationPageState extends State<ChatConversationPage> {
                     decoration: InputDecoration(
                       hintText: AppLocalizations.of(context)!.typeMessage,
                       border: OutlineInputBorder(),
-                      contentPadding: EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                      contentPadding: EdgeInsets.symmetric(
+                        horizontal: 16,
+                        vertical: 12,
+                      ),
                     ),
                     maxLines: null,
                     onSubmitted: (_) => _sendMessage(),
@@ -423,15 +436,13 @@ class _ChatConversationPageState extends State<ChatConversationPage> {
       ),
     );
   }
-
-  
 }
 
 class NotificationsPage extends StatefulWidget {
-  const NotificationsPage({Key? key}) : super(key: key);
+  const NotificationsPage({super.key});
 
   @override
-  _NotificationsPageState createState() => _NotificationsPageState();
+  State<NotificationsPage> createState() => _NotificationsPageState();
 }
 
 class _NotificationsPageState extends State<NotificationsPage> {
@@ -461,9 +472,7 @@ class _NotificationsPageState extends State<NotificationsPage> {
         actions: [const _ThemeToggleAction()],
       ),
       body: _notifications.isEmpty
-          ? Center(
-              child: Text(AppLocalizations.of(context)!.noCarsFound),
-            )
+          ? Center(child: Text(AppLocalizations.of(context)!.noCarsFound))
           : ListView.builder(
               padding: const EdgeInsets.all(16),
               itemCount: _notifications.length,
@@ -475,12 +484,16 @@ class _NotificationsPageState extends State<NotificationsPage> {
                   child: ListTile(
                     leading: Icon(
                       _getNotificationIcon(notification.notificationType),
-                      color: notification.isRead ? Colors.grey : Theme.of(context).primaryColor,
+                      color: notification.isRead
+                          ? Colors.grey
+                          : Theme.of(context).primaryColor,
                     ),
                     title: Text(
                       notification.title,
                       style: TextStyle(
-                        fontWeight: notification.isRead ? FontWeight.normal : FontWeight.bold,
+                        fontWeight: notification.isRead
+                            ? FontWeight.normal
+                            : FontWeight.bold,
                       ),
                     ),
                     subtitle: Text(notification.message),

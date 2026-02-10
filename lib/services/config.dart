@@ -5,8 +5,14 @@ import 'dart:io' show Platform;
 
 // Base like: http://192.168.1.7:5003 (NO trailing slash)
 // Default to this PC's LAN IP; override with --dart-define for emulator (10.0.2.2) or other device
-const String kApiBase = String.fromEnvironment('API_BASE', defaultValue: 'http://192.168.1.7:5003');
-const bool kForceSkipBlur = bool.fromEnvironment('FORCE_SKIP_BLUR', defaultValue: false);
+const String kApiBase = String.fromEnvironment(
+  'API_BASE',
+  defaultValue: 'http://192.168.1.7:5003',
+);
+const bool kForceSkipBlur = bool.fromEnvironment(
+  'FORCE_SKIP_BLUR',
+  defaultValue: false,
+);
 
 String apiBase() {
   return kApiBase;
@@ -23,7 +29,7 @@ String effectiveApiBase() {
 
 String apiBaseApi() {
   final base = effectiveApiBase();
-  return base.endsWith('/api') ? base : base + '/api';
+  return base.endsWith('/api') ? base : '$base/api';
 }
 
 bool forceSkipBlur() {

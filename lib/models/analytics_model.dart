@@ -36,7 +36,7 @@ class ListingAnalytics {
   });
 
   factory ListingAnalytics.fromJson(Map<String, dynamic> json) {
-    int? _parseMileage(dynamic v) {
+    int? parseMileage(dynamic v) {
       if (v == null) return null;
       if (v is int) return v;
       if (v is double) return v.toInt();
@@ -44,6 +44,7 @@ class ListingAnalytics {
       if (s.isEmpty) return null;
       return int.tryParse(s);
     }
+
     return ListingAnalytics(
       listingId: json['listing_id'] ?? json['id'] ?? '',
       title: json['title'] ?? '',
@@ -52,15 +53,21 @@ class ListingAnalytics {
       year: json['year'] ?? 0,
       price: (json['price'] ?? 0).toDouble(),
       imageUrl: json['image_url'],
-      mileage: _parseMileage(json['mileage'] ?? json['odometer'] ?? json['miles']),
+      mileage: parseMileage(
+        json['mileage'] ?? json['odometer'] ?? json['miles'],
+      ),
       city: json['city'] ?? json['location'],
       views: json['views'] ?? 0,
       messages: json['messages'] ?? 0,
       calls: json['calls'] ?? 0,
       shares: json['shares'] ?? 0,
       favorites: json['favorites'] ?? 0,
-      createdAt: DateTime.parse(json['created_at'] ?? DateTime.now().toIso8601String()),
-      lastUpdated: DateTime.parse(json['last_updated'] ?? DateTime.now().toIso8601String()),
+      createdAt: DateTime.parse(
+        json['created_at'] ?? DateTime.now().toIso8601String(),
+      ),
+      lastUpdated: DateTime.parse(
+        json['last_updated'] ?? DateTime.now().toIso8601String(),
+      ),
     );
   }
 
@@ -87,7 +94,7 @@ class ListingAnalytics {
 
   // Helper methods for analytics calculations
   int get totalInteractions => views + messages + calls + shares + favorites;
-  
+
   double get engagementRate {
     if (views == 0) return 0.0;
     return (totalInteractions - views) / views * 100;
@@ -138,18 +145,30 @@ class AnalyticsSummary {
     }
 
     final totalViews = listings.fold(0, (sum, listing) => sum + listing.views);
-    final totalMessages = listings.fold(0, (sum, listing) => sum + listing.messages);
+    final totalMessages = listings.fold(
+      0,
+      (sum, listing) => sum + listing.messages,
+    );
     final totalCalls = listings.fold(0, (sum, listing) => sum + listing.calls);
-    final totalShares = listings.fold(0, (sum, listing) => sum + listing.shares);
-    final totalFavorites = listings.fold(0, (sum, listing) => sum + listing.favorites);
+    final totalShares = listings.fold(
+      0,
+      (sum, listing) => sum + listing.shares,
+    );
+    final totalFavorites = listings.fold(
+      0,
+      (sum, listing) => sum + listing.favorites,
+    );
 
-    final averageEngagementRate = listings.isEmpty 
-        ? 0.0 
-        : listings.fold(0.0, (sum, listing) => sum + listing.engagementRate) / listings.length;
+    final averageEngagementRate = listings.isEmpty
+        ? 0.0
+        : listings.fold(0.0, (sum, listing) => sum + listing.engagementRate) /
+              listings.length;
 
     // Sort by total interactions and take top 3
     final sortedListings = List<ListingAnalytics>.from(listings);
-    sortedListings.sort((a, b) => b.totalInteractions.compareTo(a.totalInteractions));
+    sortedListings.sort(
+      (a, b) => b.totalInteractions.compareTo(a.totalInteractions),
+    );
     final topPerformers = sortedListings.take(3).toList();
 
     return AnalyticsSummary(

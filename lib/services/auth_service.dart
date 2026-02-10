@@ -20,10 +20,10 @@ class AuthService extends ChangeNotifier {
   // Initialize authentication state
   Future<void> initialize() async {
     _setLoading(true);
-    
+
     try {
       await ApiService.initializeTokens();
-      
+
       if (ApiService.isAuthenticated) {
         await _loadUserProfile();
         await WebSocketService.connect();
@@ -69,7 +69,7 @@ class AuthService extends ChangeNotifier {
     String? phoneNumber,
   }) async {
     _setLoading(true);
-    
+
     try {
       final response = await ApiService.register(
         username: username,
@@ -79,7 +79,7 @@ class AuthService extends ChangeNotifier {
         lastName: lastName,
         phoneNumber: phoneNumber,
       );
-      
+
       return response;
     } catch (e) {
       rethrow;
@@ -89,25 +89,31 @@ class AuthService extends ChangeNotifier {
   }
 
   // Login user
-  Future<Map<String, dynamic>> login(String emailOrPhone, String password) async {
+  Future<Map<String, dynamic>> login(
+    String emailOrPhone,
+    String password,
+  ) async {
     _setLoading(true);
-    
+
     try {
       final response = await ApiService.login(emailOrPhone, password);
       // Save user from response or fetch via /auth/me when absent
-      if (response['user'] != null && response['user'] is Map<String, dynamic>) {
+      if (response['user'] != null &&
+          response['user'] is Map<String, dynamic>) {
         _currentUser = Map<String, dynamic>.from(response['user']);
       } else {
         try {
           final me = await ApiService.getProfile();
-          _currentUser = (me['user'] is Map<String, dynamic>) ? Map<String, dynamic>.from(me['user']) : Map<String, dynamic>.from(me);
+          _currentUser = (me['user'] is Map<String, dynamic>)
+              ? Map<String, dynamic>.from(me['user'])
+              : Map<String, dynamic>.from(me);
         } catch (_) {}
       }
       _isAuthenticated = true;
-      
+
       // Connect to WebSocket
       await WebSocketService.connect();
-      
+
       notifyListeners();
       return response;
     } catch (e) {
@@ -120,7 +126,7 @@ class AuthService extends ChangeNotifier {
   // Logout user
   Future<void> logout() async {
     _setLoading(true);
-    
+
     try {
       await ApiService.logout();
       WebSocketService.disconnect();
@@ -135,7 +141,7 @@ class AuthService extends ChangeNotifier {
   // Forgot password
   Future<Map<String, dynamic>> forgotPassword(String email) async {
     _setLoading(true);
-    
+
     try {
       final response = await ApiService.forgotPassword(email);
       return response;
@@ -147,9 +153,12 @@ class AuthService extends ChangeNotifier {
   }
 
   // Reset password
-  Future<Map<String, dynamic>> resetPassword(String token, String newPassword) async {
+  Future<Map<String, dynamic>> resetPassword(
+    String token,
+    String newPassword,
+  ) async {
     _setLoading(true);
-    
+
     try {
       final response = await ApiService.resetPassword(token, newPassword);
       return response;
@@ -163,7 +172,7 @@ class AuthService extends ChangeNotifier {
   // Verify email
   Future<Map<String, dynamic>> verifyEmail(String token) async {
     _setLoading(true);
-    
+
     try {
       final response = await ApiService.verifyEmail(token);
       return response;
@@ -175,18 +184,21 @@ class AuthService extends ChangeNotifier {
   }
 
   // Update profile
-  Future<Map<String, dynamic>> updateProfile(Map<String, dynamic> profileData) async {
+  Future<Map<String, dynamic>> updateProfile(
+    Map<String, dynamic> profileData,
+  ) async {
     _setLoading(true);
-    
+
     try {
       final response = await ApiService.updateProfile(profileData);
-      
+
       // Update current user data
-      if (response['user'] != null && response['user'] is Map<String, dynamic>) {
+      if (response['user'] != null &&
+          response['user'] is Map<String, dynamic>) {
         _currentUser = Map<String, dynamic>.from(response['user']);
         notifyListeners();
       }
-      
+
       return response;
     } catch (e) {
       rethrow;
@@ -198,16 +210,16 @@ class AuthService extends ChangeNotifier {
   // Upload profile picture
   Future<Map<String, dynamic>> uploadProfilePicture(dynamic imageFile) async {
     _setLoading(true);
-    
+
     try {
       final response = await ApiService.uploadProfilePicture(imageFile);
-      
+
       // Update current user data
       if (_currentUser != null && response['profile_picture'] != null) {
         _currentUser!['profile_picture'] = response['profile_picture'];
         notifyListeners();
       }
-      
+
       return response;
     } catch (e) {
       rethrow;
@@ -231,8 +243,9 @@ class AuthService extends ChangeNotifier {
   String? get userId => _currentUser?['id'];
 
   // Get user name
-  String get userName => _currentUser != null 
-      ? '${_currentUser!['first_name'] ?? ''} ${_currentUser!['last_name'] ?? ''}'.trim()
+  String get userName => _currentUser != null
+      ? '${_currentUser!['first_name'] ?? ''} ${_currentUser!['last_name'] ?? ''}'
+            .trim()
       : '';
 
   // Get user email

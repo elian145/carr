@@ -1,35 +1,27 @@
 import 'dart:convert';
 import 'dart:io';
 import 'package:http/http.dart' as http;
-import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:image_picker/image_picker.dart';
 import 'config.dart';
+import '../shared/auth/token_store.dart';
 
 class ApiService {
   static String get baseUrl {
     return apiBaseApi();
   }
+
   static String? _accessToken;
-  static const FlutterSecureStorage _storage = FlutterSecureStorage();
 
   // Initialize tokens from storage
   static Future<void> initializeTokens() async {
-    // Align with AuthStore key; guard against keychain issues on sideload builds
-    try {
-      _accessToken = await _storage.read(key: 'auth_token');
-    } catch (_) {
-      _accessToken = null;
-    }
+    await TokenStore.load();
+    _accessToken = TokenStore.token;
   }
 
   // Save tokens to storage
   static Future<void> _saveAccessToken(String accessToken) async {
-    try {
-      await _storage.write(key: 'auth_token', value: accessToken);
-      _accessToken = accessToken;
-    } catch (_) {
-      _accessToken = accessToken;
-    }
+    await TokenStore.save(accessToken);
+    _accessToken = TokenStore.token;
   }
 
   /// Set the current access token (best-effort persisted).
@@ -46,22 +38,18 @@ class ApiService {
 
   // Clear tokens
   static Future<void> clearTokens() async {
-    try {
-      await _storage.delete(key: 'auth_token');
-    } catch (_) {}
+    await TokenStore.clear();
     _accessToken = null;
   }
 
   // Get headers with authorization
   static Map<String, String> _getHeaders({bool includeAuth = true}) {
-    Map<String, String> headers = {
-      'Content-Type': 'application/json',
-    };
-    
+    Map<String, String> headers = {'Content-Type': 'application/json'};
+
     if (includeAuth && _accessToken != null) {
       headers['Authorization'] = 'Bearer $_accessToken';
     }
-    
+
     return headers;
   }
 
@@ -73,8 +61,14 @@ class ApiService {
       return body.isNotEmpty ? json.decode(body) : <String, dynamic>{};
     }
     try {
-      final Map<String, dynamic> err = body.isNotEmpty ? json.decode(body) : <String, dynamic>{};
-      throw Exception(err['error'] ?? err['message'] ?? 'API request failed (${response.statusCode})');
+      final Map<String, dynamic> err = body.isNotEmpty
+          ? json.decode(body)
+          : <String, dynamic>{};
+      throw Exception(
+        err['error'] ??
+            err['message'] ??
+            'API request failed (${response.statusCode})',
+      );
     } catch (_) {
       throw Exception('API request failed (${response.statusCode})');
     }
@@ -97,7 +91,7 @@ class ApiService {
     final requestHeaders = {..._getHeaders(), ...?headers};
 
     http.Response response;
-    
+
     switch (method.toUpperCase()) {
       case 'GET':
         response = await http.get(url, headers: requestHeaders);
@@ -128,7 +122,7 @@ class ApiService {
       if (await _refreshAccessToken()) {
         // Retry request with new token
         requestHeaders['Authorization'] = 'Bearer $_accessToken';
-        
+
         switch (method.toUpperCase()) {
           case 'GET':
             response = await http.get(url, headers: requestHeaders);
@@ -202,21 +196,23 @@ class ApiService {
     return _handleResponse(response);
   }
 
-  static Future<Map<String, dynamic>> login(String emailOrPhone, String password) async {
+  static Future<Map<String, dynamic>> login(
+    String emailOrPhone,
+    String password,
+  ) async {
     final response = await http.post(
       Uri.parse('$baseUrl/auth/login'),
       headers: _getHeaders(includeAuth: false),
-      body: json.encode({
-        'username': emailOrPhone,
-        'password': password,
-      }),
+      body: json.encode({'username': emailOrPhone, 'password': password}),
     );
 
     // Accept either legacy {'token': '<jwt>'} or new {'access_token': '...', 'refresh_token': '...'}
     final data = _handleResponse(response);
     final String? legacyToken = (data['token'] as String?)?.trim();
     final String? access = (data['access_token'] as String?)?.trim();
-    final token = (legacyToken != null && legacyToken.isNotEmpty) ? legacyToken : access;
+    final token = (legacyToken != null && legacyToken.isNotEmpty)
+        ? legacyToken
+        : access;
     if (token != null && token.isNotEmpty) {
       await _saveAccessToken(token);
     }
@@ -237,14 +233,14 @@ class ApiService {
     return _handleResponse(response);
   }
 
-  static Future<Map<String, dynamic>> resetPassword(String token, String newPassword) async {
+  static Future<Map<String, dynamic>> resetPassword(
+    String token,
+    String newPassword,
+  ) async {
     final response = await http.post(
       Uri.parse('$baseUrl/auth/reset-password'),
       headers: _getHeaders(includeAuth: false),
-      body: json.encode({
-        'token': token,
-        'password': newPassword,
-      }),
+      body: json.encode({'token': token, 'password': newPassword}),
     );
 
     return _handleResponse(response);
@@ -265,11 +261,19 @@ class ApiService {
     return await _makeAuthenticatedRequest('GET', '/auth/me');
   }
 
-  static Future<Map<String, dynamic>> updateProfile(Map<String, dynamic> profileData) async {
-    return await _makeAuthenticatedRequest('PUT', '/user/profile', body: profileData);
+  static Future<Map<String, dynamic>> updateProfile(
+    Map<String, dynamic> profileData,
+  ) async {
+    return await _makeAuthenticatedRequest(
+      'PUT',
+      '/user/profile',
+      body: profileData,
+    );
   }
 
-  static Future<Map<String, dynamic>> uploadProfilePicture(XFile imageFile) async {
+  static Future<Map<String, dynamic>> uploadProfilePicture(
+    XFile imageFile,
+  ) async {
     final request = http.MultipartRequest(
       'POST',
       Uri.parse('$baseUrl/user/upload-profile-picture'),
@@ -281,7 +285,9 @@ class ApiService {
     }
 
     // Add file
-    request.files.add(await http.MultipartFile.fromPath('file', imageFile.path));
+    request.files.add(
+      await http.MultipartFile.fromPath('file', imageFile.path),
+    );
 
     final response = await request.send();
     final responseBody = await response.stream.bytesToString();
@@ -350,19 +356,31 @@ class ApiService {
     return _handleResponse(response);
   }
 
-  static Future<Map<String, dynamic>> createCar(Map<String, dynamic> carData) async {
+  static Future<Map<String, dynamic>> createCar(
+    Map<String, dynamic> carData,
+  ) async {
     return await _makeAuthenticatedRequest('POST', '/cars', body: carData);
   }
 
-  static Future<Map<String, dynamic>> updateCar(String carId, Map<String, dynamic> carData) async {
-    return await _makeAuthenticatedRequest('PUT', '/cars/$carId', body: carData);
+  static Future<Map<String, dynamic>> updateCar(
+    String carId,
+    Map<String, dynamic> carData,
+  ) async {
+    return await _makeAuthenticatedRequest(
+      'PUT',
+      '/cars/$carId',
+      body: carData,
+    );
   }
 
   static Future<Map<String, dynamic>> deleteCar(String carId) async {
     return await _makeAuthenticatedRequest('DELETE', '/cars/$carId');
   }
 
-  static Future<Map<String, dynamic>> uploadCarImages(String carId, List<XFile> imageFiles) async {
+  static Future<Map<String, dynamic>> uploadCarImages(
+    String carId,
+    List<XFile> imageFiles,
+  ) async {
     // IMPORTANT: Do not blur on submit. Blurring only happens when user taps "Blur Plates"
     // which uses /api/process-car-images. Here we always skip blur.
     const String query = '?skip_blur=1';
@@ -398,18 +416,26 @@ class ApiService {
     }
   }
 
-  static Future<Map<String, dynamic>> attachCarImages(String carId, List<String> paths) async {
-    return await _makeAuthenticatedRequest('POST', '/cars/$carId/images/attach', body: {
-      'paths': paths,
-    });
+  static Future<Map<String, dynamic>> attachCarImages(
+    String carId,
+    List<String> paths,
+  ) async {
+    return await _makeAuthenticatedRequest(
+      'POST',
+      '/cars/$carId/images/attach',
+      body: {'paths': paths},
+    );
   }
-  
+
   static List<String>? getLastProcessedServerPaths() {
     // Attach-based flow removed; always return null so callers skip.
     return null;
   }
 
-  static Future<Map<String, dynamic>> uploadCarVideos(String carId, List<XFile> videoFiles) async {
+  static Future<Map<String, dynamic>> uploadCarVideos(
+    String carId,
+    List<XFile> videoFiles,
+  ) async {
     final request = http.MultipartRequest(
       'POST',
       Uri.parse('$baseUrl/cars/$carId/videos'),
@@ -442,8 +468,14 @@ class ApiService {
   }
 
   // Favorites methods
-  static Future<Map<String, dynamic>> getFavorites({int page = 1, int perPage = 20}) async {
-    return await _makeAuthenticatedRequest('GET', '/user/favorites?page=$page&per_page=$perPage');
+  static Future<Map<String, dynamic>> getFavorites({
+    int page = 1,
+    int perPage = 20,
+  }) async {
+    return await _makeAuthenticatedRequest(
+      'GET',
+      '/user/favorites?page=$page&per_page=$perPage',
+    );
   }
 
   static Future<Map<String, dynamic>> toggleFavorite(String carId) async {

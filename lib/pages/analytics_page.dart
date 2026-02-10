@@ -11,8 +11,10 @@ import '../services/analytics_service.dart';
 import '../globals.dart';
 
 class AnalyticsPage extends StatefulWidget {
+  const AnalyticsPage({super.key});
+
   @override
-  _AnalyticsPageState createState() => _AnalyticsPageState();
+  State<AnalyticsPage> createState() => _AnalyticsPageState();
 }
 
 class _AnalyticsPageState extends State<AnalyticsPage> {
@@ -21,9 +23,10 @@ class _AnalyticsPageState extends State<AnalyticsPage> {
   bool _isLoading = true;
   String? _error;
   AnalyticsSummary? _summary;
-  
+
   // Currency symbol getter (match Home page)
-  String _currencySymbol(BuildContext context) => AppLocalizations.of(context)!.currencySymbol;
+  String _currencySymbol(BuildContext context) =>
+      AppLocalizations.of(context)!.currencySymbol;
 
   // Brand logo filenames map (copied from main.dart)
   final Map<String, String> brandLogoFilenames = {
@@ -145,8 +148,8 @@ class _AnalyticsPageState extends State<AnalyticsPage> {
   String _localizeDigitsGlobal(BuildContext context, String input) {
     final locale = Localizations.localeOf(context);
     if (locale.languageCode == 'ar' || locale.languageCode == 'ku') {
-      const western = ['0','1','2','3','4','5','6','7','8','9',','];
-      const eastern = ['٠','١','٢','٣','٤','٥','٦','٧','٨','٩','٬'];
+      const western = ['0', '1', '2', '3', '4', '5', '6', '7', '8', '9', ','];
+      const eastern = ['٠', '١', '٢', '٣', '٤', '٥', '٦', '٧', '٨', '٩', '٬'];
       String out = input;
       for (int i = 0; i < western.length; i++) {
         out = out.replaceAll(western[i], eastern[i]);
@@ -170,7 +173,9 @@ class _AnalyticsPageState extends State<AnalyticsPage> {
     if (raw is num) {
       value = raw;
     } else {
-      value = num.tryParse(raw?.toString().replaceAll(RegExp(r'[^0-9.-]'), '') ?? '');
+      value = num.tryParse(
+        raw?.toString().replaceAll(RegExp(r'[^0-9.-]'), '') ?? '',
+      );
     }
     if (value == null) {
       return symbol + _localizeDigitsGlobal(context, '0');
@@ -184,38 +189,69 @@ class _AnalyticsPageState extends State<AnalyticsPage> {
     final l = raw.trim().toLowerCase();
     final loc = AppLocalizations.of(context)!;
     switch (l) {
-      case 'new': return loc.value_condition_new;
-      case 'used': return loc.value_condition_used;
-      case 'automatic': return loc.value_transmission_automatic;
-      case 'manual': return loc.value_transmission_manual;
-      case 'gasoline': return loc.value_fuel_gasoline;
-      case 'diesel': return loc.value_fuel_diesel;
-      case 'electric': return loc.value_fuel_electric;
-      case 'hybrid': return loc.value_fuel_hybrid;
-      case 'lpg': return loc.value_fuel_lpg;
-      case 'clean': return loc.value_title_clean;
-      case 'damaged': return loc.value_title_damaged;
-      case 'fwd': return loc.value_drive_fwd;
-      case 'rwd': return loc.value_drive_rwd;
-      case 'awd': return loc.value_drive_awd;
+      case 'new':
+        return loc.value_condition_new;
+      case 'used':
+        return loc.value_condition_used;
+      case 'automatic':
+        return loc.value_transmission_automatic;
+      case 'manual':
+        return loc.value_transmission_manual;
+      case 'gasoline':
+        return loc.value_fuel_gasoline;
+      case 'diesel':
+        return loc.value_fuel_diesel;
+      case 'electric':
+        return loc.value_fuel_electric;
+      case 'hybrid':
+        return loc.value_fuel_hybrid;
+      case 'lpg':
+        return loc.value_fuel_lpg;
+      case 'clean':
+        return loc.value_title_clean;
+      case 'damaged':
+        return loc.value_title_damaged;
+      case 'fwd':
+        return loc.value_drive_fwd;
+      case 'rwd':
+        return loc.value_drive_rwd;
+      case 'awd':
+        return loc.value_drive_awd;
       // Cities (match Home page mapping)
-      case 'baghdad': return loc.city_baghdad;
-      case 'basra': return loc.city_basra;
-      case 'erbil': return loc.city_erbil;
-      case 'najaf': return loc.city_najaf;
-      case 'karbala': return loc.city_karbala;
-      case 'kirkuk': return loc.city_kirkuk;
-      case 'mosul': return loc.city_mosul;
-      case 'sulaymaniyah': return loc.city_sulaymaniyah;
-      case 'dohuk': return loc.city_dohuk;
-      case 'anbar': return loc.city_anbar;
-      case 'halabja': return loc.city_halabja;
-      case 'diyala': return loc.city_diyala;
-      case 'dhi qar': return loc.city_dhi_qar;
-      case 'maysan': return loc.city_maysan;
-      case 'muthanna': return loc.city_muthanna;
-      case 'salaheldeen': return loc.city_salaheldeen;
-      default: return raw;
+      case 'baghdad':
+        return loc.city_baghdad;
+      case 'basra':
+        return loc.city_basra;
+      case 'erbil':
+        return loc.city_erbil;
+      case 'najaf':
+        return loc.city_najaf;
+      case 'karbala':
+        return loc.city_karbala;
+      case 'kirkuk':
+        return loc.city_kirkuk;
+      case 'mosul':
+        return loc.city_mosul;
+      case 'sulaymaniyah':
+        return loc.city_sulaymaniyah;
+      case 'dohuk':
+        return loc.city_dohuk;
+      case 'anbar':
+        return loc.city_anbar;
+      case 'halabja':
+        return loc.city_halabja;
+      case 'diyala':
+        return loc.city_diyala;
+      case 'dhi qar':
+        return loc.city_dhi_qar;
+      case 'maysan':
+        return loc.city_maysan;
+      case 'muthanna':
+        return loc.city_muthanna;
+      case 'salaheldeen':
+        return loc.city_salaheldeen;
+      default:
+        return raw;
     }
   }
 
@@ -266,8 +302,8 @@ class _AnalyticsPageState extends State<AnalyticsPage> {
         child: _isLoading
             ? Center(child: CircularProgressIndicator())
             : _error != null
-                ? _buildErrorState()
-                : _buildAnalyticsContent(),
+            ? _buildErrorState()
+            : _buildAnalyticsContent(),
       ),
     );
   }
@@ -277,18 +313,11 @@ class _AnalyticsPageState extends State<AnalyticsPage> {
       child: Column(
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
-          Icon(
-            Icons.error_outline,
-            size: 64,
-            color: Colors.grey[400],
-          ),
+          Icon(Icons.error_outline, size: 64, color: Colors.grey[400]),
           SizedBox(height: 16),
           Text(
             _error!,
-            style: TextStyle(
-              fontSize: 16,
-              color: Colors.grey[600],
-            ),
+            style: TextStyle(fontSize: 16, color: Colors.grey[600]),
           ),
           SizedBox(height: 24),
           ElevatedButton(
@@ -314,10 +343,7 @@ class _AnalyticsPageState extends State<AnalyticsPage> {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           if (_summary != null)
-            Padding(
-              padding: EdgeInsets.all(16),
-              child: _buildSummaryCard(),
-            ),
+            Padding(padding: EdgeInsets.all(16), child: _buildSummaryCard()),
           _buildListingSelection(),
           SizedBox(height: 16),
         ],
@@ -330,11 +356,7 @@ class _AnalyticsPageState extends State<AnalyticsPage> {
       child: Column(
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
-          Icon(
-            Icons.analytics_outlined,
-            size: 64,
-            color: Colors.grey[400],
-          ),
+          Icon(Icons.analytics_outlined, size: 64, color: Colors.grey[400]),
           SizedBox(height: 16),
           Text(
             'No Listings Found',
@@ -347,10 +369,7 @@ class _AnalyticsPageState extends State<AnalyticsPage> {
           SizedBox(height: 8),
           Text(
             'Create your first listing to see analytics',
-            style: TextStyle(
-              fontSize: 16,
-              color: Colors.grey[500],
-            ),
+            style: TextStyle(fontSize: 16, color: Colors.grey[500]),
           ),
           SizedBox(height: 24),
           ElevatedButton(
@@ -400,21 +419,18 @@ class _AnalyticsPageState extends State<AnalyticsPage> {
           Row(
             children: [
               Expanded(
-                child: _buildSummaryItem('Listings', _summary!.totalListings.toString(), Icons.directions_car),
+                child: _buildSummaryItem(
+                  'Listings',
+                  _summary!.totalListings.toString(),
+                  Icons.directions_car,
+                ),
               ),
               Expanded(
-                child: _buildSummaryItem('Views', _summary!.totalViews.toString(), Icons.visibility),
-              ),
-            ],
-          ),
-          SizedBox(height: 12),
-          Row(
-            children: [
-              Expanded(
-                child: _buildSummaryItem('Messages', _summary!.totalMessages.toString(), Icons.message),
-              ),
-              Expanded(
-                child: _buildSummaryItem('Calls', _summary!.totalCalls.toString(), Icons.phone),
+                child: _buildSummaryItem(
+                  'Views',
+                  _summary!.totalViews.toString(),
+                  Icons.visibility,
+                ),
               ),
             ],
           ),
@@ -422,10 +438,37 @@ class _AnalyticsPageState extends State<AnalyticsPage> {
           Row(
             children: [
               Expanded(
-                child: _buildSummaryItem('Shares', _summary!.totalShares.toString(), Icons.share),
+                child: _buildSummaryItem(
+                  'Messages',
+                  _summary!.totalMessages.toString(),
+                  Icons.message,
+                ),
               ),
               Expanded(
-                child: _buildSummaryItem('Favorites', _summary!.totalFavorites.toString(), Icons.favorite),
+                child: _buildSummaryItem(
+                  'Calls',
+                  _summary!.totalCalls.toString(),
+                  Icons.phone,
+                ),
+              ),
+            ],
+          ),
+          SizedBox(height: 12),
+          Row(
+            children: [
+              Expanded(
+                child: _buildSummaryItem(
+                  'Shares',
+                  _summary!.totalShares.toString(),
+                  Icons.share,
+                ),
+              ),
+              Expanded(
+                child: _buildSummaryItem(
+                  'Favorites',
+                  _summary!.totalFavorites.toString(),
+                  Icons.favorite,
+                ),
               ),
             ],
           ),
@@ -447,13 +490,7 @@ class _AnalyticsPageState extends State<AnalyticsPage> {
             color: Colors.white,
           ),
         ),
-        Text(
-          label,
-          style: TextStyle(
-            fontSize: 12,
-            color: Colors.white70,
-          ),
-        ),
+        Text(label, style: TextStyle(fontSize: 12, color: Colors.white70)),
       ],
     );
   }
@@ -479,7 +516,7 @@ class _AnalyticsPageState extends State<AnalyticsPage> {
 
   Widget _buildListingCard(ListingAnalytics listing) {
     final isSelected = _selectedListing?.listingId == listing.listingId;
-    
+
     // Convert analytics data to match home page car format EXACTLY like My Listings
     final String brand = (listing.brand ?? '').trim();
     final String model = (listing.model).trim();
@@ -493,13 +530,13 @@ class _AnalyticsPageState extends State<AnalyticsPage> {
         if (brand.isNotEmpty) brand.toLowerCase(),
         if (model.isNotEmpty) model,
       ].join(' ');
-      displayTitle = yearStr.isNotEmpty ? (base + ' (' + yearStr + ')') : base;
+      displayTitle = yearStr.isNotEmpty ? '$base ($yearStr)' : base;
     }
 
-    final num? _mileageNum = listing.mileage;
-    final String _mileageFormatted = _mileageNum == null
+    final num? mileageNum = listing.mileage;
+    final String mileageFormatted = mileageNum == null
         ? ''
-        : _decimalFormatterGlobal(context).format(_mileageNum);
+        : _decimalFormatterGlobal(context).format(mileageNum);
 
     final car = {
       'id': listing.listingId,
@@ -507,31 +544,41 @@ class _AnalyticsPageState extends State<AnalyticsPage> {
       'title': displayTitle,
       'price': listing.price,
       'year': listing.year,
-      'mileage': _mileageFormatted,
+      'mileage': mileageFormatted,
       'city': listing.city ?? '',
-      'image_url': listing.imageUrl?.replaceFirst(getApiBase() + '/static/uploads/', '') ?? '',
+      'image_url':
+          listing.imageUrl?.replaceFirst(
+            '${getApiBase()}/static/uploads/',
+            '',
+          ) ??
+          '',
       'images': [],
       'is_quick_sell': false,
     };
-    
+
     // Pass selection state into the card and draw border inside to avoid layout shift
     car['selected'] = isSelected;
     Widget cardWidget = _buildAnalyticsCarCard(context, car);
-    
+
     // Override tap behavior for analytics modal
     return GestureDetector(
       onTap: () => _showAnalyticsModal(context, listing),
-      child: AbsorbPointer(
-        child: cardWidget,
-      ),
+      child: AbsorbPointer(child: cardWidget),
     );
   }
 
   // DUPLICATED from Home page buildGlobalCarCard function
   Widget _buildAnalyticsCarCard(BuildContext context, Map car) {
     final brand = car['brand'] ?? '';
-    final brandId = brandLogoFilenames[brand] ?? brand.toString().toLowerCase().replaceAll(' ', '-').replaceAll('é', 'e').replaceAll('ö', 'o');
-    
+    final brandId =
+        brandLogoFilenames[brand] ??
+        brand
+            .toString()
+            .toLowerCase()
+            .replaceAll(' ', '-')
+            .replaceAll('é', 'e')
+            .replaceAll('ö', 'o');
+
     return Container(
       height: 205, // Standard height for all car cards
       decoration: BoxDecoration(
@@ -560,7 +607,8 @@ class _AnalyticsPageState extends State<AnalyticsPage> {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 // Quick Sell Banner (conditional height)
-                if (car['is_quick_sell'] == true || car['is_quick_sell'] == 'true')
+                if (car['is_quick_sell'] == true ||
+                    car['is_quick_sell'] == 'true')
                   Container(
                     width: double.infinity,
                     height: 35, // Fixed height for banner
@@ -571,7 +619,9 @@ class _AnalyticsPageState extends State<AnalyticsPage> {
                         begin: Alignment.centerLeft,
                         end: Alignment.centerRight,
                       ),
-                      borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+                      borderRadius: BorderRadius.vertical(
+                        top: Radius.circular(20),
+                      ),
                     ),
                     child: Row(
                       mainAxisAlignment: MainAxisAlignment.center,
@@ -591,13 +641,19 @@ class _AnalyticsPageState extends State<AnalyticsPage> {
                     ),
                   ),
                 // Image section
-                Container(
-                  height: (car['is_quick_sell'] == true || car['is_quick_sell'] == 'true') ? 120 : 170,
+                SizedBox(
+                  height:
+                      (car['is_quick_sell'] == true ||
+                          car['is_quick_sell'] == 'true')
+                      ? 120
+                      : 170,
                   child: ClipRRect(
                     borderRadius: BorderRadius.vertical(
-                      top: (car['is_quick_sell'] == true || car['is_quick_sell'] == 'true') 
-                        ? Radius.zero 
-                        : Radius.circular(20),
+                      top:
+                          (car['is_quick_sell'] == true ||
+                              car['is_quick_sell'] == 'true')
+                          ? Radius.zero
+                          : Radius.circular(20),
                       bottom: Radius.zero,
                     ),
                     child: _buildAnalyticsCardImageCarousel(context, car),
@@ -614,7 +670,8 @@ class _AnalyticsPageState extends State<AnalyticsPage> {
                     children: [
                       Row(
                         children: [
-                          if (car['brand'] != null && car['brand'].toString().isNotEmpty)
+                          if (car['brand'] != null &&
+                              car['brand'].toString().isNotEmpty)
                             SizedBox(
                               width: 28,
                               height: 28,
@@ -627,9 +684,20 @@ class _AnalyticsPageState extends State<AnalyticsPage> {
                                   borderRadius: BorderRadius.circular(8),
                                 ),
                                 child: CachedNetworkImage(
-                                  imageUrl: getApiBase() + '/static/images/brands/' + brandId + '.png',
-                                  placeholder: (context, url) => SizedBox(width: 24, height: 24, child: CircularProgressIndicator(strokeWidth: 2)),
-                                  errorWidget: (context, url, error) => Icon(Icons.directions_car, size: 20, color: Color(0xFFFF6B00)),
+                                  imageUrl:
+                                      '${getApiBase()}/static/images/brands/$brandId.png',
+                                  placeholder: (context, url) => SizedBox(
+                                    width: 24,
+                                    height: 24,
+                                    child: CircularProgressIndicator(
+                                      strokeWidth: 2,
+                                    ),
+                                  ),
+                                  errorWidget: (context, url, error) => Icon(
+                                    Icons.directions_car,
+                                    size: 20,
+                                    color: Color(0xFFFF6B00),
+                                  ),
                                   fit: BoxFit.contain,
                                 ),
                               ),
@@ -707,14 +775,16 @@ class _AnalyticsPageState extends State<AnalyticsPage> {
     final List<String> urls = () {
       final List<String> u = [];
       final String primary = (car['image_url'] ?? '').toString();
-      final List<dynamic> imgs = (car['images'] is List) ? (car['images'] as List) : const [];
+      final List<dynamic> imgs = (car['images'] is List)
+          ? (car['images'] as List)
+          : const [];
       if (primary.isNotEmpty) {
-        u.add(getApiBase() + '/static/uploads/' + primary);
+        u.add('${getApiBase()}/static/uploads/$primary');
       }
       for (final dynamic it in imgs) {
         final s = it.toString();
         if (s.isNotEmpty) {
-          final full = getApiBase() + '/static/uploads/' + s;
+          final full = '${getApiBase()}/static/uploads/$s';
           if (!u.contains(full)) u.add(full);
         }
       }
@@ -762,14 +832,20 @@ class _AnalyticsPageState extends State<AnalyticsPage> {
                           height: 20,
                           child: CircularProgressIndicator(
                             strokeWidth: 2,
-                            valueColor: AlwaysStoppedAnimation<Color>(Color(0xFFFF6B00)),
+                            valueColor: AlwaysStoppedAnimation<Color>(
+                              Color(0xFFFF6B00),
+                            ),
                           ),
                         ),
                       ),
                     ),
                     errorWidget: (context, url, error) => Container(
                       color: Colors.grey[900],
-                      child: Icon(Icons.directions_car, size: 60, color: Colors.grey[400]),
+                      child: Icon(
+                        Icons.directions_car,
+                        size: 60,
+                        color: Colors.grey[400],
+                      ),
                     ),
                   );
                 },
@@ -785,18 +861,18 @@ class _AnalyticsPageState extends State<AnalyticsPage> {
                   child: Row(
                     mainAxisAlignment: MainAxisAlignment.center,
                     children: List.generate(urls.length, (i) {
-                    final active = i == currentIndex;
-                    return AnimatedContainer(
-                      duration: Duration(milliseconds: 200),
-                      margin: EdgeInsets.symmetric(horizontal: 3),
-                      width: active ? 8 : 6,
-                      height: active ? 8 : 6,
-                      decoration: BoxDecoration(
-                        color: active ? Colors.white : Colors.white70,
-                        shape: BoxShape.circle,
-                      ),
-                    );
-                  }),
+                      final active = i == currentIndex;
+                      return AnimatedContainer(
+                        duration: Duration(milliseconds: 200),
+                        margin: EdgeInsets.symmetric(horizontal: 3),
+                        width: active ? 8 : 6,
+                        height: active ? 8 : 6,
+                        decoration: BoxDecoration(
+                          color: active ? Colors.white : Colors.white70,
+                          shape: BoxShape.circle,
+                        ),
+                      );
+                    }),
                   ),
                 ),
               ),
@@ -805,7 +881,6 @@ class _AnalyticsPageState extends State<AnalyticsPage> {
       },
     );
   }
-
 
   void _showAnalyticsModal(BuildContext context, ListingAnalytics listing) {
     showDialog(
@@ -823,10 +898,7 @@ class _AnalyticsPageState extends State<AnalyticsPage> {
               gradient: LinearGradient(
                 begin: Alignment.topLeft,
                 end: Alignment.bottomRight,
-                colors: [
-                  Colors.white,
-                  Colors.grey[50]!,
-                ],
+                colors: [Colors.white, Colors.grey[50]!],
               ),
               boxShadow: [
                 BoxShadow(
@@ -847,14 +919,13 @@ class _AnalyticsPageState extends State<AnalyticsPage> {
                 Container(
                   padding: EdgeInsets.fromLTRB(24, 20, 20, 20),
                   decoration: BoxDecoration(
-                    borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
+                    borderRadius: BorderRadius.vertical(
+                      top: Radius.circular(24),
+                    ),
                     gradient: LinearGradient(
                       begin: Alignment.topLeft,
                       end: Alignment.bottomRight,
-                      colors: [
-                        Color(0xFFFF6B00),
-                        Color(0xFFFF8A50),
-                      ],
+                      colors: [Color(0xFFFF6B00), Color(0xFFFF8A50)],
                     ),
                   ),
                   child: Row(
@@ -936,7 +1007,9 @@ class _AnalyticsPageState extends State<AnalyticsPage> {
                           ),
                           child: ClipRRect(
                             borderRadius: BorderRadius.circular(20),
-                            child: listing.imageUrl != null && listing.imageUrl!.isNotEmpty
+                            child:
+                                listing.imageUrl != null &&
+                                    listing.imageUrl!.isNotEmpty
                                 ? Image.network(
                                     listing.imageUrl!,
                                     fit: BoxFit.cover,
@@ -944,7 +1017,10 @@ class _AnalyticsPageState extends State<AnalyticsPage> {
                                       return Container(
                                         decoration: BoxDecoration(
                                           gradient: LinearGradient(
-                                            colors: [Colors.grey[100]!, Colors.grey[200]!],
+                                            colors: [
+                                              Colors.grey[100]!,
+                                              Colors.grey[200]!,
+                                            ],
                                           ),
                                         ),
                                         child: Icon(
@@ -958,7 +1034,10 @@ class _AnalyticsPageState extends State<AnalyticsPage> {
                                 : Container(
                                     decoration: BoxDecoration(
                                       gradient: LinearGradient(
-                                        colors: [Colors.grey[100]!, Colors.grey[200]!],
+                                        colors: [
+                                          Colors.grey[100]!,
+                                          Colors.grey[200]!,
+                                        ],
                                       ),
                                     ),
                                     child: Icon(
@@ -972,7 +1051,10 @@ class _AnalyticsPageState extends State<AnalyticsPage> {
                         SizedBox(height: 24),
                         // Car details with modern typography
                         Container(
-                          padding: EdgeInsets.symmetric(horizontal: 20, vertical: 16),
+                          padding: EdgeInsets.symmetric(
+                            horizontal: 20,
+                            vertical: 16,
+                          ),
                           decoration: BoxDecoration(
                             color: Colors.white,
                             borderRadius: BorderRadius.circular(16),
@@ -999,10 +1081,16 @@ class _AnalyticsPageState extends State<AnalyticsPage> {
                               ),
                               SizedBox(height: 8),
                               Container(
-                                padding: EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                                padding: EdgeInsets.symmetric(
+                                  horizontal: 16,
+                                  vertical: 8,
+                                ),
                                 decoration: BoxDecoration(
                                   gradient: LinearGradient(
-                                    colors: [Color(0xFFFF6B00), Color(0xFFFF8A50)],
+                                    colors: [
+                                      Color(0xFFFF6B00),
+                                      Color(0xFFFF8A50),
+                                    ],
                                   ),
                                   borderRadius: BorderRadius.circular(20),
                                 ),
@@ -1021,15 +1109,15 @@ class _AnalyticsPageState extends State<AnalyticsPage> {
                         ),
                         SizedBox(height: 32),
                         // Modern metrics section
-                              Text(
-                                'Performance Metrics',
-                                style: TextStyle(
-                                  fontSize: 18,
-                                  fontWeight: FontWeight.bold,
-                                  color: Colors.grey[800],
-                                  letterSpacing: 0.5,
-                                ),
-                              ),
+                        Text(
+                          'Performance Metrics',
+                          style: TextStyle(
+                            fontSize: 18,
+                            fontWeight: FontWeight.bold,
+                            color: Colors.grey[800],
+                            letterSpacing: 0.5,
+                          ),
+                        ),
                         SizedBox(height: 20),
                         // Modern metrics grid
                         Container(
@@ -1051,27 +1139,69 @@ class _AnalyticsPageState extends State<AnalyticsPage> {
                               // First row
                               Row(
                                 children: [
-                                  Expanded(child: _buildModernMetricItem(Icons.visibility_outlined, '${listing.views}', 'Views', Color(0xFF4CAF50))),
+                                  Expanded(
+                                    child: _buildModernMetricItem(
+                                      Icons.visibility_outlined,
+                                      '${listing.views}',
+                                      'Views',
+                                      Color(0xFF4CAF50),
+                                    ),
+                                  ),
                                   SizedBox(width: 12),
-                                  Expanded(child: _buildModernMetricItem(Icons.message_outlined, '${listing.messages}', 'Messages', Color(0xFF2196F3))),
+                                  Expanded(
+                                    child: _buildModernMetricItem(
+                                      Icons.message_outlined,
+                                      '${listing.messages}',
+                                      'Messages',
+                                      Color(0xFF2196F3),
+                                    ),
+                                  ),
                                 ],
                               ),
                               SizedBox(height: 16),
                               // Second row
                               Row(
                                 children: [
-                                  Expanded(child: _buildModernMetricItem(Icons.phone_outlined, '${listing.calls}', 'Calls', Color(0xFF9C27B0))),
+                                  Expanded(
+                                    child: _buildModernMetricItem(
+                                      Icons.phone_outlined,
+                                      '${listing.calls}',
+                                      'Calls',
+                                      Color(0xFF9C27B0),
+                                    ),
+                                  ),
                                   SizedBox(width: 12),
-                                  Expanded(child: _buildModernMetricItem(Icons.share_outlined, '${listing.shares}', 'Shares', Color(0xFFFF9800))),
+                                  Expanded(
+                                    child: _buildModernMetricItem(
+                                      Icons.share_outlined,
+                                      '${listing.shares}',
+                                      'Shares',
+                                      Color(0xFFFF9800),
+                                    ),
+                                  ),
                                 ],
                               ),
                               SizedBox(height: 16),
                               // Third row
                               Row(
                                 children: [
-                                  Expanded(child: _buildModernMetricItem(Icons.favorite_outline, '${listing.favorites}', 'Favorites', Color(0xFFE91E63))),
+                                  Expanded(
+                                    child: _buildModernMetricItem(
+                                      Icons.favorite_outline,
+                                      '${listing.favorites}',
+                                      'Favorites',
+                                      Color(0xFFE91E63),
+                                    ),
+                                  ),
                                   SizedBox(width: 12),
-                                  Expanded(child: _buildModernMetricItem(Icons.trending_up_outlined, '${listing.engagementRate.toStringAsFixed(1)}%', 'Engagement', Color(0xFF00BCD4))),
+                                  Expanded(
+                                    child: _buildModernMetricItem(
+                                      Icons.trending_up_outlined,
+                                      '${listing.engagementRate.toStringAsFixed(1)}%',
+                                      'Engagement',
+                                      Color(0xFF00BCD4),
+                                    ),
+                                  ),
                                 ],
                               ),
                             ],
@@ -1090,23 +1220,22 @@ class _AnalyticsPageState extends State<AnalyticsPage> {
     );
   }
 
-  Widget _buildModernMetricItem(IconData icon, String value, String label, Color color) {
+  Widget _buildModernMetricItem(
+    IconData icon,
+    String value,
+    String label,
+    Color color,
+  ) {
     return Container(
       padding: EdgeInsets.all(16),
       decoration: BoxDecoration(
         gradient: LinearGradient(
           begin: Alignment.topLeft,
           end: Alignment.bottomRight,
-          colors: [
-            color.withValues(alpha: 0.1),
-            color.withValues(alpha: 0.05),
-          ],
+          colors: [color.withValues(alpha: 0.1), color.withValues(alpha: 0.05)],
         ),
         borderRadius: BorderRadius.circular(16),
-        border: Border.all(
-          color: color.withValues(alpha: 0.2),
-          width: 1,
-        ),
+        border: Border.all(color: color.withValues(alpha: 0.2), width: 1),
       ),
       child: Column(
         children: [
@@ -1116,11 +1245,7 @@ class _AnalyticsPageState extends State<AnalyticsPage> {
               color: color.withValues(alpha: 0.1),
               borderRadius: BorderRadius.circular(12),
             ),
-            child: Icon(
-              icon,
-              color: color,
-              size: 24,
-            ),
+            child: Icon(icon, color: color, size: 24),
           ),
           SizedBox(height: 12),
           Text(
@@ -1150,7 +1275,7 @@ class _AnalyticsPageState extends State<AnalyticsPage> {
 
   Widget _buildSelectedListingAnalytics() {
     final listing = _selectedListing!;
-    
+
     return Container(
       width: double.infinity,
       padding: EdgeInsets.all(20),
@@ -1210,7 +1335,7 @@ class _AnalyticsPageState extends State<AnalyticsPage> {
             ],
           ),
           SizedBox(height: 24),
-          
+
           // Analytics Metrics
           Text(
             'Performance Metrics',
@@ -1221,15 +1346,30 @@ class _AnalyticsPageState extends State<AnalyticsPage> {
             ),
           ),
           SizedBox(height: 16),
-          
-          _buildMetricRow('Views', listing.views, Icons.visibility, Colors.blue),
-          _buildMetricRow('Messages', listing.messages, Icons.message, Colors.green),
+
+          _buildMetricRow(
+            'Views',
+            listing.views,
+            Icons.visibility,
+            Colors.blue,
+          ),
+          _buildMetricRow(
+            'Messages',
+            listing.messages,
+            Icons.message,
+            Colors.green,
+          ),
           _buildMetricRow('Calls', listing.calls, Icons.phone, Colors.orange),
           _buildMetricRow('Shares', listing.shares, Icons.share, Colors.purple),
-          _buildMetricRow('Favorites', listing.favorites, Icons.favorite, Colors.red),
-          
+          _buildMetricRow(
+            'Favorites',
+            listing.favorites,
+            Icons.favorite,
+            Colors.red,
+          ),
+
           SizedBox(height: 20),
-          
+
           // Engagement Rate
           Container(
             width: double.infinity,
@@ -1259,10 +1399,7 @@ class _AnalyticsPageState extends State<AnalyticsPage> {
                 ),
                 Text(
                   '${listing.totalInteractions} total interactions',
-                  style: TextStyle(
-                    fontSize: 12,
-                    color: Colors.grey[600],
-                  ),
+                  style: TextStyle(fontSize: 12, color: Colors.grey[600]),
                 ),
               ],
             ),
@@ -1279,13 +1416,7 @@ class _AnalyticsPageState extends State<AnalyticsPage> {
         children: [
           Icon(icon, color: color, size: 20),
           SizedBox(width: 12),
-          Text(
-            label,
-            style: TextStyle(
-              fontSize: 14,
-              color: Colors.grey[700],
-            ),
-          ),
+          Text(label, style: TextStyle(fontSize: 14, color: Colors.grey[700])),
           Spacer(),
           Text(
             value.toString(),

@@ -9,17 +9,22 @@ import 'config.dart';
 class WebSocketService {
   static String get baseUrl {
     final base = apiBase();
-    if (base.startsWith('https://')) return base.replaceFirst('https://', 'wss://');
-    if (base.startsWith('http://')) return base.replaceFirst('http://', 'ws://');
-    return 'ws://' + base;
+    if (base.startsWith('https://')) {
+      return base.replaceFirst('https://', 'wss://');
+    }
+    if (base.startsWith('http://')) {
+      return base.replaceFirst('http://', 'ws://');
+    }
+    return 'ws://$base';
   }
+
   static WebSocketChannel? _channel;
   static bool _isConnected = false;
   static String? _currentRoom;
   static int _retries = 0;
   static DateTime? _lastAttemptAt;
   static Timer? _heartbeatTimer;
-  
+
   // Callbacks
   static Function(Map<String, dynamic>)? onMessage;
   static Function(Map<String, dynamic>)? onNotification;
@@ -33,13 +38,15 @@ class WebSocketService {
       if (_isConnected) return;
 
       final accessToken = ApiService.accessToken;
-      
+
       if (accessToken == null) {
         onError?.call('No access token found');
         return;
       }
 
-      final uri = Uri.parse('$baseUrl/socket.io/?EIO=4&transport=websocket&token=$accessToken');
+      final uri = Uri.parse(
+        '$baseUrl/socket.io/?EIO=4&transport=websocket&token=$accessToken',
+      );
       _channel = WebSocketChannel.connect(uri);
 
       _channel!.stream.listen(
@@ -61,7 +68,6 @@ class WebSocketService {
       _isConnected = true;
       onConnected?.call();
       _startHeartbeat();
-      
     } catch (e) {
       _isConnected = false;
       onError?.call('Connection failed: $e');
@@ -83,7 +89,10 @@ class WebSocketService {
   static void _scheduleReconnect() {
     if (_isConnected) return;
     final now = DateTime.now();
-    if (_lastAttemptAt != null && now.difference(_lastAttemptAt!).inSeconds < 2) return;
+    if (_lastAttemptAt != null &&
+        now.difference(_lastAttemptAt!).inSeconds < 2) {
+      return;
+    }
     _lastAttemptAt = now;
     _retries = (_retries + 1).clamp(1, 6);
     final delayMs = (500 * _retries);
@@ -107,7 +116,9 @@ class WebSocketService {
   }
 
   static void _stopHeartbeat() {
-    try { _heartbeatTimer?.cancel(); } catch (_) {}
+    try {
+      _heartbeatTimer?.cancel();
+    } catch (_) {}
     _heartbeatTimer = null;
   }
 
@@ -115,7 +126,7 @@ class WebSocketService {
   static void _handleMessage(dynamic data) {
     try {
       final message = data.toString();
-      
+
       // Handle Socket.IO protocol messages
       if (message.startsWith('0')) {
         // Connection acknowledgment
@@ -127,11 +138,11 @@ class WebSocketService {
         // Event message
         final eventData = message.substring(2);
         final decoded = json.decode(eventData);
-        
+
         if (decoded is List && decoded.length >= 2) {
           final eventName = decoded[0];
           final eventPayload = decoded[1];
-          
+
           switch (eventName) {
             case 'connected':
               _isConnected = true;
@@ -183,16 +194,17 @@ class WebSocketService {
   }
 
   // Send chat message
-  static void sendChatMessage(String carId, String content, {String? receiverId}) {
-    final messageData = {
-      'car_id': carId,
-      'content': content,
-    };
-    
+  static void sendChatMessage(
+    String carId,
+    String content, {
+    String? receiverId,
+  }) {
+    final messageData = {'car_id': carId, 'content': content};
+
     if (receiverId != null) {
       messageData['receiver_id'] = receiverId;
     }
-    
+
     sendMessage('send_message', messageData);
   }
 

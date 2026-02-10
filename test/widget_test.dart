@@ -8,11 +8,11 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 
-import 'package:car_listing_app/main.dart';
+import 'package:car_listing_app/app/app.dart';
 
 void main() {
   testWidgets('App builds smoke test', (WidgetTester tester) async {
-    await tester.pumpWidget(MyApp());
+    await tester.pumpWidget(const CarzoApp());
     expect(find.byType(MaterialApp), findsOneWidget);
   });
 }

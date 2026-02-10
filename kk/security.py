@@ -9,6 +9,7 @@ from flask import request, jsonify, current_app
 from flask_jwt_extended import get_jwt_identity, get_jwt
 from .models import User, UserAction, db
 from datetime import datetime, timedelta
+from werkzeug.utils import secure_filename as _secure_filename
 
 # Rate limiting storage (in production, use Redis)
 rate_limit_storage = {}
@@ -105,6 +106,27 @@ def validate_file_upload_security(file, allowed_extensions=None, max_size_mb=10)
         return False, "Invalid file name"
     
     return True, "File is valid"
+
+
+# Compatibility helpers
+def generate_secure_filename(filename: str) -> str:
+    """
+    Generate a safe filename for storing user uploads.
+
+    Kept for compatibility with routes that previously imported this symbol.
+    """
+    return _secure_filename(filename)
+
+
+def validate_file_upload(file, allowed_extensions=None, max_size_mb=10):
+    """
+    Backwards-compatible alias for file upload validation.
+    """
+    return validate_file_upload_security(
+        file,
+        allowed_extensions=allowed_extensions,
+        max_size_mb=max_size_mb,
+    )
 
 def log_security_event(user_id, event_type, details=None, ip_address=None):
     """

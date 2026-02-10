@@ -28,7 +28,8 @@ import 'package:provider/provider.dart';
 import 'theme_provider.dart';
 
 // Fallback delegates to provide Material/Cupertino/Widgets localizations for 'ku'
-class KuMaterialLocalizationsDelegate extends LocalizationsDelegate<MaterialLocalizations> {
+class KuMaterialLocalizationsDelegate
+    extends LocalizationsDelegate<MaterialLocalizations> {
   const KuMaterialLocalizationsDelegate();
   @override
   bool isSupported(Locale locale) => locale.languageCode == 'ku';
@@ -37,11 +38,15 @@ class KuMaterialLocalizationsDelegate extends LocalizationsDelegate<MaterialLoca
     // Reuse Arabic material localizations for Kurdish
     return GlobalMaterialLocalizations.delegate.load(const Locale('ar'));
   }
+
   @override
-  bool shouldReload(covariant LocalizationsDelegate<MaterialLocalizations> old) => false;
+  bool shouldReload(
+    covariant LocalizationsDelegate<MaterialLocalizations> old,
+  ) => false;
 }
 
-class KuCupertinoLocalizationsDelegate extends LocalizationsDelegate<CupertinoLocalizations> {
+class KuCupertinoLocalizationsDelegate
+    extends LocalizationsDelegate<CupertinoLocalizations> {
   const KuCupertinoLocalizationsDelegate();
   @override
   bool isSupported(Locale locale) => locale.languageCode == 'ku';
@@ -50,11 +55,15 @@ class KuCupertinoLocalizationsDelegate extends LocalizationsDelegate<CupertinoLo
     // Reuse Arabic cupertino localizations for Kurdish
     return GlobalCupertinoLocalizations.delegate.load(const Locale('ar'));
   }
+
   @override
-  bool shouldReload(covariant LocalizationsDelegate<CupertinoLocalizations> old) => false;
+  bool shouldReload(
+    covariant LocalizationsDelegate<CupertinoLocalizations> old,
+  ) => false;
 }
 
-class KuWidgetsLocalizationsDelegate extends LocalizationsDelegate<WidgetsLocalizations> {
+class KuWidgetsLocalizationsDelegate
+    extends LocalizationsDelegate<WidgetsLocalizations> {
   const KuWidgetsLocalizationsDelegate();
   @override
   bool isSupported(Locale locale) => locale.languageCode == 'ku';
@@ -63,10 +72,12 @@ class KuWidgetsLocalizationsDelegate extends LocalizationsDelegate<WidgetsLocali
     // Reuse Arabic widgets localizations for Kurdish
     return GlobalWidgetsLocalizations.delegate.load(const Locale('ar'));
   }
+
   @override
-  bool shouldReload(covariant LocalizationsDelegate<WidgetsLocalizations> old) => false;
+  bool shouldReload(
+    covariant LocalizationsDelegate<WidgetsLocalizations> old,
+  ) => false;
 }
- 
 
 String getApiBase() {
   try {
@@ -80,8 +91,8 @@ String getApiBase() {
 String _localizeDigitsGlobal(BuildContext context, String input) {
   final locale = Localizations.localeOf(context);
   if (locale.languageCode == 'ar' || locale.languageCode == 'ku') {
-    const western = ['0','1','2','3','4','5','6','7','8','9',','];
-    const eastern = ['٠','١','٢','٣','٤','٥','٦','٧','٨','٩','٬'];
+    const western = ['0', '1', '2', '3', '4', '5', '6', '7', '8', '9', ','];
+    const eastern = ['٠', '١', '٢', '٣', '٤', '٥', '٦', '٧', '٨', '٩', '٬'];
     String out = input;
     for (int i = 0; i < western.length; i++) {
       out = out.replaceAll(western[i], eastern[i]);
@@ -98,7 +109,9 @@ String _formatCurrencyGlobal(BuildContext context, dynamic raw) {
   if (raw is num) {
     value = raw;
   } else {
-    value = num.tryParse(raw?.toString().replaceAll(RegExp(r'[^0-9.-]'), '') ?? '');
+    value = num.tryParse(
+      raw?.toString().replaceAll(RegExp(r'[^0-9.-]'), '') ?? '',
+    );
   }
   if (value == null) {
     return symbol + _localizeDigitsGlobal(context, '0');
@@ -108,49 +121,104 @@ String _formatCurrencyGlobal(BuildContext context, dynamic raw) {
 }
 
 // Fancy selector tile used in Sell page pickers
-Widget buildFancySelector(BuildContext context, {IconData? icon, required String label, required String? value, Widget? leading, bool isError = false}) {
+Widget buildFancySelector(
+  BuildContext context, {
+  IconData? icon,
+  required String label,
+  required String? value,
+  Widget? leading,
+  bool isError = false,
+}) {
   final bool isDark = Theme.of(context).brightness == Brightness.dark;
   final Color accent = const Color(0xFFFF6B00);
   final List<Color> bg = isDark
       ? [Colors.white.withOpacity(0.06), Colors.white.withOpacity(0.03)]
       : [Colors.white, const Color(0xFFFFF1E6)];
-  final Color borderColor = isError ? Colors.redAccent : (isDark ? Colors.white12 : accent.withOpacity(0.25));
-  final Color labelColor = isError ? Colors.redAccent : (isDark ? Colors.white70 : Colors.grey[600]!);
+  final Color borderColor = isError
+      ? Colors.redAccent
+      : (isDark ? Colors.white12 : accent.withOpacity(0.25));
+  final Color labelColor = isError
+      ? Colors.redAccent
+      : (isDark ? Colors.white70 : Colors.grey[600]!);
   final Color valueColor = (value == null || value.isEmpty)
       ? (isError ? Colors.redAccent : (isDark ? Colors.white38 : Colors.grey))
-      : (isError ? Colors.redAccent : (isDark ? Colors.white : Colors.grey[900]!));
+      : (isError
+            ? Colors.redAccent
+            : (isDark ? Colors.white : Colors.grey[900]!));
   return Container(
     padding: const EdgeInsets.all(14),
     decoration: BoxDecoration(
-      gradient: LinearGradient(colors: bg, begin: Alignment.topLeft, end: Alignment.bottomRight),
+      gradient: LinearGradient(
+        colors: bg,
+        begin: Alignment.topLeft,
+        end: Alignment.bottomRight,
+      ),
       borderRadius: BorderRadius.circular(12),
       border: Border.all(color: borderColor),
-      boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.06), blurRadius: 10, offset: const Offset(0, 6))],
+      boxShadow: [
+        BoxShadow(
+          color: Colors.black.withOpacity(0.06),
+          blurRadius: 10,
+          offset: const Offset(0, 6),
+        ),
+      ],
     ),
     child: Row(
       children: [
-        Container(width: 4, height: 44, decoration: BoxDecoration(color: (isError ? Colors.redAccent : accent).withOpacity(0.9), borderRadius: BorderRadius.circular(999))),
-        const SizedBox(width: 10),
-        leading ?? Container(
-          width: 36,
-          height: 36,
-          decoration: BoxDecoration(color: (isError ? Colors.redAccent : accent).withOpacity(0.12), borderRadius: BorderRadius.circular(10)),
-          child: icon != null ? Icon(icon, color: isError ? Colors.redAccent : accent) : const SizedBox.shrink(),
+        Container(
+          width: 4,
+          height: 44,
+          decoration: BoxDecoration(
+            color: (isError ? Colors.redAccent : accent).withOpacity(0.9),
+            borderRadius: BorderRadius.circular(999),
+          ),
         ),
+        const SizedBox(width: 10),
+        leading ??
+            Container(
+              width: 36,
+              height: 36,
+              decoration: BoxDecoration(
+                color: (isError ? Colors.redAccent : accent).withOpacity(0.12),
+                borderRadius: BorderRadius.circular(10),
+              ),
+              child: icon != null
+                  ? Icon(icon, color: isError ? Colors.redAccent : accent)
+                  : const SizedBox.shrink(),
+            ),
         const SizedBox(width: 12),
         Expanded(
-          child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-            Text(label, style: TextStyle(fontSize: 12, color: labelColor, fontWeight: FontWeight.w600)),
-            const SizedBox(height: 2),
-            Text(
-              value == null || value.isEmpty ? _tapToSelectTextGlobal(context) : value,
-              maxLines: 1,
-              overflow: TextOverflow.ellipsis,
-              style: TextStyle(fontSize: 15, fontWeight: FontWeight.w700, color: valueColor),
-            ),
-          ]),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                label,
+                style: TextStyle(
+                  fontSize: 12,
+                  color: labelColor,
+                  fontWeight: FontWeight.w600,
+                ),
+              ),
+              const SizedBox(height: 2),
+              Text(
+                value == null || value.isEmpty
+                    ? _tapToSelectTextGlobal(context)
+                    : value,
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+                style: TextStyle(
+                  fontSize: 15,
+                  fontWeight: FontWeight.w700,
+                  color: valueColor,
+                ),
+              ),
+            ],
+          ),
         ),
-        Icon(Icons.keyboard_arrow_down, color: isError ? Colors.redAccent : accent),
+        Icon(
+          Icons.keyboard_arrow_down,
+          color: isError ? Colors.redAccent : accent,
+        ),
       ],
     ),
   );
@@ -341,9 +409,9 @@ String _photosUploadedTextGlobal(BuildContext context) {
 // Convert localized sort options to backend API parameters
 String? _convertSortToApiValue(BuildContext context, String? sortOption) {
   if (sortOption == null || sortOption.isEmpty) return null;
-  
+
   final loc = AppLocalizations.of(context)!;
-  
+
   // Map localized sort options to backend API values
   if (sortOption == loc.defaultSort) return null;
   if (sortOption == loc.sort_newest) return 'newest';
@@ -353,7 +421,7 @@ String? _convertSortToApiValue(BuildContext context, String? sortOption) {
   if (sortOption == loc.sort_year_oldest) return 'year_asc';
   if (sortOption == loc.sort_mileage_low_high) return 'mileage_asc';
   if (sortOption == loc.sort_mileage_high_low) return 'mileage_desc';
-  
+
   // Fallback for any unrecognized sort option
   return sortOption;
 }
@@ -363,122 +431,300 @@ String? _translateValueGlobal(BuildContext context, String? raw) {
   final l = raw.trim().toLowerCase();
   final loc = AppLocalizations.of(context)!;
   switch (l) {
-    case 'new': return loc.value_condition_new;
-    case 'used': return loc.value_condition_used;
+    case 'new':
+      return loc.value_condition_new;
+    case 'used':
+      return loc.value_condition_used;
     case 'base':
     case 'standard':
-      return Localizations.localeOf(context).languageCode == 'ar' ? 'أساسي' : Localizations.localeOf(context).languageCode == 'ku' ? 'بنەڕەتی' : 'Base';
+      return Localizations.localeOf(context).languageCode == 'ar'
+          ? 'أساسي'
+          : Localizations.localeOf(context).languageCode == 'ku'
+          ? 'بنەڕەتی'
+          : 'Base';
     case 'sport':
-      return Localizations.localeOf(context).languageCode == 'ar' ? 'رياضي' : Localizations.localeOf(context).languageCode == 'ku' ? 'وەرزشی' : 'Sport';
+      return Localizations.localeOf(context).languageCode == 'ar'
+          ? 'رياضي'
+          : Localizations.localeOf(context).languageCode == 'ku'
+          ? 'وەرزشی'
+          : 'Sport';
     case 'luxury':
-      return Localizations.localeOf(context).languageCode == 'ar' ? 'فاخر' : Localizations.localeOf(context).languageCode == 'ku' ? 'لوکس' : 'Luxury';
+      return Localizations.localeOf(context).languageCode == 'ar'
+          ? 'فاخر'
+          : Localizations.localeOf(context).languageCode == 'ku'
+          ? 'لوکس'
+          : 'Luxury';
     case 'certified':
-      return Localizations.localeOf(context).languageCode == 'ar' ? 'معتمد' : Localizations.localeOf(context).languageCode == 'ku' ? 'سەلمێنراو' : 'certified';
-    case 'automatic': return loc.value_transmission_automatic;
-    case 'manual': return loc.value_transmission_manual;
+      return Localizations.localeOf(context).languageCode == 'ar'
+          ? 'معتمد'
+          : Localizations.localeOf(context).languageCode == 'ku'
+          ? 'سەلمێنراو'
+          : 'certified';
+    case 'automatic':
+      return loc.value_transmission_automatic;
+    case 'manual':
+      return loc.value_transmission_manual;
     case 'semi-automatic':
     case 'semi automatic':
     case 'semi auto':
-      return Localizations.localeOf(context).languageCode == 'ar' ? 'نصف أوتوماتيك' : Localizations.localeOf(context).languageCode == 'ku' ? 'نیمە ئۆتۆماتیک' : 'semi-automatic';
-    case 'gasoline': return loc.value_fuel_gasoline;
-    case 'diesel': return loc.value_fuel_diesel;
-    case 'electric': return loc.value_fuel_electric;
-    case 'hybrid': return loc.value_fuel_hybrid;
-    case 'lpg': return loc.value_fuel_lpg;
+      return Localizations.localeOf(context).languageCode == 'ar'
+          ? 'نصف أوتوماتيك'
+          : Localizations.localeOf(context).languageCode == 'ku'
+          ? 'نیمە ئۆتۆماتیک'
+          : 'semi-automatic';
+    case 'gasoline':
+      return loc.value_fuel_gasoline;
+    case 'diesel':
+      return loc.value_fuel_diesel;
+    case 'electric':
+      return loc.value_fuel_electric;
+    case 'hybrid':
+      return loc.value_fuel_hybrid;
+    case 'lpg':
+      return loc.value_fuel_lpg;
     case 'plug-in hybrid':
     case 'plugin hybrid':
-    case 'plug in hybrid': return loc.value_fuel_plugin_hybrid;
-    case 'clean': return loc.value_title_clean;
-    case 'damaged': return loc.value_title_damaged;
-    case 'fwd': return loc.value_drive_fwd;
-    case 'rwd': return loc.value_drive_rwd;
-    case 'awd': return loc.value_drive_awd;
-    case '4wd': return loc.value_drive_4wd;
-    case 'sedan': return loc.value_body_sedan;
-    case 'suv': return loc.value_body_suv;
-    case 'hatchback': return loc.value_body_hatchback;
-    case 'coupe': return loc.value_body_coupe;
-    case 'pickup': return loc.value_body_pickup;
-    case 'van': return loc.value_body_van;
-    case 'minivan': return loc.value_body_minivan;
-    case 'motorcycle': return loc.value_body_motorcycle;
-    case 'truck': return loc.value_body_truck;
-    case 'cabriolet': return loc.value_body_cabriolet;
-    case 'convertible': return loc.value_body_cabriolet;
-    case 'roadster': return loc.value_body_roadster;
-    case 'micro': return loc.value_body_micro;
-    case 'cuv': return loc.value_body_cuv;
-    case 'wagon': return loc.value_body_wagon;
-    case 'minitruck': return loc.value_body_minitruck;
-    case 'bigtruck': return loc.value_body_bigtruck;
-    case 'supercar': return loc.value_body_supercar;
-    case 'utv': return loc.value_body_utv;
-    case 'atv': return loc.value_body_atv;
-    case 'scooter': return loc.value_body_scooter;
-    case 'super bike': return loc.value_body_super_bike;
+    case 'plug in hybrid':
+      return loc.value_fuel_plugin_hybrid;
+    case 'clean':
+      return loc.value_title_clean;
+    case 'damaged':
+      return loc.value_title_damaged;
+    case 'fwd':
+      return loc.value_drive_fwd;
+    case 'rwd':
+      return loc.value_drive_rwd;
+    case 'awd':
+      return loc.value_drive_awd;
+    case '4wd':
+      return loc.value_drive_4wd;
+    case 'sedan':
+      return loc.value_body_sedan;
+    case 'suv':
+      return loc.value_body_suv;
+    case 'hatchback':
+      return loc.value_body_hatchback;
+    case 'coupe':
+      return loc.value_body_coupe;
+    case 'pickup':
+      return loc.value_body_pickup;
+    case 'van':
+      return loc.value_body_van;
+    case 'minivan':
+      return loc.value_body_minivan;
+    case 'motorcycle':
+      return loc.value_body_motorcycle;
+    case 'truck':
+      return loc.value_body_truck;
+    case 'cabriolet':
+      return loc.value_body_cabriolet;
+    case 'convertible':
+      return loc.value_body_cabriolet;
+    case 'roadster':
+      return loc.value_body_roadster;
+    case 'micro':
+      return loc.value_body_micro;
+    case 'cuv':
+      return loc.value_body_cuv;
+    case 'wagon':
+      return loc.value_body_wagon;
+    case 'minitruck':
+      return loc.value_body_minitruck;
+    case 'bigtruck':
+      return loc.value_body_bigtruck;
+    case 'supercar':
+      return loc.value_body_supercar;
+    case 'utv':
+      return loc.value_body_utv;
+    case 'atv':
+      return loc.value_body_atv;
+    case 'scooter':
+      return loc.value_body_scooter;
+    case 'super bike':
+      return loc.value_body_super_bike;
     // Colors (AR + KU)
     case 'black':
-      return Localizations.localeOf(context).languageCode == 'ar' ? 'أسود' : Localizations.localeOf(context).languageCode == 'ku' ? 'ڕەش' : 'Black';
+      return Localizations.localeOf(context).languageCode == 'ar'
+          ? 'أسود'
+          : Localizations.localeOf(context).languageCode == 'ku'
+          ? 'ڕەش'
+          : 'Black';
     case 'white':
-      return Localizations.localeOf(context).languageCode == 'ar' ? 'أبيض' : Localizations.localeOf(context).languageCode == 'ku' ? 'سپی' : 'White';
+      return Localizations.localeOf(context).languageCode == 'ar'
+          ? 'أبيض'
+          : Localizations.localeOf(context).languageCode == 'ku'
+          ? 'سپی'
+          : 'White';
     case 'silver':
-      return Localizations.localeOf(context).languageCode == 'ar' ? 'فضي' : Localizations.localeOf(context).languageCode == 'ku' ? 'نەقرەی' : 'Silver';
+      return Localizations.localeOf(context).languageCode == 'ar'
+          ? 'فضي'
+          : Localizations.localeOf(context).languageCode == 'ku'
+          ? 'نەقرەی'
+          : 'Silver';
     case 'gray':
     case 'grey':
-      return Localizations.localeOf(context).languageCode == 'ar' ? 'رمادي' : Localizations.localeOf(context).languageCode == 'ku' ? 'خۆڵەپێو' : 'Gray';
+      return Localizations.localeOf(context).languageCode == 'ar'
+          ? 'رمادي'
+          : Localizations.localeOf(context).languageCode == 'ku'
+          ? 'خۆڵەپێو'
+          : 'Gray';
     case 'red':
-      return Localizations.localeOf(context).languageCode == 'ar' ? 'أحمر' : Localizations.localeOf(context).languageCode == 'ku' ? 'سۆر' : 'Red';
+      return Localizations.localeOf(context).languageCode == 'ar'
+          ? 'أحمر'
+          : Localizations.localeOf(context).languageCode == 'ku'
+          ? 'سۆر'
+          : 'Red';
     case 'blue':
-      return Localizations.localeOf(context).languageCode == 'ar' ? 'أزرق' : Localizations.localeOf(context).languageCode == 'ku' ? 'شین' : 'Blue';
+      return Localizations.localeOf(context).languageCode == 'ar'
+          ? 'أزرق'
+          : Localizations.localeOf(context).languageCode == 'ku'
+          ? 'شین'
+          : 'Blue';
     case 'green':
-      return Localizations.localeOf(context).languageCode == 'ar' ? 'أخضر' : Localizations.localeOf(context).languageCode == 'ku' ? 'سەوز' : 'Green';
+      return Localizations.localeOf(context).languageCode == 'ar'
+          ? 'أخضر'
+          : Localizations.localeOf(context).languageCode == 'ku'
+          ? 'سەوز'
+          : 'Green';
     case 'yellow':
-      return Localizations.localeOf(context).languageCode == 'ar' ? 'أصفر' : Localizations.localeOf(context).languageCode == 'ku' ? 'زەرد' : 'Yellow';
+      return Localizations.localeOf(context).languageCode == 'ar'
+          ? 'أصفر'
+          : Localizations.localeOf(context).languageCode == 'ku'
+          ? 'زەرد'
+          : 'Yellow';
     case 'orange':
-      return Localizations.localeOf(context).languageCode == 'ar' ? 'برتقالي' : Localizations.localeOf(context).languageCode == 'ku' ? 'پرتەقەڵی' : 'Orange';
+      return Localizations.localeOf(context).languageCode == 'ar'
+          ? 'برتقالي'
+          : Localizations.localeOf(context).languageCode == 'ku'
+          ? 'پرتەقەڵی'
+          : 'Orange';
     case 'purple':
-      return Localizations.localeOf(context).languageCode == 'ar' ? 'بنفسجي' : Localizations.localeOf(context).languageCode == 'ku' ? 'مۆر' : 'Purple';
+      return Localizations.localeOf(context).languageCode == 'ar'
+          ? 'بنفسجي'
+          : Localizations.localeOf(context).languageCode == 'ku'
+          ? 'مۆر'
+          : 'Purple';
     case 'brown':
-      return Localizations.localeOf(context).languageCode == 'ar' ? 'بني' : Localizations.localeOf(context).languageCode == 'ku' ? 'قاوەیی' : 'Brown';
+      return Localizations.localeOf(context).languageCode == 'ar'
+          ? 'بني'
+          : Localizations.localeOf(context).languageCode == 'ku'
+          ? 'قاوەیی'
+          : 'Brown';
     case 'beige':
-      return Localizations.localeOf(context).languageCode == 'ar' ? 'بيج' : Localizations.localeOf(context).languageCode == 'ku' ? 'بێژی' : 'Beige';
+      return Localizations.localeOf(context).languageCode == 'ar'
+          ? 'بيج'
+          : Localizations.localeOf(context).languageCode == 'ku'
+          ? 'بێژی'
+          : 'Beige';
     case 'gold':
-      return Localizations.localeOf(context).languageCode == 'ar' ? 'ذهبي' : Localizations.localeOf(context).languageCode == 'ku' ? 'زێڕی' : 'Gold';
+      return Localizations.localeOf(context).languageCode == 'ar'
+          ? 'ذهبي'
+          : Localizations.localeOf(context).languageCode == 'ku'
+          ? 'زێڕی'
+          : 'Gold';
     // Cities
     case 'baghdad':
-      return Localizations.localeOf(context).languageCode == 'ar' ? loc.city_baghdad : Localizations.localeOf(context).languageCode == 'ku' ? loc.city_baghdad : 'Baghdad';
+      return Localizations.localeOf(context).languageCode == 'ar'
+          ? loc.city_baghdad
+          : Localizations.localeOf(context).languageCode == 'ku'
+          ? loc.city_baghdad
+          : 'Baghdad';
     case 'basra':
-      return Localizations.localeOf(context).languageCode == 'ar' ? loc.city_basra : Localizations.localeOf(context).languageCode == 'ku' ? loc.city_basra : 'Basra';
+      return Localizations.localeOf(context).languageCode == 'ar'
+          ? loc.city_basra
+          : Localizations.localeOf(context).languageCode == 'ku'
+          ? loc.city_basra
+          : 'Basra';
     case 'erbil':
-      return Localizations.localeOf(context).languageCode == 'ar' ? loc.city_erbil : Localizations.localeOf(context).languageCode == 'ku' ? loc.city_erbil : 'Erbil';
+      return Localizations.localeOf(context).languageCode == 'ar'
+          ? loc.city_erbil
+          : Localizations.localeOf(context).languageCode == 'ku'
+          ? loc.city_erbil
+          : 'Erbil';
     case 'najaf':
-      return Localizations.localeOf(context).languageCode == 'ar' ? loc.city_najaf : Localizations.localeOf(context).languageCode == 'ku' ? loc.city_najaf : 'Najaf';
+      return Localizations.localeOf(context).languageCode == 'ar'
+          ? loc.city_najaf
+          : Localizations.localeOf(context).languageCode == 'ku'
+          ? loc.city_najaf
+          : 'Najaf';
     case 'karbala':
-      return Localizations.localeOf(context).languageCode == 'ar' ? loc.city_karbala : Localizations.localeOf(context).languageCode == 'ku' ? loc.city_karbala : 'Karbala';
+      return Localizations.localeOf(context).languageCode == 'ar'
+          ? loc.city_karbala
+          : Localizations.localeOf(context).languageCode == 'ku'
+          ? loc.city_karbala
+          : 'Karbala';
     case 'kirkuk':
-      return Localizations.localeOf(context).languageCode == 'ar' ? loc.city_kirkuk : Localizations.localeOf(context).languageCode == 'ku' ? loc.city_kirkuk : 'Kirkuk';
+      return Localizations.localeOf(context).languageCode == 'ar'
+          ? loc.city_kirkuk
+          : Localizations.localeOf(context).languageCode == 'ku'
+          ? loc.city_kirkuk
+          : 'Kirkuk';
     case 'mosul':
-      return Localizations.localeOf(context).languageCode == 'ar' ? loc.city_mosul : Localizations.localeOf(context).languageCode == 'ku' ? loc.city_mosul : 'Mosul';
+      return Localizations.localeOf(context).languageCode == 'ar'
+          ? loc.city_mosul
+          : Localizations.localeOf(context).languageCode == 'ku'
+          ? loc.city_mosul
+          : 'Mosul';
     case 'sulaymaniyah':
-      return Localizations.localeOf(context).languageCode == 'ar' ? loc.city_sulaymaniyah : Localizations.localeOf(context).languageCode == 'ku' ? loc.city_sulaymaniyah : 'Sulaymaniyah';
+      return Localizations.localeOf(context).languageCode == 'ar'
+          ? loc.city_sulaymaniyah
+          : Localizations.localeOf(context).languageCode == 'ku'
+          ? loc.city_sulaymaniyah
+          : 'Sulaymaniyah';
     case 'dohuk':
-      return Localizations.localeOf(context).languageCode == 'ar' ? loc.city_dohuk : Localizations.localeOf(context).languageCode == 'ku' ? loc.city_dohuk : 'Dohuk';
+      return Localizations.localeOf(context).languageCode == 'ar'
+          ? loc.city_dohuk
+          : Localizations.localeOf(context).languageCode == 'ku'
+          ? loc.city_dohuk
+          : 'Dohuk';
     case 'anbar':
-      return Localizations.localeOf(context).languageCode == 'ar' ? loc.city_anbar : Localizations.localeOf(context).languageCode == 'ku' ? loc.city_anbar : 'Anbar';
+      return Localizations.localeOf(context).languageCode == 'ar'
+          ? loc.city_anbar
+          : Localizations.localeOf(context).languageCode == 'ku'
+          ? loc.city_anbar
+          : 'Anbar';
     case 'halabja':
-      return Localizations.localeOf(context).languageCode == 'ar' ? loc.city_halabja : Localizations.localeOf(context).languageCode == 'ku' ? loc.city_halabja : 'Halabja';
+      return Localizations.localeOf(context).languageCode == 'ar'
+          ? loc.city_halabja
+          : Localizations.localeOf(context).languageCode == 'ku'
+          ? loc.city_halabja
+          : 'Halabja';
     case 'diyala':
-      return Localizations.localeOf(context).languageCode == 'ar' ? loc.city_diyala : Localizations.localeOf(context).languageCode == 'ku' ? loc.city_diyala : 'Diyala';
+      return Localizations.localeOf(context).languageCode == 'ar'
+          ? loc.city_diyala
+          : Localizations.localeOf(context).languageCode == 'ku'
+          ? loc.city_diyala
+          : 'Diyala';
     case 'diyarbakir':
-      return Localizations.localeOf(context).languageCode == 'ar' ? loc.city_diyarbakir : Localizations.localeOf(context).languageCode == 'ku' ? loc.city_diyarbakir : 'Diyarbakir';
+      return Localizations.localeOf(context).languageCode == 'ar'
+          ? loc.city_diyarbakir
+          : Localizations.localeOf(context).languageCode == 'ku'
+          ? loc.city_diyarbakir
+          : 'Diyarbakir';
     case 'maysan':
-      return Localizations.localeOf(context).languageCode == 'ar' ? loc.city_maysan : Localizations.localeOf(context).languageCode == 'ku' ? loc.city_maysan : 'Maysan';
+      return Localizations.localeOf(context).languageCode == 'ar'
+          ? loc.city_maysan
+          : Localizations.localeOf(context).languageCode == 'ku'
+          ? loc.city_maysan
+          : 'Maysan';
     case 'muthanna':
-      return Localizations.localeOf(context).languageCode == 'ar' ? loc.city_muthanna : Localizations.localeOf(context).languageCode == 'ku' ? loc.city_muthanna : 'Muthanna';
+      return Localizations.localeOf(context).languageCode == 'ar'
+          ? loc.city_muthanna
+          : Localizations.localeOf(context).languageCode == 'ku'
+          ? loc.city_muthanna
+          : 'Muthanna';
     case 'dhi qar':
-      return Localizations.localeOf(context).languageCode == 'ar' ? loc.city_dhi_qar : Localizations.localeOf(context).languageCode == 'ku' ? loc.city_dhi_qar : 'Dhi Qar';
+      return Localizations.localeOf(context).languageCode == 'ar'
+          ? loc.city_dhi_qar
+          : Localizations.localeOf(context).languageCode == 'ku'
+          ? loc.city_dhi_qar
+          : 'Dhi Qar';
     case 'salaheldeen':
-      return Localizations.localeOf(context).languageCode == 'ar' ? loc.city_salaheldeen : Localizations.localeOf(context).languageCode == 'ku' ? loc.city_salaheldeen : 'Salaheldeen';
+      return Localizations.localeOf(context).languageCode == 'ar'
+          ? loc.city_salaheldeen
+          : Localizations.localeOf(context).languageCode == 'ku'
+          ? loc.city_salaheldeen
+          : 'Salaheldeen';
   }
   return raw;
 }
@@ -494,6 +740,7 @@ class AuthStore {
     }
     token = t;
   }
+
   static Future<void> loadToken() async {
     const storage = FlutterSecureStorage();
     token = await storage.read(key: 'auth_token');
@@ -501,7 +748,9 @@ class AuthStore {
 }
 
 class LocaleController {
-  static final ValueNotifier<Locale?> currentLocale = ValueNotifier<Locale?>(null);
+  static final ValueNotifier<Locale?> currentLocale = ValueNotifier<Locale?>(
+    null,
+  );
 
   static Future<void> loadSavedLocale() async {
     final sp = await SharedPreferences.getInstance();
@@ -529,9 +778,18 @@ Widget buildLanguageMenu() {
       LocaleController.setLocale(Locale(code));
     },
     itemBuilder: (context) => [
-      PopupMenuItem(value: 'en', child: Text(AppLocalizations.of(context)!.english)),
-      PopupMenuItem(value: 'ar', child: Text(AppLocalizations.of(context)!.arabic)),
-      PopupMenuItem(value: 'ku', child: Text(AppLocalizations.of(context)!.kurdish)),
+      PopupMenuItem(
+        value: 'en',
+        child: Text(AppLocalizations.of(context)!.english),
+      ),
+      PopupMenuItem(
+        value: 'ar',
+        child: Text(AppLocalizations.of(context)!.arabic),
+      ),
+      PopupMenuItem(
+        value: 'ku',
+        child: Text(AppLocalizations.of(context)!.kurdish),
+      ),
     ],
   );
 }
@@ -539,7 +797,13 @@ Widget buildLanguageMenu() {
 class NoAnimationsPageTransitionsBuilder extends PageTransitionsBuilder {
   const NoAnimationsPageTransitionsBuilder();
   @override
-  Widget buildTransitions<T>(PageRoute<T> route, BuildContext context, Animation<double> animation, Animation<double> secondaryAnimation, Widget child) {
+  Widget buildTransitions<T>(
+    PageRoute<T> route,
+    BuildContext context,
+    Animation<double> animation,
+    Animation<double> secondaryAnimation,
+    Widget child,
+  ) {
     return child;
   }
 }
@@ -593,8 +857,20 @@ class _FullScreenGalleryPageState extends State<FullScreenGalleryPage> {
                   child: CachedNetworkImage(
                     imageUrl: url,
                     fit: BoxFit.contain,
-                    placeholder: (_, __) => Container(color: Colors.black, alignment: Alignment.center, child: CircularProgressIndicator()),
-                    errorWidget: (_, __, ___) => Container(color: Colors.black, alignment: Alignment.center, child: Icon(Icons.broken_image, color: Colors.white70, size: 48)),
+                    placeholder: (_, __) => Container(
+                      color: Colors.black,
+                      alignment: Alignment.center,
+                      child: CircularProgressIndicator(),
+                    ),
+                    errorWidget: (_, __, ___) => Container(
+                      color: Colors.black,
+                      alignment: Alignment.center,
+                      child: Icon(
+                        Icons.broken_image,
+                        color: Colors.white70,
+                        size: 48,
+                      ),
+                    ),
                   ),
                 ),
               );
@@ -608,21 +884,21 @@ class _FullScreenGalleryPageState extends State<FullScreenGalleryPage> {
               child: SingleChildScrollView(
                 scrollDirection: Axis.horizontal,
                 physics: BouncingScrollPhysics(),
-              child: Row(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: List.generate(widget.imageUrls.length, (i) {
-                  final active = i == _index;
-                  return AnimatedContainer(
-                    duration: Duration(milliseconds: 200),
-                    margin: EdgeInsets.symmetric(horizontal: 4),
-                    width: active ? 10 : 6,
-                    height: active ? 10 : 6,
-                    decoration: BoxDecoration(
-                      color: active ? Colors.white : Colors.white70,
-                      shape: BoxShape.circle,
-                    ),
-                  );
-                }),
+                child: Row(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: List.generate(widget.imageUrls.length, (i) {
+                    final active = i == _index;
+                    return AnimatedContainer(
+                      duration: Duration(milliseconds: 200),
+                      margin: EdgeInsets.symmetric(horizontal: 4),
+                      width: active ? 10 : 6,
+                      height: active ? 10 : 6,
+                      decoration: BoxDecoration(
+                        color: active ? Colors.white : Colors.white70,
+                        shape: BoxShape.circle,
+                      ),
+                    );
+                  }),
                 ),
               ),
             ),
@@ -639,7 +915,8 @@ List<String> globalBodyTypes = ['Any'];
 Map<String, String> globalBodyTypeAssetMap = {};
 
 // Global vehicle specifications database - accessible to all pages
-final Map<String, Map<String, Map<String, Map<String, dynamic>>>> globalVehicleSpecs = {
+final Map<String, Map<String, Map<String, Map<String, dynamic>>>>
+globalVehicleSpecs = {
   'BMW': {
     'X3': {
       'Base': {
@@ -886,7 +1163,9 @@ final Map<String, Map<String, Map<String, Map<String, dynamic>>>> globalVehicleS
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
-  try { await Firebase.initializeApp(); } catch (_) {}
+  try {
+    await Firebase.initializeApp();
+  } catch (_) {}
   await _initPushToken();
   await ApiService.initializeTokens();
   await LocaleController.loadSavedLocale();
@@ -899,8 +1178,14 @@ Future<void> _initPushToken() async {
     final enabled = sp.getBool('push_enabled') ?? true;
     if (!enabled) return;
     final messaging = FirebaseMessaging.instance;
-    final settings = await messaging.requestPermission(alert: true, badge: true, sound: true, provisional: false);
-    if (settings.authorizationStatus == AuthorizationStatus.authorized || settings.authorizationStatus == AuthorizationStatus.provisional) {
+    final settings = await messaging.requestPermission(
+      alert: true,
+      badge: true,
+      sound: true,
+      provisional: false,
+    );
+    if (settings.authorizationStatus == AuthorizationStatus.authorized ||
+        settings.authorizationStatus == AuthorizationStatus.provisional) {
       final token = await messaging.getToken();
       if (token != null && token.isNotEmpty) {
         final sp = await SharedPreferences.getInstance();
@@ -909,26 +1194,28 @@ Future<void> _initPushToken() async {
     }
   } catch (_) {}
 }
+
 // Car Comparison State Management
 class CarComparisonStore extends ChangeNotifier {
   final List<Map<String, dynamic>> _comparisonCars = [];
   CarComparisonStore() {
     _loadFromPrefs();
   }
-  
-  List<Map<String, dynamic>> get comparisonCars => List.unmodifiable(_comparisonCars);
-  
+
+  List<Map<String, dynamic>> get comparisonCars =>
+      List.unmodifiable(_comparisonCars);
+
   bool get canAddMore => _comparisonCars.length < 5;
-  
+
   bool isCarInComparison(int carId) {
     return _comparisonCars.any((car) => car['id'] == carId);
   }
-  
+
   void addCarToComparison(Map<String, dynamic> car) {
     if (_comparisonCars.length >= 5) {
       return; // Already at maximum
     }
-    
+
     if (!isCarInComparison(car['id'])) {
       _comparisonCars.add(car);
       // Analytics tracking for comparison add
@@ -936,25 +1223,27 @@ class CarComparisonStore extends ChangeNotifier {
       notifyListeners();
     }
   }
-  
+
   void removeCarFromComparison(int carId) {
     _comparisonCars.removeWhere((car) => car['id'] == carId);
     _saveToPrefs();
     notifyListeners();
   }
-  
+
   void clearComparison() {
     _comparisonCars.clear();
     _saveToPrefs();
     notifyListeners();
   }
-  
+
   int get comparisonCount => _comparisonCars.length;
 
   Future<void> _saveToPrefs() async {
     try {
       final sp = await SharedPreferences.getInstance();
-      final List<String> encoded = _comparisonCars.map((e) => json.encode(e)).toList();
+      final List<String> encoded = _comparisonCars
+          .map((e) => json.encode(e))
+          .toList();
       await sp.setStringList('comparison_cars', encoded);
     } catch (_) {}
   }
@@ -964,17 +1253,18 @@ class CarComparisonStore extends ChangeNotifier {
       final sp = await SharedPreferences.getInstance();
       final encoded = sp.getStringList('comparison_cars') ?? [];
       final List<Map<String, dynamic>> loaded = encoded
-          .map<Map<String, dynamic>>((s) => Map<String, dynamic>.from(json.decode(s)))
+          .map<Map<String, dynamic>>(
+            (s) => Map<String, dynamic>.from(json.decode(s)),
+          )
           .toList();
 
       bool changed = false;
       for (final Map<String, dynamic> car in loaded) {
-        final dynamic rawId = car['id'] ?? car['car_id'] ?? car['carId'] ?? car['uuid'];
+        final dynamic rawId =
+            car['id'] ?? car['car_id'] ?? car['carId'] ?? car['uuid'];
         final int loadedId = rawId is int
             ? rawId
-            : (rawId is String
-                ? (int.tryParse(rawId) ?? rawId.hashCode)
-                : -1);
+            : (rawId is String ? (int.tryParse(rawId) ?? rawId.hashCode) : -1);
 
         if (!_comparisonCars.any((c) => c['id'] == loadedId)) {
           // Ensure consistent numeric id is present before adding
@@ -996,26 +1286,22 @@ class CarComparisonStore extends ChangeNotifier {
 class ComparisonButton extends StatelessWidget {
   final Map<String, dynamic> car;
   final bool isCompact;
-  
-  const ComparisonButton({
-    Key? key,
-    required this.car,
-    this.isCompact = false,
-  }) : super(key: key);
-  
+
+  const ComparisonButton({Key? key, required this.car, this.isCompact = false})
+    : super(key: key);
+
   @override
   Widget build(BuildContext context) {
     return Consumer<CarComparisonStore>(
       builder: (context, comparisonStore, child) {
-        final dynamic rawId = car['id'] ?? car['car_id'] ?? car['carId'] ?? car['uuid'];
+        final dynamic rawId =
+            car['id'] ?? car['car_id'] ?? car['carId'] ?? car['uuid'];
         final int carId = rawId is int
             ? rawId
-            : (rawId is String
-                ? (int.tryParse(rawId) ?? rawId.hashCode)
-                : -1);
+            : (rawId is String ? (int.tryParse(rawId) ?? rawId.hashCode) : -1);
         final isInComparison = comparisonStore.isCarInComparison(carId);
         final canAddMore = comparisonStore.canAddMore;
-        
+
         return Container(
           decoration: BoxDecoration(
             color: isInComparison ? Colors.green : Colors.orange,
@@ -1044,11 +1330,17 @@ class ComparisonButton extends StatelessWidget {
                   );
                 } else if (canAddMore && carId != -1) {
                   final normalized = Map<String, dynamic>.from(car);
-                  normalized['id'] = carId; // ensure consistent numeric ID stored
+                  normalized['id'] =
+                      carId; // ensure consistent numeric ID stored
                   comparisonStore.addCarToComparison(normalized);
                   ScaffoldMessenger.of(context).showSnackBar(
                     SnackBar(
-                      content: Text(_addedToComparisonTextGlobal(context, comparisonStore.comparisonCount)),
+                      content: Text(
+                        _addedToComparisonTextGlobal(
+                          context,
+                          comparisonStore.comparisonCount,
+                        ),
+                      ),
                       backgroundColor: Colors.green,
                       duration: Duration(seconds: 1),
                     ),
@@ -1080,7 +1372,9 @@ class ComparisonButton extends StatelessWidget {
                     if (!isCompact) ...[
                       SizedBox(width: 4),
                       Text(
-                        isInComparison ? _addedLabelGlobal(context) : _compareLabelGlobal(context),
+                        isInComparison
+                            ? _addedLabelGlobal(context)
+                            : _compareLabelGlobal(context),
                         style: TextStyle(
                           color: Colors.white,
                           fontSize: 12,
@@ -1111,78 +1405,82 @@ class MyApp extends StatelessWidget {
         valueListenable: LocaleController.currentLocale,
         builder: (context, locale, _) => Consumer<ThemeProvider>(
           builder: (context, themeProvider, child) => MaterialApp(
-      title: 'CARZO',
-      locale: locale,
-      supportedLocales: const [
-        Locale('en'),
-        Locale('ar'),
-        Locale('ku'),
-      ],
-      localizationsDelegates: [
-        AppLocalizations.delegate,
-        GlobalMaterialLocalizations.delegate,
-        GlobalWidgetsLocalizations.delegate,
-        GlobalCupertinoLocalizations.delegate,
-        const KuMaterialLocalizationsDelegate(),
-        const KuWidgetsLocalizationsDelegate(),
-        const KuCupertinoLocalizationsDelegate(),
-      ],
-      localeResolutionCallback: (deviceLocale, supported) {
-        if (locale != null) return locale;
-        if (deviceLocale == null) return const Locale('en');
-        for (final l in supported) {
-          if (l.languageCode == deviceLocale.languageCode) return l;
-        }
-        return const Locale('en');
-      },
-      theme: AppThemes.lightTheme,
-      darkTheme: AppThemes.darkTheme,
-      themeMode: themeProvider.themeMode,
-      debugShowCheckedModeBanner: false,
-      initialRoute: '/',
-      routes: {
-        '/': (context) => HomePage(),
-        // Replace old AddListingPage with new multi-step SellCarPage route
-        '/sell': (context) => SellCarPage(),
-        '/settings': (context) => SettingsPage(),
-        '/favorites': (context) => FavoritesPage(),
-        '/chat': (context) => ChatListPage(),
-        '/login': (context) => LoginPage(),
-        '/signup': (context) => SignupPage(),
-        '/profile': (context) => ProfilePage(),
-        '/payment/history': (context) => PaymentHistoryPage(),
-        '/payment/initiate': (context) => PaymentInitiatePage(),
-        '/car_detail': (context) {
-          final args = ModalRoute.of(context)!.settings.arguments as Map<String, dynamic>;
-          return CarDetailsPage(carId: args['carId']);
-        },
-        '/chat/conversation': (context) {
-          final args = ModalRoute.of(context)!.settings.arguments as Map<String, dynamic>;
-          return ChatConversationPage(conversationId: args['conversationId']);
-        },
-        '/payment/status': (context) {
-          final args = ModalRoute.of(context)!.settings.arguments as Map<String, dynamic>;
-          return PaymentStatusPage(paymentId: args['paymentId']);
-        },
-        '/edit': (context) {
-          final args = ModalRoute.of(context)!.settings.arguments as Map<String, dynamic>;
-          return EditListingPage(car: args['car']);
-        },
-        '/my_listings': (context) => MyListingsPage(),
-        '/comparison': (context) => CarComparisonPage(),
-        '/analytics': (context) => AnalyticsPage(),
-      },
-      builder: (context, child) {
-        return MediaQuery(
-          data: MediaQuery.of(context).copyWith(
-            padding: EdgeInsets.zero,
-          ),
-          child: child!,
-        );
-      },
-    ),
+            title: 'CARZO',
+            locale: locale,
+            supportedLocales: const [Locale('en'), Locale('ar'), Locale('ku')],
+            localizationsDelegates: [
+              AppLocalizations.delegate,
+              GlobalMaterialLocalizations.delegate,
+              GlobalWidgetsLocalizations.delegate,
+              GlobalCupertinoLocalizations.delegate,
+              const KuMaterialLocalizationsDelegate(),
+              const KuWidgetsLocalizationsDelegate(),
+              const KuCupertinoLocalizationsDelegate(),
+            ],
+            localeResolutionCallback: (deviceLocale, supported) {
+              if (locale != null) return locale;
+              if (deviceLocale == null) return const Locale('en');
+              for (final l in supported) {
+                if (l.languageCode == deviceLocale.languageCode) return l;
+              }
+              return const Locale('en');
+            },
+            theme: AppThemes.lightTheme,
+            darkTheme: AppThemes.darkTheme,
+            themeMode: themeProvider.themeMode,
+            debugShowCheckedModeBanner: false,
+            initialRoute: '/',
+            routes: {
+              '/': (context) => HomePage(),
+              // Replace old AddListingPage with new multi-step SellCarPage route
+              '/sell': (context) => SellCarPage(),
+              '/settings': (context) => SettingsPage(),
+              '/favorites': (context) => FavoritesPage(),
+              '/chat': (context) => ChatListPage(),
+              '/login': (context) => LoginPage(),
+              '/signup': (context) => SignupPage(),
+              '/profile': (context) => ProfilePage(),
+              '/payment/history': (context) => PaymentHistoryPage(),
+              '/payment/initiate': (context) => PaymentInitiatePage(),
+              '/car_detail': (context) {
+                final args =
+                    ModalRoute.of(context)!.settings.arguments
+                        as Map<String, dynamic>;
+                return CarDetailsPage(carId: args['carId']);
+              },
+              '/chat/conversation': (context) {
+                final args =
+                    ModalRoute.of(context)!.settings.arguments
+                        as Map<String, dynamic>;
+                return ChatConversationPage(
+                  conversationId: args['conversationId'],
+                );
+              },
+              '/payment/status': (context) {
+                final args =
+                    ModalRoute.of(context)!.settings.arguments
+                        as Map<String, dynamic>;
+                return PaymentStatusPage(paymentId: args['paymentId']);
+              },
+              '/edit': (context) {
+                final args =
+                    ModalRoute.of(context)!.settings.arguments
+                        as Map<String, dynamic>;
+                return EditListingPage(car: args['car']);
+              },
+              '/my_listings': (context) => MyListingsPage(),
+              '/comparison': (context) => CarComparisonPage(),
+              '/analytics': (context) => AnalyticsPage(),
+            },
+            builder: (context, child) {
+              return MediaQuery(
+                data: MediaQuery.of(context).copyWith(padding: EdgeInsets.zero),
+                child: child!,
+              );
+            },
           ),
         ),
+      ),
     );
   }
 }
@@ -1203,7 +1501,9 @@ class ThemeToggleWidget extends StatelessWidget {
           onPressed: () {
             themeProvider.toggleTheme();
           },
-          tooltip: themeProvider.isDarkMode ? 'Switch to Light Mode' : 'Switch to Dark Mode',
+          tooltip: themeProvider.isDarkMode
+              ? 'Switch to Light Mode'
+              : 'Switch to Dark Mode',
         );
       },
     );
@@ -1218,10 +1518,26 @@ List<double> _tintColorMatrix(Color color) {
   final double g = color.green / 255.0;
   final double b = color.blue / 255.0;
   return [
-    lR * r, lG * r, lB * r, 0, 0,
-    lR * g, lG * g, lB * g, 0, 0,
-    lR * b, lG * b, lB * b, 0, 0,
-    0,      0,      0,      1, 0,
+    lR * r,
+    lG * r,
+    lB * r,
+    0,
+    0,
+    lR * g,
+    lG * g,
+    lB * g,
+    0,
+    0,
+    lR * b,
+    lG * b,
+    lB * b,
+    0,
+    0,
+    0,
+    0,
+    0,
+    1,
+    0,
   ];
 }
 
@@ -1245,7 +1561,10 @@ Widget _buildBodyTypeImage(String assetPath) {
 
   return ColorFiltered(
     colorFilter: ColorFilter.matrix(_tintColorMatrix(const Color(0xFF707070))),
-    child: _WhiteKeyedImage(assetPath: pngAssetPath, svgFallbackPath: svgFallbackPath),
+    child: _WhiteKeyedImage(
+      assetPath: pngAssetPath,
+      svgFallbackPath: svgFallbackPath,
+    ),
   );
 }
 
@@ -1255,7 +1574,10 @@ final Map<String, Future<ui.Image>> _whiteKeyedCache = {};
 class _WhiteKeyedImage extends StatefulWidget {
   final String assetPath;
   final String svgFallbackPath;
-  const _WhiteKeyedImage({required this.assetPath, required this.svgFallbackPath});
+  const _WhiteKeyedImage({
+    required this.assetPath,
+    required this.svgFallbackPath,
+  });
   @override
   State<_WhiteKeyedImage> createState() => _WhiteKeyedImageState();
 }
@@ -1266,7 +1588,8 @@ class _WhiteKeyedImageState extends State<_WhiteKeyedImage> {
   @override
   void initState() {
     super.initState();
-    _futureImage = (_whiteKeyedCache[widget.assetPath] ??= _decodePngWithWhiteTransparent(widget.assetPath));
+    _futureImage = (_whiteKeyedCache[widget.assetPath] ??=
+        _decodePngWithWhiteTransparent(widget.assetPath));
   }
 
   @override
@@ -1274,7 +1597,8 @@ class _WhiteKeyedImageState extends State<_WhiteKeyedImage> {
     super.didUpdateWidget(oldWidget);
     if (oldWidget.assetPath != widget.assetPath) {
       setState(() {
-        _futureImage = (_whiteKeyedCache[widget.assetPath] ??= _decodePngWithWhiteTransparent(widget.assetPath));
+        _futureImage = (_whiteKeyedCache[widget.assetPath] ??=
+            _decodePngWithWhiteTransparent(widget.assetPath));
       });
     }
   }
@@ -1285,7 +1609,11 @@ class _WhiteKeyedImageState extends State<_WhiteKeyedImage> {
       future: _futureImage,
       builder: (context, snap) {
         if (snap.hasData) {
-          return RawImage(image: snap.data, fit: BoxFit.contain, filterQuality: FilterQuality.high);
+          return RawImage(
+            image: snap.data,
+            fit: BoxFit.contain,
+            filterQuality: FilterQuality.high,
+          );
         }
         if (snap.hasError) {
           // Fallback to SVG if PNG missing or decode fails
@@ -1303,7 +1631,9 @@ Future<ui.Image> _decodePngWithWhiteTransparent(String assetPath) async {
   final ui.Codec codec = await ui.instantiateImageCodec(bytes);
   final ui.FrameInfo frame = await codec.getNextFrame();
   final ui.Image image = frame.image;
-  final ByteData? raw = await image.toByteData(format: ui.ImageByteFormat.rawRgba);
+  final ByteData? raw = await image.toByteData(
+    format: ui.ImageByteFormat.rawRgba,
+  );
   if (raw == null) {
     throw Exception('Failed to read image bytes');
   }
@@ -1333,6 +1663,7 @@ class HomePage extends StatefulWidget {
   @override
   _HomePageState createState() => _HomePageState();
 }
+
 class _HomePageState extends State<HomePage> {
   List<Map<String, dynamic>> cars = [];
   bool isLoading = true;
@@ -1374,13 +1705,12 @@ class _HomePageState extends State<HomePage> {
   static const String _filtersKey = 'home_filters_v1';
   static const String _sellFiltersKey = 'sell_filters_v1';
   static const String _savedSearchesKey = 'saved_searches_v1';
- 
+
   // Listings layout
   int listingColumns = 2;
 
   // Bottom bar tab selection for inline pages (payments, chat, saved, etc.)
   int? _selectedBottomTabIndex;
-  
 
   void _resetAllFiltersInMemory() {
     selectedBrand = null;
@@ -1410,6 +1740,7 @@ class _HomePageState extends State<HomePage> {
     selectedVIN = null;
     selectedAccidentHistory = null;
   }
+
   Future<void> _restoreFilters() async {
     try {
       final sp = await SharedPreferences.getInstance();
@@ -1512,36 +1843,56 @@ class _HomePageState extends State<HomePage> {
     final vin = (selectedVIN ?? '').trim();
     if (vin.isEmpty) return;
     try {
-      final uri = Uri.parse('https://vpic.nhtsa.dot.gov/api/vehicles/DecodeVinValuesExtended/' + vin + '?format=json');
+      final uri = Uri.parse(
+        'https://vpic.nhtsa.dot.gov/api/vehicles/DecodeVinValuesExtended/' +
+            vin +
+            '?format=json',
+      );
       final resp = await http.get(uri).timeout(Duration(seconds: 12));
       if (resp.statusCode == 200) {
         final data = json.decode(resp.body);
-        if (data is Map && data['Results'] is List && (data['Results'] as List).isNotEmpty) {
-          final Map<String, dynamic> r = Map<String, dynamic>.from((data['Results'] as List).first as Map);
+        if (data is Map &&
+            data['Results'] is List &&
+            (data['Results'] as List).isNotEmpty) {
+          final Map<String, dynamic> r = Map<String, dynamic>.from(
+            (data['Results'] as List).first as Map,
+          );
           final make = (r['Make'] ?? '').toString().trim();
           final model = (r['Model'] ?? '').toString().trim();
           final year = (r['ModelYear'] ?? '').toString().trim();
           setState(() {
             if (make.isNotEmpty) selectedBrand = make;
-            if (model.isNotEmpty) { selectedModel = model; selectedTrim = null; }
-            if (year.isNotEmpty) { selectedMinYear = year; selectedMaxYear = year; }
+            if (model.isNotEmpty) {
+              selectedModel = model;
+              selectedTrim = null;
+            }
+            if (year.isNotEmpty) {
+              selectedMinYear = year;
+              selectedMaxYear = year;
+            }
           });
           _persistFilters();
           onFilterChanged();
           if (!mounted) return;
-          ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('VIN decoded')));
+          ScaffoldMessenger.of(
+            context,
+          ).showSnackBar(SnackBar(content: Text('VIN decoded')));
         }
       }
     } catch (_) {
       if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(AppLocalizations.of(context)!.error)));
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text(AppLocalizations.of(context)!.error)),
+      );
     }
   }
 
   Future<void> _saveCurrentSearch() async {
     try {
       final sp = await SharedPreferences.getInstance();
-      final List<dynamic> current = json.decode(sp.getString(_savedSearchesKey) ?? '[]');
+      final List<dynamic> current = json.decode(
+        sp.getString(_savedSearchesKey) ?? '[]',
+      );
       final Map<String, dynamic> payload = {
         'id': DateTime.now().millisecondsSinceEpoch,
         'name': _generateSearchName(),
@@ -1552,10 +1903,15 @@ class _HomePageState extends State<HomePage> {
       current.insert(0, payload);
       await sp.setString(_savedSearchesKey, json.encode(current));
       if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(AppLocalizations.of(context)!.saved)));
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text(AppLocalizations.of(context)!.saved)),
+      );
       // Analytics tracking for saved search
       // Navigate to saved searches for quick edit
-      Navigator.push(context, MaterialPageRoute(builder: (_) => SavedSearchesPage(parentState: this)));
+      Navigator.push(
+        context,
+        MaterialPageRoute(builder: (_) => SavedSearchesPage(parentState: this)),
+      );
     } catch (_) {}
   }
 
@@ -1564,22 +1920,25 @@ class _HomePageState extends State<HomePage> {
     try {
       // Only auto-save if there are meaningful filters applied
       if (!_hasMeaningfulFilters()) return;
-      
+
       final sp = await SharedPreferences.getInstance();
-      final List<dynamic> current = json.decode(sp.getString(_savedSearchesKey) ?? '[]');
-      
+      final List<dynamic> current = json.decode(
+        sp.getString(_savedSearchesKey) ?? '[]',
+      );
+
       // Get current filter state
       final Map<String, dynamic> currentFilters = _getCurrentFilterState();
-      
+
       // Check if this search already exists (avoid duplicates)
       final String searchName = _generateSearchName();
-      final bool exists = current.any((item) => 
-        item['name'] == searchName && 
-        _areFiltersEqual(item['filters'], currentFilters)
+      final bool exists = current.any(
+        (item) =>
+            item['name'] == searchName &&
+            _areFiltersEqual(item['filters'], currentFilters),
       );
-      
+
       if (exists) return; // Don't save duplicate searches
-      
+
       final Map<String, dynamic> payload = {
         'id': DateTime.now().millisecondsSinceEpoch,
         'name': searchName,
@@ -1588,14 +1947,14 @@ class _HomePageState extends State<HomePage> {
         'created_at': DateTime.now().toIso8601String(),
         'auto_saved': true, // Mark as auto-saved
       };
-      
+
       current.insert(0, payload);
-      
+
       // Keep only last 20 searches to prevent storage bloat
       if (current.length > 20) {
         current.removeRange(20, current.length);
       }
-      
+
       await sp.setString(_savedSearchesKey, json.encode(current));
       // Analytics tracking for auto-saved search
     } catch (_) {}
@@ -1604,59 +1963,77 @@ class _HomePageState extends State<HomePage> {
   // Check if current filters have meaningful values
   bool _hasMeaningfulFilters() {
     return (selectedBrand?.isNotEmpty == true) ||
-           (selectedModel?.isNotEmpty == true) ||
-           (selectedCity?.isNotEmpty == true) ||
-           (selectedMinPrice?.isNotEmpty == true) ||
-           (selectedMaxPrice?.isNotEmpty == true) ||
-           (selectedMinYear?.isNotEmpty == true) ||
-           (selectedMaxYear?.isNotEmpty == true) ||
-           (selectedMinMileage?.isNotEmpty == true) ||
-           (selectedMaxMileage?.isNotEmpty == true) ||
-           (selectedCondition?.isNotEmpty == true && selectedCondition != 'Any') ||
-           (selectedTransmission?.isNotEmpty == true && selectedTransmission != 'Any') ||
-           (selectedFuelType?.isNotEmpty == true && selectedFuelType != 'Any') ||
-           (selectedBodyType?.isNotEmpty == true && selectedBodyType != 'Any') ||
-           (selectedColor?.isNotEmpty == true && selectedColor != 'Any') ||
-           (selectedDriveType?.isNotEmpty == true && selectedDriveType != 'Any') ||
-           (selectedCylinderCount?.isNotEmpty == true && selectedCylinderCount != 'Any') ||
-           (selectedSeating?.isNotEmpty == true && selectedSeating != 'Any') ||
-           (selectedOwners?.isNotEmpty == true) ||
-           (selectedVIN?.isNotEmpty == true) ||
-           (selectedAccidentHistory?.isNotEmpty == true) ||
-           (selectedTitleStatus?.isNotEmpty == true);
+        (selectedModel?.isNotEmpty == true) ||
+        (selectedCity?.isNotEmpty == true) ||
+        (selectedMinPrice?.isNotEmpty == true) ||
+        (selectedMaxPrice?.isNotEmpty == true) ||
+        (selectedMinYear?.isNotEmpty == true) ||
+        (selectedMaxYear?.isNotEmpty == true) ||
+        (selectedMinMileage?.isNotEmpty == true) ||
+        (selectedMaxMileage?.isNotEmpty == true) ||
+        (selectedCondition?.isNotEmpty == true && selectedCondition != 'Any') ||
+        (selectedTransmission?.isNotEmpty == true &&
+            selectedTransmission != 'Any') ||
+        (selectedFuelType?.isNotEmpty == true && selectedFuelType != 'Any') ||
+        (selectedBodyType?.isNotEmpty == true && selectedBodyType != 'Any') ||
+        (selectedColor?.isNotEmpty == true && selectedColor != 'Any') ||
+        (selectedDriveType?.isNotEmpty == true && selectedDriveType != 'Any') ||
+        (selectedCylinderCount?.isNotEmpty == true &&
+            selectedCylinderCount != 'Any') ||
+        (selectedSeating?.isNotEmpty == true && selectedSeating != 'Any') ||
+        (selectedOwners?.isNotEmpty == true) ||
+        (selectedVIN?.isNotEmpty == true) ||
+        (selectedAccidentHistory?.isNotEmpty == true) ||
+        (selectedTitleStatus?.isNotEmpty == true);
   }
 
   // Get current filter state as a map
   Map<String, dynamic> _getCurrentFilterState() {
     final Map<String, dynamic> filters = {};
-    
+
     // Brand and Model filters
     if (selectedBrand?.isNotEmpty == true) filters['brand'] = selectedBrand!;
     if (selectedModel?.isNotEmpty == true) filters['model'] = selectedModel!;
     if (selectedTrim?.isNotEmpty == true) filters['trim'] = selectedTrim!;
-    
+
     // Price filters - apply individually, not requiring both
-    if (selectedMinPrice?.isNotEmpty == true) filters['min_price'] = selectedMinPrice!;
-    if (selectedMaxPrice?.isNotEmpty == true) filters['max_price'] = selectedMaxPrice!;
-    
+    if (selectedMinPrice?.isNotEmpty == true)
+      filters['min_price'] = selectedMinPrice!;
+    if (selectedMaxPrice?.isNotEmpty == true)
+      filters['max_price'] = selectedMaxPrice!;
+
     // Year filters - apply individually, not requiring both
-    if (selectedMinYear?.isNotEmpty == true) filters['min_year'] = selectedMinYear!;
-    if (selectedMaxYear?.isNotEmpty == true) filters['max_year'] = selectedMaxYear!;
-    
+    if (selectedMinYear?.isNotEmpty == true)
+      filters['min_year'] = selectedMinYear!;
+    if (selectedMaxYear?.isNotEmpty == true)
+      filters['max_year'] = selectedMaxYear!;
+
     // Mileage filters - apply individually, not requiring both
-    if (selectedMinMileage?.isNotEmpty == true) filters['min_mileage'] = selectedMinMileage!;
-    if (selectedMaxMileage?.isNotEmpty == true) filters['max_mileage'] = selectedMaxMileage!;
-    
+    if (selectedMinMileage?.isNotEmpty == true)
+      filters['min_mileage'] = selectedMinMileage!;
+    if (selectedMaxMileage?.isNotEmpty == true)
+      filters['max_mileage'] = selectedMaxMileage!;
+
     // Vehicle condition and specifications
-    if (selectedCondition?.isNotEmpty == true && selectedCondition != 'Any') filters['condition'] = selectedCondition!.toLowerCase();
-    if (selectedTransmission?.isNotEmpty == true && selectedTransmission != 'Any') filters['transmission'] = selectedTransmission!.toLowerCase();
-    if (selectedFuelType?.isNotEmpty == true && selectedFuelType != 'Any') filters['fuel_type'] = selectedFuelType!.toLowerCase();
-    if (selectedBodyType?.isNotEmpty == true && selectedBodyType != 'Any') filters['body_type'] = selectedBodyType!.toLowerCase();
-    if (selectedColor?.isNotEmpty == true && selectedColor != 'Any') filters['color'] = selectedColor!.toLowerCase();
-    if (selectedDriveType?.isNotEmpty == true && selectedDriveType != 'Any') filters['drive_type'] = selectedDriveType!.toLowerCase();
-    if (selectedCylinderCount?.isNotEmpty == true && selectedCylinderCount != 'Any') filters['cylinder_count'] = selectedCylinderCount!;
-    if (selectedSeating?.isNotEmpty == true && selectedSeating != 'Any') filters['seating'] = selectedSeating!;
-    
+    if (selectedCondition?.isNotEmpty == true && selectedCondition != 'Any')
+      filters['condition'] = selectedCondition!.toLowerCase();
+    if (selectedTransmission?.isNotEmpty == true &&
+        selectedTransmission != 'Any')
+      filters['transmission'] = selectedTransmission!.toLowerCase();
+    if (selectedFuelType?.isNotEmpty == true && selectedFuelType != 'Any')
+      filters['fuel_type'] = selectedFuelType!.toLowerCase();
+    if (selectedBodyType?.isNotEmpty == true && selectedBodyType != 'Any')
+      filters['body_type'] = selectedBodyType!.toLowerCase();
+    if (selectedColor?.isNotEmpty == true && selectedColor != 'Any')
+      filters['color'] = selectedColor!.toLowerCase();
+    if (selectedDriveType?.isNotEmpty == true && selectedDriveType != 'Any')
+      filters['drive_type'] = selectedDriveType!.toLowerCase();
+    if (selectedCylinderCount?.isNotEmpty == true &&
+        selectedCylinderCount != 'Any')
+      filters['cylinder_count'] = selectedCylinderCount!;
+    if (selectedSeating?.isNotEmpty == true && selectedSeating != 'Any')
+      filters['seating'] = selectedSeating!;
+
     // Location and other filters
     if (selectedCity?.isNotEmpty == true) filters['city'] = selectedCity!;
     // Convert localized sort option to backend API value
@@ -1664,21 +2041,26 @@ class _HomePageState extends State<HomePage> {
     if (apiSortValue?.isNotEmpty == true) filters['sort_by'] = apiSortValue!;
     if (selectedOwners?.isNotEmpty == true) filters['owners'] = selectedOwners!;
     if (selectedVIN?.isNotEmpty == true) filters['vin'] = selectedVIN!;
-    if (selectedAccidentHistory?.isNotEmpty == true) filters['accident_history'] = selectedAccidentHistory!;
-    
+    if (selectedAccidentHistory?.isNotEmpty == true)
+      filters['accident_history'] = selectedAccidentHistory!;
+
     // Title status and damaged parts
     if (selectedTitleStatus?.isNotEmpty == true) {
       filters['title_status'] = selectedTitleStatus!;
-      if (selectedTitleStatus == 'damaged' && selectedDamagedParts?.isNotEmpty == true) {
+      if (selectedTitleStatus == 'damaged' &&
+          selectedDamagedParts?.isNotEmpty == true) {
         filters['damaged_parts'] = selectedDamagedParts!;
       }
     }
-    
+
     return filters;
   }
 
   // Check if two filter maps are equal
-  bool _areFiltersEqual(Map<String, dynamic> filters1, Map<String, dynamic> filters2) {
+  bool _areFiltersEqual(
+    Map<String, dynamic> filters1,
+    Map<String, dynamic> filters2,
+  ) {
     if (filters1.length != filters2.length) return false;
     for (String key in filters1.keys) {
       if (filters1[key] != filters2[key]) return false;
@@ -1690,31 +2072,226 @@ class _HomePageState extends State<HomePage> {
     final parts = <String>[];
     if (selectedBrand?.isNotEmpty == true) parts.add(selectedBrand!);
     if (selectedModel?.isNotEmpty == true) parts.add(selectedModel!);
-    if (selectedCity?.isNotEmpty == true) parts.add(_translateValueGlobal(context, selectedCity) ?? selectedCity!);
-    if (selectedMaxPrice?.isNotEmpty == true) parts.add('\$' + (selectedMaxPrice ?? ''));
-    return parts.isEmpty ? AppLocalizations.of(context)!.defaultSort : parts.join(' • ');
+    if (selectedCity?.isNotEmpty == true)
+      parts.add(_translateValueGlobal(context, selectedCity) ?? selectedCity!);
+    if (selectedMaxPrice?.isNotEmpty == true)
+      parts.add('\$' + (selectedMaxPrice ?? ''));
+    return parts.isEmpty
+        ? AppLocalizations.of(context)!.defaultSort
+        : parts.join(' • ');
   }
 
   // Static options
   final List<String> homeBrands = [
-    'Toyota', 'Volkswagen', 'Ford', 'Honda', 'Hyundai', 'Nissan', 'Chevrolet', 'Kia', 'Mercedes-Benz', 'BMW', 'Audi', 'Lexus', 'Mazda', 'Subaru', 'Volvo', 'Jeep', 'RAM', 'GMC', 'Buick', 'Cadillac', 'Lincoln', 'Mitsubishi', 'Acura', 'Infiniti', 'Tesla', 'Mini', 'Porsche', 'Land Rover', 'Jaguar', 'Fiat', 'Renault', 'Peugeot', 'Citroën', 'Škoda', 'SEAT', 'Dacia', 'Chery', 'BYD', 'Great Wall', 'FAW', 'Roewe', 'Proton', 'Perodua', 'Tata', 'Mahindra', 'Lada', 'ZAZ', 'Daewoo', 'SsangYong', 'Changan', 'Haval', 'Wuling', 'Baojun', 'Nio', 'XPeng', 'Li Auto', 'VinFast', 'Ferrari', 'Lamborghini', 'Bentley', 'Rolls-Royce', 'Aston Martin', 'McLaren', 'Maserati', 'Bugatti', 'Pagani', 'Koenigsegg', 'Polestar', 'Rivian', 'Lucid', 'Alfa Romeo', 'Lancia', 'Abarth', 'Opel', 'DS', 'MAN', 'Iran Khodro', 'Genesis', 'Isuzu', 'Datsun', 'JAC Motors', 'JAC Trucks', 'KTM', 'Alpina', 'Brabus', 'Mansory', 'Bestune', 'Hongqi', 'Dongfeng', 'FAW Jiefang', 'Foton', 'Leapmotor', 'GAC', 'SAIC', 'MG', 'Vauxhall', 'Smart'
+    'Toyota',
+    'Volkswagen',
+    'Ford',
+    'Honda',
+    'Hyundai',
+    'Nissan',
+    'Chevrolet',
+    'Kia',
+    'Mercedes-Benz',
+    'BMW',
+    'Audi',
+    'Lexus',
+    'Mazda',
+    'Subaru',
+    'Volvo',
+    'Jeep',
+    'RAM',
+    'GMC',
+    'Buick',
+    'Cadillac',
+    'Lincoln',
+    'Mitsubishi',
+    'Acura',
+    'Infiniti',
+    'Tesla',
+    'Mini',
+    'Porsche',
+    'Land Rover',
+    'Jaguar',
+    'Fiat',
+    'Renault',
+    'Peugeot',
+    'Citroën',
+    'Škoda',
+    'SEAT',
+    'Dacia',
+    'Chery',
+    'BYD',
+    'Great Wall',
+    'FAW',
+    'Roewe',
+    'Proton',
+    'Perodua',
+    'Tata',
+    'Mahindra',
+    'Lada',
+    'ZAZ',
+    'Daewoo',
+    'SsangYong',
+    'Changan',
+    'Haval',
+    'Wuling',
+    'Baojun',
+    'Nio',
+    'XPeng',
+    'Li Auto',
+    'VinFast',
+    'Ferrari',
+    'Lamborghini',
+    'Bentley',
+    'Rolls-Royce',
+    'Aston Martin',
+    'McLaren',
+    'Maserati',
+    'Bugatti',
+    'Pagani',
+    'Koenigsegg',
+    'Polestar',
+    'Rivian',
+    'Lucid',
+    'Alfa Romeo',
+    'Lancia',
+    'Abarth',
+    'Opel',
+    'DS',
+    'MAN',
+    'Iran Khodro',
+    'Genesis',
+    'Isuzu',
+    'Datsun',
+    'JAC Motors',
+    'JAC Trucks',
+    'KTM',
+    'Alpina',
+    'Brabus',
+    'Mansory',
+    'Bestune',
+    'Hongqi',
+    'Dongfeng',
+    'FAW Jiefang',
+    'Foton',
+    'Leapmotor',
+    'GAC',
+    'SAIC',
+    'MG',
+    'Vauxhall',
+    'Smart',
   ];
   final Map<String, List<String>> models = {
-    'BMW': ['X3', 'X5', 'X7', '3 Series', '5 Series', '7 Series', 'M3', 'M5', 'X1', 'X6'],
-    'Mercedes-Benz': ['C-Class', 'E-Class', 'S-Class', 'GLC', 'GLE', 'GLS', 'A-Class', 'CLA', 'GLA', 'AMG GT'],
+    'BMW': [
+      'X3',
+      'X5',
+      'X7',
+      '3 Series',
+      '5 Series',
+      '7 Series',
+      'M3',
+      'M5',
+      'X1',
+      'X6',
+    ],
+    'Mercedes-Benz': [
+      'C-Class',
+      'E-Class',
+      'S-Class',
+      'GLC',
+      'GLE',
+      'GLS',
+      'A-Class',
+      'CLA',
+      'GLA',
+      'AMG GT',
+    ],
     'Audi': ['A3', 'A4', 'A6', 'A8', 'Q3', 'Q5', 'Q7', 'Q8', 'RS6', 'TT'],
-    'Toyota': ['Camry', 'Corolla', 'RAV4', 'Highlander', 'Tacoma', 'Tundra', 'Prius', 'Avalon', '4Runner', 'Sequoia'],
-    'Honda': ['Civic', 'Accord', 'CR-V', 'Pilot', 'Ridgeline', 'Odyssey', 'HR-V', 'Passport', 'Insight', 'Clarity'],
-    'Nissan': ['Altima', 'Maxima', 'Rogue', 'Murano', 'Pathfinder', 'Frontier', 'Titan', 'Leaf', 'Sentra', 'Versa'],
-    'Ford': ['F-150', 'Mustang', 'Explorer', 'Escape', 'Edge', 'Ranger', 'Bronco', 'Mach-E', 'Focus', 'Fusion'],
-    'Chevrolet': ['Silverado', 'Camaro', 'Equinox', 'Tahoe', 'Suburban', 'Colorado', 'Corvette', 'Malibu', 'Cruze', 'Traverse'],
-    'Hyundai': ['Elantra', 'Sonata', 'Tucson', 'Santa Fe', 'Palisade', 'Kona', 'Venue', 'Accent', 'Veloster', 'Ioniq'],
-    'Kia': ['Forte', 'K5', 'Sportage', 'Telluride', 'Sorento', 'Soul', 'Rio', 'Stinger', 'EV6', 'Niro']
+    'Toyota': [
+      'Camry',
+      'Corolla',
+      'RAV4',
+      'Highlander',
+      'Tacoma',
+      'Tundra',
+      'Prius',
+      'Avalon',
+      '4Runner',
+      'Sequoia',
+    ],
+    'Honda': [
+      'Civic',
+      'Accord',
+      'CR-V',
+      'Pilot',
+      'Ridgeline',
+      'Odyssey',
+      'HR-V',
+      'Passport',
+      'Insight',
+      'Clarity',
+    ],
+    'Nissan': [
+      'Altima',
+      'Maxima',
+      'Rogue',
+      'Murano',
+      'Pathfinder',
+      'Frontier',
+      'Titan',
+      'Leaf',
+      'Sentra',
+      'Versa',
+    ],
+    'Ford': [
+      'F-150',
+      'Mustang',
+      'Explorer',
+      'Escape',
+      'Edge',
+      'Ranger',
+      'Bronco',
+      'Mach-E',
+      'Focus',
+      'Fusion',
+    ],
+    'Chevrolet': [
+      'Silverado',
+      'Camaro',
+      'Equinox',
+      'Tahoe',
+      'Suburban',
+      'Colorado',
+      'Corvette',
+      'Malibu',
+      'Cruze',
+      'Traverse',
+    ],
+    'Hyundai': [
+      'Elantra',
+      'Sonata',
+      'Tucson',
+      'Santa Fe',
+      'Palisade',
+      'Kona',
+      'Venue',
+      'Accent',
+      'Veloster',
+      'Ioniq',
+    ],
+    'Kia': [
+      'Forte',
+      'K5',
+      'Sportage',
+      'Telluride',
+      'Sorento',
+      'Soul',
+      'Rio',
+      'Stinger',
+      'EV6',
+      'Niro',
+    ],
   };
-  
-  
-
-  
 
   // Trims by brand and model for Add Listing (scoped to this page)
   final Map<String, Map<String, List<String>>> trimsByBrandModel = {
@@ -1735,7 +2312,14 @@ class _HomePageState extends State<HomePage> {
     'Toyota': {
       'Camry': ['L', 'LE', 'SE', 'XSE', 'XLE'],
       'Corolla': ['L', 'LE', 'SE', 'XSE', 'XLE'],
-      'RAV4': ['LE', 'XLE', 'XLE Premium', 'Adventure', 'Limited', 'TRD Off-Road'],
+      'RAV4': [
+        'LE',
+        'XLE',
+        'XLE Premium',
+        'Adventure',
+        'Limited',
+        'TRD Off-Road',
+      ],
     },
     'Honda': {
       'Civic': ['LX', 'Sport', 'EX', 'EX-L', 'Touring', 'Si', 'Type R'],
@@ -1746,7 +2330,15 @@ class _HomePageState extends State<HomePage> {
       'Rogue': ['S', 'SV', 'SL', 'Platinum'],
     },
     'Ford': {
-      'F-150': ['XL', 'XLT', 'Lariat', 'King Ranch', 'Platinum', 'Limited', 'Raptor'],
+      'F-150': [
+        'XL',
+        'XLT',
+        'Lariat',
+        'King Ranch',
+        'Platinum',
+        'Limited',
+        'Raptor',
+      ],
       'Explorer': ['XLT', 'Limited', 'ST', 'Platinum'],
     },
     'Chevrolet': {
@@ -1763,28 +2355,303 @@ class _HomePageState extends State<HomePage> {
     },
   };
 
-  
-
-  
-  
-  
-
   // DUPLICATE REMOVED: trimsByBrandModel
 
-  
-  
-  final List<String> trims = ['Base', 'Sport', 'Luxury', 'Premium', 'Limited', 'Platinum', 'Signature', 'Touring', 'SE', 'LE', 'XLE', 'XSE'];
+  final List<String> trims = [
+    'Base',
+    'Sport',
+    'Luxury',
+    'Premium',
+    'Limited',
+    'Platinum',
+    'Signature',
+    'Touring',
+    'SE',
+    'LE',
+    'XLE',
+    'XSE',
+  ];
   final List<String> conditions = ['Any', 'New', 'Used'];
   final List<String> transmissions = ['Any', 'Automatic', 'Manual'];
-  final List<String> fuelTypes = ['Any', 'Gasoline', 'Diesel', 'Electric', 'Hybrid', 'LPG', 'Plug-in Hybrid'];
+  final List<String> fuelTypes = [
+    'Any',
+    'Gasoline',
+    'Diesel',
+    'Electric',
+    'Hybrid',
+    'LPG',
+    'Plug-in Hybrid',
+  ];
   // Use global caches so static helpers can access
   List<String> bodyTypes = globalBodyTypes;
-  final List<String> colors = ['Any', 'Black', 'White', 'Silver', 'Gray', 'Red', 'Blue', 'Green', 'Yellow', 'Orange', 'Purple', 'Brown', 'Beige', 'Gold'];
+  final List<String> colors = [
+    'Any',
+    'Black',
+    'White',
+    'Silver',
+    'Gray',
+    'Red',
+    'Blue',
+    'Green',
+    'Yellow',
+    'Orange',
+    'Purple',
+    'Brown',
+    'Beige',
+    'Gold',
+  ];
   final List<String> driveTypes = ['Any', 'FWD', 'RWD', 'AWD', '4WD'];
-  final List<String> cylinderCounts = ['Any', '1', '2', '3', '4', '5', '6', '7', '8', '9', '10', '11', '12', '13', '14', '15', '16'];
-  final List<String> seatings = ['Any', '1', '2', '3', '4', '5', '6', '7', '8', '9', '10', '11', '12', '13', '14', '15', '16', '17', '18', '19', '20', '21', '22', '23', '24', '25', '26', '27', '28', '29', '30', '31', '32', '33', '34', '35', '36', '37', '38', '39', '40', '41', '42', '43', '44', '45', '46', '47', '48', '49', '50'];
-  final List<String> engineSizes = ['Any', '0.5', '0.6', '0.7', '0.8', '0.9', '1.0', '1.1', '1.2', '1.3', '1.4', '1.5', '1.6', '1.7', '1.8', '1.9', '2.0', '2.1', '2.2', '2.3', '2.4', '2.5', '2.6', '2.7', '2.8', '2.9', '3.0', '3.1', '3.2', '3.3', '3.4', '3.5', '3.6', '3.7', '3.8', '3.9', '4.0', '4.1', '4.2', '4.3', '4.4', '4.5', '4.6', '4.7', '4.8', '4.9', '5.0', '5.1', '5.2', '5.3', '5.4', '5.5', '5.6', '5.7', '5.8', '5.9', '6.0', '6.1', '6.2', '6.3', '6.4', '6.5', '6.6', '6.7', '6.8', '6.9', '7.0', '7.1', '7.2', '7.3', '7.4', '7.5', '7.6', '7.7', '7.8', '7.9', '8.0', '8.1', '8.2', '8.3', '8.4', '8.5', '8.6', '8.7', '8.8', '8.9', '9.0', '9.1', '9.2', '9.3', '9.4', '9.5', '9.6', '9.7', '9.8', '9.9', '10.0', '10.1', '10.2', '10.3', '10.4', '10.5', '10.6', '10.7', '10.8', '10.9', '11.0', '11.1', '11.2', '11.3', '11.4', '11.5', '11.6', '11.7', '11.8', '11.9', '12.0', '12.1', '12.2', '12.3', '12.4', '12.5', '12.6', '12.7', '12.8', '12.9', '13.0', '13.1', '13.2', '13.3', '13.4', '13.5', '13.6', '13.7', '13.8', '13.9', '14.0', '14.1', '14.2', '14.3', '14.4', '14.5', '14.6', '14.7', '14.8', '14.9', '15.0', '15.1', '15.2', '15.3', '15.4', '15.5', '15.6', '15.7', '15.8', '15.9', '16.0'];
-  final List<String> cities = ['Any', 'Baghdad', 'Basra', 'Erbil', 'Najaf', 'Karbala', 'Kirkuk', 'Mosul', 'Sulaymaniyah', 'Dohuk', 'Anbar', 'Halabja', 'Diyala', 'Diyarbakir', 'Maysan', 'Muthanna', 'Dhi Qar', 'Salaheldeen'];
+  final List<String> cylinderCounts = [
+    'Any',
+    '1',
+    '2',
+    '3',
+    '4',
+    '5',
+    '6',
+    '7',
+    '8',
+    '9',
+    '10',
+    '11',
+    '12',
+    '13',
+    '14',
+    '15',
+    '16',
+  ];
+  final List<String> seatings = [
+    'Any',
+    '1',
+    '2',
+    '3',
+    '4',
+    '5',
+    '6',
+    '7',
+    '8',
+    '9',
+    '10',
+    '11',
+    '12',
+    '13',
+    '14',
+    '15',
+    '16',
+    '17',
+    '18',
+    '19',
+    '20',
+    '21',
+    '22',
+    '23',
+    '24',
+    '25',
+    '26',
+    '27',
+    '28',
+    '29',
+    '30',
+    '31',
+    '32',
+    '33',
+    '34',
+    '35',
+    '36',
+    '37',
+    '38',
+    '39',
+    '40',
+    '41',
+    '42',
+    '43',
+    '44',
+    '45',
+    '46',
+    '47',
+    '48',
+    '49',
+    '50',
+  ];
+  final List<String> engineSizes = [
+    'Any',
+    '0.5',
+    '0.6',
+    '0.7',
+    '0.8',
+    '0.9',
+    '1.0',
+    '1.1',
+    '1.2',
+    '1.3',
+    '1.4',
+    '1.5',
+    '1.6',
+    '1.7',
+    '1.8',
+    '1.9',
+    '2.0',
+    '2.1',
+    '2.2',
+    '2.3',
+    '2.4',
+    '2.5',
+    '2.6',
+    '2.7',
+    '2.8',
+    '2.9',
+    '3.0',
+    '3.1',
+    '3.2',
+    '3.3',
+    '3.4',
+    '3.5',
+    '3.6',
+    '3.7',
+    '3.8',
+    '3.9',
+    '4.0',
+    '4.1',
+    '4.2',
+    '4.3',
+    '4.4',
+    '4.5',
+    '4.6',
+    '4.7',
+    '4.8',
+    '4.9',
+    '5.0',
+    '5.1',
+    '5.2',
+    '5.3',
+    '5.4',
+    '5.5',
+    '5.6',
+    '5.7',
+    '5.8',
+    '5.9',
+    '6.0',
+    '6.1',
+    '6.2',
+    '6.3',
+    '6.4',
+    '6.5',
+    '6.6',
+    '6.7',
+    '6.8',
+    '6.9',
+    '7.0',
+    '7.1',
+    '7.2',
+    '7.3',
+    '7.4',
+    '7.5',
+    '7.6',
+    '7.7',
+    '7.8',
+    '7.9',
+    '8.0',
+    '8.1',
+    '8.2',
+    '8.3',
+    '8.4',
+    '8.5',
+    '8.6',
+    '8.7',
+    '8.8',
+    '8.9',
+    '9.0',
+    '9.1',
+    '9.2',
+    '9.3',
+    '9.4',
+    '9.5',
+    '9.6',
+    '9.7',
+    '9.8',
+    '9.9',
+    '10.0',
+    '10.1',
+    '10.2',
+    '10.3',
+    '10.4',
+    '10.5',
+    '10.6',
+    '10.7',
+    '10.8',
+    '10.9',
+    '11.0',
+    '11.1',
+    '11.2',
+    '11.3',
+    '11.4',
+    '11.5',
+    '11.6',
+    '11.7',
+    '11.8',
+    '11.9',
+    '12.0',
+    '12.1',
+    '12.2',
+    '12.3',
+    '12.4',
+    '12.5',
+    '12.6',
+    '12.7',
+    '12.8',
+    '12.9',
+    '13.0',
+    '13.1',
+    '13.2',
+    '13.3',
+    '13.4',
+    '13.5',
+    '13.6',
+    '13.7',
+    '13.8',
+    '13.9',
+    '14.0',
+    '14.1',
+    '14.2',
+    '14.3',
+    '14.4',
+    '14.5',
+    '14.6',
+    '14.7',
+    '14.8',
+    '14.9',
+    '15.0',
+    '15.1',
+    '15.2',
+    '15.3',
+    '15.4',
+    '15.5',
+    '15.6',
+    '15.7',
+    '15.8',
+    '15.9',
+    '16.0',
+  ];
+  final List<String> cities = [
+    'Any',
+    'Baghdad',
+    'Basra',
+    'Erbil',
+    'Najaf',
+    'Karbala',
+    'Kirkuk',
+    'Mosul',
+    'Sulaymaniyah',
+    'Dohuk',
+    'Anbar',
+    'Halabja',
+    'Diyala',
+    'Diyarbakir',
+    'Maysan',
+    'Muthanna',
+    'Dhi Qar',
+    'Salaheldeen',
+  ];
   List<String> getLocalizedSortOptions(BuildContext context) => [
     AppLocalizations.of(context)!.defaultSort,
     AppLocalizations.of(context)!.sort_newest,
@@ -1795,10 +2662,6 @@ class _HomePageState extends State<HomePage> {
     AppLocalizations.of(context)!.sort_mileage_low_high,
     AppLocalizations.of(context)!.sort_mileage_high_low,
   ];
-
-
-
-  
 
   bool useCustomMinPrice = false;
   bool useCustomMaxPrice = false;
@@ -1922,30 +2785,43 @@ class _HomePageState extends State<HomePage> {
 
   Future<void> _loadBodyTypesFromAssets() async {
     try {
-      final String manifestJson = await services.rootBundle.loadString('AssetManifest.json');
+      final String manifestJson = await services.rootBundle.loadString(
+        'AssetManifest.json',
+      );
       final Map<String, dynamic> manifestMap = json.decode(manifestJson);
       final Iterable<String> allAssets = manifestMap.keys.cast<String>();
 
       // Accept both SVG (clean) and PNG variants from both folders
-      final List<String> btAssets = allAssets.where((p) =>
-        (p.startsWith('assets/body_types_clean/') && (p.endsWith('.svg') || p.endsWith('.png')))
-        || (p.startsWith('assets/body_types_png/') && p.endsWith('.png'))
-      ).toList();
+      final List<String> btAssets = allAssets
+          .where(
+            (p) =>
+                (p.startsWith('assets/body_types_clean/') &&
+                    (p.endsWith('.svg') || p.endsWith('.png'))) ||
+                (p.startsWith('assets/body_types_png/') && p.endsWith('.png')),
+          )
+          .toList();
 
       // Build normalized label -> canonical svg path map
       final Map<String, String> labelToSvg = {};
       for (final String path in btAssets) {
         // Extract base filename without extension
         final String fileName = path.split('/').last; // e.g., sedan.svg
-        final String base = fileName.replaceAll('.svg', '').replaceAll('.png', '');
-        if (base.toLowerCase() == 'default') continue; // skip default placeholder
+        final String base = fileName
+            .replaceAll('.svg', '')
+            .replaceAll('.png', '');
+        if (base.toLowerCase() == 'default')
+          continue; // skip default placeholder
 
         // Build a user-friendly label (title case, even if file uses underscores)
         final String label = base
-          .replaceAll('_', ' ')
-          .split(' ') 
-          .map((w) => w.isEmpty ? w : (w[0].toUpperCase() + (w.length > 1 ? w.substring(1) : ''))) 
-          .join(' ');
+            .replaceAll('_', ' ')
+            .split(' ')
+            .map(
+              (w) => w.isEmpty
+                  ? w
+                  : (w[0].toUpperCase() + (w.length > 1 ? w.substring(1) : '')),
+            )
+            .join(' ');
 
         // Prefer clean SVG if available for same label, otherwise use PNG
         if (!labelToSvg.containsKey(label)) {
@@ -1973,14 +2849,25 @@ class _HomePageState extends State<HomePage> {
     }
   }
 
-  Future<void> fetchCars({bool bypassCache = false, bool isRetry = false}) async {
-    print('🚀 fetchCars called with bypassCache: $bypassCache, isRetry: $isRetry');
+  Future<void> fetchCars({
+    bool bypassCache = false,
+    bool isRetry = false,
+  }) async {
+    print(
+      '🚀 fetchCars called with bypassCache: $bypassCache, isRetry: $isRetry',
+    );
     // Analytics tracking for search fetch
-    if (mounted) setState(() { isLoading = true; loadErrorMessage = null; });
+    if (mounted)
+      setState(() {
+        isLoading = true;
+        loadErrorMessage = null;
+      });
     Map<String, String> filters = _buildFilters();
-    
+
     String query = Uri(queryParameters: filters).query;
-    final url = Uri.parse('${getApiBase()}/cars${query.isNotEmpty ? '?$query' : ''}');
+    final url = Uri.parse(
+      '${getApiBase()}/cars${query.isNotEmpty ? '?$query' : ''}',
+    );
 
     // Debug: Print the URL being called
     print('🔍 Fetching cars from: $url');
@@ -1999,9 +2886,19 @@ class _HomePageState extends State<HomePage> {
         try {
           final decoded = json.decode(cached);
           final List<Map<String, dynamic>> parsed = decoded is List
-              ? decoded.whereType<Map>().map((e) => e.map((k, v) => MapEntry(k.toString(), v))).toList().cast<Map<String, dynamic>>()
+              ? decoded
+                    .whereType<Map>()
+                    .map((e) => e.map((k, v) => MapEntry(k.toString(), v)))
+                    .toList()
+                    .cast<Map<String, dynamic>>()
               : <Map<String, dynamic>>[];
-          if (mounted) setState(() { cars = parsed; isLoading = false; hasLoadedOnce = true; loadErrorMessage = null; });
+          if (mounted)
+            setState(() {
+              cars = parsed;
+              isLoading = false;
+              hasLoadedOnce = true;
+              loadErrorMessage = null;
+            });
         } catch (_) {}
       }
     } else {
@@ -2010,39 +2907,44 @@ class _HomePageState extends State<HomePage> {
 
     try {
       // Use longer timeout for sorting requests and add connection headers
-      final timeout = filters.containsKey('sort_by') ? Duration(seconds: 30) : Duration(seconds: 15);
-      final response = await http.get(
-        url,
-        headers: {
-          'Connection': 'keep-alive',
-          'Accept': 'application/json',
-          'User-Agent': 'CARZO-Mobile/1.0',
-          'Cache-Control': 'no-cache',
-          'Pragma': 'no-cache',
-        },
-      ).timeout(timeout);
-      
+      final timeout = filters.containsKey('sort_by')
+          ? Duration(seconds: 30)
+          : Duration(seconds: 15);
+      final response = await http
+          .get(
+            url,
+            headers: {
+              'Connection': 'keep-alive',
+              'Accept': 'application/json',
+              'User-Agent': 'CARZO-Mobile/1.0',
+              'Cache-Control': 'no-cache',
+              'Pragma': 'no-cache',
+            },
+          )
+          .timeout(timeout);
+
       print('📡 Response status: ${response.statusCode}');
       print('📡 Response body length: ${response.body.length}');
-      
+
       if (response.statusCode == 200) {
         final decoded = json.decode(response.body);
         final List<Map<String, dynamic>> parsed = decoded is List
             ? decoded
-                .whereType<Map>()
-                .map((e) => e.map((k, v) => MapEntry(k.toString(), v)))
-                .toList()
-                .cast<Map<String, dynamic>>()
+                  .whereType<Map>()
+                  .map((e) => e.map((k, v) => MapEntry(k.toString(), v)))
+                  .toList()
+                  .cast<Map<String, dynamic>>()
             : <Map<String, dynamic>>[];
-        
+
         print('📊 Parsed ${parsed.length} cars from response');
-        
+
         if (mounted) {
           setState(() {
             cars = parsed;
             isLoading = false;
             hasLoadedOnce = true;
-            loadErrorMessage = null; // Clear any previous error message on success
+            loadErrorMessage =
+                null; // Clear any previous error message on success
           });
         }
         // Save fresh cache
@@ -2053,18 +2955,33 @@ class _HomePageState extends State<HomePage> {
       } else {
         print('❌ Server error: ${response.statusCode}');
         print('❌ Response body: ${response.body}');
-        await _handleFetchError(bypassCache, cached, 'Server ${response.statusCode}', isRetry: isRetry);
+        await _handleFetchError(
+          bypassCache,
+          cached,
+          'Server ${response.statusCode}',
+          isRetry: isRetry,
+        );
       }
     } catch (e) {
       print('❌ Network error: $e');
-      await _handleFetchError(bypassCache, cached, 'Network error', isRetry: isRetry);
+      await _handleFetchError(
+        bypassCache,
+        cached,
+        'Network error',
+        isRetry: isRetry,
+      );
     }
   }
-  
-  Future<void> _handleFetchError(bool bypassCache, String? cached, String errorMessage, {bool isRetry = false}) async {
+
+  Future<void> _handleFetchError(
+    bool bypassCache,
+    String? cached,
+    String errorMessage, {
+    bool isRetry = false,
+  }) async {
     // Don't show error immediately - try fallback strategies first
     print('🔄 Handling fetch error: $errorMessage, isRetry: $isRetry');
-    
+
     // If sorting failed and we have a sort parameter, try without sorting first
     if (selectedSortBy != null && selectedSortBy!.isNotEmpty && !isRetry) {
       print('🔄 Sorting failed, trying without sort parameter');
@@ -2075,9 +2992,11 @@ class _HomePageState extends State<HomePage> {
         print('❌ Fallback without sort also failed: $e');
       }
     }
-    
+
     // Auto-retry logic for network errors
-    if (_fetchRetryCount < _maxRetries && errorMessage == 'Network error' && !isRetry) {
+    if (_fetchRetryCount < _maxRetries &&
+        errorMessage == 'Network error' &&
+        !isRetry) {
       _fetchRetryCount++;
       print('🔄 Auto-retrying fetch (attempt $_fetchRetryCount/$_maxRetries)');
       await Future.delayed(Duration(seconds: 1)); // Shorter delay for better UX
@@ -2090,12 +3009,12 @@ class _HomePageState extends State<HomePage> {
         }
       }
     }
-    
+
     // Only show error if all fallback strategies failed
     if (mounted) {
-      setState(() { 
-        isLoading = false; 
-        hasLoadedOnce = true; 
+      setState(() {
+        isLoading = false;
+        hasLoadedOnce = true;
         // Only show error if bypassing cache OR no cached data is available
         if (bypassCache || cached == null) {
           loadErrorMessage = errorMessage;
@@ -2105,38 +3024,44 @@ class _HomePageState extends State<HomePage> {
       });
     }
   }
-  
+
   Future<void> _fetchWithAlternativeHeaders(String sortValue) async {
     try {
-      print('🔄 Attempting fetch with alternative headers for sort: $sortValue');
+      print(
+        '🔄 Attempting fetch with alternative headers for sort: $sortValue',
+      );
       Map<String, String> filters = _buildFilters();
-      
+
       String query = Uri(queryParameters: filters).query;
-      final url = Uri.parse('${getApiBase()}/cars${query.isNotEmpty ? '?$query' : ''}');
-      
+      final url = Uri.parse(
+        '${getApiBase()}/cars${query.isNotEmpty ? '?$query' : ''}',
+      );
+
       print('🔍 Alternative fetch URL: $url');
-      
-      final response = await http.get(
-        url,
-        headers: {
-          'Connection': 'close',
-          'Accept': 'application/json',
-          'User-Agent': 'CARZO-Mobile/1.0',
-          'Cache-Control': 'no-cache',
-          'Pragma': 'no-cache',
-        },
-      ).timeout(Duration(seconds: 25));
-      
+
+      final response = await http
+          .get(
+            url,
+            headers: {
+              'Connection': 'close',
+              'Accept': 'application/json',
+              'User-Agent': 'CARZO-Mobile/1.0',
+              'Cache-Control': 'no-cache',
+              'Pragma': 'no-cache',
+            },
+          )
+          .timeout(Duration(seconds: 25));
+
       if (response.statusCode == 200) {
         final decoded = json.decode(response.body);
         final List<Map<String, dynamic>> parsed = decoded is List
             ? decoded
-                .whereType<Map>()
-                .map((e) => e.map((k, v) => MapEntry(k.toString(), v)))
-                .toList()
-                .cast<Map<String, dynamic>>()
+                  .whereType<Map>()
+                  .map((e) => e.map((k, v) => MapEntry(k.toString(), v)))
+                  .toList()
+                  .cast<Map<String, dynamic>>()
             : <Map<String, dynamic>>[];
-        
+
         if (mounted) {
           setState(() {
             cars = parsed;
@@ -2145,7 +3070,7 @@ class _HomePageState extends State<HomePage> {
             loadErrorMessage = null;
           });
         }
-        
+
         print('✅ Alternative fetch successful: ${parsed.length} cars loaded');
       } else {
         throw Exception('Server error: ${response.statusCode}');
@@ -2160,23 +3085,25 @@ class _HomePageState extends State<HomePage> {
     try {
       print('🔄 Attempting fetch without sort parameter');
       Map<String, String> filters = _buildFilters(includeSort: false);
-      
+
       String query = Uri(queryParameters: filters).query;
-      final url = Uri.parse('${getApiBase()}/cars${query.isNotEmpty ? '?$query' : ''}');
-      
+      final url = Uri.parse(
+        '${getApiBase()}/cars${query.isNotEmpty ? '?$query' : ''}',
+      );
+
       print('🔍 Fallback URL: $url');
-      
+
       final response = await http.get(url).timeout(Duration(seconds: 10));
       if (response.statusCode == 200) {
         final decoded = json.decode(response.body);
         final List<Map<String, dynamic>> parsed = decoded is List
             ? decoded
-                .whereType<Map>()
-                .map((e) => e.map((k, v) => MapEntry(k.toString(), v)))
-                .toList()
-                .cast<Map<String, dynamic>>()
+                  .whereType<Map>()
+                  .map((e) => e.map((k, v) => MapEntry(k.toString(), v)))
+                  .toList()
+                  .cast<Map<String, dynamic>>()
             : <Map<String, dynamic>>[];
-        
+
         if (mounted) {
           setState(() {
             cars = parsed;
@@ -2185,9 +3112,9 @@ class _HomePageState extends State<HomePage> {
             loadErrorMessage = null;
           });
         }
-        
+
         print('✅ Fallback fetch successful: ${parsed.length} cars loaded');
-        
+
         // Show a message that sorting was disabled
         if (mounted) {
           ScaffoldMessenger.of(context).showSnackBar(
@@ -2228,41 +3155,78 @@ class _HomePageState extends State<HomePage> {
   Timer? _sortDebounceTimer;
   int _fetchRetryCount = 0;
   static const int _maxRetries = 3;
-  
+
   Map<String, String> _buildFilters({bool includeSort = true}) {
     Map<String, String> filters = {};
-    
+
     // Brand and Model filters
-    if (selectedBrand != null && selectedBrand!.isNotEmpty) filters['brand'] = selectedBrand!;
-    if (selectedModel != null && selectedModel!.isNotEmpty) filters['model'] = selectedModel!;
-    if (selectedTrim != null && selectedTrim!.isNotEmpty) filters['trim'] = selectedTrim!;
-    
+    if (selectedBrand != null && selectedBrand!.isNotEmpty)
+      filters['brand'] = selectedBrand!;
+    if (selectedModel != null && selectedModel!.isNotEmpty)
+      filters['model'] = selectedModel!;
+    if (selectedTrim != null && selectedTrim!.isNotEmpty)
+      filters['trim'] = selectedTrim!;
+
     // Price filters - apply individually, not requiring both
-    if (selectedMinPrice != null && selectedMinPrice!.isNotEmpty) filters['min_price'] = selectedMinPrice!;
-    if (selectedMaxPrice != null && selectedMaxPrice!.isNotEmpty) filters['max_price'] = selectedMaxPrice!;
-    
+    if (selectedMinPrice != null && selectedMinPrice!.isNotEmpty)
+      filters['min_price'] = selectedMinPrice!;
+    if (selectedMaxPrice != null && selectedMaxPrice!.isNotEmpty)
+      filters['max_price'] = selectedMaxPrice!;
+
     // Year filters - apply individually, not requiring both
-    if (selectedMinYear != null && selectedMinYear!.isNotEmpty) filters['min_year'] = selectedMinYear!;
-    if (selectedMaxYear != null && selectedMaxYear!.isNotEmpty) filters['max_year'] = selectedMaxYear!;
-    
+    if (selectedMinYear != null && selectedMinYear!.isNotEmpty)
+      filters['min_year'] = selectedMinYear!;
+    if (selectedMaxYear != null && selectedMaxYear!.isNotEmpty)
+      filters['max_year'] = selectedMaxYear!;
+
     // Mileage filters - apply individually, not requiring both
-    if (selectedMinMileage != null && selectedMinMileage!.isNotEmpty) filters['min_mileage'] = selectedMinMileage!;
-    if (selectedMaxMileage != null && selectedMaxMileage!.isNotEmpty) filters['max_mileage'] = selectedMaxMileage!;
-    
+    if (selectedMinMileage != null && selectedMinMileage!.isNotEmpty)
+      filters['min_mileage'] = selectedMinMileage!;
+    if (selectedMaxMileage != null && selectedMaxMileage!.isNotEmpty)
+      filters['max_mileage'] = selectedMaxMileage!;
+
     // Vehicle condition and specifications
-    if (selectedCondition != null && selectedCondition!.isNotEmpty && selectedCondition != 'Any') filters['condition'] = selectedCondition!.toLowerCase();
-    if (selectedTransmission != null && selectedTransmission!.isNotEmpty && selectedTransmission != 'Any') filters['transmission'] = selectedTransmission!.toLowerCase();
-    if (selectedFuelType != null && selectedFuelType!.isNotEmpty && selectedFuelType != 'Any') filters['fuel_type'] = selectedFuelType!.toLowerCase();
-    if (selectedBodyType != null && selectedBodyType!.isNotEmpty && selectedBodyType != 'Any') filters['body_type'] = selectedBodyType!.toLowerCase();
-    if (selectedColor != null && selectedColor!.isNotEmpty && selectedColor != 'Any') filters['color'] = selectedColor!.toLowerCase();
-    if (selectedDriveType != null && selectedDriveType!.isNotEmpty && selectedDriveType != 'Any') filters['drive_type'] = selectedDriveType!.toLowerCase();
-    if (selectedCylinderCount != null && selectedCylinderCount!.isNotEmpty && selectedCylinderCount != 'Any') filters['cylinder_count'] = selectedCylinderCount!;
-    if (selectedSeating != null && selectedSeating!.isNotEmpty && selectedSeating != 'Any') filters['seating'] = selectedSeating!;
-    if (selectedEngineSize != null && selectedEngineSize!.isNotEmpty && selectedEngineSize != 'Any') filters['engine_size'] = selectedEngineSize!;
-    
+    if (selectedCondition != null &&
+        selectedCondition!.isNotEmpty &&
+        selectedCondition != 'Any')
+      filters['condition'] = selectedCondition!.toLowerCase();
+    if (selectedTransmission != null &&
+        selectedTransmission!.isNotEmpty &&
+        selectedTransmission != 'Any')
+      filters['transmission'] = selectedTransmission!.toLowerCase();
+    if (selectedFuelType != null &&
+        selectedFuelType!.isNotEmpty &&
+        selectedFuelType != 'Any')
+      filters['fuel_type'] = selectedFuelType!.toLowerCase();
+    if (selectedBodyType != null &&
+        selectedBodyType!.isNotEmpty &&
+        selectedBodyType != 'Any')
+      filters['body_type'] = selectedBodyType!.toLowerCase();
+    if (selectedColor != null &&
+        selectedColor!.isNotEmpty &&
+        selectedColor != 'Any')
+      filters['color'] = selectedColor!.toLowerCase();
+    if (selectedDriveType != null &&
+        selectedDriveType!.isNotEmpty &&
+        selectedDriveType != 'Any')
+      filters['drive_type'] = selectedDriveType!.toLowerCase();
+    if (selectedCylinderCount != null &&
+        selectedCylinderCount!.isNotEmpty &&
+        selectedCylinderCount != 'Any')
+      filters['cylinder_count'] = selectedCylinderCount!;
+    if (selectedSeating != null &&
+        selectedSeating!.isNotEmpty &&
+        selectedSeating != 'Any')
+      filters['seating'] = selectedSeating!;
+    if (selectedEngineSize != null &&
+        selectedEngineSize!.isNotEmpty &&
+        selectedEngineSize != 'Any')
+      filters['engine_size'] = selectedEngineSize!;
+
     // Location and other filters
-    if (selectedCity != null && selectedCity!.isNotEmpty) filters['city'] = selectedCity!;
-    
+    if (selectedCity != null && selectedCity!.isNotEmpty)
+      filters['city'] = selectedCity!;
+
     // Only include sort if requested and valid
     if (includeSort) {
       final apiSortValue = _convertSortToApiValue(context, selectedSortBy);
@@ -2270,35 +3234,40 @@ class _HomePageState extends State<HomePage> {
         filters['sort_by'] = apiSortValue;
       }
     }
-    
-    if (selectedOwners != null && selectedOwners!.isNotEmpty) filters['owners'] = selectedOwners!;
-    if (selectedVIN != null && selectedVIN!.isNotEmpty) filters['vin'] = selectedVIN!;
-    if (selectedAccidentHistory != null && selectedAccidentHistory!.isNotEmpty) filters['accident_history'] = selectedAccidentHistory!;
-    
+
+    if (selectedOwners != null && selectedOwners!.isNotEmpty)
+      filters['owners'] = selectedOwners!;
+    if (selectedVIN != null && selectedVIN!.isNotEmpty)
+      filters['vin'] = selectedVIN!;
+    if (selectedAccidentHistory != null && selectedAccidentHistory!.isNotEmpty)
+      filters['accident_history'] = selectedAccidentHistory!;
+
     // Title status and damaged parts
     if (selectedTitleStatus != null && selectedTitleStatus!.isNotEmpty) {
       filters['title_status'] = selectedTitleStatus!;
-      if (selectedTitleStatus == 'damaged' && selectedDamagedParts != null && selectedDamagedParts!.isNotEmpty) {
+      if (selectedTitleStatus == 'damaged' &&
+          selectedDamagedParts != null &&
+          selectedDamagedParts!.isNotEmpty) {
         filters['damaged_parts'] = selectedDamagedParts!;
       }
     }
-    
+
     return filters;
   }
-  
+
   void onSortChanged() async {
     print('🔄 Sort changed to: $selectedSortBy');
     // Analytics tracking for sort changed
-    
+
     // Cancel any pending sort operation
     _sortDebounceTimer?.cancel();
-    
+
     // Immediate response - no debounce for better UX
     if (!mounted) return;
-    
+
     // Reset retry count when sorting changes
     _fetchRetryCount = 0;
-    
+
     // Clear any previous error messages
     if (mounted) {
       setState(() {
@@ -2306,7 +3275,7 @@ class _HomePageState extends State<HomePage> {
         isLoading = true;
       });
     }
-    
+
     // Clear cache for current filters
     try {
       final sp = await SharedPreferences.getInstance();
@@ -2318,22 +3287,22 @@ class _HomePageState extends State<HomePage> {
     } catch (e) {
       print('❌ Error clearing cache: $e');
     }
-    
+
     // Try the sort operation immediately
     await _performSortWithFallback();
   }
-  
+
   Future<void> _performSortWithFallback() async {
     // Validate sort parameter before attempting
     final apiSortValue = _convertSortToApiValue(context, selectedSortBy);
     print('🔄 Sort parameter validation: ${selectedSortBy} -> ${apiSortValue}');
-    
+
     if (apiSortValue == null || apiSortValue.isEmpty) {
       print('⚠️ Invalid sort parameter, skipping sort');
       await fetchCars(bypassCache: true);
       return;
     }
-    
+
     // Try multiple strategies in sequence
     List<Future<void> Function()> strategies = [
       () => _tryDirectSort(apiSortValue),
@@ -2342,7 +3311,7 @@ class _HomePageState extends State<HomePage> {
       () => _tryConnectionReset(apiSortValue),
       () => _tryWithoutSort(),
     ];
-    
+
     for (int i = 0; i < strategies.length; i++) {
       try {
         print('🔄 Trying strategy ${i + 1}/${strategies.length}');
@@ -2356,7 +3325,7 @@ class _HomePageState extends State<HomePage> {
         }
       }
     }
-    
+
     // If all strategies fail, show error
     if (mounted) {
       setState(() {
@@ -2365,37 +3334,45 @@ class _HomePageState extends State<HomePage> {
       });
     }
   }
-  
+
   Future<void> _tryDirectSort(String apiSortValue) async {
     print('🔄 Direct sort attempt with: $apiSortValue');
-    
+
     // Try up to 5 times with increasing delays and different approaches
     for (int attempt = 1; attempt <= 5; attempt++) {
       try {
         // Use different timeout and connection settings based on attempt
         final timeout = Duration(seconds: 10 + (attempt * 5));
         print('🔄 Attempt $attempt with ${timeout.inSeconds}s timeout');
-        
+
         Map<String, String> filters = _buildFilters();
         String query = Uri(queryParameters: filters).query;
-        final url = Uri.parse('${getApiBase()}/cars${query.isNotEmpty ? '?$query' : ''}');
-        
-        final response = await http.get(
-          url,
-          headers: {
-            'Accept': 'application/json',
-            'User-Agent': 'CARZO-Mobile/1.0',
-            'Connection': attempt % 2 == 0 ? 'close' : 'keep-alive',
-            'Cache-Control': 'no-cache',
-          },
-        ).timeout(timeout);
-        
+        final url = Uri.parse(
+          '${getApiBase()}/cars${query.isNotEmpty ? '?$query' : ''}',
+        );
+
+        final response = await http
+            .get(
+              url,
+              headers: {
+                'Accept': 'application/json',
+                'User-Agent': 'CARZO-Mobile/1.0',
+                'Connection': attempt % 2 == 0 ? 'close' : 'keep-alive',
+                'Cache-Control': 'no-cache',
+              },
+            )
+            .timeout(timeout);
+
         if (response.statusCode == 200) {
           final decoded = json.decode(response.body);
           final List<Map<String, dynamic>> parsed = decoded is List
-              ? decoded.whereType<Map>().map((e) => e.map((k, v) => MapEntry(k.toString(), v))).toList().cast<Map<String, dynamic>>()
+              ? decoded
+                    .whereType<Map>()
+                    .map((e) => e.map((k, v) => MapEntry(k.toString(), v)))
+                    .toList()
+                    .cast<Map<String, dynamic>>()
               : <Map<String, dynamic>>[];
-          
+
           if (mounted) {
             setState(() {
               cars = parsed;
@@ -2404,12 +3381,12 @@ class _HomePageState extends State<HomePage> {
               loadErrorMessage = null;
             });
           }
-          
+
           // Save to cache
           final sp = await SharedPreferences.getInstance();
           final cacheKey = 'cache_home_' + query.hashCode.toString();
           unawaited(sp.setString(cacheKey, response.body));
-          
+
           unawaited(_autoSaveSearch());
           print('✅ Direct sort successful on attempt $attempt');
           return;
@@ -2426,35 +3403,43 @@ class _HomePageState extends State<HomePage> {
       }
     }
   }
-  
+
   Future<void> _tryAlternativeSort(String apiSortValue) async {
     print('🔄 Alternative sort attempt with: $apiSortValue');
-    
+
     // Try with different connection approaches
     for (int attempt = 1; attempt <= 3; attempt++) {
       try {
         Map<String, String> filters = _buildFilters();
         String query = Uri(queryParameters: filters).query;
-        final url = Uri.parse('${getApiBase()}/cars${query.isNotEmpty ? '?$query' : ''}');
-        
-        final response = await http.get(
-          url,
-          headers: {
-            'Accept': 'application/json',
-            'User-Agent': 'CARZO-Mobile/1.0',
-            'Connection': 'close',
-            'Cache-Control': 'no-cache',
-            'Pragma': 'no-cache',
-            'If-None-Match': '*',
-          },
-        ).timeout(Duration(seconds: 15));
-        
+        final url = Uri.parse(
+          '${getApiBase()}/cars${query.isNotEmpty ? '?$query' : ''}',
+        );
+
+        final response = await http
+            .get(
+              url,
+              headers: {
+                'Accept': 'application/json',
+                'User-Agent': 'CARZO-Mobile/1.0',
+                'Connection': 'close',
+                'Cache-Control': 'no-cache',
+                'Pragma': 'no-cache',
+                'If-None-Match': '*',
+              },
+            )
+            .timeout(Duration(seconds: 15));
+
         if (response.statusCode == 200) {
           final decoded = json.decode(response.body);
           final List<Map<String, dynamic>> parsed = decoded is List
-              ? decoded.whereType<Map>().map((e) => e.map((k, v) => MapEntry(k.toString(), v))).toList().cast<Map<String, dynamic>>()
+              ? decoded
+                    .whereType<Map>()
+                    .map((e) => e.map((k, v) => MapEntry(k.toString(), v)))
+                    .toList()
+                    .cast<Map<String, dynamic>>()
               : <Map<String, dynamic>>[];
-          
+
           if (mounted) {
             setState(() {
               cars = parsed;
@@ -2463,7 +3448,7 @@ class _HomePageState extends State<HomePage> {
               loadErrorMessage = null;
             });
           }
-          
+
           unawaited(_autoSaveSearch());
           print('✅ Alternative sort successful on attempt $attempt');
           return;
@@ -2480,25 +3465,30 @@ class _HomePageState extends State<HomePage> {
       }
     }
   }
-  
+
   Future<void> _trySimpleSort(String apiSortValue) async {
     print('🔄 Simple sort attempt with: $apiSortValue');
     // Try with minimal headers and shorter timeout
     Map<String, String> filters = _buildFilters();
     String query = Uri(queryParameters: filters).query;
-    final url = Uri.parse('${getApiBase()}/cars${query.isNotEmpty ? '?$query' : ''}');
-    
-    final response = await http.get(
-      url,
-      headers: {'Accept': 'application/json'},
-    ).timeout(Duration(seconds: 10));
-    
+    final url = Uri.parse(
+      '${getApiBase()}/cars${query.isNotEmpty ? '?$query' : ''}',
+    );
+
+    final response = await http
+        .get(url, headers: {'Accept': 'application/json'})
+        .timeout(Duration(seconds: 10));
+
     if (response.statusCode == 200) {
       final decoded = json.decode(response.body);
       final List<Map<String, dynamic>> parsed = decoded is List
-          ? decoded.whereType<Map>().map((e) => e.map((k, v) => MapEntry(k.toString(), v))).toList().cast<Map<String, dynamic>>()
+          ? decoded
+                .whereType<Map>()
+                .map((e) => e.map((k, v) => MapEntry(k.toString(), v)))
+                .toList()
+                .cast<Map<String, dynamic>>()
           : <Map<String, dynamic>>[];
-      
+
       if (mounted) {
         setState(() {
           cars = parsed;
@@ -2512,32 +3502,35 @@ class _HomePageState extends State<HomePage> {
       throw Exception('Server error: ${response.statusCode}');
     }
   }
-  
+
   Future<void> _tryConnectionReset(String apiSortValue) async {
     print('🔄 Connection reset attempt with: $apiSortValue');
-    
+
     // Wait a bit longer and try with a completely fresh approach
     await Future.delayed(Duration(milliseconds: 1000));
-    
+
     try {
       Map<String, String> filters = _buildFilters();
       String query = Uri(queryParameters: filters).query;
-      final url = Uri.parse('${getApiBase()}/cars${query.isNotEmpty ? '?$query' : ''}');
-      
+      final url = Uri.parse(
+        '${getApiBase()}/cars${query.isNotEmpty ? '?$query' : ''}',
+      );
+
       // Try with a very simple request
-      final response = await http.get(
-        url,
-        headers: {
-          'Accept': 'application/json',
-        },
-      ).timeout(Duration(seconds: 20));
-      
+      final response = await http
+          .get(url, headers: {'Accept': 'application/json'})
+          .timeout(Duration(seconds: 20));
+
       if (response.statusCode == 200) {
         final decoded = json.decode(response.body);
         final List<Map<String, dynamic>> parsed = decoded is List
-            ? decoded.whereType<Map>().map((e) => e.map((k, v) => MapEntry(k.toString(), v))).toList().cast<Map<String, dynamic>>()
+            ? decoded
+                  .whereType<Map>()
+                  .map((e) => e.map((k, v) => MapEntry(k.toString(), v)))
+                  .toList()
+                  .cast<Map<String, dynamic>>()
             : <Map<String, dynamic>>[];
-        
+
         if (mounted) {
           setState(() {
             cars = parsed;
@@ -2546,7 +3539,7 @@ class _HomePageState extends State<HomePage> {
             loadErrorMessage = null;
           });
         }
-        
+
         unawaited(_autoSaveSearch());
         print('✅ Connection reset successful');
       } else {
@@ -2577,14 +3570,14 @@ class _HomePageState extends State<HomePage> {
       }
     }
   }
-  
+
   Future<void> _tryClientSideSort() async {
     print('🔄 Attempting client-side sort');
     final apiSortValue = _convertSortToApiValue(context, selectedSortBy);
     if (apiSortValue == null || selectedSortBy == null) return;
-    
+
     List<Map<String, dynamic>> sortedCars = List.from(cars);
-    
+
     try {
       switch (apiSortValue) {
         case 'price_asc':
@@ -2631,13 +3624,17 @@ class _HomePageState extends State<HomePage> {
           break;
         case 'newest':
           sortedCars.sort((a, b) {
-            final dateA = DateTime.tryParse(a['created_at']?.toString() ?? '') ?? DateTime(1970);
-            final dateB = DateTime.tryParse(b['created_at']?.toString() ?? '') ?? DateTime(1970);
+            final dateA =
+                DateTime.tryParse(a['created_at']?.toString() ?? '') ??
+                DateTime(1970);
+            final dateB =
+                DateTime.tryParse(b['created_at']?.toString() ?? '') ??
+                DateTime(1970);
             return dateB.compareTo(dateA);
           });
           break;
       }
-      
+
       if (mounted) {
         setState(() {
           cars = sortedCars;
@@ -2645,7 +3642,7 @@ class _HomePageState extends State<HomePage> {
           loadErrorMessage = null;
         });
       }
-      
+
       print('✅ Client-side sort successful');
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
@@ -2676,11 +3673,14 @@ class _HomePageState extends State<HomePage> {
 
   // Helper methods to get available options based on selected vehicle
   List<String> getAvailableEngineSizes() {
-    if (selectedBrand == null || selectedModel == null || selectedTrim == null) {
+    if (selectedBrand == null ||
+        selectedModel == null ||
+        selectedTrim == null) {
       return engineSizes;
     }
-    
-    final specs = globalVehicleSpecs[selectedBrand]?[selectedModel]?[selectedTrim];
+
+    final specs =
+        globalVehicleSpecs[selectedBrand]?[selectedModel]?[selectedTrim];
     if (specs != null && specs['engineSizes'] != null) {
       return ['Any', ...specs['engineSizes']];
     }
@@ -2692,11 +3692,14 @@ class _HomePageState extends State<HomePage> {
   }
 
   List<String> getAvailableBodyTypes() {
-    if (selectedBrand == null || selectedModel == null || selectedTrim == null) {
+    if (selectedBrand == null ||
+        selectedModel == null ||
+        selectedTrim == null) {
       return bodyTypes;
     }
-    
-    final specs = globalVehicleSpecs[selectedBrand]?[selectedModel]?[selectedTrim];
+
+    final specs =
+        globalVehicleSpecs[selectedBrand]?[selectedModel]?[selectedTrim];
     if (specs != null && specs['bodyTypes'] != null) {
       return ['Any', ...specs['bodyTypes']];
     }
@@ -2704,11 +3707,14 @@ class _HomePageState extends State<HomePage> {
   }
 
   List<String> getAvailableTransmissions() {
-    if (selectedBrand == null || selectedModel == null || selectedTrim == null) {
+    if (selectedBrand == null ||
+        selectedModel == null ||
+        selectedTrim == null) {
       return transmissions;
     }
-    
-    final specs = globalVehicleSpecs[selectedBrand]?[selectedModel]?[selectedTrim];
+
+    final specs =
+        globalVehicleSpecs[selectedBrand]?[selectedModel]?[selectedTrim];
     if (specs != null && specs['transmissions'] != null) {
       return ['Any', ...specs['transmissions']];
     }
@@ -2716,11 +3722,14 @@ class _HomePageState extends State<HomePage> {
   }
 
   List<String> getAvailableFuelTypes() {
-    if (selectedBrand == null || selectedModel == null || selectedTrim == null) {
+    if (selectedBrand == null ||
+        selectedModel == null ||
+        selectedTrim == null) {
       return fuelTypes;
     }
-    
-    final specs = globalVehicleSpecs[selectedBrand]?[selectedModel]?[selectedTrim];
+
+    final specs =
+        globalVehicleSpecs[selectedBrand]?[selectedModel]?[selectedTrim];
     if (specs != null && specs['fuelTypes'] != null) {
       return ['Any', ...specs['fuelTypes']];
     }
@@ -2728,11 +3737,14 @@ class _HomePageState extends State<HomePage> {
   }
 
   List<String> getAvailableDriveTypes() {
-    if (selectedBrand == null || selectedModel == null || selectedTrim == null) {
+    if (selectedBrand == null ||
+        selectedModel == null ||
+        selectedTrim == null) {
       return driveTypes;
     }
-    
-    final specs = globalVehicleSpecs[selectedBrand]?[selectedModel]?[selectedTrim];
+
+    final specs =
+        globalVehicleSpecs[selectedBrand]?[selectedModel]?[selectedTrim];
     if (specs != null && specs['driveTypes'] != null) {
       return ['Any', ...specs['driveTypes']];
     }
@@ -2740,11 +3752,14 @@ class _HomePageState extends State<HomePage> {
   }
 
   List<String> getAvailableCylinderCounts() {
-    if (selectedBrand == null || selectedModel == null || selectedTrim == null) {
+    if (selectedBrand == null ||
+        selectedModel == null ||
+        selectedTrim == null) {
       return cylinderCounts;
     }
-    
-    final specs = globalVehicleSpecs[selectedBrand]?[selectedModel]?[selectedTrim];
+
+    final specs =
+        globalVehicleSpecs[selectedBrand]?[selectedModel]?[selectedTrim];
     if (specs != null && specs['cylinderCounts'] != null) {
       return ['Any', ...specs['cylinderCounts']];
     }
@@ -2752,11 +3767,14 @@ class _HomePageState extends State<HomePage> {
   }
 
   List<String> getAvailableSeatings() {
-    if (selectedBrand == null || selectedModel == null || selectedTrim == null) {
+    if (selectedBrand == null ||
+        selectedModel == null ||
+        selectedTrim == null) {
       return seatings;
     }
-    
-    final specs = globalVehicleSpecs[selectedBrand]?[selectedModel]?[selectedTrim];
+
+    final specs =
+        globalVehicleSpecs[selectedBrand]?[selectedModel]?[selectedTrim];
     if (specs != null && specs['seatings'] != null) {
       return ['Any', ...specs['seatings']];
     }
@@ -2764,11 +3782,14 @@ class _HomePageState extends State<HomePage> {
   }
 
   List<String> getAvailableColors() {
-    if (selectedBrand == null || selectedModel == null || selectedTrim == null) {
+    if (selectedBrand == null ||
+        selectedModel == null ||
+        selectedTrim == null) {
       return colors;
     }
-    
-    final specs = globalVehicleSpecs[selectedBrand]?[selectedModel]?[selectedTrim];
+
+    final specs =
+        globalVehicleSpecs[selectedBrand]?[selectedModel]?[selectedTrim];
     if (specs != null && specs['colors'] != null) {
       return ['Any', ...specs['colors']];
     }
@@ -2778,14 +3799,14 @@ class _HomePageState extends State<HomePage> {
   // Helper method to get a valid drive type value for dropdown
   String? _getValidDriveTypeValue() {
     if (selectedDriveType == null) return '';
-    
+
     final availableTypes = getAvailableDriveTypes();
-    
+
     // First try exact match
     if (availableTypes.contains(selectedDriveType)) {
       return selectedDriveType;
     }
-    
+
     // Try case-insensitive match
     final lowerSelected = selectedDriveType!.toLowerCase();
     for (final type in availableTypes) {
@@ -2793,7 +3814,7 @@ class _HomePageState extends State<HomePage> {
         return type;
       }
     }
-    
+
     // If no match found, return empty string
     return '';
   }
@@ -2801,14 +3822,14 @@ class _HomePageState extends State<HomePage> {
   // Helper method to get a valid transmission value for dropdown
   String? _getValidTransmissionValue() {
     if (selectedTransmission == null) return '';
-    
+
     final availableTypes = getAvailableTransmissions();
-    
+
     // First try exact match
     if (availableTypes.contains(selectedTransmission)) {
       return selectedTransmission;
     }
-    
+
     // Try case-insensitive match
     final lowerSelected = selectedTransmission!.toLowerCase();
     for (final type in availableTypes) {
@@ -2816,7 +3837,7 @@ class _HomePageState extends State<HomePage> {
         return type;
       }
     }
-    
+
     // If no match found, return empty string
     return '';
   }
@@ -2824,14 +3845,14 @@ class _HomePageState extends State<HomePage> {
   // Helper method to get a valid fuel type value for dropdown
   String? _getValidFuelTypeValue() {
     if (selectedFuelType == null) return '';
-    
+
     final availableTypes = getAvailableFuelTypes();
-    
+
     // First try exact match
     if (availableTypes.contains(selectedFuelType)) {
       return selectedFuelType;
     }
-    
+
     // Try case-insensitive match
     final lowerSelected = selectedFuelType!.toLowerCase();
     for (final type in availableTypes) {
@@ -2839,7 +3860,7 @@ class _HomePageState extends State<HomePage> {
         return type;
       }
     }
-    
+
     // If no match found, return empty string
     return '';
   }
@@ -2847,27 +3868,27 @@ class _HomePageState extends State<HomePage> {
   // Helper method to check if there are any active filters
   bool _hasActiveFilters() {
     return selectedBrand != null ||
-           selectedModel != null ||
-           selectedTrim != null ||
-           selectedMinPrice != null ||
-           selectedMaxPrice != null ||
-           selectedMinYear != null ||
-           selectedMaxYear != null ||
-           selectedMinMileage != null ||
-           selectedMaxMileage != null ||
-           selectedCondition != null ||
-           selectedTransmission != null ||
-           selectedFuelType != null ||
-           selectedBodyType != null ||
-           selectedColor != null ||
-           selectedDriveType != null ||
-           selectedCylinderCount != null ||
-           selectedSeating != null ||
-           selectedEngineSize != null ||
-           selectedCity != null ||
-           selectedSortBy != null ||
-           selectedTitleStatus != null ||
-           selectedDamagedParts != null;
+        selectedModel != null ||
+        selectedTrim != null ||
+        selectedMinPrice != null ||
+        selectedMaxPrice != null ||
+        selectedMinYear != null ||
+        selectedMaxYear != null ||
+        selectedMinMileage != null ||
+        selectedMaxMileage != null ||
+        selectedCondition != null ||
+        selectedTransmission != null ||
+        selectedFuelType != null ||
+        selectedBodyType != null ||
+        selectedColor != null ||
+        selectedDriveType != null ||
+        selectedCylinderCount != null ||
+        selectedSeating != null ||
+        selectedEngineSize != null ||
+        selectedCity != null ||
+        selectedSortBy != null ||
+        selectedTitleStatus != null ||
+        selectedDamagedParts != null;
   }
 
   // Helper method to clear all filters
@@ -2983,133 +4004,319 @@ class _HomePageState extends State<HomePage> {
     });
     onFilterChanged();
   }
+
   // Helper method to build active filter chips
   List<Widget> _buildActiveFilterChips() {
     List<Widget> chips = [];
 
     // Brand filter
     if (selectedBrand != null && selectedBrand!.toLowerCase() != 'any') {
-      chips.add(_buildFilterChip(AppLocalizations.of(context)!.brandLabel, _translateValueGlobal(context, selectedBrand) ?? selectedBrand!, 'brand', Icons.directions_car, Color(0xFFFF6B00)));
+      chips.add(
+        _buildFilterChip(
+          AppLocalizations.of(context)!.brandLabel,
+          _translateValueGlobal(context, selectedBrand) ?? selectedBrand!,
+          'brand',
+          Icons.directions_car,
+          Color(0xFFFF6B00),
+        ),
+      );
     }
 
     // Model filter
     if (selectedModel != null && selectedModel!.toLowerCase() != 'any') {
-      chips.add(_buildFilterChip(AppLocalizations.of(context)!.modelLabel, _translateValueGlobal(context, selectedModel) ?? selectedModel!, 'model', Icons.directions_car, Color(0xFFFF6B00)));
+      chips.add(
+        _buildFilterChip(
+          AppLocalizations.of(context)!.modelLabel,
+          _translateValueGlobal(context, selectedModel) ?? selectedModel!,
+          'model',
+          Icons.directions_car,
+          Color(0xFFFF6B00),
+        ),
+      );
     }
 
     // Trim filter
     if (selectedTrim != null && selectedTrim!.toLowerCase() != 'any') {
-      chips.add(_buildFilterChip(AppLocalizations.of(context)!.trimLabel, _translateValueGlobal(context, selectedTrim) ?? selectedTrim!, 'trim', Icons.settings, Color(0xFFFF6B00)));
+      chips.add(
+        _buildFilterChip(
+          AppLocalizations.of(context)!.trimLabel,
+          _translateValueGlobal(context, selectedTrim) ?? selectedTrim!,
+          'trim',
+          Icons.settings,
+          Color(0xFFFF6B00),
+        ),
+      );
     }
 
     // Price range filter
     if (selectedMinPrice != null || selectedMaxPrice != null) {
       String priceText = '';
       if (selectedMinPrice != null && selectedMaxPrice != null) {
-        priceText = _formatCurrencyGlobal(context, selectedMinPrice!) + ' - ' + _formatCurrencyGlobal(context, selectedMaxPrice!);
+        priceText =
+            _formatCurrencyGlobal(context, selectedMinPrice!) +
+            ' - ' +
+            _formatCurrencyGlobal(context, selectedMaxPrice!);
       } else if (selectedMinPrice != null) {
-        priceText = '${AppLocalizations.of(context)!.minPrice}: ' + _formatCurrencyGlobal(context, selectedMinPrice!);
+        priceText =
+            '${AppLocalizations.of(context)!.minPrice}: ' +
+            _formatCurrencyGlobal(context, selectedMinPrice!);
       } else if (selectedMaxPrice != null) {
-        priceText = '${AppLocalizations.of(context)!.maxPrice}: ' + _formatCurrencyGlobal(context, selectedMaxPrice!);
+        priceText =
+            '${AppLocalizations.of(context)!.maxPrice}: ' +
+            _formatCurrencyGlobal(context, selectedMaxPrice!);
       }
-      chips.add(_buildFilterChip(AppLocalizations.of(context)!.priceLabel, priceText, 'price', Icons.attach_money, Colors.green));
+      chips.add(
+        _buildFilterChip(
+          AppLocalizations.of(context)!.priceLabel,
+          priceText,
+          'price',
+          Icons.attach_money,
+          Colors.green,
+        ),
+      );
     }
 
     // Year range filter
     if (selectedMinYear != null || selectedMaxYear != null) {
       String yearText = '';
       if (selectedMinYear != null && selectedMaxYear != null) {
-        yearText = '${_localizeDigitsGlobal(context, selectedMinYear!)} - ${_localizeDigitsGlobal(context, selectedMaxYear!)}';
+        yearText =
+            '${_localizeDigitsGlobal(context, selectedMinYear!)} - ${_localizeDigitsGlobal(context, selectedMaxYear!)}';
       } else if (selectedMinYear != null) {
-        yearText = '${AppLocalizations.of(context)!.minYear}: ${_localizeDigitsGlobal(context, selectedMinYear!)}';
+        yearText =
+            '${AppLocalizations.of(context)!.minYear}: ${_localizeDigitsGlobal(context, selectedMinYear!)}';
       } else if (selectedMaxYear != null) {
-        yearText = '${AppLocalizations.of(context)!.maxYear}: ${_localizeDigitsGlobal(context, selectedMaxYear!)}';
+        yearText =
+            '${AppLocalizations.of(context)!.maxYear}: ${_localizeDigitsGlobal(context, selectedMaxYear!)}';
       }
-      chips.add(_buildFilterChip(AppLocalizations.of(context)!.yearLabel, yearText, 'year', Icons.calendar_today, Colors.blue));
+      chips.add(
+        _buildFilterChip(
+          AppLocalizations.of(context)!.yearLabel,
+          yearText,
+          'year',
+          Icons.calendar_today,
+          Colors.blue,
+        ),
+      );
     }
 
     // Mileage range filter
     if (selectedMinMileage != null || selectedMaxMileage != null) {
       String mileageText = '';
       if (selectedMinMileage != null && selectedMaxMileage != null) {
-        mileageText = '${_localizeDigitsGlobal(context, selectedMinMileage!)} - ${_localizeDigitsGlobal(context, selectedMaxMileage!)} ${AppLocalizations.of(context)!.unit_km}';
+        mileageText =
+            '${_localizeDigitsGlobal(context, selectedMinMileage!)} - ${_localizeDigitsGlobal(context, selectedMaxMileage!)} ${AppLocalizations.of(context)!.unit_km}';
       } else if (selectedMinMileage != null) {
-        mileageText = '${AppLocalizations.of(context)!.minMileage}: ${_localizeDigitsGlobal(context, selectedMinMileage!)} ${AppLocalizations.of(context)!.unit_km}';
+        mileageText =
+            '${AppLocalizations.of(context)!.minMileage}: ${_localizeDigitsGlobal(context, selectedMinMileage!)} ${AppLocalizations.of(context)!.unit_km}';
       } else if (selectedMaxMileage != null) {
-        mileageText = '${AppLocalizations.of(context)!.maxMileage}: ${_localizeDigitsGlobal(context, selectedMaxMileage!)} ${AppLocalizations.of(context)!.unit_km}';
+        mileageText =
+            '${AppLocalizations.of(context)!.maxMileage}: ${_localizeDigitsGlobal(context, selectedMaxMileage!)} ${AppLocalizations.of(context)!.unit_km}';
       }
-      chips.add(_buildFilterChip(AppLocalizations.of(context)!.mileageLabel, mileageText, 'mileage', Icons.speed, Colors.orange));
+      chips.add(
+        _buildFilterChip(
+          AppLocalizations.of(context)!.mileageLabel,
+          mileageText,
+          'mileage',
+          Icons.speed,
+          Colors.orange,
+        ),
+      );
     }
 
     // Condition filter
-    if (selectedCondition != null && selectedCondition!.toLowerCase() != 'any') {
-      chips.add(_buildFilterChip(AppLocalizations.of(context)!.detail_condition, _translateValueGlobal(context, selectedCondition) ?? selectedCondition!, 'condition', Icons.check_circle, Colors.green));
+    if (selectedCondition != null &&
+        selectedCondition!.toLowerCase() != 'any') {
+      chips.add(
+        _buildFilterChip(
+          AppLocalizations.of(context)!.detail_condition,
+          _translateValueGlobal(context, selectedCondition) ??
+              selectedCondition!,
+          'condition',
+          Icons.check_circle,
+          Colors.green,
+        ),
+      );
     }
 
     // Transmission filter
-    if (selectedTransmission != null && selectedTransmission!.toLowerCase() != 'any') {
-      chips.add(_buildFilterChip(AppLocalizations.of(context)!.transmissionLabel, _translateValueGlobal(context, selectedTransmission) ?? selectedTransmission!, 'transmission', Icons.settings, Colors.purple));
+    if (selectedTransmission != null &&
+        selectedTransmission!.toLowerCase() != 'any') {
+      chips.add(
+        _buildFilterChip(
+          AppLocalizations.of(context)!.transmissionLabel,
+          _translateValueGlobal(context, selectedTransmission) ??
+              selectedTransmission!,
+          'transmission',
+          Icons.settings,
+          Colors.purple,
+        ),
+      );
     }
 
     // Fuel type filter
     if (selectedFuelType != null && selectedFuelType!.toLowerCase() != 'any') {
-      chips.add(_buildFilterChip(AppLocalizations.of(context)!.detail_fuel, _translateValueGlobal(context, selectedFuelType) ?? selectedFuelType!, 'fuelType', Icons.local_gas_station, Colors.orange));
+      chips.add(
+        _buildFilterChip(
+          AppLocalizations.of(context)!.detail_fuel,
+          _translateValueGlobal(context, selectedFuelType) ?? selectedFuelType!,
+          'fuelType',
+          Icons.local_gas_station,
+          Colors.orange,
+        ),
+      );
     }
 
     // Title/parts filter
     if (selectedTitleStatus != null && selectedTitleStatus!.isNotEmpty) {
-      if (selectedTitleStatus == 'damaged' && selectedDamagedParts != null && selectedDamagedParts!.isNotEmpty) {
-        chips.add(_buildFilterChip(AppLocalizations.of(context)!.titleStatus, '${AppLocalizations.of(context)!.value_title_damaged} (${_localizeDigitsGlobal(context, selectedDamagedParts!)} ${AppLocalizations.of(context)!.damagedParts})', 'titleStatus', Icons.report, Colors.redAccent));
+      if (selectedTitleStatus == 'damaged' &&
+          selectedDamagedParts != null &&
+          selectedDamagedParts!.isNotEmpty) {
+        chips.add(
+          _buildFilterChip(
+            AppLocalizations.of(context)!.titleStatus,
+            '${AppLocalizations.of(context)!.value_title_damaged} (${_localizeDigitsGlobal(context, selectedDamagedParts!)} ${AppLocalizations.of(context)!.damagedParts})',
+            'titleStatus',
+            Icons.report,
+            Colors.redAccent,
+          ),
+        );
       } else {
-        chips.add(_buildFilterChip(AppLocalizations.of(context)!.titleStatus, _translateValueGlobal(context, selectedTitleStatus) ?? selectedTitleStatus!.substring(0,1).toUpperCase() + selectedTitleStatus!.substring(1), 'titleStatus', Icons.verified, Colors.green));
+        chips.add(
+          _buildFilterChip(
+            AppLocalizations.of(context)!.titleStatus,
+            _translateValueGlobal(context, selectedTitleStatus) ??
+                selectedTitleStatus!.substring(0, 1).toUpperCase() +
+                    selectedTitleStatus!.substring(1),
+            'titleStatus',
+            Icons.verified,
+            Colors.green,
+          ),
+        );
       }
     }
 
     // Body type filter
     if (selectedBodyType != null && selectedBodyType!.toLowerCase() != 'any') {
-      chips.add(_buildFilterChip(AppLocalizations.of(context)!.bodyTypeLabel, _translateValueGlobal(context, selectedBodyType) ?? selectedBodyType!, 'bodyType', _getBodyTypeIcon(selectedBodyType!), Color(0xFFFF6B00)));
+      chips.add(
+        _buildFilterChip(
+          AppLocalizations.of(context)!.bodyTypeLabel,
+          _translateValueGlobal(context, selectedBodyType) ?? selectedBodyType!,
+          'bodyType',
+          _getBodyTypeIcon(selectedBodyType!),
+          Color(0xFFFF6B00),
+        ),
+      );
     }
 
     // Color filter
     if (selectedColor != null && selectedColor!.toLowerCase() != 'any') {
-      chips.add(_buildFilterChip(AppLocalizations.of(context)!.colorLabel, _translateValueGlobal(context, selectedColor) ?? selectedColor!, 'color', Icons.palette, _getColorValue(selectedColor!)));
+      chips.add(
+        _buildFilterChip(
+          AppLocalizations.of(context)!.colorLabel,
+          _translateValueGlobal(context, selectedColor) ?? selectedColor!,
+          'color',
+          Icons.palette,
+          _getColorValue(selectedColor!),
+        ),
+      );
     }
 
     // Drive type filter
-    if (selectedDriveType != null && selectedDriveType!.toLowerCase() != 'any') {
-      chips.add(_buildFilterChip(AppLocalizations.of(context)!.driveType, _translateValueGlobal(context, selectedDriveType) ?? selectedDriveType!, 'driveType', Icons.directions_car, Colors.cyan));
+    if (selectedDriveType != null &&
+        selectedDriveType!.toLowerCase() != 'any') {
+      chips.add(
+        _buildFilterChip(
+          AppLocalizations.of(context)!.driveType,
+          _translateValueGlobal(context, selectedDriveType) ??
+              selectedDriveType!,
+          'driveType',
+          Icons.directions_car,
+          Colors.cyan,
+        ),
+      );
     }
 
     // Cylinder count filter
-    if (selectedCylinderCount != null && selectedCylinderCount!.toLowerCase() != 'any') {
-      chips.add(_buildFilterChip(AppLocalizations.of(context)!.detail_cylinders, _localizeDigitsGlobal(context, selectedCylinderCount!), 'cylinderCount', Icons.engineering, Colors.red));
+    if (selectedCylinderCount != null &&
+        selectedCylinderCount!.toLowerCase() != 'any') {
+      chips.add(
+        _buildFilterChip(
+          AppLocalizations.of(context)!.detail_cylinders,
+          _localizeDigitsGlobal(context, selectedCylinderCount!),
+          'cylinderCount',
+          Icons.engineering,
+          Colors.red,
+        ),
+      );
     }
 
     // Seating filter
     if (selectedSeating != null && selectedSeating!.toLowerCase() != 'any') {
-      chips.add(_buildFilterChip(AppLocalizations.of(context)!.seating, _localizeDigitsGlobal(context, selectedSeating!), 'seating', Icons.airline_seat_recline_normal, Colors.indigo));
+      chips.add(
+        _buildFilterChip(
+          AppLocalizations.of(context)!.seating,
+          _localizeDigitsGlobal(context, selectedSeating!),
+          'seating',
+          Icons.airline_seat_recline_normal,
+          Colors.indigo,
+        ),
+      );
     }
 
     // Engine Size filter
-    if (selectedEngineSize != null && selectedEngineSize!.toLowerCase() != 'any') {
-      chips.add(_buildFilterChip(AppLocalizations.of(context)!.engineSizeL, '${_localizeDigitsGlobal(context, selectedEngineSize!)}${AppLocalizations.of(context)!.unit_liter_suffix}', 'engineSize', Icons.engineering, Colors.deepOrange));
+    if (selectedEngineSize != null &&
+        selectedEngineSize!.toLowerCase() != 'any') {
+      chips.add(
+        _buildFilterChip(
+          AppLocalizations.of(context)!.engineSizeL,
+          '${_localizeDigitsGlobal(context, selectedEngineSize!)}${AppLocalizations.of(context)!.unit_liter_suffix}',
+          'engineSize',
+          Icons.engineering,
+          Colors.deepOrange,
+        ),
+      );
     }
 
     // City filter
     if (selectedCity != null && selectedCity!.toLowerCase() != 'any') {
-      chips.add(_buildFilterChip(AppLocalizations.of(context)!.cityLabel, _translateValueGlobal(context, selectedCity) ?? selectedCity!, 'city', Icons.location_city, Colors.teal));
+      chips.add(
+        _buildFilterChip(
+          AppLocalizations.of(context)!.cityLabel,
+          _translateValueGlobal(context, selectedCity) ?? selectedCity!,
+          'city',
+          Icons.location_city,
+          Colors.teal,
+        ),
+      );
     }
 
     // Sort by filter
-    if (selectedSortBy != null && selectedSortBy!.toLowerCase() != 'any' && selectedSortBy!.toLowerCase() != 'default') {
-      chips.add(_buildFilterChip(AppLocalizations.of(context)!.sortBy, _translateValueGlobal(context, selectedSortBy) ?? selectedSortBy!, 'sortBy', Icons.sort, Colors.grey));
+    if (selectedSortBy != null &&
+        selectedSortBy!.toLowerCase() != 'any' &&
+        selectedSortBy!.toLowerCase() != 'default') {
+      chips.add(
+        _buildFilterChip(
+          AppLocalizations.of(context)!.sortBy,
+          _translateValueGlobal(context, selectedSortBy) ?? selectedSortBy!,
+          'sortBy',
+          Icons.sort,
+          Colors.grey,
+        ),
+      );
     }
 
     return chips;
   }
 
   // Helper method to build individual filter chips
-  Widget _buildFilterChip(String label, String value, String filterType, IconData icon, Color color) {
+  Widget _buildFilterChip(
+    String label,
+    String value,
+    String filterType,
+    IconData icon,
+    Color color,
+  ) {
     return GestureDetector(
       onTap: () => _clearFilter(filterType),
       child: Container(
@@ -3151,7 +4358,12 @@ class _HomePageState extends State<HomePage> {
         actions: [
           IconButton(
             tooltip: 'Saved Searches',
-            onPressed: () => Navigator.push(context, MaterialPageRoute(builder: (_) => SavedSearchesPage(parentState: this))),
+            onPressed: () => Navigator.push(
+              context,
+              MaterialPageRoute(
+                builder: (_) => SavedSearchesPage(parentState: this),
+              ),
+            ),
             icon: Icon(Icons.bookmarks_outlined),
           ),
           OutlinedButton.icon(
@@ -3196,9 +4408,22 @@ class _HomePageState extends State<HomePage> {
           }
         },
         items: [
-          BottomNavigationBarItem(icon: Icon(Icons.home), label: AppLocalizations.of(context)!.navHome),
-          BottomNavigationBarItem(icon: Icon(Icons.favorite), label: AppLocalizations.of(context)!.navSaved),
-          BottomNavigationBarItem(icon: Icon(Icons.person), label: (ApiService.accessToken == null || ApiService.accessToken!.isEmpty) ? AppLocalizations.of(context)!.navLogin : AppLocalizations.of(context)!.navProfile),
+          BottomNavigationBarItem(
+            icon: Icon(Icons.home),
+            label: AppLocalizations.of(context)!.navHome,
+          ),
+          BottomNavigationBarItem(
+            icon: Icon(Icons.favorite),
+            label: AppLocalizations.of(context)!.navSaved,
+          ),
+          BottomNavigationBarItem(
+            icon: Icon(Icons.person),
+            label:
+                (ApiService.accessToken == null ||
+                    ApiService.accessToken!.isEmpty)
+                ? AppLocalizations.of(context)!.navLogin
+                : AppLocalizations.of(context)!.navProfile,
+          ),
         ],
       ),
       body: Stack(
@@ -3206,7 +4431,11 @@ class _HomePageState extends State<HomePage> {
           Container(
             decoration: BoxDecoration(
               gradient: LinearGradient(
-                colors: [Color(0xFF0F1115), Color(0xFF131722), Color(0xFF0F1115)],
+                colors: [
+                  Color(0xFF0F1115),
+                  Color(0xFF131722),
+                  Color(0xFF0F1115),
+                ],
                 begin: Alignment.topLeft,
                 end: Alignment.bottomRight,
               ),
@@ -3217,12 +4446,17 @@ class _HomePageState extends State<HomePage> {
             child: Column(
               children: [
                 Padding(
-                  padding: const EdgeInsets.symmetric(horizontal: 8.0, vertical: 8.0),
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 8.0,
+                    vertical: 8.0,
+                  ),
                   child: Card(
                     elevation: 12,
-                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(20),
+                    ),
                     color: Colors.white.withOpacity(0.06),
-                     child: Padding(
+                    child: Padding(
                       padding: const EdgeInsets.all(20.0),
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
@@ -3242,7 +4476,7 @@ class _HomePageState extends State<HomePage> {
                             ],
                           ),
                           SizedBox(height: 16),
-                           Row(
+                          Row(
                             children: [
                               // Brand selector styled like a form field for symmetry
                               Expanded(
@@ -3252,22 +4486,49 @@ class _HomePageState extends State<HomePage> {
                                       context: context,
                                       builder: (context) {
                                         return Dialog(
-                                          backgroundColor: Colors.grey[900]?.withOpacity(0.98),
-                                          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+                                          backgroundColor: Colors.grey[900]
+                                              ?.withOpacity(0.98),
+                                          shape: RoundedRectangleBorder(
+                                            borderRadius: BorderRadius.circular(
+                                              20,
+                                            ),
+                                          ),
                                           child: Container(
                                             width: 400,
                                             padding: EdgeInsets.all(20),
                                             child: Column(
-                                              crossAxisAlignment: CrossAxisAlignment.start,
+                                              crossAxisAlignment:
+                                                  CrossAxisAlignment.start,
                                               mainAxisSize: MainAxisSize.min,
                                               children: [
                                                 Row(
-                                                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                                                  mainAxisAlignment:
+                                                      MainAxisAlignment
+                                                          .spaceBetween,
                                                   children: [
-                                                    Text(AppLocalizations.of(context)!.selectBrand, style: GoogleFonts.orbitron(color: Color(0xFFFF6B00), fontWeight: FontWeight.bold, fontSize: 20)),
+                                                    Text(
+                                                      AppLocalizations.of(
+                                                        context,
+                                                      )!.selectBrand,
+                                                      style:
+                                                          GoogleFonts.orbitron(
+                                                            color: Color(
+                                                              0xFFFF6B00,
+                                                            ),
+                                                            fontWeight:
+                                                                FontWeight.bold,
+                                                            fontSize: 20,
+                                                          ),
+                                                    ),
                                                     IconButton(
-                                                      icon: Icon(Icons.close, color: Colors.white),
-                                                      onPressed: () => Navigator.pop(context),
+                                                      icon: Icon(
+                                                        Icons.close,
+                                                        color: Colors.white,
+                                                      ),
+                                                      onPressed: () =>
+                                                          Navigator.pop(
+                                                            context,
+                                                          ),
                                                     ),
                                                   ],
                                                 ),
@@ -3276,52 +4537,143 @@ class _HomePageState extends State<HomePage> {
                                                   height: 380,
                                                   child: GridView.builder(
                                                     shrinkWrap: true,
-                                                    physics: BouncingScrollPhysics(),
-                                                    gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
-                                                      crossAxisCount: 4,
-                                                      childAspectRatio: 0.85,
-                                                      crossAxisSpacing: 10,
-                                                      mainAxisSpacing: 10,
-                                                    ),
-                                                    itemCount: homeBrands.length,
+                                                    physics:
+                                                        BouncingScrollPhysics(),
+                                                    gridDelegate:
+                                                        SliverGridDelegateWithFixedCrossAxisCount(
+                                                          crossAxisCount: 4,
+                                                          childAspectRatio:
+                                                              0.85,
+                                                          crossAxisSpacing: 10,
+                                                          mainAxisSpacing: 10,
+                                                        ),
+                                                    itemCount:
+                                                        homeBrands.length,
                                                     itemBuilder: (context, index) {
-                                                      final brand = homeBrands[index];
-                                                      final logoFile = brandLogoFilenames[brand] ?? brand.toLowerCase().replaceAll(' ', '-').replaceAll('é', 'e').replaceAll('ö', 'o');
-                                                      final logoUrl = getApiBase() + '/static/images/brands/' + logoFile + '.png';
+                                                      final brand =
+                                                          homeBrands[index];
+                                                      final logoFile =
+                                                          brandLogoFilenames[brand] ??
+                                                          brand
+                                                              .toLowerCase()
+                                                              .replaceAll(
+                                                                ' ',
+                                                                '-',
+                                                              )
+                                                              .replaceAll(
+                                                                'é',
+                                                                'e',
+                                                              )
+                                                              .replaceAll(
+                                                                'ö',
+                                                                'o',
+                                                              );
+                                                      final logoUrl =
+                                                          getApiBase() +
+                                                          '/static/images/brands/' +
+                                                          logoFile +
+                                                          '.png';
                                                       return InkWell(
-                                                        borderRadius: BorderRadius.circular(12),
-                                                        onTap: () => Navigator.pop(context, brand),
+                                                        borderRadius:
+                                                            BorderRadius.circular(
+                                                              12,
+                                                            ),
+                                                        onTap: () =>
+                                                            Navigator.pop(
+                                                              context,
+                                                              brand,
+                                                            ),
                                                         child: Container(
                                                           decoration: BoxDecoration(
-                                                            color: Colors.black.withOpacity(0.15),
-                                                            borderRadius: BorderRadius.circular(12),
-                                                            border: Border.all(color: Colors.white24),
+                                                            color: Colors.black
+                                                                .withOpacity(
+                                                                  0.15,
+                                                                ),
+                                                            borderRadius:
+                                                                BorderRadius.circular(
+                                                                  12,
+                                                                ),
+                                                            border: Border.all(
+                                                              color: Colors
+                                                                  .white24,
+                                                            ),
                                                           ),
-                                                          padding: EdgeInsets.all(6),
+                                                          padding:
+                                                              EdgeInsets.all(6),
                                                           child: Column(
-                                                            mainAxisAlignment: MainAxisAlignment.center,
+                                                            mainAxisAlignment:
+                                                                MainAxisAlignment
+                                                                    .center,
                                                             children: [
                                                               Container(
                                                                 width: 32,
                                                                 height: 32,
-                                                                padding: EdgeInsets.all(4),
+                                                                padding:
+                                                                    EdgeInsets.all(
+                                                                      4,
+                                                                    ),
                                                                 decoration: BoxDecoration(
-                                                                  color: Colors.white,
-                                                                  borderRadius: BorderRadius.circular(8),
+                                                                  color: Colors
+                                                                      .white,
+                                                                  borderRadius:
+                                                                      BorderRadius.circular(
+                                                                        8,
+                                                                      ),
                                                                 ),
                                                                 child: CachedNetworkImage(
-                                                                  imageUrl: logoUrl,
-                                                                  placeholder: (context, url) => SizedBox(width: 24, height: 24, child: CircularProgressIndicator(strokeWidth: 2)),
-                                                                  errorWidget: (context, url, error) => Icon(Icons.directions_car, size: 22, color: Color(0xFFFF6B00)),
-                                                                  fit: BoxFit.contain,
+                                                                  imageUrl:
+                                                                      logoUrl,
+                                                                  placeholder:
+                                                                      (
+                                                                        context,
+                                                                        url,
+                                                                      ) => SizedBox(
+                                                                        width:
+                                                                            24,
+                                                                        height:
+                                                                            24,
+                                                                        child: CircularProgressIndicator(
+                                                                          strokeWidth:
+                                                                              2,
+                                                                        ),
+                                                                      ),
+                                                                  errorWidget:
+                                                                      (
+                                                                        context,
+                                                                        url,
+                                                                        error,
+                                                                      ) => Icon(
+                                                                        Icons
+                                                                            .directions_car,
+                                                                        size:
+                                                                            22,
+                                                                        color: Color(
+                                                                          0xFFFF6B00,
+                                                                        ),
+                                                                      ),
+                                                                  fit: BoxFit
+                                                                      .contain,
                                                                 ),
                                                               ),
-                                                              SizedBox(height: 4),
+                                                              SizedBox(
+                                                                height: 4,
+                                                              ),
                                                               Text(
                                                                 brand,
-                                                                style: GoogleFonts.orbitron(fontSize: 10, color: Colors.white, fontWeight: FontWeight.bold),
-                                                                textAlign: TextAlign.center,
-                                                                overflow: TextOverflow.ellipsis,
+                                                                style: GoogleFonts.orbitron(
+                                                                  fontSize: 10,
+                                                                  color: Colors
+                                                                      .white,
+                                                                  fontWeight:
+                                                                      FontWeight
+                                                                          .bold,
+                                                                ),
+                                                                textAlign:
+                                                                    TextAlign
+                                                                        .center,
+                                                                overflow:
+                                                                    TextOverflow
+                                                                        .ellipsis,
                                                                 maxLines: 1,
                                                               ),
                                                             ],
@@ -3338,46 +4690,98 @@ class _HomePageState extends State<HomePage> {
                                       },
                                     );
                                     if (brand != null) {
-                                                                                              setState(() {
-                                                          selectedBrand = brand;
-                                                          selectedModel = null;
-                                                          selectedTrim = null;
-                                                          clearFiltersOnVehicleChange();
-                                                        });
+                                      setState(() {
+                                        selectedBrand = brand;
+                                        selectedModel = null;
+                                        selectedTrim = null;
+                                        clearFiltersOnVehicleChange();
+                                      });
                                       onFilterChanged();
                                     }
                                   },
                                   child: InputDecorator(
                                     decoration: InputDecoration(
-                                      labelText: AppLocalizations.of(context)!.brandLabel,
-                                      labelStyle: GoogleFonts.orbitron(color: Colors.white, fontSize: 15, fontWeight: FontWeight.bold),
+                                      labelText: AppLocalizations.of(
+                                        context,
+                                      )!.brandLabel,
+                                      labelStyle: GoogleFonts.orbitron(
+                                        color: Colors.white,
+                                        fontSize: 15,
+                                        fontWeight: FontWeight.bold,
+                                      ),
                                       filled: true,
                                       fillColor: Colors.black.withOpacity(0.15),
-                                      border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
-                                      contentPadding: EdgeInsets.symmetric(horizontal: 12, vertical: 14),
+                                      border: OutlineInputBorder(
+                                        borderRadius: BorderRadius.circular(12),
+                                      ),
+                                      contentPadding: EdgeInsets.symmetric(
+                                        horizontal: 12,
+                                        vertical: 14,
+                                      ),
                                     ),
                                     child: Row(
                                       children: [
-                                        if (selectedBrand != null && selectedBrand!.isNotEmpty)
+                                        if (selectedBrand != null &&
+                                            selectedBrand!.isNotEmpty)
                                           Container(
                                             width: 24,
                                             height: 24,
-                                            decoration: BoxDecoration(color: Colors.white, borderRadius: BorderRadius.circular(6)),
+                                            decoration: BoxDecoration(
+                                              color: Colors.white,
+                                              borderRadius:
+                                                  BorderRadius.circular(6),
+                                            ),
                                             padding: EdgeInsets.all(2),
                                             child: CachedNetworkImage(
-                                              imageUrl: getApiBase() + '/static/images/brands/' + (brandLogoFilenames[selectedBrand] ?? selectedBrand!.toLowerCase().replaceAll(' ', '-')) + '.png',
-                                              placeholder: (context, url) => SizedBox(width: 16, height: 16, child: CircularProgressIndicator(strokeWidth: 2)),
-                                              errorWidget: (context, url, error) => Icon(Icons.directions_car, size: 16, color: Color(0xFFFF6B00)),
+                                              imageUrl:
+                                                  getApiBase() +
+                                                  '/static/images/brands/' +
+                                                  (brandLogoFilenames[selectedBrand] ??
+                                                      selectedBrand!
+                                                          .toLowerCase()
+                                                          .replaceAll(
+                                                            ' ',
+                                                            '-',
+                                                          )) +
+                                                  '.png',
+                                              placeholder: (context, url) =>
+                                                  SizedBox(
+                                                    width: 16,
+                                                    height: 16,
+                                                    child:
+                                                        CircularProgressIndicator(
+                                                          strokeWidth: 2,
+                                                        ),
+                                                  ),
+                                              errorWidget:
+                                                  (context, url, error) => Icon(
+                                                    Icons.directions_car,
+                                                    size: 16,
+                                                    color: Color(0xFFFF6B00),
+                                                  ),
                                               fit: BoxFit.contain,
                                             ),
                                           )
                                         else
-                                          Icon(Icons.directions_car, size: 20, color: Color(0xFFFF6B00)),
+                                          Icon(
+                                            Icons.directions_car,
+                                            size: 20,
+                                            color: Color(0xFFFF6B00),
+                                          ),
                                         SizedBox(width: 8),
                                         Expanded(
                                           child: Text(
-                                            selectedBrand == null || selectedBrand!.isEmpty ? AppLocalizations.of(context)!.any : selectedBrand!,
-                                            style: GoogleFonts.orbitron(fontSize: 14, color: Colors.white, fontWeight: FontWeight.bold),
+                                            selectedBrand == null ||
+                                                    selectedBrand!.isEmpty
+                                                ? AppLocalizations.of(
+                                                    context,
+                                                  )!.any
+                                                : selectedBrand!,
+                                            style: GoogleFonts.orbitron(
+                                              fontSize: 14,
+                                              color: Colors.white,
+                                              fontWeight: FontWeight.bold,
+                                            ),
                                             overflow: TextOverflow.ellipsis,
                                           ),
                                         ),
@@ -3388,27 +4792,79 @@ class _HomePageState extends State<HomePage> {
                               ),
                               SizedBox(width: 8),
                               // Model Dropdown
-                               Expanded(
+                              Expanded(
                                 child: DropdownButtonFormField<String>(
                                   isDense: true,
-                                  style: GoogleFonts.orbitron(fontSize: 14, color: Colors.white, fontWeight: FontWeight.bold),
-                                  value: selectedModel != null && (selectedModel!.isEmpty || (selectedBrand != null && models[selectedBrand] != null && models[selectedBrand]!.contains(selectedModel))) ? selectedModel : null,
+                                  style: GoogleFonts.orbitron(
+                                    fontSize: 14,
+                                    color: Colors.white,
+                                    fontWeight: FontWeight.bold,
+                                  ),
+                                  value:
+                                      selectedModel != null &&
+                                          (selectedModel!.isEmpty ||
+                                              (selectedBrand != null &&
+                                                  models[selectedBrand] !=
+                                                      null &&
+                                                  models[selectedBrand]!
+                                                      .contains(selectedModel)))
+                                      ? selectedModel
+                                      : null,
                                   decoration: InputDecoration(
-                                    labelText: AppLocalizations.of(context)!.modelLabel,
-                                    labelStyle: GoogleFonts.orbitron(color: Colors.white, fontSize: 15, fontWeight: FontWeight.bold),
-                                     filled: true,
-                                     fillColor: Colors.black.withOpacity(0.15),
-                                     border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
-                                    contentPadding: EdgeInsets.symmetric(horizontal: 6, vertical: 6),
+                                    labelText: AppLocalizations.of(
+                                      context,
+                                    )!.modelLabel,
+                                    labelStyle: GoogleFonts.orbitron(
+                                      color: Colors.white,
+                                      fontSize: 15,
+                                      fontWeight: FontWeight.bold,
+                                    ),
+                                    filled: true,
+                                    fillColor: Colors.black.withOpacity(0.15),
+                                    border: OutlineInputBorder(
+                                      borderRadius: BorderRadius.circular(12),
+                                    ),
+                                    contentPadding: EdgeInsets.symmetric(
+                                      horizontal: 6,
+                                      vertical: 6,
+                                    ),
                                   ),
                                   items: [
-                                    DropdownMenuItem(value: '', child: Text(AppLocalizations.of(context)!.any, style: GoogleFonts.orbitron(color: Colors.grey, fontSize: 14))),
-                                    if (selectedBrand != null && models[selectedBrand!] != null)
-                                      ...models[selectedBrand!]!.map((m) => DropdownMenuItem(value: m, child: Text(_translateValueGlobal(context, m) ?? m, style: GoogleFonts.orbitron(fontSize: 14)))).toList(),
+                                    DropdownMenuItem(
+                                      value: '',
+                                      child: Text(
+                                        AppLocalizations.of(context)!.any,
+                                        style: GoogleFonts.orbitron(
+                                          color: Colors.grey,
+                                          fontSize: 14,
+                                        ),
+                                      ),
+                                    ),
+                                    if (selectedBrand != null &&
+                                        models[selectedBrand!] != null)
+                                      ...models[selectedBrand!]!
+                                          .map(
+                                            (m) => DropdownMenuItem(
+                                              value: m,
+                                              child: Text(
+                                                _translateValueGlobal(
+                                                      context,
+                                                      m,
+                                                    ) ??
+                                                    m,
+                                                style: GoogleFonts.orbitron(
+                                                  fontSize: 14,
+                                                ),
+                                              ),
+                                            ),
+                                          )
+                                          .toList(),
                                   ],
                                   onChanged: (value) {
-                                    setState(() { 
-                                      selectedModel = value == '' ? null : value;
+                                    setState(() {
+                                      selectedModel = value == ''
+                                          ? null
+                                          : value;
                                       selectedTrim = null;
                                       clearFiltersOnVehicleChange();
                                     });
@@ -3418,27 +4874,80 @@ class _HomePageState extends State<HomePage> {
                               ),
                               SizedBox(width: 8),
                               // Trim Dropdown
-                               Expanded(
+                              Expanded(
                                 child: DropdownButtonFormField<String>(
                                   isDense: true,
-                                  style: GoogleFonts.orbitron(fontSize: 14, color: Colors.white, fontWeight: FontWeight.bold),
-                                  value: selectedTrim != null && (selectedTrim!.isEmpty || (selectedBrand != null && selectedModel != null && trimsByBrandModel[selectedBrand] != null && trimsByBrandModel[selectedBrand]![selectedModel] != null && trimsByBrandModel[selectedBrand]![selectedModel]!.contains(selectedTrim))) ? selectedTrim : null,
+                                  style: GoogleFonts.orbitron(
+                                    fontSize: 14,
+                                    color: Colors.white,
+                                    fontWeight: FontWeight.bold,
+                                  ),
+                                  value:
+                                      selectedTrim != null &&
+                                          (selectedTrim!.isEmpty ||
+                                              (selectedBrand != null &&
+                                                  selectedModel != null &&
+                                                  trimsByBrandModel[selectedBrand] !=
+                                                      null &&
+                                                  trimsByBrandModel[selectedBrand]![selectedModel] !=
+                                                      null &&
+                                                  trimsByBrandModel[selectedBrand]![selectedModel]!
+                                                      .contains(selectedTrim)))
+                                      ? selectedTrim
+                                      : null,
                                   decoration: InputDecoration(
-                                    labelText: AppLocalizations.of(context)!.trimLabel,
-                                    labelStyle: GoogleFonts.orbitron(color: Colors.white, fontSize: 15, fontWeight: FontWeight.bold),
-                                     filled: true,
-                                     fillColor: Colors.black.withOpacity(0.15),
-                                     border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
-                                    contentPadding: EdgeInsets.symmetric(horizontal: 6, vertical: 6),
+                                    labelText: AppLocalizations.of(
+                                      context,
+                                    )!.trimLabel,
+                                    labelStyle: GoogleFonts.orbitron(
+                                      color: Colors.white,
+                                      fontSize: 15,
+                                      fontWeight: FontWeight.bold,
+                                    ),
+                                    filled: true,
+                                    fillColor: Colors.black.withOpacity(0.15),
+                                    border: OutlineInputBorder(
+                                      borderRadius: BorderRadius.circular(12),
+                                    ),
+                                    contentPadding: EdgeInsets.symmetric(
+                                      horizontal: 6,
+                                      vertical: 6,
+                                    ),
                                   ),
                                   items: [
-                                    DropdownMenuItem(value: '', child: Text(AppLocalizations.of(context)!.any, style: GoogleFonts.orbitron(color: Colors.grey, fontSize: 14))),
-                                    if (selectedBrand != null && selectedModel != null && trimsByBrandModel[selectedBrand] != null && trimsByBrandModel[selectedBrand]![selectedModel] != null)
-                                      ...trimsByBrandModel[selectedBrand]![selectedModel]!.map((t) => DropdownMenuItem(value: t, child: Text(t, style: GoogleFonts.orbitron(fontSize: 14)))).toList(),
+                                    DropdownMenuItem(
+                                      value: '',
+                                      child: Text(
+                                        AppLocalizations.of(context)!.any,
+                                        style: GoogleFonts.orbitron(
+                                          color: Colors.grey,
+                                          fontSize: 14,
+                                        ),
+                                      ),
+                                    ),
+                                    if (selectedBrand != null &&
+                                        selectedModel != null &&
+                                        trimsByBrandModel[selectedBrand] !=
+                                            null &&
+                                        trimsByBrandModel[selectedBrand]![selectedModel] !=
+                                            null)
+                                      ...trimsByBrandModel[selectedBrand]![selectedModel]!
+                                          .map(
+                                            (t) => DropdownMenuItem(
+                                              value: t,
+                                              child: Text(
+                                                t,
+                                                style: GoogleFonts.orbitron(
+                                                  fontSize: 14,
+                                                ),
+                                              ),
+                                            ),
+                                          )
+                                          .toList(),
                                   ],
                                   onChanged: (value) {
-                                    setState(() { 
-                                      selectedTrim = value == '' ? null : value; 
+                                    setState(() {
+                                      selectedTrim = value == '' ? null : value;
                                       clearFiltersOnVehicleChange();
                                     });
                                     onFilterChanged();
@@ -3451,7 +4960,10 @@ class _HomePageState extends State<HomePage> {
                           // Active Filters Display
                           if (_hasActiveFilters())
                             Container(
-                              padding: EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                              padding: EdgeInsets.symmetric(
+                                horizontal: 12,
+                                vertical: 8,
+                              ),
                               decoration: BoxDecoration(
                                 color: Colors.black.withOpacity(0.1),
                                 borderRadius: BorderRadius.circular(8),
@@ -3461,14 +4973,21 @@ class _HomePageState extends State<HomePage> {
                                 crossAxisAlignment: CrossAxisAlignment.start,
                                 children: [
                                   Row(
-                                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                                    mainAxisAlignment:
+                                        MainAxisAlignment.spaceBetween,
                                     children: [
                                       Row(
                                         children: [
-                                          Icon(Icons.filter_list, color: Color(0xFFFF6B00), size: 16),
+                                          Icon(
+                                            Icons.filter_list,
+                                            color: Color(0xFFFF6B00),
+                                            size: 16,
+                                          ),
                                           SizedBox(width: 8),
                                           Text(
-                                            AppLocalizations.of(context)!.activeFilters,
+                                            AppLocalizations.of(
+                                              context,
+                                            )!.activeFilters,
                                             style: GoogleFonts.orbitron(
                                               fontSize: 12,
                                               color: Colors.white,
@@ -3477,61 +4996,95 @@ class _HomePageState extends State<HomePage> {
                                           ),
                                         ],
                                       ),
-                                      Row(children: [
-                                      GestureDetector(
-                                        onTap: _clearAllFilters,
-                                        child: Container(
-                                          padding: EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-                                          decoration: BoxDecoration(
-                                            color: Colors.red.withOpacity(0.2),
-                                            borderRadius: BorderRadius.circular(12),
-                                            border: Border.all(color: Colors.red, width: 1),
-                                          ),
-                                          child: Row(
-                                            mainAxisSize: MainAxisSize.min,
-                                            children: [
-                                              Icon(Icons.clear, color: Colors.red, size: 12),
-                                              SizedBox(width: 4),
-                                              Text(
-                                                  AppLocalizations.of(context)!.clearFilters,
-                                                style: GoogleFonts.orbitron(
-                                                  fontSize: 10,
+                                      Row(
+                                        children: [
+                                          GestureDetector(
+                                            onTap: _clearAllFilters,
+                                            child: Container(
+                                              padding: EdgeInsets.symmetric(
+                                                horizontal: 8,
+                                                vertical: 4,
+                                              ),
+                                              decoration: BoxDecoration(
+                                                color: Colors.red.withOpacity(
+                                                  0.2,
+                                                ),
+                                                borderRadius:
+                                                    BorderRadius.circular(12),
+                                                border: Border.all(
                                                   color: Colors.red,
-                                                  fontWeight: FontWeight.bold,
+                                                  width: 1,
                                                 ),
                                               ),
-                                            ],
-                                          ),
-                                          ),
-                                        ),
-                                        SizedBox(width: 8),
-                                        GestureDetector(
-                                          onTap: _saveCurrentSearch,
-                                          child: Container(
-                                            padding: EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-                                            decoration: BoxDecoration(
-                                              color: Color(0xFFFF6B00).withOpacity(0.15),
-                                              borderRadius: BorderRadius.circular(12),
-                                              border: Border.all(color: Color(0xFFFF6B00), width: 1),
-                                            ),
-                                            child: Row(
-                                              mainAxisSize: MainAxisSize.min,
-                                              children: [
-                                                Icon(Icons.bookmark_add_outlined, color: Color(0xFFFF6B00), size: 12),
-                                                SizedBox(width: 4),
-                                                Text(
-                                                  AppLocalizations.of(context)!.save,
-                                                  style: GoogleFonts.orbitron(
-                                                    fontSize: 10,
-                                                    color: Color(0xFFFF6B00),
-                                                    fontWeight: FontWeight.bold,
+                                              child: Row(
+                                                mainAxisSize: MainAxisSize.min,
+                                                children: [
+                                                  Icon(
+                                                    Icons.clear,
+                                                    color: Colors.red,
+                                                    size: 12,
                                                   ),
-                                                ),
-                                              ],
+                                                  SizedBox(width: 4),
+                                                  Text(
+                                                    AppLocalizations.of(
+                                                      context,
+                                                    )!.clearFilters,
+                                                    style: GoogleFonts.orbitron(
+                                                      fontSize: 10,
+                                                      color: Colors.red,
+                                                      fontWeight:
+                                                          FontWeight.bold,
+                                                    ),
+                                                  ),
+                                                ],
+                                              ),
                                             ),
                                           ),
-                                        ),
-                                      ]),
+                                          SizedBox(width: 8),
+                                          GestureDetector(
+                                            onTap: _saveCurrentSearch,
+                                            child: Container(
+                                              padding: EdgeInsets.symmetric(
+                                                horizontal: 8,
+                                                vertical: 4,
+                                              ),
+                                              decoration: BoxDecoration(
+                                                color: Color(
+                                                  0xFFFF6B00,
+                                                ).withOpacity(0.15),
+                                                borderRadius:
+                                                    BorderRadius.circular(12),
+                                                border: Border.all(
+                                                  color: Color(0xFFFF6B00),
+                                                  width: 1,
+                                                ),
+                                              ),
+                                              child: Row(
+                                                mainAxisSize: MainAxisSize.min,
+                                                children: [
+                                                  Icon(
+                                                    Icons.bookmark_add_outlined,
+                                                    color: Color(0xFFFF6B00),
+                                                    size: 12,
+                                                  ),
+                                                  SizedBox(width: 4),
+                                                  Text(
+                                                    AppLocalizations.of(
+                                                      context,
+                                                    )!.save,
+                                                    style: GoogleFonts.orbitron(
+                                                      fontSize: 10,
+                                                      color: Color(0xFFFF6B00),
+                                                      fontWeight:
+                                                          FontWeight.bold,
+                                                    ),
+                                                  ),
+                                                ],
+                                              ),
+                                            ),
+                                          ),
+                                        ],
+                                      ),
                                     ],
                                   ),
                                   SizedBox(height: 8),
@@ -3541,11 +5094,35 @@ class _HomePageState extends State<HomePage> {
                                     children: [
                                       ..._buildActiveFilterChips(),
                                       if ((selectedOwners ?? '').isNotEmpty)
-                                        _buildFilterChip(_ownersLabelGlobal(context), _localizeDigitsGlobal(context, selectedOwners!), 'owners', Icons.person_outline, Colors.teal),
+                                        _buildFilterChip(
+                                          _ownersLabelGlobal(context),
+                                          _localizeDigitsGlobal(
+                                            context,
+                                            selectedOwners!,
+                                          ),
+                                          'owners',
+                                          Icons.person_outline,
+                                          Colors.teal,
+                                        ),
                                       if ((selectedVIN ?? '').isNotEmpty)
-                                        _buildFilterChip(_vinLabelGlobal(context), selectedVIN!, 'vin', Icons.qr_code_2, Colors.teal),
-                                      if ((selectedAccidentHistory ?? '').isNotEmpty)
-                                        _buildFilterChip(_accidentHistoryLabelGlobal(context), (selectedAccidentHistory == 'yes') ? _yesTextGlobal(context) : _noTextGlobal(context), 'accident_history', Icons.report_gmailerrorred, Colors.teal),
+                                        _buildFilterChip(
+                                          _vinLabelGlobal(context),
+                                          selectedVIN!,
+                                          'vin',
+                                          Icons.qr_code_2,
+                                          Colors.teal,
+                                        ),
+                                      if ((selectedAccidentHistory ?? '')
+                                          .isNotEmpty)
+                                        _buildFilterChip(
+                                          _accidentHistoryLabelGlobal(context),
+                                          (selectedAccidentHistory == 'yes')
+                                              ? _yesTextGlobal(context)
+                                              : _noTextGlobal(context),
+                                          'accident_history',
+                                          Icons.report_gmailerrorred,
+                                          Colors.teal,
+                                        ),
                                     ],
                                   ),
                                 ],
@@ -3559,12 +5136,23 @@ class _HomePageState extends State<HomePage> {
                               style: ElevatedButton.styleFrom(
                                 backgroundColor: Color(0xFFFF6B00),
                                 foregroundColor: Colors.white,
-                                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
-                                padding: EdgeInsets.symmetric(horizontal: 4, vertical: 0),
+                                shape: RoundedRectangleBorder(
+                                  borderRadius: BorderRadius.circular(8),
+                                ),
+                                padding: EdgeInsets.symmetric(
+                                  horizontal: 4,
+                                  vertical: 0,
+                                ),
                                 minimumSize: Size(0, 32),
                               ),
                               icon: Icon(Icons.tune, size: 18),
-                              label: Text(AppLocalizations.of(context)!.moreFilters, style: GoogleFonts.orbitron(fontSize: 15, fontWeight: FontWeight.bold)),
+                              label: Text(
+                                AppLocalizations.of(context)!.moreFilters,
+                                style: GoogleFonts.orbitron(
+                                  fontSize: 15,
+                                  fontWeight: FontWeight.bold,
+                                ),
+                              ),
                               onPressed: () async {
                                 await showDialog(
                                   context: context,
@@ -3572,15 +5160,37 @@ class _HomePageState extends State<HomePage> {
                                     return StatefulBuilder(
                                       builder: (context, setStateDialog) {
                                         return AlertDialog(
-                                          backgroundColor: Colors.grey[900]?.withOpacity(0.98),
-                                          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
-                                          title: Text(AppLocalizations.of(context)!.moreFilters, style: GoogleFonts.orbitron(color: Color(0xFFFF6B00), fontWeight: FontWeight.bold)),
+                                          backgroundColor: Colors.grey[900]
+                                              ?.withOpacity(0.98),
+                                          shape: RoundedRectangleBorder(
+                                            borderRadius: BorderRadius.circular(
+                                              20,
+                                            ),
+                                          ),
+                                          title: Text(
+                                            AppLocalizations.of(
+                                              context,
+                                            )!.moreFilters,
+                                            style: GoogleFonts.orbitron(
+                                              color: Color(0xFFFF6B00),
+                                              fontWeight: FontWeight.bold,
+                                            ),
+                                          ),
                                           content: SingleChildScrollView(
                                             child: Column(
                                               mainAxisSize: MainAxisSize.min,
                                               children: [
                                                 // Price Filter
-                                                Text(AppLocalizations.of(context)!.priceRange, style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 16)),
+                                                Text(
+                                                  AppLocalizations.of(
+                                                    context,
+                                                  )!.priceRange,
+                                                  style: TextStyle(
+                                                    color: Colors.white,
+                                                    fontWeight: FontWeight.bold,
+                                                    fontSize: 16,
+                                                  ),
+                                                ),
                                                 SizedBox(height: 8),
                                                 Row(
                                                   children: [
@@ -3588,143 +5198,365 @@ class _HomePageState extends State<HomePage> {
                                                       child: isPriceDropdown
                                                           ? Column(
                                                               children: [
-                                                Row(
-                                                  children: [
-                                                    Expanded(
-                                                      child: DropdownButtonFormField<String>(
-                                                        value: selectedMinPrice ?? '',
-                                                        decoration: InputDecoration(
-                                                                          labelText: AppLocalizations.of(context)!.minPrice,
-                                                          filled: true,
-                                                          fillColor: Colors.black.withOpacity(0.2),
-                                                          labelStyle: TextStyle(color: Colors.white),
-                                                          border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
-                                                        ),
-                                                        items: [
-                                                          DropdownMenuItem(value: '', child: Text(AppLocalizations.of(context)!.anyMinPrice, style: TextStyle(color: Colors.grey))),
-                                                          ...[
-                                                            for (int p = 500; p <= 300000; p += 500) p,
-                                                            for (int p = 310000; p <= 2000000; p += 10000) p,
-                                                          ]
-                                                              .where((p) {
-                                                                if (selectedMaxPrice == null || selectedMaxPrice!.isEmpty) return true;
-                                                                final max = int.tryParse(selectedMaxPrice!);
-                                                                return max == null ? true : p <= max;
-                                                              })
-                                                              .map((p) => DropdownMenuItem(
-                                                                    value: p.toString(),
-                                                                    child: Text(_formatCurrencyGlobal(context, p)),
-                                                                  ))
-                                                              .toList(),
-                                                        ],
-                                                        onChanged: (value) {
-                                                          setState(() {
-                                                            selectedMinPrice = value?.isEmpty == true ? null : value;
-                                                            final min = int.tryParse(selectedMinPrice ?? '');
-                                                            final max = int.tryParse(selectedMaxPrice ?? '');
-                                                            if (min != null && max != null && min > max) {
-                                                              selectedMaxPrice = selectedMinPrice;
-                                                            }
-                                                          });
-                                                          setStateDialog(() {});
-                                                        },
+                                                                Row(
+                                                                  children: [
+                                                                    Expanded(
+                                                                      child: DropdownButtonFormField<String>(
+                                                                        value:
+                                                                            selectedMinPrice ??
+                                                                            '',
+                                                                        decoration: InputDecoration(
+                                                                          labelText: AppLocalizations.of(
+                                                                            context,
+                                                                          )!.minPrice,
+                                                                          filled:
+                                                                              true,
+                                                                          fillColor: Colors.black.withOpacity(
+                                                                            0.2,
+                                                                          ),
+                                                                          labelStyle: TextStyle(
+                                                                            color:
+                                                                                Colors.white,
+                                                                          ),
+                                                                          border: OutlineInputBorder(
+                                                                            borderRadius: BorderRadius.circular(
+                                                                              12,
+                                                                            ),
+                                                                          ),
+                                                                        ),
+                                                                        items: [
+                                                                          DropdownMenuItem(
+                                                                            value:
+                                                                                '',
+                                                                            child: Text(
+                                                                              AppLocalizations.of(
+                                                                                context,
+                                                                              )!.anyMinPrice,
+                                                                              style: TextStyle(
+                                                                                color: Colors.grey,
+                                                                              ),
+                                                                            ),
+                                                                          ),
+                                                                          ...[
+                                                                                for (
+                                                                                  int p = 500;
+                                                                                  p <=
+                                                                                      300000;
+                                                                                  p += 500
+                                                                                )
+                                                                                  p,
+                                                                                for (
+                                                                                  int p = 310000;
+                                                                                  p <=
+                                                                                      2000000;
+                                                                                  p += 10000
+                                                                                )
+                                                                                  p,
+                                                                              ]
+                                                                              .where(
+                                                                                (
+                                                                                  p,
+                                                                                ) {
+                                                                                  if (selectedMaxPrice ==
+                                                                                          null ||
+                                                                                      selectedMaxPrice!.isEmpty)
+                                                                                    return true;
+                                                                                  final max = int.tryParse(
+                                                                                    selectedMaxPrice!,
+                                                                                  );
+                                                                                  return max ==
+                                                                                          null
+                                                                                      ? true
+                                                                                      : p <=
+                                                                                            max;
+                                                                                },
+                                                                              )
+                                                                              .map(
+                                                                                (
+                                                                                  p,
+                                                                                ) => DropdownMenuItem(
+                                                                                  value: p.toString(),
+                                                                                  child: Text(
+                                                                                    _formatCurrencyGlobal(
+                                                                                      context,
+                                                                                      p,
+                                                                                    ),
+                                                                                  ),
+                                                                                ),
+                                                                              )
+                                                                              .toList(),
+                                                                        ],
+                                                                        onChanged: (value) {
+                                                                          setState(() {
+                                                                            selectedMinPrice =
+                                                                                value?.isEmpty ==
+                                                                                    true
+                                                                                ? null
+                                                                                : value;
+                                                                            final min = int.tryParse(
+                                                                              selectedMinPrice ??
+                                                                                  '',
+                                                                            );
+                                                                            final max = int.tryParse(
+                                                                              selectedMaxPrice ??
+                                                                                  '',
+                                                                            );
+                                                                            if (min !=
+                                                                                    null &&
+                                                                                max !=
+                                                                                    null &&
+                                                                                min >
+                                                                                    max) {
+                                                                              selectedMaxPrice = selectedMinPrice;
+                                                                            }
+                                                                          });
+                                                                          setStateDialog(
+                                                                            () {},
+                                                                          );
+                                                                        },
                                                                       ),
                                                                     ),
-                                                                    SizedBox(width: 8),
-                                                    Expanded(
-                                                      child: DropdownButtonFormField<String>(
-                                                        value: selectedMaxPrice ?? '',
-                                                        decoration: InputDecoration(
-                                                                          labelText: AppLocalizations.of(context)!.maxPrice,
-                                                          filled: true,
-                                                          fillColor: Colors.black.withOpacity(0.2),
-                                                          labelStyle: TextStyle(color: Colors.white),
-                                                          border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
-                                                        ),
-                                                        items: [
-                                                          DropdownMenuItem(value: '', child: Text(AppLocalizations.of(context)!.anyMaxPrice, style: TextStyle(color: Colors.grey))),
-                                                          ...[
-                                                            for (int p = 500; p <= 300000; p += 500) p,
-                                                            for (int p = 310000; p <= 2000000; p += 10000) p,
-                                                          ]
-                                                              .where((p) {
-                                                                if (selectedMinPrice == null || selectedMinPrice!.isEmpty) return true;
-                                                                final min = int.tryParse(selectedMinPrice!);
-                                                                return min == null ? true : p >= min;
-                                                              })
-                                                              .map((p) => DropdownMenuItem(
-                                                                    value: p.toString(),
-                                                                    child: Text(_formatCurrencyGlobal(context, p)),
-                                                                  ))
-                                                              .toList(),
-                                                        ],
-                                                        onChanged: (value) {
-                                                          setState(() {
-                                                            selectedMaxPrice = value?.isEmpty == true ? null : value;
-                                                            final min = int.tryParse(selectedMinPrice ?? '');
-                                                            final max = int.tryParse(selectedMaxPrice ?? '');
-                                                            if (min != null && max != null && max < min) {
-                                                              selectedMinPrice = selectedMaxPrice;
-                                                            }
-                                                          });
-                                                          setStateDialog(() {});
-                                                        },
-                                                      ),
-                                                    ),
-                                                  ],
-                                                ),
+                                                                    SizedBox(
+                                                                      width: 8,
+                                                                    ),
+                                                                    Expanded(
+                                                                      child: DropdownButtonFormField<String>(
+                                                                        value:
+                                                                            selectedMaxPrice ??
+                                                                            '',
+                                                                        decoration: InputDecoration(
+                                                                          labelText: AppLocalizations.of(
+                                                                            context,
+                                                                          )!.maxPrice,
+                                                                          filled:
+                                                                              true,
+                                                                          fillColor: Colors.black.withOpacity(
+                                                                            0.2,
+                                                                          ),
+                                                                          labelStyle: TextStyle(
+                                                                            color:
+                                                                                Colors.white,
+                                                                          ),
+                                                                          border: OutlineInputBorder(
+                                                                            borderRadius: BorderRadius.circular(
+                                                                              12,
+                                                                            ),
+                                                                          ),
+                                                                        ),
+                                                                        items: [
+                                                                          DropdownMenuItem(
+                                                                            value:
+                                                                                '',
+                                                                            child: Text(
+                                                                              AppLocalizations.of(
+                                                                                context,
+                                                                              )!.anyMaxPrice,
+                                                                              style: TextStyle(
+                                                                                color: Colors.grey,
+                                                                              ),
+                                                                            ),
+                                                                          ),
+                                                                          ...[
+                                                                                for (
+                                                                                  int p = 500;
+                                                                                  p <=
+                                                                                      300000;
+                                                                                  p += 500
+                                                                                )
+                                                                                  p,
+                                                                                for (
+                                                                                  int p = 310000;
+                                                                                  p <=
+                                                                                      2000000;
+                                                                                  p += 10000
+                                                                                )
+                                                                                  p,
+                                                                              ]
+                                                                              .where(
+                                                                                (
+                                                                                  p,
+                                                                                ) {
+                                                                                  if (selectedMinPrice ==
+                                                                                          null ||
+                                                                                      selectedMinPrice!.isEmpty)
+                                                                                    return true;
+                                                                                  final min = int.tryParse(
+                                                                                    selectedMinPrice!,
+                                                                                  );
+                                                                                  return min ==
+                                                                                          null
+                                                                                      ? true
+                                                                                      : p >=
+                                                                                            min;
+                                                                                },
+                                                                              )
+                                                                              .map(
+                                                                                (
+                                                                                  p,
+                                                                                ) => DropdownMenuItem(
+                                                                                  value: p.toString(),
+                                                                                  child: Text(
+                                                                                    _formatCurrencyGlobal(
+                                                                                      context,
+                                                                                      p,
+                                                                                    ),
+                                                                                  ),
+                                                                                ),
+                                                                              )
+                                                                              .toList(),
+                                                                        ],
+                                                                        onChanged: (value) {
+                                                                          setState(() {
+                                                                            selectedMaxPrice =
+                                                                                value?.isEmpty ==
+                                                                                    true
+                                                                                ? null
+                                                                                : value;
+                                                                            final min = int.tryParse(
+                                                                              selectedMinPrice ??
+                                                                                  '',
+                                                                            );
+                                                                            final max = int.tryParse(
+                                                                              selectedMaxPrice ??
+                                                                                  '',
+                                                                            );
+                                                                            if (min !=
+                                                                                    null &&
+                                                                                max !=
+                                                                                    null &&
+                                                                                max <
+                                                                                    min) {
+                                                                              selectedMinPrice = selectedMaxPrice;
+                                                                            }
+                                                                          });
+                                                                          setStateDialog(
+                                                                            () {},
+                                                                          );
+                                                                        },
+                                                                      ),
+                                                                    ),
+                                                                  ],
+                                                                ),
                                                               ],
                                                             )
                                                           : Column(
                                                               children: [
-                                                Row(
-                                                  children: [
-                                                    Expanded(
-                                                      child: TextFormField(
-                                                        controller: TextEditingController(text: selectedMinPrice ?? ''),
-                                                        decoration: InputDecoration(
-                                                                          labelText: AppLocalizations.of(context)!.minPrice,
-                                                          filled: true,
-                                                          fillColor: Colors.black.withOpacity(0.2),
-                                                          labelStyle: TextStyle(color: Colors.white),
-                                                          border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
-                                                        ),
-                                                        keyboardType: TextInputType.number,
+                                                                Row(
+                                                                  children: [
+                                                                    Expanded(
+                                                                      child: TextFormField(
+                                                                        controller: TextEditingController(
+                                                                          text:
+                                                                              selectedMinPrice ??
+                                                                              '',
+                                                                        ),
+                                                                        decoration: InputDecoration(
+                                                                          labelText: AppLocalizations.of(
+                                                                            context,
+                                                                          )!.minPrice,
+                                                                          filled:
+                                                                              true,
+                                                                          fillColor: Colors.black.withOpacity(
+                                                                            0.2,
+                                                                          ),
+                                                                          labelStyle: TextStyle(
+                                                                            color:
+                                                                                Colors.white,
+                                                                          ),
+                                                                          border: OutlineInputBorder(
+                                                                            borderRadius: BorderRadius.circular(
+                                                                              12,
+                                                                            ),
+                                                                          ),
+                                                                        ),
+                                                                        keyboardType:
+                                                                            TextInputType.number,
                                                                         onChanged: (value) {
                                                                           setState(() {
-                                                                            selectedMinPrice = value.isEmpty ? null : value;
-                                                                            final min = int.tryParse(selectedMinPrice ?? '');
-                                                                            final max = int.tryParse(selectedMaxPrice ?? '');
-                                                                            if (min != null && max != null && min > max) {
+                                                                            selectedMinPrice =
+                                                                                value.isEmpty
+                                                                                ? null
+                                                                                : value;
+                                                                            final min = int.tryParse(
+                                                                              selectedMinPrice ??
+                                                                                  '',
+                                                                            );
+                                                                            final max = int.tryParse(
+                                                                              selectedMaxPrice ??
+                                                                                  '',
+                                                                            );
+                                                                            if (min !=
+                                                                                    null &&
+                                                                                max !=
+                                                                                    null &&
+                                                                                min >
+                                                                                    max) {
                                                                               selectedMaxPrice = selectedMinPrice;
                                                                             }
                                                                           });
-                                                                          setStateDialog(() {});
+                                                                          setStateDialog(
+                                                                            () {},
+                                                                          );
                                                                         },
-                                                      ),
-                                                    ),
-                                                                    SizedBox(width: 8),
-                                                    Expanded(
-                                                      child: TextFormField(
-                                                        controller: TextEditingController(text: selectedMaxPrice ?? ''),
-                                                        decoration: InputDecoration(
-                                                                          labelText: AppLocalizations.of(context)!.maxPrice,
-                                                          filled: true,
-                                                          fillColor: Colors.black.withOpacity(0.2),
-                                                          labelStyle: TextStyle(color: Colors.white),
-                                                          border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
-                                                        ),
-                                                        keyboardType: TextInputType.number,
+                                                                      ),
+                                                                    ),
+                                                                    SizedBox(
+                                                                      width: 8,
+                                                                    ),
+                                                                    Expanded(
+                                                                      child: TextFormField(
+                                                                        controller: TextEditingController(
+                                                                          text:
+                                                                              selectedMaxPrice ??
+                                                                              '',
+                                                                        ),
+                                                                        decoration: InputDecoration(
+                                                                          labelText: AppLocalizations.of(
+                                                                            context,
+                                                                          )!.maxPrice,
+                                                                          filled:
+                                                                              true,
+                                                                          fillColor: Colors.black.withOpacity(
+                                                                            0.2,
+                                                                          ),
+                                                                          labelStyle: TextStyle(
+                                                                            color:
+                                                                                Colors.white,
+                                                                          ),
+                                                                          border: OutlineInputBorder(
+                                                                            borderRadius: BorderRadius.circular(
+                                                                              12,
+                                                                            ),
+                                                                          ),
+                                                                        ),
+                                                                        keyboardType:
+                                                                            TextInputType.number,
                                                                         onChanged: (value) {
                                                                           setState(() {
-                                                                            selectedMaxPrice = value.isEmpty ? null : value;
-                                                                            final min = int.tryParse(selectedMinPrice ?? '');
-                                                                            final max = int.tryParse(selectedMaxPrice ?? '');
-                                                                            if (min != null && max != null && max < min) {
+                                                                            selectedMaxPrice =
+                                                                                value.isEmpty
+                                                                                ? null
+                                                                                : value;
+                                                                            final min = int.tryParse(
+                                                                              selectedMinPrice ??
+                                                                                  '',
+                                                                            );
+                                                                            final max = int.tryParse(
+                                                                              selectedMaxPrice ??
+                                                                                  '',
+                                                                            );
+                                                                            if (min !=
+                                                                                    null &&
+                                                                                max !=
+                                                                                    null &&
+                                                                                max <
+                                                                                    min) {
                                                                               selectedMinPrice = selectedMaxPrice;
                                                                             }
                                                                           });
-                                                                          setStateDialog(() {});
+                                                                          setStateDialog(
+                                                                            () {},
+                                                                          );
                                                                         },
                                                                       ),
                                                                     ),
@@ -3735,18 +5567,45 @@ class _HomePageState extends State<HomePage> {
                                                     ),
                                                     SizedBox(width: 8),
                                                     IconButton(
-                                                      onPressed: () => setStateDialog(() => isPriceDropdown = !isPriceDropdown),
-                                                      icon: Icon(isPriceDropdown ? Icons.edit : Icons.list, color: Color(0xFFFF6B00)),
+                                                      onPressed: () =>
+                                                          setStateDialog(
+                                                            () => isPriceDropdown =
+                                                                !isPriceDropdown,
+                                                          ),
+                                                      icon: Icon(
+                                                        isPriceDropdown
+                                                            ? Icons.edit
+                                                            : Icons.list,
+                                                        color: Color(
+                                                          0xFFFF6B00,
+                                                        ),
+                                                      ),
                                                       style: IconButton.styleFrom(
-                                                        backgroundColor: Colors.black.withOpacity(0.2),
-                                                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+                                                        backgroundColor: Colors
+                                                            .black
+                                                            .withOpacity(0.2),
+                                                        shape: RoundedRectangleBorder(
+                                                          borderRadius:
+                                                              BorderRadius.circular(
+                                                                8,
+                                                              ),
+                                                        ),
                                                       ),
                                                     ),
                                                   ],
                                                 ),
                                                 SizedBox(height: 16),
                                                 // Year Filter
-                                                Text(AppLocalizations.of(context)!.yearRange, style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 16)),
+                                                Text(
+                                                  AppLocalizations.of(
+                                                    context,
+                                                  )!.yearRange,
+                                                  style: TextStyle(
+                                                    color: Colors.white,
+                                                    fontWeight: FontWeight.bold,
+                                                    fontSize: 16,
+                                                  ),
+                                                ),
                                                 SizedBox(height: 8),
                                                 Row(
                                                   children: [
@@ -3754,121 +5613,343 @@ class _HomePageState extends State<HomePage> {
                                                       child: isYearDropdown
                                                           ? Column(
                                                               children: [
-                                                Row(
-                                                  children: [
-                                                    Expanded(
-                                                      child: DropdownButtonFormField<String>(
-                                                        value: selectedMinYear ?? '',
-                                                        decoration: InputDecoration(
-                                                                          labelText: AppLocalizations.of(context)!.minYear,
-                                                          filled: true,
-                                                          fillColor: Colors.black.withOpacity(0.2),
-                                                          labelStyle: TextStyle(color: Colors.white),
-                                                          border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
-                                                        ),
-                                                        items: [
-                                                                          DropdownMenuItem(value: '', child: Text(AppLocalizations.of(context)!.anyMinYear, style: TextStyle(color: Colors.grey))),
-                                                                          ...List.generate(127, (i) => (1900 + i).toString()).reversed
-                                                                            .where((y) {
-                                                                              if (selectedMaxYear == null || selectedMaxYear!.isEmpty) return true;
-                                                                              final max = int.tryParse(selectedMaxYear!);
-                                                                              final val = int.tryParse(y);
-                                                                              return max == null || val == null ? true : val <= max;
-                                                                            })
-                                                                            .map((y) => DropdownMenuItem(value: y, child: Text(_localizeDigitsGlobal(context, y), style: TextStyle(color: Colors.white))))
-                                                                          .toList(),
+                                                                Row(
+                                                                  children: [
+                                                                    Expanded(
+                                                                      child: DropdownButtonFormField<String>(
+                                                                        value:
+                                                                            selectedMinYear ??
+                                                                            '',
+                                                                        decoration: InputDecoration(
+                                                                          labelText: AppLocalizations.of(
+                                                                            context,
+                                                                          )!.minYear,
+                                                                          filled:
+                                                                              true,
+                                                                          fillColor: Colors.black.withOpacity(
+                                                                            0.2,
+                                                                          ),
+                                                                          labelStyle: TextStyle(
+                                                                            color:
+                                                                                Colors.white,
+                                                                          ),
+                                                                          border: OutlineInputBorder(
+                                                                            borderRadius: BorderRadius.circular(
+                                                                              12,
+                                                                            ),
+                                                                          ),
+                                                                        ),
+                                                                        items: [
+                                                                          DropdownMenuItem(
+                                                                            value:
+                                                                                '',
+                                                                            child: Text(
+                                                                              AppLocalizations.of(
+                                                                                context,
+                                                                              )!.anyMinYear,
+                                                                              style: TextStyle(
+                                                                                color: Colors.grey,
+                                                                              ),
+                                                                            ),
+                                                                          ),
+                                                                          ...List.generate(
+                                                                                127,
+                                                                                (
+                                                                                  i,
+                                                                                ) =>
+                                                                                    (1900 +
+                                                                                            i)
+                                                                                        .toString(),
+                                                                              )
+                                                                              .reversed
+                                                                              .where(
+                                                                                (
+                                                                                  y,
+                                                                                ) {
+                                                                                  if (selectedMaxYear ==
+                                                                                          null ||
+                                                                                      selectedMaxYear!.isEmpty)
+                                                                                    return true;
+                                                                                  final max = int.tryParse(
+                                                                                    selectedMaxYear!,
+                                                                                  );
+                                                                                  final val = int.tryParse(
+                                                                                    y,
+                                                                                  );
+                                                                                  return max ==
+                                                                                              null ||
+                                                                                          val ==
+                                                                                              null
+                                                                                      ? true
+                                                                                      : val <=
+                                                                                            max;
+                                                                                },
+                                                                              )
+                                                                              .map(
+                                                                                (
+                                                                                  y,
+                                                                                ) => DropdownMenuItem(
+                                                                                  value: y,
+                                                                                  child: Text(
+                                                                                    _localizeDigitsGlobal(
+                                                                                      context,
+                                                                                      y,
+                                                                                    ),
+                                                                                    style: TextStyle(
+                                                                                      color: Colors.white,
+                                                                                    ),
+                                                                                  ),
+                                                                                ),
+                                                                              )
+                                                                              .toList(),
                                                                         ],
                                                                         onChanged: (value) {
                                                                           setState(() {
-                                                                            selectedMinYear = value?.isEmpty == true ? null : value;
-                                                                            final min = int.tryParse(selectedMinYear ?? '');
-                                                                            final max = int.tryParse(selectedMaxYear ?? '');
-                                                                            if (min != null && max != null && min > max) {
+                                                                            selectedMinYear =
+                                                                                value?.isEmpty ==
+                                                                                    true
+                                                                                ? null
+                                                                                : value;
+                                                                            final min = int.tryParse(
+                                                                              selectedMinYear ??
+                                                                                  '',
+                                                                            );
+                                                                            final max = int.tryParse(
+                                                                              selectedMaxYear ??
+                                                                                  '',
+                                                                            );
+                                                                            if (min !=
+                                                                                    null &&
+                                                                                max !=
+                                                                                    null &&
+                                                                                min >
+                                                                                    max) {
                                                                               selectedMaxYear = selectedMinYear;
                                                                             }
                                                                           });
-                                                                          setStateDialog(() {});
+                                                                          setStateDialog(
+                                                                            () {},
+                                                                          );
                                                                         },
                                                                       ),
                                                                     ),
-                                                                    SizedBox(width: 8),
-                                                    Expanded(
-                                                      child: DropdownButtonFormField<String>(
-                                                        value: selectedMaxYear ?? '',
-                                                        decoration: InputDecoration(
-                                                                          labelText: AppLocalizations.of(context)!.maxYear,
-                                                          filled: true,
-                                                          fillColor: Colors.black.withOpacity(0.2),
-                                                          labelStyle: TextStyle(color: Colors.white),
-                                                          border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
-                                                        ),
-                                                        items: [
-                                                                          DropdownMenuItem(value: '', child: Text(AppLocalizations.of(context)!.anyMaxYear, style: TextStyle(color: Colors.grey))),
-                                                                          ...List.generate(127, (i) => (1900 + i).toString()).reversed
-                                                                            .where((y) {
-                                                                              if (selectedMinYear == null || selectedMinYear!.isEmpty) return true;
-                                                                              final min = int.tryParse(selectedMinYear!);
-                                                                              final val = int.tryParse(y);
-                                                                              return min == null || val == null ? true : val >= min;
-                                                                            })
-                                                                            .map((y) => DropdownMenuItem(value: y, child: Text(_localizeDigitsGlobal(context, y), style: TextStyle(color: Colors.white))))
-                                                                          .toList(),
+                                                                    SizedBox(
+                                                                      width: 8,
+                                                                    ),
+                                                                    Expanded(
+                                                                      child: DropdownButtonFormField<String>(
+                                                                        value:
+                                                                            selectedMaxYear ??
+                                                                            '',
+                                                                        decoration: InputDecoration(
+                                                                          labelText: AppLocalizations.of(
+                                                                            context,
+                                                                          )!.maxYear,
+                                                                          filled:
+                                                                              true,
+                                                                          fillColor: Colors.black.withOpacity(
+                                                                            0.2,
+                                                                          ),
+                                                                          labelStyle: TextStyle(
+                                                                            color:
+                                                                                Colors.white,
+                                                                          ),
+                                                                          border: OutlineInputBorder(
+                                                                            borderRadius: BorderRadius.circular(
+                                                                              12,
+                                                                            ),
+                                                                          ),
+                                                                        ),
+                                                                        items: [
+                                                                          DropdownMenuItem(
+                                                                            value:
+                                                                                '',
+                                                                            child: Text(
+                                                                              AppLocalizations.of(
+                                                                                context,
+                                                                              )!.anyMaxYear,
+                                                                              style: TextStyle(
+                                                                                color: Colors.grey,
+                                                                              ),
+                                                                            ),
+                                                                          ),
+                                                                          ...List.generate(
+                                                                                127,
+                                                                                (
+                                                                                  i,
+                                                                                ) =>
+                                                                                    (1900 +
+                                                                                            i)
+                                                                                        .toString(),
+                                                                              )
+                                                                              .reversed
+                                                                              .where(
+                                                                                (
+                                                                                  y,
+                                                                                ) {
+                                                                                  if (selectedMinYear ==
+                                                                                          null ||
+                                                                                      selectedMinYear!.isEmpty)
+                                                                                    return true;
+                                                                                  final min = int.tryParse(
+                                                                                    selectedMinYear!,
+                                                                                  );
+                                                                                  final val = int.tryParse(
+                                                                                    y,
+                                                                                  );
+                                                                                  return min ==
+                                                                                              null ||
+                                                                                          val ==
+                                                                                              null
+                                                                                      ? true
+                                                                                      : val >=
+                                                                                            min;
+                                                                                },
+                                                                              )
+                                                                              .map(
+                                                                                (
+                                                                                  y,
+                                                                                ) => DropdownMenuItem(
+                                                                                  value: y,
+                                                                                  child: Text(
+                                                                                    _localizeDigitsGlobal(
+                                                                                      context,
+                                                                                      y,
+                                                                                    ),
+                                                                                    style: TextStyle(
+                                                                                      color: Colors.white,
+                                                                                    ),
+                                                                                  ),
+                                                                                ),
+                                                                              )
+                                                                              .toList(),
                                                                         ],
                                                                         onChanged: (value) {
                                                                           setState(() {
-                                                                            selectedMaxYear = value?.isEmpty == true ? null : value;
-                                                                            final min = int.tryParse(selectedMinYear ?? '');
-                                                                            final max = int.tryParse(selectedMaxYear ?? '');
-                                                                            if (min != null && max != null && max < min) {
+                                                                            selectedMaxYear =
+                                                                                value?.isEmpty ==
+                                                                                    true
+                                                                                ? null
+                                                                                : value;
+                                                                            final min = int.tryParse(
+                                                                              selectedMinYear ??
+                                                                                  '',
+                                                                            );
+                                                                            final max = int.tryParse(
+                                                                              selectedMaxYear ??
+                                                                                  '',
+                                                                            );
+                                                                            if (min !=
+                                                                                    null &&
+                                                                                max !=
+                                                                                    null &&
+                                                                                max <
+                                                                                    min) {
                                                                               selectedMinYear = selectedMaxYear;
                                                                             }
                                                                           });
-                                                                          setStateDialog(() {});
+                                                                          setStateDialog(
+                                                                            () {},
+                                                                          );
                                                                         },
-                                                      ),
-                                                    ),
-                                                  ],
-                                                ),
+                                                                      ),
+                                                                    ),
+                                                                  ],
+                                                                ),
                                                               ],
                                                             )
                                                           : Column(
                                                               children: [
-                                                Row(
-                                                  children: [
-                                                    Expanded(
-                                                      child: TextFormField(
-                                                        controller: TextEditingController(text: selectedMinYear ?? ''),
-                                                        decoration: InputDecoration(
-                                                                          labelText: AppLocalizations.of(context)!.minYear,
-                                                          filled: true,
-                                                          fillColor: Colors.black.withOpacity(0.2),
-                                                          labelStyle: TextStyle(color: Colors.white),
-                                                          border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
-                                                                          hintText: AppLocalizations.of(context)!.enterMinYear,
-                                                        ),
-                                                        keyboardType: TextInputType.number,
+                                                                Row(
+                                                                  children: [
+                                                                    Expanded(
+                                                                      child: TextFormField(
+                                                                        controller: TextEditingController(
+                                                                          text:
+                                                                              selectedMinYear ??
+                                                                              '',
+                                                                        ),
+                                                                        decoration: InputDecoration(
+                                                                          labelText: AppLocalizations.of(
+                                                                            context,
+                                                                          )!.minYear,
+                                                                          filled:
+                                                                              true,
+                                                                          fillColor: Colors.black.withOpacity(
+                                                                            0.2,
+                                                                          ),
+                                                                          labelStyle: TextStyle(
+                                                                            color:
+                                                                                Colors.white,
+                                                                          ),
+                                                                          border: OutlineInputBorder(
+                                                                            borderRadius: BorderRadius.circular(
+                                                                              12,
+                                                                            ),
+                                                                          ),
+                                                                          hintText: AppLocalizations.of(
+                                                                            context,
+                                                                          )!.enterMinYear,
+                                                                        ),
+                                                                        keyboardType:
+                                                                            TextInputType.number,
                                                                         onChanged: (value) {
-                                                                          setState(() => selectedMinYear = value.isEmpty ? null : value);
-                                                                          setStateDialog(() {});
+                                                                          setState(
+                                                                            () =>
+                                                                                selectedMinYear = value.isEmpty
+                                                                                ? null
+                                                                                : value,
+                                                                          );
+                                                                          setStateDialog(
+                                                                            () {},
+                                                                          );
                                                                         },
-                                                      ),
-                                                    ),
-                                                                    SizedBox(width: 8),
-                                                    Expanded(
-                                                      child: TextFormField(
-                                                        controller: TextEditingController(text: selectedMaxYear ?? ''),
-                                                        decoration: InputDecoration(
-                                                                          labelText: AppLocalizations.of(context)!.maxYear,
-                                                          filled: true,
-                                                          fillColor: Colors.black.withOpacity(0.2),
-                                                          labelStyle: TextStyle(color: Colors.white),
-                                                          border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
-                                                                          hintText: AppLocalizations.of(context)!.enterMaxYear,
-                                                        ),
-                                                        keyboardType: TextInputType.number,
+                                                                      ),
+                                                                    ),
+                                                                    SizedBox(
+                                                                      width: 8,
+                                                                    ),
+                                                                    Expanded(
+                                                                      child: TextFormField(
+                                                                        controller: TextEditingController(
+                                                                          text:
+                                                                              selectedMaxYear ??
+                                                                              '',
+                                                                        ),
+                                                                        decoration: InputDecoration(
+                                                                          labelText: AppLocalizations.of(
+                                                                            context,
+                                                                          )!.maxYear,
+                                                                          filled:
+                                                                              true,
+                                                                          fillColor: Colors.black.withOpacity(
+                                                                            0.2,
+                                                                          ),
+                                                                          labelStyle: TextStyle(
+                                                                            color:
+                                                                                Colors.white,
+                                                                          ),
+                                                                          border: OutlineInputBorder(
+                                                                            borderRadius: BorderRadius.circular(
+                                                                              12,
+                                                                            ),
+                                                                          ),
+                                                                          hintText: AppLocalizations.of(
+                                                                            context,
+                                                                          )!.enterMaxYear,
+                                                                        ),
+                                                                        keyboardType:
+                                                                            TextInputType.number,
                                                                         onChanged: (value) {
-                                                                          setState(() => selectedMaxYear = value.isEmpty ? null : value);
-                                                                          setStateDialog(() {});
+                                                                          setState(
+                                                                            () =>
+                                                                                selectedMaxYear = value.isEmpty
+                                                                                ? null
+                                                                                : value,
+                                                                          );
+                                                                          setStateDialog(
+                                                                            () {},
+                                                                          );
                                                                         },
                                                                       ),
                                                                     ),
@@ -3879,18 +5960,45 @@ class _HomePageState extends State<HomePage> {
                                                     ),
                                                     SizedBox(width: 8),
                                                     IconButton(
-                                                      onPressed: () => setStateDialog(() => isYearDropdown = !isYearDropdown),
-                                                      icon: Icon(isYearDropdown ? Icons.edit : Icons.list, color: Color(0xFFFF6B00)),
+                                                      onPressed: () =>
+                                                          setStateDialog(
+                                                            () => isYearDropdown =
+                                                                !isYearDropdown,
+                                                          ),
+                                                      icon: Icon(
+                                                        isYearDropdown
+                                                            ? Icons.edit
+                                                            : Icons.list,
+                                                        color: Color(
+                                                          0xFFFF6B00,
+                                                        ),
+                                                      ),
                                                       style: IconButton.styleFrom(
-                                                        backgroundColor: Colors.black.withOpacity(0.2),
-                                                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+                                                        backgroundColor: Colors
+                                                            .black
+                                                            .withOpacity(0.2),
+                                                        shape: RoundedRectangleBorder(
+                                                          borderRadius:
+                                                              BorderRadius.circular(
+                                                                8,
+                                                              ),
+                                                        ),
                                                       ),
                                                     ),
                                                   ],
                                                 ),
                                                 SizedBox(height: 16),
                                                 // Mileage Filter
-                                                Text(AppLocalizations.of(context)!.mileageRangeLabel, style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 16)),
+                                                Text(
+                                                  AppLocalizations.of(
+                                                    context,
+                                                  )!.mileageRangeLabel,
+                                                  style: TextStyle(
+                                                    color: Colors.white,
+                                                    fontWeight: FontWeight.bold,
+                                                    fontSize: 16,
+                                                  ),
+                                                ),
                                                 SizedBox(height: 8),
                                                 Row(
                                                   children: [
@@ -3902,82 +6010,259 @@ class _HomePageState extends State<HomePage> {
                                                                   children: [
                                                                     Expanded(
                                                                       child: DropdownButtonFormField<String>(
-                                                                        value: (selectedMinMileage != null && selectedMinMileage!.isNotEmpty) ? selectedMinMileage : '',
+                                                                        value:
+                                                                            (selectedMinMileage !=
+                                                                                    null &&
+                                                                                selectedMinMileage!.isNotEmpty)
+                                                                            ? selectedMinMileage
+                                                                            : '',
                                                                         decoration: InputDecoration(
-                                                                          labelText: AppLocalizations.of(context)!.minMileage,
-                                                                          filled: true,
-                                                                          fillColor: Colors.black.withOpacity(0.2),
-                                                                          labelStyle: TextStyle(color: Colors.white),
-                                                                          border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
+                                                                          labelText: AppLocalizations.of(
+                                                                            context,
+                                                                          )!.minMileage,
+                                                                          filled:
+                                                                              true,
+                                                                          fillColor: Colors.black.withOpacity(
+                                                                            0.2,
+                                                                          ),
+                                                                          labelStyle: TextStyle(
+                                                                            color:
+                                                                                Colors.white,
+                                                                          ),
+                                                                          border: OutlineInputBorder(
+                                                                            borderRadius: BorderRadius.circular(
+                                                                              12,
+                                                                            ),
+                                                                          ),
                                                                         ),
                                                                         items: [
-                                                                          DropdownMenuItem(value: '', child: Text(AppLocalizations.of(context)!.any, style: TextStyle(color: Colors.grey))),
+                                                                          DropdownMenuItem(
+                                                                            value:
+                                                                                '',
+                                                                            child: Text(
+                                                                              AppLocalizations.of(
+                                                                                context,
+                                                                              )!.any,
+                                                                              style: TextStyle(
+                                                                                color: Colors.grey,
+                                                                              ),
+                                                                            ),
+                                                                          ),
                                                                           ...[
-                                                                            for (int m = 0; m <= 100000; m += 1000) m,
-                                                                            for (int m = 105000; m <= 300000; m += 5000) m,
-                                                                          ]
-                                                                              .where((m) {
-                                                                                if (selectedMaxMileage == null || selectedMaxMileage!.isEmpty) return true;
-                                                                                final max = int.tryParse(selectedMaxMileage!);
-                                                                                return max == null ? true : m <= max;
-                                                                              })
-                                                                              .map((m) => DropdownMenuItem(
-                                                                                    value: m.toString(),
-                                                                                    child: Text(_localizeDigitsGlobal(context, m.toString().replaceAllMapped(RegExp(r'(\d{1,3})(?=(\d{3})+(?!\d))'), (mm) => '${mm[1]},'))),
-                                                                                  ))
+                                                                                for (
+                                                                                  int m = 0;
+                                                                                  m <=
+                                                                                      100000;
+                                                                                  m += 1000
+                                                                                )
+                                                                                  m,
+                                                                                for (
+                                                                                  int m = 105000;
+                                                                                  m <=
+                                                                                      300000;
+                                                                                  m += 5000
+                                                                                )
+                                                                                  m,
+                                                                              ]
+                                                                              .where(
+                                                                                (
+                                                                                  m,
+                                                                                ) {
+                                                                                  if (selectedMaxMileage ==
+                                                                                          null ||
+                                                                                      selectedMaxMileage!.isEmpty)
+                                                                                    return true;
+                                                                                  final max = int.tryParse(
+                                                                                    selectedMaxMileage!,
+                                                                                  );
+                                                                                  return max ==
+                                                                                          null
+                                                                                      ? true
+                                                                                      : m <=
+                                                                                            max;
+                                                                                },
+                                                                              )
+                                                                              .map(
+                                                                                (
+                                                                                  m,
+                                                                                ) => DropdownMenuItem(
+                                                                                  value: m.toString(),
+                                                                                  child: Text(
+                                                                                    _localizeDigitsGlobal(
+                                                                                      context,
+                                                                                      m.toString().replaceAllMapped(
+                                                                                        RegExp(
+                                                                                          r'(\d{1,3})(?=(\d{3})+(?!\d))',
+                                                                                        ),
+                                                                                        (
+                                                                                          mm,
+                                                                                        ) => '${mm[1]},',
+                                                                                      ),
+                                                                                    ),
+                                                                                  ),
+                                                                                ),
+                                                                              )
                                                                               .toList(),
                                                                         ],
                                                                         onChanged: (value) {
                                                                           setState(() {
-                                                                            selectedMinMileage = (value == null || value.isEmpty) ? null : value;
-                                                                            final min = int.tryParse(selectedMinMileage ?? '');
-                                                                            final max = int.tryParse(selectedMaxMileage ?? '');
-                                                                            if (min != null && max != null && min > max) {
+                                                                            selectedMinMileage =
+                                                                                (value ==
+                                                                                        null ||
+                                                                                    value.isEmpty)
+                                                                                ? null
+                                                                                : value;
+                                                                            final min = int.tryParse(
+                                                                              selectedMinMileage ??
+                                                                                  '',
+                                                                            );
+                                                                            final max = int.tryParse(
+                                                                              selectedMaxMileage ??
+                                                                                  '',
+                                                                            );
+                                                                            if (min !=
+                                                                                    null &&
+                                                                                max !=
+                                                                                    null &&
+                                                                                min >
+                                                                                    max) {
                                                                               selectedMaxMileage = selectedMinMileage;
                                                                             }
                                                                           });
-                                                                          setStateDialog(() {});
+                                                                          setStateDialog(
+                                                                            () {},
+                                                                          );
                                                                         },
                                                                       ),
                                                                     ),
-                                                                    SizedBox(width: 8),
+                                                                    SizedBox(
+                                                                      width: 8,
+                                                                    ),
                                                                     Expanded(
                                                                       child: DropdownButtonFormField<String>(
-                                                                        value: (selectedMaxMileage != null && selectedMaxMileage!.isNotEmpty) ? selectedMaxMileage : '',
+                                                                        value:
+                                                                            (selectedMaxMileage !=
+                                                                                    null &&
+                                                                                selectedMaxMileage!.isNotEmpty)
+                                                                            ? selectedMaxMileage
+                                                                            : '',
                                                                         decoration: InputDecoration(
-                                                                          labelText: AppLocalizations.of(context)!.maxMileage,
-                                                                          filled: true,
-                                                                          fillColor: Colors.black.withOpacity(0.2),
-                                                                          labelStyle: TextStyle(color: Colors.white),
-                                                                          border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
+                                                                          labelText: AppLocalizations.of(
+                                                                            context,
+                                                                          )!.maxMileage,
+                                                                          filled:
+                                                                              true,
+                                                                          fillColor: Colors.black.withOpacity(
+                                                                            0.2,
+                                                                          ),
+                                                                          labelStyle: TextStyle(
+                                                                            color:
+                                                                                Colors.white,
+                                                                          ),
+                                                                          border: OutlineInputBorder(
+                                                                            borderRadius: BorderRadius.circular(
+                                                                              12,
+                                                                            ),
+                                                                          ),
                                                                         ),
                                                                         items: [
-                                                                          DropdownMenuItem(value: '', child: Text(AppLocalizations.of(context)!.any, style: TextStyle(color: Colors.grey))),
+                                                                          DropdownMenuItem(
+                                                                            value:
+                                                                                '',
+                                                                            child: Text(
+                                                                              AppLocalizations.of(
+                                                                                context,
+                                                                              )!.any,
+                                                                              style: TextStyle(
+                                                                                color: Colors.grey,
+                                                                              ),
+                                                                            ),
+                                                                          ),
                                                                           ...[
-                                                                            for (int m = 0; m <= 100000; m += 1000) m,
-                                                                            for (int m = 105000; m <= 300000; m += 5000) m,
-                                                                          ]
-                                                                              .where((m) {
-                                                                                if (selectedMinMileage == null || selectedMinMileage!.isNotEmpty == false) return true;
-                                                                                final min = int.tryParse(selectedMinMileage!);
-                                                                                return min == null ? true : m >= min;
-                                                                              })
-                                                                              .map((m) => DropdownMenuItem(
-                                                                                    value: m.toString(),
-                                                                                    child: Text(_localizeDigitsGlobal(context, m.toString().replaceAllMapped(RegExp(r'(\d{1,3})(?=(\d{3})+(?!\d))'), (mm) => '${mm[1]},'))),
-                                                                                  ))
+                                                                                for (
+                                                                                  int m = 0;
+                                                                                  m <=
+                                                                                      100000;
+                                                                                  m += 1000
+                                                                                )
+                                                                                  m,
+                                                                                for (
+                                                                                  int m = 105000;
+                                                                                  m <=
+                                                                                      300000;
+                                                                                  m += 5000
+                                                                                )
+                                                                                  m,
+                                                                              ]
+                                                                              .where(
+                                                                                (
+                                                                                  m,
+                                                                                ) {
+                                                                                  if (selectedMinMileage ==
+                                                                                          null ||
+                                                                                      selectedMinMileage!.isNotEmpty ==
+                                                                                          false)
+                                                                                    return true;
+                                                                                  final min = int.tryParse(
+                                                                                    selectedMinMileage!,
+                                                                                  );
+                                                                                  return min ==
+                                                                                          null
+                                                                                      ? true
+                                                                                      : m >=
+                                                                                            min;
+                                                                                },
+                                                                              )
+                                                                              .map(
+                                                                                (
+                                                                                  m,
+                                                                                ) => DropdownMenuItem(
+                                                                                  value: m.toString(),
+                                                                                  child: Text(
+                                                                                    _localizeDigitsGlobal(
+                                                                                      context,
+                                                                                      m.toString().replaceAllMapped(
+                                                                                        RegExp(
+                                                                                          r'(\d{1,3})(?=(\d{3})+(?!\d))',
+                                                                                        ),
+                                                                                        (
+                                                                                          mm,
+                                                                                        ) => '${mm[1]},',
+                                                                                      ),
+                                                                                    ),
+                                                                                  ),
+                                                                                ),
+                                                                              )
                                                                               .toList(),
                                                                         ],
                                                                         onChanged: (value) {
                                                                           setState(() {
-                                                                            selectedMaxMileage = (value == null || value.isEmpty) ? null : value;
-                                                                            final min = int.tryParse(selectedMinMileage ?? '');
-                                                                            final max = int.tryParse(selectedMaxMileage ?? '');
-                                                                            if (min != null && max != null && max < min) {
+                                                                            selectedMaxMileage =
+                                                                                (value ==
+                                                                                        null ||
+                                                                                    value.isEmpty)
+                                                                                ? null
+                                                                                : value;
+                                                                            final min = int.tryParse(
+                                                                              selectedMinMileage ??
+                                                                                  '',
+                                                                            );
+                                                                            final max = int.tryParse(
+                                                                              selectedMaxMileage ??
+                                                                                  '',
+                                                                            );
+                                                                            if (min !=
+                                                                                    null &&
+                                                                                max !=
+                                                                                    null &&
+                                                                                max <
+                                                                                    min) {
                                                                               selectedMinMileage = selectedMaxMileage;
                                                                             }
                                                                           });
-                                                                          setStateDialog(() {});
+                                                                          setStateDialog(
+                                                                            () {},
+                                                                          );
                                                                         },
                                                                       ),
                                                                     ),
@@ -3987,42 +6272,96 @@ class _HomePageState extends State<HomePage> {
                                                             )
                                                           : Column(
                                                               children: [
-                                                Row(
-                                                  children: [
-                                                    Expanded(
-                                                      child: TextFormField(
-                                                        controller: TextEditingController(text: selectedMinMileage ?? ''),
-                                                        decoration: InputDecoration(
-                                                                          labelText: AppLocalizations.of(context)!.minMileage,
-                                                          filled: true,
-                                                          fillColor: Colors.black.withOpacity(0.2),
-                                                          labelStyle: TextStyle(color: Colors.white),
-                                                          border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
-                                                                          hintText: AppLocalizations.of(context)!.enterMinMileage,
-                                                        ),
-                                                        keyboardType: TextInputType.number,
+                                                                Row(
+                                                                  children: [
+                                                                    Expanded(
+                                                                      child: TextFormField(
+                                                                        controller: TextEditingController(
+                                                                          text:
+                                                                              selectedMinMileage ??
+                                                                              '',
+                                                                        ),
+                                                                        decoration: InputDecoration(
+                                                                          labelText: AppLocalizations.of(
+                                                                            context,
+                                                                          )!.minMileage,
+                                                                          filled:
+                                                                              true,
+                                                                          fillColor: Colors.black.withOpacity(
+                                                                            0.2,
+                                                                          ),
+                                                                          labelStyle: TextStyle(
+                                                                            color:
+                                                                                Colors.white,
+                                                                          ),
+                                                                          border: OutlineInputBorder(
+                                                                            borderRadius: BorderRadius.circular(
+                                                                              12,
+                                                                            ),
+                                                                          ),
+                                                                          hintText: AppLocalizations.of(
+                                                                            context,
+                                                                          )!.enterMinMileage,
+                                                                        ),
+                                                                        keyboardType:
+                                                                            TextInputType.number,
                                                                         onChanged: (value) {
-                                                                          setState(() => selectedMinMileage = value.isEmpty ? null : value);
-                                                                          setStateDialog(() {});
+                                                                          setState(
+                                                                            () =>
+                                                                                selectedMinMileage = value.isEmpty
+                                                                                ? null
+                                                                                : value,
+                                                                          );
+                                                                          setStateDialog(
+                                                                            () {},
+                                                                          );
                                                                         },
-                                                      ),
-                                                    ),
-                                                                    SizedBox(width: 8),
-                                                    Expanded(
-                                                      child: TextFormField(
-                                                        controller: TextEditingController(text: selectedMaxMileage ?? ''),
-                                                        decoration: InputDecoration(
-                                                                          labelText: AppLocalizations.of(context)!.maxMileage,
-                                                          filled: true,
-                                                          fillColor: Colors.black.withOpacity(0.2),
-                                                          labelStyle: TextStyle(color: Colors.white),
-                                                          border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
-                                                                          hintText: AppLocalizations.of(context)!.enterMaxMileage,
-                                                        ),
-                                                        keyboardType: TextInputType.number,
+                                                                      ),
+                                                                    ),
+                                                                    SizedBox(
+                                                                      width: 8,
+                                                                    ),
+                                                                    Expanded(
+                                                                      child: TextFormField(
+                                                                        controller: TextEditingController(
+                                                                          text:
+                                                                              selectedMaxMileage ??
+                                                                              '',
+                                                                        ),
+                                                                        decoration: InputDecoration(
+                                                                          labelText: AppLocalizations.of(
+                                                                            context,
+                                                                          )!.maxMileage,
+                                                                          filled:
+                                                                              true,
+                                                                          fillColor: Colors.black.withOpacity(
+                                                                            0.2,
+                                                                          ),
+                                                                          labelStyle: TextStyle(
+                                                                            color:
+                                                                                Colors.white,
+                                                                          ),
+                                                                          border: OutlineInputBorder(
+                                                                            borderRadius: BorderRadius.circular(
+                                                                              12,
+                                                                            ),
+                                                                          ),
+                                                                          hintText: AppLocalizations.of(
+                                                                            context,
+                                                                          )!.enterMaxMileage,
+                                                                        ),
+                                                                        keyboardType:
+                                                                            TextInputType.number,
                                                                         onChanged: (value) {
-                                                                          setState(() => selectedMaxMileage = value.isEmpty ? null : value);
-                                                                          setStateDialog(() {});
+                                                                          setState(
+                                                                            () =>
+                                                                                selectedMaxMileage = value.isEmpty
+                                                                                ? null
+                                                                                : value,
+                                                                          );
+                                                                          setStateDialog(
+                                                                            () {},
+                                                                          );
                                                                         },
                                                                       ),
                                                                     ),
@@ -4033,90 +6372,363 @@ class _HomePageState extends State<HomePage> {
                                                     ),
                                                     SizedBox(width: 8),
                                                     IconButton(
-                                                      onPressed: () => setStateDialog(() => isMileageDropdown = !isMileageDropdown),
-                                                      icon: Icon(isMileageDropdown ? Icons.edit : Icons.list, color: Color(0xFFFF6B00)),
+                                                      onPressed: () => setStateDialog(
+                                                        () => isMileageDropdown =
+                                                            !isMileageDropdown,
+                                                      ),
+                                                      icon: Icon(
+                                                        isMileageDropdown
+                                                            ? Icons.edit
+                                                            : Icons.list,
+                                                        color: Color(
+                                                          0xFFFF6B00,
+                                                        ),
+                                                      ),
                                                       style: IconButton.styleFrom(
-                                                        backgroundColor: Colors.black.withOpacity(0.2),
-                                                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+                                                        backgroundColor: Colors
+                                                            .black
+                                                            .withOpacity(0.2),
+                                                        shape: RoundedRectangleBorder(
+                                                          borderRadius:
+                                                              BorderRadius.circular(
+                                                                8,
+                                                              ),
+                                                        ),
                                                       ),
                                                     ),
                                                   ],
                                                 ),
                                                 SizedBox(height: 10),
                                                 DropdownButtonFormField<String>(
-                                                  value: selectedTitleStatus ?? '',
-                                                  decoration: InputDecoration(labelText: AppLocalizations.of(context)!.titleStatus, filled: true, fillColor: Colors.black.withOpacity(0.2), labelStyle: TextStyle(color: Colors.white), border: OutlineInputBorder(borderRadius: BorderRadius.circular(12))),
+                                                  value:
+                                                      selectedTitleStatus ?? '',
+                                                  decoration: InputDecoration(
+                                                    labelText:
+                                                        AppLocalizations.of(
+                                                          context,
+                                                        )!.titleStatus,
+                                                    filled: true,
+                                                    fillColor: Colors.black
+                                                        .withOpacity(0.2),
+                                                    labelStyle: TextStyle(
+                                                      color: Colors.white,
+                                                    ),
+                                                    border: OutlineInputBorder(
+                                                      borderRadius:
+                                                          BorderRadius.circular(
+                                                            12,
+                                                          ),
+                                                    ),
+                                                  ),
                                                   items: [
-                                                    DropdownMenuItem(value: '', child: Text(AppLocalizations.of(context)!.any, style: TextStyle(color: Colors.grey))),
-                                                    DropdownMenuItem(value: 'clean', child: Text(AppLocalizations.of(context)!.value_title_clean)),
-                                                    DropdownMenuItem(value: 'damaged', child: Text(AppLocalizations.of(context)!.value_title_damaged)),
+                                                    DropdownMenuItem(
+                                                      value: '',
+                                                      child: Text(
+                                                        AppLocalizations.of(
+                                                          context,
+                                                        )!.any,
+                                                        style: TextStyle(
+                                                          color: Colors.grey,
+                                                        ),
+                                                      ),
+                                                    ),
+                                                    DropdownMenuItem(
+                                                      value: 'clean',
+                                                      child: Text(
+                                                        AppLocalizations.of(
+                                                          context,
+                                                        )!.value_title_clean,
+                                                      ),
+                                                    ),
+                                                    DropdownMenuItem(
+                                                      value: 'damaged',
+                                                      child: Text(
+                                                        AppLocalizations.of(
+                                                          context,
+                                                        )!.value_title_damaged,
+                                                      ),
+                                                    ),
                                                   ],
                                                   onChanged: (value) {
                                                     setState(() {
-                                                      selectedTitleStatus = value == '' ? null : value;
-                                                      if (selectedTitleStatus != 'damaged') {
-                                                        selectedDamagedParts = null;
+                                                      selectedTitleStatus =
+                                                          value == ''
+                                                          ? null
+                                                          : value;
+                                                      if (selectedTitleStatus !=
+                                                          'damaged') {
+                                                        selectedDamagedParts =
+                                                            null;
                                                       }
                                                     });
                                                     setStateDialog(() {});
                                                   },
                                                 ),
                                                 SizedBox(height: 10),
-                                                if (selectedTitleStatus == 'damaged')
-                                                  DropdownButtonFormField<String>(
-                                                    value: selectedDamagedParts ?? '',
-                                                    decoration: InputDecoration(labelText: AppLocalizations.of(context)!.damagedParts, filled: true, fillColor: Colors.black.withOpacity(0.2), labelStyle: TextStyle(color: Colors.white), border: OutlineInputBorder(borderRadius: BorderRadius.circular(12))),
+                                                if (selectedTitleStatus ==
+                                                    'damaged')
+                                                  DropdownButtonFormField<
+                                                    String
+                                                  >(
+                                                    value:
+                                                        selectedDamagedParts ??
+                                                        '',
+                                                    decoration: InputDecoration(
+                                                      labelText:
+                                                          AppLocalizations.of(
+                                                            context,
+                                                          )!.damagedParts,
+                                                      filled: true,
+                                                      fillColor: Colors.black
+                                                          .withOpacity(0.2),
+                                                      labelStyle: TextStyle(
+                                                        color: Colors.white,
+                                                      ),
+                                                      border: OutlineInputBorder(
+                                                        borderRadius:
+                                                            BorderRadius.circular(
+                                                              12,
+                                                            ),
+                                                      ),
+                                                    ),
                                                     items: [
-                                                      DropdownMenuItem(value: '', child: Text(AppLocalizations.of(context)!.any, style: TextStyle(color: Colors.grey))),
-                                                      ...List.generate(15, (i) => (i + 1).toString()).map((p) => DropdownMenuItem(
-                                                        value: p,
-                                                        child: Text('${_localizeDigitsGlobal(context, p)} ${AppLocalizations.of(context)!.damagedParts}'),
-                                                      ))
+                                                      DropdownMenuItem(
+                                                        value: '',
+                                                        child: Text(
+                                                          AppLocalizations.of(
+                                                            context,
+                                                          )!.any,
+                                                          style: TextStyle(
+                                                            color: Colors.grey,
+                                                          ),
+                                                        ),
+                                                      ),
+                                                      ...List.generate(
+                                                        15,
+                                                        (i) =>
+                                                            (i + 1).toString(),
+                                                      ).map(
+                                                        (p) => DropdownMenuItem(
+                                                          value: p,
+                                                          child: Text(
+                                                            '${_localizeDigitsGlobal(context, p)} ${AppLocalizations.of(context)!.damagedParts}',
+                                                          ),
+                                                        ),
+                                                      ),
                                                     ],
                                                     onChanged: (value) {
-                                                      setState(() => selectedDamagedParts = value == '' ? null : value);
+                                                      setState(
+                                                        () =>
+                                                            selectedDamagedParts =
+                                                                value == ''
+                                                                ? null
+                                                                : value,
+                                                      );
                                                       setStateDialog(() {});
                                                     },
                                                   ),
                                                 SizedBox(height: 10),
                                                 DropdownButtonFormField<String>(
-                                                  value: selectedCondition ?? 'Any',
-                                                  decoration: InputDecoration(labelText: AppLocalizations.of(context)!.conditionLabel, filled: true, fillColor: Colors.black.withOpacity(0.2), labelStyle: TextStyle(color: Colors.white), border: OutlineInputBorder(borderRadius: BorderRadius.circular(12))),
-                                                  items: conditions.map((c) => DropdownMenuItem(
-                                                    value: c, 
-                                                    child: Text(
-                                                      _translateValueGlobal(context, c) ?? c,
-                                                      style: TextStyle(
-                                                        color: c == 'Any' ? Colors.grey : null,
+                                                  value:
+                                                      selectedCondition ??
+                                                      'Any',
+                                                  decoration: InputDecoration(
+                                                    labelText:
+                                                        AppLocalizations.of(
+                                                          context,
+                                                        )!.conditionLabel,
+                                                    filled: true,
+                                                    fillColor: Colors.black
+                                                        .withOpacity(0.2),
+                                                    labelStyle: TextStyle(
+                                                      color: Colors.white,
+                                                    ),
+                                                    border: OutlineInputBorder(
+                                                      borderRadius:
+                                                          BorderRadius.circular(
+                                                            12,
+                                                          ),
+                                                    ),
+                                                  ),
+                                                  items: conditions
+                                                      .map(
+                                                        (c) => DropdownMenuItem(
+                                                          value: c,
+                                                          child: Text(
+                                                            _translateValueGlobal(
+                                                                  context,
+                                                                  c,
+                                                                ) ??
+                                                                c,
+                                                            style: TextStyle(
+                                                              color: c == 'Any'
+                                                                  ? Colors.grey
+                                                                  : null,
+                                                            ),
+                                                          ),
+                                                        ),
+                                                      )
+                                                      .toList(),
+                                                  onChanged: (value) =>
+                                                      setState(
+                                                        () =>
+                                                            selectedCondition =
+                                                                value == 'Any'
+                                                                ? 'Any'
+                                                                : value,
+                                                      ),
+                                                ),
+                                                SizedBox(height: 10),
+                                                DropdownButtonFormField<String>(
+                                                  value:
+                                                      _getValidTransmissionValue(),
+                                                  decoration: InputDecoration(
+                                                    labelText:
+                                                        AppLocalizations.of(
+                                                          context,
+                                                        )!.transmissionLabel,
+                                                    filled: true,
+                                                    fillColor: Colors.black
+                                                        .withOpacity(0.2),
+                                                    labelStyle: TextStyle(
+                                                      color: Colors.white,
+                                                    ),
+                                                    border: OutlineInputBorder(
+                                                      borderRadius:
+                                                          BorderRadius.circular(
+                                                            12,
+                                                          ),
+                                                    ),
+                                                  ),
+                                                  items: [
+                                                    DropdownMenuItem(
+                                                      value: '',
+                                                      child: Text(
+                                                        AppLocalizations.of(
+                                                          context,
+                                                        )!.any,
+                                                        style: TextStyle(
+                                                          color: Colors.grey,
+                                                        ),
                                                       ),
                                                     ),
-                                                  )).toList(),
-                                                  onChanged: (value) => setState(() => selectedCondition = value == 'Any' ? 'Any' : value),
+                                                    ...getAvailableTransmissions()
+                                                        .where(
+                                                          (t) => t != 'Any',
+                                                        )
+                                                        .map(
+                                                          (
+                                                            t,
+                                                          ) => DropdownMenuItem(
+                                                            value: t,
+                                                            child: Text(
+                                                              _translateValueGlobal(
+                                                                    context,
+                                                                    t,
+                                                                  ) ??
+                                                                  t,
+                                                            ),
+                                                          ),
+                                                        )
+                                                        .toList(),
+                                                  ],
+                                                  onChanged: (value) => setState(
+                                                    () => selectedTransmission =
+                                                        value == ''
+                                                        ? 'Any'
+                                                        : value,
+                                                  ),
                                                 ),
                                                 SizedBox(height: 10),
                                                 DropdownButtonFormField<String>(
-                                                  value: _getValidTransmissionValue(),
-                                                  decoration: InputDecoration(labelText: AppLocalizations.of(context)!.transmissionLabel, filled: true, fillColor: Colors.black.withOpacity(0.2), labelStyle: TextStyle(color: Colors.white), border: OutlineInputBorder(borderRadius: BorderRadius.circular(12))),
-                                                  items: [DropdownMenuItem(value: '', child: Text(AppLocalizations.of(context)!.any, style: TextStyle(color: Colors.grey))), ...getAvailableTransmissions().where((t) => t != 'Any').map((t) => DropdownMenuItem(value: t, child: Text(_translateValueGlobal(context, t) ?? t))).toList()],
-                                                  onChanged: (value) => setState(() => selectedTransmission = value == '' ? 'Any' : value),
-                                                ),
-                                                SizedBox(height: 10),
-                                                DropdownButtonFormField<String>(
-                                                  value: _getValidFuelTypeValue(),
-                                                  decoration: InputDecoration(labelText: AppLocalizations.of(context)!.fuelTypeLabel, filled: true, fillColor: Colors.black.withOpacity(0.2), labelStyle: TextStyle(color: Colors.white), border: OutlineInputBorder(borderRadius: BorderRadius.circular(12))),
-                                                  items: [DropdownMenuItem(value: '', child: Text(AppLocalizations.of(context)!.any, style: TextStyle(color: Colors.grey))), ...getAvailableFuelTypes().where((f) => f != 'Any').map((f) => DropdownMenuItem(value: f, child: Text(_translateValueGlobal(context, f) ?? f))).toList()],
-                                                  onChanged: (value) => setState(() => selectedFuelType = value == '' ? 'Any' : value),
+                                                  value:
+                                                      _getValidFuelTypeValue(),
+                                                  decoration: InputDecoration(
+                                                    labelText:
+                                                        AppLocalizations.of(
+                                                          context,
+                                                        )!.fuelTypeLabel,
+                                                    filled: true,
+                                                    fillColor: Colors.black
+                                                        .withOpacity(0.2),
+                                                    labelStyle: TextStyle(
+                                                      color: Colors.white,
+                                                    ),
+                                                    border: OutlineInputBorder(
+                                                      borderRadius:
+                                                          BorderRadius.circular(
+                                                            12,
+                                                          ),
+                                                    ),
+                                                  ),
+                                                  items: [
+                                                    DropdownMenuItem(
+                                                      value: '',
+                                                      child: Text(
+                                                        AppLocalizations.of(
+                                                          context,
+                                                        )!.any,
+                                                        style: TextStyle(
+                                                          color: Colors.grey,
+                                                        ),
+                                                      ),
+                                                    ),
+                                                    ...getAvailableFuelTypes()
+                                                        .where(
+                                                          (f) => f != 'Any',
+                                                        )
+                                                        .map(
+                                                          (
+                                                            f,
+                                                          ) => DropdownMenuItem(
+                                                            value: f,
+                                                            child: Text(
+                                                              _translateValueGlobal(
+                                                                    context,
+                                                                    f,
+                                                                  ) ??
+                                                                  f,
+                                                            ),
+                                                          ),
+                                                        )
+                                                        .toList(),
+                                                  ],
+                                                  onChanged: (value) =>
+                                                      setState(
+                                                        () => selectedFuelType =
+                                                            value == ''
+                                                            ? 'Any'
+                                                            : value,
+                                                      ),
                                                 ),
                                                 SizedBox(height: 10),
                                                 TextFormField(
                                                   readOnly: true,
-                                                  controller: TextEditingController(text: (selectedBodyType ?? AppLocalizations.of(context)!.any)),
+                                                  controller:
+                                                      TextEditingController(
+                                                        text:
+                                                            (selectedBodyType ??
+                                                            AppLocalizations.of(
+                                                              context,
+                                                            )!.any),
+                                                      ),
                                                   decoration: InputDecoration(
-                                                    labelText: AppLocalizations.of(context)!.bodyTypeLabel,
+                                                    labelText:
+                                                        AppLocalizations.of(
+                                                          context,
+                                                        )!.bodyTypeLabel,
                                                     filled: true,
-                                                    fillColor: Colors.black.withOpacity(0.2),
-                                                    labelStyle: TextStyle(color: Colors.white),
-                                                    border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
+                                                    fillColor: Colors.black
+                                                        .withOpacity(0.2),
+                                                    labelStyle: TextStyle(
+                                                      color: Colors.white,
+                                                    ),
+                                                    border: OutlineInputBorder(
+                                                      borderRadius:
+                                                          BorderRadius.circular(
+                                                            12,
+                                                          ),
+                                                    ),
                                                     suffixIcon: Container(
                                                       margin: EdgeInsets.all(8),
                                                       width: 44,
@@ -4124,18 +6736,36 @@ class _HomePageState extends State<HomePage> {
                                                       decoration: BoxDecoration(
                                                         shape: BoxShape.circle,
                                                         color: Colors.white,
-                                                        border: Border.all(color: Color(0xFFFF6B00), width: 2),
+                                                        border: Border.all(
+                                                          color: Color(
+                                                            0xFFFF6B00,
+                                                          ),
+                                                          width: 2,
+                                                        ),
                                                       ),
                                                       child: Padding(
-                                                        padding: EdgeInsets.all(6),
+                                                        padding: EdgeInsets.all(
+                                                          6,
+                                                        ),
                                                         child: ClipOval(
                                                           child: FittedBox(
                                                             fit: BoxFit.contain,
-                                                            child: (selectedBodyType != null && selectedBodyType!.isNotEmpty)
-                                                                ? _buildBodyTypeImage(_getBodyTypeAsset(selectedBodyType!))
+                                                            child:
+                                                                (selectedBodyType !=
+                                                                        null &&
+                                                                    selectedBodyType!
+                                                                        .isNotEmpty)
+                                                                ? _buildBodyTypeImage(
+                                                                    _getBodyTypeAsset(
+                                                                      selectedBodyType!,
+                                                                    ),
+                                                                  )
                                                                 : Icon(
-                                                                    _getBodyTypeIcon('car'),
-                                                                    color: Colors.black,
+                                                                    _getBodyTypeIcon(
+                                                                      'car',
+                                                                    ),
+                                                                    color: Colors
+                                                                        .black,
                                                                   ),
                                                           ),
                                                         ),
@@ -4147,95 +6777,217 @@ class _HomePageState extends State<HomePage> {
                                                       context: context,
                                                       builder: (context) {
                                                         return Dialog(
-                                                          backgroundColor: Colors.grey[900]?.withOpacity(0.98),
-                                                          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+                                                          backgroundColor:
+                                                              Colors.grey[900]
+                                                                  ?.withOpacity(
+                                                                    0.98,
+                                                                  ),
+                                                          shape: RoundedRectangleBorder(
+                                                            borderRadius:
+                                                                BorderRadius.circular(
+                                                                  20,
+                                                                ),
+                                                          ),
                                                           child: Container(
                                                             width: 400,
-                                                            padding: EdgeInsets.all(20),
+                                                            padding:
+                                                                EdgeInsets.all(
+                                                                  20,
+                                                                ),
                                                             child: Column(
-                                                              crossAxisAlignment: CrossAxisAlignment.start,
-                                                              mainAxisSize: MainAxisSize.min,
+                                                              crossAxisAlignment:
+                                                                  CrossAxisAlignment
+                                                                      .start,
+                                                              mainAxisSize:
+                                                                  MainAxisSize
+                                                                      .min,
                                                               children: [
                                                                 Row(
-                                                                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                                                                  mainAxisAlignment:
+                                                                      MainAxisAlignment
+                                                                          .spaceBetween,
                                                                   children: [
-                                                                    Text(AppLocalizations.of(context)!.selectBodyType, style: GoogleFonts.orbitron(color: Color(0xFFFF6B00), fontWeight: FontWeight.bold, fontSize: 20)),
+                                                                    Text(
+                                                                      AppLocalizations.of(
+                                                                        context,
+                                                                      )!.selectBodyType,
+                                                                      style: GoogleFonts.orbitron(
+                                                                        color: Color(
+                                                                          0xFFFF6B00,
+                                                                        ),
+                                                                        fontWeight:
+                                                                            FontWeight.bold,
+                                                                        fontSize:
+                                                                            20,
+                                                                      ),
+                                                                    ),
                                                                     IconButton(
-                                                                      icon: Icon(Icons.close, color: Colors.white),
-                                                                      onPressed: () => Navigator.pop(context),
+                                                                      icon: Icon(
+                                                                        Icons
+                                                                            .close,
+                                                                        color: Colors
+                                                                            .white,
+                                                                      ),
+                                                                      onPressed: () =>
+                                                                          Navigator.pop(
+                                                                            context,
+                                                                          ),
                                                                     ),
                                                                   ],
                                                                 ),
-                                                                SizedBox(height: 10),
+                                                                SizedBox(
+                                                                  height: 10,
+                                                                ),
                                                                 SizedBox(
                                                                   height: 300,
                                                                   child: GridView.builder(
-                                                                    shrinkWrap: true,
-                                                                    physics: BouncingScrollPhysics(),
+                                                                    shrinkWrap:
+                                                                        true,
+                                                                    physics:
+                                                                        BouncingScrollPhysics(),
                                                                     gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
-                                                                      crossAxisCount: 3,
-                                                                      childAspectRatio: 0.82,
-                                                                      crossAxisSpacing: 12,
-                                                                      mainAxisSpacing: 12,
+                                                                      crossAxisCount:
+                                                                          3,
+                                                                      childAspectRatio:
+                                                                          0.82,
+                                                                      crossAxisSpacing:
+                                                                          12,
+                                                                      mainAxisSpacing:
+                                                                          12,
                                                                     ),
-                                                                    itemCount: getAvailableBodyTypes().length,
-                                                                    itemBuilder: (context, index) {
-                                                                      final bodyTypeName = getAvailableBodyTypes()[index];
-                                                                      final asset = _getBodyTypeAsset(bodyTypeName);
-                                                                      final bool isSelected = (selectedBodyType ?? AppLocalizations.of(context)!.any) == bodyTypeName;
-                                                                      return InkWell(
-                                                                        borderRadius: BorderRadius.circular(12),
-                                                                        onTap: () => Navigator.pop(context, bodyTypeName),
-                                                                        child: Container(
-                                                                          decoration: BoxDecoration(
-                                                                            color: Colors.transparent,
-                                                                            borderRadius: BorderRadius.circular(12),
-                                                                            border: Border.all(color: isSelected ? const Color(0xFFFF6B00) : Colors.white24, width: isSelected ? 2 : 1),
-                                                                            boxShadow: isSelected
-                                                                                ? [
-                                                                                    BoxShadow(color: const Color(0xFFFF6B00).withOpacity(0.35), blurRadius: 14, spreadRadius: 1, offset: const Offset(0, 4)),
-                                                                                  ]
-                                                                                : [
-                                                                                    const BoxShadow(color: Colors.black54, blurRadius: 10, spreadRadius: 0, offset: Offset(0, 3)),
-                                                                                  ],
-                                                                          ),
-                                                                          padding: EdgeInsets.all(8),
-                                                                          child: Column(
-                                                                            mainAxisAlignment: MainAxisAlignment.center,
-                                                                            children: [
-                                                                              Container(
-                                                                                width: 56,
-                                                                                height: 56,
-                                                                                decoration: BoxDecoration(
-                                                                                  shape: BoxShape.circle,
-                                                                                  color: Colors.white,
-                                                                                  border: Border.all(color: isSelected ? const Color(0xFFFF6B00) : Colors.white24, width: isSelected ? 2 : 1),
+                                                                    itemCount:
+                                                                        getAvailableBodyTypes()
+                                                                            .length,
+                                                                    itemBuilder:
+                                                                        (
+                                                                          context,
+                                                                          index,
+                                                                        ) {
+                                                                          final bodyTypeName =
+                                                                              getAvailableBodyTypes()[index];
+                                                                          final asset = _getBodyTypeAsset(
+                                                                            bodyTypeName,
+                                                                          );
+                                                                          final bool
+                                                                          isSelected =
+                                                                              (selectedBodyType ??
+                                                                                  AppLocalizations.of(
+                                                                                    context,
+                                                                                  )!.any) ==
+                                                                              bodyTypeName;
+                                                                          return InkWell(
+                                                                            borderRadius: BorderRadius.circular(
+                                                                              12,
+                                                                            ),
+                                                                            onTap: () => Navigator.pop(
+                                                                              context,
+                                                                              bodyTypeName,
+                                                                            ),
+                                                                            child: Container(
+                                                                              decoration: BoxDecoration(
+                                                                                color: Colors.transparent,
+                                                                                borderRadius: BorderRadius.circular(
+                                                                                  12,
                                                                                 ),
-                                                                                child: Padding(
-                                                                                  padding: const EdgeInsets.all(8),
-                                                                                  child: FittedBox(
-                                                                                    fit: BoxFit.contain,
-                                                                                    child: _buildBodyTypeImage(asset),
+                                                                                border: Border.all(
+                                                                                  color: isSelected
+                                                                                      ? const Color(
+                                                                                          0xFFFF6B00,
+                                                                                        )
+                                                                                      : Colors.white24,
+                                                                                  width: isSelected
+                                                                                      ? 2
+                                                                                      : 1,
+                                                                                ),
+                                                                                boxShadow: isSelected
+                                                                                    ? [
+                                                                                        BoxShadow(
+                                                                                          color:
+                                                                                              const Color(
+                                                                                                0xFFFF6B00,
+                                                                                              ).withOpacity(
+                                                                                                0.35,
+                                                                                              ),
+                                                                                          blurRadius: 14,
+                                                                                          spreadRadius: 1,
+                                                                                          offset: const Offset(
+                                                                                            0,
+                                                                                            4,
+                                                                                          ),
+                                                                                        ),
+                                                                                      ]
+                                                                                    : [
+                                                                                        const BoxShadow(
+                                                                                          color: Colors.black54,
+                                                                                          blurRadius: 10,
+                                                                                          spreadRadius: 0,
+                                                                                          offset: Offset(
+                                                                                            0,
+                                                                                            3,
+                                                                                          ),
+                                                                                        ),
+                                                                                      ],
+                                                                              ),
+                                                                              padding: EdgeInsets.all(
+                                                                                8,
+                                                                              ),
+                                                                              child: Column(
+                                                                                mainAxisAlignment: MainAxisAlignment.center,
+                                                                                children: [
+                                                                                  Container(
+                                                                                    width: 56,
+                                                                                    height: 56,
+                                                                                    decoration: BoxDecoration(
+                                                                                      shape: BoxShape.circle,
+                                                                                      color: Colors.white,
+                                                                                      border: Border.all(
+                                                                                        color: isSelected
+                                                                                            ? const Color(
+                                                                                                0xFFFF6B00,
+                                                                                              )
+                                                                                            : Colors.white24,
+                                                                                        width: isSelected
+                                                                                            ? 2
+                                                                                            : 1,
+                                                                                      ),
+                                                                                    ),
+                                                                                    child: Padding(
+                                                                                      padding: const EdgeInsets.all(
+                                                                                        8,
+                                                                                      ),
+                                                                                      child: FittedBox(
+                                                                                        fit: BoxFit.contain,
+                                                                                        child: _buildBodyTypeImage(
+                                                                                          asset,
+                                                                                        ),
+                                                                                      ),
+                                                                                    ),
                                                                                   ),
-                                                                                ),
+                                                                                  const SizedBox(
+                                                                                    height: 8,
+                                                                                  ),
+                                                                                  Text(
+                                                                                    _translateValueGlobal(
+                                                                                          context,
+                                                                                          bodyTypeName,
+                                                                                        ) ??
+                                                                                        bodyTypeName,
+                                                                                    style: GoogleFonts.orbitron(
+                                                                                      fontSize: 12,
+                                                                                      color: isSelected
+                                                                                          ? Colors.white
+                                                                                          : Colors.white70,
+                                                                                      fontWeight: FontWeight.bold,
+                                                                                    ),
+                                                                                    textAlign: TextAlign.center,
+                                                                                    overflow: TextOverflow.ellipsis,
+                                                                                    maxLines: 1,
+                                                                                  ),
+                                                                                ],
                                                                               ),
-                                                                              const SizedBox(height: 8),
-                                                                              Text(
-                                                                                _translateValueGlobal(context, bodyTypeName) ?? bodyTypeName,
-                                                                                style: GoogleFonts.orbitron(
-                                                                                  fontSize: 12,
-                                                                                  color: isSelected ? Colors.white : Colors.white70,
-                                                                                  fontWeight: FontWeight.bold,
-                                                                                ),
-                                                                                textAlign: TextAlign.center,
-                                                                                overflow: TextOverflow.ellipsis,
-                                                                                maxLines: 1,
-                                                                              ),
-                                                                            ],
-                                            ),
-                                                                        ),
-                                                                      );
-                                                                    },
+                                                                            ),
+                                                                          );
+                                                                        },
                                                                   ),
                                                                 ),
                                                               ],
@@ -4246,7 +6998,10 @@ class _HomePageState extends State<HomePage> {
                                                     );
                                                     if (bodyType != null) {
                                                       setState(() {
-                                                        selectedBodyType = bodyType == 'Any' ? null : bodyType;
+                                                        selectedBodyType =
+                                                            bodyType == 'Any'
+                                                            ? null
+                                                            : bodyType;
                                                       });
                                                       setStateDialog(() {});
                                                     }
@@ -4255,21 +7010,55 @@ class _HomePageState extends State<HomePage> {
                                                 SizedBox(height: 10),
                                                 TextFormField(
                                                   readOnly: true,
-                                                  controller: TextEditingController(text: (_translateValueGlobal(context, selectedColor) ?? selectedColor ?? AppLocalizations.of(context)!.any)),
+                                                  controller:
+                                                      TextEditingController(
+                                                        text:
+                                                            (_translateValueGlobal(
+                                                              context,
+                                                              selectedColor,
+                                                            ) ??
+                                                            selectedColor ??
+                                                            AppLocalizations.of(
+                                                              context,
+                                                            )!.any),
+                                                      ),
                                                   decoration: InputDecoration(
-                                                    labelText: AppLocalizations.of(context)!.colorLabel,
+                                                    labelText:
+                                                        AppLocalizations.of(
+                                                          context,
+                                                        )!.colorLabel,
                                                     filled: true,
-                                                    fillColor: Colors.black.withOpacity(0.2),
-                                                    labelStyle: TextStyle(color: Colors.white),
-                                                    border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
+                                                    fillColor: Colors.black
+                                                        .withOpacity(0.2),
+                                                    labelStyle: TextStyle(
+                                                      color: Colors.white,
+                                                    ),
+                                                    border: OutlineInputBorder(
+                                                      borderRadius:
+                                                          BorderRadius.circular(
+                                                            12,
+                                                          ),
+                                                    ),
                                                     suffixIcon: Container(
                                                       width: 24,
                                                       height: 24,
                                                       margin: EdgeInsets.all(8),
                                                       decoration: BoxDecoration(
-                                                        color: selectedColor != null ? _getColorValue(selectedColor!) : Colors.grey,
-                                                        borderRadius: BorderRadius.circular(6),
-                                                        border: Border.all(color: Colors.white24, width: 2),
+                                                        color:
+                                                            selectedColor !=
+                                                                null
+                                                            ? _getColorValue(
+                                                                selectedColor!,
+                                                              )
+                                                            : Colors.grey,
+                                                        borderRadius:
+                                                            BorderRadius.circular(
+                                                              6,
+                                                            ),
+                                                        border: Border.all(
+                                                          color: Colors.white24,
+                                                          width: 2,
+                                                        ),
                                                       ),
                                                     ),
                                                   ),
@@ -4278,119 +7067,208 @@ class _HomePageState extends State<HomePage> {
                                                       context: context,
                                                       builder: (context) {
                                                         return Dialog(
-                                                          backgroundColor: Colors.grey[900]?.withOpacity(0.98),
-                                                          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+                                                          backgroundColor:
+                                                              Colors.grey[900]
+                                                                  ?.withOpacity(
+                                                                    0.98,
+                                                                  ),
+                                                          shape: RoundedRectangleBorder(
+                                                            borderRadius:
+                                                                BorderRadius.circular(
+                                                                  20,
+                                                                ),
+                                                          ),
                                                           child: Container(
                                                             width: 400,
-                                                            padding: EdgeInsets.all(20),
+                                                            padding:
+                                                                EdgeInsets.all(
+                                                                  20,
+                                                                ),
                                                             child: Column(
-                                                              crossAxisAlignment: CrossAxisAlignment.start,
-                                                              mainAxisSize: MainAxisSize.min,
+                                                              crossAxisAlignment:
+                                                                  CrossAxisAlignment
+                                                                      .start,
+                                                              mainAxisSize:
+                                                                  MainAxisSize
+                                                                      .min,
                                                               children: [
                                                                 Row(
-                                                                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                                                                  mainAxisAlignment:
+                                                                      MainAxisAlignment
+                                                                          .spaceBetween,
                                                                   children: [
-                                                                    Text(AppLocalizations.of(context)!.selectColor, style: GoogleFonts.orbitron(color: Color(0xFFFF6B00), fontWeight: FontWeight.bold, fontSize: 20)),
+                                                                    Text(
+                                                                      AppLocalizations.of(
+                                                                        context,
+                                                                      )!.selectColor,
+                                                                      style: GoogleFonts.orbitron(
+                                                                        color: Color(
+                                                                          0xFFFF6B00,
+                                                                        ),
+                                                                        fontWeight:
+                                                                            FontWeight.bold,
+                                                                        fontSize:
+                                                                            20,
+                                                                      ),
+                                                                    ),
                                                                     IconButton(
-                                                                      icon: Icon(Icons.close, color: Colors.white),
-                                                                      onPressed: () => Navigator.pop(context),
+                                                                      icon: Icon(
+                                                                        Icons
+                                                                            .close,
+                                                                        color: Colors
+                                                                            .white,
+                                                                      ),
+                                                                      onPressed: () =>
+                                                                          Navigator.pop(
+                                                                            context,
+                                                                          ),
                                                                     ),
                                                                   ],
                                                                 ),
-                                                                SizedBox(height: 10),
+                                                                SizedBox(
+                                                                  height: 10,
+                                                                ),
                                                                 SizedBox(
                                                                   height: 300,
                                                                   child: GridView.builder(
-                                                                    shrinkWrap: true,
-                                                                    physics: BouncingScrollPhysics(),
+                                                                    shrinkWrap:
+                                                                        true,
+                                                                    physics:
+                                                                        BouncingScrollPhysics(),
                                                                     gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
-                                                                      crossAxisCount: 3,
-                                                                      childAspectRatio: 1.2,
-                                                                      crossAxisSpacing: 10,
-                                                                      mainAxisSpacing: 10,
+                                                                      crossAxisCount:
+                                                                          3,
+                                                                      childAspectRatio:
+                                                                          1.2,
+                                                                      crossAxisSpacing:
+                                                                          10,
+                                                                      mainAxisSpacing:
+                                                                          10,
                                                                     ),
-                                                                    itemCount: getAvailableColors().length,
-                                                                    itemBuilder: (context, index) {
-                                                                      final colorName = getAvailableColors()[index];
-                                                                      Color colorValue = Colors.grey;
-                                                                      switch (colorName.toLowerCase()) {
-                                                                        case 'black':
-                                                                          colorValue = Colors.black;
-                                                                          break;
-                                                                        case 'white':
-                                                                          colorValue = Colors.white;
-                                                                          break;
-                                                                        case 'silver':
-                                                                          colorValue = Colors.grey[300]!;
-                                                                          break;
-                                                                        case 'gray':
-                                                                          colorValue = Colors.grey[600]!;
-                                                                          break;
-                                                                        case 'red':
-                                                                          colorValue = Colors.red;
-                                                                          break;
-                                                                        case 'blue':
-                                                                          colorValue = Colors.blue;
-                                                                          break;
-                                                                        case 'green':
-                                                                          colorValue = Colors.green;
-                                                                          break;
-                                                                        case 'yellow':
-                                                                          colorValue = Colors.yellow;
-                                                                          break;
-                                                                        case 'orange':
-                                                                          colorValue = Colors.orange;
-                                                                          break;
-                                                                        case 'purple':
-                                                                          colorValue = Colors.purple;
-                                                                          break;
-                                                                        case 'brown':
-                                                                          colorValue = Colors.brown;
-                                                                          break;
-                                                                        case 'beige':
-                                                                          colorValue = Color(0xFFF5F5DC);
-                                                                          break;
-                                                                        case 'gold':
-                                                                          colorValue = Color(0xFFFFD700);
-                                                                          break;
-                                                                        default:
-                                                                          colorValue = Colors.grey;
-                                                                      }
-                                                                      return InkWell(
-                                                                        borderRadius: BorderRadius.circular(12),
-                                                                        onTap: () => Navigator.pop(context, colorName),
-                                                                        child: Container(
-                                                                          decoration: BoxDecoration(
-                                                                            color: Colors.black.withOpacity(0.15),
-                                                                            borderRadius: BorderRadius.circular(12),
-                                                                            border: Border.all(color: Colors.white24),
-                                                                          ),
-                                                                          padding: EdgeInsets.all(8),
-                                                                          child: Column(
-                                                                            mainAxisAlignment: MainAxisAlignment.center,
-                                                                            children: [
-                                                                              Container(
-                                                                                width: 40,
-                                                                                height: 40,
-                                                                                decoration: BoxDecoration(
-                                                                                  color: colorValue,
-                                                                                  borderRadius: BorderRadius.circular(8),
-                                                                                  border: Border.all(color: Colors.white24, width: 2),
+                                                                    itemCount:
+                                                                        getAvailableColors()
+                                                                            .length,
+                                                                    itemBuilder:
+                                                                        (
+                                                                          context,
+                                                                          index,
+                                                                        ) {
+                                                                          final colorName =
+                                                                              getAvailableColors()[index];
+                                                                          Color
+                                                                          colorValue =
+                                                                              Colors.grey;
+                                                                          switch (colorName
+                                                                              .toLowerCase()) {
+                                                                            case 'black':
+                                                                              colorValue = Colors.black;
+                                                                              break;
+                                                                            case 'white':
+                                                                              colorValue = Colors.white;
+                                                                              break;
+                                                                            case 'silver':
+                                                                              colorValue = Colors.grey[300]!;
+                                                                              break;
+                                                                            case 'gray':
+                                                                              colorValue = Colors.grey[600]!;
+                                                                              break;
+                                                                            case 'red':
+                                                                              colorValue = Colors.red;
+                                                                              break;
+                                                                            case 'blue':
+                                                                              colorValue = Colors.blue;
+                                                                              break;
+                                                                            case 'green':
+                                                                              colorValue = Colors.green;
+                                                                              break;
+                                                                            case 'yellow':
+                                                                              colorValue = Colors.yellow;
+                                                                              break;
+                                                                            case 'orange':
+                                                                              colorValue = Colors.orange;
+                                                                              break;
+                                                                            case 'purple':
+                                                                              colorValue = Colors.purple;
+                                                                              break;
+                                                                            case 'brown':
+                                                                              colorValue = Colors.brown;
+                                                                              break;
+                                                                            case 'beige':
+                                                                              colorValue = Color(
+                                                                                0xFFF5F5DC,
+                                                                              );
+                                                                              break;
+                                                                            case 'gold':
+                                                                              colorValue = Color(
+                                                                                0xFFFFD700,
+                                                                              );
+                                                                              break;
+                                                                            default:
+                                                                              colorValue = Colors.grey;
+                                                                          }
+                                                                          return InkWell(
+                                                                            borderRadius: BorderRadius.circular(
+                                                                              12,
+                                                                            ),
+                                                                            onTap: () => Navigator.pop(
+                                                                              context,
+                                                                              colorName,
+                                                                            ),
+                                                                            child: Container(
+                                                                              decoration: BoxDecoration(
+                                                                                color: Colors.black.withOpacity(
+                                                                                  0.15,
+                                                                                ),
+                                                                                borderRadius: BorderRadius.circular(
+                                                                                  12,
+                                                                                ),
+                                                                                border: Border.all(
+                                                                                  color: Colors.white24,
                                                                                 ),
                                                                               ),
-                                                                              SizedBox(height: 8),
-                                                                              Text(
-                                                                                _translateValueGlobal(context, colorName) ?? colorName,
-                                                                                style: GoogleFonts.orbitron(fontSize: 12, color: Colors.white, fontWeight: FontWeight.bold),
-                                                                                textAlign: TextAlign.center,
-                                                                                overflow: TextOverflow.ellipsis,
-                                                                                maxLines: 1,
+                                                                              padding: EdgeInsets.all(
+                                                                                8,
                                                                               ),
-                                                                            ],
-                                                                          ),
-                                                                        ),
-                                                                      );
-                                                                    },
+                                                                              child: Column(
+                                                                                mainAxisAlignment: MainAxisAlignment.center,
+                                                                                children: [
+                                                                                  Container(
+                                                                                    width: 40,
+                                                                                    height: 40,
+                                                                                    decoration: BoxDecoration(
+                                                                                      color: colorValue,
+                                                                                      borderRadius: BorderRadius.circular(
+                                                                                        8,
+                                                                                      ),
+                                                                                      border: Border.all(
+                                                                                        color: Colors.white24,
+                                                                                        width: 2,
+                                                                                      ),
+                                                                                    ),
+                                                                                  ),
+                                                                                  SizedBox(
+                                                                                    height: 8,
+                                                                                  ),
+                                                                                  Text(
+                                                                                    _translateValueGlobal(
+                                                                                          context,
+                                                                                          colorName,
+                                                                                        ) ??
+                                                                                        colorName,
+                                                                                    style: GoogleFonts.orbitron(
+                                                                                      fontSize: 12,
+                                                                                      color: Colors.white,
+                                                                                      fontWeight: FontWeight.bold,
+                                                                                    ),
+                                                                                    textAlign: TextAlign.center,
+                                                                                    overflow: TextOverflow.ellipsis,
+                                                                                    maxLines: 1,
+                                                                                  ),
+                                                                                ],
+                                                                              ),
+                                                                            ),
+                                                                          );
+                                                                        },
                                                                   ),
                                                                 ),
                                                               ],
@@ -4401,7 +7279,10 @@ class _HomePageState extends State<HomePage> {
                                                     );
                                                     if (color != null) {
                                                       setState(() {
-                                                        selectedColor = color == 'Any' ? null : color;
+                                                        selectedColor =
+                                                            color == 'Any'
+                                                            ? null
+                                                            : color;
                                                       });
                                                       setStateDialog(() {});
                                                     }
@@ -4410,111 +7291,548 @@ class _HomePageState extends State<HomePage> {
                                                 SizedBox(height: 10),
                                                 // Drive Type Dropdown
                                                 DropdownButtonFormField<String>(
-                                                  value: _getValidDriveTypeValue(),
-                                                  decoration: InputDecoration(labelText: AppLocalizations.of(context)!.driveType, filled: true, fillColor: Colors.black.withOpacity(0.2), labelStyle: TextStyle(color: Colors.white), border: OutlineInputBorder(borderRadius: BorderRadius.circular(12))),
-                                                  items: [DropdownMenuItem(value: '', child: Text(AppLocalizations.of(context)!.any, style: TextStyle(color: Colors.grey))), ...getAvailableDriveTypes().where((d) => d != 'Any').map((d) => DropdownMenuItem(value: d, child: Text(_translateValueGlobal(context, d) ?? d))).toList()],
-                                                  onChanged: (value) { setState(() => selectedDriveType = value == '' ? null : value); _persistFilters(); },
+                                                  value:
+                                                      _getValidDriveTypeValue(),
+                                                  decoration: InputDecoration(
+                                                    labelText:
+                                                        AppLocalizations.of(
+                                                          context,
+                                                        )!.driveType,
+                                                    filled: true,
+                                                    fillColor: Colors.black
+                                                        .withOpacity(0.2),
+                                                    labelStyle: TextStyle(
+                                                      color: Colors.white,
+                                                    ),
+                                                    border: OutlineInputBorder(
+                                                      borderRadius:
+                                                          BorderRadius.circular(
+                                                            12,
+                                                          ),
+                                                    ),
+                                                  ),
+                                                  items: [
+                                                    DropdownMenuItem(
+                                                      value: '',
+                                                      child: Text(
+                                                        AppLocalizations.of(
+                                                          context,
+                                                        )!.any,
+                                                        style: TextStyle(
+                                                          color: Colors.grey,
+                                                        ),
+                                                      ),
+                                                    ),
+                                                    ...getAvailableDriveTypes()
+                                                        .where(
+                                                          (d) => d != 'Any',
+                                                        )
+                                                        .map(
+                                                          (
+                                                            d,
+                                                          ) => DropdownMenuItem(
+                                                            value: d,
+                                                            child: Text(
+                                                              _translateValueGlobal(
+                                                                    context,
+                                                                    d,
+                                                                  ) ??
+                                                                  d,
+                                                            ),
+                                                          ),
+                                                        )
+                                                        .toList(),
+                                                  ],
+                                                  onChanged: (value) {
+                                                    setState(
+                                                      () => selectedDriveType =
+                                                          value == ''
+                                                          ? null
+                                                          : value,
+                                                    );
+                                                    _persistFilters();
+                                                  },
                                                 ),
                                                 SizedBox(height: 10),
                                                 // Cylinder Count Dropdown
                                                 DropdownButtonFormField<String>(
-                                                  value: selectedCylinderCount ?? '',
-                                                  decoration: InputDecoration(labelText: AppLocalizations.of(context)!.cylinderCount, filled: true, fillColor: Colors.black.withOpacity(0.2), labelStyle: TextStyle(color: Colors.white), border: OutlineInputBorder(borderRadius: BorderRadius.circular(12))),
-                                                  items: [DropdownMenuItem(value: '', child: Text(AppLocalizations.of(context)!.any, style: TextStyle(color: Colors.grey))), ...getAvailableCylinderCounts().where((c) => c != 'Any').map((c) => DropdownMenuItem(value: c, child: Text(_localizeDigitsGlobal(context, c)))).toList()],
-                                                  onChanged: (value) { setState(() => selectedCylinderCount = value == '' ? null : value); _persistFilters(); },
+                                                  value:
+                                                      selectedCylinderCount ??
+                                                      '',
+                                                  decoration: InputDecoration(
+                                                    labelText:
+                                                        AppLocalizations.of(
+                                                          context,
+                                                        )!.cylinderCount,
+                                                    filled: true,
+                                                    fillColor: Colors.black
+                                                        .withOpacity(0.2),
+                                                    labelStyle: TextStyle(
+                                                      color: Colors.white,
+                                                    ),
+                                                    border: OutlineInputBorder(
+                                                      borderRadius:
+                                                          BorderRadius.circular(
+                                                            12,
+                                                          ),
+                                                    ),
+                                                  ),
+                                                  items: [
+                                                    DropdownMenuItem(
+                                                      value: '',
+                                                      child: Text(
+                                                        AppLocalizations.of(
+                                                          context,
+                                                        )!.any,
+                                                        style: TextStyle(
+                                                          color: Colors.grey,
+                                                        ),
+                                                      ),
+                                                    ),
+                                                    ...getAvailableCylinderCounts()
+                                                        .where(
+                                                          (c) => c != 'Any',
+                                                        )
+                                                        .map(
+                                                          (
+                                                            c,
+                                                          ) => DropdownMenuItem(
+                                                            value: c,
+                                                            child: Text(
+                                                              _localizeDigitsGlobal(
+                                                                context,
+                                                                c,
+                                                              ),
+                                                            ),
+                                                          ),
+                                                        )
+                                                        .toList(),
+                                                  ],
+                                                  onChanged: (value) {
+                                                    setState(
+                                                      () =>
+                                                          selectedCylinderCount =
+                                                              value == ''
+                                                              ? null
+                                                              : value,
+                                                    );
+                                                    _persistFilters();
+                                                  },
                                                 ),
                                                 SizedBox(height: 10),
                                                 // Seating Dropdown
                                                 DropdownButtonFormField<String>(
                                                   value: selectedSeating ?? '',
-                                                  decoration: InputDecoration(labelText: AppLocalizations.of(context)!.seating, filled: true, fillColor: Colors.black.withOpacity(0.2), labelStyle: TextStyle(color: Colors.white), border: OutlineInputBorder(borderRadius: BorderRadius.circular(12))),
-                                                  items: [DropdownMenuItem(value: '', child: Text(AppLocalizations.of(context)!.any, style: TextStyle(color: Colors.grey))), ...getAvailableSeatings().where((s) => s != 'Any').map((s) => DropdownMenuItem(value: s, child: Text(_localizeDigitsGlobal(context, s)))).toList()],
-                                                  onChanged: (value) { setState(() => selectedSeating = value == '' ? null : value); _persistFilters(); },
+                                                  decoration: InputDecoration(
+                                                    labelText:
+                                                        AppLocalizations.of(
+                                                          context,
+                                                        )!.seating,
+                                                    filled: true,
+                                                    fillColor: Colors.black
+                                                        .withOpacity(0.2),
+                                                    labelStyle: TextStyle(
+                                                      color: Colors.white,
+                                                    ),
+                                                    border: OutlineInputBorder(
+                                                      borderRadius:
+                                                          BorderRadius.circular(
+                                                            12,
+                                                          ),
+                                                    ),
+                                                  ),
+                                                  items: [
+                                                    DropdownMenuItem(
+                                                      value: '',
+                                                      child: Text(
+                                                        AppLocalizations.of(
+                                                          context,
+                                                        )!.any,
+                                                        style: TextStyle(
+                                                          color: Colors.grey,
+                                                        ),
+                                                      ),
+                                                    ),
+                                                    ...getAvailableSeatings()
+                                                        .where(
+                                                          (s) => s != 'Any',
+                                                        )
+                                                        .map(
+                                                          (
+                                                            s,
+                                                          ) => DropdownMenuItem(
+                                                            value: s,
+                                                            child: Text(
+                                                              _localizeDigitsGlobal(
+                                                                context,
+                                                                s,
+                                                              ),
+                                                            ),
+                                                          ),
+                                                        )
+                                                        .toList(),
+                                                  ],
+                                                  onChanged: (value) {
+                                                    setState(
+                                                      () => selectedSeating =
+                                                          value == ''
+                                                          ? null
+                                                          : value,
+                                                    );
+                                                    _persistFilters();
+                                                  },
                                                 ),
                                                 SizedBox(height: 10),
                                                 // Engine Size Dropdown
                                                 DropdownButtonFormField<String>(
-                                                  value: selectedEngineSize ?? '',
-                                                  decoration: InputDecoration(labelText: AppLocalizations.of(context)!.engineSizeL, filled: true, fillColor: Colors.black.withOpacity(0.2), labelStyle: TextStyle(color: Colors.white), border: OutlineInputBorder(borderRadius: BorderRadius.circular(12))),
-                                                  items: [DropdownMenuItem(value: '', child: Text(AppLocalizations.of(context)!.any, style: TextStyle(color: Colors.grey))), ...getAvailableEngineSizes().where((e) => e != 'Any').map((e) => DropdownMenuItem(value: e, child: Text('${_localizeDigitsGlobal(context, e)}${AppLocalizations.of(context)!.unit_liter_suffix}'))).toList()],
-                                                  onChanged: (value) { setState(() => selectedEngineSize = value == '' ? null : value); _persistFilters(); },
+                                                  value:
+                                                      selectedEngineSize ?? '',
+                                                  decoration: InputDecoration(
+                                                    labelText:
+                                                        AppLocalizations.of(
+                                                          context,
+                                                        )!.engineSizeL,
+                                                    filled: true,
+                                                    fillColor: Colors.black
+                                                        .withOpacity(0.2),
+                                                    labelStyle: TextStyle(
+                                                      color: Colors.white,
+                                                    ),
+                                                    border: OutlineInputBorder(
+                                                      borderRadius:
+                                                          BorderRadius.circular(
+                                                            12,
+                                                          ),
+                                                    ),
+                                                  ),
+                                                  items: [
+                                                    DropdownMenuItem(
+                                                      value: '',
+                                                      child: Text(
+                                                        AppLocalizations.of(
+                                                          context,
+                                                        )!.any,
+                                                        style: TextStyle(
+                                                          color: Colors.grey,
+                                                        ),
+                                                      ),
+                                                    ),
+                                                    ...getAvailableEngineSizes()
+                                                        .where(
+                                                          (e) => e != 'Any',
+                                                        )
+                                                        .map(
+                                                          (
+                                                            e,
+                                                          ) => DropdownMenuItem(
+                                                            value: e,
+                                                            child: Text(
+                                                              '${_localizeDigitsGlobal(context, e)}${AppLocalizations.of(context)!.unit_liter_suffix}',
+                                                            ),
+                                                          ),
+                                                        )
+                                                        .toList(),
+                                                  ],
+                                                  onChanged: (value) {
+                                                    setState(
+                                                      () => selectedEngineSize =
+                                                          value == ''
+                                                          ? null
+                                                          : value,
+                                                    );
+                                                    _persistFilters();
+                                                  },
                                                 ),
                                                 SizedBox(height: 10),
                                                 DropdownButtonFormField<String>(
                                                   value: selectedCity ?? '',
-                                                  decoration: InputDecoration(labelText: AppLocalizations.of(context)!.cityLabel, filled: true, fillColor: Colors.black.withOpacity(0.2), labelStyle: TextStyle(color: Colors.white), border: OutlineInputBorder(borderRadius: BorderRadius.circular(12))),
-                                                  items: [DropdownMenuItem(value: '', child: Text(AppLocalizations.of(context)!.any, style: TextStyle(color: Colors.grey))), ...cities.map((c) => DropdownMenuItem(value: c, child: Text(_translateValueGlobal(context, c) ?? c))).toList()],
-                                                  onChanged: (value) { setState(() => selectedCity = value == '' ? null : value); _persistFilters(); },
+                                                  decoration: InputDecoration(
+                                                    labelText:
+                                                        AppLocalizations.of(
+                                                          context,
+                                                        )!.cityLabel,
+                                                    filled: true,
+                                                    fillColor: Colors.black
+                                                        .withOpacity(0.2),
+                                                    labelStyle: TextStyle(
+                                                      color: Colors.white,
+                                                    ),
+                                                    border: OutlineInputBorder(
+                                                      borderRadius:
+                                                          BorderRadius.circular(
+                                                            12,
+                                                          ),
+                                                    ),
+                                                  ),
+                                                  items: [
+                                                    DropdownMenuItem(
+                                                      value: '',
+                                                      child: Text(
+                                                        AppLocalizations.of(
+                                                          context,
+                                                        )!.any,
+                                                        style: TextStyle(
+                                                          color: Colors.grey,
+                                                        ),
+                                                      ),
+                                                    ),
+                                                    ...cities
+                                                        .map(
+                                                          (
+                                                            c,
+                                                          ) => DropdownMenuItem(
+                                                            value: c,
+                                                            child: Text(
+                                                              _translateValueGlobal(
+                                                                    context,
+                                                                    c,
+                                                                  ) ??
+                                                                  c,
+                                                            ),
+                                                          ),
+                                                        )
+                                                        .toList(),
+                                                  ],
+                                                  onChanged: (value) {
+                                                    setState(
+                                                      () => selectedCity =
+                                                          value == ''
+                                                          ? null
+                                                          : value,
+                                                    );
+                                                    _persistFilters();
+                                                  },
                                                 ),
                                                 SizedBox(height: 10),
                                                 // Owners
                                                 TextFormField(
-                                                  controller: TextEditingController(text: selectedOwners ?? ''),
-                                                  decoration: InputDecoration(labelText: _ownersLabelGlobal(context), filled: true, fillColor: Colors.black.withOpacity(0.2), labelStyle: TextStyle(color: Colors.white), border: OutlineInputBorder(borderRadius: BorderRadius.circular(12))),
-                                                  keyboardType: TextInputType.number,
-                                                  onChanged: (v) { setState(() => selectedOwners = v.trim().isEmpty ? null : v.trim()); _persistFilters(); },
+                                                  controller:
+                                                      TextEditingController(
+                                                        text:
+                                                            selectedOwners ??
+                                                            '',
+                                                      ),
+                                                  decoration: InputDecoration(
+                                                    labelText:
+                                                        _ownersLabelGlobal(
+                                                          context,
+                                                        ),
+                                                    filled: true,
+                                                    fillColor: Colors.black
+                                                        .withOpacity(0.2),
+                                                    labelStyle: TextStyle(
+                                                      color: Colors.white,
+                                                    ),
+                                                    border: OutlineInputBorder(
+                                                      borderRadius:
+                                                          BorderRadius.circular(
+                                                            12,
+                                                          ),
+                                                    ),
+                                                  ),
+                                                  keyboardType:
+                                                      TextInputType.number,
+                                                  onChanged: (v) {
+                                                    setState(
+                                                      () => selectedOwners =
+                                                          v.trim().isEmpty
+                                                          ? null
+                                                          : v.trim(),
+                                                    );
+                                                    _persistFilters();
+                                                  },
                                                 ),
                                                 SizedBox(height: 10),
                                                 // VIN
                                                 TextFormField(
-                                                  controller: TextEditingController(text: selectedVIN ?? ''),
-                                                  decoration: InputDecoration(labelText: _vinLabelGlobal(context), filled: true, fillColor: Colors.black.withOpacity(0.2), labelStyle: TextStyle(color: Colors.white), border: OutlineInputBorder(borderRadius: BorderRadius.circular(12))),
-                                                  keyboardType: TextInputType.text,
+                                                  controller:
+                                                      TextEditingController(
+                                                        text: selectedVIN ?? '',
+                                                      ),
+                                                  decoration: InputDecoration(
+                                                    labelText: _vinLabelGlobal(
+                                                      context,
+                                                    ),
+                                                    filled: true,
+                                                    fillColor: Colors.black
+                                                        .withOpacity(0.2),
+                                                    labelStyle: TextStyle(
+                                                      color: Colors.white,
+                                                    ),
+                                                    border: OutlineInputBorder(
+                                                      borderRadius:
+                                                          BorderRadius.circular(
+                                                            12,
+                                                          ),
+                                                    ),
+                                                  ),
+                                                  keyboardType:
+                                                      TextInputType.text,
                                                   inputFormatters: [
-                                                    services.FilteringTextInputFormatter.allow(RegExp(r'[A-HJ-NPR-Z0-9]')),
-                                                    services.LengthLimitingTextInputFormatter(17),
+                                                    services
+                                                        .FilteringTextInputFormatter.allow(
+                                                      RegExp(
+                                                        r'[A-HJ-NPR-Z0-9]',
+                                                      ),
+                                                    ),
+                                                    services.LengthLimitingTextInputFormatter(
+                                                      17,
+                                                    ),
                                                   ],
-                                                  onChanged: (v) { setState(() => selectedVIN = v.trim().isEmpty ? null : v.trim()); _persistFilters(); },
+                                                  onChanged: (v) {
+                                                    setState(
+                                                      () => selectedVIN =
+                                                          v.trim().isEmpty
+                                                          ? null
+                                                          : v.trim(),
+                                                    );
+                                                    _persistFilters();
+                                                  },
                                                 ),
                                                 Align(
-                                                  alignment: Alignment.centerRight,
+                                                  alignment:
+                                                      Alignment.centerRight,
                                                   child: TextButton.icon(
                                                     onPressed: _decodeVin,
-                                                    icon: Icon(Icons.qr_code, color: Color(0xFFFF6B00)),
-                                                    label: Text(_vinLabelGlobal(context), style: TextStyle(color: Color(0xFFFF6B00))),
+                                                    icon: Icon(
+                                                      Icons.qr_code,
+                                                      color: Color(0xFFFF6B00),
+                                                    ),
+                                                    label: Text(
+                                                      _vinLabelGlobal(context),
+                                                      style: TextStyle(
+                                                        color: Color(
+                                                          0xFFFF6B00,
+                                                        ),
+                                                      ),
+                                                    ),
                                                   ),
                                                 ),
                                                 Align(
-                                                  alignment: Alignment.centerRight,
+                                                  alignment:
+                                                      Alignment.centerRight,
                                                   child: TextButton.icon(
                                                     onPressed: () async {
-                                                      final vin = await Navigator.push<String>(context, MaterialPageRoute(builder: (_) => VinScanPage()));
-                                                      if (vin != null && vin.trim().isNotEmpty) {
-                                                        setState(() => selectedVIN = vin.trim());
+                                                      final vin =
+                                                          await Navigator.push<
+                                                            String
+                                                          >(
+                                                            context,
+                                                            MaterialPageRoute(
+                                                              builder: (_) =>
+                                                                  VinScanPage(),
+                                                            ),
+                                                          );
+                                                      if (vin != null &&
+                                                          vin
+                                                              .trim()
+                                                              .isNotEmpty) {
+                                                        setState(
+                                                          () => selectedVIN =
+                                                              vin.trim(),
+                                                        );
                                                         await _persistFilters();
                                                         await _decodeVin();
                                                       }
                                                     },
-                                                    icon: Icon(Icons.camera_alt_outlined, color: Color(0xFFFF6B00)),
-                                                    label: Text(_vinLabelGlobal(context)),
+                                                    icon: Icon(
+                                                      Icons.camera_alt_outlined,
+                                                      color: Color(0xFFFF6B00),
+                                                    ),
+                                                    label: Text(
+                                                      _vinLabelGlobal(context),
+                                                    ),
                                                   ),
                                                 ),
                                                 SizedBox(height: 10),
                                                 DropdownButtonFormField<String>(
-                                                  value: selectedAccidentHistory ?? '',
-                                                  decoration: InputDecoration(labelText: _accidentHistoryLabelGlobal(context), filled: true, fillColor: Colors.black.withOpacity(0.2), labelStyle: TextStyle(color: Colors.white), border: OutlineInputBorder(borderRadius: BorderRadius.circular(12))),
+                                                  value:
+                                                      selectedAccidentHistory ??
+                                                      '',
+                                                  decoration: InputDecoration(
+                                                    labelText:
+                                                        _accidentHistoryLabelGlobal(
+                                                          context,
+                                                        ),
+                                                    filled: true,
+                                                    fillColor: Colors.black
+                                                        .withOpacity(0.2),
+                                                    labelStyle: TextStyle(
+                                                      color: Colors.white,
+                                                    ),
+                                                    border: OutlineInputBorder(
+                                                      borderRadius:
+                                                          BorderRadius.circular(
+                                                            12,
+                                                          ),
+                                                    ),
+                                                  ),
                                                   items: [
-                                                    DropdownMenuItem(value: '', child: Text(AppLocalizations.of(context)!.any, style: TextStyle(color: Colors.grey))),
-                                                    DropdownMenuItem(value: 'yes', child: Text(_yesTextGlobal(context))),
-                                                    DropdownMenuItem(value: 'no', child: Text(_noTextGlobal(context))),
+                                                    DropdownMenuItem(
+                                                      value: '',
+                                                      child: Text(
+                                                        AppLocalizations.of(
+                                                          context,
+                                                        )!.any,
+                                                        style: TextStyle(
+                                                          color: Colors.grey,
+                                                        ),
+                                                      ),
+                                                    ),
+                                                    DropdownMenuItem(
+                                                      value: 'yes',
+                                                      child: Text(
+                                                        _yesTextGlobal(context),
+                                                      ),
+                                                    ),
+                                                    DropdownMenuItem(
+                                                      value: 'no',
+                                                      child: Text(
+                                                        _noTextGlobal(context),
+                                                      ),
+                                                    ),
                                                   ],
-                                                  onChanged: (v) { setState(() => selectedAccidentHistory = (v == null || v.isEmpty) ? null : v); _persistFilters(); },
+                                                  onChanged: (v) {
+                                                    setState(
+                                                      () =>
+                                                          selectedAccidentHistory =
+                                                              (v == null ||
+                                                                  v.isEmpty)
+                                                              ? null
+                                                              : v,
+                                                    );
+                                                    _persistFilters();
+                                                  },
                                                 ),
                                               ],
                                             ),
                                           ),
                                           actions: [
                                             TextButton(
-                                              onPressed: () => Navigator.pop(context),
-                                              child: Text(_cancelTextGlobal(context), style: TextStyle(color: Colors.white70)),
+                                              onPressed: () =>
+                                                  Navigator.pop(context),
+                                              child: Text(
+                                                _cancelTextGlobal(context),
+                                                style: TextStyle(
+                                                  color: Colors.white70,
+                                                ),
+                                              ),
                                             ),
                                             ElevatedButton(
-                                              style: ElevatedButton.styleFrom(backgroundColor: Color(0xFFFF6B00)),
+                                              style: ElevatedButton.styleFrom(
+                                                backgroundColor: Color(
+                                                  0xFFFF6B00,
+                                                ),
+                                              ),
                                               onPressed: () {
                                                 onFilterChanged();
                                                 Navigator.pop(context);
                                               },
-                                              child: Text(AppLocalizations.of(context)!.applyFilters),
+                                              child: Text(
+                                                AppLocalizations.of(
+                                                  context,
+                                                )!.applyFilters,
+                                              ),
                                             ),
                                           ],
                                         );
@@ -4537,13 +7855,15 @@ class _HomePageState extends State<HomePage> {
                             mainAxisAlignment: MainAxisAlignment.center,
                             children: [
                               CircularProgressIndicator(
-                                valueColor: AlwaysStoppedAnimation<Color>(Color(0xFFFF6B00)),
+                                valueColor: AlwaysStoppedAnimation<Color>(
+                                  Color(0xFFFF6B00),
+                                ),
                               ),
                               SizedBox(height: 16),
                               Text(
-                                selectedSortBy != null 
-                                  ? 'Sorting listings...' 
-                                  : 'Loading listings...',
+                                selectedSortBy != null
+                                    ? 'Sorting listings...'
+                                    : 'Loading listings...',
                                 style: TextStyle(
                                   color: Colors.white70,
                                   fontSize: 16,
@@ -4553,127 +7873,206 @@ class _HomePageState extends State<HomePage> {
                           ),
                         )
                       : (loadErrorMessage != null && cars.isEmpty)
-                          ? Center(
-                              child: Column(
-                                mainAxisSize: MainAxisSize.min,
+                      ? Center(
+                          child: Column(
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              Text(
+                                _couldNotLoadListingsTextGlobal(context),
+                                style: TextStyle(color: Colors.white70),
+                              ),
+                              SizedBox(height: 8),
+                              Wrap(
+                                spacing: 8,
                                 children: [
-                                  Text(_couldNotLoadListingsTextGlobal(context), style: TextStyle(color: Colors.white70)),
-                                  SizedBox(height: 8),
-                                  Wrap(spacing: 8, children: [
-                                    OutlinedButton(
-                                      onPressed: () {
-                                        _fetchRetryCount = 0; // Reset retry count
-                                        fetchCars(bypassCache: true);
-                                      }, 
-                                      child: Text('Retry')
+                                  OutlinedButton(
+                                    onPressed: () {
+                                      _fetchRetryCount = 0; // Reset retry count
+                                      fetchCars(bypassCache: true);
+                                    },
+                                    child: Text('Retry'),
+                                  ),
+                                  OutlinedButton(
+                                    onPressed: () => onFilterChanged(),
+                                    child: Text(
+                                      AppLocalizations.of(
+                                        context,
+                                      )!.clearFilters,
                                     ),
-                                    OutlinedButton(onPressed: () => onFilterChanged(), child: Text(AppLocalizations.of(context)!.clearFilters)),
-                                  ]),
+                                  ),
                                 ],
                               ),
-                            )
-                          : cars.isEmpty
-                              ? Center(
-                                  child: Column(
-                                    mainAxisSize: MainAxisSize.min,
-                                    children: [
-                                      Text(AppLocalizations.of(context)!.noCarsFound, style: TextStyle(color: Colors.white70)),
-                                      SizedBox(height: 8),
-                                      OutlinedButton(onPressed: () => onFilterChanged(), child: Text(AppLocalizations.of(context)!.applyFilters)),
-                                    ],
-                                  ),
-                                )
-                              : Column(
-                              children: [
-                                Padding(
-                                  padding: EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-                                  child: Row(
-                                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                                    children: [
-                                      PopupMenuButton<String>(
-                                        tooltip: AppLocalizations.of(context)!.sortBy,
-                                        icon: Icon(Icons.sort, size: 20),
-                                        onSelected: (value) {
-                                          setState(() => selectedSortBy = value == '' ? null : value);
-                                          _persistFilters();
-                                          onSortChanged();
-                                        },
-                                        itemBuilder: (context) => [
-                                          PopupMenuItem(value: '', child: Text(AppLocalizations.of(context)!.defaultSort)),
-                                          ...getLocalizedSortOptions(context).skip(1).map((s) => PopupMenuItem(value: s, child: Text(s))).toList(),
-                                        ],
-                                      ),
-                                      ToggleButtons(
-                                        isSelected: [listingColumns == 1, listingColumns == 2],
-                                        onPressed: (index) {
-                                          setState(() {
-                                            listingColumns = index == 0 ? 1 : 2;
-                                          });
-                                        },
-                                        children: const [
-                                          Icon(Icons.view_agenda),
-                                          Icon(Icons.grid_view),
-                                        ],
-                                      ),
-                                    ],
-                                  ),
+                            ],
+                          ),
+                        )
+                      : cars.isEmpty
+                      ? Center(
+                          child: Column(
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              Text(
+                                AppLocalizations.of(context)!.noCarsFound,
+                                style: TextStyle(color: Colors.white70),
+                              ),
+                              SizedBox(height: 8),
+                              OutlinedButton(
+                                onPressed: () => onFilterChanged(),
+                                child: Text(
+                                  AppLocalizations.of(context)!.applyFilters,
                                 ),
-                                Expanded(
-                                  child: Column(
-                                    children: [
-                                      // Show a subtle indicator when there's cached data with an error
-                                      if (loadErrorMessage != null && cars.isNotEmpty)
-                                        Container(
-                                          width: double.infinity,
-                                          padding: EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-                                          margin: EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-                                          decoration: BoxDecoration(
-                                            color: Colors.orange.withOpacity(0.1),
-                                            borderRadius: BorderRadius.circular(8),
-                                            border: Border.all(color: Colors.orange.withOpacity(0.3), width: 1),
-                                          ),
-                                          child: Row(
-                                            children: [
-                                              Icon(Icons.offline_bolt, color: Colors.orange, size: 16),
-                                              SizedBox(width: 8),
-                                              Expanded(
-                                                child: Text(
-                                                  'Showing cached results',
-                                                  style: TextStyle(color: Colors.orange, fontSize: 12),
-                                                ),
-                                              ),
-                                              TextButton(
-                                                onPressed: fetchCars,
-                                                style: TextButton.styleFrom(
-                                                  padding: EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-                                                  minimumSize: Size(0, 0),
-                                                ),
-                                                child: Text('Refresh', style: TextStyle(color: Colors.orange, fontSize: 12)),
-                                              ),
-                                            ],
-                                          ),
+                              ),
+                            ],
+                          ),
+                        )
+                      : Column(
+                          children: [
+                            Padding(
+                              padding: EdgeInsets.symmetric(
+                                horizontal: 8,
+                                vertical: 4,
+                              ),
+                              child: Row(
+                                mainAxisAlignment:
+                                    MainAxisAlignment.spaceBetween,
+                                children: [
+                                  PopupMenuButton<String>(
+                                    tooltip: AppLocalizations.of(
+                                      context,
+                                    )!.sortBy,
+                                    icon: Icon(Icons.sort, size: 20),
+                                    onSelected: (value) {
+                                      setState(
+                                        () => selectedSortBy = value == ''
+                                            ? null
+                                            : value,
+                                      );
+                                      _persistFilters();
+                                      onSortChanged();
+                                    },
+                                    itemBuilder: (context) => [
+                                      PopupMenuItem(
+                                        value: '',
+                                        child: Text(
+                                          AppLocalizations.of(
+                                            context,
+                                          )!.defaultSort,
                                         ),
-                                      Expanded(
-                                        child: GridView.builder(
-                                          padding: EdgeInsets.all(8),
-                                          gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
+                                      ),
+                                      ...getLocalizedSortOptions(context)
+                                          .skip(1)
+                                          .map(
+                                            (s) => PopupMenuItem(
+                                              value: s,
+                                              child: Text(s),
+                                            ),
+                                          )
+                                          .toList(),
+                                    ],
+                                  ),
+                                  ToggleButtons(
+                                    isSelected: [
+                                      listingColumns == 1,
+                                      listingColumns == 2,
+                                    ],
+                                    onPressed: (index) {
+                                      setState(() {
+                                        listingColumns = index == 0 ? 1 : 2;
+                                      });
+                                    },
+                                    children: const [
+                                      Icon(Icons.view_agenda),
+                                      Icon(Icons.grid_view),
+                                    ],
+                                  ),
+                                ],
+                              ),
+                            ),
+                            Expanded(
+                              child: Column(
+                                children: [
+                                  // Show a subtle indicator when there's cached data with an error
+                                  if (loadErrorMessage != null &&
+                                      cars.isNotEmpty)
+                                    Container(
+                                      width: double.infinity,
+                                      padding: EdgeInsets.symmetric(
+                                        horizontal: 16,
+                                        vertical: 8,
+                                      ),
+                                      margin: EdgeInsets.symmetric(
+                                        horizontal: 8,
+                                        vertical: 4,
+                                      ),
+                                      decoration: BoxDecoration(
+                                        color: Colors.orange.withOpacity(0.1),
+                                        borderRadius: BorderRadius.circular(8),
+                                        border: Border.all(
+                                          color: Colors.orange.withOpacity(0.3),
+                                          width: 1,
+                                        ),
+                                      ),
+                                      child: Row(
+                                        children: [
+                                          Icon(
+                                            Icons.offline_bolt,
+                                            color: Colors.orange,
+                                            size: 16,
+                                          ),
+                                          SizedBox(width: 8),
+                                          Expanded(
+                                            child: Text(
+                                              'Showing cached results',
+                                              style: TextStyle(
+                                                color: Colors.orange,
+                                                fontSize: 12,
+                                              ),
+                                            ),
+                                          ),
+                                          TextButton(
+                                            onPressed: fetchCars,
+                                            style: TextButton.styleFrom(
+                                              padding: EdgeInsets.symmetric(
+                                                horizontal: 8,
+                                                vertical: 4,
+                                              ),
+                                              minimumSize: Size(0, 0),
+                                            ),
+                                            child: Text(
+                                              'Refresh',
+                                              style: TextStyle(
+                                                color: Colors.orange,
+                                                fontSize: 12,
+                                              ),
+                                            ),
+                                          ),
+                                        ],
+                                      ),
+                                    ),
+                                  Expanded(
+                                    child: GridView.builder(
+                                      padding: EdgeInsets.all(8),
+                                      gridDelegate:
+                                          SliverGridDelegateWithFixedCrossAxisCount(
                                             crossAxisCount: listingColumns,
-                                            childAspectRatio: listingColumns == 2 ? 0.75 : 1.4, // Adjusted for more text space
+                                            childAspectRatio:
+                                                listingColumns == 2
+                                                ? 0.75
+                                                : 1.4, // Adjusted for more text space
                                             crossAxisSpacing: 8,
                                             mainAxisSpacing: 8,
                                           ),
-                                          itemCount: cars.length,
-                                          itemBuilder: (context, index) {
-                                            final car = cars[index];
-                                            return buildCarCard(car);
-                                          },
-                                        ),
-                                      ),
-                                    ],
+                                      itemCount: cars.length,
+                                      itemBuilder: (context, index) {
+                                        final car = cars[index];
+                                        return buildCarCard(car);
+                                      },
+                                    ),
                                   ),
-                                ),
-                              ],
+                                ],
+                              ),
                             ),
+                          ],
+                        ),
                 ),
               ],
             ),
@@ -4686,7 +8085,14 @@ class _HomePageState extends State<HomePage> {
 
   Widget buildCarCard(Map car) {
     final brand = car['brand'] ?? '';
-    final brandId = brandLogoFilenames[brand] ?? brand.toString().toLowerCase().replaceAll(' ', '-').replaceAll('é', 'e').replaceAll('ö', 'o');
+    final brandId =
+        brandLogoFilenames[brand] ??
+        brand
+            .toString()
+            .toLowerCase()
+            .replaceAll(' ', '-')
+            .replaceAll('é', 'e')
+            .replaceAll('ö', 'o');
     return Card(
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
       elevation: 8,
@@ -4705,109 +8111,130 @@ class _HomePageState extends State<HomePage> {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-            // Quick Sell Banner
-            if (car['is_quick_sell'] == true || car['is_quick_sell'] == 'true')
-              Container(
-                width: double.infinity,
-                padding: EdgeInsets.symmetric(vertical: 8, horizontal: 12),
-                decoration: BoxDecoration(
-                  gradient: LinearGradient(
-                    colors: [Colors.orange, Colors.deepOrange],
-                    begin: Alignment.centerLeft,
-                    end: Alignment.centerRight,
-                  ),
-                  borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
-                ),
-                child: Row(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  children: [
-                    Icon(Icons.flash_on, color: Colors.white, size: 16),
-                    SizedBox(width: 6),
-                    Text(
-                      'QUICK SELL',
-                      style: TextStyle(
-                        color: Colors.white,
-                        fontWeight: FontWeight.bold,
-                        fontSize: 12,
-                        letterSpacing: 1.2,
+                // Quick Sell Banner
+                if (car['is_quick_sell'] == true ||
+                    car['is_quick_sell'] == 'true')
+                  Container(
+                    width: double.infinity,
+                    padding: EdgeInsets.symmetric(vertical: 8, horizontal: 12),
+                    decoration: BoxDecoration(
+                      gradient: LinearGradient(
+                        colors: [Colors.orange, Colors.deepOrange],
+                        begin: Alignment.centerLeft,
+                        end: Alignment.centerRight,
+                      ),
+                      borderRadius: BorderRadius.vertical(
+                        top: Radius.circular(20),
                       ),
                     ),
-                  ],
-                ),
-              ),
-            Expanded(
-              child: ClipRRect(
-                borderRadius: BorderRadius.vertical(
-                  top: (car['is_quick_sell'] == true || car['is_quick_sell'] == 'true') 
-                    ? Radius.zero 
-                    : Radius.circular(20),
-                  bottom: Radius.circular(20),
-                ),
-                child: _buildCardImageCarousel(context, car),
-              ),
-            ),
-            Padding(
-              padding: const EdgeInsets.all(12.0),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                  Row(
-                    children: [
-                      if (car['brand'] != null && car['brand'].toString().isNotEmpty)
-                        SizedBox(
-                          width: 28,
-                          height: 28,
-                          child: Container(
-                            width: 28,
-                            height: 28,
-                            padding: EdgeInsets.all(4),
-                            decoration: BoxDecoration(
-                              color: Colors.white,
-                              borderRadius: BorderRadius.circular(8),
-                            ),
-                            child: CachedNetworkImage(
-                              imageUrl: getApiBase() + '/static/images/brands/' + brandId + '.png',
-                              placeholder: (context, url) => SizedBox(width: 24, height: 24, child: CircularProgressIndicator(strokeWidth: 2)),
-                              errorWidget: (context, url, error) => Icon(Icons.directions_car, size: 20, color: Color(0xFFFF6B00)),
-                              fit: BoxFit.contain,
-                            ),
-                          ),
-                        ),
-                      SizedBox(width: 8),
-                      Expanded(
-                        child: Text(
-                          car['title'] ?? '',
+                    child: Row(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        Icon(Icons.flash_on, color: Colors.white, size: 16),
+                        SizedBox(width: 6),
+                        Text(
+                          'QUICK SELL',
                           style: TextStyle(
+                            color: Colors.white,
                             fontWeight: FontWeight.bold,
-                            color: Color(0xFFFF6B00),
-                            fontSize: 16,
-                            height: 1.2, // Line height for better readability
+                            fontSize: 12,
+                            letterSpacing: 1.2,
                           ),
-                          maxLines: 2, // Allow two lines for longer titles
-                          overflow: TextOverflow.ellipsis,
                         ),
+                      ],
+                    ),
+                  ),
+                Expanded(
+                  child: ClipRRect(
+                    borderRadius: BorderRadius.vertical(
+                      top:
+                          (car['is_quick_sell'] == true ||
+                              car['is_quick_sell'] == 'true')
+                          ? Radius.zero
+                          : Radius.circular(20),
+                      bottom: Radius.circular(20),
+                    ),
+                    child: _buildCardImageCarousel(context, car),
+                  ),
+                ),
+                Padding(
+                  padding: const EdgeInsets.all(12.0),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Row(
+                        children: [
+                          if (car['brand'] != null &&
+                              car['brand'].toString().isNotEmpty)
+                            SizedBox(
+                              width: 28,
+                              height: 28,
+                              child: Container(
+                                width: 28,
+                                height: 28,
+                                padding: EdgeInsets.all(4),
+                                decoration: BoxDecoration(
+                                  color: Colors.white,
+                                  borderRadius: BorderRadius.circular(8),
+                                ),
+                                child: CachedNetworkImage(
+                                  imageUrl:
+                                      getApiBase() +
+                                      '/static/images/brands/' +
+                                      brandId +
+                                      '.png',
+                                  placeholder: (context, url) => SizedBox(
+                                    width: 24,
+                                    height: 24,
+                                    child: CircularProgressIndicator(
+                                      strokeWidth: 2,
+                                    ),
+                                  ),
+                                  errorWidget: (context, url, error) => Icon(
+                                    Icons.directions_car,
+                                    size: 20,
+                                    color: Color(0xFFFF6B00),
+                                  ),
+                                  fit: BoxFit.contain,
+                                ),
+                              ),
+                            ),
+                          SizedBox(width: 8),
+                          Expanded(
+                            child: Text(
+                              car['title'] ?? '',
+                              style: TextStyle(
+                                fontWeight: FontWeight.bold,
+                                color: Color(0xFFFF6B00),
+                                fontSize: 16,
+                                height:
+                                    1.2, // Line height for better readability
+                              ),
+                              maxLines: 2, // Allow two lines for longer titles
+                              overflow: TextOverflow.ellipsis,
+                            ),
+                          ),
+                        ],
+                      ),
+                      SizedBox(height: 6),
+                      Text(
+                        _formatCurrencyGlobal(context, car['price']),
+                        style: TextStyle(
+                          color: Color(0xFFFF6B00),
+                          fontWeight: FontWeight.w600,
+                          fontSize: 15,
+                        ),
+                      ),
+                      SizedBox(height: 6),
+                      Text(
+                        '${_localizeDigitsGlobal(context, (car['year'] ?? '').toString())} • ${_localizeDigitsGlobal(context, (car['mileage'] ?? '').toString())} ${AppLocalizations.of(context)!.unit_km} • ${_translateValueGlobal(context, car['city']?.toString()) ?? (car['city'] ?? '')}',
+                        style: TextStyle(color: Colors.white70, fontSize: 13),
                       ),
                     ],
                   ),
-                  SizedBox(height: 6),
-                  Text(
-                    _formatCurrencyGlobal(context, car['price']),
-                    style: TextStyle(
-                      color: Color(0xFFFF6B00),
-                      fontWeight: FontWeight.w600,
-                      fontSize: 15,
-                    ),
-                  ),
-                  SizedBox(height: 6),
-                  Text(
-                    '${_localizeDigitsGlobal(context, (car['year'] ?? '').toString())} • ${_localizeDigitsGlobal(context, (car['mileage'] ?? '').toString())} ${AppLocalizations.of(context)!.unit_km} • ${_translateValueGlobal(context, car['city']?.toString()) ?? (car['city'] ?? '')}',
-                    style: TextStyle(color: Colors.white70, fontSize: 13),
-                  ),
-                ],
-              ),
+                ),
+              ],
             ),
-          ],
-        ),
           ),
           // Comparison Button
           // Removed banner comparison button to move it inside details page
@@ -4815,11 +8242,14 @@ class _HomePageState extends State<HomePage> {
       ),
     );
   }
+
   Widget _buildCardImageCarousel(BuildContext context, Map car) {
     final List<String> urls = () {
       final List<String> u = [];
       final String primary = (car['image_url'] ?? '').toString();
-      final List<dynamic> imgs = (car['images'] is List) ? (car['images'] as List) : const [];
+      final List<dynamic> imgs = (car['images'] is List)
+          ? (car['images'] as List)
+          : const [];
       if (primary.isNotEmpty) {
         u.add(getApiBase() + '/static/uploads/' + primary);
       }
@@ -4868,7 +8298,14 @@ class _HomePageState extends State<HomePage> {
                     fit: BoxFit.cover,
                     width: double.infinity,
                     placeholder: (_, __) => Container(color: Colors.white10),
-                    errorWidget: (_, __, ___) => Container(color: Colors.grey[900], child: Icon(Icons.directions_car, size: 60, color: Colors.grey[400])),
+                    errorWidget: (_, __, ___) => Container(
+                      color: Colors.grey[900],
+                      child: Icon(
+                        Icons.directions_car,
+                        size: 60,
+                        color: Colors.grey[400],
+                      ),
+                    ),
                   );
                 },
               ),
@@ -5055,7 +8492,7 @@ class _HomePageState extends State<HomePage> {
         return '🚘';
     }
   }
-  
+
   @override
   void dispose() {
     _sortDebounceTimer?.cancel();
@@ -5065,9 +8502,9 @@ class _HomePageState extends State<HomePage> {
 
 class SavedSearchesPage extends StatefulWidget {
   final dynamic parentState;
-  
+
   const SavedSearchesPage({Key? key, this.parentState}) : super(key: key);
-  
+
   @override
   State<SavedSearchesPage> createState() => _SavedSearchesPageState();
 }
@@ -5086,9 +8523,13 @@ class _SavedSearchesPageState extends State<SavedSearchesPage> {
   Future<void> _load() async {
     final sp = await SharedPreferences.getInstance();
     final raw = sp.getString(_savedSearchesKey);
-    final list = (raw == null || raw.isEmpty) ? [] : (json.decode(raw) as List).cast<dynamic>();
+    final list = (raw == null || raw.isEmpty)
+        ? []
+        : (json.decode(raw) as List).cast<dynamic>();
     setState(() {
-      _items = list.map<Map<String, dynamic>>((e) => Map<String, dynamic>.from(e as Map)).toList();
+      _items = list
+          .map<Map<String, dynamic>>((e) => Map<String, dynamic>.from(e as Map))
+          .toList();
       _loading = false;
     });
   }
@@ -5099,31 +8540,47 @@ class _SavedSearchesPageState extends State<SavedSearchesPage> {
   }
 
   void _rename(int index) async {
-    final controller = TextEditingController(text: _items[index]['name']?.toString() ?? '');
+    final controller = TextEditingController(
+      text: _items[index]['name']?.toString() ?? '',
+    );
     final ok = await showDialog<bool>(
       context: context,
       builder: (_) => AlertDialog(
         title: Text('Rename'),
         content: TextField(controller: controller, autofocus: true),
         actions: [
-          TextButton(onPressed: () => Navigator.pop(context, false), child: Text(AppLocalizations.of(context)!.ok)),
-          TextButton(onPressed: () => Navigator.pop(context, true), child: Text(AppLocalizations.of(context)!.save)),
+          TextButton(
+            onPressed: () => Navigator.pop(context, false),
+            child: Text(AppLocalizations.of(context)!.ok),
+          ),
+          TextButton(
+            onPressed: () => Navigator.pop(context, true),
+            child: Text(AppLocalizations.of(context)!.save),
+          ),
         ],
       ),
     );
     if (ok == true) {
-      setState(() { _items[index]['name'] = controller.text.trim().isEmpty ? _items[index]['name'] : controller.text.trim(); });
+      setState(() {
+        _items[index]['name'] = controller.text.trim().isEmpty
+            ? _items[index]['name']
+            : controller.text.trim();
+      });
       await _save();
     }
   }
 
   void _delete(int index) async {
-    setState(() { _items.removeAt(index); });
+    setState(() {
+      _items.removeAt(index);
+    });
     await _save();
   }
 
   void _toggleNotify(int index, bool value) async {
-    setState(() { _items[index]['notify'] = value; });
+    setState(() {
+      _items[index]['notify'] = value;
+    });
     await _save();
     // Optionally sync to backend if available
     unawaited(_syncSavedSearchNotify(index));
@@ -5141,94 +8598,105 @@ class _SavedSearchesPageState extends State<SavedSearchesPage> {
         'filters': _items[index]['filters'] ?? {},
       };
       final url = Uri.parse(getApiBase() + '/api/saved_search/notify');
-      await http.post(url, headers: {'Content-Type': 'application/json'}, body: json.encode(body));
+      await http.post(
+        url,
+        headers: {'Content-Type': 'application/json'},
+        body: json.encode(body),
+      );
     } catch (_) {}
   }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(
-        title: Text('Saved Searches'),
-      ),
+      appBar: AppBar(title: Text('Saved Searches')),
       body: _loading
           ? Center(child: CircularProgressIndicator())
           : _items.isEmpty
-              ? Center(
-                  child: Column(
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    children: [
-                      Icon(Icons.search_off, size: 64, color: Colors.grey),
-                      SizedBox(height: 16),
-                      Text('No saved searches yet', style: TextStyle(fontSize: 18, color: Colors.grey)),
-                      SizedBox(height: 8),
-                      Text('Your searches will be automatically saved here', style: TextStyle(color: Colors.grey[600])),
-                    ],
+          ? Center(
+              child: Column(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  Icon(Icons.search_off, size: 64, color: Colors.grey),
+                  SizedBox(height: 16),
+                  Text(
+                    'No saved searches yet',
+                    style: TextStyle(fontSize: 18, color: Colors.grey),
                   ),
-                )
-              : ListView.separated(
-                  itemCount: _items.length,
-                  separatorBuilder: (_, __) => Divider(height: 1),
-                  itemBuilder: (context, index) {
-                    final item = _items[index];
-                    final filters = item['filters'] as Map<String, dynamic>? ?? {};
-                    final isAutoSaved = item['auto_saved'] == true;
-                    
-                    return Card(
-                      margin: EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-                      child: ListTile(
-                        onTap: () => _showFilterDetails(item['name']?.toString() ?? 'Unnamed Search', filters),
-                        leading: Icon(
-                          Icons.bookmark, 
-                          color: Color(0xFFFF6B00)
+                  SizedBox(height: 8),
+                  Text(
+                    'Your searches will be automatically saved here',
+                    style: TextStyle(color: Colors.grey[600]),
+                  ),
+                ],
+              ),
+            )
+          : ListView.separated(
+              itemCount: _items.length,
+              separatorBuilder: (_, __) => Divider(height: 1),
+              itemBuilder: (context, index) {
+                final item = _items[index];
+                final filters = item['filters'] as Map<String, dynamic>? ?? {};
+                final isAutoSaved = item['auto_saved'] == true;
+
+                return Card(
+                  margin: EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                  child: ListTile(
+                    onTap: () => _showFilterDetails(
+                      item['name']?.toString() ?? 'Unnamed Search',
+                      filters,
+                    ),
+                    leading: Icon(Icons.bookmark, color: Color(0xFFFF6B00)),
+                    title: Text(
+                      item['name']?.toString() ?? 'Unnamed Search',
+                      style: TextStyle(fontWeight: FontWeight.bold),
+                    ),
+                    subtitle: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        SizedBox(height: 4),
+                        _buildFilterChips(filters),
+                        SizedBox(height: 4),
+                        Text(
+                          _formatDate(item['created_at']?.toString() ?? ''),
+                          style: TextStyle(
+                            fontSize: 12,
+                            color: Colors.grey[600],
+                          ),
                         ),
-                        title: Text(
-                          item['name']?.toString() ?? 'Unnamed Search',
-                          style: TextStyle(fontWeight: FontWeight.bold),
+                      ],
+                    ),
+                    trailing: Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        IconButton(
+                          icon: Icon(Icons.search, color: Colors.green),
+                          onPressed: () => _applySearch(filters),
+                          tooltip: 'Apply Search',
                         ),
-                        subtitle: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            SizedBox(height: 4),
-                            _buildFilterChips(filters),
-                            SizedBox(height: 4),
-                            Text(
-                              _formatDate(item['created_at']?.toString() ?? ''),
-                              style: TextStyle(fontSize: 12, color: Colors.grey[600]),
-                            ),
-                          ],
+                        IconButton(
+                          icon: Icon(Icons.edit),
+                          onPressed: () => _rename(index),
+                          tooltip: 'Rename',
                         ),
-                        trailing: Row(
-                          mainAxisSize: MainAxisSize.min,
-                          children: [
-                            IconButton(
-                              icon: Icon(Icons.search, color: Colors.green),
-                              onPressed: () => _applySearch(filters),
-                              tooltip: 'Apply Search',
-                            ),
-                            IconButton(
-                              icon: Icon(Icons.edit), 
-                              onPressed: () => _rename(index),
-                              tooltip: 'Rename',
-                            ),
-                            IconButton(
-                              icon: Icon(Icons.delete, color: Colors.red), 
-                              onPressed: () => _delete(index),
-                              tooltip: 'Delete',
-                            ),
-                          ],
+                        IconButton(
+                          icon: Icon(Icons.delete, color: Colors.red),
+                          onPressed: () => _delete(index),
+                          tooltip: 'Delete',
                         ),
-                        isThreeLine: true,
-                      ),
-                    );
-                  },
-                ),
+                      ],
+                    ),
+                    isThreeLine: true,
+                  ),
+                );
+              },
+            ),
     );
   }
 
   Widget _buildFilterChips(Map<String, dynamic> filters) {
     final chips = <Widget>[];
-    
+
     // Add filter chips for all criteria
     if (filters['brand'] != null) {
       chips.add(_buildFilterChip('Brand', filters['brand'].toString()));
@@ -5243,52 +8711,103 @@ class _SavedSearchesPageState extends State<SavedSearchesPage> {
       chips.add(_buildFilterChip('City', filters['city'].toString()));
     }
     if (filters['min_price'] != null || filters['max_price'] != null) {
-      final priceRange = '${filters['min_price'] ?? '0'} - ${filters['max_price'] ?? '∞'}';
+      final priceRange =
+          '${filters['min_price'] ?? '0'} - ${filters['max_price'] ?? '∞'}';
       chips.add(_buildFilterChip('Price', priceRange));
     }
     if (filters['min_year'] != null || filters['max_year'] != null) {
-      final yearRange = '${filters['min_year'] ?? '0'} - ${filters['max_year'] ?? '∞'}';
+      final yearRange =
+          '${filters['min_year'] ?? '0'} - ${filters['max_year'] ?? '∞'}';
       chips.add(_buildFilterChip('Year', yearRange));
     }
     if (filters['min_mileage'] != null || filters['max_mileage'] != null) {
-      final mileageRange = '${filters['min_mileage'] ?? '0'} - ${filters['max_mileage'] ?? '∞'} km';
+      final mileageRange =
+          '${filters['min_mileage'] ?? '0'} - ${filters['max_mileage'] ?? '∞'} km';
       chips.add(_buildFilterChip('Mileage', mileageRange));
     }
     if (filters['transmission'] != null) {
-      chips.add(_buildFilterChip('Transmission', _capitalizeFirst(filters['transmission'].toString())));
+      chips.add(
+        _buildFilterChip(
+          'Transmission',
+          _capitalizeFirst(filters['transmission'].toString()),
+        ),
+      );
     }
     if (filters['condition'] != null) {
-      chips.add(_buildFilterChip('Condition', _capitalizeFirst(filters['condition'].toString())));
+      chips.add(
+        _buildFilterChip(
+          'Condition',
+          _capitalizeFirst(filters['condition'].toString()),
+        ),
+      );
     }
     if (filters['body_type'] != null) {
-      chips.add(_buildFilterChip('Body Type', _capitalizeFirst(filters['body_type'].toString())));
+      chips.add(
+        _buildFilterChip(
+          'Body Type',
+          _capitalizeFirst(filters['body_type'].toString()),
+        ),
+      );
     }
     if (filters['fuel_type'] != null) {
-      chips.add(_buildFilterChip('Fuel Type', _capitalizeFirst(filters['fuel_type'].toString())));
+      chips.add(
+        _buildFilterChip(
+          'Fuel Type',
+          _capitalizeFirst(filters['fuel_type'].toString()),
+        ),
+      );
     }
     if (filters['color'] != null) {
-      chips.add(_buildFilterChip('Color', _capitalizeFirst(filters['color'].toString())));
+      chips.add(
+        _buildFilterChip(
+          'Color',
+          _capitalizeFirst(filters['color'].toString()),
+        ),
+      );
     }
     if (filters['drive_type'] != null) {
-      chips.add(_buildFilterChip('Drive Type', filters['drive_type'].toString().toUpperCase()));
+      chips.add(
+        _buildFilterChip(
+          'Drive Type',
+          filters['drive_type'].toString().toUpperCase(),
+        ),
+      );
     }
     if (filters['cylinder_count'] != null) {
-      chips.add(_buildFilterChip('Cylinders', filters['cylinder_count'].toString()));
+      chips.add(
+        _buildFilterChip('Cylinders', filters['cylinder_count'].toString()),
+      );
     }
     if (filters['seating'] != null) {
-      chips.add(_buildFilterChip('Seating', '${filters['seating'].toString()} seats'));
+      chips.add(
+        _buildFilterChip('Seating', '${filters['seating'].toString()} seats'),
+      );
     }
     if (filters['engine_size'] != null) {
-      chips.add(_buildFilterChip('Engine', '${filters['engine_size'].toString()}L'));
+      chips.add(
+        _buildFilterChip('Engine', '${filters['engine_size'].toString()}L'),
+      );
     }
     if (filters['title_status'] != null) {
-      chips.add(_buildFilterChip('Title', _capitalizeFirst(filters['title_status'].toString())));
+      chips.add(
+        _buildFilterChip(
+          'Title',
+          _capitalizeFirst(filters['title_status'].toString()),
+        ),
+      );
     }
     if (filters['damaged_parts'] != null) {
-      chips.add(_buildFilterChip('Damaged Parts', filters['damaged_parts'].toString()));
+      chips.add(
+        _buildFilterChip('Damaged Parts', filters['damaged_parts'].toString()),
+      );
     }
     if (filters['sort_by'] != null) {
-      chips.add(_buildFilterChip('Sort By', _capitalizeFirst(filters['sort_by'].toString())));
+      chips.add(
+        _buildFilterChip(
+          'Sort By',
+          _capitalizeFirst(filters['sort_by'].toString()),
+        ),
+      );
     }
     if (filters['owners'] != null) {
       chips.add(_buildFilterChip('Owners', filters['owners'].toString()));
@@ -5297,18 +8816,22 @@ class _SavedSearchesPageState extends State<SavedSearchesPage> {
       chips.add(_buildFilterChip('VIN', filters['vin'].toString()));
     }
     if (filters['accident_history'] != null) {
-      chips.add(_buildFilterChip('Accident History', _capitalizeFirst(filters['accident_history'].toString())));
+      chips.add(
+        _buildFilterChip(
+          'Accident History',
+          _capitalizeFirst(filters['accident_history'].toString()),
+        ),
+      );
     }
-    
+
     if (chips.isEmpty) {
-      return Text('No filters applied', style: TextStyle(color: Colors.grey[600], fontSize: 12));
+      return Text(
+        'No filters applied',
+        style: TextStyle(color: Colors.grey[600], fontSize: 12),
+      );
     }
-    
-    return Wrap(
-      spacing: 4,
-      runSpacing: 4,
-      children: chips,
-    );
+
+    return Wrap(spacing: 4, runSpacing: 4, children: chips);
   }
 
   Widget _buildFilterChip(String label, String value) {
@@ -5331,7 +8854,7 @@ class _SavedSearchesPageState extends State<SavedSearchesPage> {
       final date = DateTime.parse(dateString);
       final now = DateTime.now();
       final difference = now.difference(date);
-      
+
       if (difference.inDays == 0) {
         return 'Today ${date.hour.toString().padLeft(2, '0')}:${date.minute.toString().padLeft(2, '0')}';
       } else if (difference.inDays == 1) {
@@ -5349,13 +8872,13 @@ class _SavedSearchesPageState extends State<SavedSearchesPage> {
   void _applySearch(Map<String, dynamic> filters) async {
     // Navigate back to home page
     Navigator.pop(context);
-    
+
     // Apply the saved filters to the home page state
     if (widget.parentState != null) {
       widget.parentState!.setState(() {
         // Clear all current filters first
         widget.parentState!._resetAllFiltersInMemory();
-        
+
         // Apply saved filters
         widget.parentState!.selectedBrand = filters['brand'];
         widget.parentState!.selectedModel = filters['model'];
@@ -5381,15 +8904,16 @@ class _SavedSearchesPageState extends State<SavedSearchesPage> {
         widget.parentState!.selectedSortBy = filters['sort_by'];
         widget.parentState!.selectedOwners = filters['owners'];
         widget.parentState!.selectedVIN = filters['vin'];
-        widget.parentState!.selectedAccidentHistory = filters['accident_history'];
+        widget.parentState!.selectedAccidentHistory =
+            filters['accident_history'];
       });
-      
+
       // Persist the applied filters
       await widget.parentState!._persistFilters();
-      
+
       // Trigger filter change to fetch cars with applied filters
       widget.parentState!.onFilterChanged();
-      
+
       // Show success message
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
@@ -5442,9 +8966,7 @@ class _SavedSearchesPageState extends State<SavedSearchesPage> {
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(context),
-            style: TextButton.styleFrom(
-              foregroundColor: Colors.grey[400],
-            ),
+            style: TextButton.styleFrom(foregroundColor: Colors.grey[400]),
             child: Text('Close'),
           ),
           ElevatedButton(
@@ -5468,91 +8990,178 @@ class _SavedSearchesPageState extends State<SavedSearchesPage> {
 
   Widget _buildDetailedFilterList(Map<String, dynamic> filters) {
     final List<Widget> filterItems = [];
-    
+
     // Vehicle Information
     if (filters['brand'] != null) {
-      filterItems.add(_buildFilterDetailItem('Brand', filters['brand'].toString()));
+      filterItems.add(
+        _buildFilterDetailItem('Brand', filters['brand'].toString()),
+      );
     }
     if (filters['model'] != null) {
-      filterItems.add(_buildFilterDetailItem('Model', filters['model'].toString()));
+      filterItems.add(
+        _buildFilterDetailItem('Model', filters['model'].toString()),
+      );
     }
     if (filters['trim'] != null) {
-      filterItems.add(_buildFilterDetailItem('Trim', filters['trim'].toString()));
+      filterItems.add(
+        _buildFilterDetailItem('Trim', filters['trim'].toString()),
+      );
     }
-    
+
     // Price Range
     if (filters['min_price'] != null || filters['max_price'] != null) {
       final minPrice = filters['min_price']?.toString() ?? 'Any';
       final maxPrice = filters['max_price']?.toString() ?? 'Any';
-      filterItems.add(_buildFilterDetailItem('Price Range', '$minPrice - $maxPrice'));
+      filterItems.add(
+        _buildFilterDetailItem('Price Range', '$minPrice - $maxPrice'),
+      );
     }
-    
+
     // Year Range
     if (filters['min_year'] != null || filters['max_year'] != null) {
       final minYear = filters['min_year']?.toString() ?? 'Any';
       final maxYear = filters['max_year']?.toString() ?? 'Any';
-      filterItems.add(_buildFilterDetailItem('Year Range', '$minYear - $maxYear'));
+      filterItems.add(
+        _buildFilterDetailItem('Year Range', '$minYear - $maxYear'),
+      );
     }
-    
+
     // Mileage Range
     if (filters['min_mileage'] != null || filters['max_mileage'] != null) {
       final minMileage = filters['min_mileage']?.toString() ?? 'Any';
       final maxMileage = filters['max_mileage']?.toString() ?? 'Any';
-      filterItems.add(_buildFilterDetailItem('Mileage Range', '$minMileage - $maxMileage km'));
+      filterItems.add(
+        _buildFilterDetailItem('Mileage Range', '$minMileage - $maxMileage km'),
+      );
     }
-    
+
     // Vehicle Specifications
     if (filters['condition'] != null) {
-      filterItems.add(_buildFilterDetailItem('Condition', _capitalizeFirst(filters['condition'].toString())));
+      filterItems.add(
+        _buildFilterDetailItem(
+          'Condition',
+          _capitalizeFirst(filters['condition'].toString()),
+        ),
+      );
     }
     if (filters['transmission'] != null) {
-      filterItems.add(_buildFilterDetailItem('Transmission', _capitalizeFirst(filters['transmission'].toString())));
+      filterItems.add(
+        _buildFilterDetailItem(
+          'Transmission',
+          _capitalizeFirst(filters['transmission'].toString()),
+        ),
+      );
     }
     if (filters['fuel_type'] != null) {
-      filterItems.add(_buildFilterDetailItem('Fuel Type', _capitalizeFirst(filters['fuel_type'].toString())));
+      filterItems.add(
+        _buildFilterDetailItem(
+          'Fuel Type',
+          _capitalizeFirst(filters['fuel_type'].toString()),
+        ),
+      );
     }
     if (filters['body_type'] != null) {
-      filterItems.add(_buildFilterDetailItem('Body Type', _capitalizeFirst(filters['body_type'].toString())));
+      filterItems.add(
+        _buildFilterDetailItem(
+          'Body Type',
+          _capitalizeFirst(filters['body_type'].toString()),
+        ),
+      );
     }
     if (filters['color'] != null) {
-      filterItems.add(_buildFilterDetailItem('Color', _capitalizeFirst(filters['color'].toString())));
+      filterItems.add(
+        _buildFilterDetailItem(
+          'Color',
+          _capitalizeFirst(filters['color'].toString()),
+        ),
+      );
     }
     if (filters['drive_type'] != null) {
-      filterItems.add(_buildFilterDetailItem('Drive Type', filters['drive_type'].toString().toUpperCase()));
+      filterItems.add(
+        _buildFilterDetailItem(
+          'Drive Type',
+          filters['drive_type'].toString().toUpperCase(),
+        ),
+      );
     }
     if (filters['cylinder_count'] != null) {
-      filterItems.add(_buildFilterDetailItem('Cylinder Count', filters['cylinder_count'].toString()));
+      filterItems.add(
+        _buildFilterDetailItem(
+          'Cylinder Count',
+          filters['cylinder_count'].toString(),
+        ),
+      );
     }
     if (filters['seating'] != null) {
-      filterItems.add(_buildFilterDetailItem('Seating', '${filters['seating'].toString()} seats'));
+      filterItems.add(
+        _buildFilterDetailItem(
+          'Seating',
+          '${filters['seating'].toString()} seats',
+        ),
+      );
     }
     if (filters['engine_size'] != null) {
-      filterItems.add(_buildFilterDetailItem('Engine Size', '${filters['engine_size'].toString()}L'));
+      filterItems.add(
+        _buildFilterDetailItem(
+          'Engine Size',
+          '${filters['engine_size'].toString()}L',
+        ),
+      );
     }
-    
+
     // Location and Other
     if (filters['city'] != null) {
-      filterItems.add(_buildFilterDetailItem('City', _capitalizeFirst(filters['city'].toString())));
+      filterItems.add(
+        _buildFilterDetailItem(
+          'City',
+          _capitalizeFirst(filters['city'].toString()),
+        ),
+      );
     }
     if (filters['title_status'] != null) {
-      filterItems.add(_buildFilterDetailItem('Title Status', _capitalizeFirst(filters['title_status'].toString())));
+      filterItems.add(
+        _buildFilterDetailItem(
+          'Title Status',
+          _capitalizeFirst(filters['title_status'].toString()),
+        ),
+      );
     }
     if (filters['damaged_parts'] != null) {
-      filterItems.add(_buildFilterDetailItem('Damaged Parts', filters['damaged_parts'].toString()));
+      filterItems.add(
+        _buildFilterDetailItem(
+          'Damaged Parts',
+          filters['damaged_parts'].toString(),
+        ),
+      );
     }
     if (filters['sort_by'] != null) {
-      filterItems.add(_buildFilterDetailItem('Sort By', _capitalizeFirst(filters['sort_by'].toString())));
+      filterItems.add(
+        _buildFilterDetailItem(
+          'Sort By',
+          _capitalizeFirst(filters['sort_by'].toString()),
+        ),
+      );
     }
     if (filters['owners'] != null) {
-      filterItems.add(_buildFilterDetailItem('Number of Owners', filters['owners'].toString()));
+      filterItems.add(
+        _buildFilterDetailItem(
+          'Number of Owners',
+          filters['owners'].toString(),
+        ),
+      );
     }
     if (filters['vin'] != null) {
       filterItems.add(_buildFilterDetailItem('VIN', filters['vin'].toString()));
     }
     if (filters['accident_history'] != null) {
-      filterItems.add(_buildFilterDetailItem('Accident History', _capitalizeFirst(filters['accident_history'].toString())));
+      filterItems.add(
+        _buildFilterDetailItem(
+          'Accident History',
+          _capitalizeFirst(filters['accident_history'].toString()),
+        ),
+      );
     }
-    
+
     if (filterItems.isEmpty) {
       return Container(
         padding: EdgeInsets.all(16),
@@ -5563,11 +9172,7 @@ class _SavedSearchesPageState extends State<SavedSearchesPage> {
         ),
         child: Row(
           children: [
-            Icon(
-              Icons.info_outline,
-              color: Colors.grey[400],
-              size: 20,
-            ),
+            Icon(Icons.info_outline, color: Colors.grey[400], size: 20),
             SizedBox(width: 8),
             Text(
               'No filters applied to this search.',
@@ -5580,12 +9185,8 @@ class _SavedSearchesPageState extends State<SavedSearchesPage> {
         ),
       );
     }
-    
-    return Wrap(
-      spacing: 8,
-      runSpacing: 6,
-      children: filterItems,
-    );
+
+    return Wrap(spacing: 8, runSpacing: 6, children: filterItems);
   }
 
   Widget _buildFilterDetailItem(String label, String value) {
@@ -5638,7 +9239,11 @@ String _getBodyTypeAsset(String bodyType) {
   String normalizeTitle(String s) => s
       .replaceAll('_', ' ')
       .split(' ')
-      .map((w) => w.isEmpty ? w : (w[0].toUpperCase() + (w.length > 1 ? w.substring(1) : '')))
+      .map(
+        (w) => w.isEmpty
+            ? w
+            : (w[0].toUpperCase() + (w.length > 1 ? w.substring(1) : '')),
+      )
       .join(' ');
 
   final String titleKey = normalizeTitle(bodyType);
@@ -5699,6 +9304,7 @@ class CarDetailsPage extends StatefulWidget {
   @override
   _CarDetailsPageState createState() => _CarDetailsPageState();
 }
+
 class _CarDetailsPageState extends State<CarDetailsPage> {
   Map<String, dynamic>? car;
   bool loading = true;
@@ -5715,29 +9321,47 @@ class _CarDetailsPageState extends State<CarDetailsPage> {
       final tok = ApiService.accessToken;
       if (tok == null || tok.isEmpty) {
         if (!mounted) return;
-        ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(AppLocalizations.of(context)!.loginRequired)));
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text(AppLocalizations.of(context)!.loginRequired)),
+        );
         return;
       }
-      final url = Uri.parse(getApiBase() + '/api/favorite/' + widget.carId.toString());
-      final resp = await http.post(url, headers: { 'Authorization': 'Bearer ' + tok });
+      final url = Uri.parse(
+        getApiBase() + '/api/favorite/' + widget.carId.toString(),
+      );
+      final resp = await http.post(
+        url,
+        headers: {'Authorization': 'Bearer ' + tok},
+      );
       if (resp.statusCode == 200) {
         final Map<String, dynamic> data = json.decode(resp.body);
         final bool favorited = data['favorited'] == true;
-        if (mounted) setState(() { isFavorite = favorited; });
+        if (mounted)
+          setState(() {
+            isFavorite = favorited;
+          });
         // Track favorite for analytics
         if (favorited) {
           unawaited(AnalyticsService.trackFavorite(widget.carId.toString()));
         }
       } else if (resp.statusCode == 401) {
         if (!mounted) return;
-        ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(AppLocalizations.of(context)!.loginRequired)));
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text(AppLocalizations.of(context)!.loginRequired)),
+        );
       } else {
         if (!mounted) return;
-        ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(AppLocalizations.of(context)!.couldNotSubmitListing)));
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(AppLocalizations.of(context)!.couldNotSubmitListing),
+          ),
+        );
       }
     } catch (e) {
       if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(e.toString())));
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text(e.toString())));
     }
   }
 
@@ -5745,7 +9369,9 @@ class _CarDetailsPageState extends State<CarDetailsPage> {
     final List<String> urls = [];
     if (car != null) {
       final String primary = (car!['image_url'] ?? '').toString();
-      final List<dynamic> imgs = (car!['images'] is List) ? (car!['images'] as List) : const [];
+      final List<dynamic> imgs = (car!['images'] is List)
+          ? (car!['images'] as List)
+          : const [];
       if (primary.isNotEmpty) {
         urls.add(getApiBase() + '/static/uploads/' + primary);
       }
@@ -5763,7 +9389,9 @@ class _CarDetailsPageState extends State<CarDetailsPage> {
   List<String> get _videoUrls {
     final List<String> urls = [];
     if (car != null) {
-      final List<dynamic> videos = (car!['videos'] is List) ? (car!['videos'] as List) : const [];
+      final List<dynamic> videos = (car!['videos'] is List)
+          ? (car!['videos'] as List)
+          : const [];
       for (final dynamic it in videos) {
         final s = it.toString();
         if (s.isNotEmpty) {
@@ -5795,8 +9423,17 @@ class _CarDetailsPageState extends State<CarDetailsPage> {
       if (cached != null && cached.isNotEmpty) {
         try {
           final data = json.decode(cached);
-          if (data is Map) { setState(() { car = Map<String, dynamic>.from(data); loading = false; }); }
-          else if (data is List && data.isNotEmpty) { setState(() { car = Map<String, dynamic>.from(data.first); loading = false; }); }
+          if (data is Map) {
+            setState(() {
+              car = Map<String, dynamic>.from(data);
+              loading = false;
+            });
+          } else if (data is List && data.isNotEmpty) {
+            setState(() {
+              car = Map<String, dynamic>.from(data.first);
+              loading = false;
+            });
+          }
         } catch (_) {}
       }
       final url = Uri.parse(getApiBase() + '/cars?id=${widget.carId}');
@@ -5804,25 +9441,38 @@ class _CarDetailsPageState extends State<CarDetailsPage> {
       if (resp.statusCode == 200) {
         final data = json.decode(resp.body);
         if (data is List && data.isNotEmpty) {
-          setState(() { car = Map<String, dynamic>.from(data.first); loading = false; });
+          setState(() {
+            car = Map<String, dynamic>.from(data.first);
+            loading = false;
+          });
           _loadSimilarAndRelated();
           unawaited(sp.setString(cacheKey, json.encode(car)));
           // Track view for analytics
           _trackView();
         } else if (data is Map) {
-          setState(() { car = Map<String, dynamic>.from(data); loading = false; });
+          setState(() {
+            car = Map<String, dynamic>.from(data);
+            loading = false;
+          });
           _loadSimilarAndRelated();
           unawaited(sp.setString(cacheKey, json.encode(car)));
           // Track view for analytics
           _trackView();
         } else {
-          setState(() { loading = false; });
+          setState(() {
+            loading = false;
+          });
         }
       } else {
-        if (cached == null) setState(() { loading = false; });
+        if (cached == null)
+          setState(() {
+            loading = false;
+          });
       }
     } catch (_) {
-      setState(() { loading = false; });
+      setState(() {
+        loading = false;
+      });
     }
   }
 
@@ -5838,17 +9488,17 @@ class _CarDetailsPageState extends State<CarDetailsPage> {
   Future<void> _shareCar() async {
     try {
       if (car == null) return;
-      
+
       final String title = car!['title']?.toString() ?? 'Car Listing';
       final String brand = car!['brand']?.toString() ?? '';
       final String model = car!['model']?.toString() ?? '';
       final String year = car!['year']?.toString() ?? '';
       final String price = car!['price']?.toString() ?? '';
-      
+
       final String shareText = '$title - $brand $model ($year) - \$${price}';
-      
+
       await Share.share(shareText);
-      
+
       // Track share for analytics
       await AnalyticsService.trackShare(widget.carId.toString());
     } catch (e) {
@@ -5861,7 +9511,10 @@ class _CarDetailsPageState extends State<CarDetailsPage> {
     final String? brand = car!['brand']?.toString();
     final String? model = car!['model']?.toString();
     if (brand == null || brand.isEmpty) return;
-    setState(() { loadingSimilar = true; loadingRelated = true; });
+    setState(() {
+      loadingSimilar = true;
+      loadingRelated = true;
+    });
     try {
       final sp = await SharedPreferences.getInstance();
       final simKey = 'cache_similar_${widget.carId}';
@@ -5871,18 +9524,27 @@ class _CarDetailsPageState extends State<CarDetailsPage> {
         final simCached = sp.getString(simKey);
         if (simCached != null && simCached.isNotEmpty) {
           final simData = json.decode(simCached);
-          if (simData is List) setState(() { similarCars = simData.cast<Map<String, dynamic>>(); });
+          if (simData is List)
+            setState(() {
+              similarCars = simData.cast<Map<String, dynamic>>();
+            });
         }
         final relCached = sp.getString(relKey);
         if (relCached != null && relCached.isNotEmpty) {
           final relData = json.decode(relCached);
-          if (relData is List) setState(() { relatedCars = relData.cast<Map<String, dynamic>>(); });
+          if (relData is List)
+            setState(() {
+              relatedCars = relData.cast<Map<String, dynamic>>();
+            });
         }
       } catch (_) {}
       // Similar: strictly same brand + model
       if (model != null && model.isNotEmpty) {
         final simUrl = Uri(
-          scheme: 'http', host: '10.0.2.2', port: 5000, path: '/cars',
+          scheme: 'http',
+          host: '10.0.2.2',
+          port: 5000,
+          path: '/cars',
           queryParameters: {
             'brand': brand,
             'model': model,
@@ -5898,12 +9560,16 @@ class _CarDetailsPageState extends State<CarDetailsPage> {
                 .map<Map<String, dynamic>>((e) => Map<String, dynamic>.from(e))
                 .where((e) => e['id'] != widget.carId)
                 .toList();
-            setState(() { similarCars = list.take(12).toList(); });
+            setState(() {
+              similarCars = list.take(12).toList();
+            });
             unawaited(sp.setString(simKey, json.encode(similarCars)));
           }
         }
       } else {
-        setState(() { similarCars = []; });
+        setState(() {
+          similarCars = [];
+        });
       }
 
       // Related: same brand and matching key attributes ("same filters")
@@ -5932,12 +9598,19 @@ class _CarDetailsPageState extends State<CarDetailsPage> {
         final val = car![key]?.toString();
         if (val != null && val.isNotEmpty) qp[key] = val;
       }
+
       addIfPresent('transmission');
       addIfPresent('fuel_type');
       addIfPresent('condition');
       addIfPresent('city');
 
-      final relUrl = Uri(scheme: 'http', host: '10.0.2.2', port: 5000, path: '/cars', queryParameters: qp);
+      final relUrl = Uri(
+        scheme: 'http',
+        host: '10.0.2.2',
+        port: 5000,
+        path: '/cars',
+        queryParameters: qp,
+      );
       final relResp = await http.get(relUrl);
       if (relResp.statusCode == 200) {
         final relData = json.decode(relResp.body);
@@ -5947,7 +9620,9 @@ class _CarDetailsPageState extends State<CarDetailsPage> {
               .map<Map<String, dynamic>>((e) => Map<String, dynamic>.from(e))
               .where((e) => e['id'] != widget.carId)
               .toList();
-          setState(() { relatedCars = list.take(12).toList(); });
+          setState(() {
+            relatedCars = list.take(12).toList();
+          });
           unawaited(sp.setString(relKey, json.encode(relatedCars)));
         }
       }
@@ -5955,7 +9630,10 @@ class _CarDetailsPageState extends State<CarDetailsPage> {
       // ignore network errors for these sections
     } finally {
       if (mounted) {
-        setState(() { loadingSimilar = false; loadingRelated = false; });
+        setState(() {
+          loadingSimilar = false;
+          loadingRelated = false;
+        });
       }
     }
   }
@@ -5966,406 +9644,528 @@ class _CarDetailsPageState extends State<CarDetailsPage> {
       body: loading
           ? Center(child: CircularProgressIndicator())
           : car == null
-              ? Center(child: Text(AppLocalizations.of(context)!.carNotFound))
-              : CustomScrollView(
-                  slivers: [
-                    SliverAppBar(
-                      pinned: true,
-                      stretch: true,
-                      expandedHeight: 300,
-                      leading: IconButton(
-                        icon: Icon(Icons.arrow_back),
-                        onPressed: () => Navigator.of(context).maybePop(),
+          ? Center(child: Text(AppLocalizations.of(context)!.carNotFound))
+          : CustomScrollView(
+              slivers: [
+                SliverAppBar(
+                  pinned: true,
+                  stretch: true,
+                  expandedHeight: 300,
+                  leading: IconButton(
+                    icon: Icon(Icons.arrow_back),
+                    onPressed: () => Navigator.of(context).maybePop(),
+                  ),
+                  actions: [
+                    IconButton(
+                      onPressed: _toggleFavoriteOnServer,
+                      icon: Icon(
+                        isFavorite ? Icons.favorite : Icons.favorite_border,
                       ),
-                      actions: [
-                        IconButton(
-                          onPressed: _toggleFavoriteOnServer,
-                          icon: Icon(isFavorite ? Icons.favorite : Icons.favorite_border),
+                    ),
+                  ],
+                  flexibleSpace: FlexibleSpaceBar(
+                    background: Stack(
+                      fit: StackFit.expand,
+                      children: [
+                        ClipRRect(
+                          borderRadius: BorderRadius.only(
+                            bottomLeft: Radius.circular(24),
+                            bottomRight: Radius.circular(24),
+                          ),
+                          child: GestureDetector(
+                            onTap: () {
+                              final urls = _imageUrls;
+                              if (urls.isEmpty) return;
+                              Navigator.of(context).push(
+                                MaterialPageRoute(
+                                  builder: (_) => FullScreenGalleryPage(
+                                    imageUrls: urls,
+                                    initialIndex: _currentImageIndex,
+                                  ),
+                                ),
+                              );
+                            },
+                            child: (_imageUrls.isNotEmpty)
+                                ? PageView.builder(
+                                    controller: _imagePageController,
+                                    onPageChanged: (idx) => setState(
+                                      () => _currentImageIndex = idx,
+                                    ),
+                                    itemCount: _imageUrls.length,
+                                    itemBuilder: (context, index) {
+                                      final url = _imageUrls[index];
+                                      return CachedNetworkImage(
+                                        imageUrl: url,
+                                        fit: BoxFit.cover,
+                                        width: double.infinity,
+                                        placeholder: (_, __) =>
+                                            Container(color: Colors.white10),
+                                        errorWidget: (_, __, ___) => Container(
+                                          color: Colors.grey[900],
+                                          child: Icon(
+                                            Icons.directions_car,
+                                            size: 60,
+                                            color: Colors.grey[400],
+                                          ),
+                                        ),
+                                      );
+                                    },
+                                  )
+                                : Container(
+                                    color: Colors.grey[900],
+                                    width: double.infinity,
+                                    child: Icon(
+                                      Icons.directions_car,
+                                      size: 60,
+                                      color: Colors.grey[400],
+                                    ),
+                                  ),
+                          ),
                         ),
-                      ],
-                      flexibleSpace: FlexibleSpaceBar(
-                        background: Stack(
-                          fit: StackFit.expand,
-                          children: [
-                            ClipRRect(
-                              borderRadius: BorderRadius.only(
-                                bottomLeft: Radius.circular(24),
-                                bottomRight: Radius.circular(24),
+                        if (_imageUrls.length > 1)
+                          Positioned(
+                            bottom: 72,
+                            left: 0,
+                            right: 0,
+                            child: IgnorePointer(
+                              ignoring: true,
+                              child: SingleChildScrollView(
+                                scrollDirection: Axis.horizontal,
+                                physics: BouncingScrollPhysics(),
+                                child: Row(
+                                  mainAxisAlignment: MainAxisAlignment.center,
+                                  children: List.generate(_imageUrls.length, (
+                                    i,
+                                  ) {
+                                    final bool active = i == _currentImageIndex;
+                                    return AnimatedContainer(
+                                      duration: Duration(milliseconds: 200),
+                                      margin: EdgeInsets.symmetric(
+                                        horizontal: 4,
+                                      ),
+                                      width: active ? 10 : 6,
+                                      height: active ? 10 : 6,
+                                      decoration: BoxDecoration(
+                                        color: active
+                                            ? Colors.white
+                                            : Colors.white70,
+                                        shape: BoxShape.circle,
+                                      ),
+                                    );
+                                  }),
+                                ),
                               ),
-                              child: GestureDetector(
-                                onTap: () {
-                                  final urls = _imageUrls;
-                                  if (urls.isEmpty) return;
-                                  Navigator.of(context).push(
-                                    MaterialPageRoute(
-                                      builder: (_) => FullScreenGalleryPage(
-                                        imageUrls: urls,
-                                        initialIndex: _currentImageIndex,
+                            ),
+                          ),
+                        // Removed title/price overlay to avoid blocking the image
+                      ],
+                    ),
+                  ),
+                ),
+                SliverToBoxAdapter(
+                  child: Padding(
+                    padding: EdgeInsets.fromLTRB(16, 20, 16, 24),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        // Quick Sell Banner
+                        if (car!['is_quick_sell'] == true ||
+                            car!['is_quick_sell'] == 'true')
+                          Container(
+                            width: double.infinity,
+                            padding: EdgeInsets.symmetric(
+                              vertical: 12,
+                              horizontal: 16,
+                            ),
+                            margin: EdgeInsets.only(bottom: 16),
+                            decoration: BoxDecoration(
+                              gradient: LinearGradient(
+                                colors: [Colors.orange, Colors.deepOrange],
+                                begin: Alignment.centerLeft,
+                                end: Alignment.centerRight,
+                              ),
+                              borderRadius: BorderRadius.circular(12),
+                            ),
+                            child: Row(
+                              mainAxisAlignment: MainAxisAlignment.center,
+                              children: [
+                                Icon(
+                                  Icons.flash_on,
+                                  color: Colors.white,
+                                  size: 20,
+                                ),
+                                SizedBox(width: 8),
+                                Text(
+                                  AppLocalizations.of(context)!.quickSell,
+                                  style: TextStyle(
+                                    color: Colors.white,
+                                    fontWeight: FontWeight.bold,
+                                    fontSize: 16,
+                                    letterSpacing: 1.5,
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
+                        // Title and price moved below the image header
+                        Text(
+                          car!['title']?.toString() ?? '',
+                          style: TextStyle(
+                            fontSize: 22,
+                            fontWeight: FontWeight.bold,
+                            color: Colors.white,
+                          ),
+                          maxLines: 2,
+                          overflow: TextOverflow.ellipsis,
+                        ),
+                        SizedBox(height: 8),
+                        if (car!['price'] != null)
+                          Text(
+                            _formatCurrencyGlobal(context, car!['price']),
+                            style: TextStyle(
+                              fontSize: 18,
+                              fontWeight: FontWeight.w700,
+                              color: Color(0xFFFF6B00),
+                            ),
+                          ),
+                        SizedBox(height: 16),
+                        // Actions
+                        SizedBox(height: 8),
+                        if (car!['contact_phone'] != null &&
+                            car!['contact_phone'].toString().isNotEmpty)
+                          SizedBox(
+                            width: double.infinity,
+                            child: ElevatedButton.icon(
+                              style: ElevatedButton.styleFrom(
+                                backgroundColor: Color(0xFF25D366),
+                                foregroundColor: Colors.white,
+                                padding: EdgeInsets.symmetric(vertical: 14),
+                                shape: RoundedRectangleBorder(
+                                  borderRadius: BorderRadius.circular(12),
+                                ),
+                              ),
+                              icon: Icon(Icons.chat),
+                              label: Text(
+                                AppLocalizations.of(context)!.chatOnWhatsApp,
+                              ),
+                              onPressed: () async {
+                                final String raw = car!['contact_phone']
+                                    .toString();
+                                final String digits = raw.replaceAll(
+                                  RegExp(r'[^0-9]'),
+                                  '',
+                                );
+                                final String msg = Uri.encodeComponent(
+                                  'Hi, I am interested in your ${car!['title'] ?? 'car'}',
+                                );
+
+                                final Uri waApp = Uri.parse(
+                                  'whatsapp://send?phone=$digits&text=$msg',
+                                );
+                                final Uri waWeb = Uri.parse(
+                                  'https://wa.me/$digits?text=$msg',
+                                );
+
+                                bool launched = await launchUrl(
+                                  waApp,
+                                  mode:
+                                      LaunchMode.externalNonBrowserApplication,
+                                ).catchError((_) => false);
+                                if (!launched) {
+                                  launched = await launchUrl(
+                                    waWeb,
+                                    mode: LaunchMode.externalApplication,
+                                  ).catchError((_) => false);
+                                }
+                                if (!launched) {
+                                  launched = await launchUrl(
+                                    waWeb,
+                                    mode: LaunchMode.platformDefault,
+                                  ).catchError((_) => false);
+                                }
+                                if (!launched && mounted) {
+                                  ScaffoldMessenger.of(context).showSnackBar(
+                                    SnackBar(
+                                      content: Text(
+                                        AppLocalizations.of(
+                                          context,
+                                        )!.unableToOpenWhatsApp,
                                       ),
                                     ),
                                   );
-                                },
-                                child: (_imageUrls.isNotEmpty)
-                                    ? PageView.builder(
-                                        controller: _imagePageController,
-                                        onPageChanged: (idx) => setState(() => _currentImageIndex = idx),
-                                        itemCount: _imageUrls.length,
-                                        itemBuilder: (context, index) {
-                                          final url = _imageUrls[index];
-                                          return CachedNetworkImage(
-                                            imageUrl: url,
-                                            fit: BoxFit.cover,
-                                            width: double.infinity,
-                                            placeholder: (_, __) => Container(color: Colors.white10),
-                                            errorWidget: (_, __, ___) => Container(color: Colors.grey[900], child: Icon(Icons.directions_car, size: 60, color: Colors.grey[400])),
-                                          );
-                                        },
-                                      )
-                                    : Container(
-                                        color: Colors.grey[900],
-                                        width: double.infinity,
-                                        child: Icon(Icons.directions_car, size: 60, color: Colors.grey[400]),
-                                      ),
-                              ),
+                                } else if (launched) {
+                                  // Track message for analytics
+                                  await AnalyticsService.trackMessage(
+                                    widget.carId.toString(),
+                                  );
+                                }
+                              },
                             ),
-                            if (_imageUrls.length > 1)
-                              Positioned(
-                                bottom: 72,
-                                left: 0,
-                                right: 0,
-                                child: IgnorePointer(
-                                  ignoring: true,
-                                  child: SingleChildScrollView(
-                                    scrollDirection: Axis.horizontal,
-                                    physics: BouncingScrollPhysics(),
-                                  child: Row(
-                                    mainAxisAlignment: MainAxisAlignment.center,
-                                    children: List.generate(_imageUrls.length, (i) {
-                                      final bool active = i == _currentImageIndex;
-                                      return AnimatedContainer(
-                                        duration: Duration(milliseconds: 200),
-                                        margin: EdgeInsets.symmetric(horizontal: 4),
-                                        width: active ? 10 : 6,
-                                        height: active ? 10 : 6,
-                                        decoration: BoxDecoration(
-                                          color: active ? Colors.white : Colors.white70,
-                                          shape: BoxShape.circle,
-                                        ),
-                                      );
-                                    }),
-                                    ),
-                                  ),
-                                ),
-                              ),
-                            // Removed title/price overlay to avoid blocking the image
-                          ],
-                        ),
-                      ),
-                    ),
-                    SliverToBoxAdapter(
-                      child: Padding(
-                        padding: EdgeInsets.fromLTRB(16, 20, 16, 24),
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            // Quick Sell Banner
-                            if (car!['is_quick_sell'] == true || car!['is_quick_sell'] == 'true')
-                              Container(
-                                width: double.infinity,
-                                padding: EdgeInsets.symmetric(vertical: 12, horizontal: 16),
-                                margin: EdgeInsets.only(bottom: 16),
-                                decoration: BoxDecoration(
-                                  gradient: LinearGradient(
-                                    colors: [Colors.orange, Colors.deepOrange],
-                                    begin: Alignment.centerLeft,
-                                    end: Alignment.centerRight,
-                                  ),
+                          ),
+                        if (car!['contact_phone'] != null &&
+                            car!['contact_phone'].toString().isNotEmpty) ...[
+                          SizedBox(height: 12),
+                          SizedBox(
+                            width: double.infinity,
+                            child: ElevatedButton.icon(
+                              style: ElevatedButton.styleFrom(
+                                backgroundColor: Color(0xFF007AFF),
+                                foregroundColor: Colors.white,
+                                padding: EdgeInsets.symmetric(vertical: 14),
+                                shape: RoundedRectangleBorder(
                                   borderRadius: BorderRadius.circular(12),
                                 ),
-                                child: Row(
-                                  mainAxisAlignment: MainAxisAlignment.center,
-                                  children: [
-                                    Icon(Icons.flash_on, color: Colors.white, size: 20),
-                                    SizedBox(width: 8),
-                                    Text(
-                                      AppLocalizations.of(context)!.quickSell,
-                                      style: TextStyle(
-                                        color: Colors.white,
-                                        fontWeight: FontWeight.bold,
-                                        fontSize: 16,
-                                        letterSpacing: 1.5,
-                                      ),
+                              ),
+                              icon: Icon(Icons.phone),
+                              label: Text('Call Seller'),
+                              onPressed: () async {
+                                final String raw = car!['contact_phone']
+                                    .toString();
+                                final String digits = raw.replaceAll(
+                                  RegExp(r'[^0-9]'),
+                                  '',
+                                );
+
+                                final Uri callUri = Uri.parse('tel:$digits');
+
+                                bool launched = await launchUrl(
+                                  callUri,
+                                  mode: LaunchMode.externalApplication,
+                                ).catchError((_) => false);
+
+                                if (launched) {
+                                  // Track call for analytics
+                                  await AnalyticsService.trackCall(
+                                    widget.carId.toString(),
+                                  );
+                                } else if (mounted) {
+                                  ScaffoldMessenger.of(context).showSnackBar(
+                                    SnackBar(
+                                      content: Text('Unable to make call'),
                                     ),
-                                  ],
-                                ),
-                              ),
-                            // Title and price moved below the image header
-                            Text(
-                              car!['title']?.toString() ?? '',
-                              style: TextStyle(
-                                fontSize: 22,
-                                fontWeight: FontWeight.bold,
-                                color: Colors.white,
-                              ),
-                              maxLines: 2,
-                              overflow: TextOverflow.ellipsis,
+                                  );
+                                }
+                              },
                             ),
-                            SizedBox(height: 8),
-                            if (car!['price'] != null)
-                              Text(
-                                _formatCurrencyGlobal(context, car!['price']),
-                                style: TextStyle(
-                                  fontSize: 18,
-                                  fontWeight: FontWeight.w700,
-                                  color: Color(0xFFFF6B00),
-                                ),
-                              ),
-                            SizedBox(height: 16),
-                            // Actions
-                            SizedBox(height: 8),
-                            if (car!['contact_phone'] != null && car!['contact_phone'].toString().isNotEmpty)
-                              SizedBox(
-                                width: double.infinity,
-                                child: ElevatedButton.icon(
-                                  style: ElevatedButton.styleFrom(
-                                    backgroundColor: Color(0xFF25D366),
-                                    foregroundColor: Colors.white,
-                                    padding: EdgeInsets.symmetric(vertical: 14),
-                                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-                                  ),
-                                  icon: Icon(Icons.chat),
-                                  label: Text(AppLocalizations.of(context)!.chatOnWhatsApp),
-                                  onPressed: () async {
-final String raw = car!['contact_phone'].toString();
-                                    final String digits = raw.replaceAll(RegExp(r'[^0-9]'), '');
-                                    final String msg = Uri.encodeComponent('Hi, I am interested in your ${car!['title'] ?? 'car'}');
+                          ),
+                          SizedBox(height: 12),
+                        ],
 
-                                    final Uri waApp = Uri.parse('whatsapp://send?phone=$digits&text=$msg');
-                                    final Uri waWeb = Uri.parse('https://wa.me/$digits?text=$msg');
+                        Text(
+                          AppLocalizations.of(context)!.specificationsLabel,
+                          style: TextStyle(
+                            fontSize: 16,
+                            fontWeight: FontWeight.bold,
+                            color: Color(0xFFFF6B00),
+                          ),
+                        ),
+                        SizedBox(height: 12),
+                        _buildSpecsGrid(),
+                        SizedBox(height: 24),
 
-                                    bool launched = await launchUrl(
-                                      waApp,
-                                      mode: LaunchMode.externalNonBrowserApplication,
-                                    ).catchError((_) => false);
-                                    if (!launched) {
-                                      launched = await launchUrl(
-                                        waWeb,
-                                        mode: LaunchMode.externalApplication,
-                                      ).catchError((_) => false);
-                                    }
-                                    if (!launched) {
-                                      launched = await launchUrl(
-                                        waWeb,
-                                        mode: LaunchMode.platformDefault,
-                                      ).catchError((_) => false);
-                                    }
-                                    if (!launched && mounted) {
-                                      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(AppLocalizations.of(context)!.unableToOpenWhatsApp)));
-                                    } else if (launched) {
-                                      // Track message for analytics
-                                      await AnalyticsService.trackMessage(widget.carId.toString());
-                                    }
-                                  },
-                                ),
-                              ),
-                            if (car!['contact_phone'] != null && car!['contact_phone'].toString().isNotEmpty) ...[
-                              SizedBox(height: 12),
-                              SizedBox(
-                                width: double.infinity,
-                                child: ElevatedButton.icon(
-                                  style: ElevatedButton.styleFrom(
-                                    backgroundColor: Color(0xFF007AFF),
-                                    foregroundColor: Colors.white,
-                                    padding: EdgeInsets.symmetric(vertical: 14),
-                                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-                                  ),
-                                  icon: Icon(Icons.phone),
-                                  label: Text('Call Seller'),
-                                  onPressed: () async {
-                                    final String raw = car!['contact_phone'].toString();
-                                    final String digits = raw.replaceAll(RegExp(r'[^0-9]'), '');
-                                    
-                                    final Uri callUri = Uri.parse('tel:$digits');
-                                    
-                                    bool launched = await launchUrl(
-                                      callUri,
-                                      mode: LaunchMode.externalApplication,
-                                    ).catchError((_) => false);
-                                    
-                                    if (launched) {
-                                      // Track call for analytics
-                                      await AnalyticsService.trackCall(widget.carId.toString());
-                                    } else if (mounted) {
-                                      ScaffoldMessenger.of(context).showSnackBar(
-                                        SnackBar(content: Text('Unable to make call')),
-                                      );
-                                    }
-                                  },
-                                ),
-                              ),
-                              SizedBox(height: 12),
-                            ],
-                            
-                            Text(
-                              AppLocalizations.of(context)!.specificationsLabel,
-                              style: TextStyle(
-                                fontSize: 16,
-                                fontWeight: FontWeight.bold,
-                                color: Color(0xFFFF6B00),
-                              ),
+                        // Videos Section
+                        if (_videoUrls.isNotEmpty) ...[
+                          Text(
+                            AppLocalizations.of(context)!.vehicleVideos,
+                            style: TextStyle(
+                              fontSize: 16,
+                              fontWeight: FontWeight.bold,
+                              color: Color(0xFFFF6B00),
                             ),
-                            SizedBox(height: 12),
-                            _buildSpecsGrid(),
-                            SizedBox(height: 24),
-                            
-                            // Videos Section
-                            if (_videoUrls.isNotEmpty) ...[
-                              Text(
-                                AppLocalizations.of(context)!.vehicleVideos,
-                                style: TextStyle(
-                                  fontSize: 16,
-                                  fontWeight: FontWeight.bold,
-                                  color: Color(0xFFFF6B00),
-                                ),
-                              ),
-                              SizedBox(height: 12),
-                              GridView.builder(
-                                shrinkWrap: true,
-                                physics: NeverScrollableScrollPhysics(),
-                                gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
+                          ),
+                          SizedBox(height: 12),
+                          GridView.builder(
+                            shrinkWrap: true,
+                            physics: NeverScrollableScrollPhysics(),
+                            gridDelegate:
+                                SliverGridDelegateWithFixedCrossAxisCount(
                                   crossAxisCount: 1,
                                   childAspectRatio: 16 / 9,
                                   crossAxisSpacing: 8,
                                   mainAxisSpacing: 8,
                                 ),
-                                itemCount: _videoUrls.length,
-                                itemBuilder: (context, index) {
-                                  return Container(
-                                    decoration: BoxDecoration(
-                                      borderRadius: BorderRadius.circular(12),
-                                      color: Colors.grey[900],
-                                    ),
-                                    child: ClipRRect(
-                                      borderRadius: BorderRadius.circular(12),
-                                      child: Stack(
-                                        alignment: Alignment.center,
-                                        children: [
-                                          Container(
-                                            width: double.infinity,
-                                            height: double.infinity,
-                                            color: Colors.grey[800],
-                                            child: Icon(
-                                              Icons.videocam,
-                                              size: 48,
-                                              color: Colors.grey[400],
-                                            ),
-                                          ),
-                                          Container(
-                                            decoration: BoxDecoration(
-                                              color: Colors.black54,
-                                              shape: BoxShape.circle,
-                                            ),
-                                            padding: EdgeInsets.all(12),
-                                            child: Icon(
-                                              Icons.play_arrow,
-                                              color: Colors.white,
-                                              size: 32,
-                                            ),
-                                          ),
-                                          Positioned(
-                                            bottom: 8,
-                                            left: 8,
-                                            child: Container(
-                                              padding: EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-                                              decoration: BoxDecoration(
-                                                color: Colors.black54,
-                                                borderRadius: BorderRadius.circular(4),
-                                              ),
-                                              child: Text(
-                                                AppLocalizations.of(context)!.videoIndex((index + 1).toString()),
-                                                style: TextStyle(
-                                                  color: Colors.white,
-                                                  fontSize: 12,
-                                                  fontWeight: FontWeight.w500,
-                                                ),
-                                              ),
-                                            ),
-                                          ),
-                                        ],
-                                      ),
-                                    ),
-                                  );
-                                },
-                              ),
-                              SizedBox(height: 24),
-                            ],
-                            Row(
-                              children: [
-                                Expanded(
-                                  child: Column(
-                                    crossAxisAlignment: CrossAxisAlignment.stretch,
+                            itemCount: _videoUrls.length,
+                            itemBuilder: (context, index) {
+                              return Container(
+                                decoration: BoxDecoration(
+                                  borderRadius: BorderRadius.circular(12),
+                                  color: Colors.grey[900],
+                                ),
+                                child: ClipRRect(
+                                  borderRadius: BorderRadius.circular(12),
+                                  child: Stack(
+                                    alignment: Alignment.center,
                                     children: [
-                                      FilledButton.icon(
-                                        onPressed: _toggleFavoriteOnServer,
-                                        icon: Icon(isFavorite ? Icons.favorite : Icons.favorite_border),
-                                        label: Text(isFavorite ? AppLocalizations.of(context)!.saved : AppLocalizations.of(context)!.save),
-                                      ),
-                                      SizedBox(height: 8),
-                                      SizedBox(
+                                      Container(
                                         width: double.infinity,
-                                        child: ComparisonButton(car: car!),
+                                        height: double.infinity,
+                                        color: Colors.grey[800],
+                                        child: Icon(
+                                          Icons.videocam,
+                                          size: 48,
+                                          color: Colors.grey[400],
+                                        ),
+                                      ),
+                                      Container(
+                                        decoration: BoxDecoration(
+                                          color: Colors.black54,
+                                          shape: BoxShape.circle,
+                                        ),
+                                        padding: EdgeInsets.all(12),
+                                        child: Icon(
+                                          Icons.play_arrow,
+                                          color: Colors.white,
+                                          size: 32,
+                                        ),
+                                      ),
+                                      Positioned(
+                                        bottom: 8,
+                                        left: 8,
+                                        child: Container(
+                                          padding: EdgeInsets.symmetric(
+                                            horizontal: 8,
+                                            vertical: 4,
+                                          ),
+                                          decoration: BoxDecoration(
+                                            color: Colors.black54,
+                                            borderRadius: BorderRadius.circular(
+                                              4,
+                                            ),
+                                          ),
+                                          child: Text(
+                                            AppLocalizations.of(
+                                              context,
+                                            )!.videoIndex(
+                                              (index + 1).toString(),
+                                            ),
+                                            style: TextStyle(
+                                              color: Colors.white,
+                                              fontSize: 12,
+                                              fontWeight: FontWeight.w500,
+                                            ),
+                                          ),
+                                        ),
                                       ),
                                     ],
                                   ),
                                 ),
-                                SizedBox(width: 8),
-                                Expanded(
-                                  child: Column(
-                                    crossAxisAlignment: CrossAxisAlignment.stretch,
-                                    children: [
-                                      OutlinedButton.icon(
-                                        onPressed: _shareCar,
-                                        icon: Icon(Icons.share),
-                                        label: Text('Share'),
-                                      ),
-                                      SizedBox(height: 8),
-                                      OutlinedButton.icon(
-                                        onPressed: () => Navigator.of(context).maybePop(),
-                                        icon: Icon(Icons.list_alt),
-                                        label: Text(AppLocalizations.of(context)!.backToList),
-                                      ),
-                                    ],
+                              );
+                            },
+                          ),
+                          SizedBox(height: 24),
+                        ],
+                        Row(
+                          children: [
+                            Expanded(
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.stretch,
+                                children: [
+                                  FilledButton.icon(
+                                    onPressed: _toggleFavoriteOnServer,
+                                    icon: Icon(
+                                      isFavorite
+                                          ? Icons.favorite
+                                          : Icons.favorite_border,
+                                    ),
+                                    label: Text(
+                                      isFavorite
+                                          ? AppLocalizations.of(context)!.saved
+                                          : AppLocalizations.of(context)!.save,
+                                    ),
                                   ),
-                                ),
-                              ],
+                                  SizedBox(height: 8),
+                                  SizedBox(
+                                    width: double.infinity,
+                                    child: ComparisonButton(car: car!),
+                                  ),
+                                ],
+                              ),
                             ),
-                            SizedBox(height: 28),
-                            if (similarCars.isNotEmpty) ...[
-                              Text(AppLocalizations.of(context)!.similarListings, style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: Colors.white)),
-                              SizedBox(height: 12),
-                              _buildHorizontalList(similarCars),
-                              SizedBox(height: 28),
-                            ] else if (loadingSimilar) ...[
-                              Text(AppLocalizations.of(context)!.similarListings, style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: Colors.white)),
-                              SizedBox(height: 12),
-                              SizedBox(height: 120, child: Center(child: CircularProgressIndicator())),
-                              SizedBox(height: 28),
-                            ],
-                            if (relatedCars.isNotEmpty) ...[
-                              Text(AppLocalizations.of(context)!.relatedListings, style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: Colors.white)),
-                              SizedBox(height: 12),
-                              _buildHorizontalList(relatedCars),
-                            ] else if (loadingRelated) ...[
-                              Text(AppLocalizations.of(context)!.relatedListings, style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: Colors.white)),
-                              SizedBox(height: 12),
-                              SizedBox(height: 120, child: Center(child: CircularProgressIndicator())),
-                            ],
+                            SizedBox(width: 8),
+                            Expanded(
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.stretch,
+                                children: [
+                                  OutlinedButton.icon(
+                                    onPressed: _shareCar,
+                                    icon: Icon(Icons.share),
+                                    label: Text('Share'),
+                                  ),
+                                  SizedBox(height: 8),
+                                  OutlinedButton.icon(
+                                    onPressed: () =>
+                                        Navigator.of(context).maybePop(),
+                                    icon: Icon(Icons.list_alt),
+                                    label: Text(
+                                      AppLocalizations.of(context)!.backToList,
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            ),
                           ],
                         ),
-                      ),
+                        SizedBox(height: 28),
+                        if (similarCars.isNotEmpty) ...[
+                          Text(
+                            AppLocalizations.of(context)!.similarListings,
+                            style: TextStyle(
+                              fontSize: 16,
+                              fontWeight: FontWeight.bold,
+                              color: Colors.white,
+                            ),
+                          ),
+                          SizedBox(height: 12),
+                          _buildHorizontalList(similarCars),
+                          SizedBox(height: 28),
+                        ] else if (loadingSimilar) ...[
+                          Text(
+                            AppLocalizations.of(context)!.similarListings,
+                            style: TextStyle(
+                              fontSize: 16,
+                              fontWeight: FontWeight.bold,
+                              color: Colors.white,
+                            ),
+                          ),
+                          SizedBox(height: 12),
+                          SizedBox(
+                            height: 120,
+                            child: Center(child: CircularProgressIndicator()),
+                          ),
+                          SizedBox(height: 28),
+                        ],
+                        if (relatedCars.isNotEmpty) ...[
+                          Text(
+                            AppLocalizations.of(context)!.relatedListings,
+                            style: TextStyle(
+                              fontSize: 16,
+                              fontWeight: FontWeight.bold,
+                              color: Colors.white,
+                            ),
+                          ),
+                          SizedBox(height: 12),
+                          _buildHorizontalList(relatedCars),
+                        ] else if (loadingRelated) ...[
+                          Text(
+                            AppLocalizations.of(context)!.relatedListings,
+                            style: TextStyle(
+                              fontSize: 16,
+                              fontWeight: FontWeight.bold,
+                              color: Colors.white,
+                            ),
+                          ),
+                          SizedBox(height: 12),
+                          SizedBox(
+                            height: 120,
+                            child: Center(child: CircularProgressIndicator()),
+                          ),
+                        ],
+                      ],
                     ),
-                  ],
+                  ),
                 ),
+              ],
+            ),
     );
   }
 
@@ -6393,7 +10193,11 @@ final String raw = car!['contact_phone'].toString();
   }
 
   // Styled detail row with icon, label and value pill
-  Widget _detailRow({required IconData icon, required String label, required String? value}) {
+  Widget _detailRow({
+    required IconData icon,
+    required String label,
+    required String? value,
+  }) {
     if (value == null || value.isEmpty) return SizedBox.shrink();
     return Container(
       margin: EdgeInsets.only(bottom: 8),
@@ -6417,7 +10221,11 @@ final String raw = car!['contact_phone'].toString();
           Expanded(
             child: Text(
               label,
-              style: TextStyle(color: Colors.white70, fontSize: 14, fontWeight: FontWeight.w600),
+              style: TextStyle(
+                color: Colors.white70,
+                fontSize: 14,
+                fontWeight: FontWeight.w600,
+              ),
             ),
           ),
           Container(
@@ -6428,7 +10236,10 @@ final String raw = car!['contact_phone'].toString();
             ),
             child: Text(
               value,
-              style: TextStyle(color: Colors.black, fontWeight: FontWeight.w800),
+              style: TextStyle(
+                color: Colors.black,
+                fontWeight: FontWeight.w800,
+              ),
             ),
           ),
           // Inline overlay only belongs to HomePage, not here
@@ -6437,57 +10248,210 @@ final String raw = car!['contact_phone'].toString();
     );
   }
 
-
-
-
-
   Widget _buildSpecsGrid() {
     // Primary fields
     final List<_SpecItem> primary = [
-      _SpecItem(icon: Icons.calendar_month, label: AppLocalizations.of(context)!.yearLabel, value: car!['year'] != null ? _localizeDigitsGlobal(context, car!['year'].toString()) : null),
-      _SpecItem(icon: Icons.speed, label: AppLocalizations.of(context)!.mileageLabel, value: car!['mileage'] != null ? '${_localizeDigitsGlobal(context, _formatPrice(car!['mileage'].toString()))} ${AppLocalizations.of(context)!.unit_km}' : null),
-      _SpecItem(icon: Icons.settings, label: AppLocalizations.of(context)!.transmissionLabel, value: _translateValueGlobal(context, _getFirstNonEmpty(car!, ['transmission']))),
-      _SpecItem(icon: Icons.location_city, label: AppLocalizations.of(context)!.cityLabel, value: car!['city'] != null ? _translateValueGlobal(context, car!['city'].toString()) ?? car!['city'].toString() : null),
-      _SpecItem(icon: Icons.assignment_turned_in, label: AppLocalizations.of(context)!.titleStatus, value: car!['title_status'] != null
-          ? (car!['title_status'].toString().toLowerCase() == 'damaged'
-              ? (AppLocalizations.of(context)!.value_title_damaged + (car!['damaged_parts'] != null ? ' (${_localizeDigitsGlobal(context, car!['damaged_parts'].toString())} ${AppLocalizations.of(context)!.damagedParts})' : ''))
-              : AppLocalizations.of(context)!.value_title_clean)
-          : null),
-      _SpecItem(icon: Icons.local_gas_station, label: AppLocalizations.of(context)!.detail_fuel, value: _translateValueGlobal(context, _getFirstNonEmpty(car!, ['fuel_type']))),
+      _SpecItem(
+        icon: Icons.calendar_month,
+        label: AppLocalizations.of(context)!.yearLabel,
+        value: car!['year'] != null
+            ? _localizeDigitsGlobal(context, car!['year'].toString())
+            : null,
+      ),
+      _SpecItem(
+        icon: Icons.speed,
+        label: AppLocalizations.of(context)!.mileageLabel,
+        value: car!['mileage'] != null
+            ? '${_localizeDigitsGlobal(context, _formatPrice(car!['mileage'].toString()))} ${AppLocalizations.of(context)!.unit_km}'
+            : null,
+      ),
+      _SpecItem(
+        icon: Icons.settings,
+        label: AppLocalizations.of(context)!.transmissionLabel,
+        value: _translateValueGlobal(
+          context,
+          _getFirstNonEmpty(car!, ['transmission']),
+        ),
+      ),
+      _SpecItem(
+        icon: Icons.location_city,
+        label: AppLocalizations.of(context)!.cityLabel,
+        value: car!['city'] != null
+            ? _translateValueGlobal(context, car!['city'].toString()) ??
+                  car!['city'].toString()
+            : null,
+      ),
+      _SpecItem(
+        icon: Icons.assignment_turned_in,
+        label: AppLocalizations.of(context)!.titleStatus,
+        value: car!['title_status'] != null
+            ? (car!['title_status'].toString().toLowerCase() == 'damaged'
+                  ? (AppLocalizations.of(context)!.value_title_damaged +
+                        (car!['damaged_parts'] != null
+                            ? ' (${_localizeDigitsGlobal(context, car!['damaged_parts'].toString())} ${AppLocalizations.of(context)!.damagedParts})'
+                            : ''))
+                  : AppLocalizations.of(context)!.value_title_clean)
+            : null,
+      ),
+      _SpecItem(
+        icon: Icons.local_gas_station,
+        label: AppLocalizations.of(context)!.detail_fuel,
+        value: _translateValueGlobal(
+          context,
+          _getFirstNonEmpty(car!, ['fuel_type']),
+        ),
+      ),
     ];
 
     // Vertical list for detailed specs below the big labels
-    final String? engineSize = _getFirstNonEmpty(car!, ['engine_size', 'engineSize', 'engine']);
+    final String? engineSize = _getFirstNonEmpty(car!, [
+      'engine_size',
+      'engineSize',
+      'engine',
+    ]);
     final List<Widget> details = [
-      _detailRow(icon: Icons.place, label: AppLocalizations.of(context)!.cityLabel, value: _translateValueGlobal(context, _getFirstNonEmpty(car!, ['city']))),
-      _detailRow(icon: Icons.check_circle, label: AppLocalizations.of(context)!.detail_condition, value: _translateValueGlobal(context, _getFirstNonEmpty(car!, ['condition']))),
-      _detailRow(icon: Icons.settings, label: AppLocalizations.of(context)!.transmissionLabel, value: _translateValueGlobal(context, _getFirstNonEmpty(car!, ['transmission']))),
-      _detailRow(icon: Icons.local_gas_station, label: AppLocalizations.of(context)!.detail_fuel, value: _translateValueGlobal(context, _getFirstNonEmpty(car!, ['fuel_type', 'fuelType', 'fuel']))),
-      _detailRow(icon: Icons.directions_car_filled, label: AppLocalizations.of(context)!.detail_body, value: _translateValueGlobal(context, _getFirstNonEmpty(car!, ['body_type', 'bodyType', 'body']))),
-      _detailRow(icon: Icons.color_lens, label: AppLocalizations.of(context)!.detail_color, value: _translateValueGlobal(context, _getFirstNonEmpty(car!, ['color']))),
-      _detailRow(icon: Icons.drive_eta, label: AppLocalizations.of(context)!.detail_drive, value: _translateValueGlobal(context, _getFirstNonEmpty(car!, ['drive_type', 'driveType', 'drivetrain', 'drive']))),
-      _detailRow(icon: Icons.settings_input_component, label: AppLocalizations.of(context)!.detail_cylinders, value: _localizeDigitsGlobal(context, _getFirstNonEmpty(car!, ['cylinder_count', 'cylinders', 'cylinderCount']) ?? '')),
-      _detailRow(icon: Icons.straighten, label: AppLocalizations.of(context)!.detail_engine, value: engineSize != null ? '${_localizeDigitsGlobal(context, engineSize.toString())}${AppLocalizations.of(context)!.unit_liter_suffix}' : null),
-      _detailRow(icon: Icons.airline_seat_recline_normal, label: AppLocalizations.of(context)!.detail_seating, value: _localizeDigitsGlobal(context, _getFirstNonEmpty(car!, ['seating', 'seats', 'seatCount']) ?? '')),
-      _detailRow(icon: Icons.assignment_turned_in, label: AppLocalizations.of(context)!.titleStatus, value: car!['title_status'] != null
-          ? (car!['title_status'].toString().toLowerCase() == 'damaged'
-              ? (AppLocalizations.of(context)!.value_title_damaged + (car!['damaged_parts'] != null ? ' (${_localizeDigitsGlobal(context, car!['damaged_parts'].toString())} ${AppLocalizations.of(context)!.damagedParts})' : ''))
-              : AppLocalizations.of(context)!.value_title_clean)
-          : null),
-      _detailRow(icon: Icons.person_outline, label: _ownersLabelGlobal(context), value: _localizeDigitsGlobal(context, _getFirstNonEmpty(car!, ['owners', 'owner_count', 'ownerCount']) ?? '')),
-      _detailRow(icon: Icons.qr_code_2, label: _vinLabelGlobal(context), value: _getFirstNonEmpty(car!, ['vin'])),
-      _detailRow(icon: Icons.report_gmailerrorred, label: _accidentHistoryLabelGlobal(context), value: (() {
-        final v = _getFirstNonEmpty(car!, ['accident_history', 'accidentHistory']);
-        if (v == null) return null;
-        final s = v.toString().toLowerCase();
-        if (s == '1' || s == 'true' || s == 'yes') return _yesTextGlobal(context);
-        if (s == '0' || s == 'false' || s == 'no') return _noTextGlobal(context);
-        return v.toString();
-      })()),
-      _detailRow(icon: Icons.phone, label: AppLocalizations.of(context)!.phoneLabel, value: _getFirstNonEmpty(car!, ['contact_phone'])),
+      _detailRow(
+        icon: Icons.place,
+        label: AppLocalizations.of(context)!.cityLabel,
+        value: _translateValueGlobal(
+          context,
+          _getFirstNonEmpty(car!, ['city']),
+        ),
+      ),
+      _detailRow(
+        icon: Icons.check_circle,
+        label: AppLocalizations.of(context)!.detail_condition,
+        value: _translateValueGlobal(
+          context,
+          _getFirstNonEmpty(car!, ['condition']),
+        ),
+      ),
+      _detailRow(
+        icon: Icons.settings,
+        label: AppLocalizations.of(context)!.transmissionLabel,
+        value: _translateValueGlobal(
+          context,
+          _getFirstNonEmpty(car!, ['transmission']),
+        ),
+      ),
+      _detailRow(
+        icon: Icons.local_gas_station,
+        label: AppLocalizations.of(context)!.detail_fuel,
+        value: _translateValueGlobal(
+          context,
+          _getFirstNonEmpty(car!, ['fuel_type', 'fuelType', 'fuel']),
+        ),
+      ),
+      _detailRow(
+        icon: Icons.directions_car_filled,
+        label: AppLocalizations.of(context)!.detail_body,
+        value: _translateValueGlobal(
+          context,
+          _getFirstNonEmpty(car!, ['body_type', 'bodyType', 'body']),
+        ),
+      ),
+      _detailRow(
+        icon: Icons.color_lens,
+        label: AppLocalizations.of(context)!.detail_color,
+        value: _translateValueGlobal(
+          context,
+          _getFirstNonEmpty(car!, ['color']),
+        ),
+      ),
+      _detailRow(
+        icon: Icons.drive_eta,
+        label: AppLocalizations.of(context)!.detail_drive,
+        value: _translateValueGlobal(
+          context,
+          _getFirstNonEmpty(car!, [
+            'drive_type',
+            'driveType',
+            'drivetrain',
+            'drive',
+          ]),
+        ),
+      ),
+      _detailRow(
+        icon: Icons.settings_input_component,
+        label: AppLocalizations.of(context)!.detail_cylinders,
+        value: _localizeDigitsGlobal(
+          context,
+          _getFirstNonEmpty(car!, [
+                'cylinder_count',
+                'cylinders',
+                'cylinderCount',
+              ]) ??
+              '',
+        ),
+      ),
+      _detailRow(
+        icon: Icons.straighten,
+        label: AppLocalizations.of(context)!.detail_engine,
+        value: engineSize != null
+            ? '${_localizeDigitsGlobal(context, engineSize.toString())}${AppLocalizations.of(context)!.unit_liter_suffix}'
+            : null,
+      ),
+      _detailRow(
+        icon: Icons.airline_seat_recline_normal,
+        label: AppLocalizations.of(context)!.detail_seating,
+        value: _localizeDigitsGlobal(
+          context,
+          _getFirstNonEmpty(car!, ['seating', 'seats', 'seatCount']) ?? '',
+        ),
+      ),
+      _detailRow(
+        icon: Icons.assignment_turned_in,
+        label: AppLocalizations.of(context)!.titleStatus,
+        value: car!['title_status'] != null
+            ? (car!['title_status'].toString().toLowerCase() == 'damaged'
+                  ? (AppLocalizations.of(context)!.value_title_damaged +
+                        (car!['damaged_parts'] != null
+                            ? ' (${_localizeDigitsGlobal(context, car!['damaged_parts'].toString())} ${AppLocalizations.of(context)!.damagedParts})'
+                            : ''))
+                  : AppLocalizations.of(context)!.value_title_clean)
+            : null,
+      ),
+      _detailRow(
+        icon: Icons.person_outline,
+        label: _ownersLabelGlobal(context),
+        value: _localizeDigitsGlobal(
+          context,
+          _getFirstNonEmpty(car!, ['owners', 'owner_count', 'ownerCount']) ??
+              '',
+        ),
+      ),
+      _detailRow(
+        icon: Icons.qr_code_2,
+        label: _vinLabelGlobal(context),
+        value: _getFirstNonEmpty(car!, ['vin']),
+      ),
+      _detailRow(
+        icon: Icons.report_gmailerrorred,
+        label: _accidentHistoryLabelGlobal(context),
+        value: (() {
+          final v = _getFirstNonEmpty(car!, [
+            'accident_history',
+            'accidentHistory',
+          ]);
+          if (v == null) return null;
+          final s = v.toString().toLowerCase();
+          if (s == '1' || s == 'true' || s == 'yes')
+            return _yesTextGlobal(context);
+          if (s == '0' || s == 'false' || s == 'no')
+            return _noTextGlobal(context);
+          return v.toString();
+        })(),
+      ),
+      _detailRow(
+        icon: Icons.phone,
+        label: AppLocalizations.of(context)!.phoneLabel,
+        value: _getFirstNonEmpty(car!, ['contact_phone']),
+      ),
     ];
 
-    final primItems = primary.where((i) => i.value != null && i.value!.isNotEmpty).toList();
+    final primItems = primary
+        .where((i) => i.value != null && i.value!.isNotEmpty)
+        .toList();
 
     final primGrid = GridView.builder(
       shrinkWrap: true,
@@ -6504,13 +10468,10 @@ final String raw = car!['contact_phone'].toString();
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        primGrid,
-        SizedBox(height: 12),
-        ...details,
-      ],
+      children: [primGrid, SizedBox(height: 12), ...details],
     );
   }
+
   Widget _buildSpecCard(_SpecItem item) {
     return Container(
       padding: EdgeInsets.symmetric(horizontal: 12, vertical: 12),
@@ -6561,8 +10522,6 @@ final String raw = car!['contact_phone'].toString();
     );
   }
 
-  
-
   Widget _buildSpecCardSmall(_SpecItem item) {
     return Container(
       padding: EdgeInsets.symmetric(horizontal: 10, vertical: 8),
@@ -6583,7 +10542,11 @@ final String raw = car!['contact_phone'].toString();
                   item.label,
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,
-                  style: TextStyle(fontSize: 11, color: Colors.black, fontWeight: FontWeight.w800),
+                  style: TextStyle(
+                    fontSize: 11,
+                    color: Colors.black,
+                    fontWeight: FontWeight.w800,
+                  ),
                 ),
               ),
             ],
@@ -6593,7 +10556,11 @@ final String raw = car!['contact_phone'].toString();
             item.value!,
             maxLines: 1,
             overflow: TextOverflow.ellipsis,
-            style: TextStyle(fontSize: 13, color: Colors.black, fontWeight: FontWeight.w700),
+            style: TextStyle(
+              fontSize: 13,
+              color: Colors.black,
+              fontWeight: FontWeight.w700,
+            ),
           ),
         ],
       ),
@@ -6619,7 +10586,11 @@ final String raw = car!['contact_phone'].toString();
     return InkWell(
       onTap: () {
         // Analytics tracking for view listing
-        Navigator.pushNamed(context, '/car_detail', arguments: {'carId': data['id']});
+        Navigator.pushNamed(
+          context,
+          '/car_detail',
+          arguments: {'carId': data['id']},
+        );
       },
       child: Container(
         width: 160,
@@ -6635,7 +10606,9 @@ final String raw = car!['contact_phone'].toString();
               borderRadius: BorderRadius.vertical(top: Radius.circular(12)),
               child: () {
                 final String primary = (data['image_url'] ?? '').toString();
-                final List<dynamic> imgs = (data['images'] is List) ? (data['images'] as List) : const [];
+                final List<dynamic> imgs = (data['images'] is List)
+                    ? (data['images'] as List)
+                    : const [];
                 final String rel = primary.isNotEmpty
                     ? primary
                     : (imgs.isNotEmpty ? imgs.first.toString() : '');
@@ -6645,11 +10618,25 @@ final String raw = car!['contact_phone'].toString();
                     height: 110,
                     width: 160,
                     fit: BoxFit.cover,
-                    placeholder: (_, __) => Container(height: 110, width: 160, color: Colors.white10),
-                    errorWidget: (_, __, ___) => Container(height: 110, width: 160, color: Colors.black26, child: Icon(Icons.directions_car, color: Colors.white38)),
+                    placeholder: (_, __) => Container(
+                      height: 110,
+                      width: 160,
+                      color: Colors.white10,
+                    ),
+                    errorWidget: (_, __, ___) => Container(
+                      height: 110,
+                      width: 160,
+                      color: Colors.black26,
+                      child: Icon(Icons.directions_car, color: Colors.white38),
+                    ),
                   );
                 }
-                return Container(height: 110, width: 160, color: Colors.black26, child: Icon(Icons.directions_car, color: Colors.white38));
+                return Container(
+                  height: 110,
+                  width: 160,
+                  color: Colors.black26,
+                  child: Icon(Icons.directions_car, color: Colors.white38),
+                );
               }(),
             ),
             Padding(
@@ -6661,13 +10648,19 @@ final String raw = car!['contact_phone'].toString();
                     data['title']?.toString() ?? '',
                     maxLines: 1,
                     overflow: TextOverflow.ellipsis,
-                    style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold),
+                    style: TextStyle(
+                      color: Colors.white,
+                      fontWeight: FontWeight.bold,
+                    ),
                   ),
                   SizedBox(height: 4),
                   if (data['price'] != null)
                     Text(
                       _formatCurrencyGlobal(context, data['price']),
-                      style: TextStyle(color: Color(0xFFFF6B00), fontWeight: FontWeight.w600),
+                      style: TextStyle(
+                        color: Color(0xFFFF6B00),
+                        fontWeight: FontWeight.w600,
+                      ),
                     ),
                 ],
               ),
@@ -6684,8 +10677,13 @@ final String raw = car!['contact_phone'].toString();
       padding: const EdgeInsets.symmetric(vertical: 6.0),
       child: Row(
         children: [
-          SizedBox(width: 120, child: Text(label, style: TextStyle(color: Colors.white70))),
-          Expanded(child: Text(value, style: TextStyle(color: Colors.white))),
+          SizedBox(
+            width: 120,
+            child: Text(label, style: TextStyle(color: Colors.white70)),
+          ),
+          Expanded(
+            child: Text(value, style: TextStyle(color: Colors.white)),
+          ),
         ],
       ),
     );
@@ -6697,7 +10695,12 @@ class _SpecItem {
   final String label;
   final String? value;
   final bool isSecondary;
-  _SpecItem({required this.icon, required this.label, required this.value, this.isSecondary = false});
+  _SpecItem({
+    required this.icon,
+    required this.label,
+    required this.value,
+    this.isSecondary = false,
+  });
 }
 
 // Removed old AddListingPage in favor of the new multi-step SellCarPage
@@ -6711,10 +10714,10 @@ class SellCarPage extends StatefulWidget {
 class _SellCarPageState extends State<SellCarPage> {
   int currentStep = 0;
   final PageController _pageController = PageController();
-  
+
   // Car data that will be passed between steps
   Map<String, dynamic> carData = {};
-  
+
   final List<Widget> steps = [
     SellStep1Page(),
     SellStep2Page(),
@@ -6722,7 +10725,7 @@ class _SellCarPageState extends State<SellCarPage> {
     SellStep4Page(),
     SellStep5Page(),
   ];
-  
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -6760,9 +10763,9 @@ class _SellCarPageState extends State<SellCarPage> {
                     margin: EdgeInsets.symmetric(horizontal: 4),
                     height: 4,
                     decoration: BoxDecoration(
-                      color: index <= currentStep 
-                        ? Color(0xFFFF6B00) 
-                        : Colors.grey[300],
+                      color: index <= currentStep
+                          ? Color(0xFFFF6B00)
+                          : Colors.grey[300],
                       borderRadius: BorderRadius.circular(2),
                     ),
                   ),
@@ -6814,18 +10817,24 @@ class _SellCarPageState extends State<SellCarPage> {
       ),
     );
   }
-  
+
   String _getStepTitle(int step) {
     switch (step) {
-      case 0: return 'Basic Information';
-      case 1: return 'Car Details';
-      case 2: return 'Pricing & Contact';
-      case 3: return 'Photos & Videos';
-      case 4: return 'Review & Submit';
-      default: return '';
+      case 0:
+        return 'Basic Information';
+      case 1:
+        return 'Car Details';
+      case 2:
+        return 'Pricing & Contact';
+      case 3:
+        return 'Photos & Videos';
+      case 4:
+        return 'Review & Submit';
+      default:
+        return '';
     }
   }
-  
+
   @override
   void dispose() {
     _pageController.dispose();
@@ -6838,6 +10847,7 @@ class SellStep1Page extends StatefulWidget {
   @override
   _SellStep1PageState createState() => _SellStep1PageState();
 }
+
 class _SellStep1PageState extends State<SellStep1Page> {
   final _formKey = GlobalKey<FormState>();
   String? selectedBrand;
@@ -6848,36 +10858,62 @@ class _SellStep1PageState extends State<SellStep1Page> {
   bool errModel = false;
   bool errTrim = false;
   bool errYear = false;
-  
+
   String _brandSlug(String brand) {
     String s = brand.toLowerCase().trim();
     const replacements = {
-      'á': 'a', 'à': 'a', 'â': 'a', 'ä': 'a', 'ã': 'a', 'å': 'a',
-      'é': 'e', 'è': 'e', 'ê': 'e', 'ë': 'e',
-      'í': 'i', 'ì': 'i', 'î': 'i', 'ï': 'i',
-      'ó': 'o', 'ò': 'o', 'ô': 'o', 'ö': 'o', 'õ': 'o', 'ø': 'o',
-      'ú': 'u', 'ù': 'u', 'û': 'u', 'ü': 'u',
-      'ý': 'y', 'ÿ': 'y',
+      'á': 'a',
+      'à': 'a',
+      'â': 'a',
+      'ä': 'a',
+      'ã': 'a',
+      'å': 'a',
+      'é': 'e',
+      'è': 'e',
+      'ê': 'e',
+      'ë': 'e',
+      'í': 'i',
+      'ì': 'i',
+      'î': 'i',
+      'ï': 'i',
+      'ó': 'o',
+      'ò': 'o',
+      'ô': 'o',
+      'ö': 'o',
+      'õ': 'o',
+      'ø': 'o',
+      'ú': 'u',
+      'ù': 'u',
+      'û': 'u',
+      'ü': 'u',
+      'ý': 'y',
+      'ÿ': 'y',
       'ñ': 'n',
-      'ç': 'c', 'č': 'c', 'ć': 'c',
-      'š': 's', 'ß': 'ss',
+      'ç': 'c',
+      'č': 'c',
+      'ć': 'c',
+      'š': 's',
+      'ß': 'ss',
       'ž': 'z',
-      'œ': 'oe', 'æ': 'ae',
+      'œ': 'oe',
+      'æ': 'ae',
       'đ': 'd',
-      'ł': 'l'
+      'ł': 'l',
     };
-    replacements.forEach((k, v) { s = s.replaceAll(k, v); });
+    replacements.forEach((k, v) {
+      s = s.replaceAll(k, v);
+    });
     s = s.replaceAll(RegExp(r"[^a-z0-9]+"), '-');
     s = s.replaceAll(RegExp(r"-+"), '-').replaceAll(RegExp(r"(^-|-$)"), '');
     return s;
   }
-  
+
   @override
   void initState() {
     super.initState();
     _resetSellFilters();
   }
-  
+
   Future<void> _resetSellFilters() async {
     selectedBrand = null;
     selectedModel = null;
@@ -6885,7 +10921,7 @@ class _SellStep1PageState extends State<SellStep1Page> {
     selectedYear = null;
     setState(() {});
   }
-  
+
   Future<String?> _pickFromList(String title, List<String> options) async {
     services.HapticFeedback.selectionClick();
     return await showGeneralDialog<String>(
@@ -6894,65 +10930,106 @@ class _SellStep1PageState extends State<SellStep1Page> {
       barrierLabel: 'dismiss',
       pageBuilder: (context, a1, a2) => const SizedBox.shrink(),
       transitionBuilder: (context, animation, secondaryAnimation, child) {
-        final curved = CurvedAnimation(parent: animation, curve: Curves.easeOutCubic);
+        final curved = CurvedAnimation(
+          parent: animation,
+          curve: Curves.easeOutCubic,
+        );
         return Transform.translate(
           offset: Offset(0, (1 - curved.value) * 30),
           child: Opacity(
             opacity: curved.value,
             child: Dialog(
-          backgroundColor: Colors.grey[900]?.withOpacity(0.98),
-          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
-          child: Container(
-            width: 420,
-            padding: EdgeInsets.all(20),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              backgroundColor: Colors.grey[900]?.withOpacity(0.98),
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(20),
+              ),
+              child: Container(
+                width: 420,
+                padding: EdgeInsets.all(20),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  mainAxisSize: MainAxisSize.min,
                   children: [
-                    Text(title, style: TextStyle(color: Color(0xFFFF6B00), fontWeight: FontWeight.bold, fontSize: 20)),
-                    IconButton(icon: Icon(Icons.close, color: Colors.white), onPressed: () => Navigator.pop(context)),
-                  ],
-                ),
-                SizedBox(height: 10),
-                SizedBox(
-                  height: 400,
-                  child: ListView.separated(
-                    itemCount: options.length,
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      children: [
+                        Text(
+                          title,
+                          style: TextStyle(
+                            color: Color(0xFFFF6B00),
+                            fontWeight: FontWeight.bold,
+                            fontSize: 20,
+                          ),
+                        ),
+                        IconButton(
+                          icon: Icon(Icons.close, color: Colors.white),
+                          onPressed: () => Navigator.pop(context),
+                        ),
+                      ],
+                    ),
+                    SizedBox(height: 10),
+                    SizedBox(
+                      height: 400,
+                      child: ListView.separated(
+                        itemCount: options.length,
                         separatorBuilder: (_, __) => SizedBox(height: 10),
-                    itemBuilder: (context, index) {
-                      final value = options[index];
+                        itemBuilder: (context, index) {
+                          final value = options[index];
                           final lowerTitle = title.toLowerCase();
                           String displayText = value;
-                          final bool isNumeric = RegExp(r'^[0-9]+(\.[0-9]+)?$').hasMatch(value);
+                          final bool isNumeric = RegExp(
+                            r'^[0-9]+(\.[0-9]+)?$',
+                          ).hasMatch(value);
                           if (lowerTitle.contains('price')) {
                             displayText = _formatCurrencyGlobal(context, value);
-                          } else if (lowerTitle.contains('mileage') && isNumeric) {
+                          } else if (lowerTitle.contains('mileage') &&
+                              isNumeric) {
                             final nf = _decimalFormatterGlobal(context);
-                            displayText = _localizeDigitsGlobal(context, nf.format(num.tryParse(value) ?? 0)) + ' ' + AppLocalizations.of(context)!.unit_km;
+                            displayText =
+                                _localizeDigitsGlobal(
+                                  context,
+                                  nf.format(num.tryParse(value) ?? 0),
+                                ) +
+                                ' ' +
+                                AppLocalizations.of(context)!.unit_km;
                           } else if (lowerTitle.contains('year') && isNumeric) {
                             displayText = _localizeDigitsGlobal(context, value);
-                          } else if (lowerTitle.contains('seating') && isNumeric) {
-                            displayText = _localizeDigitsGlobal(context, value) + ' seats';
-                          } else if (lowerTitle.contains('cylinder') && isNumeric) {
-                            displayText = _localizeDigitsGlobal(context, value) + ' cylinders';
-                          } else if (lowerTitle.contains('engine') && isNumeric) {
-                            displayText = _localizeDigitsGlobal(context, value) + ' L';
+                          } else if (lowerTitle.contains('seating') &&
+                              isNumeric) {
+                            displayText =
+                                _localizeDigitsGlobal(context, value) +
+                                ' seats';
+                          } else if (lowerTitle.contains('cylinder') &&
+                              isNumeric) {
+                            displayText =
+                                _localizeDigitsGlobal(context, value) +
+                                ' cylinders';
+                          } else if (lowerTitle.contains('engine') &&
+                              isNumeric) {
+                            displayText =
+                                _localizeDigitsGlobal(context, value) + ' L';
                           } else {
-                            final translated = _translateValueGlobal(context, value);
+                            final translated = _translateValueGlobal(
+                              context,
+                              value,
+                            );
                             if (translated != null) displayText = translated;
                           }
                           return InkWell(
                             borderRadius: BorderRadius.circular(14),
-                        onTap: () => Navigator.pop(context, value),
+                            onTap: () => Navigator.pop(context, value),
                             child: Container(
-                              padding: EdgeInsets.symmetric(vertical: 14, horizontal: 12),
+                              padding: EdgeInsets.symmetric(
+                                vertical: 14,
+                                horizontal: 12,
+                              ),
                               decoration: BoxDecoration(
                                 borderRadius: BorderRadius.circular(14),
                                 gradient: LinearGradient(
-                                  colors: [Colors.white.withOpacity(0.06), Colors.white.withOpacity(0.02)],
+                                  colors: [
+                                    Colors.white.withOpacity(0.06),
+                                    Colors.white.withOpacity(0.02),
+                                  ],
                                   begin: Alignment.topLeft,
                                   end: Alignment.bottomRight,
                                 ),
@@ -6960,16 +11037,27 @@ class _SellStep1PageState extends State<SellStep1Page> {
                               ),
                               child: Row(
                                 children: [
-                                  Expanded(child: Text(displayText, style: TextStyle(color: Colors.white, fontWeight: FontWeight.w600))),
-                                  Icon(Icons.chevron_right, color: Colors.white70),
+                                  Expanded(
+                                    child: Text(
+                                      displayText,
+                                      style: TextStyle(
+                                        color: Colors.white,
+                                        fontWeight: FontWeight.w600,
+                                      ),
+                                    ),
+                                  ),
+                                  Icon(
+                                    Icons.chevron_right,
+                                    color: Colors.white70,
+                                  ),
                                 ],
                               ),
                             ),
-                      );
-                    },
-                  ),
-                )
-              ],
+                          );
+                        },
+                      ),
+                    ),
+                  ],
                 ),
               ),
             ),
@@ -6979,14 +11067,16 @@ class _SellStep1PageState extends State<SellStep1Page> {
       transitionDuration: const Duration(milliseconds: 220),
     );
   }
-  
+
   Future<String?> _pickBrandModal() async {
     return await showDialog<String>(
       context: context,
       builder: (context) {
         return Dialog(
           backgroundColor: Colors.grey[900]?.withOpacity(0.98),
-          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(20),
+          ),
           child: Container(
             width: 480,
             padding: EdgeInsets.all(20),
@@ -6997,8 +11087,18 @@ class _SellStep1PageState extends State<SellStep1Page> {
                 Row(
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
-                    Text(AppLocalizations.of(context)!.selectBrand, style: TextStyle(color: Color(0xFFFF6B00), fontWeight: FontWeight.bold, fontSize: 20)),
-                    IconButton(icon: Icon(Icons.close, color: Colors.white), onPressed: () => Navigator.pop(context)),
+                    Text(
+                      AppLocalizations.of(context)!.selectBrand,
+                      style: TextStyle(
+                        color: Color(0xFFFF6B00),
+                        fontWeight: FontWeight.bold,
+                        fontSize: 20,
+                      ),
+                    ),
+                    IconButton(
+                      icon: Icon(Icons.close, color: Colors.white),
+                      onPressed: () => Navigator.pop(context),
+                    ),
                   ],
                 ),
                 SizedBox(height: 10),
@@ -7017,7 +11117,11 @@ class _SellStep1PageState extends State<SellStep1Page> {
                     itemBuilder: (context, index) {
                       final brand = brands[index];
                       final logoFile = _brandSlug(brand);
-                      final logoUrl = getApiBase() + '/static/images/brands/' + logoFile + '.png';
+                      final logoUrl =
+                          getApiBase() +
+                          '/static/images/brands/' +
+                          logoFile +
+                          '.png';
                       return InkWell(
                         borderRadius: BorderRadius.circular(12),
                         onTap: () => Navigator.pop(context, brand),
@@ -7035,19 +11139,40 @@ class _SellStep1PageState extends State<SellStep1Page> {
                                 width: 32,
                                 height: 32,
                                 padding: EdgeInsets.all(4),
-                                decoration: BoxDecoration(color: Colors.white, borderRadius: BorderRadius.circular(8)),
+                                decoration: BoxDecoration(
+                                  color: Colors.white,
+                                  borderRadius: BorderRadius.circular(8),
+                                ),
                                 child: CachedNetworkImage(
                                   imageUrl: logoUrl,
-                                  placeholder: (context, url) => SizedBox(width: 24, height: 24, child: CircularProgressIndicator(strokeWidth: 2)),
-                                  errorWidget: (context, url, error) => Image.network(
-                                    getApiBase() + '/static/images/brands/default.png',
-                                    fit: BoxFit.contain,
+                                  placeholder: (context, url) => SizedBox(
+                                    width: 24,
+                                    height: 24,
+                                    child: CircularProgressIndicator(
+                                      strokeWidth: 2,
+                                    ),
                                   ),
+                                  errorWidget: (context, url, error) =>
+                                      Image.network(
+                                        getApiBase() +
+                                            '/static/images/brands/default.png',
+                                        fit: BoxFit.contain,
+                                      ),
                                   fit: BoxFit.contain,
                                 ),
                               ),
                               SizedBox(height: 4),
-                              Text(brand, style: TextStyle(fontSize: 10, color: Colors.white, fontWeight: FontWeight.bold), maxLines: 1, overflow: TextOverflow.ellipsis, textAlign: TextAlign.center),
+                              Text(
+                                brand,
+                                style: TextStyle(
+                                  fontSize: 10,
+                                  color: Colors.white,
+                                  fontWeight: FontWeight.bold,
+                                ),
+                                maxLines: 1,
+                                overflow: TextOverflow.ellipsis,
+                                textAlign: TextAlign.center,
+                              ),
                             ],
                           ),
                         ),
@@ -7062,36 +11187,219 @@ class _SellStep1PageState extends State<SellStep1Page> {
       },
     );
   }
-  
+
   final List<String> brands = [
-    'Toyota', 'Volkswagen', 'Ford', 'Honda', 'Hyundai', 'Nissan', 'Chevrolet', 'Kia', 
-    'Mercedes-Benz', 'BMW', 'Audi', 'Lexus', 'Mazda', 'Subaru', 'Volvo', 'Jeep', 'RAM', 
-    'GMC', 'Buick', 'Cadillac', 'Lincoln', 'Mitsubishi', 'Acura', 'Infiniti', 'Tesla', 
-    'Mini', 'Porsche', 'Land Rover', 'Jaguar', 'Fiat', 'Renault', 'Peugeot', 'Citroën', 
-    'Škoda', 'SEAT', 'Dacia', 'Chery', 'BYD', 'Great Wall', 'FAW', 'Roewe', 'Proton', 
-    'Perodua', 'Tata', 'Mahindra', 'Lada', 'ZAZ', 'Daewoo', 'SsangYong', 'Changan', 
-    'Haval', 'Wuling', 'Baojun', 'Nio', 'XPeng', 'Li Auto', 'VinFast', 'Ferrari', 
-    'Lamborghini', 'Bentley', 'Rolls-Royce', 'Aston Martin', 'McLaren', 'Maserati', 
-    'Bugatti', 'Pagani', 'Koenigsegg', 'Polestar', 'Rivian', 'Lucid', 'Alfa Romeo', 
-    'Lancia', 'Abarth', 'Opel', 'DS', 'MAN', 'Iran Khodro', 'Genesis', 'Isuzu', 
-    'Datsun', 'JAC Motors', 'JAC Trucks', 'KTM', 'Alpina', 'Brabus', 'Mansory', 
-    'Bestune', 'Hongqi', 'Dongfeng', 'FAW Jiefang', 'Foton', 'Leapmotor', 'GAC', 
-    'SAIC', 'MG', 'Vauxhall', 'Smart'
+    'Toyota',
+    'Volkswagen',
+    'Ford',
+    'Honda',
+    'Hyundai',
+    'Nissan',
+    'Chevrolet',
+    'Kia',
+    'Mercedes-Benz',
+    'BMW',
+    'Audi',
+    'Lexus',
+    'Mazda',
+    'Subaru',
+    'Volvo',
+    'Jeep',
+    'RAM',
+    'GMC',
+    'Buick',
+    'Cadillac',
+    'Lincoln',
+    'Mitsubishi',
+    'Acura',
+    'Infiniti',
+    'Tesla',
+    'Mini',
+    'Porsche',
+    'Land Rover',
+    'Jaguar',
+    'Fiat',
+    'Renault',
+    'Peugeot',
+    'Citroën',
+    'Škoda',
+    'SEAT',
+    'Dacia',
+    'Chery',
+    'BYD',
+    'Great Wall',
+    'FAW',
+    'Roewe',
+    'Proton',
+    'Perodua',
+    'Tata',
+    'Mahindra',
+    'Lada',
+    'ZAZ',
+    'Daewoo',
+    'SsangYong',
+    'Changan',
+    'Haval',
+    'Wuling',
+    'Baojun',
+    'Nio',
+    'XPeng',
+    'Li Auto',
+    'VinFast',
+    'Ferrari',
+    'Lamborghini',
+    'Bentley',
+    'Rolls-Royce',
+    'Aston Martin',
+    'McLaren',
+    'Maserati',
+    'Bugatti',
+    'Pagani',
+    'Koenigsegg',
+    'Polestar',
+    'Rivian',
+    'Lucid',
+    'Alfa Romeo',
+    'Lancia',
+    'Abarth',
+    'Opel',
+    'DS',
+    'MAN',
+    'Iran Khodro',
+    'Genesis',
+    'Isuzu',
+    'Datsun',
+    'JAC Motors',
+    'JAC Trucks',
+    'KTM',
+    'Alpina',
+    'Brabus',
+    'Mansory',
+    'Bestune',
+    'Hongqi',
+    'Dongfeng',
+    'FAW Jiefang',
+    'Foton',
+    'Leapmotor',
+    'GAC',
+    'SAIC',
+    'MG',
+    'Vauxhall',
+    'Smart',
   ];
-  
+
   final Map<String, List<String>> models = {
-    'BMW': ['X3', 'X5', 'X7', '3 Series', '5 Series', '7 Series', 'M3', 'M5', 'X1', 'X6'],
-    'Mercedes-Benz': ['C-Class', 'E-Class', 'S-Class', 'GLC', 'GLE', 'GLS', 'A-Class', 'CLA', 'GLA', 'AMG GT'],
+    'BMW': [
+      'X3',
+      'X5',
+      'X7',
+      '3 Series',
+      '5 Series',
+      '7 Series',
+      'M3',
+      'M5',
+      'X1',
+      'X6',
+    ],
+    'Mercedes-Benz': [
+      'C-Class',
+      'E-Class',
+      'S-Class',
+      'GLC',
+      'GLE',
+      'GLS',
+      'A-Class',
+      'CLA',
+      'GLA',
+      'AMG GT',
+    ],
     'Audi': ['A3', 'A4', 'A6', 'A8', 'Q3', 'Q5', 'Q7', 'Q8', 'RS6', 'TT'],
-    'Toyota': ['Camry', 'Corolla', 'RAV4', 'Highlander', 'Tacoma', 'Tundra', 'Prius', 'Avalon', '4Runner', 'Sequoia'],
-    'Honda': ['Civic', 'Accord', 'CR-V', 'Pilot', 'Ridgeline', 'Odyssey', 'HR-V', 'Passport', 'Insight', 'Clarity'],
-    'Nissan': ['Altima', 'Maxima', 'Rogue', 'Murano', 'Pathfinder', 'Frontier', 'Titan', 'Leaf', 'Sentra', 'Versa'],
-    'Ford': ['F-150', 'Mustang', 'Explorer', 'Escape', 'Edge', 'Ranger', 'Bronco', 'Mach-E', 'Focus', 'Fusion'],
-    'Chevrolet': ['Silverado', 'Camaro', 'Equinox', 'Tahoe', 'Suburban', 'Colorado', 'Corvette', 'Malibu', 'Cruze', 'Traverse'],
-    'Hyundai': ['Elantra', 'Sonata', 'Tucson', 'Santa Fe', 'Palisade', 'Kona', 'Venue', 'Accent', 'Veloster', 'Ioniq'],
-    'Kia': ['Forte', 'K5', 'Sportage', 'Telluride', 'Sorento', 'Soul', 'Rio', 'Stinger', 'EV6', 'Niro']
+    'Toyota': [
+      'Camry',
+      'Corolla',
+      'RAV4',
+      'Highlander',
+      'Tacoma',
+      'Tundra',
+      'Prius',
+      'Avalon',
+      '4Runner',
+      'Sequoia',
+    ],
+    'Honda': [
+      'Civic',
+      'Accord',
+      'CR-V',
+      'Pilot',
+      'Ridgeline',
+      'Odyssey',
+      'HR-V',
+      'Passport',
+      'Insight',
+      'Clarity',
+    ],
+    'Nissan': [
+      'Altima',
+      'Maxima',
+      'Rogue',
+      'Murano',
+      'Pathfinder',
+      'Frontier',
+      'Titan',
+      'Leaf',
+      'Sentra',
+      'Versa',
+    ],
+    'Ford': [
+      'F-150',
+      'Mustang',
+      'Explorer',
+      'Escape',
+      'Edge',
+      'Ranger',
+      'Bronco',
+      'Mach-E',
+      'Focus',
+      'Fusion',
+    ],
+    'Chevrolet': [
+      'Silverado',
+      'Camaro',
+      'Equinox',
+      'Tahoe',
+      'Suburban',
+      'Colorado',
+      'Corvette',
+      'Malibu',
+      'Cruze',
+      'Traverse',
+    ],
+    'Hyundai': [
+      'Elantra',
+      'Sonata',
+      'Tucson',
+      'Santa Fe',
+      'Palisade',
+      'Kona',
+      'Venue',
+      'Accent',
+      'Veloster',
+      'Ioniq',
+    ],
+    'Kia': [
+      'Forte',
+      'K5',
+      'Sportage',
+      'Telluride',
+      'Sorento',
+      'Soul',
+      'Rio',
+      'Stinger',
+      'EV6',
+      'Niro',
+    ],
   };
-  
+
   final Map<String, Map<String, List<String>>> trimsByBrandModel = {
     'BMW': {
       'X3': ['Base', 'xDrive30i', 'M40i'],
@@ -7101,7 +11409,14 @@ class _SellStep1PageState extends State<SellStep1Page> {
     'Toyota': {
       'Camry': ['L', 'LE', 'SE', 'XSE', 'XLE'],
       'Corolla': ['L', 'LE', 'SE', 'XSE', 'XLE'],
-      'RAV4': ['LE', 'XLE', 'XLE Premium', 'Adventure', 'Limited', 'TRD Off-Road'],
+      'RAV4': [
+        'LE',
+        'XLE',
+        'XLE Premium',
+        'Adventure',
+        'Limited',
+        'TRD Off-Road',
+      ],
     },
     'Mercedes-Benz': {
       'C-Class': ['C 200', 'C 300', 'AMG C 43', 'AMG C 63'],
@@ -7109,19 +11424,19 @@ class _SellStep1PageState extends State<SellStep1Page> {
       'GLC': ['GLC 200', 'GLC 300', 'AMG GLC 43'],
     },
   };
-  
+
   List<String> get availableYears {
     final currentYear = DateTime.now().year;
     return List.generate(30, (index) => (currentYear - index).toString());
   }
-  
+
   List<String> get availableTrims {
     if (selectedBrand != null && selectedModel != null) {
       return trimsByBrandModel[selectedBrand!]?[selectedModel!] ?? ['Base'];
     }
     return ['Base'];
   }
-  
+
   @override
   Widget build(BuildContext context) {
     return SingleChildScrollView(
@@ -7146,7 +11461,11 @@ class _SellStep1PageState extends State<SellStep1Page> {
               ),
               child: Column(
                 children: [
-                  Icon(Icons.directions_car, size: 48, color: Color(0xFFFF6B00)),
+                  Icon(
+                    Icons.directions_car,
+                    size: 48,
+                    color: Color(0xFFFF6B00),
+                  ),
                   SizedBox(height: 12),
                   Text(
                     'Basic Information',
@@ -7159,20 +11478,18 @@ class _SellStep1PageState extends State<SellStep1Page> {
                   SizedBox(height: 8),
                   Text(
                     'Tell us about your car\'s basic details',
-                    style: TextStyle(
-                      fontSize: 16,
-                      color: Colors.grey[600],
-                    ),
+                    style: TextStyle(fontSize: 16, color: Colors.grey[600]),
                     textAlign: TextAlign.center,
                   ),
                 ],
               ),
             ),
             SizedBox(height: 24),
-            
+
             // Brand Selection (Modal)
             FormField<String>(
-              validator: (_) => selectedBrand == null ? 'Please select a brand' : null,
+              validator: (_) =>
+                  selectedBrand == null ? 'Please select a brand' : null,
               builder: (state) => GestureDetector(
                 onTap: () async {
                   final choice = await _pickBrandModal();
@@ -7188,22 +11505,33 @@ class _SellStep1PageState extends State<SellStep1Page> {
                   context,
                   label: 'Brand *',
                   value: selectedBrand,
-                  isError: errBrand && (selectedBrand == null || selectedBrand!.isEmpty),
+                  isError:
+                      errBrand &&
+                      (selectedBrand == null || selectedBrand!.isEmpty),
                   leading: Container(
                     width: 36,
                     height: 36,
-                    decoration: BoxDecoration(color: const Color(0xFFFF6B00).withOpacity(0.12), borderRadius: BorderRadius.circular(10)),
+                    decoration: BoxDecoration(
+                      color: const Color(0xFFFF6B00).withOpacity(0.12),
+                      borderRadius: BorderRadius.circular(10),
+                    ),
                     child: selectedBrand == null
                         ? Icon(Icons.business, color: const Color(0xFFFF6B00))
                         : Padding(
                             padding: const EdgeInsets.all(6),
                             child: CachedNetworkImage(
-                              imageUrl: getApiBase() + '/static/images/brands/' + _brandSlug(selectedBrand!) + '.png',
+                              imageUrl:
+                                  getApiBase() +
+                                  '/static/images/brands/' +
+                                  _brandSlug(selectedBrand!) +
+                                  '.png',
                               fit: BoxFit.contain,
-                              errorWidget: (context, url, error) => Image.network(
-                                getApiBase() + '/static/images/brands/default.png',
-                                fit: BoxFit.contain,
-                              ),
+                              errorWidget: (context, url, error) =>
+                                  Image.network(
+                                    getApiBase() +
+                                        '/static/images/brands/default.png',
+                                    fit: BoxFit.contain,
+                                  ),
                             ),
                           ),
                   ),
@@ -7211,50 +11539,90 @@ class _SellStep1PageState extends State<SellStep1Page> {
               ),
             ),
             SizedBox(height: 16),
-            
+
             // Model (Modal)
             FormField<String>(
-              validator: (_) => selectedModel == null ? 'Please select a model' : null,
+              validator: (_) =>
+                  selectedModel == null ? 'Please select a model' : null,
               builder: (state) => GestureDetector(
                 onTap: () async {
                   if (selectedBrand == null) return;
                   final options = models[selectedBrand!] ?? [];
                   final choice = await _pickFromList('Model', options);
                   if (choice != null) {
-                    setState(() { selectedModel = choice; selectedTrim = null; });
+                    setState(() {
+                      selectedModel = choice;
+                      selectedTrim = null;
+                    });
                   }
                 },
-                child: buildFancySelector(context, icon: Icons.directions_car, label: 'Model *', value: selectedModel ?? (selectedBrand == null ? 'Select brand first' : ''), isError: errModel && (selectedModel == null || selectedModel!.isEmpty)),
+                child: buildFancySelector(
+                  context,
+                  icon: Icons.directions_car,
+                  label: 'Model *',
+                  value:
+                      selectedModel ??
+                      (selectedBrand == null ? 'Select brand first' : ''),
+                  isError:
+                      errModel &&
+                      (selectedModel == null || selectedModel!.isEmpty),
+                ),
               ),
             ),
             SizedBox(height: 16),
-            
+
             // Trim (Modal)
             FormField<String>(
-              validator: (_) => selectedTrim == null ? 'Please select a trim' : null,
+              validator: (_) =>
+                  selectedTrim == null ? 'Please select a trim' : null,
               builder: (state) => GestureDetector(
                 onTap: () async {
                   final choice = await _pickFromList('Trim', availableTrims);
-                  if (choice != null) setState(() { selectedTrim = choice; });
+                  if (choice != null)
+                    setState(() {
+                      selectedTrim = choice;
+                    });
                 },
-                child: buildFancySelector(context, icon: Icons.settings, label: 'Trim *', value: selectedTrim, isError: errTrim && (selectedTrim == null || selectedTrim!.isEmpty)),
+                child: buildFancySelector(
+                  context,
+                  icon: Icons.settings,
+                  label: 'Trim *',
+                  value: selectedTrim,
+                  isError:
+                      errTrim &&
+                      (selectedTrim == null || selectedTrim!.isEmpty),
+                ),
               ),
             ),
             SizedBox(height: 16),
-            
+
             // Year (Modal)
             FormField<String>(
-              validator: (_) => selectedYear == null ? 'Please select a year' : null,
+              validator: (_) =>
+                  selectedYear == null ? 'Please select a year' : null,
               builder: (state) => GestureDetector(
                 onTap: () async {
                   final choice = await _pickFromList('Year', availableYears);
-                  if (choice != null) setState(() { selectedYear = choice; });
+                  if (choice != null)
+                    setState(() {
+                      selectedYear = choice;
+                    });
                 },
-                child: buildFancySelector(context, icon: Icons.calendar_today, label: 'Year *', value: selectedYear != null ? _localizeDigitsGlobal(context, selectedYear!) : null, isError: errYear && (selectedYear == null || selectedYear!.isEmpty)),
+                child: buildFancySelector(
+                  context,
+                  icon: Icons.calendar_today,
+                  label: 'Year *',
+                  value: selectedYear != null
+                      ? _localizeDigitsGlobal(context, selectedYear!)
+                      : null,
+                  isError:
+                      errYear &&
+                      (selectedYear == null || selectedYear!.isEmpty),
+                ),
               ),
             ),
             SizedBox(height: 32),
-            
+
             // Next Button
             SizedBox(
               width: double.infinity,
@@ -7263,33 +11631,56 @@ class _SellStep1PageState extends State<SellStep1Page> {
                 onPressed: () {
                   // Manual validation for required selectors (since we use custom tiles)
                   final List<String> missing = [];
-                  if (selectedBrand == null || (selectedBrand ?? '').isEmpty) missing.add(AppLocalizations.of(context)!.brandLabel);
-                  if (selectedModel == null || (selectedModel ?? '').isEmpty) missing.add(AppLocalizations.of(context)!.modelLabel);
-                  if (selectedTrim == null || (selectedTrim ?? '').isEmpty) missing.add(AppLocalizations.of(context)!.trimLabel);
-                  if (selectedYear == null || (selectedYear ?? '').isEmpty) missing.add(AppLocalizations.of(context)!.yearLabel);
+                  if (selectedBrand == null || (selectedBrand ?? '').isEmpty)
+                    missing.add(AppLocalizations.of(context)!.brandLabel);
+                  if (selectedModel == null || (selectedModel ?? '').isEmpty)
+                    missing.add(AppLocalizations.of(context)!.modelLabel);
+                  if (selectedTrim == null || (selectedTrim ?? '').isEmpty)
+                    missing.add(AppLocalizations.of(context)!.trimLabel);
+                  if (selectedYear == null || (selectedYear ?? '').isEmpty)
+                    missing.add(AppLocalizations.of(context)!.yearLabel);
 
                   if (missing.isNotEmpty) {
                     setState(() {
-                      errBrand = selectedBrand == null || (selectedBrand ?? '').isEmpty;
-                      errModel = selectedModel == null || (selectedModel ?? '').isEmpty;
-                      errTrim = selectedTrim == null || (selectedTrim ?? '').isEmpty;
-                      errYear = selectedYear == null || (selectedYear ?? '').isEmpty;
+                      errBrand =
+                          selectedBrand == null ||
+                          (selectedBrand ?? '').isEmpty;
+                      errModel =
+                          selectedModel == null ||
+                          (selectedModel ?? '').isEmpty;
+                      errTrim =
+                          selectedTrim == null || (selectedTrim ?? '').isEmpty;
+                      errYear =
+                          selectedYear == null || (selectedYear ?? '').isEmpty;
                     });
                     ScaffoldMessenger.of(context).showSnackBar(
-                      SnackBar(content: Text(_pleaseFillRequiredGlobal(context) + ': ' + missing.join(', ')), backgroundColor: Colors.red),
+                      SnackBar(
+                        content: Text(
+                          _pleaseFillRequiredGlobal(context) +
+                              ': ' +
+                              missing.join(', '),
+                        ),
+                        backgroundColor: Colors.red,
+                      ),
                     );
                     return;
                   }
 
-                    // Save data and navigate to next step
-                    final parentState = context.findAncestorStateOfType<_SellCarPageState>();
-                    if (parentState != null) {
-                      parentState.carData['brand'] = selectedBrand;
-                      parentState.carData['model'] = selectedModel;
-                      parentState.carData['trim'] = selectedTrim;
-                      parentState.carData['year'] = selectedYear;
-                    setState(() { errBrand = errModel = errTrim = errYear = false; });
-                    parentState._pageController.nextPage(duration: Duration(milliseconds: 300), curve: Curves.easeInOut);
+                  // Save data and navigate to next step
+                  final parentState = context
+                      .findAncestorStateOfType<_SellCarPageState>();
+                  if (parentState != null) {
+                    parentState.carData['brand'] = selectedBrand;
+                    parentState.carData['model'] = selectedModel;
+                    parentState.carData['trim'] = selectedTrim;
+                    parentState.carData['year'] = selectedYear;
+                    setState(() {
+                      errBrand = errModel = errTrim = errYear = false;
+                    });
+                    parentState._pageController.nextPage(
+                      duration: Duration(milliseconds: 300),
+                      curve: Curves.easeInOut,
+                    );
                   }
                 },
                 style: ElevatedButton.styleFrom(
@@ -7318,6 +11709,7 @@ class SellStep2Page extends StatefulWidget {
   @override
   _SellStep2PageState createState() => _SellStep2PageState();
 }
+
 class _SellStep2PageState extends State<SellStep2Page> {
   final _formKey = GlobalKey<FormState>();
   String? selectedMileage;
@@ -7342,13 +11734,13 @@ class _SellStep2PageState extends State<SellStep2Page> {
   bool errSeating = false;
   bool errTitle = false;
   bool errDamagedParts = false;
-  
+
   @override
   void initState() {
     super.initState();
     _resetStep2();
   }
-  
+
   void _resetStep2() {
     selectedMileage = null;
     selectedCondition = null;
@@ -7363,46 +11755,99 @@ class _SellStep2PageState extends State<SellStep2Page> {
     selectedTitleStatus = null;
     selectedDamagedParts = null;
   }
-  
+
   final List<String> conditions = ['New', 'Used', 'Certified'];
-  final List<String> transmissions = ['Automatic', 'Manual', 'CVT', 'Semi-Automatic'];
-  final List<String> fuelTypes = ['Gasoline', 'Diesel', 'Electric', 'Hybrid', 'Plug-in Hybrid'];
-  final List<String> bodyTypes = ['Sedan', 'SUV', 'Hatchback', 'Coupe', 'Convertible', 'Wagon', 'Pickup', 'Van', 'Minivan'];
-  final List<String> colors = ['Black', 'White', 'Silver', 'Gray', 'Red', 'Blue', 'Green', 'Brown', 'Gold', 'Other'];
+  final List<String> transmissions = [
+    'Automatic',
+    'Manual',
+    'CVT',
+    'Semi-Automatic',
+  ];
+  final List<String> fuelTypes = [
+    'Gasoline',
+    'Diesel',
+    'Electric',
+    'Hybrid',
+    'Plug-in Hybrid',
+  ];
+  final List<String> bodyTypes = [
+    'Sedan',
+    'SUV',
+    'Hatchback',
+    'Coupe',
+    'Convertible',
+    'Wagon',
+    'Pickup',
+    'Van',
+    'Minivan',
+  ];
+  final List<String> colors = [
+    'Black',
+    'White',
+    'Silver',
+    'Gray',
+    'Red',
+    'Blue',
+    'Green',
+    'Brown',
+    'Gold',
+    'Other',
+  ];
   final List<String> driveTypes = ['FWD', 'RWD', 'AWD', '4WD'];
   final List<String> seatings = ['2', '4', '5', '6', '7', '8'];
-  final List<String> engineSizes = ['1.0', '1.2', '1.4', '1.6', '1.8', '2.0', '2.2', '2.4', '2.5', '3.0', '3.5', '4.0', '5.0', '6.0'];
+  final List<String> engineSizes = [
+    '1.0',
+    '1.2',
+    '1.4',
+    '1.6',
+    '1.8',
+    '2.0',
+    '2.2',
+    '2.4',
+    '2.5',
+    '3.0',
+    '3.5',
+    '4.0',
+    '5.0',
+    '6.0',
+  ];
   final List<String> cylinderCounts = ['3', '4', '5', '6', '8', '10', '12'];
   final List<String> titleStatuses = ['Clean', 'Damaged'];
-  
+
   // Helpers to mirror search page availability with simple defaults
   List<String> getAvailableBodyTypes() {
     return bodyTypes;
   }
-  
+
   List<String> getAvailableColors() {
     return colors;
   }
-  
+
   // Availability helpers aligned with More Filters (simple pass-throughs here)
   List<String> getAvailableConditions() {
     return conditions;
   }
+
   List<String> getAvailableTransmissions() {
     return transmissions;
   }
+
   List<String> getAvailableFuelTypes() {
     return fuelTypes;
   }
+
   List<String> getAvailableDriveTypes() {
     return driveTypes;
   }
+
   List<String> getAvailableSeatings() {
     return seatings;
   }
+
   List<String> getAvailableEngineSizes() {
     return engineSizes;
   }
+
   List<String> getAvailableCylinderCounts() {
     return cylinderCounts;
   }
@@ -7439,7 +11884,7 @@ class _SellStep2PageState extends State<SellStep2Page> {
         return Colors.grey;
     }
   }
-  
+
   Future<String?> _pickFromList(String title, List<String> options) async {
     return await showGeneralDialog<String>(
       context: context,
@@ -7447,83 +11892,137 @@ class _SellStep2PageState extends State<SellStep2Page> {
       barrierLabel: 'dismiss',
       pageBuilder: (context, a1, a2) => const SizedBox.shrink(),
       transitionBuilder: (context, animation, secondaryAnimation, child) {
-        final curved = CurvedAnimation(parent: animation, curve: Curves.easeOutCubic);
+        final curved = CurvedAnimation(
+          parent: animation,
+          curve: Curves.easeOutCubic,
+        );
         return Transform.translate(
           offset: Offset(0, (1 - curved.value) * 30),
           child: Opacity(
             opacity: curved.value,
             child: Dialog(
-          backgroundColor: Colors.grey[900]?.withOpacity(0.98),
-          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
-          child: Container(
-            width: 420,
-            padding: EdgeInsets.all(20),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              backgroundColor: Colors.grey[900]?.withOpacity(0.98),
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(20),
+              ),
+              child: Container(
+                width: 420,
+                padding: EdgeInsets.all(20),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  mainAxisSize: MainAxisSize.min,
                   children: [
-                    Text(title, style: TextStyle(color: Color(0xFFFF6B00), fontWeight: FontWeight.bold, fontSize: 20)),
-                    IconButton(icon: Icon(Icons.close, color: Colors.white), onPressed: () => Navigator.pop(context)),
-                  ],
-                ),
-                SizedBox(height: 10),
-                SizedBox(
-                  height: 420,
-                  child: ListView.separated(
-                    itemCount: options.length,
-                    separatorBuilder: (_, __) => SizedBox(height: 10),
-                    itemBuilder: (context, index) {
-                      final value = options[index];
-                      final lowerTitle = title.toLowerCase();
-                      String displayText = value;
-                      final bool isNumeric = RegExp(r'^[0-9]+(\.[0-9]+)?$').hasMatch(value);
-                      if (lowerTitle.contains('price')) {
-                        displayText = _formatCurrencyGlobal(context, value);
-                      } else if (lowerTitle.contains('mileage') && isNumeric) {
-                        final localeTag = Localizations.localeOf(context).toLanguageTag();
-                        final nf = _decimalFormatterGlobal(context);
-                        displayText = _localizeDigitsGlobal(context, nf.format(num.tryParse(value) ?? 0)) + ' ' + AppLocalizations.of(context)!.unit_km;
-                      } else if (lowerTitle.contains('year') && isNumeric) {
-                        displayText = _localizeDigitsGlobal(context, value);
-                      } else if (lowerTitle.contains('seating') && isNumeric) {
-                        displayText = _localizeDigitsGlobal(context, value) + ' seats';
-                      } else if (lowerTitle.contains('cylinder') && isNumeric) {
-                        displayText = _localizeDigitsGlobal(context, value) + ' cylinders';
-                      } else if (lowerTitle.contains('engine') && isNumeric) {
-                        displayText = _localizeDigitsGlobal(context, value) + ' L';
-                      } else {
-                        final translated = _translateValueGlobal(context, value);
-                        if (translated != null) displayText = translated;
-                      }
-                      return InkWell(
-                        borderRadius: BorderRadius.circular(14),
-                        onTap: () => Navigator.pop(context, value),
-                        child: Container(
-                          padding: EdgeInsets.symmetric(vertical: 14, horizontal: 12),
-                          decoration: BoxDecoration(
-                            borderRadius: BorderRadius.circular(14),
-                            gradient: LinearGradient(
-                              colors: [Colors.white.withOpacity(0.06), Colors.white.withOpacity(0.02)],
-                              begin: Alignment.topLeft,
-                              end: Alignment.bottomRight,
-                            ),
-                            border: Border.all(color: Colors.white10),
-                          ),
-                          child: Row(
-                            children: [
-                              Expanded(child: Text(displayText, style: TextStyle(color: Colors.white, fontWeight: FontWeight.w600))),
-                              Icon(Icons.chevron_right, color: Colors.white70),
-                            ],
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      children: [
+                        Text(
+                          title,
+                          style: TextStyle(
+                            color: Color(0xFFFF6B00),
+                            fontWeight: FontWeight.bold,
+                            fontSize: 20,
                           ),
                         ),
-                      );
-                    },
-                  ),
-                )
-              ],
+                        IconButton(
+                          icon: Icon(Icons.close, color: Colors.white),
+                          onPressed: () => Navigator.pop(context),
+                        ),
+                      ],
+                    ),
+                    SizedBox(height: 10),
+                    SizedBox(
+                      height: 420,
+                      child: ListView.separated(
+                        itemCount: options.length,
+                        separatorBuilder: (_, __) => SizedBox(height: 10),
+                        itemBuilder: (context, index) {
+                          final value = options[index];
+                          final lowerTitle = title.toLowerCase();
+                          String displayText = value;
+                          final bool isNumeric = RegExp(
+                            r'^[0-9]+(\.[0-9]+)?$',
+                          ).hasMatch(value);
+                          if (lowerTitle.contains('price')) {
+                            displayText = _formatCurrencyGlobal(context, value);
+                          } else if (lowerTitle.contains('mileage') &&
+                              isNumeric) {
+                            final localeTag = Localizations.localeOf(
+                              context,
+                            ).toLanguageTag();
+                            final nf = _decimalFormatterGlobal(context);
+                            displayText =
+                                _localizeDigitsGlobal(
+                                  context,
+                                  nf.format(num.tryParse(value) ?? 0),
+                                ) +
+                                ' ' +
+                                AppLocalizations.of(context)!.unit_km;
+                          } else if (lowerTitle.contains('year') && isNumeric) {
+                            displayText = _localizeDigitsGlobal(context, value);
+                          } else if (lowerTitle.contains('seating') &&
+                              isNumeric) {
+                            displayText =
+                                _localizeDigitsGlobal(context, value) +
+                                ' seats';
+                          } else if (lowerTitle.contains('cylinder') &&
+                              isNumeric) {
+                            displayText =
+                                _localizeDigitsGlobal(context, value) +
+                                ' cylinders';
+                          } else if (lowerTitle.contains('engine') &&
+                              isNumeric) {
+                            displayText =
+                                _localizeDigitsGlobal(context, value) + ' L';
+                          } else {
+                            final translated = _translateValueGlobal(
+                              context,
+                              value,
+                            );
+                            if (translated != null) displayText = translated;
+                          }
+                          return InkWell(
+                            borderRadius: BorderRadius.circular(14),
+                            onTap: () => Navigator.pop(context, value),
+                            child: Container(
+                              padding: EdgeInsets.symmetric(
+                                vertical: 14,
+                                horizontal: 12,
+                              ),
+                              decoration: BoxDecoration(
+                                borderRadius: BorderRadius.circular(14),
+                                gradient: LinearGradient(
+                                  colors: [
+                                    Colors.white.withOpacity(0.06),
+                                    Colors.white.withOpacity(0.02),
+                                  ],
+                                  begin: Alignment.topLeft,
+                                  end: Alignment.bottomRight,
+                                ),
+                                border: Border.all(color: Colors.white10),
+                              ),
+                              child: Row(
+                                children: [
+                                  Expanded(
+                                    child: Text(
+                                      displayText,
+                                      style: TextStyle(
+                                        color: Colors.white,
+                                        fontWeight: FontWeight.w600,
+                                      ),
+                                    ),
+                                  ),
+                                  Icon(
+                                    Icons.chevron_right,
+                                    color: Colors.white70,
+                                  ),
+                                ],
+                              ),
+                            ),
+                          );
+                        },
+                      ),
+                    ),
+                  ],
                 ),
               ),
             ),
@@ -7533,7 +12032,7 @@ class _SellStep2PageState extends State<SellStep2Page> {
       transitionDuration: const Duration(milliseconds: 220),
     );
   }
-  
+
   @override
   Widget build(BuildContext context) {
     return SingleChildScrollView(
@@ -7571,26 +12070,28 @@ class _SellStep2PageState extends State<SellStep2Page> {
                   SizedBox(height: 8),
                   Text(
                     'Provide detailed information about your car',
-                    style: TextStyle(
-                      fontSize: 16,
-                      color: Colors.grey[600],
-                    ),
+                    style: TextStyle(fontSize: 16, color: Colors.grey[600]),
                     textAlign: TextAlign.center,
                   ),
                 ],
               ),
             ),
             SizedBox(height: 24),
-            
+
             // Mileage
             // Mileage (Modal)
             FormField<String>(
-              validator: (_) => (selectedMileage == null || selectedMileage!.isEmpty) ? 'Please select mileage' : null,
+              validator: (_) =>
+                  (selectedMileage == null || selectedMileage!.isEmpty)
+                  ? 'Please select mileage'
+                  : null,
               builder: (state) => GestureDetector(
                 onTap: () async {
                   final miles = [
                     ...[for (int m = 0; m <= 100000; m += 1000) m.toString()],
-                    ...[for (int m = 105000; m <= 300000; m += 5000) m.toString()],
+                    ...[
+                      for (int m = 105000; m <= 300000; m += 5000) m.toString(),
+                    ],
                   ];
                   final choice = await _pickFromList('Mileage (km)', miles);
                   if (choice != null) setState(() => selectedMileage = choice);
@@ -7600,56 +12101,106 @@ class _SellStep2PageState extends State<SellStep2Page> {
                   icon: Icons.speed,
                   label: 'Mileage (km) *',
                   value: selectedMileage != null
-                      ? (_localizeDigitsGlobal(context, _decimalFormatterGlobal(context).format(int.tryParse(selectedMileage!) ?? 0)) + ' ' + AppLocalizations.of(context)!.unit_km)
+                      ? (_localizeDigitsGlobal(
+                              context,
+                              _decimalFormatterGlobal(
+                                context,
+                              ).format(int.tryParse(selectedMileage!) ?? 0),
+                            ) +
+                            ' ' +
+                            AppLocalizations.of(context)!.unit_km)
                       : null,
-                  isError: errMileage && (selectedMileage == null || selectedMileage!.isEmpty),
+                  isError:
+                      errMileage &&
+                      (selectedMileage == null || selectedMileage!.isEmpty),
                 ),
               ),
             ),
             SizedBox(height: 16),
-            
+
             // Condition (Modal)
             FormField<String>(
-              validator: (_) => selectedCondition == null ? 'Please select condition' : null,
+              validator: (_) =>
+                  selectedCondition == null ? 'Please select condition' : null,
               builder: (state) => GestureDetector(
                 onTap: () async {
-                  final choice = await _pickFromList('Condition', getAvailableConditions());
-                  if (choice != null) setState(() => selectedCondition = choice);
+                  final choice = await _pickFromList(
+                    'Condition',
+                    getAvailableConditions(),
+                  );
+                  if (choice != null)
+                    setState(() => selectedCondition = choice);
                 },
-                child: buildFancySelector(context, icon: Icons.check_circle, label: 'Condition *', value: selectedCondition, isError: errCondition && (selectedCondition == null || selectedCondition!.isEmpty)),
+                child: buildFancySelector(
+                  context,
+                  icon: Icons.check_circle,
+                  label: 'Condition *',
+                  value: selectedCondition,
+                  isError:
+                      errCondition &&
+                      (selectedCondition == null || selectedCondition!.isEmpty),
+                ),
               ),
             ),
             SizedBox(height: 16),
-            
+
             // Transmission (Modal)
             FormField<String>(
-              validator: (_) => selectedTransmission == null ? 'Please select transmission' : null,
+              validator: (_) => selectedTransmission == null
+                  ? 'Please select transmission'
+                  : null,
               builder: (state) => GestureDetector(
                 onTap: () async {
-                  final choice = await _pickFromList('Transmission', getAvailableTransmissions());
-                  if (choice != null) setState(() => selectedTransmission = choice);
+                  final choice = await _pickFromList(
+                    'Transmission',
+                    getAvailableTransmissions(),
+                  );
+                  if (choice != null)
+                    setState(() => selectedTransmission = choice);
                 },
-                child: buildFancySelector(context, icon: Icons.settings, label: 'Transmission *', value: selectedTransmission, isError: errTransmission && (selectedTransmission == null || selectedTransmission!.isEmpty)),
+                child: buildFancySelector(
+                  context,
+                  icon: Icons.settings,
+                  label: 'Transmission *',
+                  value: selectedTransmission,
+                  isError:
+                      errTransmission &&
+                      (selectedTransmission == null ||
+                          selectedTransmission!.isEmpty),
+                ),
               ),
             ),
             SizedBox(height: 16),
-            
+
             // Fuel Type (Modal)
             FormField<String>(
-              validator: (_) => selectedFuelType == null ? 'Please select fuel type' : null,
+              validator: (_) =>
+                  selectedFuelType == null ? 'Please select fuel type' : null,
               builder: (state) => GestureDetector(
                 onTap: () async {
-                  final choice = await _pickFromList('Fuel Type', getAvailableFuelTypes());
+                  final choice = await _pickFromList(
+                    'Fuel Type',
+                    getAvailableFuelTypes(),
+                  );
                   if (choice != null) setState(() => selectedFuelType = choice);
                 },
-                child: buildFancySelector(context, icon: Icons.local_gas_station, label: 'Fuel Type *', value: selectedFuelType, isError: errFuelType && (selectedFuelType == null || selectedFuelType!.isEmpty)),
+                child: buildFancySelector(
+                  context,
+                  icon: Icons.local_gas_station,
+                  label: 'Fuel Type *',
+                  value: selectedFuelType,
+                  isError:
+                      errFuelType &&
+                      (selectedFuelType == null || selectedFuelType!.isEmpty),
+                ),
               ),
             ),
             SizedBox(height: 16),
-            
+
             // Body Type (Modal - grid like search)
             FormField<String>(
-              validator: (_) => selectedBodyType == null ? 'Please select body type' : null,
+              validator: (_) =>
+                  selectedBodyType == null ? 'Please select body type' : null,
               builder: (state) => GestureDetector(
                 onTap: () async {
                   final choice = await showDialog<String>(
@@ -7657,7 +12208,9 @@ class _SellStep2PageState extends State<SellStep2Page> {
                     builder: (context) {
                       return Dialog(
                         backgroundColor: Colors.grey[900]?.withOpacity(0.98),
-                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(20),
+                        ),
                         child: Container(
                           width: 400,
                           padding: EdgeInsets.all(20),
@@ -7666,10 +12219,26 @@ class _SellStep2PageState extends State<SellStep2Page> {
                             mainAxisSize: MainAxisSize.min,
                             children: [
                               Row(
-                                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                                mainAxisAlignment:
+                                    MainAxisAlignment.spaceBetween,
                                 children: [
-                                  Text(AppLocalizations.of(context)!.selectBodyType, style: GoogleFonts.orbitron(color: Color(0xFFFF6B00), fontWeight: FontWeight.bold, fontSize: 20)),
-                                  IconButton(icon: Icon(Icons.close, color: Colors.white), onPressed: () => Navigator.pop(context)),
+                                  Text(
+                                    AppLocalizations.of(
+                                      context,
+                                    )!.selectBodyType,
+                                    style: GoogleFonts.orbitron(
+                                      color: Color(0xFFFF6B00),
+                                      fontWeight: FontWeight.bold,
+                                      fontSize: 20,
+                                    ),
+                                  ),
+                                  IconButton(
+                                    icon: Icon(
+                                      Icons.close,
+                                      color: Colors.white,
+                                    ),
+                                    onPressed: () => Navigator.pop(context),
+                                  ),
                                 ],
                               ),
                               SizedBox(height: 10),
@@ -7678,32 +12247,63 @@ class _SellStep2PageState extends State<SellStep2Page> {
                                 child: GridView.builder(
                                   shrinkWrap: true,
                                   physics: BouncingScrollPhysics(),
-                                  gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
-                                    crossAxisCount: 3,
-                                    childAspectRatio: 0.82,
-                                    crossAxisSpacing: 12,
-                                    mainAxisSpacing: 12,
-                                  ),
+                                  gridDelegate:
+                                      SliverGridDelegateWithFixedCrossAxisCount(
+                                        crossAxisCount: 3,
+                                        childAspectRatio: 0.82,
+                                        crossAxisSpacing: 12,
+                                        mainAxisSpacing: 12,
+                                      ),
                                   itemCount: getAvailableBodyTypes().length,
                                   itemBuilder: (context, index) {
-                                    final bodyTypeName = getAvailableBodyTypes()[index];
-                                    final asset = _getBodyTypeAsset(bodyTypeName);
-                                    final bool isSelected = (selectedBodyType ?? '') == bodyTypeName;
+                                    final bodyTypeName =
+                                        getAvailableBodyTypes()[index];
+                                    final asset = _getBodyTypeAsset(
+                                      bodyTypeName,
+                                    );
+                                    final bool isSelected =
+                                        (selectedBodyType ?? '') ==
+                                        bodyTypeName;
                                     return InkWell(
                                       borderRadius: BorderRadius.circular(12),
-                                      onTap: () => Navigator.pop(context, bodyTypeName),
+                                      onTap: () =>
+                                          Navigator.pop(context, bodyTypeName),
                                       child: Container(
                                         decoration: BoxDecoration(
                                           color: Colors.transparent,
-                                          borderRadius: BorderRadius.circular(12),
-                                          border: Border.all(color: isSelected ? const Color(0xFFFF6B00) : Colors.white24, width: isSelected ? 2 : 1),
+                                          borderRadius: BorderRadius.circular(
+                                            12,
+                                          ),
+                                          border: Border.all(
+                                            color: isSelected
+                                                ? const Color(0xFFFF6B00)
+                                                : Colors.white24,
+                                            width: isSelected ? 2 : 1,
+                                          ),
                                           boxShadow: isSelected
-                                              ? [BoxShadow(color: const Color(0xFFFF6B00).withOpacity(0.35), blurRadius: 14, spreadRadius: 1, offset: const Offset(0, 4))]
-                                              : [const BoxShadow(color: Colors.black54, blurRadius: 10, spreadRadius: 0, offset: Offset(0, 3))],
+                                              ? [
+                                                  BoxShadow(
+                                                    color: const Color(
+                                                      0xFFFF6B00,
+                                                    ).withOpacity(0.35),
+                                                    blurRadius: 14,
+                                                    spreadRadius: 1,
+                                                    offset: const Offset(0, 4),
+                                                  ),
+                                                ]
+                                              : [
+                                                  const BoxShadow(
+                                                    color: Colors.black54,
+                                                    blurRadius: 10,
+                                                    spreadRadius: 0,
+                                                    offset: Offset(0, 3),
+                                                  ),
+                                                ],
                                         ),
                                         padding: EdgeInsets.all(8),
                                         child: Column(
-                                          mainAxisAlignment: MainAxisAlignment.center,
+                                          mainAxisAlignment:
+                                              MainAxisAlignment.center,
                                           children: [
                                             Container(
                                               width: 56,
@@ -7711,20 +12311,39 @@ class _SellStep2PageState extends State<SellStep2Page> {
                                               decoration: BoxDecoration(
                                                 shape: BoxShape.circle,
                                                 color: Colors.white,
-                                                border: Border.all(color: isSelected ? const Color(0xFFFF6B00) : Colors.white24, width: isSelected ? 2 : 1),
+                                                border: Border.all(
+                                                  color: isSelected
+                                                      ? const Color(0xFFFF6B00)
+                                                      : Colors.white24,
+                                                  width: isSelected ? 2 : 1,
+                                                ),
                                               ),
                                               child: Padding(
-                                                padding: const EdgeInsets.all(8),
+                                                padding: const EdgeInsets.all(
+                                                  8,
+                                                ),
                                                 child: FittedBox(
                                                   fit: BoxFit.contain,
-                                                  child: _buildBodyTypeImage(asset),
+                                                  child: _buildBodyTypeImage(
+                                                    asset,
+                                                  ),
                                                 ),
                                               ),
                                             ),
                                             const SizedBox(height: 8),
                                             Text(
-                                              _translateValueGlobal(context, bodyTypeName) ?? bodyTypeName,
-                                              style: GoogleFonts.orbitron(fontSize: 12, color: isSelected ? Colors.white : Colors.white70, fontWeight: FontWeight.bold),
+                                              _translateValueGlobal(
+                                                    context,
+                                                    bodyTypeName,
+                                                  ) ??
+                                                  bodyTypeName,
+                                              style: GoogleFonts.orbitron(
+                                                fontSize: 12,
+                                                color: isSelected
+                                                    ? Colors.white
+                                                    : Colors.white70,
+                                                fontWeight: FontWeight.bold,
+                                              ),
                                               textAlign: TextAlign.center,
                                               overflow: TextOverflow.ellipsis,
                                               maxLines: 1,
@@ -7744,14 +12363,24 @@ class _SellStep2PageState extends State<SellStep2Page> {
                   );
                   if (choice != null) setState(() => selectedBodyType = choice);
                 },
-                child: buildFancySelector(context, icon: Icons.directions_car, label: 'Body Type *', value: selectedBodyType ?? _tapToSelectTextGlobal(context), isError: errBodyType && (selectedBodyType == null || selectedBodyType!.isEmpty)),
+                child: buildFancySelector(
+                  context,
+                  icon: Icons.directions_car,
+                  label: 'Body Type *',
+                  value: selectedBodyType ?? _tapToSelectTextGlobal(context),
+                  isError:
+                      errBodyType &&
+                      (selectedBodyType == null || selectedBodyType!.isEmpty),
+                ),
               ),
             ),
             SizedBox(height: 16),
-            
+
             // Color (Modal - swatches like search)
             FormField<String>(
-              validator: (_) => selectedColor == null ? AppLocalizations.of(context)!.selectColor : null,
+              validator: (_) => selectedColor == null
+                  ? AppLocalizations.of(context)!.selectColor
+                  : null,
               builder: (state) => GestureDetector(
                 onTap: () async {
                   final choice = await showDialog<String>(
@@ -7759,7 +12388,9 @@ class _SellStep2PageState extends State<SellStep2Page> {
                     builder: (context) {
                       return Dialog(
                         backgroundColor: Colors.grey[900]?.withOpacity(0.98),
-                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(20),
+                        ),
                         child: Container(
                           width: 400,
                           padding: EdgeInsets.all(20),
@@ -7768,10 +12399,24 @@ class _SellStep2PageState extends State<SellStep2Page> {
                             mainAxisSize: MainAxisSize.min,
                             children: [
                               Row(
-                                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                                mainAxisAlignment:
+                                    MainAxisAlignment.spaceBetween,
                                 children: [
-                                  Text(AppLocalizations.of(context)!.selectColor, style: GoogleFonts.orbitron(color: Color(0xFFFF6B00), fontWeight: FontWeight.bold, fontSize: 20)),
-                                  IconButton(icon: Icon(Icons.close, color: Colors.white), onPressed: () => Navigator.pop(context)),
+                                  Text(
+                                    AppLocalizations.of(context)!.selectColor,
+                                    style: GoogleFonts.orbitron(
+                                      color: Color(0xFFFF6B00),
+                                      fontWeight: FontWeight.bold,
+                                      fontSize: 20,
+                                    ),
+                                  ),
+                                  IconButton(
+                                    icon: Icon(
+                                      Icons.close,
+                                      color: Colors.white,
+                                    ),
+                                    onPressed: () => Navigator.pop(context),
+                                  ),
                                 ],
                               ),
                               SizedBox(height: 10),
@@ -7780,40 +12425,68 @@ class _SellStep2PageState extends State<SellStep2Page> {
                                 child: GridView.builder(
                                   shrinkWrap: true,
                                   physics: BouncingScrollPhysics(),
-                                  gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
-                                    crossAxisCount: 3,
-                                    childAspectRatio: 1.2,
-                                    crossAxisSpacing: 10,
-                                    mainAxisSpacing: 10,
-                                  ),
+                                  gridDelegate:
+                                      SliverGridDelegateWithFixedCrossAxisCount(
+                                        crossAxisCount: 3,
+                                        childAspectRatio: 1.2,
+                                        crossAxisSpacing: 10,
+                                        mainAxisSpacing: 10,
+                                      ),
                                   itemCount: getAvailableColors().length,
                                   itemBuilder: (context, index) {
-                                    final colorName = getAvailableColors()[index];
-                                    final colorValue = _colorFromName(colorName);
+                                    final colorName =
+                                        getAvailableColors()[index];
+                                    final colorValue = _colorFromName(
+                                      colorName,
+                                    );
                                     return InkWell(
                                       borderRadius: BorderRadius.circular(12),
-                                      onTap: () => Navigator.pop(context, colorName),
+                                      onTap: () =>
+                                          Navigator.pop(context, colorName),
                                       child: Container(
                                         decoration: BoxDecoration(
                                           color: Colors.black.withOpacity(0.15),
-                                          borderRadius: BorderRadius.circular(12),
-                                          border: Border.all(color: Colors.white24),
+                                          borderRadius: BorderRadius.circular(
+                                            12,
+                                          ),
+                                          border: Border.all(
+                                            color: Colors.white24,
+                                          ),
                                         ),
                                         padding: EdgeInsets.all(8),
                                         child: Column(
-                                          mainAxisAlignment: MainAxisAlignment.center,
+                                          mainAxisAlignment:
+                                              MainAxisAlignment.center,
                                           children: [
                                             Container(
                                               width: 40,
                                               height: 40,
                                               decoration: BoxDecoration(
                                                 color: colorValue,
-                                                borderRadius: BorderRadius.circular(8),
-                                                border: Border.all(color: Colors.white24, width: 2),
+                                                borderRadius:
+                                                    BorderRadius.circular(8),
+                                                border: Border.all(
+                                                  color: Colors.white24,
+                                                  width: 2,
+                                                ),
                                               ),
                                             ),
                                             SizedBox(height: 8),
-                                            Text(_translateValueGlobal(context, colorName) ?? colorName, style: GoogleFonts.orbitron(fontSize: 12, color: Colors.white, fontWeight: FontWeight.bold), textAlign: TextAlign.center, overflow: TextOverflow.ellipsis, maxLines: 1),
+                                            Text(
+                                              _translateValueGlobal(
+                                                    context,
+                                                    colorName,
+                                                  ) ??
+                                                  colorName,
+                                              style: GoogleFonts.orbitron(
+                                                fontSize: 12,
+                                                color: Colors.white,
+                                                fontWeight: FontWeight.bold,
+                                              ),
+                                              textAlign: TextAlign.center,
+                                              overflow: TextOverflow.ellipsis,
+                                              maxLines: 1,
+                                            ),
                                           ],
                                         ),
                                       ),
@@ -7829,67 +12502,144 @@ class _SellStep2PageState extends State<SellStep2Page> {
                   );
                   if (choice != null) setState(() => selectedColor = choice);
                 },
-                child: buildFancySelector(context, icon: Icons.palette, label: 'Color *', value: selectedColor ?? _tapToSelectTextGlobal(context), isError: errColor && (selectedColor == null || selectedColor!.isEmpty)),
+                child: buildFancySelector(
+                  context,
+                  icon: Icons.palette,
+                  label: 'Color *',
+                  value: selectedColor ?? _tapToSelectTextGlobal(context),
+                  isError:
+                      errColor &&
+                      (selectedColor == null || selectedColor!.isEmpty),
+                ),
               ),
             ),
             SizedBox(height: 16),
-            
+
             // Drive Type (Modal)
             FormField<String>(
-              validator: (_) => selectedDriveType == null ? 'Please select drive type' : null,
+              validator: (_) =>
+                  selectedDriveType == null ? 'Please select drive type' : null,
               builder: (state) => GestureDetector(
                 onTap: () async {
-                  final choice = await _pickFromList('Drive Type', getAvailableDriveTypes());
-                  if (choice != null) setState(() => selectedDriveType = choice);
+                  final choice = await _pickFromList(
+                    'Drive Type',
+                    getAvailableDriveTypes(),
+                  );
+                  if (choice != null)
+                    setState(() => selectedDriveType = choice);
                 },
-                child: buildFancySelector(context, icon: Icons.directions, label: 'Drive Type *', value: selectedDriveType, isError: errDrive && (selectedDriveType == null || selectedDriveType!.isEmpty)),
+                child: buildFancySelector(
+                  context,
+                  icon: Icons.directions,
+                  label: 'Drive Type *',
+                  value: selectedDriveType,
+                  isError:
+                      errDrive &&
+                      (selectedDriveType == null || selectedDriveType!.isEmpty),
+                ),
               ),
             ),
             SizedBox(height: 16),
-            
+
             // Seating (Modal)
             FormField<String>(
-              validator: (_) => selectedSeating == null ? 'Please select seating' : null,
+              validator: (_) =>
+                  selectedSeating == null ? 'Please select seating' : null,
               builder: (state) => GestureDetector(
                 onTap: () async {
-                  final choice = await _pickFromList('Seating', getAvailableSeatings().where((s) => s != 'Any').toList());
+                  final choice = await _pickFromList(
+                    'Seating',
+                    getAvailableSeatings().where((s) => s != 'Any').toList(),
+                  );
                   if (choice != null) setState(() => selectedSeating = choice);
                 },
-                child: buildFancySelector(context, icon: Icons.people, label: 'Seating *', value: selectedSeating == null ? null : (_localizeDigitsGlobal(context, selectedSeating!) + ' seats'), isError: errSeating && (selectedSeating == null || selectedSeating!.isEmpty)),
+                child: buildFancySelector(
+                  context,
+                  icon: Icons.people,
+                  label: 'Seating *',
+                  value: selectedSeating == null
+                      ? null
+                      : (_localizeDigitsGlobal(context, selectedSeating!) +
+                            ' seats'),
+                  isError:
+                      errSeating &&
+                      (selectedSeating == null || selectedSeating!.isEmpty),
+                ),
               ),
             ),
             SizedBox(height: 16),
-            
+
             // Engine Size (Modal)
             FormField<String>(
               builder: (state) => GestureDetector(
                 onTap: () async {
-                  final choice = await _pickFromList('Engine Size (L)', getAvailableEngineSizes().where((e) => e != 'Any').toList());
-                  if (choice != null) setState(() => selectedEngineSize = choice.replaceAll(' L', ''));
+                  final choice = await _pickFromList(
+                    'Engine Size (L)',
+                    getAvailableEngineSizes().where((e) => e != 'Any').toList(),
+                  );
+                  if (choice != null)
+                    setState(
+                      () => selectedEngineSize = choice.replaceAll(' L', ''),
+                    );
                 },
-                child: buildFancySelector(context, icon: Icons.engineering, label: 'Engine Size (L)', value: selectedEngineSize == null ? null : (_localizeDigitsGlobal(context, selectedEngineSize!) + ' L')),
+                child: buildFancySelector(
+                  context,
+                  icon: Icons.engineering,
+                  label: 'Engine Size (L)',
+                  value: selectedEngineSize == null
+                      ? null
+                      : (_localizeDigitsGlobal(context, selectedEngineSize!) +
+                            ' L'),
+                ),
               ),
             ),
             SizedBox(height: 16),
-            
+
             // Cylinder Count (Modal)
             FormField<String>(
               builder: (state) => GestureDetector(
                 onTap: () async {
-                  final choice = await _pickFromList('Cylinder Count', getAvailableCylinderCounts().where((c) => c != 'Any').toList());
-                  if (choice != null) setState(() => selectedCylinderCount = choice.replaceAll(' cylinders', ''));
+                  final choice = await _pickFromList(
+                    'Cylinder Count',
+                    getAvailableCylinderCounts()
+                        .where((c) => c != 'Any')
+                        .toList(),
+                  );
+                  if (choice != null)
+                    setState(
+                      () => selectedCylinderCount = choice.replaceAll(
+                        ' cylinders',
+                        '',
+                      ),
+                    );
                 },
-                child: buildFancySelector(context, icon: Icons.settings_input_component, label: 'Cylinder Count', value: selectedCylinderCount == null ? null : (_localizeDigitsGlobal(context, selectedCylinderCount!) + ' cylinders')),
+                child: buildFancySelector(
+                  context,
+                  icon: Icons.settings_input_component,
+                  label: 'Cylinder Count',
+                  value: selectedCylinderCount == null
+                      ? null
+                      : (_localizeDigitsGlobal(
+                              context,
+                              selectedCylinderCount!,
+                            ) +
+                            ' cylinders'),
+                ),
               ),
             ),
             SizedBox(height: 16),
-            
+
             // Title Status (Modal)
             FormField<String>(
-              validator: (_) => selectedTitleStatus == null ? AppLocalizations.of(context)!.titleStatus : null,
+              validator: (_) => selectedTitleStatus == null
+                  ? AppLocalizations.of(context)!.titleStatus
+                  : null,
               builder: (state) => GestureDetector(
                 onTap: () async {
-                  final choice = await _pickFromList(AppLocalizations.of(context)!.titleStatus, titleStatuses);
+                  final choice = await _pickFromList(
+                    AppLocalizations.of(context)!.titleStatus,
+                    titleStatuses,
+                  );
                   if (choice != null) {
                     setState(() {
                       selectedTitleStatus = choice;
@@ -7897,21 +12647,45 @@ class _SellStep2PageState extends State<SellStep2Page> {
                     });
                   }
                 },
-                child: buildFancySelector(context, icon: Icons.description, label: AppLocalizations.of(context)!.titleStatus + ' *', value: _translateValueGlobal(context, selectedTitleStatus), isError: errTitle && (selectedTitleStatus == null || (selectedTitleStatus ?? '').isEmpty)),
+                child: buildFancySelector(
+                  context,
+                  icon: Icons.description,
+                  label: AppLocalizations.of(context)!.titleStatus + ' *',
+                  value: _translateValueGlobal(context, selectedTitleStatus),
+                  isError:
+                      errTitle &&
+                      (selectedTitleStatus == null ||
+                          (selectedTitleStatus ?? '').isEmpty),
+                ),
               ),
             ),
             SizedBox(height: 16),
-            
+
             // Damaged Parts modal
             if ((selectedTitleStatus ?? '').toLowerCase() == 'damaged')
               FormField<String>(
                 builder: (state) => GestureDetector(
                   onTap: () async {
                     final nums = List.generate(20, (i) => (i + 1).toString());
-                    final choice = await _pickFromList(AppLocalizations.of(context)!.damagedParts, nums);
-                    if (choice != null) setState(() => selectedDamagedParts = choice);
+                    final choice = await _pickFromList(
+                      AppLocalizations.of(context)!.damagedParts,
+                      nums,
+                    );
+                    if (choice != null)
+                      setState(() => selectedDamagedParts = choice);
                   },
-                  child: buildFancySelector(context, icon: Icons.warning, label: AppLocalizations.of(context)!.damagedParts, value: selectedDamagedParts == null ? null : _localizeDigitsGlobal(context, selectedDamagedParts!), isError: errDamagedParts && (selectedDamagedParts == null || selectedDamagedParts!.isEmpty)),
+                  child: buildFancySelector(
+                    context,
+                    icon: Icons.warning,
+                    label: AppLocalizations.of(context)!.damagedParts,
+                    value: selectedDamagedParts == null
+                        ? null
+                        : _localizeDigitsGlobal(context, selectedDamagedParts!),
+                    isError:
+                        errDamagedParts &&
+                        (selectedDamagedParts == null ||
+                            selectedDamagedParts!.isEmpty),
+                  ),
                 ),
               ),
             SizedBox(height: 32),
@@ -7923,7 +12697,8 @@ class _SellStep2PageState extends State<SellStep2Page> {
                     height: 50,
                     child: OutlinedButton(
                       onPressed: () {
-                        final parentState = context.findAncestorStateOfType<_SellCarPageState>();
+                        final parentState = context
+                            .findAncestorStateOfType<_SellCarPageState>();
                         if (parentState != null) {
                           parentState._pageController.previousPage(
                             duration: Duration(milliseconds: 300),
@@ -7955,50 +12730,130 @@ class _SellStep2PageState extends State<SellStep2Page> {
                     child: ElevatedButton(
                       onPressed: () {
                         final List<String> missing = [];
-                        if (selectedMileage == null || (selectedMileage ?? '').isEmpty) missing.add(AppLocalizations.of(context)!.mileageLabel);
-                        if (selectedCondition == null || (selectedCondition ?? '').isEmpty) missing.add(AppLocalizations.of(context)!.conditionLabel);
-                        if (selectedTransmission == null || (selectedTransmission ?? '').isEmpty) missing.add(AppLocalizations.of(context)!.transmissionLabel);
-                        if (selectedFuelType == null || (selectedFuelType ?? '').isEmpty) missing.add(AppLocalizations.of(context)!.fuelTypeLabel);
-                        if (selectedBodyType == null || (selectedBodyType ?? '').isEmpty) missing.add(AppLocalizations.of(context)!.selectBodyType);
-                        if (selectedColor == null || (selectedColor ?? '').isEmpty) missing.add(AppLocalizations.of(context)!.selectColor);
-                        if (selectedDriveType == null || (selectedDriveType ?? '').isEmpty) missing.add(AppLocalizations.of(context)!.driveType);
-                        if (selectedSeating == null || (selectedSeating ?? '').isEmpty) missing.add(AppLocalizations.of(context)!.seating);
-                        if (selectedTitleStatus == null || (selectedTitleStatus ?? '').isEmpty) missing.add(AppLocalizations.of(context)!.titleStatus);
-                        if ((selectedTitleStatus?.toLowerCase() == 'damaged') && (selectedDamagedParts == null || (selectedDamagedParts ?? '').isEmpty)) missing.add(AppLocalizations.of(context)!.damagedParts);
+                        if (selectedMileage == null ||
+                            (selectedMileage ?? '').isEmpty)
+                          missing.add(
+                            AppLocalizations.of(context)!.mileageLabel,
+                          );
+                        if (selectedCondition == null ||
+                            (selectedCondition ?? '').isEmpty)
+                          missing.add(
+                            AppLocalizations.of(context)!.conditionLabel,
+                          );
+                        if (selectedTransmission == null ||
+                            (selectedTransmission ?? '').isEmpty)
+                          missing.add(
+                            AppLocalizations.of(context)!.transmissionLabel,
+                          );
+                        if (selectedFuelType == null ||
+                            (selectedFuelType ?? '').isEmpty)
+                          missing.add(
+                            AppLocalizations.of(context)!.fuelTypeLabel,
+                          );
+                        if (selectedBodyType == null ||
+                            (selectedBodyType ?? '').isEmpty)
+                          missing.add(
+                            AppLocalizations.of(context)!.selectBodyType,
+                          );
+                        if (selectedColor == null ||
+                            (selectedColor ?? '').isEmpty)
+                          missing.add(
+                            AppLocalizations.of(context)!.selectColor,
+                          );
+                        if (selectedDriveType == null ||
+                            (selectedDriveType ?? '').isEmpty)
+                          missing.add(AppLocalizations.of(context)!.driveType);
+                        if (selectedSeating == null ||
+                            (selectedSeating ?? '').isEmpty)
+                          missing.add(AppLocalizations.of(context)!.seating);
+                        if (selectedTitleStatus == null ||
+                            (selectedTitleStatus ?? '').isEmpty)
+                          missing.add(
+                            AppLocalizations.of(context)!.titleStatus,
+                          );
+                        if ((selectedTitleStatus?.toLowerCase() == 'damaged') &&
+                            (selectedDamagedParts == null ||
+                                (selectedDamagedParts ?? '').isEmpty))
+                          missing.add(
+                            AppLocalizations.of(context)!.damagedParts,
+                          );
                         if (missing.isNotEmpty) {
                           setState(() {
-                            errMileage = selectedMileage == null || (selectedMileage ?? '').isEmpty;
-                            errCondition = selectedCondition == null || (selectedCondition ?? '').isEmpty;
-                            errTransmission = selectedTransmission == null || (selectedTransmission ?? '').isEmpty;
-                            errFuelType = selectedFuelType == null || (selectedFuelType ?? '').isEmpty;
-                            errBodyType = selectedBodyType == null || (selectedBodyType ?? '').isEmpty;
-                            errColor = selectedColor == null || (selectedColor ?? '').isEmpty;
-                            errDrive = selectedDriveType == null || (selectedDriveType ?? '').isEmpty;
-                            errSeating = selectedSeating == null || (selectedSeating ?? '').isEmpty;
-                            errTitle = selectedTitleStatus == null || (selectedTitleStatus ?? '').isEmpty;
-                            errDamagedParts = (selectedTitleStatus?.toLowerCase() == 'damaged') && (selectedDamagedParts == null || (selectedDamagedParts ?? '').isEmpty);
+                            errMileage =
+                                selectedMileage == null ||
+                                (selectedMileage ?? '').isEmpty;
+                            errCondition =
+                                selectedCondition == null ||
+                                (selectedCondition ?? '').isEmpty;
+                            errTransmission =
+                                selectedTransmission == null ||
+                                (selectedTransmission ?? '').isEmpty;
+                            errFuelType =
+                                selectedFuelType == null ||
+                                (selectedFuelType ?? '').isEmpty;
+                            errBodyType =
+                                selectedBodyType == null ||
+                                (selectedBodyType ?? '').isEmpty;
+                            errColor =
+                                selectedColor == null ||
+                                (selectedColor ?? '').isEmpty;
+                            errDrive =
+                                selectedDriveType == null ||
+                                (selectedDriveType ?? '').isEmpty;
+                            errSeating =
+                                selectedSeating == null ||
+                                (selectedSeating ?? '').isEmpty;
+                            errTitle =
+                                selectedTitleStatus == null ||
+                                (selectedTitleStatus ?? '').isEmpty;
+                            errDamagedParts =
+                                (selectedTitleStatus?.toLowerCase() ==
+                                    'damaged') &&
+                                (selectedDamagedParts == null ||
+                                    (selectedDamagedParts ?? '').isEmpty);
                           });
                           ScaffoldMessenger.of(context).showSnackBar(
-                            SnackBar(content: Text(_pleaseFillRequiredGlobal(context) + ': ' + missing.join(', ')), backgroundColor: Colors.red),
+                            SnackBar(
+                              content: Text(
+                                _pleaseFillRequiredGlobal(context) +
+                                    ': ' +
+                                    missing.join(', '),
+                              ),
+                              backgroundColor: Colors.red,
+                            ),
                           );
                           return;
                         }
-                          final parentState = context.findAncestorStateOfType<_SellCarPageState>();
-                          if (parentState != null) {
-                            parentState.carData['mileage'] = selectedMileage;
-                            parentState.carData['condition'] = selectedCondition;
-                            parentState.carData['transmission'] = selectedTransmission;
-                            parentState.carData['fuel_type'] = selectedFuelType;
-                            parentState.carData['body_type'] = selectedBodyType;
-                            parentState.carData['color'] = selectedColor;
-                            parentState.carData['drive_type'] = selectedDriveType;
-                            parentState.carData['seating'] = selectedSeating;
-                            parentState.carData['engine_size'] = selectedEngineSize;
-                            parentState.carData['cylinder_count'] = selectedCylinderCount;
-                            parentState.carData['title_status'] = selectedTitleStatus;
-                            parentState.carData['damaged_parts'] = selectedDamagedParts;
-                          setState(() { errMileage = errCondition = errTransmission = errFuelType = errBodyType = errColor = errDrive = errSeating = errTitle = errDamagedParts = false; });
-                          parentState._pageController.nextPage(duration: Duration(milliseconds: 300), curve: Curves.easeInOut);
+                        final parentState = context
+                            .findAncestorStateOfType<_SellCarPageState>();
+                        if (parentState != null) {
+                          parentState.carData['mileage'] = selectedMileage;
+                          parentState.carData['condition'] = selectedCondition;
+                          parentState.carData['transmission'] =
+                              selectedTransmission;
+                          parentState.carData['fuel_type'] = selectedFuelType;
+                          parentState.carData['body_type'] = selectedBodyType;
+                          parentState.carData['color'] = selectedColor;
+                          parentState.carData['drive_type'] = selectedDriveType;
+                          parentState.carData['seating'] = selectedSeating;
+                          parentState.carData['engine_size'] =
+                              selectedEngineSize;
+                          parentState.carData['cylinder_count'] =
+                              selectedCylinderCount;
+                          parentState.carData['title_status'] =
+                              selectedTitleStatus;
+                          parentState.carData['damaged_parts'] =
+                              selectedDamagedParts;
+                          setState(() {
+                            errMileage = errCondition = errTransmission =
+                                errFuelType = errBodyType = errColor =
+                                    errDrive = errSeating = errTitle =
+                                        errDamagedParts = false;
+                          });
+                          parentState._pageController.nextPage(
+                            duration: Duration(milliseconds: 300),
+                            curve: Curves.easeInOut,
+                          );
                         }
                       },
                       style: ElevatedButton.styleFrom(
@@ -8011,7 +12866,10 @@ class _SellStep2PageState extends State<SellStep2Page> {
                       ),
                       child: Text(
                         'Next Step',
-                        style: TextStyle(fontSize: 16, fontWeight: FontWeight.w600),
+                        style: TextStyle(
+                          fontSize: 16,
+                          fontWeight: FontWeight.w600,
+                        ),
                       ),
                     ),
                   ),
@@ -8037,32 +12895,46 @@ class _SellStep3PageState extends State<SellStep3Page> {
   String? selectedCity;
   String? contactPhone;
   bool isQuickSell = false;
-  
+
   @override
   void initState() {
     super.initState();
     _resetStep3();
   }
-  
+
   void _resetStep3() {
     selectedPrice = null;
     selectedCity = null;
     contactPhone = null;
     isQuickSell = false;
   }
-  
+
   final List<String> cities = [
-    'Baghdad', 'Basra', 'Mosul', 'Erbil', 'Najaf', 'Karbala', 'Sulaymaniyah', 
-    'Kirkuk', 'Nasiriyah', 'Amara', 'Ramadi', 'Fallujah', 'Tikrit', 'Samarra'
+    'Baghdad',
+    'Basra',
+    'Mosul',
+    'Erbil',
+    'Najaf',
+    'Karbala',
+    'Sulaymaniyah',
+    'Kirkuk',
+    'Nasiriyah',
+    'Amara',
+    'Ramadi',
+    'Fallujah',
+    'Tikrit',
+    'Samarra',
   ];
-  
+
   Future<String?> _pickFromList(String title, List<String> options) async {
     return await showDialog<String>(
       context: context,
       builder: (context) {
         return Dialog(
           backgroundColor: Colors.grey[900]?.withOpacity(0.98),
-          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(20),
+          ),
           child: Container(
             width: 420,
             padding: EdgeInsets.all(20),
@@ -8073,8 +12945,18 @@ class _SellStep3PageState extends State<SellStep3Page> {
                 Row(
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
-                    Text(title, style: TextStyle(color: Color(0xFFFF6B00), fontWeight: FontWeight.bold, fontSize: 20)),
-                    IconButton(icon: Icon(Icons.close, color: Colors.white), onPressed: () => Navigator.pop(context)),
+                    Text(
+                      title,
+                      style: TextStyle(
+                        color: Color(0xFFFF6B00),
+                        fontWeight: FontWeight.bold,
+                        fontSize: 20,
+                      ),
+                    ),
+                    IconButton(
+                      icon: Icon(Icons.close, color: Colors.white),
+                      onPressed: () => Navigator.pop(context),
+                    ),
                   ],
                 ),
                 SizedBox(height: 10),
@@ -8089,11 +12971,17 @@ class _SellStep3PageState extends State<SellStep3Page> {
                         borderRadius: BorderRadius.circular(14),
                         onTap: () => Navigator.pop(context, value),
                         child: Container(
-                          padding: EdgeInsets.symmetric(vertical: 14, horizontal: 12),
+                          padding: EdgeInsets.symmetric(
+                            vertical: 14,
+                            horizontal: 12,
+                          ),
                           decoration: BoxDecoration(
                             borderRadius: BorderRadius.circular(14),
                             gradient: LinearGradient(
-                              colors: [Colors.white.withOpacity(0.06), Colors.white.withOpacity(0.02)],
+                              colors: [
+                                Colors.white.withOpacity(0.06),
+                                Colors.white.withOpacity(0.02),
+                              ],
                               begin: Alignment.topLeft,
                               end: Alignment.bottomRight,
                             ),
@@ -8101,7 +12989,15 @@ class _SellStep3PageState extends State<SellStep3Page> {
                           ),
                           child: Row(
                             children: [
-                              Expanded(child: Text(value, style: TextStyle(color: Colors.white, fontWeight: FontWeight.w600))),
+                              Expanded(
+                                child: Text(
+                                  value,
+                                  style: TextStyle(
+                                    color: Colors.white,
+                                    fontWeight: FontWeight.w600,
+                                  ),
+                                ),
+                              ),
                               Icon(Icons.chevron_right, color: Colors.white70),
                             ],
                           ),
@@ -8109,7 +13005,7 @@ class _SellStep3PageState extends State<SellStep3Page> {
                       );
                     },
                   ),
-                )
+                ),
               ],
             ),
           ),
@@ -8117,7 +13013,7 @@ class _SellStep3PageState extends State<SellStep3Page> {
       },
     );
   }
-  
+
   @override
   Widget build(BuildContext context) {
     return SingleChildScrollView(
@@ -8155,29 +13051,35 @@ class _SellStep3PageState extends State<SellStep3Page> {
                   SizedBox(height: 8),
                   Text(
                     'Set your price and contact information',
-                    style: TextStyle(
-                      fontSize: 16,
-                      color: Colors.grey[600],
-                    ),
+                    style: TextStyle(fontSize: 16, color: Colors.grey[600]),
                     textAlign: TextAlign.center,
                   ),
                 ],
               ),
             ),
             SizedBox(height: 24),
-            
+
             // Price (Modal)
             FormField<String>(
-              validator: (_) => (selectedPrice == null || selectedPrice!.isEmpty) ? 'Please select price' : null,
+              validator: (_) =>
+                  (selectedPrice == null || selectedPrice!.isEmpty)
+                  ? 'Please select price'
+                  : null,
               builder: (state) => GestureDetector(
                 onTap: () async {
                   final priceOptions = [
                     ...List.generate(600, (i) => (500 + i * 500).toString()),
-                    ...List.generate(171, (i) => (300000 + (i + 1) * 10000).toString()),
+                    ...List.generate(
+                      171,
+                      (i) => (300000 + (i + 1) * 10000).toString(),
+                    ),
                   ].map((p) => ' ' + p).toList();
                   final choice = await _pickFromList('Price (USD)', [
                     ...List.generate(600, (i) => (500 + i * 500).toString()),
-                    ...List.generate(170, (i) => (300000 + (i + 1) * 10000).toString()),
+                    ...List.generate(
+                      170,
+                      (i) => (300000 + (i + 1) * 10000).toString(),
+                    ),
                   ]);
                   if (choice != null) setState(() => selectedPrice = choice);
                 },
@@ -8185,25 +13087,33 @@ class _SellStep3PageState extends State<SellStep3Page> {
                   context,
                   icon: Icons.attach_money,
                   label: 'Price (USD) *',
-                  value: selectedPrice != null ? _formatCurrencyGlobal(context, selectedPrice) : null,
+                  value: selectedPrice != null
+                      ? _formatCurrencyGlobal(context, selectedPrice)
+                      : null,
                 ),
               ),
             ),
             SizedBox(height: 16),
-            
+
             // City (Modal)
             FormField<String>(
-              validator: (_) => selectedCity == null ? 'Please select city' : null,
+              validator: (_) =>
+                  selectedCity == null ? 'Please select city' : null,
               builder: (state) => GestureDetector(
                 onTap: () async {
                   final choice = await _pickFromList('City', cities);
                   if (choice != null) setState(() => selectedCity = choice);
                 },
-                child: buildFancySelector(context, icon: Icons.location_city, label: 'City *', value: selectedCity),
+                child: buildFancySelector(
+                  context,
+                  icon: Icons.location_city,
+                  label: 'City *',
+                  value: selectedCity,
+                ),
               ),
             ),
             SizedBox(height: 16),
-            
+
             // Contact Phone
             TextFormField(
               decoration: InputDecoration(
@@ -8221,15 +13131,18 @@ class _SellStep3PageState extends State<SellStep3Page> {
               ],
               onChanged: (value) => contactPhone = value,
               validator: (value) {
-                if (value == null || value.trim().isEmpty) return 'Please enter phone number';
+                if (value == null || value.trim().isEmpty)
+                  return 'Please enter phone number';
                 final s = value.trim();
-                final bool looksOk = s.startsWith('+') ? RegExp(r'^\+\d{7,}$').hasMatch(s) : RegExp(r'^\d{7,}$').hasMatch(s);
+                final bool looksOk = s.startsWith('+')
+                    ? RegExp(r'^\+\d{7,}$').hasMatch(s)
+                    : RegExp(r'^\d{7,}$').hasMatch(s);
                 if (!looksOk) return 'Please use international format';
                 return null;
               },
             ),
             SizedBox(height: 24),
-            
+
             // Quick Sell Option
             Container(
               padding: EdgeInsets.all(16),
@@ -8277,7 +13190,7 @@ class _SellStep3PageState extends State<SellStep3Page> {
               ),
             ),
             SizedBox(height: 32),
-            
+
             // Navigation Buttons
             Row(
               children: [
@@ -8286,7 +13199,8 @@ class _SellStep3PageState extends State<SellStep3Page> {
                     height: 50,
                     child: OutlinedButton(
                       onPressed: () {
-                        final parentState = context.findAncestorStateOfType<_SellCarPageState>();
+                        final parentState = context
+                            .findAncestorStateOfType<_SellCarPageState>();
                         if (parentState != null) {
                           parentState._pageController.previousPage(
                             duration: Duration(milliseconds: 300),
@@ -8318,22 +13232,39 @@ class _SellStep3PageState extends State<SellStep3Page> {
                     child: ElevatedButton(
                       onPressed: () {
                         final List<String> missing = [];
-                        if (selectedPrice == null || (selectedPrice ?? '').isEmpty) missing.add(AppLocalizations.of(context)!.priceLabel);
-                        if (selectedCity == null || (selectedCity ?? '').isEmpty) missing.add(AppLocalizations.of(context)!.cityLabel);
-                        if (contactPhone == null || (contactPhone ?? '').trim().isEmpty) missing.add('Phone');
+                        if (selectedPrice == null ||
+                            (selectedPrice ?? '').isEmpty)
+                          missing.add(AppLocalizations.of(context)!.priceLabel);
+                        if (selectedCity == null ||
+                            (selectedCity ?? '').isEmpty)
+                          missing.add(AppLocalizations.of(context)!.cityLabel);
+                        if (contactPhone == null ||
+                            (contactPhone ?? '').trim().isEmpty)
+                          missing.add('Phone');
                         if (missing.isNotEmpty) {
                           ScaffoldMessenger.of(context).showSnackBar(
-                            SnackBar(content: Text(_pleaseFillRequiredGlobal(context) + ': ' + missing.join(', ')), backgroundColor: Colors.red),
+                            SnackBar(
+                              content: Text(
+                                _pleaseFillRequiredGlobal(context) +
+                                    ': ' +
+                                    missing.join(', '),
+                              ),
+                              backgroundColor: Colors.red,
+                            ),
                           );
                           return;
                         }
-                          final parentState = context.findAncestorStateOfType<_SellCarPageState>();
-                          if (parentState != null) {
-                            parentState.carData['price'] = selectedPrice;
-                            parentState.carData['city'] = selectedCity;
-                            parentState.carData['contact_phone'] = contactPhone;
-                            parentState.carData['is_quick_sell'] = isQuickSell;
-                          parentState._pageController.nextPage(duration: Duration(milliseconds: 300), curve: Curves.easeInOut);
+                        final parentState = context
+                            .findAncestorStateOfType<_SellCarPageState>();
+                        if (parentState != null) {
+                          parentState.carData['price'] = selectedPrice;
+                          parentState.carData['city'] = selectedCity;
+                          parentState.carData['contact_phone'] = contactPhone;
+                          parentState.carData['is_quick_sell'] = isQuickSell;
+                          parentState._pageController.nextPage(
+                            duration: Duration(milliseconds: 300),
+                            curve: Curves.easeInOut,
+                          );
                         }
                       },
                       style: ElevatedButton.styleFrom(
@@ -8346,7 +13277,10 @@ class _SellStep3PageState extends State<SellStep3Page> {
                       ),
                       child: Text(
                         'Next Step',
-                        style: TextStyle(fontSize: 16, fontWeight: FontWeight.w600),
+                        style: TextStyle(
+                          fontSize: 16,
+                          fontWeight: FontWeight.w600,
+                        ),
                       ),
                     ),
                   ),
@@ -8365,14 +13299,18 @@ class SellStep4Page extends StatefulWidget {
   @override
   _SellStep4PageState createState() => _SellStep4PageState();
 }
+
 class _SellStep4PageState extends State<SellStep4Page> {
   final ImagePicker _imagePicker = ImagePicker();
   List<XFile> _selectedImages = [];
   List<XFile> _selectedVideos = [];
-  
+
   Future<void> _pickImages() async {
     try {
-      final files = await _imagePicker.pickMultiImage(imageQuality: 85, maxWidth: 1920);
+      final files = await _imagePicker.pickMultiImage(
+        imageQuality: 85,
+        maxWidth: 1920,
+      );
       if (files.isNotEmpty) {
         setState(() {
           _selectedImages = files;
@@ -8380,7 +13318,7 @@ class _SellStep4PageState extends State<SellStep4Page> {
       }
     } catch (_) {}
   }
-  
+
   Future<void> _pickVideos() async {
     try {
       final file = await _imagePicker.pickVideo(
@@ -8394,7 +13332,7 @@ class _SellStep4PageState extends State<SellStep4Page> {
       }
     } catch (_) {}
   }
-  
+
   @override
   Widget build(BuildContext context) {
     return SingleChildScrollView(
@@ -8430,19 +13368,19 @@ class _SellStep4PageState extends State<SellStep4Page> {
                 SizedBox(height: 8),
                 Text(
                   AppLocalizations.of(context)!.addMorePhotos,
-                  style: TextStyle(
-                    fontSize: 16,
-                    color: Colors.grey[600],
-                  ),
+                  style: TextStyle(fontSize: 16, color: Colors.grey[600]),
                   textAlign: TextAlign.center,
                 ),
               ],
             ),
           ),
           SizedBox(height: 24),
-          
+
           // Photos Section
-          Text(_photosRequiredTitleGlobal(context), style: TextStyle(fontWeight: FontWeight.bold, fontSize: 18)),
+          Text(
+            _photosRequiredTitleGlobal(context),
+            style: TextStyle(fontWeight: FontWeight.bold, fontSize: 18),
+          ),
           SizedBox(height: 12),
           if (_selectedImages.isNotEmpty)
             Container(
@@ -8464,7 +13402,10 @@ class _SellStep4PageState extends State<SellStep4Page> {
                             border: Border.all(color: Colors.white24),
                           ),
                           clipBehavior: Clip.antiAlias,
-                          child: Image.file(File(image.path), fit: BoxFit.cover),
+                          child: Image.file(
+                            File(image.path),
+                            fit: BoxFit.cover,
+                          ),
                         ),
                         Positioned(
                           right: 4,
@@ -8476,12 +13417,19 @@ class _SellStep4PageState extends State<SellStep4Page> {
                               });
                             },
                             child: Container(
-                              decoration: BoxDecoration(color: Colors.black54, shape: BoxShape.circle),
+                              decoration: BoxDecoration(
+                                color: Colors.black54,
+                                shape: BoxShape.circle,
+                              ),
                               padding: EdgeInsets.all(4),
-                              child: Icon(Icons.close, size: 16, color: Colors.white),
+                              child: Icon(
+                                Icons.close,
+                                size: 16,
+                                color: Colors.white,
+                              ),
                             ),
                           ),
-                        )
+                        ),
                       ],
                     ),
                   );
@@ -8494,7 +13442,9 @@ class _SellStep4PageState extends State<SellStep4Page> {
             child: ElevatedButton.icon(
               onPressed: _pickImages,
               icon: Icon(Icons.photo_library),
-              label: Text(_selectedImages.isEmpty ? 'Add Photos' : 'Add More Photos'),
+              label: Text(
+                _selectedImages.isEmpty ? 'Add Photos' : 'Add More Photos',
+              ),
               style: ElevatedButton.styleFrom(
                 backgroundColor: Colors.grey.withOpacity(0.2),
                 foregroundColor: Colors.white,
@@ -8505,9 +13455,12 @@ class _SellStep4PageState extends State<SellStep4Page> {
             ),
           ),
           SizedBox(height: 24),
-          
+
           // Videos Section
-          Text(_videosOptionalTitleGlobal(context), style: TextStyle(fontWeight: FontWeight.bold, fontSize: 18)),
+          Text(
+            _videosOptionalTitleGlobal(context),
+            style: TextStyle(fontWeight: FontWeight.bold, fontSize: 18),
+          ),
           SizedBox(height: 12),
           if (_selectedVideos.isNotEmpty)
             Container(
@@ -8534,7 +13487,11 @@ class _SellStep4PageState extends State<SellStep4Page> {
                               Container(
                                 color: Colors.grey[800],
                                 child: Center(
-                                  child: Icon(Icons.videocam, color: Colors.white, size: 32),
+                                  child: Icon(
+                                    Icons.videocam,
+                                    color: Colors.white,
+                                    size: 32,
+                                  ),
                                 ),
                               ),
                               Center(
@@ -8544,7 +13501,11 @@ class _SellStep4PageState extends State<SellStep4Page> {
                                     shape: BoxShape.circle,
                                   ),
                                   padding: EdgeInsets.all(8),
-                                  child: Icon(Icons.play_arrow, color: Colors.white, size: 24),
+                                  child: Icon(
+                                    Icons.play_arrow,
+                                    color: Colors.white,
+                                    size: 24,
+                                  ),
                                 ),
                               ),
                             ],
@@ -8560,12 +13521,19 @@ class _SellStep4PageState extends State<SellStep4Page> {
                               });
                             },
                             child: Container(
-                              decoration: BoxDecoration(color: Colors.black54, shape: BoxShape.circle),
+                              decoration: BoxDecoration(
+                                color: Colors.black54,
+                                shape: BoxShape.circle,
+                              ),
                               padding: EdgeInsets.all(4),
-                              child: Icon(Icons.close, size: 16, color: Colors.white),
+                              child: Icon(
+                                Icons.close,
+                                size: 16,
+                                color: Colors.white,
+                              ),
                             ),
                           ),
-                        )
+                        ),
                       ],
                     ),
                   );
@@ -8578,7 +13546,9 @@ class _SellStep4PageState extends State<SellStep4Page> {
             child: ElevatedButton.icon(
               onPressed: _pickVideos,
               icon: Icon(Icons.videocam),
-              label: Text(_selectedVideos.isEmpty ? 'Add Videos' : 'Add More Videos'),
+              label: Text(
+                _selectedVideos.isEmpty ? 'Add Videos' : 'Add More Videos',
+              ),
               style: ElevatedButton.styleFrom(
                 backgroundColor: Colors.grey.withOpacity(0.2),
                 foregroundColor: Colors.white,
@@ -8589,7 +13559,7 @@ class _SellStep4PageState extends State<SellStep4Page> {
             ),
           ),
           SizedBox(height: 32),
-          
+
           // Navigation Buttons
           Row(
             children: [
@@ -8598,7 +13568,8 @@ class _SellStep4PageState extends State<SellStep4Page> {
                   height: 50,
                   child: OutlinedButton(
                     onPressed: () {
-                      final parentState = context.findAncestorStateOfType<_SellCarPageState>();
+                      final parentState = context
+                          .findAncestorStateOfType<_SellCarPageState>();
                       if (parentState != null) {
                         parentState._pageController.previousPage(
                           duration: Duration(milliseconds: 300),
@@ -8632,19 +13603,22 @@ class _SellStep4PageState extends State<SellStep4Page> {
                       if (_selectedImages.isEmpty) {
                         ScaffoldMessenger.of(context).showSnackBar(
                           SnackBar(
-                            content: Text(_pleaseSelectPhotoTextGlobal(context)),
+                            content: Text(
+                              _pleaseSelectPhotoTextGlobal(context),
+                            ),
                             backgroundColor: Colors.red,
                           ),
                         );
                         return;
                       }
-                      
+
                       // Save data and navigate to next step
-                      final parentState = context.findAncestorStateOfType<_SellCarPageState>();
+                      final parentState = context
+                          .findAncestorStateOfType<_SellCarPageState>();
                       if (parentState != null) {
                         parentState.carData['images'] = _selectedImages;
                         parentState.carData['videos'] = _selectedVideos;
-                        
+
                         parentState._pageController.nextPage(
                           duration: Duration(milliseconds: 300),
                           curve: Curves.easeInOut,
@@ -8661,7 +13635,10 @@ class _SellStep4PageState extends State<SellStep4Page> {
                     ),
                     child: Text(
                       'Next Step',
-                      style: TextStyle(fontSize: 16, fontWeight: FontWeight.w600),
+                      style: TextStyle(
+                        fontSize: 16,
+                        fontWeight: FontWeight.w600,
+                      ),
                     ),
                   ),
                 ),
@@ -8682,12 +13659,12 @@ class SellStep5Page extends StatefulWidget {
 
 class _SellStep5PageState extends State<SellStep5Page> {
   bool isSubmitting = false;
-  
+
   @override
   Widget build(BuildContext context) {
     final parentState = context.findAncestorStateOfType<_SellCarPageState>();
     final carData = parentState?.carData ?? {};
-    
+
     return SingleChildScrollView(
       padding: EdgeInsets.all(20),
       child: Column(
@@ -8721,17 +13698,14 @@ class _SellStep5PageState extends State<SellStep5Page> {
                 SizedBox(height: 8),
                 Text(
                   'Review your listing before submitting',
-                  style: TextStyle(
-                    fontSize: 16,
-                    color: Colors.grey[600],
-                  ),
+                  style: TextStyle(fontSize: 16, color: Colors.grey[600]),
                   textAlign: TextAlign.center,
                 ),
               ],
             ),
           ),
           SizedBox(height: 24),
-          
+
           // Car Summary
           Container(
             padding: EdgeInsets.all(16),
@@ -8771,7 +13745,7 @@ class _SellStep5PageState extends State<SellStep5Page> {
             ),
           ),
           SizedBox(height: 24),
-          
+
           // Photos Summary
           Container(
             padding: EdgeInsets.all(16),
@@ -8792,13 +13766,19 @@ class _SellStep5PageState extends State<SellStep5Page> {
                   ),
                 ),
                 SizedBox(height: 12),
-                _buildSummaryRow('Photos', '${carData['images']?.length ?? 0} selected'),
-                _buildSummaryRow('Videos', '${carData['videos']?.length ?? 0} selected'),
+                _buildSummaryRow(
+                  'Photos',
+                  '${carData['images']?.length ?? 0} selected',
+                ),
+                _buildSummaryRow(
+                  'Videos',
+                  '${carData['videos']?.length ?? 0} selected',
+                ),
               ],
             ),
           ),
           SizedBox(height: 32),
-          
+
           // Navigation Buttons
           Row(
             children: [
@@ -8806,15 +13786,18 @@ class _SellStep5PageState extends State<SellStep5Page> {
                 child: SizedBox(
                   height: 50,
                   child: OutlinedButton(
-                    onPressed: isSubmitting ? null : () {
-                      final parentState = context.findAncestorStateOfType<_SellCarPageState>();
-                      if (parentState != null) {
-                        parentState._pageController.previousPage(
-                          duration: Duration(milliseconds: 300),
-                          curve: Curves.easeInOut,
-                        );
-                      }
-                    },
+                    onPressed: isSubmitting
+                        ? null
+                        : () {
+                            final parentState = context
+                                .findAncestorStateOfType<_SellCarPageState>();
+                            if (parentState != null) {
+                              parentState._pageController.previousPage(
+                                duration: Duration(milliseconds: 300),
+                                curve: Curves.easeInOut,
+                              );
+                            }
+                          },
                     style: OutlinedButton.styleFrom(
                       side: BorderSide(color: Color(0xFFFF6B00)),
                       shape: RoundedRectangleBorder(
@@ -8837,77 +13820,133 @@ class _SellStep5PageState extends State<SellStep5Page> {
                 child: SizedBox(
                   height: 50,
                   child: ElevatedButton(
-                    onPressed: isSubmitting ? null : () async {
-                      setState(() {
-                        isSubmitting = true;
-                      });
-                      
-                      try {
-                        // Client-side validation before submit
-                        final parentState = context.findAncestorStateOfType<_SellCarPageState>();
-                        final Map<String, dynamic> carData = Map<String, dynamic>.from(parentState?.carData ?? {});
-                        final List<String> required = [
-                          'brand','model','trim','year','mileage','condition','transmission','fuel_type','color','body_type','seating','drive_type','title_status'
-                        ];
-                        final List<String> missing = [];
-                        for (final k in required) {
-                          final v = carData[k];
-                          final isEmpty = v == null || (v is String && v.trim().isEmpty);
-                          if (isEmpty) missing.add(k);
-                        }
-                        if (missing.isNotEmpty) {
-                          final stepFor = (String k) {
-                            const step1 = {'brand','model','trim','year'};
-                            const step2 = {'mileage','condition','transmission','fuel_type','color','body_type','seating','drive_type','title_status'};
-                            if (step1.contains(k)) return 1;
-                            if (step2.contains(k)) return 2;
-                            return 3;
-                          };
-                          final first = missing.first;
-                          final targetStep = stepFor(first);
-                          // Navigate user to the step containing the first missing field
-                          if (parentState != null) {
-                            parentState._pageController.jumpToPage(targetStep - 1);
-                          }
-                          ScaffoldMessenger.of(context).showSnackBar(
-                            SnackBar(
-                              content: Text('Please complete: ' + missing.join(', ')),
-                              backgroundColor: Colors.red,
-                            ),
-                          );
-                          setState(() { isSubmitting = false; });
-                          return;
-                        }
-                        // Submit the listing
-                        await _submitListing(carData);
-                        
-                        // Show success message
-                        ScaffoldMessenger.of(context).showSnackBar(
-                          SnackBar(
-                            content: Text(_listingSubmittedSuccessTextGlobal(context)),
-                            backgroundColor: Colors.green,
-                          ),
-                        );
-                        
-                        // Navigate back to home
-                        Navigator.pushReplacementNamed(context, '/');
-                      } catch (e) {
-                        ScaffoldMessenger.of(context).showSnackBar(
-                          SnackBar(
-                            content: Text(
-                              (e is Exception ? e.toString().replaceFirst('Exception: ', '') : e.toString()).isEmpty
-                                  ? AppLocalizations.of(context)!.couldNotSubmitListing
-                                  : (e is Exception ? e.toString().replaceFirst('Exception: ', '') : e.toString()),
-                            ),
-                            backgroundColor: Colors.red,
-                          ),
-                        );
-                      } finally {
-                        setState(() {
-                          isSubmitting = false;
-                        });
-                      }
-                    },
+                    onPressed: isSubmitting
+                        ? null
+                        : () async {
+                            setState(() {
+                              isSubmitting = true;
+                            });
+
+                            try {
+                              // Client-side validation before submit
+                              final parentState = context
+                                  .findAncestorStateOfType<_SellCarPageState>();
+                              final Map<String, dynamic> carData =
+                                  Map<String, dynamic>.from(
+                                    parentState?.carData ?? {},
+                                  );
+                              final List<String> required = [
+                                'brand',
+                                'model',
+                                'trim',
+                                'year',
+                                'mileage',
+                                'condition',
+                                'transmission',
+                                'fuel_type',
+                                'color',
+                                'body_type',
+                                'seating',
+                                'drive_type',
+                                'title_status',
+                              ];
+                              final List<String> missing = [];
+                              for (final k in required) {
+                                final v = carData[k];
+                                final isEmpty =
+                                    v == null ||
+                                    (v is String && v.trim().isEmpty);
+                                if (isEmpty) missing.add(k);
+                              }
+                              if (missing.isNotEmpty) {
+                                final stepFor = (String k) {
+                                  const step1 = {
+                                    'brand',
+                                    'model',
+                                    'trim',
+                                    'year',
+                                  };
+                                  const step2 = {
+                                    'mileage',
+                                    'condition',
+                                    'transmission',
+                                    'fuel_type',
+                                    'color',
+                                    'body_type',
+                                    'seating',
+                                    'drive_type',
+                                    'title_status',
+                                  };
+                                  if (step1.contains(k)) return 1;
+                                  if (step2.contains(k)) return 2;
+                                  return 3;
+                                };
+                                final first = missing.first;
+                                final targetStep = stepFor(first);
+                                // Navigate user to the step containing the first missing field
+                                if (parentState != null) {
+                                  parentState._pageController.jumpToPage(
+                                    targetStep - 1,
+                                  );
+                                }
+                                ScaffoldMessenger.of(context).showSnackBar(
+                                  SnackBar(
+                                    content: Text(
+                                      'Please complete: ' + missing.join(', '),
+                                    ),
+                                    backgroundColor: Colors.red,
+                                  ),
+                                );
+                                setState(() {
+                                  isSubmitting = false;
+                                });
+                                return;
+                              }
+                              // Submit the listing
+                              await _submitListing(carData);
+
+                              // Show success message
+                              ScaffoldMessenger.of(context).showSnackBar(
+                                SnackBar(
+                                  content: Text(
+                                    _listingSubmittedSuccessTextGlobal(context),
+                                  ),
+                                  backgroundColor: Colors.green,
+                                ),
+                              );
+
+                              // Navigate back to home
+                              Navigator.pushReplacementNamed(context, '/');
+                            } catch (e) {
+                              ScaffoldMessenger.of(context).showSnackBar(
+                                SnackBar(
+                                  content: Text(
+                                    (e is Exception
+                                                ? e.toString().replaceFirst(
+                                                    'Exception: ',
+                                                    '',
+                                                  )
+                                                : e.toString())
+                                            .isEmpty
+                                        ? AppLocalizations.of(
+                                            context,
+                                          )!.couldNotSubmitListing
+                                        : (e is Exception
+                                              ? e.toString().replaceFirst(
+                                                  'Exception: ',
+                                                  '',
+                                                )
+                                              : e.toString()),
+                                  ),
+                                  backgroundColor: Colors.red,
+                                ),
+                              );
+                            } finally {
+                              setState(() {
+                                isSubmitting = false;
+                              });
+                            }
+                          },
                     style: ElevatedButton.styleFrom(
                       backgroundColor: Color(0xFFFF6B00),
                       foregroundColor: Colors.white,
@@ -8922,12 +13961,17 @@ class _SellStep5PageState extends State<SellStep5Page> {
                             height: 20,
                             child: CircularProgressIndicator(
                               strokeWidth: 2,
-                              valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
+                              valueColor: AlwaysStoppedAnimation<Color>(
+                                Colors.white,
+                              ),
                             ),
                           )
                         : Text(
                             'Submit Listing',
-                            style: TextStyle(fontSize: 16, fontWeight: FontWeight.w600),
+                            style: TextStyle(
+                              fontSize: 16,
+                              fontWeight: FontWeight.w600,
+                            ),
                           ),
                   ),
                 ),
@@ -8938,8 +13982,12 @@ class _SellStep5PageState extends State<SellStep5Page> {
       ),
     );
   }
-  
-  Widget _buildSummaryRow(String label, String? value, {bool isHighlight = false}) {
+
+  Widget _buildSummaryRow(
+    String label,
+    String? value, {
+    bool isHighlight = false,
+  }) {
     return Padding(
       padding: EdgeInsets.symmetric(vertical: 4),
       child: Row(
@@ -8967,7 +14015,7 @@ class _SellStep5PageState extends State<SellStep5Page> {
       ),
     );
   }
-  
+
   Future<void> _submitListing(Map<String, dynamic> carData) async {
     // Require authentication before allowing submission
     final existingToken = ApiService.accessToken;
@@ -8978,19 +14026,32 @@ class _SellStep5PageState extends State<SellStep5Page> {
     final brand = carData['brand']?.toString() ?? '';
     final model = carData['model']?.toString() ?? '';
     final trim = carData['trim']?.toString() ?? 'Base';
-    final year = int.tryParse(carData['year']?.toString() ?? '') ?? DateTime.now().year;
+    final year =
+        int.tryParse(carData['year']?.toString() ?? '') ?? DateTime.now().year;
     final mileage = int.tryParse(carData['mileage']?.toString() ?? '0') ?? 0;
-    final condition = (carData['condition']?.toString() ?? 'Used').toLowerCase();
-    final transmission = (carData['transmission']?.toString() ?? 'Automatic').toLowerCase();
-    final fuelType = (carData['fuel_type']?.toString() ?? 'Gasoline').toLowerCase();
+    final condition = (carData['condition']?.toString() ?? 'Used')
+        .toLowerCase();
+    final transmission = (carData['transmission']?.toString() ?? 'Automatic')
+        .toLowerCase();
+    final fuelType = (carData['fuel_type']?.toString() ?? 'Gasoline')
+        .toLowerCase();
     final color = (carData['color']?.toString() ?? 'Black').toLowerCase();
-    final bodyType = (carData['body_type']?.toString() ?? 'Sedan').toLowerCase();
+    final bodyType = (carData['body_type']?.toString() ?? 'Sedan')
+        .toLowerCase();
     final seating = int.tryParse(carData['seating']?.toString() ?? '5') ?? 5;
-    final driveType = (carData['drive_type']?.toString() ?? 'fwd').toLowerCase();
-    final titleStatus = (carData['title_status']?.toString() ?? 'clean').toLowerCase();
-    final damagedParts = titleStatus == 'damaged' ? int.tryParse(carData['damaged_parts']?.toString() ?? '') : null;
-    final cylinderCount = int.tryParse(carData['cylinder_count']?.toString() ?? '');
-    final engineSize = double.tryParse(carData['engine_size']?.toString() ?? '');
+    final driveType = (carData['drive_type']?.toString() ?? 'fwd')
+        .toLowerCase();
+    final titleStatus = (carData['title_status']?.toString() ?? 'clean')
+        .toLowerCase();
+    final damagedParts = titleStatus == 'damaged'
+        ? int.tryParse(carData['damaged_parts']?.toString() ?? '')
+        : null;
+    final cylinderCount = int.tryParse(
+      carData['cylinder_count']?.toString() ?? '',
+    );
+    final engineSize = double.tryParse(
+      carData['engine_size']?.toString() ?? '',
+    );
     final price = int.tryParse(carData['price']?.toString() ?? '');
     final city = (carData['city']?.toString() ?? 'Baghdad').toLowerCase();
     final title = '$brand $model $trim'.trim();
@@ -9041,7 +14102,9 @@ class _SellStep5PageState extends State<SellStep5Page> {
           final dynamic maybeImgs = carData['images'];
           final List<dynamic> imgs = (maybeImgs is List) ? maybeImgs : const [];
           if (imgs.isNotEmpty) {
-            final uploadUrl = Uri.parse(getApiBase() + '/api/cars/' + carId.toString() + '/images');
+            final uploadUrl = Uri.parse(
+              getApiBase() + '/api/cars/' + carId.toString() + '/images',
+            );
             final request = http.MultipartRequest('POST', uploadUrl);
             final tok = ApiService.accessToken;
             if (tok != null) request.headers['Authorization'] = 'Bearer ' + tok;
@@ -9054,14 +14117,21 @@ class _SellStep5PageState extends State<SellStep5Page> {
                   path = img;
                 }
                 if (path != null && path.isNotEmpty) {
-                  request.files.add(await http.MultipartFile.fromPath('image', path));
+                  request.files.add(
+                    await http.MultipartFile.fromPath('image', path),
+                  );
                 }
               } catch (_) {}
             }
             final uploadResp = await request.send();
             if (uploadResp.statusCode != 201) {
               final uploadHttpResp = await http.Response.fromStream(uploadResp);
-              throw Exception('Image upload failed: ' + uploadResp.statusCode.toString() + ' ' + uploadHttpResp.body);
+              throw Exception(
+                'Image upload failed: ' +
+                    uploadResp.statusCode.toString() +
+                    ' ' +
+                    uploadHttpResp.body,
+              );
             }
           }
         } catch (_) {}
@@ -9076,13 +14146,15 @@ class _SellStep5PageState extends State<SellStep5Page> {
         throw Exception(errorData['error'] ?? 'Failed to create listing');
       }
     } catch (e) {
-      if (e.toString().contains('SocketException') || e.toString().contains('HandshakeException')) {
+      if (e.toString().contains('SocketException') ||
+          e.toString().contains('HandshakeException')) {
         throw Exception('Network error. Please check your connection.');
       }
       rethrow;
     }
   }
 }
+
 // Car Comparison Page
 class CarComparisonPage extends StatelessWidget {
   @override
@@ -9096,9 +14168,17 @@ class CarComparisonPage extends StatelessWidget {
             tooltip: 'Share',
             onPressed: () async {
               try {
-                final store = Provider.of<CarComparisonStore>(context, listen: false);
+                final store = Provider.of<CarComparisonStore>(
+                  context,
+                  listen: false,
+                );
                 final cars = store.comparisonCars;
-                final text = cars.map((c) => '${c['title'] ?? ''} • ${c['year'] ?? ''} • ${c['price'] ?? ''}').join('\n');
+                final text = cars
+                    .map(
+                      (c) =>
+                          '${c['title'] ?? ''} • ${c['year'] ?? ''} • ${c['price'] ?? ''}',
+                    )
+                    .join('\n');
                 if (text.trim().isNotEmpty) Share.share(text);
               } catch (_) {}
             },
@@ -9112,7 +14192,9 @@ class CarComparisonPage extends StatelessWidget {
                     comparisonStore.clearComparison();
                     ScaffoldMessenger.of(context).showSnackBar(
                       SnackBar(
-                        content: Text(AppLocalizations.of(context)!.clearFilters),
+                        content: Text(
+                          AppLocalizations.of(context)!.clearFilters,
+                        ),
                         backgroundColor: Color(0xFFFF6B00),
                       ),
                     );
@@ -9135,415 +14217,579 @@ class CarComparisonPage extends StatelessWidget {
           Container(
             decoration: BoxDecoration(
               gradient: LinearGradient(
-                colors: [Color(0xFF0F1115), Color(0xFF131722), Color(0xFF0F1115)],
+                colors: [
+                  Color(0xFF0F1115),
+                  Color(0xFF131722),
+                  Color(0xFF0F1115),
+                ],
                 begin: Alignment.topLeft,
                 end: Alignment.bottomRight,
               ),
             ),
           ),
           Consumer<CarComparisonStore>(
-        builder: (context, comparisonStore, child) {
-          final cars = comparisonStore.comparisonCars;
-          final double columnWidth = 260.0;
-          
-          if (cars.isEmpty) {
-            return Center(
-              child: Column(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  Icon(
-                    Icons.compare_arrows,
-                    size: 84,
-                    color: Colors.white24,
-                  ),
-                  SizedBox(height: 16),
-                  Text(
-                    AppLocalizations.of(context)!.noCarsFound,
-                    style: TextStyle(
-                      fontSize: 20,
-                      fontWeight: FontWeight.bold,
-                      color: Colors.white70,
-                    ),
-                  ),
-                  SizedBox(height: 8),
-                  Text(
-                    AppLocalizations.of(context)!.tapToSelectBrand,
-                    style: TextStyle(
-                      fontSize: 16,
-                      color: Colors.white54,
-                    ),
-                    textAlign: TextAlign.center,
-                  ),
-                  SizedBox(height: 24),
-                  ElevatedButton.icon(
-                    onPressed: () => Navigator.pushReplacementNamed(context, '/'),
-                    icon: Icon(Icons.search),
-                    label: Text(AppLocalizations.of(context)!.navHome),
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: Color(0xFFFF6B00),
-                      foregroundColor: Colors.white,
-                      padding: EdgeInsets.symmetric(horizontal: 24, vertical: 12),
-                    ),
-                  ),
-                ],
-              ),
-            );
-          }
-          
-          return ListView(
-            padding: EdgeInsets.all(16),
-            children: [
-                // Header
-                Container(
-                  width: double.infinity,
-                  padding: EdgeInsets.all(16),
-                  decoration: BoxDecoration(
-                    color: Colors.white.withOpacity(0.06),
-                    borderRadius: BorderRadius.circular(16),
-                    border: Border.all(color: Colors.white10),
-                  ),
-                  child: Row(
+            builder: (context, comparisonStore, child) {
+              final cars = comparisonStore.comparisonCars;
+              final double columnWidth = 260.0;
+
+              if (cars.isEmpty) {
+                return Center(
+                  child: Column(
+                    mainAxisAlignment: MainAxisAlignment.center,
                     children: [
-                      Icon(Icons.compare_arrows, color: Color(0xFFFF6B00), size: 28),
-                      SizedBox(width: 12),
-                      Expanded(
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Text(
-                              AppLocalizations.of(context)!.specificationsLabel,
-                              style: TextStyle(
-                                fontSize: 18,
-                                fontWeight: FontWeight.bold,
-                                color: Colors.white,
-                              ),
-                            ),
-                            Text(
-                              '${AppLocalizations.of(context)!.sortBy}: ${cars.length}',
-                              style: TextStyle(
-                                fontSize: 12,
-                                color: Colors.white70,
-                              ),
-                            ),
-                            SizedBox(height: 8),
-                            Wrap(
-                              spacing: 8,
-                              runSpacing: 8,
-                              children: [
-                                OutlinedButton.icon(
-                                  style: OutlinedButton.styleFrom(
-                                    side: BorderSide(color: Color(0xFFFF6B00)),
-                                    foregroundColor: Colors.white,
-                                    padding: EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-                                  ),
-                                  onPressed: () {
-                                    Navigator.pushReplacementNamed(context, '/');
-                                  },
-                                  icon: Icon(Icons.add, color: Color(0xFFFF6B00), size: 18),
-                                  label: Text(AppLocalizations.of(context)!.addMorePhotos),
-                                ),
-                                OutlinedButton.icon(
-                                  style: OutlinedButton.styleFrom(
-                                    side: BorderSide(color: Colors.white24),
-                                    foregroundColor: Colors.white,
-                                    padding: EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-                                  ),
-                                  onPressed: () {
-                                    Provider.of<CarComparisonStore>(context, listen: false).clearComparison();
-                                    ScaffoldMessenger.of(context).showSnackBar(
-                                      SnackBar(
-                                        content: Text(_comparisonClearedTextGlobal(context)),
-                                        backgroundColor: Color(0xFFFF6B00),
-                                      ),
-                                    );
-                                  },
-                                  icon: Icon(Icons.delete_outline, color: Colors.white70, size: 18),
-                                  label: Text(_clearAllTextGlobal(context)),
-                                ),
-                              ],
-                            ),
-                          ],
+                      Icon(
+                        Icons.compare_arrows,
+                        size: 84,
+                        color: Colors.white24,
+                      ),
+                      SizedBox(height: 16),
+                      Text(
+                        AppLocalizations.of(context)!.noCarsFound,
+                        style: TextStyle(
+                          fontSize: 20,
+                          fontWeight: FontWeight.bold,
+                          color: Colors.white70,
+                        ),
+                      ),
+                      SizedBox(height: 8),
+                      Text(
+                        AppLocalizations.of(context)!.tapToSelectBrand,
+                        style: TextStyle(fontSize: 16, color: Colors.white54),
+                        textAlign: TextAlign.center,
+                      ),
+                      SizedBox(height: 24),
+                      ElevatedButton.icon(
+                        onPressed: () =>
+                            Navigator.pushReplacementNamed(context, '/'),
+                        icon: Icon(Icons.search),
+                        label: Text(AppLocalizations.of(context)!.navHome),
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: Color(0xFFFF6B00),
+                          foregroundColor: Colors.white,
+                          padding: EdgeInsets.symmetric(
+                            horizontal: 24,
+                            vertical: 12,
+                          ),
                         ),
                       ),
                     ],
                   ),
-                ),
-                SizedBox(height: 20),
-                
-                // Comparison Table
-                LayoutBuilder(
-                  builder: (context, constraints) {
-                    final double labelWidth = 120.0;
-                    final double horizontalPadding = 32.0; // padding inside row containers
-                    final bool isTwoCars = cars.length == 2;
-                    final double availableWidth = constraints.maxWidth;
-                    final double effectiveRowWidth = availableWidth - horizontalPadding;
-                    final int numColumns = cars.isEmpty ? 1 : cars.length;
-                    final double baseColumnWidth = (effectiveRowWidth - labelWidth) / numColumns;
-                    final double columnWidth = isTwoCars
-                        ? (baseColumnWidth < 96.0 ? 96.0 : baseColumnWidth)
-                        : baseColumnWidth.clamp(120.0, 260.0).toDouble();
-                    final double requiredWidth = labelWidth + (numColumns * columnWidth) + horizontalPadding;
-                    final double tableWidth = requiredWidth > availableWidth ? requiredWidth : availableWidth;
-                    final double imageSize = isTwoCars ? ((columnWidth - 16).clamp(88.0, 120.0)).toDouble() : 120.0;
-                    final double headerTitleHeight = 36.0;
-                    final double headerPriceHeight = 22.0;
+                );
+              }
 
-                    final table = Container(
-                      decoration: BoxDecoration(
-                        color: Colors.white.withOpacity(0.06),
-                        borderRadius: BorderRadius.circular(16),
-                        boxShadow: [
-                          BoxShadow(
-                            color: Colors.black.withOpacity(0.08),
-                            blurRadius: 16,
-                            offset: Offset(0, 8),
-                          ),
-                        ],
-                      ),
-                      child: Column(
-                        mainAxisSize: MainAxisSize.min,
-                        children: [
-                          // Car Headers
-                          Container(
-                            padding: EdgeInsets.symmetric(horizontal: 16, vertical: 16),
-                            decoration: BoxDecoration(
-                              color: Color(0xFFFF6B00).withOpacity(0.12),
-                              borderRadius: BorderRadius.vertical(top: Radius.circular(16)),
-                            ),
-                            child: Row(
-                              mainAxisAlignment: isTwoCars ? MainAxisAlignment.center : MainAxisAlignment.start,
-                              children: isTwoCars
-                                  ? [
-                                      // Left car
-                                      SizedBox(
-                                        width: columnWidth,
-                                        child: Padding(
-                                        padding: EdgeInsets.symmetric(horizontal: 8),
-                                        child: Column(
-                                          children: [
-                                            Container(
-                                              height: imageSize,
-                                              width: imageSize,
-                                              decoration: BoxDecoration(
-                                                borderRadius: BorderRadius.circular(8),
-                                                border: Border.all(color: Colors.white10),
-                                              ),
-                                              child: ClipRRect(
-                                                borderRadius: BorderRadius.circular(8),
-                                                child: _buildCarImage(cars[0]),
-                                              ),
-                                            ),
-                                            SizedBox(height: 8),
-                                            SizedBox(
-                                              height: headerTitleHeight,
-                                              child: Center(
-                                                child: Text(
-                                                  cars[0]['title'] ?? '',
-                                                  style: TextStyle(
-                                                    fontWeight: FontWeight.bold,
-                                                    fontSize: 14,
-                                                    color: Colors.white,
-                                                  ),
-                                                  textAlign: TextAlign.center,
-                                                  maxLines: 1,
-                                                  overflow: TextOverflow.ellipsis,
-                                                ),
-                                              ),
-                                            ),
-                                            SizedBox(height: 4),
-                                            SizedBox(
-                                              height: headerPriceHeight,
-                                              child: Center(
-                                                child: Text(
-                                                  _formatCurrencyGlobal(context, cars[0]['price']?.toString() ?? '0'),
-                                                  style: TextStyle(
-                                                    color: Color(0xFFFF6B00),
-                                                    fontWeight: FontWeight.bold,
-                                                    fontSize: 16,
-                                                  ),
-                                                ),
-                                              ),
-                                            ),
-                                            SizedBox(height: 8),
-                                            IconButton(
-                                              onPressed: () {
-                                                comparisonStore.removeCarFromComparison(cars[0]['id']);
-                                              },
-                                              icon: Icon(Icons.close, color: Colors.red, size: 24),
-                                              constraints: BoxConstraints(),
-                                              padding: EdgeInsets.zero,
-                                            ),
-                                          ],
-                                        ),
-                                        ),
+              return ListView(
+                padding: EdgeInsets.all(16),
+                children: [
+                  // Header
+                  Container(
+                    width: double.infinity,
+                    padding: EdgeInsets.all(16),
+                    decoration: BoxDecoration(
+                      color: Colors.white.withOpacity(0.06),
+                      borderRadius: BorderRadius.circular(16),
+                      border: Border.all(color: Colors.white10),
+                    ),
+                    child: Row(
+                      children: [
+                        Icon(
+                          Icons.compare_arrows,
+                          color: Color(0xFFFF6B00),
+                          size: 28,
+                        ),
+                        SizedBox(width: 12),
+                        Expanded(
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Text(
+                                AppLocalizations.of(
+                                  context,
+                                )!.specificationsLabel,
+                                style: TextStyle(
+                                  fontSize: 18,
+                                  fontWeight: FontWeight.bold,
+                                  color: Colors.white,
+                                ),
+                              ),
+                              Text(
+                                '${AppLocalizations.of(context)!.sortBy}: ${cars.length}',
+                                style: TextStyle(
+                                  fontSize: 12,
+                                  color: Colors.white70,
+                                ),
+                              ),
+                              SizedBox(height: 8),
+                              Wrap(
+                                spacing: 8,
+                                runSpacing: 8,
+                                children: [
+                                  OutlinedButton.icon(
+                                    style: OutlinedButton.styleFrom(
+                                      side: BorderSide(
+                                        color: Color(0xFFFF6B00),
                                       ),
-                                      // Middle spacer for labels
-                                      SizedBox(width: labelWidth),
-                                      // Right car
-                                      SizedBox(
-                                        width: columnWidth,
-                                        child: Padding(
-                                        padding: EdgeInsets.symmetric(horizontal: 8),
-                                        child: Column(
-                                          children: [
-                                            Container(
-                                              height: imageSize,
-                                              width: imageSize,
-                                              decoration: BoxDecoration(
-                                                borderRadius: BorderRadius.circular(8),
-                                                border: Border.all(color: Colors.white10),
-                                              ),
-                                              child: ClipRRect(
-                                                borderRadius: BorderRadius.circular(8),
-                                                child: _buildCarImage(cars[1]),
-                                              ),
-                                            ),
-                                            SizedBox(height: 8),
-                                            SizedBox(
-                                              height: headerTitleHeight,
-                                              child: Center(
-                                                child: Text(
-                                                  cars[1]['title'] ?? '',
-                                                  style: TextStyle(
-                                                    fontWeight: FontWeight.bold,
-                                                    fontSize: 14,
-                                                    color: Colors.white,
-                                                  ),
-                                                  textAlign: TextAlign.center,
-                                                  maxLines: 1,
-                                                  overflow: TextOverflow.ellipsis,
-                                                ),
-                                              ),
-                                            ),
-                                            SizedBox(height: 4),
-                                            SizedBox(
-                                              height: headerPriceHeight,
-                                              child: Center(
-                                                child: Text(
-                                                  _formatCurrencyGlobal(context, cars[1]['price']?.toString() ?? '0'),
-                                                  style: TextStyle(
-                                                    color: Color(0xFFFF6B00),
-                                                    fontWeight: FontWeight.bold,
-                                                    fontSize: 16,
-                                                  ),
-                                                ),
-                                              ),
-                                            ),
-                                            SizedBox(height: 8),
-                                            IconButton(
-                                              onPressed: () {
-                                                comparisonStore.removeCarFromComparison(cars[1]['id']);
-                                              },
-                                              icon: Icon(Icons.close, color: Colors.red, size: 24),
-                                              constraints: BoxConstraints(),
-                                              padding: EdgeInsets.zero,
-                                            ),
-                                          ],
-                                        ),
-                                        ),
+                                      foregroundColor: Colors.white,
+                                      padding: EdgeInsets.symmetric(
+                                        horizontal: 12,
+                                        vertical: 8,
                                       ),
-                                    ]
-                                  : [
-                                      SizedBox(width: labelWidth), // Space for property names
-                                      ...cars.map((car) => SizedBox(
-                                        width: columnWidth,
-                                        child: Padding(
-                                        padding: EdgeInsets.symmetric(horizontal: 8),
-                                        child: Column(
-                                          children: [
-                                            Container(
-                                              height: 110,
-                                              width: 110,
-                                              decoration: BoxDecoration(
-                                                borderRadius: BorderRadius.circular(8),
-                                                border: Border.all(color: Colors.white10),
-                                              ),
-                                              child: ClipRRect(
-                                                borderRadius: BorderRadius.circular(8),
-                                                child: _buildCarImage(car),
-                                              ),
+                                    ),
+                                    onPressed: () {
+                                      Navigator.pushReplacementNamed(
+                                        context,
+                                        '/',
+                                      );
+                                    },
+                                    icon: Icon(
+                                      Icons.add,
+                                      color: Color(0xFFFF6B00),
+                                      size: 18,
+                                    ),
+                                    label: Text(
+                                      AppLocalizations.of(
+                                        context,
+                                      )!.addMorePhotos,
+                                    ),
+                                  ),
+                                  OutlinedButton.icon(
+                                    style: OutlinedButton.styleFrom(
+                                      side: BorderSide(color: Colors.white24),
+                                      foregroundColor: Colors.white,
+                                      padding: EdgeInsets.symmetric(
+                                        horizontal: 12,
+                                        vertical: 8,
+                                      ),
+                                    ),
+                                    onPressed: () {
+                                      Provider.of<CarComparisonStore>(
+                                        context,
+                                        listen: false,
+                                      ).clearComparison();
+                                      ScaffoldMessenger.of(
+                                        context,
+                                      ).showSnackBar(
+                                        SnackBar(
+                                          content: Text(
+                                            _comparisonClearedTextGlobal(
+                                              context,
                                             ),
-                                            SizedBox(height: 8),
-                                            SizedBox(
-                                              height: headerTitleHeight,
-                                              child: Center(
-                                                child: Text(
-                                                  car['title'] ?? '',
-                                                  style: TextStyle(
-                                                    fontWeight: FontWeight.bold,
-                                                    fontSize: 14,
-                                                    color: Colors.white,
-                                                  ),
-                                                  textAlign: TextAlign.center,
-                                                  maxLines: 1,
-                                                  overflow: TextOverflow.ellipsis,
-                                                ),
-                                              ),
-                                            ),
-                                            SizedBox(height: 4),
-                                            SizedBox(
-                                              height: headerPriceHeight,
-                                              child: Center(
-                                                child: Text(
-                                                  _formatCurrencyGlobal(context, car['price']?.toString() ?? '0'),
-                                                  style: TextStyle(
-                                                    color: Color(0xFFFF6B00),
-                                                    fontWeight: FontWeight.bold,
-                                                    fontSize: 16,
-                                                  ),
-                                                ),
-                                              ),
-                                            ),
-                                            SizedBox(height: 8),
-                                            IconButton(
-                                              onPressed: () {
-                                                comparisonStore.removeCarFromComparison(car['id']);
-                                              },
-                                              icon: Icon(Icons.close, color: Colors.red, size: 24),
-                                              constraints: BoxConstraints(),
-                                              padding: EdgeInsets.zero,
-                                            ),
-                                          ],
+                                          ),
+                                          backgroundColor: Color(0xFFFF6B00),
                                         ),
-                                        ),
-                                      )).toList(),
-                                    ],
-                            ),
+                                      );
+                                    },
+                                    icon: Icon(
+                                      Icons.delete_outline,
+                                      color: Colors.white70,
+                                      size: 18,
+                                    ),
+                                    label: Text(_clearAllTextGlobal(context)),
+                                  ),
+                                ],
+                              ),
+                            ],
                           ),
-                          SizedBox(height: 12),
+                        ),
+                      ],
+                    ),
+                  ),
+                  SizedBox(height: 20),
 
-                          // Comparison Rows
-                          ..._buildComparisonRows(context, cars, columnWidth, labelWidth),
-                        ],
-                      ),
-                    );
+                  // Comparison Table
+                  LayoutBuilder(
+                    builder: (context, constraints) {
+                      final double labelWidth = 120.0;
+                      final double horizontalPadding =
+                          32.0; // padding inside row containers
+                      final bool isTwoCars = cars.length == 2;
+                      final double availableWidth = constraints.maxWidth;
+                      final double effectiveRowWidth =
+                          availableWidth - horizontalPadding;
+                      final int numColumns = cars.isEmpty ? 1 : cars.length;
+                      final double baseColumnWidth =
+                          (effectiveRowWidth - labelWidth) / numColumns;
+                      final double columnWidth = isTwoCars
+                          ? (baseColumnWidth < 96.0 ? 96.0 : baseColumnWidth)
+                          : baseColumnWidth.clamp(120.0, 260.0).toDouble();
+                      final double requiredWidth =
+                          labelWidth +
+                          (numColumns * columnWidth) +
+                          horizontalPadding;
+                      final double tableWidth = requiredWidth > availableWidth
+                          ? requiredWidth
+                          : availableWidth;
+                      final double imageSize = isTwoCars
+                          ? ((columnWidth - 16).clamp(88.0, 120.0)).toDouble()
+                          : 120.0;
+                      final double headerTitleHeight = 36.0;
+                      final double headerPriceHeight = 22.0;
 
-                    if (isTwoCars) {
-                      return SizedBox(
-                        width: availableWidth,
-                        child: table,
+                      final table = Container(
+                        decoration: BoxDecoration(
+                          color: Colors.white.withOpacity(0.06),
+                          borderRadius: BorderRadius.circular(16),
+                          boxShadow: [
+                            BoxShadow(
+                              color: Colors.black.withOpacity(0.08),
+                              blurRadius: 16,
+                              offset: Offset(0, 8),
+                            ),
+                          ],
+                        ),
+                        child: Column(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            // Car Headers
+                            Container(
+                              padding: EdgeInsets.symmetric(
+                                horizontal: 16,
+                                vertical: 16,
+                              ),
+                              decoration: BoxDecoration(
+                                color: Color(0xFFFF6B00).withOpacity(0.12),
+                                borderRadius: BorderRadius.vertical(
+                                  top: Radius.circular(16),
+                                ),
+                              ),
+                              child: Row(
+                                mainAxisAlignment: isTwoCars
+                                    ? MainAxisAlignment.center
+                                    : MainAxisAlignment.start,
+                                children: isTwoCars
+                                    ? [
+                                        // Left car
+                                        SizedBox(
+                                          width: columnWidth,
+                                          child: Padding(
+                                            padding: EdgeInsets.symmetric(
+                                              horizontal: 8,
+                                            ),
+                                            child: Column(
+                                              children: [
+                                                Container(
+                                                  height: imageSize,
+                                                  width: imageSize,
+                                                  decoration: BoxDecoration(
+                                                    borderRadius:
+                                                        BorderRadius.circular(
+                                                          8,
+                                                        ),
+                                                    border: Border.all(
+                                                      color: Colors.white10,
+                                                    ),
+                                                  ),
+                                                  child: ClipRRect(
+                                                    borderRadius:
+                                                        BorderRadius.circular(
+                                                          8,
+                                                        ),
+                                                    child: _buildCarImage(
+                                                      cars[0],
+                                                    ),
+                                                  ),
+                                                ),
+                                                SizedBox(height: 8),
+                                                SizedBox(
+                                                  height: headerTitleHeight,
+                                                  child: Center(
+                                                    child: Text(
+                                                      cars[0]['title'] ?? '',
+                                                      style: TextStyle(
+                                                        fontWeight:
+                                                            FontWeight.bold,
+                                                        fontSize: 14,
+                                                        color: Colors.white,
+                                                      ),
+                                                      textAlign:
+                                                          TextAlign.center,
+                                                      maxLines: 1,
+                                                      overflow:
+                                                          TextOverflow.ellipsis,
+                                                    ),
+                                                  ),
+                                                ),
+                                                SizedBox(height: 4),
+                                                SizedBox(
+                                                  height: headerPriceHeight,
+                                                  child: Center(
+                                                    child: Text(
+                                                      _formatCurrencyGlobal(
+                                                        context,
+                                                        cars[0]['price']
+                                                                ?.toString() ??
+                                                            '0',
+                                                      ),
+                                                      style: TextStyle(
+                                                        color: Color(
+                                                          0xFFFF6B00,
+                                                        ),
+                                                        fontWeight:
+                                                            FontWeight.bold,
+                                                        fontSize: 16,
+                                                      ),
+                                                    ),
+                                                  ),
+                                                ),
+                                                SizedBox(height: 8),
+                                                IconButton(
+                                                  onPressed: () {
+                                                    comparisonStore
+                                                        .removeCarFromComparison(
+                                                          cars[0]['id'],
+                                                        );
+                                                  },
+                                                  icon: Icon(
+                                                    Icons.close,
+                                                    color: Colors.red,
+                                                    size: 24,
+                                                  ),
+                                                  constraints: BoxConstraints(),
+                                                  padding: EdgeInsets.zero,
+                                                ),
+                                              ],
+                                            ),
+                                          ),
+                                        ),
+                                        // Middle spacer for labels
+                                        SizedBox(width: labelWidth),
+                                        // Right car
+                                        SizedBox(
+                                          width: columnWidth,
+                                          child: Padding(
+                                            padding: EdgeInsets.symmetric(
+                                              horizontal: 8,
+                                            ),
+                                            child: Column(
+                                              children: [
+                                                Container(
+                                                  height: imageSize,
+                                                  width: imageSize,
+                                                  decoration: BoxDecoration(
+                                                    borderRadius:
+                                                        BorderRadius.circular(
+                                                          8,
+                                                        ),
+                                                    border: Border.all(
+                                                      color: Colors.white10,
+                                                    ),
+                                                  ),
+                                                  child: ClipRRect(
+                                                    borderRadius:
+                                                        BorderRadius.circular(
+                                                          8,
+                                                        ),
+                                                    child: _buildCarImage(
+                                                      cars[1],
+                                                    ),
+                                                  ),
+                                                ),
+                                                SizedBox(height: 8),
+                                                SizedBox(
+                                                  height: headerTitleHeight,
+                                                  child: Center(
+                                                    child: Text(
+                                                      cars[1]['title'] ?? '',
+                                                      style: TextStyle(
+                                                        fontWeight:
+                                                            FontWeight.bold,
+                                                        fontSize: 14,
+                                                        color: Colors.white,
+                                                      ),
+                                                      textAlign:
+                                                          TextAlign.center,
+                                                      maxLines: 1,
+                                                      overflow:
+                                                          TextOverflow.ellipsis,
+                                                    ),
+                                                  ),
+                                                ),
+                                                SizedBox(height: 4),
+                                                SizedBox(
+                                                  height: headerPriceHeight,
+                                                  child: Center(
+                                                    child: Text(
+                                                      _formatCurrencyGlobal(
+                                                        context,
+                                                        cars[1]['price']
+                                                                ?.toString() ??
+                                                            '0',
+                                                      ),
+                                                      style: TextStyle(
+                                                        color: Color(
+                                                          0xFFFF6B00,
+                                                        ),
+                                                        fontWeight:
+                                                            FontWeight.bold,
+                                                        fontSize: 16,
+                                                      ),
+                                                    ),
+                                                  ),
+                                                ),
+                                                SizedBox(height: 8),
+                                                IconButton(
+                                                  onPressed: () {
+                                                    comparisonStore
+                                                        .removeCarFromComparison(
+                                                          cars[1]['id'],
+                                                        );
+                                                  },
+                                                  icon: Icon(
+                                                    Icons.close,
+                                                    color: Colors.red,
+                                                    size: 24,
+                                                  ),
+                                                  constraints: BoxConstraints(),
+                                                  padding: EdgeInsets.zero,
+                                                ),
+                                              ],
+                                            ),
+                                          ),
+                                        ),
+                                      ]
+                                    : [
+                                        SizedBox(
+                                          width: labelWidth,
+                                        ), // Space for property names
+                                        ...cars
+                                            .map(
+                                              (car) => SizedBox(
+                                                width: columnWidth,
+                                                child: Padding(
+                                                  padding: EdgeInsets.symmetric(
+                                                    horizontal: 8,
+                                                  ),
+                                                  child: Column(
+                                                    children: [
+                                                      Container(
+                                                        height: 110,
+                                                        width: 110,
+                                                        decoration: BoxDecoration(
+                                                          borderRadius:
+                                                              BorderRadius.circular(
+                                                                8,
+                                                              ),
+                                                          border: Border.all(
+                                                            color:
+                                                                Colors.white10,
+                                                          ),
+                                                        ),
+                                                        child: ClipRRect(
+                                                          borderRadius:
+                                                              BorderRadius.circular(
+                                                                8,
+                                                              ),
+                                                          child: _buildCarImage(
+                                                            car,
+                                                          ),
+                                                        ),
+                                                      ),
+                                                      SizedBox(height: 8),
+                                                      SizedBox(
+                                                        height:
+                                                            headerTitleHeight,
+                                                        child: Center(
+                                                          child: Text(
+                                                            car['title'] ?? '',
+                                                            style: TextStyle(
+                                                              fontWeight:
+                                                                  FontWeight
+                                                                      .bold,
+                                                              fontSize: 14,
+                                                              color:
+                                                                  Colors.white,
+                                                            ),
+                                                            textAlign: TextAlign
+                                                                .center,
+                                                            maxLines: 1,
+                                                            overflow:
+                                                                TextOverflow
+                                                                    .ellipsis,
+                                                          ),
+                                                        ),
+                                                      ),
+                                                      SizedBox(height: 4),
+                                                      SizedBox(
+                                                        height:
+                                                            headerPriceHeight,
+                                                        child: Center(
+                                                          child: Text(
+                                                            _formatCurrencyGlobal(
+                                                              context,
+                                                              car['price']
+                                                                      ?.toString() ??
+                                                                  '0',
+                                                            ),
+                                                            style: TextStyle(
+                                                              color: Color(
+                                                                0xFFFF6B00,
+                                                              ),
+                                                              fontWeight:
+                                                                  FontWeight
+                                                                      .bold,
+                                                              fontSize: 16,
+                                                            ),
+                                                          ),
+                                                        ),
+                                                      ),
+                                                      SizedBox(height: 8),
+                                                      IconButton(
+                                                        onPressed: () {
+                                                          comparisonStore
+                                                              .removeCarFromComparison(
+                                                                car['id'],
+                                                              );
+                                                        },
+                                                        icon: Icon(
+                                                          Icons.close,
+                                                          color: Colors.red,
+                                                          size: 24,
+                                                        ),
+                                                        constraints:
+                                                            BoxConstraints(),
+                                                        padding:
+                                                            EdgeInsets.zero,
+                                                      ),
+                                                    ],
+                                                  ),
+                                                ),
+                                              ),
+                                            )
+                                            .toList(),
+                                      ],
+                              ),
+                            ),
+                            SizedBox(height: 12),
+
+                            // Comparison Rows
+                            ..._buildComparisonRows(
+                              context,
+                              cars,
+                              columnWidth,
+                              labelWidth,
+                            ),
+                          ],
+                        ),
                       );
-                    }
-                    return SingleChildScrollView(
-                      scrollDirection: Axis.horizontal,
-                      physics: BouncingScrollPhysics(),
-                      child: SizedBox(
-                        width: tableWidth,
-                        child: table,
-                      ),
-                    );
-                  },
-                ),
-            ],
-          );
-        },
-      ),
+
+                      if (isTwoCars) {
+                        return SizedBox(width: availableWidth, child: table);
+                      }
+                      return SingleChildScrollView(
+                        scrollDirection: Axis.horizontal,
+                        physics: BouncingScrollPhysics(),
+                        child: SizedBox(width: tableWidth, child: table),
+                      );
+                    },
+                  ),
+                ],
+              );
+            },
+          ),
         ],
       ),
     );
   }
-  
+
   Widget _buildCarImage(Map<String, dynamic> car) {
     final imageUrl = car['image_url']?.toString();
     if (imageUrl != null && imageUrl.isNotEmpty) {
@@ -9562,53 +14808,152 @@ class CarComparisonPage extends StatelessWidget {
       child: Icon(Icons.directions_car, color: Colors.white24),
     );
   }
-  
-  List<Widget> _buildComparisonRows(BuildContext context, List<Map<String, dynamic>> cars, double columnWidth, double labelWidth) {
+
+  List<Widget> _buildComparisonRows(
+    BuildContext context,
+    List<Map<String, dynamic>> cars,
+    double columnWidth,
+    double labelWidth,
+  ) {
     final sections = [
       {
         'title': AppLocalizations.of(context)!.brandLabel,
         'icon': Icons.info_outline,
         'rows': [
-          {'label': AppLocalizations.of(context)!.brandLabel, 'key': 'brand', 'icon': Icons.directions_car},
-          {'label': AppLocalizations.of(context)!.modelLabel, 'key': 'model', 'icon': Icons.badge_outlined},
-          {'label': AppLocalizations.of(context)!.trimLabel, 'key': 'trim', 'icon': Icons.layers},
-          {'label': AppLocalizations.of(context)!.yearLabel, 'key': 'year', 'icon': Icons.calendar_today},
-          {'label': AppLocalizations.of(context)!.cityLabel, 'key': 'city', 'icon': Icons.location_city},
-          {'label': AppLocalizations.of(context)!.priceLabel, 'key': 'price', 'icon': Icons.attach_money},
+          {
+            'label': AppLocalizations.of(context)!.brandLabel,
+            'key': 'brand',
+            'icon': Icons.directions_car,
+          },
+          {
+            'label': AppLocalizations.of(context)!.modelLabel,
+            'key': 'model',
+            'icon': Icons.badge_outlined,
+          },
+          {
+            'label': AppLocalizations.of(context)!.trimLabel,
+            'key': 'trim',
+            'icon': Icons.layers,
+          },
+          {
+            'label': AppLocalizations.of(context)!.yearLabel,
+            'key': 'year',
+            'icon': Icons.calendar_today,
+          },
+          {
+            'label': AppLocalizations.of(context)!.cityLabel,
+            'key': 'city',
+            'icon': Icons.location_city,
+          },
+          {
+            'label': AppLocalizations.of(context)!.priceLabel,
+            'key': 'price',
+            'icon': Icons.attach_money,
+          },
         ],
       },
       {
         'title': AppLocalizations.of(context)!.specificationsLabel,
         'icon': Icons.speed,
         'rows': [
-          {'label': AppLocalizations.of(context)!.mileageLabel, 'key': 'mileage', 'suffix': ' ${AppLocalizations.of(context)!.unit_km}', 'icon': Icons.speed},
-          {'label': AppLocalizations.of(context)!.engineSizeL, 'key': 'engine_size', 'suffix': AppLocalizations.of(context)!.unit_liter_suffix, 'icon': Icons.settings},
-          {'label': AppLocalizations.of(context)!.detail_cylinders, 'key': 'cylinder_count', 'suffix': '', 'icon': Icons.precision_manufacturing},
-          {'label': AppLocalizations.of(context)!.seating, 'key': 'seating', 'suffix': '', 'icon': Icons.event_seat},
+          {
+            'label': AppLocalizations.of(context)!.mileageLabel,
+            'key': 'mileage',
+            'suffix': ' ${AppLocalizations.of(context)!.unit_km}',
+            'icon': Icons.speed,
+          },
+          {
+            'label': AppLocalizations.of(context)!.engineSizeL,
+            'key': 'engine_size',
+            'suffix': AppLocalizations.of(context)!.unit_liter_suffix,
+            'icon': Icons.settings,
+          },
+          {
+            'label': AppLocalizations.of(context)!.detail_cylinders,
+            'key': 'cylinder_count',
+            'suffix': '',
+            'icon': Icons.precision_manufacturing,
+          },
+          {
+            'label': AppLocalizations.of(context)!.seating,
+            'key': 'seating',
+            'suffix': '',
+            'icon': Icons.event_seat,
+          },
         ],
       },
       {
         'title': AppLocalizations.of(context)!.moreFilters,
         'icon': Icons.tune,
         'rows': [
-          {'label': AppLocalizations.of(context)!.detail_condition, 'key': 'condition', 'icon': Icons.verified},
-          {'label': AppLocalizations.of(context)!.transmissionLabel, 'key': 'transmission', 'icon': Icons.settings_suggest},
-          {'label': AppLocalizations.of(context)!.detail_fuel, 'key': 'fuel_type', 'icon': Icons.local_gas_station},
-          {'label': AppLocalizations.of(context)!.detail_body, 'key': 'body_type', 'icon': Icons.directions_car_filled},
-          {'label': AppLocalizations.of(context)!.driveType, 'key': 'drive_type', 'icon': Icons.all_inclusive},
-          {'label': AppLocalizations.of(context)!.detail_color, 'key': 'color', 'icon': Icons.color_lens},
+          {
+            'label': AppLocalizations.of(context)!.detail_condition,
+            'key': 'condition',
+            'icon': Icons.verified,
+          },
+          {
+            'label': AppLocalizations.of(context)!.transmissionLabel,
+            'key': 'transmission',
+            'icon': Icons.settings_suggest,
+          },
+          {
+            'label': AppLocalizations.of(context)!.detail_fuel,
+            'key': 'fuel_type',
+            'icon': Icons.local_gas_station,
+          },
+          {
+            'label': AppLocalizations.of(context)!.detail_body,
+            'key': 'body_type',
+            'icon': Icons.directions_car_filled,
+          },
+          {
+            'label': AppLocalizations.of(context)!.driveType,
+            'key': 'drive_type',
+            'icon': Icons.all_inclusive,
+          },
+          {
+            'label': AppLocalizations.of(context)!.detail_color,
+            'key': 'color',
+            'icon': Icons.color_lens,
+          },
         ],
       },
       {
         'title': _statusTitleGlobal(context),
         'icon': Icons.assignment_turned_in,
         'rows': [
-          {'label': AppLocalizations.of(context)!.titleStatus, 'key': 'title_status', 'icon': Icons.assignment},
-          {'label': AppLocalizations.of(context)!.damagedParts, 'key': 'damaged_parts', 'suffix': '', 'icon': Icons.build},
-          {'label': _quickSellTextGlobal(context), 'key': 'is_quick_sell', 'isBoolean': true, 'icon': Icons.flash_on},
-          {'label': _ownersLabelGlobal(context), 'key': 'owners', 'icon': Icons.person_outline},
-          {'label': _vinLabelGlobal(context), 'key': 'vin', 'icon': Icons.qr_code_2},
-          {'label': _accidentHistoryLabelGlobal(context), 'key': 'accident_history', 'icon': Icons.report_gmailerrorred},
+          {
+            'label': AppLocalizations.of(context)!.titleStatus,
+            'key': 'title_status',
+            'icon': Icons.assignment,
+          },
+          {
+            'label': AppLocalizations.of(context)!.damagedParts,
+            'key': 'damaged_parts',
+            'suffix': '',
+            'icon': Icons.build,
+          },
+          {
+            'label': _quickSellTextGlobal(context),
+            'key': 'is_quick_sell',
+            'isBoolean': true,
+            'icon': Icons.flash_on,
+          },
+          {
+            'label': _ownersLabelGlobal(context),
+            'key': 'owners',
+            'icon': Icons.person_outline,
+          },
+          {
+            'label': _vinLabelGlobal(context),
+            'key': 'vin',
+            'icon': Icons.qr_code_2,
+          },
+          {
+            'label': _accidentHistoryLabelGlobal(context),
+            'key': 'accident_history',
+            'icon': Icons.report_gmailerrorred,
+          },
         ],
       },
     ];
@@ -9616,125 +14961,160 @@ class CarComparisonPage extends StatelessWidget {
     final List<Widget> out = [];
     for (int s = 0; s < sections.length; s++) {
       final section = sections[s] as Map<String, dynamic>;
-      out.add(Container(
-        width: double.infinity,
-        padding: EdgeInsets.symmetric(horizontal: 16, vertical: 10),
-        margin: EdgeInsets.only(top: s == 0 ? 0 : 16),
-        decoration: BoxDecoration(
-          color: Color(0xFFFF6B00).withOpacity(0.12),
-          borderRadius: BorderRadius.circular(12),
-        ),
-        child: Row(
-          children: [
-            if (section['icon'] is IconData)
-              Icon(section['icon'] as IconData, color: Color(0xFFFF6B00), size: 18)
-            else
-              Icon(Icons.toc, color: Color(0xFFFF6B00), size: 18),
-            SizedBox(width: 8),
-            Text(
-              section['title'].toString(),
-              style: TextStyle(
-                color: Colors.white,
-                fontWeight: FontWeight.bold,
+      out.add(
+        Container(
+          width: double.infinity,
+          padding: EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+          margin: EdgeInsets.only(top: s == 0 ? 0 : 16),
+          decoration: BoxDecoration(
+            color: Color(0xFFFF6B00).withOpacity(0.12),
+            borderRadius: BorderRadius.circular(12),
+          ),
+          child: Row(
+            children: [
+              if (section['icon'] is IconData)
+                Icon(
+                  section['icon'] as IconData,
+                  color: Color(0xFFFF6B00),
+                  size: 18,
+                )
+              else
+                Icon(Icons.toc, color: Color(0xFFFF6B00), size: 18),
+              SizedBox(width: 8),
+              Text(
+                section['title'].toString(),
+                style: TextStyle(
+                  color: Colors.white,
+                  fontWeight: FontWeight.bold,
+                ),
               ),
-            ),
-          ],
+            ],
+          ),
         ),
-      ));
+      );
 
       final List rows = section['rows'] as List;
       for (int i = 0; i < rows.length; i++) {
         final property = Map<String, dynamic>.from(rows[i] as Map);
         final bool isOdd = i % 2 == 1;
-        out.add(Container(
-          padding: EdgeInsets.symmetric(vertical: 12, horizontal: 16),
-          decoration: BoxDecoration(
-            color: isOdd ? Colors.white.withOpacity(0.02) : Colors.transparent,
-            border: Border(
-              bottom: BorderSide(color: Colors.white12),
+        out.add(
+          Container(
+            padding: EdgeInsets.symmetric(vertical: 12, horizontal: 16),
+            decoration: BoxDecoration(
+              color: isOdd
+                  ? Colors.white.withOpacity(0.02)
+                  : Colors.transparent,
+              border: Border(bottom: BorderSide(color: Colors.white12)),
+            ),
+            child: Row(
+              mainAxisAlignment: cars.length == 2
+                  ? MainAxisAlignment.center
+                  : MainAxisAlignment.start,
+              children: [
+                if (cars.length == 2) ...[
+                  SizedBox(
+                    width: columnWidth,
+                    child: _buildCellValue(context, cars[0], property),
+                  ),
+                  SizedBox(
+                    width: labelWidth,
+                    child: Row(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        if (rows[i]['icon'] is IconData)
+                          Icon(
+                            rows[i]['icon'] as IconData,
+                            color: Colors.white54,
+                            size: 16,
+                          )
+                        else
+                          Icon(
+                            Icons.label_outline,
+                            color: Colors.white54,
+                            size: 16,
+                          ),
+                        SizedBox(width: 8),
+                        Flexible(
+                          child: Text(
+                            property['label']!.toString(),
+                            style: TextStyle(
+                              fontWeight: FontWeight.w600,
+                              color: Colors.white70,
+                            ),
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                            textAlign: TextAlign.center,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                  SizedBox(
+                    width: columnWidth,
+                    child: _buildCellValue(context, cars[1], property),
+                  ),
+                ] else ...[
+                  SizedBox(
+                    width: labelWidth,
+                    child: Row(
+                      children: [
+                        if (rows[i]['icon'] is IconData)
+                          Icon(
+                            rows[i]['icon'] as IconData,
+                            color: Colors.white54,
+                            size: 16,
+                          )
+                        else
+                          Icon(
+                            Icons.label_outline,
+                            color: Colors.white54,
+                            size: 16,
+                          ),
+                        SizedBox(width: 8),
+                        Expanded(
+                          child: Text(
+                            property['label']!.toString(),
+                            style: TextStyle(
+                              fontWeight: FontWeight.w600,
+                              color: Colors.white70,
+                            ),
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                  Expanded(
+                    child: Row(
+                      children: cars
+                          .map(
+                            (car) => SizedBox(
+                              width: columnWidth,
+                              child: _buildCellValue(context, car, property),
+                            ),
+                          )
+                          .toList(),
+                    ),
+                  ),
+                ],
+              ],
             ),
           ),
-          child: Row(
-            mainAxisAlignment: cars.length == 2 ? MainAxisAlignment.center : MainAxisAlignment.start,
-            children: [
-              if (cars.length == 2) ...[
-                SizedBox(
-                  width: columnWidth,
-                  child: _buildCellValue(context, cars[0], property),
-                ),
-                SizedBox(
-                  width: labelWidth,
-                  child: Row(
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    children: [
-                      if (rows[i]['icon'] is IconData)
-                        Icon(rows[i]['icon'] as IconData, color: Colors.white54, size: 16)
-                      else
-                        Icon(Icons.label_outline, color: Colors.white54, size: 16),
-                      SizedBox(width: 8),
-                      Flexible(
-                        child: Text(
-                          property['label']!.toString(),
-                          style: TextStyle(
-                            fontWeight: FontWeight.w600,
-                            color: Colors.white70,
-                          ),
-                          maxLines: 1,
-                          overflow: TextOverflow.ellipsis,
-                          textAlign: TextAlign.center,
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-                SizedBox(
-                  width: columnWidth,
-                  child: _buildCellValue(context, cars[1], property),
-                ),
-              ] else ...[
-                SizedBox(
-                  width: labelWidth,
-                  child: Row(
-                    children: [
-                      if (rows[i]['icon'] is IconData)
-                        Icon(rows[i]['icon'] as IconData, color: Colors.white54, size: 16)
-                      else
-                        Icon(Icons.label_outline, color: Colors.white54, size: 16),
-                      SizedBox(width: 8),
-                      Expanded(
-                        child: Text(
-                          property['label']!.toString(),
-                          style: TextStyle(
-                            fontWeight: FontWeight.w600,
-                            color: Colors.white70,
-                          ),
-                          maxLines: 1,
-                          overflow: TextOverflow.ellipsis,
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-                Expanded(
-                  child: Row(
-                    children: cars.map((car) => SizedBox(
-                      width: columnWidth,
-                      child: _buildCellValue(context, car, property),
-                    )).toList(),
-                  ),
-                ),
-              ],
-            ],
-          ),
-        ));
+        );
       }
     }
     return out;
   }
 
-  Widget _buildCellValue(BuildContext context, Map<String, dynamic> car, Map<String, dynamic> property) {
+  Widget _buildCellValue(
+    BuildContext context,
+    Map<String, dynamic> car,
+    Map<String, dynamic> property,
+  ) {
     final text = _formatPropertyValue(context, car, property);
-    final isBool = property['isBoolean'] == true || property['isBoolean'] == 'true';
+    final isBool =
+        property['isBoolean'] == true || property['isBoolean'] == 'true';
     if (isBool) {
       final boolVal = text.toLowerCase() == 'yes';
       return Align(
@@ -9742,9 +15122,15 @@ class CarComparisonPage extends StatelessWidget {
         child: Container(
           padding: EdgeInsets.symmetric(horizontal: 8, vertical: 4),
           decoration: BoxDecoration(
-            color: boolVal ? Colors.green.withOpacity(0.18) : Colors.red.withOpacity(0.18),
+            color: boolVal
+                ? Colors.green.withOpacity(0.18)
+                : Colors.red.withOpacity(0.18),
             borderRadius: BorderRadius.circular(999),
-            border: Border.all(color: boolVal ? Colors.greenAccent.withOpacity(0.3) : Colors.redAccent.withOpacity(0.3)),
+            border: Border.all(
+              color: boolVal
+                  ? Colors.greenAccent.withOpacity(0.3)
+                  : Colors.redAccent.withOpacity(0.3),
+            ),
           ),
           child: Text(
             boolVal ? _yesTextGlobal(context) : _noTextGlobal(context),
@@ -9758,27 +15144,30 @@ class CarComparisonPage extends StatelessWidget {
     }
     return Text(
       text,
-      style: TextStyle(
-        color: Colors.white,
-        fontWeight: FontWeight.w600,
-      ),
+      style: TextStyle(color: Colors.white, fontWeight: FontWeight.w600),
       textAlign: TextAlign.center,
     );
   }
-  
-  String _formatPropertyValue(BuildContext context, Map<String, dynamic> car, Map<String, dynamic> property) {
+
+  String _formatPropertyValue(
+    BuildContext context,
+    Map<String, dynamic> car,
+    Map<String, dynamic> property,
+  ) {
     final key = property['key']!;
     final value = car[key];
-    
+
     if (value == null) return '-';
     if (key == 'price') {
       return _formatCurrencyGlobal(context, value);
     }
-    
+
     if (property['isBoolean'] == true || property['isBoolean'] == 'true') {
-      return value == true || value == 'true' ? _yesTextGlobal(context) : _noTextGlobal(context);
+      return value == true || value == 'true'
+          ? _yesTextGlobal(context)
+          : _noTextGlobal(context);
     }
-    
+
     final suffix = property['suffix'] ?? '';
     final String raw = value.toString();
     // Translate known categorical fields
@@ -9799,7 +15188,7 @@ class CarComparisonPage extends StatelessWidget {
     // Localize digits for numeric-like strings
     return _localizeDigitsGlobal(context, raw + (suffix?.toString() ?? ''));
   }
-  
+
   String _formatPrice(BuildContext context, String price) {
     try {
       final num? value = num.tryParse(price.replaceAll(RegExp(r'[^0-9.]'), ''));
@@ -9812,6 +15201,7 @@ class CarComparisonPage extends StatelessWidget {
     }
   }
 }
+
 /* Legacy AddListingPage implementation removed - begin (commented out)
   final _formKey = GlobalKey<FormState>();
   String? selectedBrand;
@@ -9894,18 +15284,15 @@ class CarComparisonPage extends StatelessWidget {
   };
 // Legacy AddListingPage implementation removed - end
 */
-  // @override
-  Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(
-        title: Text(AppLocalizations.of(context)!.addListingTitle),
-        automaticallyImplyLeading: false,
-        actions: [
-          const ThemeToggleWidget(),
-          buildLanguageMenu(),
-        ],
-      ),
-      /* Legacy AddListingPage UI removed
+// @override
+Widget build(BuildContext context) {
+  return Scaffold(
+    appBar: AppBar(
+      title: Text(AppLocalizations.of(context)!.addListingTitle),
+      automaticallyImplyLeading: false,
+      actions: [const ThemeToggleWidget(), buildLanguageMenu()],
+    ),
+    /* Legacy AddListingPage UI removed
       body: SingleChildScrollView(
         padding: EdgeInsets.all(16),
         child: Form(
@@ -10933,101 +16320,115 @@ class CarComparisonPage extends StatelessWidget {
         ),
       ),
       */
-      bottomNavigationBar: BottomNavigationBar(
-        type: BottomNavigationBarType.fixed,
-        backgroundColor: Colors.black87,
-        selectedItemColor: Color(0xFFFF6B00),
-        unselectedItemColor: Colors.white70,
-        currentIndex: 0,
-        onTap: (idx) {
-          switch (idx) {
-            case 0:
-              Navigator.pushReplacementNamed(context, '/');
-              break;
-            case 1:
-              Navigator.pushReplacementNamed(context, '/favorites');
-              break;
-            case 2:
-              if (ApiService.accessToken == null || ApiService.accessToken!.isEmpty) {
-                Navigator.pushReplacementNamed(context, '/login');
-              } else {
-                Navigator.pushReplacementNamed(context, '/profile');
-              }
-              break;
-          }
-        },
-        items: [
-          BottomNavigationBarItem(icon: Icon(Icons.home), label: AppLocalizations.of(context)!.navHome),
-          BottomNavigationBarItem(icon: Icon(Icons.favorite), label: AppLocalizations.of(context)!.navSaved),
-          BottomNavigationBarItem(icon: Icon(Icons.person), label: (ApiService.accessToken == null || ApiService.accessToken!.isEmpty) ? AppLocalizations.of(context)!.navLogin : AppLocalizations.of(context)!.navProfile),
-        ],
-      ),
-    );
-  }
+    bottomNavigationBar: BottomNavigationBar(
+      type: BottomNavigationBarType.fixed,
+      backgroundColor: Colors.black87,
+      selectedItemColor: Color(0xFFFF6B00),
+      unselectedItemColor: Colors.white70,
+      currentIndex: 0,
+      onTap: (idx) {
+        switch (idx) {
+          case 0:
+            Navigator.pushReplacementNamed(context, '/');
+            break;
+          case 1:
+            Navigator.pushReplacementNamed(context, '/favorites');
+            break;
+          case 2:
+            if (ApiService.accessToken == null ||
+                ApiService.accessToken!.isEmpty) {
+              Navigator.pushReplacementNamed(context, '/login');
+            } else {
+              Navigator.pushReplacementNamed(context, '/profile');
+            }
+            break;
+        }
+      },
+      items: [
+        BottomNavigationBarItem(
+          icon: Icon(Icons.home),
+          label: AppLocalizations.of(context)!.navHome,
+        ),
+        BottomNavigationBarItem(
+          icon: Icon(Icons.favorite),
+          label: AppLocalizations.of(context)!.navSaved,
+        ),
+        BottomNavigationBarItem(
+          icon: Icon(Icons.person),
+          label:
+              (ApiService.accessToken == null ||
+                  ApiService.accessToken!.isEmpty)
+              ? AppLocalizations.of(context)!.navLogin
+              : AppLocalizations.of(context)!.navProfile,
+        ),
+      ],
+    ),
+  );
+}
 
-  // Helper function to get body type icon
-  IconData _getBodyTypeIcon(String bodyType) {
-    switch (bodyType.toLowerCase()) {
-      case 'sedan':
-        return Icons.directions_car;
-      case 'suv':
-        return Icons.directions_car_filled;
-      case 'hatchback':
-        return Icons.directions_car;
-      case 'coupe':
-        return Icons.directions_car;
-      case 'wagon':
-        return Icons.directions_car;
-      case 'pickup':
-        return Icons.local_shipping;
-      case 'van':
-        return Icons.airport_shuttle;
-      case 'minivan':
-        return Icons.airport_shuttle;
-      case 'motorcycle':
-        return Icons.motorcycle;
-      case 'utv':
-        return Icons.directions_car;
-      case 'atv':
-        return Icons.directions_car;
-      default:
-        return Icons.directions_car;
-    }
+// Helper function to get body type icon
+IconData _getBodyTypeIcon(String bodyType) {
+  switch (bodyType.toLowerCase()) {
+    case 'sedan':
+      return Icons.directions_car;
+    case 'suv':
+      return Icons.directions_car_filled;
+    case 'hatchback':
+      return Icons.directions_car;
+    case 'coupe':
+      return Icons.directions_car;
+    case 'wagon':
+      return Icons.directions_car;
+    case 'pickup':
+      return Icons.local_shipping;
+    case 'van':
+      return Icons.airport_shuttle;
+    case 'minivan':
+      return Icons.airport_shuttle;
+    case 'motorcycle':
+      return Icons.motorcycle;
+    case 'utv':
+      return Icons.directions_car;
+    case 'atv':
+      return Icons.directions_car;
+    default:
+      return Icons.directions_car;
   }
+}
 
-  // Helper function to get color value
-  Color _getColorValue(String colorName) {
-    switch (colorName.toLowerCase()) {
-      case 'black':
-        return Colors.black;
-      case 'white':
-        return Colors.white;
-      case 'silver':
-        return Colors.grey[300]!;
-      case 'gray':
-        return Colors.grey[600]!;
-      case 'red':
-        return Colors.red;
-      case 'blue':
-        return Colors.blue;
-      case 'green':
-        return Colors.green;
-      case 'yellow':
-        return Colors.yellow;
-      case 'orange':
-        return Colors.orange;
-      case 'purple':
-        return Colors.purple;
-      case 'brown':
-        return Colors.brown;
-      case 'beige':
-        return Color(0xFFF5F5DC);
-      case 'gold':
-        return Color(0xFFFFD700);
-      default:
-        return Colors.grey;
-    }
+// Helper function to get color value
+Color _getColorValue(String colorName) {
+  switch (colorName.toLowerCase()) {
+    case 'black':
+      return Colors.black;
+    case 'white':
+      return Colors.white;
+    case 'silver':
+      return Colors.grey[300]!;
+    case 'gray':
+      return Colors.grey[600]!;
+    case 'red':
+      return Colors.red;
+    case 'blue':
+      return Colors.blue;
+    case 'green':
+      return Colors.green;
+    case 'yellow':
+      return Colors.yellow;
+    case 'orange':
+      return Colors.orange;
+    case 'purple':
+      return Colors.purple;
+    case 'brown':
+      return Colors.brown;
+    case 'beige':
+      return Color(0xFFF5F5DC);
+    case 'gold':
+      return Color(0xFFFFD700);
+    default:
+      return Colors.grey;
   }
+}
 // Removed stray closing brace that caused a syntax error
 
 class FavoritesPage extends StatefulWidget {
@@ -11047,11 +16448,17 @@ class _FavoritesPageState extends State<FavoritesPage> {
   }
 
   Future<void> _loadFavorites() async {
-    setState(() { _loading = true; _error = null; });
+    setState(() {
+      _loading = true;
+      _error = null;
+    });
     try {
       final tok = ApiService.accessToken;
       if (tok == null || tok.isEmpty) {
-        setState(() { _error = AppLocalizations.of(context)!.loginRequired; _loading = false; });
+        setState(() {
+          _error = AppLocalizations.of(context)!.loginRequired;
+          _loading = false;
+        });
         return;
       }
       final sp = await SharedPreferences.getInstance();
@@ -11061,27 +16468,44 @@ class _FavoritesPageState extends State<FavoritesPage> {
         try {
           final data = json.decode(cached);
           if (data is List) {
-            setState(() { _favorites = data.cast<Map<String, dynamic>>(); _loading = false; });
+            setState(() {
+              _favorites = data.cast<Map<String, dynamic>>();
+              _loading = false;
+            });
           }
         } catch (_) {}
       }
       final url = Uri.parse(getApiBase() + '/api/favorites');
-      final resp = await http.get(url, headers: { 'Authorization': 'Bearer ' + tok });
+      final resp = await http.get(
+        url,
+        headers: {'Authorization': 'Bearer ' + tok},
+      );
       if (resp.statusCode == 200) {
         final data = json.decode(resp.body);
         if (data is List) {
-          setState(() { _favorites = data.cast<Map<String, dynamic>>(); });
+          setState(() {
+            _favorites = data.cast<Map<String, dynamic>>();
+          });
           unawaited(sp.setString(cacheKey, json.encode(_favorites)));
         }
       } else if (resp.statusCode == 401) {
-        setState(() { _error = AppLocalizations.of(context)!.loginRequired; });
+        setState(() {
+          _error = AppLocalizations.of(context)!.loginRequired;
+        });
       } else {
-        setState(() { _error = AppLocalizations.of(context)!.couldNotSubmitListing; });
+        setState(() {
+          _error = AppLocalizations.of(context)!.couldNotSubmitListing;
+        });
       }
     } catch (e) {
-      setState(() { _error = e.toString(); });
+      setState(() {
+        _error = e.toString();
+      });
     } finally {
-      if (mounted) setState(() { _loading = false; });
+      if (mounted)
+        setState(() {
+          _loading = false;
+        });
     }
   }
 
@@ -11090,13 +16514,18 @@ class _FavoritesPageState extends State<FavoritesPage> {
       final tok = ApiService.accessToken;
       if (tok == null || tok.isEmpty) return;
       final url = Uri.parse(getApiBase() + '/api/favorite/' + carId.toString());
-      final resp = await http.post(url, headers: { 'Authorization': 'Bearer ' + tok });
+      final resp = await http.post(
+        url,
+        headers: {'Authorization': 'Bearer ' + tok},
+      );
       if (resp.statusCode == 200) {
         // Remove if unfavorited; keep if favorited
         final Map<String, dynamic> res = json.decode(resp.body);
         final bool favorited = res['favorited'] == true;
         if (!favorited) {
-          setState(() { _favorites.removeWhere((c) => c['id'] == carId); });
+          setState(() {
+            _favorites.removeWhere((c) => c['id'] == carId);
+          });
         } else {
           // If favorited, ensure it exists (no-op if already in list)
           // Could fetch full car if needed; skip for now
@@ -11120,6 +16549,7 @@ class _FavoritesPageState extends State<FavoritesPage> {
       return raw;
     }
   }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -11127,90 +16557,120 @@ class _FavoritesPageState extends State<FavoritesPage> {
       body: _loading
           ? Center(child: CircularProgressIndicator())
           : (_error != null)
-              ? Center(child: Text(_error!))
-              : (_favorites.isEmpty)
-                  ? Center(child: Text('No favorites yet'))
-                  : RefreshIndicator(
-                      onRefresh: _loadFavorites,
-                      child: ListView.separated(
-                        physics: const AlwaysScrollableScrollPhysics(),
-                        padding: const EdgeInsets.all(12),
-                        itemBuilder: (context, index) {
-                          final car = _favorites[index];
-                          final String title = (car['title']?.toString() ?? '').trim();
-                          final String imageUrl = (car['image_url']?.toString() ?? '').trim();
-                          final String? rel = imageUrl.isEmpty ? null : imageUrl;
-                          final String fullImg = rel == null
-                              ? ''
-                              : (rel.startsWith('http')
-                                  ? rel
-                                  : (getApiBase() + '/static/uploads/' + rel));
-                          return InkWell(
-                            onTap: () {
-                              final int? id = car['id'] is int ? car['id'] as int : int.tryParse(car['id']?.toString() ?? '');
-                              if (id != null) {
-                                // Analytics tracking for view listing
-                                Navigator.pushNamed(context, '/car_detail', arguments: {'carId': id});
-                              }
-                            },
-                            child: Row(
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              children: [
-                                ClipRRect(
-                                  borderRadius: BorderRadius.circular(10),
-                                  child: (fullImg.isNotEmpty)
-                                      ? CachedNetworkImage(
-                                          imageUrl: fullImg,
-                                          width: 110,
-                                          height: 78,
-                                          fit: BoxFit.cover,
-                                          placeholder: (_, __) => Container(width: 110, height: 78, color: Colors.white10),
-                                          errorWidget: (_, __, ___) => Container(width: 110, height: 78, color: Colors.grey[900], child: Icon(Icons.directions_car, color: Colors.grey[500])),
-                                        )
-                                      : Container(
-                                          width: 110,
-                                          height: 78,
-                                          color: Colors.grey[900],
-                                          child: Icon(Icons.directions_car, color: Colors.grey[500]),
-                                        ),
-                                ),
-                                SizedBox(width: 12),
-                                Expanded(
-                                  child: Column(
-                                    crossAxisAlignment: CrossAxisAlignment.start,
-                                    children: [
-                                      Text(
-                                        title.isEmpty ? '—' : title,
-                                        maxLines: 2,
-                                        overflow: TextOverflow.ellipsis,
-                                        style: TextStyle(fontSize: 16, fontWeight: FontWeight.w600),
-                                      ),
-                                      SizedBox(height: 6),
-                                      if (car['price'] != null)
-                                        Text(
-                                          _formatCurrencyGlobal(context, car['price']),
-                                          style: TextStyle(color: Color(0xFFFF6B00), fontWeight: FontWeight.w700),
-                                        ),
-                                    ],
+          ? Center(child: Text(_error!))
+          : (_favorites.isEmpty)
+          ? Center(child: Text('No favorites yet'))
+          : RefreshIndicator(
+              onRefresh: _loadFavorites,
+              child: ListView.separated(
+                physics: const AlwaysScrollableScrollPhysics(),
+                padding: const EdgeInsets.all(12),
+                itemBuilder: (context, index) {
+                  final car = _favorites[index];
+                  final String title = (car['title']?.toString() ?? '').trim();
+                  final String imageUrl = (car['image_url']?.toString() ?? '')
+                      .trim();
+                  final String? rel = imageUrl.isEmpty ? null : imageUrl;
+                  final String fullImg = rel == null
+                      ? ''
+                      : (rel.startsWith('http')
+                            ? rel
+                            : (getApiBase() + '/static/uploads/' + rel));
+                  return InkWell(
+                    onTap: () {
+                      final int? id = car['id'] is int
+                          ? car['id'] as int
+                          : int.tryParse(car['id']?.toString() ?? '');
+                      if (id != null) {
+                        // Analytics tracking for view listing
+                        Navigator.pushNamed(
+                          context,
+                          '/car_detail',
+                          arguments: {'carId': id},
+                        );
+                      }
+                    },
+                    child: Row(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        ClipRRect(
+                          borderRadius: BorderRadius.circular(10),
+                          child: (fullImg.isNotEmpty)
+                              ? CachedNetworkImage(
+                                  imageUrl: fullImg,
+                                  width: 110,
+                                  height: 78,
+                                  fit: BoxFit.cover,
+                                  placeholder: (_, __) => Container(
+                                    width: 110,
+                                    height: 78,
+                                    color: Colors.white10,
+                                  ),
+                                  errorWidget: (_, __, ___) => Container(
+                                    width: 110,
+                                    height: 78,
+                                    color: Colors.grey[900],
+                                    child: Icon(
+                                      Icons.directions_car,
+                                      color: Colors.grey[500],
+                                    ),
+                                  ),
+                                )
+                              : Container(
+                                  width: 110,
+                                  height: 78,
+                                  color: Colors.grey[900],
+                                  child: Icon(
+                                    Icons.directions_car,
+                                    color: Colors.grey[500],
                                   ),
                                 ),
-                                IconButton(
-                                  icon: Icon(Icons.favorite, color: Color(0xFFFF6B00)),
-                                  onPressed: () {
-                                    final int? id = car['id'] is int ? car['id'] as int : int.tryParse(car['id']?.toString() ?? '');
-                                    if (id != null) {
-                                      _toggleFavorite(id);
-                                    }
-                                  },
-                                )
-                              ],
-                            ),
-                          );
-                        },
-                        separatorBuilder: (_, __) => SizedBox(height: 12),
-                        itemCount: _favorites.length,
-                      ),
+                        ),
+                        SizedBox(width: 12),
+                        Expanded(
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Text(
+                                title.isEmpty ? '—' : title,
+                                maxLines: 2,
+                                overflow: TextOverflow.ellipsis,
+                                style: TextStyle(
+                                  fontSize: 16,
+                                  fontWeight: FontWeight.w600,
+                                ),
+                              ),
+                              SizedBox(height: 6),
+                              if (car['price'] != null)
+                                Text(
+                                  _formatCurrencyGlobal(context, car['price']),
+                                  style: TextStyle(
+                                    color: Color(0xFFFF6B00),
+                                    fontWeight: FontWeight.w700,
+                                  ),
+                                ),
+                            ],
+                          ),
+                        ),
+                        IconButton(
+                          icon: Icon(Icons.favorite, color: Color(0xFFFF6B00)),
+                          onPressed: () {
+                            final int? id = car['id'] is int
+                                ? car['id'] as int
+                                : int.tryParse(car['id']?.toString() ?? '');
+                            if (id != null) {
+                              _toggleFavorite(id);
+                            }
+                          },
+                        ),
+                      ],
                     ),
+                  );
+                },
+                separatorBuilder: (_, __) => SizedBox(height: 12),
+                itemCount: _favorites.length,
+              ),
+            ),
       bottomNavigationBar: BottomNavigationBar(
         type: BottomNavigationBarType.fixed,
         backgroundColor: Colors.black87,
@@ -11231,9 +16691,22 @@ class _FavoritesPageState extends State<FavoritesPage> {
           }
         },
         items: [
-          BottomNavigationBarItem(icon: Icon(Icons.home), label: AppLocalizations.of(context)!.navHome),
-          BottomNavigationBarItem(icon: Icon(Icons.favorite), label: AppLocalizations.of(context)!.navSaved),
-          BottomNavigationBarItem(icon: Icon(Icons.person), label: (ApiService.accessToken == null || ApiService.accessToken!.isEmpty) ? AppLocalizations.of(context)!.navLogin : AppLocalizations.of(context)!.navProfile),
+          BottomNavigationBarItem(
+            icon: Icon(Icons.home),
+            label: AppLocalizations.of(context)!.navHome,
+          ),
+          BottomNavigationBarItem(
+            icon: Icon(Icons.favorite),
+            label: AppLocalizations.of(context)!.navSaved,
+          ),
+          BottomNavigationBarItem(
+            icon: Icon(Icons.person),
+            label:
+                (ApiService.accessToken == null ||
+                    ApiService.accessToken!.isEmpty)
+                ? AppLocalizations.of(context)!.navLogin
+                : AppLocalizations.of(context)!.navProfile,
+          ),
         ],
       ),
     );
@@ -11266,7 +16739,8 @@ class _ChatListPageState extends State<ChatListPage> {
               Navigator.pushReplacementNamed(context, '/favorites');
               break;
             case 2:
-              if (ApiService.accessToken == null || ApiService.accessToken!.isEmpty) {
+              if (ApiService.accessToken == null ||
+                  ApiService.accessToken!.isEmpty) {
                 Navigator.pushReplacementNamed(context, '/login');
               } else {
                 Navigator.pushReplacementNamed(context, '/profile');
@@ -11275,9 +16749,22 @@ class _ChatListPageState extends State<ChatListPage> {
           }
         },
         items: [
-          BottomNavigationBarItem(icon: Icon(Icons.home), label: AppLocalizations.of(context)!.navHome),
-          BottomNavigationBarItem(icon: Icon(Icons.favorite), label: AppLocalizations.of(context)!.navSaved),
-          BottomNavigationBarItem(icon: Icon(Icons.person), label: (ApiService.accessToken == null || ApiService.accessToken!.isEmpty) ? AppLocalizations.of(context)!.navLogin : AppLocalizations.of(context)!.navProfile),
+          BottomNavigationBarItem(
+            icon: Icon(Icons.home),
+            label: AppLocalizations.of(context)!.navHome,
+          ),
+          BottomNavigationBarItem(
+            icon: Icon(Icons.favorite),
+            label: AppLocalizations.of(context)!.navSaved,
+          ),
+          BottomNavigationBarItem(
+            icon: Icon(Icons.person),
+            label:
+                (ApiService.accessToken == null ||
+                    ApiService.accessToken!.isEmpty)
+                ? AppLocalizations.of(context)!.navLogin
+                : AppLocalizations.of(context)!.navProfile,
+          ),
         ],
       ),
     );
@@ -11288,6 +16775,7 @@ class LoginPage extends StatefulWidget {
   @override
   _LoginPageState createState() => _LoginPageState();
 }
+
 class _LoginPageState extends State<LoginPage> {
   final _formKey = GlobalKey<FormState>();
   final _usernameController = TextEditingController();
@@ -11296,13 +16784,19 @@ class _LoginPageState extends State<LoginPage> {
 
   Future<void> _login() async {
     if (!_formKey.currentState!.validate()) return;
-    setState(() { _loading = true; });
+    setState(() {
+      _loading = true;
+    });
     try {
       final url = Uri.parse(getApiBase() + '/api/auth/login');
-      final resp = await http.post(url, headers: {'Content-Type': 'application/json'}, body: json.encode({
-        'username': _usernameController.text.trim(),
-        'password': _passwordController.text,
-      }));
+      final resp = await http.post(
+        url,
+        headers: {'Content-Type': 'application/json'},
+        body: json.encode({
+          'username': _usernameController.text.trim(),
+          'password': _passwordController.text,
+        }),
+      );
       if (resp.statusCode == 200) {
         final data = json.decode(resp.body);
         final token = data['token'] as String;
@@ -11311,15 +16805,44 @@ class _LoginPageState extends State<LoginPage> {
         if (!mounted) return;
         Navigator.pushReplacementNamed(context, '/');
       } else {
-        final msg = resp.body.length > 0 ? resp.body : AppLocalizations.of(context)!.couldNotSubmitListing;
+        final msg = resp.body.length > 0
+            ? resp.body
+            : AppLocalizations.of(context)!.couldNotSubmitListing;
         if (!mounted) return;
-        showDialog(context: context, builder: (_) => AlertDialog(title: Text(AppLocalizations.of(context)!.errorTitle), content: Text(msg), actions: [TextButton(onPressed: ()=>Navigator.pop(context), child: Text(AppLocalizations.of(context)!.okAction))]));
+        showDialog(
+          context: context,
+          builder: (_) => AlertDialog(
+            title: Text(AppLocalizations.of(context)!.errorTitle),
+            content: Text(msg),
+            actions: [
+              TextButton(
+                onPressed: () => Navigator.pop(context),
+                child: Text(AppLocalizations.of(context)!.okAction),
+              ),
+            ],
+          ),
+        );
       }
     } catch (e) {
       if (!mounted) return;
-      showDialog(context: context, builder: (_) => AlertDialog(title: Text(AppLocalizations.of(context)!.errorTitle), content: Text(e.toString()), actions: [TextButton(onPressed: ()=>Navigator.pop(context), child: Text(AppLocalizations.of(context)!.okAction))]));
+      showDialog(
+        context: context,
+        builder: (_) => AlertDialog(
+          title: Text(AppLocalizations.of(context)!.errorTitle),
+          content: Text(e.toString()),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(context),
+              child: Text(AppLocalizations.of(context)!.okAction),
+            ),
+          ],
+        ),
+      );
     } finally {
-      if (mounted) setState(() { _loading = false; });
+      if (mounted)
+        setState(() {
+          _loading = false;
+        });
     }
   }
 
@@ -11336,25 +16859,40 @@ class _LoginPageState extends State<LoginPage> {
             children: [
               TextFormField(
                 controller: _usernameController,
-                decoration: InputDecoration(labelText: AppLocalizations.of(context)!.usernameLabel),
-                validator: (v) => (v==null || v.trim().isEmpty) ? AppLocalizations.of(context)!.requiredField : null,
+                decoration: InputDecoration(
+                  labelText: AppLocalizations.of(context)!.usernameLabel,
+                ),
+                validator: (v) => (v == null || v.trim().isEmpty)
+                    ? AppLocalizations.of(context)!.requiredField
+                    : null,
               ),
               SizedBox(height: 12),
               TextFormField(
                 controller: _passwordController,
                 obscureText: true,
-                decoration: InputDecoration(labelText: AppLocalizations.of(context)!.passwordLabel),
-                validator: (v) => (v==null || v.isEmpty) ? AppLocalizations.of(context)!.requiredField : null,
+                decoration: InputDecoration(
+                  labelText: AppLocalizations.of(context)!.passwordLabel,
+                ),
+                validator: (v) => (v == null || v.isEmpty)
+                    ? AppLocalizations.of(context)!.requiredField
+                    : null,
               ),
               SizedBox(height: 20),
               ElevatedButton(
                 onPressed: _loading ? null : _login,
-                child: _loading ? SizedBox(width: 18, height: 18, child: CircularProgressIndicator(strokeWidth: 2)) : Text(AppLocalizations.of(context)!.navLogin),
+                child: _loading
+                    ? SizedBox(
+                        width: 18,
+                        height: 18,
+                        child: CircularProgressIndicator(strokeWidth: 2),
+                      )
+                    : Text(AppLocalizations.of(context)!.navLogin),
               ),
               TextButton(
-                onPressed: () => Navigator.pushReplacementNamed(context, '/signup'),
+                onPressed: () =>
+                    Navigator.pushReplacementNamed(context, '/signup'),
                 child: Text(AppLocalizations.of(context)!.createAccount),
-              )
+              ),
             ],
           ),
         ),
@@ -11379,9 +16917,22 @@ class _LoginPageState extends State<LoginPage> {
           }
         },
         items: [
-          BottomNavigationBarItem(icon: Icon(Icons.home), label: AppLocalizations.of(context)!.navHome),
-          BottomNavigationBarItem(icon: Icon(Icons.favorite), label: AppLocalizations.of(context)!.navSaved),
-          BottomNavigationBarItem(icon: Icon(Icons.person), label: (ApiService.accessToken == null || ApiService.accessToken!.isEmpty) ? AppLocalizations.of(context)!.navLogin : AppLocalizations.of(context)!.navProfile),
+          BottomNavigationBarItem(
+            icon: Icon(Icons.home),
+            label: AppLocalizations.of(context)!.navHome,
+          ),
+          BottomNavigationBarItem(
+            icon: Icon(Icons.favorite),
+            label: AppLocalizations.of(context)!.navSaved,
+          ),
+          BottomNavigationBarItem(
+            icon: Icon(Icons.person),
+            label:
+                (ApiService.accessToken == null ||
+                    ApiService.accessToken!.isEmpty)
+                ? AppLocalizations.of(context)!.navLogin
+                : AppLocalizations.of(context)!.navProfile,
+          ),
         ],
       ),
     );
@@ -11405,52 +16956,135 @@ class _SignupPageState extends State<SignupPage> {
   Future<void> _sendOtp() async {
     final phone = _phoneController.text.trim();
     if (phone.isEmpty) {
-      showDialog(context: context, builder: (_) => AlertDialog(title: Text(AppLocalizations.of(context)!.errorTitle), content: Text(AppLocalizations.of(context)!.enterPhoneNumber), actions: [TextButton(onPressed: ()=>Navigator.pop(context), child: Text(AppLocalizations.of(context)!.okAction))]));
+      showDialog(
+        context: context,
+        builder: (_) => AlertDialog(
+          title: Text(AppLocalizations.of(context)!.errorTitle),
+          content: Text(AppLocalizations.of(context)!.enterPhoneNumber),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(context),
+              child: Text(AppLocalizations.of(context)!.okAction),
+            ),
+          ],
+        ),
+      );
       return;
     }
-    setState(() { _loading = true; });
+    setState(() {
+      _loading = true;
+    });
     try {
       final url = Uri.parse(getApiBase() + '/api/auth/send_otp');
-      final resp = await http.post(url, headers: {'Content-Type': 'application/json'}, body: json.encode({'phone': phone}));
+      final resp = await http.post(
+        url,
+        headers: {'Content-Type': 'application/json'},
+        body: json.encode({'phone': phone}),
+      );
       if (resp.statusCode == 200) {
         final data = json.decode(resp.body);
         final bool sent = data['sent'] == true;
-        setState(() { _otpSent = true; });
+        setState(() {
+          _otpSent = true;
+        });
         if (sent) {
-          ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(AppLocalizations.of(context)!.verificationCodeSent)));
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text(AppLocalizations.of(context)!.verificationCodeSent),
+            ),
+          );
         } else if (data['dev_code'] != null) {
           final String code = data['dev_code'].toString();
-          showDialog(context: context, builder: (_) => AlertDialog(
-            title: Text(AppLocalizations.of(context)!.devCodeTitle),
-            content: Text(AppLocalizations.of(context)!.useCodeToVerify(code)),
-            actions: [TextButton(onPressed: ()=>Navigator.pop(context), child: Text(AppLocalizations.of(context)!.okAction))],
-          ));
+          showDialog(
+            context: context,
+            builder: (_) => AlertDialog(
+              title: Text(AppLocalizations.of(context)!.devCodeTitle),
+              content: Text(
+                AppLocalizations.of(context)!.useCodeToVerify(code),
+              ),
+              actions: [
+                TextButton(
+                  onPressed: () => Navigator.pop(context),
+                  child: Text(AppLocalizations.of(context)!.okAction),
+                ),
+              ],
+            ),
+          );
         } else {
-          final String err = data['error']?.toString() ?? AppLocalizations.of(context)!.couldNotSubmitListing;
-          showDialog(context: context, builder: (_) => AlertDialog(title: Text(AppLocalizations.of(context)!.errorTitle), content: Text(err), actions: [TextButton(onPressed: ()=>Navigator.pop(context), child: Text(AppLocalizations.of(context)!.okAction))]));
+          final String err =
+              data['error']?.toString() ??
+              AppLocalizations.of(context)!.couldNotSubmitListing;
+          showDialog(
+            context: context,
+            builder: (_) => AlertDialog(
+              title: Text(AppLocalizations.of(context)!.errorTitle),
+              content: Text(err),
+              actions: [
+                TextButton(
+                  onPressed: () => Navigator.pop(context),
+                  child: Text(AppLocalizations.of(context)!.okAction),
+                ),
+              ],
+            ),
+          );
         }
       } else {
-        final msg = resp.body.isNotEmpty ? resp.body : AppLocalizations.of(context)!.couldNotSubmitListing;
-        showDialog(context: context, builder: (_) => AlertDialog(title: Text(AppLocalizations.of(context)!.errorTitle), content: Text(msg), actions: [TextButton(onPressed: ()=>Navigator.pop(context), child: Text(AppLocalizations.of(context)!.okAction))]));
+        final msg = resp.body.isNotEmpty
+            ? resp.body
+            : AppLocalizations.of(context)!.couldNotSubmitListing;
+        showDialog(
+          context: context,
+          builder: (_) => AlertDialog(
+            title: Text(AppLocalizations.of(context)!.errorTitle),
+            content: Text(msg),
+            actions: [
+              TextButton(
+                onPressed: () => Navigator.pop(context),
+                child: Text(AppLocalizations.of(context)!.okAction),
+              ),
+            ],
+          ),
+        );
       }
     } catch (e) {
-      showDialog(context: context, builder: (_) => AlertDialog(title: Text(AppLocalizations.of(context)!.errorTitle), content: Text(e.toString()), actions: [TextButton(onPressed: ()=>Navigator.pop(context), child: Text(AppLocalizations.of(context)!.okAction))]));
+      showDialog(
+        context: context,
+        builder: (_) => AlertDialog(
+          title: Text(AppLocalizations.of(context)!.errorTitle),
+          content: Text(e.toString()),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(context),
+              child: Text(AppLocalizations.of(context)!.okAction),
+            ),
+          ],
+        ),
+      );
     } finally {
-      if (mounted) setState(() { _loading = false; });
+      if (mounted)
+        setState(() {
+          _loading = false;
+        });
     }
   }
 
   Future<void> _signup() async {
     if (!_formKey.currentState!.validate()) return;
-    setState(() { _loading = true; });
+    setState(() {
+      _loading = true;
+    });
     try {
       final url = Uri.parse(getApiBase() + '/api/auth/signup');
-      final resp = await http.post(url, headers: {'Content-Type': 'application/json'}, body: json.encode({
-        'username': _usernameController.text.trim(),
-        'phone': _phoneController.text.trim(),
-        'otp_code': _otpController.text.trim(),
-        'password': _passwordController.text,
-      }));
+      final resp = await http.post(
+        url,
+        headers: {'Content-Type': 'application/json'},
+        body: json.encode({
+          'username': _usernameController.text.trim(),
+          'phone': _phoneController.text.trim(),
+          'otp_code': _otpController.text.trim(),
+          'password': _passwordController.text,
+        }),
+      );
       if (resp.statusCode == 200) {
         final data = json.decode(resp.body);
         final token = data['token'] as String;
@@ -11458,15 +17092,44 @@ class _SignupPageState extends State<SignupPage> {
         if (!mounted) return;
         Navigator.pushReplacementNamed(context, '/');
       } else {
-        final msg = resp.body.length > 0 ? resp.body : AppLocalizations.of(context)!.couldNotSubmitListing;
+        final msg = resp.body.length > 0
+            ? resp.body
+            : AppLocalizations.of(context)!.couldNotSubmitListing;
         if (!mounted) return;
-        showDialog(context: context, builder: (_) => AlertDialog(title: Text(AppLocalizations.of(context)!.errorTitle), content: Text(msg), actions: [TextButton(onPressed: ()=>Navigator.pop(context), child: Text(AppLocalizations.of(context)!.okAction))]));
+        showDialog(
+          context: context,
+          builder: (_) => AlertDialog(
+            title: Text(AppLocalizations.of(context)!.errorTitle),
+            content: Text(msg),
+            actions: [
+              TextButton(
+                onPressed: () => Navigator.pop(context),
+                child: Text(AppLocalizations.of(context)!.okAction),
+              ),
+            ],
+          ),
+        );
       }
     } catch (e) {
       if (!mounted) return;
-      showDialog(context: context, builder: (_) => AlertDialog(title: Text(AppLocalizations.of(context)!.errorTitle), content: Text(e.toString()), actions: [TextButton(onPressed: ()=>Navigator.pop(context), child: Text(AppLocalizations.of(context)!.okAction))]));
+      showDialog(
+        context: context,
+        builder: (_) => AlertDialog(
+          title: Text(AppLocalizations.of(context)!.errorTitle),
+          content: Text(e.toString()),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(context),
+              child: Text(AppLocalizations.of(context)!.okAction),
+            ),
+          ],
+        ),
+      );
     } finally {
-      if (mounted) setState(() { _loading = false; });
+      if (mounted)
+        setState(() {
+          _loading = false;
+        });
     }
   }
 
@@ -11482,15 +17145,23 @@ class _SignupPageState extends State<SignupPage> {
             children: [
               TextFormField(
                 controller: _usernameController,
-                decoration: InputDecoration(labelText: AppLocalizations.of(context)!.usernameLabel),
-                validator: (v) => (v==null || v.trim().isEmpty) ? AppLocalizations.of(context)!.requiredField : null,
+                decoration: InputDecoration(
+                  labelText: AppLocalizations.of(context)!.usernameLabel,
+                ),
+                validator: (v) => (v == null || v.trim().isEmpty)
+                    ? AppLocalizations.of(context)!.requiredField
+                    : null,
               ),
               SizedBox(height: 12),
               TextFormField(
                 controller: _phoneController,
                 keyboardType: TextInputType.phone,
-                decoration: InputDecoration(labelText: AppLocalizations.of(context)!.enterPhoneNumber),
-                validator: (v) => (v==null || v.trim().isEmpty) ? AppLocalizations.of(context)!.requiredField : null,
+                decoration: InputDecoration(
+                  labelText: AppLocalizations.of(context)!.enterPhoneNumber,
+                ),
+                validator: (v) => (v == null || v.trim().isEmpty)
+                    ? AppLocalizations.of(context)!.requiredField
+                    : null,
               ),
               SizedBox(height: 12),
               Row(
@@ -11498,8 +17169,14 @@ class _SignupPageState extends State<SignupPage> {
                   Expanded(
                     child: TextFormField(
                       controller: _otpController,
-                      decoration: InputDecoration(labelText: AppLocalizations.of(context)!.sendCode),
-                      validator: (v) => (!_otpSent) ? AppLocalizations.of(context)!.sendCodeFirst : ((v==null || v.trim().isEmpty) ? AppLocalizations.of(context)!.requiredField : null),
+                      decoration: InputDecoration(
+                        labelText: AppLocalizations.of(context)!.sendCode,
+                      ),
+                      validator: (v) => (!_otpSent)
+                          ? AppLocalizations.of(context)!.sendCodeFirst
+                          : ((v == null || v.trim().isEmpty)
+                                ? AppLocalizations.of(context)!.requiredField
+                                : null),
                     ),
                   ),
                   SizedBox(width: 8),
@@ -11513,18 +17190,29 @@ class _SignupPageState extends State<SignupPage> {
               TextFormField(
                 controller: _passwordController,
                 obscureText: true,
-                decoration: InputDecoration(labelText: AppLocalizations.of(context)!.passwordLabel),
-                validator: (v) => (v==null || v.isEmpty) ? AppLocalizations.of(context)!.requiredField : null,
+                decoration: InputDecoration(
+                  labelText: AppLocalizations.of(context)!.passwordLabel,
+                ),
+                validator: (v) => (v == null || v.isEmpty)
+                    ? AppLocalizations.of(context)!.requiredField
+                    : null,
               ),
               SizedBox(height: 20),
               ElevatedButton(
                 onPressed: _loading ? null : _signup,
-                child: _loading ? SizedBox(width: 18, height: 18, child: CircularProgressIndicator(strokeWidth: 2)) : Text(AppLocalizations.of(context)!.createAccount),
+                child: _loading
+                    ? SizedBox(
+                        width: 18,
+                        height: 18,
+                        child: CircularProgressIndicator(strokeWidth: 2),
+                      )
+                    : Text(AppLocalizations.of(context)!.createAccount),
               ),
               TextButton(
-                onPressed: () => Navigator.pushReplacementNamed(context, '/login'),
+                onPressed: () =>
+                    Navigator.pushReplacementNamed(context, '/login'),
                 child: Text(AppLocalizations.of(context)!.haveAccountLogin),
-              )
+              ),
             ],
           ),
         ),
@@ -11544,7 +17232,8 @@ class _SignupPageState extends State<SignupPage> {
               Navigator.pushReplacementNamed(context, '/favorites');
               break;
             case 2:
-              if (ApiService.accessToken == null || ApiService.accessToken!.isEmpty) {
+              if (ApiService.accessToken == null ||
+                  ApiService.accessToken!.isEmpty) {
                 Navigator.pushReplacementNamed(context, '/login');
               } else {
                 Navigator.pushReplacementNamed(context, '/profile');
@@ -11553,9 +17242,22 @@ class _SignupPageState extends State<SignupPage> {
           }
         },
         items: [
-          BottomNavigationBarItem(icon: Icon(Icons.home), label: AppLocalizations.of(context)!.navHome),
-          BottomNavigationBarItem(icon: Icon(Icons.favorite), label: AppLocalizations.of(context)!.navSaved),
-          BottomNavigationBarItem(icon: Icon(Icons.person), label: (ApiService.accessToken == null || ApiService.accessToken!.isEmpty) ? AppLocalizations.of(context)!.navLogin : AppLocalizations.of(context)!.navProfile),
+          BottomNavigationBarItem(
+            icon: Icon(Icons.home),
+            label: AppLocalizations.of(context)!.navHome,
+          ),
+          BottomNavigationBarItem(
+            icon: Icon(Icons.favorite),
+            label: AppLocalizations.of(context)!.navSaved,
+          ),
+          BottomNavigationBarItem(
+            icon: Icon(Icons.person),
+            label:
+                (ApiService.accessToken == null ||
+                    ApiService.accessToken!.isEmpty)
+                ? AppLocalizations.of(context)!.navLogin
+                : AppLocalizations.of(context)!.navProfile,
+          ),
         ],
       ),
     );
@@ -11581,16 +17283,24 @@ class _ProfilePageState extends State<ProfilePage> {
     try {
       final tok = ApiService.accessToken;
       if (tok == null || tok.isEmpty) {
-        setState(() { _loading = false; });
+        setState(() {
+          _loading = false;
+        });
         return;
       }
       final url = Uri.parse(getApiBase() + '/api/auth/me');
-      final resp = await http.get(url, headers: { 'Authorization': 'Bearer ' + tok });
+      final resp = await http.get(
+        url,
+        headers: {'Authorization': 'Bearer ' + tok},
+      );
       if (resp.statusCode == 200) {
         me = json.decode(resp.body) as Map<String, dynamic>;
       }
     } catch (_) {}
-    if (mounted) setState(() { _loading = false; });
+    if (mounted)
+      setState(() {
+        _loading = false;
+      });
   }
 
   Future<void> _logout() async {
@@ -11655,17 +17365,15 @@ class _ProfilePageState extends State<ProfilePage> {
                     Text(
                       'Sign in to access your profile and manage your account',
                       textAlign: TextAlign.center,
-                      style: TextStyle(
-                        fontSize: 14,
-                        color: Colors.grey[600],
-                      ),
+                      style: TextStyle(fontSize: 14, color: Colors.grey[600]),
                     ),
                     SizedBox(height: 32),
                     SizedBox(
                       width: double.infinity,
                       height: 50,
                       child: ElevatedButton(
-                        onPressed: () => Navigator.pushReplacementNamed(context, '/login'),
+                        onPressed: () =>
+                            Navigator.pushReplacementNamed(context, '/login'),
                         style: ElevatedButton.styleFrom(
                           backgroundColor: Color(0xFFFF6B00),
                           foregroundColor: Colors.white,
@@ -11676,13 +17384,17 @@ class _ProfilePageState extends State<ProfilePage> {
                         ),
                         child: Text(
                           AppLocalizations.of(context)!.loginAction,
-                          style: TextStyle(fontSize: 16, fontWeight: FontWeight.w600),
+                          style: TextStyle(
+                            fontSize: 16,
+                            fontWeight: FontWeight.w600,
+                          ),
                         ),
                       ),
                     ),
                     SizedBox(height: 16),
                     TextButton(
-                      onPressed: () => Navigator.pushReplacementNamed(context, '/signup'),
+                      onPressed: () =>
+                          Navigator.pushReplacementNamed(context, '/signup'),
                       child: Text(
                         AppLocalizations.of(context)!.createAccount,
                         style: TextStyle(
@@ -11756,16 +17468,13 @@ class _ProfilePageState extends State<ProfilePage> {
                   SizedBox(height: 8),
                   Text(
                     me?['email']?.toString() ?? '',
-                    style: TextStyle(
-                      fontSize: 16,
-                      color: Colors.grey[600],
-                    ),
+                    style: TextStyle(fontSize: 16, color: Colors.grey[600]),
                   ),
                 ],
               ),
             ),
             SizedBox(height: 24),
-            
+
             // User Information Card
             Container(
               width: double.infinity,
@@ -11793,20 +17502,36 @@ class _ProfilePageState extends State<ProfilePage> {
                     ),
                   ),
                   SizedBox(height: 20),
-                  _buildInfoRow(Icons.person_outline, AppLocalizations.of(context)!.usernameLabel, me?['username']?.toString() ?? ''),
+                  _buildInfoRow(
+                    Icons.person_outline,
+                    AppLocalizations.of(context)!.usernameLabel,
+                    me?['username']?.toString() ?? '',
+                  ),
                   SizedBox(height: 16),
-                  _buildInfoRow(Icons.email_outlined, AppLocalizations.of(context)!.emailLabel, me?['email']?.toString() ?? ''),
+                  _buildInfoRow(
+                    Icons.email_outlined,
+                    AppLocalizations.of(context)!.emailLabel,
+                    me?['email']?.toString() ?? '',
+                  ),
                   if ((me?['phone']?.toString().isNotEmpty ?? false)) ...[
                     SizedBox(height: 16),
-                    _buildInfoRow(Icons.phone_outlined, AppLocalizations.of(context)!.phoneLabel, me!['phone'].toString()),
+                    _buildInfoRow(
+                      Icons.phone_outlined,
+                      AppLocalizations.of(context)!.phoneLabel,
+                      me!['phone'].toString(),
+                    ),
                   ],
                   SizedBox(height: 16),
-                  _buildInfoRow(Icons.lock_outline, AppLocalizations.of(context)!.passwordLabel, '••••••••'),
+                  _buildInfoRow(
+                    Icons.lock_outline,
+                    AppLocalizations.of(context)!.passwordLabel,
+                    '••••••••',
+                  ),
                 ],
               ),
             ),
             SizedBox(height: 24),
-            
+
             // Action Buttons
             Container(
               width: double.infinity,
@@ -11842,21 +17567,13 @@ class _ProfilePageState extends State<ProfilePage> {
                     },
                   ),
                   SizedBox(height: 12),
-                  _buildActionButton(
-                    Icons.analytics_outlined,
-                    'Analytics',
-                    () {
-                      Navigator.pushNamed(context, '/analytics');
-                    },
-                  ),
+                  _buildActionButton(Icons.analytics_outlined, 'Analytics', () {
+                    Navigator.pushNamed(context, '/analytics');
+                  }),
                   SizedBox(height: 12),
-                  _buildActionButton(
-                    Icons.chat_outlined,
-                    'Chat',
-                    () {
-                      Navigator.pushNamed(context, '/chat');
-                    },
-                  ),
+                  _buildActionButton(Icons.chat_outlined, 'Chat', () {
+                    Navigator.pushNamed(context, '/chat');
+                  }),
                   SizedBox(height: 12),
                   Consumer<CarComparisonStore>(
                     builder: (context, comparisonStore, child) {
@@ -11870,43 +17587,35 @@ class _ProfilePageState extends State<ProfilePage> {
                     },
                   ),
                   SizedBox(height: 12),
-                  _buildActionButton(
-                    Icons.edit_outlined,
-                    'Edit Profile',
-                    () {
-                      // TODO: Implement edit profile functionality
-                      ScaffoldMessenger.of(context).showSnackBar(
-                        SnackBar(content: Text('Edit profile feature coming soon!')),
-                      );
-                    },
-                  ),
+                  _buildActionButton(Icons.edit_outlined, 'Edit Profile', () {
+                    // TODO: Implement edit profile functionality
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      SnackBar(
+                        content: Text('Edit profile feature coming soon!'),
+                      ),
+                    );
+                  }),
                   SizedBox(height: 12),
-                  _buildActionButton(
-                    Icons.settings_outlined,
-                    'Settings',
-                    () {
-                      // TODO: Implement settings functionality
-                      ScaffoldMessenger.of(context).showSnackBar(
-                        SnackBar(content: Text('Settings feature coming soon!')),
-                      );
-                    },
-                  ),
+                  _buildActionButton(Icons.settings_outlined, 'Settings', () {
+                    // TODO: Implement settings functionality
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      SnackBar(content: Text('Settings feature coming soon!')),
+                    );
+                  }),
                   SizedBox(height: 12),
-                  _buildActionButton(
-                    Icons.help_outline,
-                    'Help & Support',
-                    () {
-                      // TODO: Implement help functionality
-                      ScaffoldMessenger.of(context).showSnackBar(
-                        SnackBar(content: Text('Help & Support feature coming soon!')),
-                      );
-                    },
-                  ),
+                  _buildActionButton(Icons.help_outline, 'Help & Support', () {
+                    // TODO: Implement help functionality
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      SnackBar(
+                        content: Text('Help & Support feature coming soon!'),
+                      ),
+                    );
+                  }),
                 ],
               ),
             ),
             SizedBox(height: 24),
-            
+
             // Logout Button
             SizedBox(
               width: double.infinity,
@@ -11928,7 +17637,10 @@ class _ProfilePageState extends State<ProfilePage> {
                     SizedBox(width: 8),
                     Text(
                       AppLocalizations.of(context)!.logout,
-                      style: TextStyle(fontSize: 16, fontWeight: FontWeight.w600),
+                      style: TextStyle(
+                        fontSize: 16,
+                        fontWeight: FontWeight.w600,
+                      ),
                     ),
                   ],
                 ),
@@ -11940,6 +17652,7 @@ class _ProfilePageState extends State<ProfilePage> {
       ),
     );
   }
+
   Widget _buildInfoRow(IconData icon, String label, String value) {
     return Row(
       children: [
@@ -12023,19 +17736,15 @@ class _ProfilePageState extends State<ProfilePage> {
       context: context,
       builder: (BuildContext context) {
         return AlertDialog(
-          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-          title: Text(
-            'Logout',
-            style: TextStyle(fontWeight: FontWeight.bold),
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(16),
           ),
+          title: Text('Logout', style: TextStyle(fontWeight: FontWeight.bold)),
           content: Text('Are you sure you want to logout?'),
           actions: [
             TextButton(
               onPressed: () => Navigator.of(context).pop(),
-              child: Text(
-                'Cancel',
-                style: TextStyle(color: Colors.grey[600]),
-              ),
+              child: Text('Cancel', style: TextStyle(color: Colors.grey[600])),
             ),
             ElevatedButton(
               onPressed: () {
@@ -12076,8 +17785,8 @@ class _ProfilePageState extends State<ProfilePage> {
       body: _loading
           ? Center(child: CircularProgressIndicator())
           : (ApiService.accessToken == null || ApiService.accessToken!.isEmpty)
-              ? _buildNotLoggedInState(context)
-              : _buildLoggedInState(context),
+          ? _buildNotLoggedInState(context)
+          : _buildLoggedInState(context),
       bottomNavigationBar: BottomNavigationBar(
         type: BottomNavigationBarType.fixed,
         backgroundColor: Colors.black87,
@@ -12093,7 +17802,8 @@ class _ProfilePageState extends State<ProfilePage> {
               Navigator.pushReplacementNamed(context, '/favorites');
               break;
             case 2:
-              if (ApiService.accessToken == null || ApiService.accessToken!.isEmpty) {
+              if (ApiService.accessToken == null ||
+                  ApiService.accessToken!.isEmpty) {
                 Navigator.pushReplacementNamed(context, '/login');
               } else {
                 Navigator.pushReplacementNamed(context, '/profile');
@@ -12102,9 +17812,22 @@ class _ProfilePageState extends State<ProfilePage> {
           }
         },
         items: [
-          BottomNavigationBarItem(icon: Icon(Icons.home), label: AppLocalizations.of(context)!.navHome),
-          BottomNavigationBarItem(icon: Icon(Icons.favorite), label: AppLocalizations.of(context)!.navSaved),
-          BottomNavigationBarItem(icon: Icon(Icons.person), label: (ApiService.accessToken == null || ApiService.accessToken!.isEmpty) ? AppLocalizations.of(context)!.navLogin : AppLocalizations.of(context)!.navProfile),
+          BottomNavigationBarItem(
+            icon: Icon(Icons.home),
+            label: AppLocalizations.of(context)!.navHome,
+          ),
+          BottomNavigationBarItem(
+            icon: Icon(Icons.favorite),
+            label: AppLocalizations.of(context)!.navSaved,
+          ),
+          BottomNavigationBarItem(
+            icon: Icon(Icons.person),
+            label:
+                (ApiService.accessToken == null ||
+                    ApiService.accessToken!.isEmpty)
+                ? AppLocalizations.of(context)!.navLogin
+                : AppLocalizations.of(context)!.navProfile,
+          ),
         ],
       ),
     );
@@ -12120,8 +17843,12 @@ class _PaymentHistoryPageState extends State<PaymentHistoryPage> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: Text(AppLocalizations.of(context)!.paymentHistoryTitle)),
-      body: Center(child: Text(AppLocalizations.of(context)!.paymentHistoryTitle)),
+      appBar: AppBar(
+        title: Text(AppLocalizations.of(context)!.paymentHistoryTitle),
+      ),
+      body: Center(
+        child: Text(AppLocalizations.of(context)!.paymentHistoryTitle),
+      ),
       bottomNavigationBar: BottomNavigationBar(
         type: BottomNavigationBarType.fixed,
         backgroundColor: Colors.black87,
@@ -12142,9 +17869,22 @@ class _PaymentHistoryPageState extends State<PaymentHistoryPage> {
           }
         },
         items: [
-          BottomNavigationBarItem(icon: Icon(Icons.home), label: AppLocalizations.of(context)!.navHome),
-          BottomNavigationBarItem(icon: Icon(Icons.favorite), label: AppLocalizations.of(context)!.navSaved),
-          BottomNavigationBarItem(icon: Icon(Icons.person), label: (ApiService.accessToken == null || ApiService.accessToken!.isEmpty) ? AppLocalizations.of(context)!.navLogin : AppLocalizations.of(context)!.navProfile),
+          BottomNavigationBarItem(
+            icon: Icon(Icons.home),
+            label: AppLocalizations.of(context)!.navHome,
+          ),
+          BottomNavigationBarItem(
+            icon: Icon(Icons.favorite),
+            label: AppLocalizations.of(context)!.navSaved,
+          ),
+          BottomNavigationBarItem(
+            icon: Icon(Icons.person),
+            label:
+                (ApiService.accessToken == null ||
+                    ApiService.accessToken!.isEmpty)
+                ? AppLocalizations.of(context)!.navLogin
+                : AppLocalizations.of(context)!.navProfile,
+          ),
         ],
       ),
     );
@@ -12160,8 +17900,12 @@ class _PaymentInitiatePageState extends State<PaymentInitiatePage> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: Text(AppLocalizations.of(context)!.paymentInitiateTitle)),
-      body: Center(child: Text(AppLocalizations.of(context)!.paymentInitiateTitle)),
+      appBar: AppBar(
+        title: Text(AppLocalizations.of(context)!.paymentInitiateTitle),
+      ),
+      body: Center(
+        child: Text(AppLocalizations.of(context)!.paymentInitiateTitle),
+      ),
     );
   }
 }
@@ -12177,8 +17921,12 @@ class _ChatConversationPageState extends State<ChatConversationPage> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: Text(AppLocalizations.of(context)!.chatConversationTitle)),
-      body: Center(child: Text(AppLocalizations.of(context)!.chatConversationTitle)),
+      appBar: AppBar(
+        title: Text(AppLocalizations.of(context)!.chatConversationTitle),
+      ),
+      body: Center(
+        child: Text(AppLocalizations.of(context)!.chatConversationTitle),
+      ),
     );
   }
 }
@@ -12194,8 +17942,12 @@ class _PaymentStatusPageState extends State<PaymentStatusPage> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: Text(AppLocalizations.of(context)!.paymentStatusTitle)),
-      body: Center(child: Text(AppLocalizations.of(context)!.paymentStatusTitle)),
+      appBar: AppBar(
+        title: Text(AppLocalizations.of(context)!.paymentStatusTitle),
+      ),
+      body: Center(
+        child: Text(AppLocalizations.of(context)!.paymentStatusTitle),
+      ),
     );
   }
 }
@@ -12211,7 +17963,9 @@ class _EditListingPageState extends State<EditListingPage> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: Text(AppLocalizations.of(context)!.editListingTitle)),
+      appBar: AppBar(
+        title: Text(AppLocalizations.of(context)!.editListingTitle),
+      ),
       body: Center(child: Text(AppLocalizations.of(context)!.editListingTitle)),
     );
   }
@@ -12255,7 +18009,9 @@ class _VinScanPageState extends State<VinScanPage> {
               final barcodes = capture.barcodes;
               if (barcodes.isEmpty) return;
               final raw = barcodes.first.rawValue ?? '';
-              final vin = raw.replaceAll(RegExp(r'[^A-Za-z0-9]'), '').toUpperCase();
+              final vin = raw
+                  .replaceAll(RegExp(r'[^A-Za-z0-9]'), '')
+                  .toUpperCase();
               if (vin.length >= 11) {
                 _done = true;
                 Navigator.pop(context, vin);
@@ -12268,8 +18024,14 @@ class _VinScanPageState extends State<VinScanPage> {
               padding: EdgeInsets.all(16),
               child: Container(
                 padding: EdgeInsets.all(12),
-                decoration: BoxDecoration(color: Colors.black54, borderRadius: BorderRadius.circular(12)),
-                child: Text(_vinLabelGlobal(context), style: TextStyle(color: Colors.white)),
+                decoration: BoxDecoration(
+                  color: Colors.black54,
+                  borderRadius: BorderRadius.circular(12),
+                ),
+                child: Text(
+                  _vinLabelGlobal(context),
+                  style: TextStyle(color: Colors.white),
+                ),
               ),
             ),
           ),
@@ -12299,11 +18061,17 @@ class _SettingsPageState extends State<SettingsPage> {
   Future<void> _togglePush(bool v) async {
     final sp = await SharedPreferences.getInstance();
     await sp.setBool('push_enabled', v);
-    setState(() { _pushEnabled = v; });
+    setState(() {
+      _pushEnabled = v;
+    });
     final token = sp.getString('push_token');
     if (token != null && token.isNotEmpty) {
       try {
-        await http.post(Uri.parse(getApiBase() + '/api/push/preferences'), headers: {'Content-Type': 'application/json'}, body: json.encode({'push_token': token, 'enabled': v}));
+        await http.post(
+          Uri.parse(getApiBase() + '/api/push/preferences'),
+          headers: {'Content-Type': 'application/json'},
+          body: json.encode({'push_token': token, 'enabled': v}),
+        );
       } catch (_) {}
     }
   }
@@ -12312,12 +18080,18 @@ class _SettingsPageState extends State<SettingsPage> {
     final sp = await SharedPreferences.getInstance();
     // Clear known cache keys
     for (final k in sp.getKeys().toList()) {
-      if (k.startsWith('cache_home_') || k.startsWith('cache_car_') || k.startsWith('cache_similar_') || k.startsWith('cache_related_') || k == 'cache_favorites') {
+      if (k.startsWith('cache_home_') ||
+          k.startsWith('cache_car_') ||
+          k.startsWith('cache_similar_') ||
+          k.startsWith('cache_related_') ||
+          k == 'cache_favorites') {
         await sp.remove(k);
       }
     }
     if (!mounted) return;
-    ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(AppLocalizations.of(context)!.settingsCleared)));
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(content: Text(AppLocalizations.of(context)!.settingsCleared)),
+    );
   }
 
   @override
@@ -12333,7 +18107,9 @@ class _SettingsPageState extends State<SettingsPage> {
           ),
           ListTile(
             title: Text(AppLocalizations.of(context)!.settingsClearCaches),
-            subtitle: Text(AppLocalizations.of(context)!.settingsCachesSubtitle),
+            subtitle: Text(
+              AppLocalizations.of(context)!.settingsCachesSubtitle,
+            ),
             trailing: Icon(Icons.delete_outline),
             onTap: _clearCaches,
           ),
@@ -12397,7 +18173,9 @@ class _MyListingsPageState extends State<MyListingsPage> {
           error = 'Failed to load listings. Please try again.';
           isLoading = false;
         });
-        print('MyListings API error: ${response.statusCode} - ${response.body}');
+        print(
+          'MyListings API error: ${response.statusCode} - ${response.body}',
+        );
       }
     } catch (e) {
       setState(() {
@@ -12416,10 +18194,7 @@ class _MyListingsPageState extends State<MyListingsPage> {
         foregroundColor: Colors.white,
         elevation: 0,
         actions: [
-          IconButton(
-            icon: Icon(Icons.refresh),
-            onPressed: _loadMyListings,
-          ),
+          IconButton(icon: Icon(Icons.refresh), onPressed: _loadMyListings),
         ],
       ),
       body: Container(
@@ -12433,10 +18208,10 @@ class _MyListingsPageState extends State<MyListingsPage> {
         child: isLoading
             ? Center(child: CircularProgressIndicator())
             : error != null
-                ? _buildErrorState()
-                : myListings.isEmpty
-                    ? _buildEmptyState()
-                    : _buildListingsGrid(),
+            ? _buildErrorState()
+            : myListings.isEmpty
+            ? _buildEmptyState()
+            : _buildListingsGrid(),
       ),
       bottomNavigationBar: BottomNavigationBar(
         type: BottomNavigationBarType.fixed,
@@ -12453,7 +18228,8 @@ class _MyListingsPageState extends State<MyListingsPage> {
               Navigator.pushReplacementNamed(context, '/favorites');
               break;
             case 2:
-              if (ApiService.accessToken == null || ApiService.accessToken!.isEmpty) {
+              if (ApiService.accessToken == null ||
+                  ApiService.accessToken!.isEmpty) {
                 Navigator.pushReplacementNamed(context, '/login');
               } else {
                 Navigator.pushReplacementNamed(context, '/profile');
@@ -12462,9 +18238,22 @@ class _MyListingsPageState extends State<MyListingsPage> {
           }
         },
         items: [
-          BottomNavigationBarItem(icon: Icon(Icons.home), label: AppLocalizations.of(context)!.navHome),
-          BottomNavigationBarItem(icon: Icon(Icons.favorite), label: AppLocalizations.of(context)!.navSaved),
-          BottomNavigationBarItem(icon: Icon(Icons.person), label: (ApiService.accessToken == null || ApiService.accessToken!.isEmpty) ? AppLocalizations.of(context)!.navLogin : AppLocalizations.of(context)!.navProfile),
+          BottomNavigationBarItem(
+            icon: Icon(Icons.home),
+            label: AppLocalizations.of(context)!.navHome,
+          ),
+          BottomNavigationBarItem(
+            icon: Icon(Icons.favorite),
+            label: AppLocalizations.of(context)!.navSaved,
+          ),
+          BottomNavigationBarItem(
+            icon: Icon(Icons.person),
+            label:
+                (ApiService.accessToken == null ||
+                    ApiService.accessToken!.isEmpty)
+                ? AppLocalizations.of(context)!.navLogin
+                : AppLocalizations.of(context)!.navProfile,
+          ),
         ],
       ),
     );
@@ -12477,19 +18266,12 @@ class _MyListingsPageState extends State<MyListingsPage> {
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            Icon(
-              Icons.error_outline,
-              size: 64,
-              color: Colors.red[400],
-            ),
+            Icon(Icons.error_outline, size: 64, color: Colors.red[400]),
             SizedBox(height: 16),
             Text(
               error!,
               textAlign: TextAlign.center,
-              style: TextStyle(
-                fontSize: 16,
-                color: Colors.grey[600],
-              ),
+              style: TextStyle(fontSize: 16, color: Colors.grey[600]),
             ),
             SizedBox(height: 24),
             ElevatedButton(
@@ -12541,10 +18323,7 @@ class _MyListingsPageState extends State<MyListingsPage> {
             Text(
               'You haven\'t created any car listings yet.\nStart by adding your first car!',
               textAlign: TextAlign.center,
-              style: TextStyle(
-                fontSize: 16,
-                color: Colors.grey[600],
-              ),
+              style: TextStyle(fontSize: 16, color: Colors.grey[600]),
             ),
             SizedBox(height: 32),
             ElevatedButton(
@@ -12604,7 +18383,8 @@ class _MyListingsPageState extends State<MyListingsPage> {
                 ),
                 Spacer(),
                 ElevatedButton.icon(
-                  onPressed: () => Navigator.pushReplacementNamed(context, '/sell'),
+                  onPressed: () =>
+                      Navigator.pushReplacementNamed(context, '/sell'),
                   icon: Icon(Icons.add, size: 18),
                   label: Text('Add New'),
                   style: ElevatedButton.styleFrom(
@@ -12624,7 +18404,8 @@ class _MyListingsPageState extends State<MyListingsPage> {
             child: GridView.builder(
               gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
                 crossAxisCount: 2,
-                childAspectRatio: 0.75, // Slightly taller cards for more text space
+                childAspectRatio:
+                    0.75, // Slightly taller cards for more text space
                 crossAxisSpacing: 12,
                 mainAxisSpacing: 12,
               ),
@@ -12639,6 +18420,7 @@ class _MyListingsPageState extends State<MyListingsPage> {
       ),
     );
   }
+
   Widget _buildListingCard(Map<String, dynamic> listing) {
     final brand = listing['brand'] ?? '';
     final model = listing['model'] ?? '';
@@ -12648,7 +18430,9 @@ class _MyListingsPageState extends State<MyListingsPage> {
     String imageUrl = listing['image_url']?.toString() ?? '';
     // Fallback: if primary image missing, try first item from 'images' array
     if (imageUrl.isEmpty) {
-      final imgs = (listing['images'] is List) ? (listing['images'] as List) : const [];
+      final imgs = (listing['images'] is List)
+          ? (listing['images'] as List)
+          : const [];
       if (imgs.isNotEmpty) {
         final first = imgs.first?.toString() ?? '';
         if (first.isNotEmpty) imageUrl = first;
@@ -12692,10 +18476,19 @@ class _MyListingsPageState extends State<MyListingsPage> {
                   borderRadius: BorderRadius.vertical(top: Radius.circular(16)),
                   child: imageUrl.isNotEmpty
                       ? CachedNetworkImage(
-                          imageUrl: getApiBase() + '/static/uploads/' + imageUrl,
+                          imageUrl:
+                              getApiBase() + '/static/uploads/' + imageUrl,
                           fit: BoxFit.cover,
-                          placeholder: (_, __) => Container(color: Colors.white10),
-                          errorWidget: (_, __, ___) => Container(color: Colors.grey[300], child: Icon(Icons.directions_car, size: 48, color: Colors.grey[600])),
+                          placeholder: (_, __) =>
+                              Container(color: Colors.white10),
+                          errorWidget: (_, __, ___) => Container(
+                            color: Colors.grey[300],
+                            child: Icon(
+                              Icons.directions_car,
+                              size: 48,
+                              color: Colors.grey[600],
+                            ),
+                          ),
                         )
                       : Container(
                           color: Colors.grey[300],
@@ -12711,7 +18504,9 @@ class _MyListingsPageState extends State<MyListingsPage> {
             Expanded(
               flex: 3, // Increased flex for text area to provide more space
               child: Padding(
-                padding: EdgeInsets.all(16), // Increased padding for larger grey area
+                padding: EdgeInsets.all(
+                  16,
+                ), // Increased padding for larger grey area
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
@@ -12729,10 +18524,7 @@ class _MyListingsPageState extends State<MyListingsPage> {
                     SizedBox(height: 4),
                     Text(
                       year.isNotEmpty ? '$year' : 'Year N/A',
-                      style: TextStyle(
-                        fontSize: 12,
-                        color: Colors.grey[600],
-                      ),
+                      style: TextStyle(fontSize: 12, color: Colors.grey[600]),
                     ),
                     SizedBox(height: 8),
                     Spacer(), // Push price/status to bottom
@@ -12740,7 +18532,9 @@ class _MyListingsPageState extends State<MyListingsPage> {
                       children: [
                         Expanded(
                           child: Text(
-                            price.isNotEmpty ? '\$${double.parse(price).toStringAsFixed(0)}' : 'Price N/A',
+                            price.isNotEmpty
+                                ? '\$${double.parse(price).toStringAsFixed(0)}'
+                                : 'Price N/A',
                             style: TextStyle(
                               fontSize: 14,
                               fontWeight: FontWeight.bold,
@@ -12749,9 +18543,14 @@ class _MyListingsPageState extends State<MyListingsPage> {
                           ),
                         ),
                         Container(
-                          padding: EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                          padding: EdgeInsets.symmetric(
+                            horizontal: 6,
+                            vertical: 2,
+                          ),
                           decoration: BoxDecoration(
-                            color: status == 'active' ? Colors.green[100] : Colors.orange[100],
+                            color: status == 'active'
+                                ? Colors.green[100]
+                                : Colors.orange[100],
                             borderRadius: BorderRadius.circular(4),
                           ),
                           child: Text(
@@ -12759,7 +18558,9 @@ class _MyListingsPageState extends State<MyListingsPage> {
                             style: TextStyle(
                               fontSize: 10,
                               fontWeight: FontWeight.bold,
-                              color: status == 'active' ? Colors.green[800] : Colors.orange[800],
+                              color: status == 'active'
+                                  ? Colors.green[800]
+                                  : Colors.orange[800],
                             ),
                           ),
                         ),

@@ -5,11 +5,11 @@
 # IDEs (https://dart.dev/tools#ides-and-editors). The analyzer can also be
 # invoked from the command line by running `flutter analyze`.
 
+include: package:flutter_lints/flutter.yaml
+
 # NOTE:
-# We intentionally do NOT include `package:flutter_lints/flutter.yaml` right now.
-# This repo currently has a large number of style/info-level lints; including them
-# makes `flutter analyze` fail CI builds (Codemagic).
-# Re-enable flutter_lints once the codebase is cleaned up.
+# We exclude legacy code while refactoring. The goal is to keep `flutter analyze`
+# clean for the actively-maintained code paths, then migrate legacy code in phases.
 
 analyzer:
   # CI/Codemagic: don't fail builds on non-critical warnings while the codebase
@@ -27,9 +27,10 @@ analyzer:
     equal_keys_in_map: ignore
     deprecated_member_use: ignore
   exclude:
+    - lib/legacy/**
     - lib/main_backup.dart
-    - original_main.dart
-    - temp_main.dart
+    - tools/scratch/original_main.dart.txt
+    - tools/scratch/temp_main.dart.txt
 
 linter:
   # The lint rules applied to this project can be customized in the

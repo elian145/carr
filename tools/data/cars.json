@@ -1,0 +1,309 @@
+{
+  "cars": [
+    {
+      "ai_analysis_timestamp": null,
+      "ai_analyzed": false,
+      "ai_confidence_score": null,
+      "ai_detected_body_type": null,
+      "ai_detected_brand": null,
+      "ai_detected_color": null,
+      "ai_detected_condition": null,
+      "ai_detected_model": null,
+      "body_type": "convertible",
+      "brand": "nissan",
+      "color": "brown",
+      "condition": "certified",
+      "created_at": "2025-11-05T22:21:34.055282",
+      "currency": "USD",
+      "description": null,
+      "drive_type": "4wd",
+      "engine_type": "Hybrid",
+      "fuel_economy": null,
+      "id": "7a2dfe71-b247-42bd-a1ea-24493ec76597",
+      "images": [
+        {
+          "id": 10,
+          "image_url": "uploads/car_photos/processed_20251105_222134_20251105_222134_b04b8d2f573fc931.jpg",
+          "is_primary": true,
+          "order": 0
+        },
+        {
+          "id": 11,
+          "image_url": "uploads/car_photos/processed_20251105_222139_20251105_222139_d9cbd4bf1d8b1d24.jpg",
+          "is_primary": true,
+          "order": 0
+        },
+        {
+          "id": 12,
+          "image_url": "uploads/car_photos/processed_20251105_222141_20251105_222141_39ff6569c8cbaf07.jpg",
+          "is_primary": true,
+          "order": 0
+        },
+        {
+          "id": 13,
+          "image_url": "uploads/car_photos/processed_20251105_222144_20251105_222144_c2dea08c2b070263.jpg",
+          "is_primary": true,
+          "order": 0
+        },
+        {
+          "id": 14,
+          "image_url": "uploads/car_photos/processed_20251105_222147_20251105_222147_938ca3eee5460ce0.jpg",
+          "is_primary": true,
+          "order": 0
+        },
+        {
+          "id": 15,
+          "image_url": "uploads/car_photos/processed_20251105_222148_20251105_222148_b625f157dad182be.jpg",
+          "is_primary": true,
+          "order": 0
+        },
+        {
+          "id": 16,
+          "image_url": "uploads/car_photos/processed_20251105_222152_20251105_222152_6154e178d1b3be0c.jpg",
+          "is_primary": true,
+          "order": 0
+        },
+        {
+          "id": 17,
+          "image_url": "uploads/car_photos/processed_20251105_222154_20251105_222154_c3956f809c3a08d7.jpg",
+          "is_primary": true,
+          "order": 0
+        },
+        {
+          "id": 18,
+          "image_url": "uploads/car_photos/processed_20251105_222157_20251105_222157_7a98c97a80d2fe04.jpg",
+          "is_primary": true,
+          "order": 0
+        }
+      ],
+      "is_active": true,
+      "is_featured": false,
+      "license_plates_blurred": true,
+      "location": "najaf",
+      "mileage": 2000,
+      "model": "Rogue",
+      "price": 1500.0,
+      "seller": {
+        "created_at": "2025-11-05T22:12:37.737590",
+        "email": "elianyaqoob1005@gmail.com",
+        "first_name": "Elian",
+        "id": "f230edc2-c898-4bc0-9607-011ae7bdb67e",
+        "is_active": true,
+        "is_verified": false,
+        "last_login": "2025-11-06T22:47:24.474423",
+        "last_name": "User",
+        "phone_number": "07039210140",
+        "profile_picture": null,
+        "username": "elianyaqoob1005@gmail.com"
+      },
+      "transmission": "cvt",
+      "updated_at": "2025-11-06T22:47:27.962149",
+      "videos": [],
+      "views_count": 5,
+      "year": 2023
+    },
+    {
+      "ai_analysis_timestamp": null,
+      "ai_analyzed": false,
+      "ai_confidence_score": null,
+      "ai_detected_body_type": null,
+      "ai_detected_brand": null,
+      "ai_detected_color": null,
+      "ai_detected_condition": null,
+      "ai_detected_model": null,
+      "body_type": "sedan",
+      "brand": "mercedes-benz",
+      "color": null,
+      "condition": "used",
+      "created_at": "2025-10-03T14:22:59.961307",
+      "currency": "USD",
+      "description": null,
+      "drive_type": "rwd",
+      "engine_type": "gasoline",
+      "fuel_economy": null,
+      "id": "acddb590-7cc1-4f57-bfd3-a98d395d9e16",
+      "images": [
+        {
+          "id": 7,
+          "image_url": "car_photos/20250820_170800_scaled_86.jpg",
+          "is_primary": true,
+          "order": 0
+        },
+        {
+          "id": 8,
+          "image_url": "car_photos/20250820_170800_scaled_87.jpg",
+          "is_primary": false,
+          "order": 1
+        },
+        {
+          "id": 9,
+          "image_url": "car_photos/20250820_170800_scaled_89.jpg",
+          "is_primary": false,
+          "order": 2
+        }
+      ],
+      "is_active": true,
+      "is_featured": false,
+      "license_plates_blurred": false,
+      "location": "basra",
+      "mileage": 22000,
+      "model": "c-class",
+      "price": 32000.0,
+      "seller": {
+        "created_at": "2025-10-03T14:22:59.940016",
+        "first_name": "Demo",
+        "id": "a2044e27-6584-4da5-9e7f-827687f542cc",
+        "is_active": true,
+        "is_verified": false,
+        "last_login": null,
+        "last_name": "User",
+        "phone_number": "07000000000",
+        "profile_picture": null,
+        "username": "demo"
+      },
+      "transmission": "automatic",
+      "updated_at": "2025-11-05T22:17:04.200058",
+      "videos": [],
+      "views_count": 1,
+      "year": 2020
+    },
+    {
+      "ai_analysis_timestamp": null,
+      "ai_analyzed": false,
+      "ai_confidence_score": null,
+      "ai_detected_body_type": null,
+      "ai_detected_brand": null,
+      "ai_detected_color": null,
+      "ai_detected_condition": null,
+      "ai_detected_model": null,
+      "body_type": "sedan",
+      "brand": "toyota",
+      "color": null,
+      "condition": "used",
+      "created_at": "2025-10-03T14:22:59.959663",
+      "currency": "USD",
+      "description": null,
+      "drive_type": "fwd",
+      "engine_type": "gasoline",
+      "fuel_economy": null,
+      "id": "6c0fd2cc-1d7a-49ce-a43a-04518e6041cb",
+      "images": [
+        {
+          "id": 4,
+          "image_url": "car_photos/20250820_170800_scaled_86.jpg",
+          "is_primary": true,
+          "order": 0
+        },
+        {
+          "id": 5,
+          "image_url": "car_photos/20250820_170800_scaled_87.jpg",
+          "is_primary": false,
+          "order": 1
+        },
+        {
+          "id": 6,
+          "image_url": "car_photos/20250820_170800_scaled_89.jpg",
+          "is_primary": false,
+          "order": 2
+        }
+      ],
+      "is_active": true,
+      "is_featured": false,
+      "license_plates_blurred": false,
+      "location": "erbil",
+      "mileage": 30000,
+      "model": "camry",
+      "price": 24000.0,
+      "seller": {
+        "created_at": "2025-10-03T14:22:59.940016",
+        "first_name": "Demo",
+        "id": "a2044e27-6584-4da5-9e7f-827687f542cc",
+        "is_active": true,
+        "is_verified": false,
+        "last_login": null,
+        "last_name": "User",
+        "phone_number": "07000000000",
+        "profile_picture": null,
+        "username": "demo"
+      },
+      "transmission": "automatic",
+      "updated_at": "2025-10-03T14:22:59.959665",
+      "videos": [],
+      "views_count": 0,
+      "year": 2021
+    },
+    {
+      "ai_analysis_timestamp": null,
+      "ai_analyzed": false,
+      "ai_confidence_score": null,
+      "ai_detected_body_type": null,
+      "ai_detected_brand": null,
+      "ai_detected_color": null,
+      "ai_detected_condition": null,
+      "ai_detected_model": null,
+      "body_type": "sedan",
+      "brand": "bmw",
+      "color": null,
+      "condition": "used",
+      "created_at": "2025-10-03T14:22:59.958182",
+      "currency": "USD",
+      "description": null,
+      "drive_type": "rwd",
+      "engine_type": "gasoline",
+      "fuel_economy": null,
+      "id": "063dee89-90f1-4ffb-a617-a88ef4216210",
+      "images": [
+        {
+          "id": 1,
+          "image_url": "car_photos/20250820_170800_scaled_86.jpg",
+          "is_primary": true,
+          "order": 0
+        },
+        {
+          "id": 2,
+          "image_url": "car_photos/20250820_170800_scaled_87.jpg",
+          "is_primary": false,
+          "order": 1
+        },
+        {
+          "id": 3,
+          "image_url": "car_photos/20250820_170800_scaled_89.jpg",
+          "is_primary": false,
+          "order": 2
+        }
+      ],
+      "is_active": true,
+      "is_featured": false,
+      "license_plates_blurred": false,
+      "location": "baghdad",
+      "mileage": 45000,
+      "model": "3 series",
+      "price": 21000.0,
+      "seller": {
+        "created_at": "2025-10-03T14:22:59.940016",
+        "first_name": "Demo",
+        "id": "a2044e27-6584-4da5-9e7f-827687f542cc",
+        "is_active": true,
+        "is_verified": false,
+        "last_login": null,
+        "last_name": "User",
+        "phone_number": "07000000000",
+        "profile_picture": null,
+        "username": "demo"
+      },
+      "transmission": "automatic",
+      "updated_at": "2025-10-03T14:22:59.958184",
+      "videos": [],
+      "views_count": 0,
+      "year": 2019
+    }
+  ],
+  "pagination": {
+    "has_next": false,
+    "has_prev": false,
+    "page": 1,
+    "pages": 1,
+    "per_page": 20,
+    "total": 4
+  }
+}
