@@ -35,6 +35,12 @@ class User(db.Model):
     last_name = db.Column(db.String(50), nullable=False)
     profile_picture = db.Column(db.String(200), nullable=True)
     is_verified = db.Column(db.Boolean, default=False)
+    # Phone verification (OTP) - stored as hash, never plaintext
+    phone_verification_code_hash = db.Column(db.Text, nullable=True)
+    phone_verification_expires_at = db.Column(db.DateTime, nullable=True)
+    phone_verification_attempts = db.Column(db.Integer, default=0)
+    phone_verification_last_sent_at = db.Column(db.DateTime, nullable=True)
+    phone_verification_locked_until = db.Column(db.DateTime, nullable=True)
     is_active = db.Column(db.Boolean, default=True)
     is_admin = db.Column(db.Boolean, default=False)
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
@@ -203,10 +209,14 @@ class Car(db.Model):
         
         return data
     
-    def increment_views(self):
-        """Increment view count"""
-        self.views_count += 1
-        db.session.commit()
+    def increment_views(self, commit: bool = False):
+        """Increment view count (caller controls commit)."""
+        try:
+            self.views_count = int(self.views_count or 0) + 1
+        except Exception:
+            self.views_count = 1
+        if commit:
+            db.session.commit()
     
     def __repr__(self):
         return f'<Car {self.brand} {self.model} {self.year}>'

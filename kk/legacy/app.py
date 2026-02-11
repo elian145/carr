@@ -1,4 +1,20 @@
 import os
+
+# SECURITY: legacy backend is dev-only and must never run in production.
+# This guard MUST run before importing other legacy-only modules.
+from ..config import get_app_env
+
+if get_app_env() == "production":
+    raise RuntimeError(
+        "Legacy backend module `kk.legacy.app` must not be used in production. "
+        "Use `kk/app_new.py` instead."
+    )
+if (os.environ.get("ALLOW_LEGACY_BACKEND") or "").strip().lower() not in ("1", "true", "yes", "on"):
+    raise RuntimeError(
+        "Legacy backend module `kk.legacy.app` is disabled by default. "
+        "Set ALLOW_LEGACY_BACKEND=true and APP_ENV=development to enable locally."
+    )
+
 import base64
 import sys
 import traceback
@@ -127,6 +143,12 @@ TOKENS: dict[str, int] = {}
 # Simple in-memory phone OTP store and user->phone mapping (for demo/dev)
 PHONE_OTPS: dict[str, dict] = {}
 USER_PHONES: dict[int, str] = {}
+
+def _dev_endpoints_enabled() -> bool:
+    """
+    Dev-only dangerous endpoints (seed, OTP dev_code, payment simulation) require explicit opt-in.
+    """
+    return (os.environ.get("ENABLE_DEV_ENDPOINTS") or "").strip().lower() in ("1", "true", "yes", "on")
 
 def _normalize_phone(raw: str) -> str:
     """Return E.164-like string: keep digits and leading '+'. If no '+', prefix '+'"""
@@ -319,7 +341,11 @@ def api_auth_send_otp():
     sent, err = _send_sms(phone, body)
     if sent:
         return jsonify({'sent': True})
-    return jsonify({'sent': False, 'error': err, 'dev_code': code})
+    # SECURITY: never return OTP codes unless explicitly enabled for dev testing.
+    payload = {'sent': False, 'error': err}
+    if _dev_endpoints_enabled():
+        payload['dev_code'] = code
+    return jsonify(payload)
 
 def _send_sms(phone: str, body: str) -> tuple[bool, str]:
     provider = os.environ.get('SMS_PROVIDER', 'twilio').strip().lower()
@@ -2858,6 +2884,8 @@ def dev_seed():
     """Development helper: top up listings to the requested total count.
     Usage: /dev/seed?count=200
     """
+    if not _dev_endpoints_enabled():
+        abort(404)
     try:
         target = int(request.args.get('count', '200'))
     except Exception:
@@ -3195,6 +3223,8 @@ def payment_gateway(payment_id):
         action = request.form.get('action')
         
         if action == 'complete':
+            if not _dev_endpoints_enabled():
+                abort(404)
             # Simulate successful payment
             payment.status = 'completed'
             payment.transaction_reference = f"FIB_{uuid.uuid4().hex[:16].upper()}"
@@ -3228,6 +3258,8 @@ def payment_gateway(payment_id):
                 return redirect(url_for('payment_success', payment_id=payment.id))
         
         elif action == 'cancel':
+            if not _dev_endpoints_enabled():
+                abort(404)
             # Simulate cancelled payment
             payment.status = 'cancelled'
             

@@ -1,6 +1,7 @@
 import 'dart:convert';
 import 'dart:io';
 import 'dart:async';
+import 'package:flutter/foundation.dart' show kReleaseMode;
 import 'package:web_socket_channel/web_socket_channel.dart';
 import 'package:web_socket_channel/io.dart';
 import 'package:web_socket_channel/status.dart' as status;
@@ -8,13 +9,11 @@ import 'api_service.dart';
 import 'config.dart';
 
 class WebSocketService {
-  // If false, we attempt to authenticate via headers only (preferred), and do NOT
-  // include the token in the URL query string. Keep true by default for backward
-  // compatibility with servers that only support ?token=... on the Socket.IO WS upgrade.
-  static const bool _tokenInQuery = bool.fromEnvironment(
-    'WS_TOKEN_IN_QUERY',
-    defaultValue: true,
-  );
+  // SECURITY: never put JWTs in URLs in release builds (URLs leak via logs/proxies).
+  static bool get _tokenInQuery {
+    if (kReleaseMode) return false;
+    return const bool.fromEnvironment('WS_TOKEN_IN_QUERY', defaultValue: false);
+  }
 
   static final StreamController<Map<String, dynamic>> _messagesController =
       StreamController<Map<String, dynamic>>.broadcast();
@@ -32,11 +31,14 @@ class WebSocketService {
   static Stream<String> get errors => _errorController.stream;
 
   static String get baseUrl {
-    final base = apiBase();
+    final base = effectiveApiBase();
     if (base.startsWith('https://')) {
       return base.replaceFirst('https://', 'wss://');
     }
     if (base.startsWith('http://')) {
+      if (kReleaseMode) {
+        throw StateError('Release builds require HTTPS/WSS. Refusing ws://');
+      }
       return base.replaceFirst('http://', 'ws://');
     }
     return 'ws://$base';

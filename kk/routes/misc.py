@@ -4,6 +4,7 @@ import os
 import logging
 
 from flask import Blueprint, abort, jsonify, send_from_directory, current_app
+from werkzeug.utils import safe_join
 
 bp = Blueprint("misc", __name__)
 logger = logging.getLogger(__name__)
@@ -22,16 +23,16 @@ def static_files(filename: str):
 
     static_dir = os.path.join(current_app.root_path, "static")
     try:
-        path_in_kk = os.path.join(static_dir, filename)
-        if os.path.isfile(path_in_kk):
+        safe_path = safe_join(static_dir, filename)
+        if safe_path and os.path.isfile(safe_path):
             return send_from_directory(static_dir, filename)
     except Exception as e:
         logger.warning("static_files kk/static failed for %s: %s", filename, e, exc_info=True)
 
     repo_static = os.path.abspath(os.path.join(current_app.root_path, "..", "static"))
     try:
-        path_in_repo = os.path.join(repo_static, filename)
-        if os.path.isfile(path_in_repo):
+        safe_path = safe_join(repo_static, filename)
+        if safe_path and os.path.isfile(safe_path):
             return send_from_directory(repo_static, filename)
     except Exception as e:
         logger.warning("static_files repo static failed for %s: %s", filename, e, exc_info=True)

@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="utf-8"?>
-<!-- Allow HTTP for backend (emulator 10.0.2.2, LAN, localhost) -->
+<!-- Release/Profile: do NOT permit cleartext HTTP traffic. -->
 <network-security-config>
-    <base-config cleartextTrafficPermitted="true" />
+    <base-config cleartextTrafficPermitted="false" />
 </network-security-config>

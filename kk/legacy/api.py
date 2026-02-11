@@ -13,6 +13,20 @@ except Exception:
     pass
 import secrets
 
+# SECURITY: legacy backend is dev-only and must never run in production.
+from ..config import get_app_env
+
+if get_app_env() == "production":
+    raise RuntimeError(
+        "Legacy backend module `kk.legacy.api` must not be used in production. "
+        "Use `kk/app_new.py` instead."
+    )
+if (os.environ.get("ALLOW_LEGACY_BACKEND") or "").strip().lower() not in ("1", "true", "yes", "on"):
+    raise RuntimeError(
+        "Legacy backend module `kk.legacy.api` is disabled by default. "
+        "Set ALLOW_LEGACY_BACKEND=true and APP_ENV=development to enable locally."
+    )
+
 # Setup Flask app
 BASE_DIR = os.path.abspath(os.path.dirname(__file__))
 DB_PATH = os.path.join(BASE_DIR, 'instance', 'cars.db')

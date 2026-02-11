@@ -14,9 +14,15 @@ kk/instance/
 **/*.db-journal
 **/*.sqlite
 **/*.sqlite3
+**/*.log
 
 # Model weights and large binaries
 *.pt
+kk/**/*.zip
+kk/**/*.7z
+kk/**/*.rar
+kk/**/*.tar
+kk/**/*.tar.gz
 
 # Flutter/Build outputs
 .flutter-plugins-dependencies
@@ -52,6 +58,10 @@ cloudflared.exe
 python310.exe
 releases_windows.json
 android/.kotlin/
+signing.properties
+
+# Scratch outputs (never commit)
+tools/scratch/
 
 # Accidental CLI artifact files (repo root)
 Get

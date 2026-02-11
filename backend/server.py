@@ -2,6 +2,7 @@ import io
 import os
 import sys
 import logging
+from pathlib import Path
 from flask import Flask, request, jsonify, send_file
 from werkzeug.utils import secure_filename
 from dotenv import load_dotenv
@@ -26,6 +27,33 @@ logging.basicConfig(level=logging.INFO, format="%(asctime)s %(levelname)s [%(nam
 logger = logging.getLogger("watermarkly-backend")
 
 LISTINGS_API_BASE = (os.getenv("LISTINGS_API_BASE") or "").strip().rstrip("/")
+
+def _safe_resolve_under(root_dir: str, subpath: str) -> str | None:
+	"""
+	Return an absolute path to subpath under root_dir, or None if unsafe.
+
+	Blocks:
+	- path traversal (..)
+	- absolute paths
+	- symlinks that would escape root_dir (via resolve())
+	"""
+	try:
+		root = Path(root_dir).resolve()
+		# Treat incoming URL path as POSIX-ish and strip leading slashes.
+		norm = (subpath or "").replace("\\", "/").lstrip("/")
+		if not norm:
+			return None
+		candidate = (root / Path(norm)).resolve()
+		root_s = str(root)
+		cand_s = str(candidate)
+		# Must be strictly inside root (not equal, not outside)
+		if cand_s == root_s:
+			return None
+		if not cand_s.startswith(root_s + os.sep):
+			return None
+		return cand_s
+	except Exception:
+		return None
 
 @app.route("/health", methods=["GET"])
 def health():
@@ -104,16 +132,14 @@ def static_uploads_local(subpath: str):
 	Checks both repo_root/static/uploads and kk/static/uploads.
 	"""
 	try:
-		# Normalize path (forward slashes from URL work on Windows when joined)
-		norm = subpath.replace("\\", "/").strip("/")
-		parts = norm.split("/")
 		repo_root = os.path.abspath(os.path.join(os.path.dirname(__file__), ".."))
-		candidates = [
-			os.path.join(repo_root, "static", "uploads", *parts),
-			os.path.join(repo_root, "kk", "static", "uploads", *parts),
+		roots = [
+			os.path.join(repo_root, "static", "uploads"),
+			os.path.join(repo_root, "kk", "static", "uploads"),
 		]
-		for p in candidates:
-			if os.path.isfile(p):
+		for root in roots:
+			p = _safe_resolve_under(root, subpath)
+			if p and os.path.isfile(p):
 				return send_file(p, as_attachment=False, download_name=os.path.basename(p))
 	except Exception:
 		pass
@@ -128,12 +154,13 @@ def static_images_local(subpath: str):
 	"""
 	try:
 		repo_root = os.path.abspath(os.path.join(os.path.dirname(__file__), ".."))
-		candidates = [
-			os.path.join(repo_root, "static", "images", subpath),
-			os.path.join(repo_root, "kk", "static", "images", subpath),
+		roots = [
+			os.path.join(repo_root, "static", "images"),
+			os.path.join(repo_root, "kk", "static", "images"),
 		]
-		for p in candidates:
-			if os.path.isfile(p):
+		for root in roots:
+			p = _safe_resolve_under(root, subpath)
+			if p and os.path.isfile(p):
 				return send_file(p, as_attachment=False, download_name=os.path.basename(p))
 	except Exception:
 		pass

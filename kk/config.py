@@ -4,6 +4,9 @@ from dotenv import load_dotenv
 
 load_dotenv()
 
+_DEV_SECRET_FALLBACK = "dev-only-insecure-secret"
+_DEV_JWT_SECRET_FALLBACK = "dev-only-insecure-jwt-secret"
+
 def get_app_env() -> str:
     """
     Determine the runtime environment.
@@ -11,15 +14,17 @@ def get_app_env() -> str:
     Preferred: APP_ENV=development|production|testing
     Fallbacks: FLASK_ENV (legacy), then development.
     """
-    env = (os.environ.get('APP_ENV') or os.environ.get('FLASK_ENV') or 'development').strip().lower()
-    return env or 'development'
+    env = (os.environ.get("APP_ENV") or os.environ.get("FLASK_ENV") or "").strip().lower()
+    # SECURITY: default to production if unset, so accidental deploys
+    # don't run with DEBUG=True, permissive CORS, and dev secrets.
+    return env or "production"
 
 def validate_required_secrets(env: str | None = None) -> None:
     """
-    Fail fast in production if critical secrets are missing.
+    Fail fast outside development/testing if critical secrets are missing.
     """
     env_name = (env or get_app_env()).strip().lower()
-    if env_name != 'production':
+    if env_name in ("development", "testing"):
         return
     missing: list[str] = []
     for key in ('SECRET_KEY', 'JWT_SECRET_KEY'):
@@ -31,11 +36,16 @@ def validate_required_secrets(env: str | None = None) -> None:
             + ", ".join(missing)
             + ". Set them (and restart) before running with APP_ENV=production."
         )
+    # Also reject the known-insecure dev fallbacks if they were explicitly set.
+    if (os.environ.get("SECRET_KEY") or "").strip() == _DEV_SECRET_FALLBACK:
+        raise RuntimeError("SECRET_KEY is set to an insecure dev fallback; set a strong production secret.")
+    if (os.environ.get("JWT_SECRET_KEY") or "").strip() == _DEV_JWT_SECRET_FALLBACK:
+        raise RuntimeError("JWT_SECRET_KEY is set to an insecure dev fallback; set a strong production secret.")
 
 class Config:
     # Basic Flask Configuration
     # In production, secrets are REQUIRED (validated via validate_required_secrets()).
-    SECRET_KEY = os.environ.get('SECRET_KEY') or 'dev-only-insecure-secret'
+    SECRET_KEY = os.environ.get("SECRET_KEY") or _DEV_SECRET_FALLBACK
     
     # Database Configuration
     SQLALCHEMY_DATABASE_URI = os.environ.get('DATABASE_URL') or 'sqlite:///car_listings.db'
@@ -53,7 +63,7 @@ class Config:
         SQLALCHEMY_DATABASE_URI = f'postgresql://{POSTGRES_USER}:{POSTGRES_PASSWORD}@{POSTGRES_HOST}:{POSTGRES_PORT}/{POSTGRES_DB}'
     
     # JWT Configuration
-    JWT_SECRET_KEY = os.environ.get('JWT_SECRET_KEY') or 'dev-only-insecure-jwt-secret'
+    JWT_SECRET_KEY = os.environ.get("JWT_SECRET_KEY") or _DEV_JWT_SECRET_FALLBACK
     JWT_ACCESS_TOKEN_EXPIRES = timedelta(hours=24)
     JWT_REFRESH_TOKEN_EXPIRES = timedelta(days=30)
     JWT_BLACKLIST_ENABLED = True

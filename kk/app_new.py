@@ -1,7 +1,15 @@
 from flask import Flask, request, jsonify, send_from_directory, send_file, render_template, url_for, abort
 from flask_sqlalchemy import SQLAlchemy
 from flask_migrate import Migrate
-from flask_jwt_extended import JWTManager, create_access_token, create_refresh_token, jwt_required, get_jwt_identity, get_jwt
+from flask_jwt_extended import (
+    JWTManager,
+    create_access_token,
+    create_refresh_token,
+    jwt_required,
+    get_jwt_identity,
+    get_jwt,
+    verify_jwt_in_request,
+)
 from flask_cors import CORS
 from flask_mail import Mail, Message
 from flask_socketio import SocketIO, emit, join_room, leave_room
@@ -10,6 +18,8 @@ from .config import config, get_app_env, validate_required_secrets
 from .models import *
 from .auth import *
 from .security import rate_limit, validate_input_sanitization, secure_headers
+from sqlalchemy.orm import selectinload, joinedload
+from sqlalchemy import update, select
 import pathlib
 import os
 import json
@@ -32,6 +42,85 @@ app, socketio, jwt, migrate, mail = create_app()
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
+# Performance / DoS safety defaults
+MAX_PER_PAGE = int(os.environ.get("MAX_PER_PAGE", "50"))
+MAX_PER_PAGE = max(1, min(MAX_PER_PAGE, 200))
+
+# Best-effort anonymous view cooldown (in-memory, per process)
+_anon_view_cache: dict[tuple[str, int], float] = {}
+_ANON_VIEW_COOLDOWN_S = 600.0  # 10 minutes
+_ANON_VIEW_CACHE_MAX = 50_000
+
+def _clamp_pagination(page: int, per_page: int) -> tuple[int, int]:
+    try:
+        p = int(page)
+    except Exception:
+        p = 1
+    try:
+        pp = int(per_page)
+    except Exception:
+        pp = 20
+    if p < 1:
+        p = 1
+    if pp < 1:
+        pp = 1
+    if pp > MAX_PER_PAGE:
+        pp = MAX_PER_PAGE
+    return p, pp
+
+def _increment_views_best_effort(car: "Car", current_user: "User | None") -> None:
+    """
+    Reduce write-amplification:
+    - Authenticated users: increment at most once per user per listing (via user_viewed_listings).
+    - Anonymous users: increment at most once per IP per listing per cooldown window (best-effort).
+    """
+    try:
+        if not car or not getattr(car, "id", None):
+            return
+        now = datetime.utcnow()
+        if current_user:
+            # Only count the first view per user per listing.
+            exists = db.session.execute(
+                select(user_viewed_listings.c.user_id).where(
+                    user_viewed_listings.c.user_id == current_user.id,
+                    user_viewed_listings.c.car_id == car.id,
+                )
+            ).first()
+            if exists:
+                return
+            db.session.execute(
+                user_viewed_listings.insert().values(
+                    user_id=current_user.id,
+                    car_id=car.id,
+                    viewed_at=now,
+                )
+            )
+        else:
+            ip = (request.headers.get("X-Forwarded-For") or request.remote_addr or "").split(",")[0].strip()
+            if not ip:
+                ip = "anon"
+            key = (ip, int(car.id))
+            ts = _anon_view_cache.get(key)
+            now_ts = time.time()
+            if ts is not None and (now_ts - ts) < _ANON_VIEW_COOLDOWN_S:
+                return
+            _anon_view_cache[key] = now_ts
+            # Prevent unbounded growth (best-effort eviction).
+            if len(_anon_view_cache) > _ANON_VIEW_CACHE_MAX:
+                for k in list(_anon_view_cache.keys())[: int(_ANON_VIEW_CACHE_MAX * 0.1)]:
+                    _anon_view_cache.pop(k, None)
+
+        db.session.execute(
+            update(Car).where(Car.id == car.id).values(views_count=Car.views_count + 1)
+        )
+        db.session.commit()
+    except Exception:
+        try:
+            db.session.rollback()
+        except Exception:
+            pass
+        return
+
 # Car Listing Routes
 @app.route('/api/cars', methods=['GET'])
 def get_cars():
@@ -39,6 +128,7 @@ def get_cars():
     try:
         page = request.args.get('page', 1, type=int)
         per_page = request.args.get('per_page', 20, type=int)
+        page, per_page = _clamp_pagination(page, per_page)
         
         # Filtering parameters
         brand = request.args.get('brand')
@@ -54,8 +144,15 @@ def get_cars():
         drive_type = request.args.get('drive_type')
         engine_type = request.args.get('engine_type')
         
-        # Build query
-        query = Car.query.filter_by(is_active=True)
+        # Build query (eager-load to avoid N+1)
+        query = (
+            Car.query.filter_by(is_active=True)
+            .options(
+                selectinload(Car.images),
+                selectinload(Car.videos),
+                joinedload(Car.seller),
+            )
+        )
         
         if brand:
             query = query.filter(Car.brand.ilike(f'%{brand}%'))
@@ -186,12 +283,28 @@ def get_cars_alias():
             try:
                 # Accept numeric database id
                 if car_id.isdigit():
-                    car = Car.query.filter_by(id=int(car_id), is_active=True).first()
+                    car = (
+                        Car.query.options(
+                            selectinload(Car.images),
+                            selectinload(Car.videos),
+                            joinedload(Car.seller),
+                        )
+                        .filter_by(id=int(car_id), is_active=True)
+                        .first()
+                    )
             except Exception:
                 pass
             if car is None:
                 # Fallback to public_id
-                car = Car.query.filter_by(public_id=car_id, is_active=True).first()
+                car = (
+                    Car.query.options(
+                        selectinload(Car.images),
+                        selectinload(Car.videos),
+                        joinedload(Car.seller),
+                    )
+                    .filter_by(public_id=car_id, is_active=True)
+                    .first()
+                )
             if not car:
                 return jsonify({'message': 'Car not found'}), 404
             # Match client expectation: return a single object with image_url/images/videos fields
@@ -233,6 +346,7 @@ def get_cars_alias():
         # Mirror filters from /api/cars
         page = request.args.get('page', 1, type=int)
         per_page = request.args.get('per_page', 20, type=int)
+        page, per_page = _clamp_pagination(page, per_page)
         brand = request.args.get('brand')
         model = request.args.get('model')
         year_min = request.args.get('year_min', type=int)
@@ -246,7 +360,14 @@ def get_cars_alias():
         drive_type = request.args.get('drive_type')
         engine_type = request.args.get('engine_type')
 
-        query = Car.query.filter_by(is_active=True)
+        query = (
+            Car.query.filter_by(is_active=True)
+            .options(
+                selectinload(Car.images),
+                selectinload(Car.videos),
+                joinedload(Car.seller),
+            )
+        )
         if brand:
             query = query.filter(Car.brand.ilike(f'%{brand}%'))
         if model:
@@ -325,19 +446,40 @@ def get_car(car_id):
     """Get single car by ID"""
     try:
         # Accept either public_id (UUID string) or numeric database id
-        car = Car.query.filter_by(public_id=car_id, is_active=True).first()
+        car = (
+            Car.query.options(
+                selectinload(Car.images),
+                selectinload(Car.videos),
+                joinedload(Car.seller),
+            )
+            .filter_by(public_id=car_id, is_active=True)
+            .first()
+        )
         if not car and car_id.isdigit():
-            car = Car.query.filter_by(id=int(car_id), is_active=True).first()
+            car = (
+                Car.query.options(
+                    selectinload(Car.images),
+                    selectinload(Car.videos),
+                    joinedload(Car.seller),
+                )
+                .filter_by(id=int(car_id), is_active=True)
+                .first()
+            )
         if not car:
             return jsonify({'message': 'Car not found'}), 404
-        
-        # Increment view count
-        car.increment_views()
-        
-        # Log view action if user is authenticated
-        current_user = get_current_user()
+
+        # Log view action if user is authenticated (best-effort; endpoint is public)
+        current_user = None
+        try:
+            verify_jwt_in_request(optional=True)
+            current_user = get_current_user()
+        except Exception:
+            current_user = None
         if current_user:
             log_user_action(current_user, 'view_listing', 'car', car.public_id)
+
+        # Increment view count (best-effort; avoids write on every hit)
+        _increment_views_best_effort(car, current_user)
         
         # Normalize response for mobile client compatibility
         car_dict = car.to_dict()

@@ -1,9 +1,11 @@
 from __future__ import annotations
 
+import hashlib
+import hmac
 import secrets
-from datetime import datetime
+from datetime import datetime, timedelta
 
-from flask import Blueprint, jsonify, request
+from flask import Blueprint, current_app, jsonify, request
 from flask_jwt_extended import (
     create_access_token,
     create_refresh_token,
@@ -24,6 +26,23 @@ from ..models import PasswordReset, TokenBlacklist, User, db
 from ..security import rate_limit, validate_input_sanitization
 
 bp = Blueprint("auth", __name__)
+
+
+def _normalize_phone(raw_phone: str) -> str:
+    digits = "".join(ch for ch in (raw_phone or "") if ch.isdigit())
+    # Legacy clients commonly send Iraqi numbers; keep the last 11 digits
+    # to match the existing compat signup normalization.
+    if len(digits) > 11:
+        digits = digits[-11:]
+    return digits
+
+
+def _hash_phone_verification_code(phone_digits: str, code: str) -> str:
+    # Bind the code to the phone number and SECRET_KEY.
+    # This prevents storing OTPs in plaintext and prevents cross-phone reuse.
+    key = (current_app.config.get("SECRET_KEY") or "").encode("utf-8")
+    msg = f"{phone_digits}:{code}".encode("utf-8")
+    return hmac.new(key, msg=msg, digestmod=hashlib.sha256).hexdigest()
 
 
 def init_jwt_callbacks(jwt) -> None:
@@ -265,51 +284,112 @@ def reset_password():
 def verify_phone():
     """Phone verification endpoint"""
     try:
-        data = request.get_json()
-        phone_number = data.get("phone_number")
-        verification_code = data.get("verification_code")
+        data = request.get_json(silent=True) or {}
+        data = validate_input_sanitization(data)
+        raw_phone = (data.get("phone_number") or data.get("phone") or "").strip()
+        verification_code = str(data.get("verification_code") or "").strip()
 
-        if not phone_number or not verification_code:
+        phone_digits = _normalize_phone(raw_phone)
+        if not phone_digits or not verification_code:
             return jsonify({"message": "Phone number and verification code are required"}), 400
 
-        user = User.query.filter_by(phone_number=phone_number).first()
+        user = User.query.filter_by(phone_number=phone_digits).first()
         if not user:
             return jsonify({"message": "User not found"}), 404
 
-        if len(verification_code) == 6 and verification_code.isdigit():
-            user.is_verified = True
-            db.session.commit()
-            log_user_action(user, "phone_verified")
+        if user.is_verified:
             return jsonify({"message": "Phone number verified successfully"}), 200
 
-        return jsonify({"message": "Invalid verification code"}), 400
+        if len(verification_code) != 6 or not verification_code.isdigit():
+            return jsonify({"message": "Invalid or expired verification code"}), 400
+
+        now = datetime.utcnow()
+        locked_until = getattr(user, "phone_verification_locked_until", None)
+        if locked_until and locked_until > now:
+            return jsonify({"message": "Too many attempts. Please try again later."}), 429
+
+        expires_at = getattr(user, "phone_verification_expires_at", None)
+        code_hash = getattr(user, "phone_verification_code_hash", None)
+        if not expires_at or not code_hash or expires_at <= now:
+            # Clear stale state so the next send starts clean.
+            user.phone_verification_code_hash = None
+            user.phone_verification_expires_at = None
+            user.phone_verification_attempts = 0
+            db.session.commit()
+            return jsonify({"message": "Invalid or expired verification code"}), 400
+
+        expected = _hash_phone_verification_code(phone_digits, verification_code)
+        if not hmac.compare_digest(code_hash, expected):
+            attempts = int(getattr(user, "phone_verification_attempts", 0) or 0) + 1
+            user.phone_verification_attempts = attempts
+            if attempts >= 5:
+                user.phone_verification_locked_until = now + timedelta(minutes=15)
+                user.phone_verification_code_hash = None
+                user.phone_verification_expires_at = None
+                user.phone_verification_attempts = 0
+            db.session.commit()
+            return jsonify({"message": "Invalid or expired verification code"}), 400
+
+        user.is_verified = True
+        user.phone_verification_code_hash = None
+        user.phone_verification_expires_at = None
+        user.phone_verification_attempts = 0
+        user.phone_verification_locked_until = None
+        db.session.commit()
+        log_user_action(user, "phone_verified")
+        return jsonify({"message": "Phone number verified successfully"}), 200
 
     except Exception:
         return jsonify({"message": "Phone verification failed"}), 500
 
 
 @bp.route("/api/auth/send-verification", methods=["POST"])
+@rate_limit(max_requests=3, window_minutes=10)  # best-effort (in-memory) throttle per IP
 def send_phone_verification():
     """Send phone verification code"""
     try:
-        data = request.get_json()
-        phone_number = data.get("phone_number")
+        data = request.get_json(silent=True) or {}
+        data = validate_input_sanitization(data)
+        raw_phone = (data.get("phone_number") or data.get("phone") or "").strip()
 
-        if not phone_number:
+        phone_digits = _normalize_phone(raw_phone)
+        if not phone_digits:
             return jsonify({"message": "Phone number is required"}), 400
 
-        user = User.query.filter_by(phone_number=phone_number).first()
+        user = User.query.filter_by(phone_number=phone_digits).first()
         if not user:
             return jsonify({"message": "User not found"}), 404
 
-        import random
+        if user.is_verified:
+            return jsonify({"message": "Phone number is already verified"}), 200
 
-        verification_code = str(random.randint(100000, 999999))
+        now = datetime.utcnow()
+        locked_until = getattr(user, "phone_verification_locked_until", None)
+        if locked_until and locked_until > now:
+            return jsonify({"message": "Too many attempts. Please try again later."}), 429
+
+        last_sent = getattr(user, "phone_verification_last_sent_at", None)
+        if last_sent and (now - last_sent).total_seconds() < 60:
+            return jsonify({"message": "Please wait before requesting another code"}), 429
+
+        verification_code = f"{secrets.randbelow(1_000_000):06d}"
+        user.phone_verification_code_hash = _hash_phone_verification_code(phone_digits, verification_code)
+        user.phone_verification_expires_at = now + timedelta(minutes=10)
+        user.phone_verification_attempts = 0
+        user.phone_verification_last_sent_at = now
+        user.phone_verification_locked_until = None
+        db.session.commit()
 
         from ..sms_service import send_verification_sms
 
-        sms_sent = send_verification_sms(phone_number, verification_code)
+        sms_sent = send_verification_sms(phone_digits, verification_code)
         if not sms_sent:
+            # Do not leave a potentially valid code in DB if SMS failed.
+            user.phone_verification_code_hash = None
+            user.phone_verification_expires_at = None
+            user.phone_verification_attempts = 0
+            user.phone_verification_locked_until = None
+            db.session.commit()
             return jsonify({"message": "Failed to send verification code"}), 500
 
         return jsonify({"message": "Verification code sent successfully"}), 200
@@ -325,6 +405,7 @@ def compat_signup():
     """
     try:
         data = request.get_json(silent=True) or {}
+        data = validate_input_sanitization(data)
 
         raw_username = (data.get("username") or "").strip()
         raw_phone = (data.get("phone") or data.get("phone_number") or "").strip()
@@ -347,6 +428,9 @@ def compat_signup():
             phone_digits = f"070{secrets.randbelow(10**8):08d}"
         if not password:
             return jsonify({"message": "Password is required"}), 400
+        is_valid, message = validate_password(password)
+        if not is_valid:
+            return jsonify({"message": message}), 400
 
         from sqlalchemy import or_
 
@@ -356,43 +440,19 @@ def compat_signup():
         filters.append(User.phone_number == phone_digits)
         existing = User.query.filter(or_(*filters)).first()
         if existing:
-            if password:
-                existing.set_password(password)
-            if email and not existing.email:
-                existing.email = email
-            if first_name and not existing.first_name:
-                existing.first_name = first_name
-            if last_name and not existing.last_name:
-                existing.last_name = last_name
-            existing.is_active = True
-            if raw_username and raw_username.strip() and existing.username != username:
-                existing.username = username
-            if not getattr(existing, "public_id", None):
-                existing.public_id = secrets.token_hex(8)
-            db.session.commit()
-
-            identity = existing.public_id
-            access_token = create_access_token(identity=identity)
-            refresh_token = create_refresh_token(identity=identity)
-            return (
-                jsonify(
-                    {
-                        "message": "Signup successful",
-                        "token": access_token,
-                        "access_token": access_token,
-                        "refresh_token": refresh_token,
-                        "user": existing.to_dict(),
-                    }
-                ),
-                200,
-            )
+            # SECURITY: never mutate an existing account via "signup".
+            # Direct the user to login or the password reset flow instead.
+            return jsonify({"message": "Account already exists. Please log in."}), 409
 
         user = User(
             username=username,
             phone_number=phone_digits,
             first_name=first_name,
             last_name=last_name,
-            email=email if email else "",
+            # IMPORTANT: keep missing email as NULL (not empty string),
+            # otherwise the UNIQUE constraint will treat "" as a real value
+            # and block additional users without emails.
+            email=email or None,
             is_active=True,
             public_id=secrets.token_hex(8),
         )
