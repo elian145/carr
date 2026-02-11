@@ -6,8 +6,8 @@ workflows:
       xcode: latest
       vars:
         # IMPORTANT: Do NOT include /api in API_BASE. The app adds /api itself.
-        # Set to your PC LAN IP (run ipconfig); override in Codemagic UI if different.
-        API_BASE: "http://192.168.1.7:5003"
+        # Release builds enforce HTTPS. Override in Codemagic UI.
+        API_BASE: "https://api.example.com"
     scripts:
       - name: Flutter pub get
         script: |
@@ -34,8 +34,8 @@ workflows:
       flutter: stable
       vars:
         # IMPORTANT: Do NOT include /api in API_BASE. The app adds /api itself.
-        # Set to your PC LAN IP (run ipconfig); override in Codemagic UI if different.
-        API_BASE: "http://192.168.1.7:5003"
+        # Release builds enforce HTTPS. Override in Codemagic UI.
+        API_BASE: "https://api.example.com"
     scripts:
       - name: Flutter pub get
         script: |
@@ -55,6 +55,8 @@ workflows:
       flutter: stable
       vars:
         FLAVOR: dev
+        # Debug builds may use HTTP for local development.
+        API_BASE: "http://10.0.2.2:5003"
     cache:
       cache_paths:
         - $HOME/.pub-cache

@@ -11,7 +11,7 @@ from flask_jwt_extended import (
     verify_jwt_in_request,
 )
 from flask_cors import CORS
-from flask_mail import Mail, Message
+from flask_mail import Mail, Message as MailMessage
 from flask_socketio import SocketIO, emit, join_room, leave_room
 from werkzeug.utils import secure_filename
 from .config import config, get_app_env, validate_required_secrets
@@ -901,17 +901,25 @@ def attach_car_images(car_id):
             return jsonify({'message': 'No image paths provided'}), 400
 
         attached = []
+        from werkzeug.utils import safe_join
+        upload_root = os.path.abspath(os.path.join(app.root_path, "static", "uploads"))
         for rel in paths:
             try:
-                rel_str = str(rel)
-                # normalize and ensure it stays under static/
-                if rel_str.startswith('/'):
-                    rel_str = rel_str[1:]
-                if not rel_str.lower().startswith('uploads/'):
+                rel_str = str(rel or "").strip().lstrip("/").replace("\\", "/")
+                if not rel_str.lower().startswith("uploads/"):
                     continue
-                abs_path = os.path.join(app.root_path, 'static', rel_str).replace('\\', '/')
+                # Resolve strictly under static/uploads/
+                subpath = os.path.relpath(rel_str, "uploads").replace("\\", "/")
+                abs_path = safe_join(upload_root, subpath)
+                if not abs_path:
+                    continue
+                abs_path = os.path.abspath(abs_path)
+                if not abs_path.startswith(upload_root + os.sep):
+                    continue
                 if not os.path.isfile(abs_path):
                     continue
+                # Store canonical relative path under static/
+                rel_str = f"uploads/{subpath}".replace("\\", "/")
                 ci = CarImage(
                     car_id=car.id,
                     image_url=rel_str,
@@ -1240,11 +1248,17 @@ def blur_image():
 
 
 @app.route('/api/process-car-images-test', methods=['POST'])
+@jwt_required()
 def process_car_images_test():
     try:
+        if get_app_env() == "production":
+            abort(404)
         files = request.files.getlist('images')
         if not files:
             return jsonify({'error': 'No image files provided'}), 400
+        # Hard cap to prevent abuse even in development.
+        if len(files) > 5:
+            return jsonify({'error': 'Too many files'}), 400
         want_b64 = request.args.get('inline_base64') == '1'
         processed = []
         processed_b64 = []
@@ -1294,7 +1308,7 @@ def send_verification_email(user, token):
     try:
         verification_url = f"{request.host_url}verify-email?token={token}"
         
-        msg = Message(
+        msg = MailMessage(
             subject='Verify Your Email - Car Listings',
             recipients=[user.email],
             html=f"""
@@ -1318,7 +1332,7 @@ def send_password_reset_email(user, token):
     try:
         reset_url = f"{request.host_url}reset-password?token={token}"
         
-        msg = Message(
+        msg = MailMessage(
             subject='Password Reset - Car Listings',
             recipients=[user.email],
             html=f"""

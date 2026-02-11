@@ -32,12 +32,16 @@ def create_app():
     app.config.from_object(config.get(env_name, config["development"]))
     validate_required_secrets(env_name)
 
+    # Respect DATABASE_URL for production-scale deployments (Postgres, etc.)
+    database_url = (os.getenv("DATABASE_URL") or "").strip()
     env_db = (os.getenv("DB_PATH") or "").strip()
     kk_cars_db = os.path.join(app.root_path, "instance", "cars.db")
     root_level_db = os.path.abspath(os.path.join(app.root_path, "..", "instance", "car_listings_dev.db"))
     kk_level_db = os.path.join(app.root_path, "instance", "car_listings_dev.db")
 
-    if env_db:
+    if database_url:
+        app.config["SQLALCHEMY_DATABASE_URI"] = database_url
+    elif env_db:
         db_path = env_db
     elif os.path.isfile(kk_cars_db):
         db_path = kk_cars_db
@@ -46,8 +50,9 @@ def create_app():
     else:
         db_path = kk_level_db
 
-    os.makedirs(os.path.dirname(db_path), exist_ok=True)
-    app.config["SQLALCHEMY_DATABASE_URI"] = f"sqlite:///{db_path}"
+    if not database_url:
+        os.makedirs(os.path.dirname(db_path), exist_ok=True)
+        app.config["SQLALCHEMY_DATABASE_URI"] = f"sqlite:///{db_path}"
 
     db.init_app(app)
     migrate.init_app(app, db)

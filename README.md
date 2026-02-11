@@ -305,9 +305,9 @@ The admin dashboard provides:
 
 Access the admin dashboard at: `http://localhost:5000/api/admin/dashboard`
 
-Default admin credentials:
-- Username: `admin`
-- Password: `admin123`
+Admin credentials:
+- **Do not ship default credentials to production.**
+- Provision an admin account securely (bootstrap/env) and rotate passwords.
 
 ## 🔔 Real-time Features
 
