@@ -38,7 +38,8 @@ def test_backend_with_debug():
             
             # Check if processed images exist and are accessible
             for processed_path in result.get('processed_images', []):
-                full_path = f"kk/{processed_path}"
+                # Processed paths are relative to the static root (kk/static/...)
+                full_path = f"kk/static/{processed_path}"
                 print(f"Checking: {full_path}")
                 if os.path.exists(full_path):
                     print(f"SUCCESS: Processed image exists: {full_path}")
