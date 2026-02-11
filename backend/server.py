@@ -72,10 +72,10 @@ def proxy_api(subpath: str):
 					fn = storage.filename or "upload.jpg"
 					mt = storage.mimetype or "application/octet-stream"
 					if buf is not None:
-						# Attach with canonical 'images' key and original key
+						# Attach with canonical 'images' key only.
+						# NOTE: Do NOT also forward under original key, otherwise the upstream
+						# backend may interpret it as two uploads of the same file and store duplicates.
 						files.append(("images", (fn, buf, mt)))
-						buf2 = _io.BytesIO(buf.getvalue())
-						files.append((key, (fn, buf2, mt)))
 			data = request.form.to_dict(flat=False)
 		else:
 			ctype = request.headers.get("Content-Type", "")

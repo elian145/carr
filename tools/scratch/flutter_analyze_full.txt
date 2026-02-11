@@ -1,0 +1,100 @@
+﻿Analyzing car_listing_app...                                    
+
+warning - The declaration '_contactForPriceGlobal' isn't referenced - lib\legacy\main_legacy.dart:468:8 - unused_element
+warning - The declaration '_photosUploadedTextGlobal' isn't referenced - lib\legacy\main_legacy.dart:629:8 - unused_element
+warning - The declaration '_StartupDiagnostics' isn't referenced - lib\legacy\main_legacy.dart:2147:7 - unused_element
+warning - The declaration 'lastError' isn't referenced - lib\legacy\main_legacy.dart:2148:26 - unused_element
+   info - 'red' is deprecated and shouldn't be used. Use (*.r * 255.0).round().clamp(0, 255) - lib\legacy\main_legacy.dart:2391:26 - deprecated_member_use
+   info - 'green' is deprecated and shouldn't be used. Use (*.g * 255.0).round().clamp(0, 255) - lib\legacy\main_legacy.dart:2392:26 - deprecated_member_use
+   info - 'blue' is deprecated and shouldn't be used. Use (*.b * 255.0).round().clamp(0, 255) - lib\legacy\main_legacy.dart:2393:26 - deprecated_member_use
+   info - Invalid use of a private type in a public API - lib\legacy\main_legacy.dart:2636:3 - library_private_types_in_public_api
+warning - The value of the field '_selectedBottomTabIndex' isn't used - lib\legacy\main_legacy.dart:2687:8 - unused_field
+warning - The declaration '_restoreFilters' isn't referenced - lib\legacy\main_legacy.dart:2715:16 - unused_element
+warning - The declaration '_clearPersistedFilters' isn't referenced - lib\legacy\main_legacy.dart:2779:16 - unused_element
+warning - The declaration '_fetchWithAlternativeHeaders' isn't referenced - lib\legacy\main_legacy.dart:3996:16 - unused_element
+warning - The declaration '_buildCardImageCarousel' isn't referenced - lib\legacy\main_legacy.dart:8974:10 - unused_element
+warning - The declaration '_getPriceRangeValue' isn't referenced - lib\legacy\main_legacy.dart:9084:11 - unused_element
+warning - The declaration '_formatPrice' isn't referenced - lib\legacy\main_legacy.dart:9088:10 - unused_element
+warning - The value of the local variable 'locale' isn't used - lib\legacy\main_legacy.dart:9092:13 - unused_local_variable
+warning - The declaration '_updatePriceFilter' isn't referenced - lib\legacy\main_legacy.dart:9100:8 - unused_element
+warning - The declaration '_getYearRangeValue' isn't referenced - lib\legacy\main_legacy.dart:9112:11 - unused_element
+warning - The declaration '_updateYearFilter' isn't referenced - lib\legacy\main_legacy.dart:9116:8 - unused_element
+warning - The declaration '_getMileageRangeValue' isn't referenced - lib\legacy\main_legacy.dart:9128:11 - unused_element
+warning - The declaration '_updateMileageFilter' isn't referenced - lib\legacy\main_legacy.dart:9132:8 - unused_element
+warning - The declaration '_getBodyTypeEmoji' isn't referenced - lib\legacy\main_legacy.dart:9209:10 - unused_element
+warning - The declaration '_toggleNotify' isn't referenced - lib\legacy\main_legacy.dart:9346:8 - unused_element
+   info - Unnecessary use of multiple underscores - lib\legacy\main_legacy.dart:9402:37 - unnecessary_underscores
+warning - The value of the local variable 'isAutoSaved' isn't used - lib\legacy\main_legacy.dart:9406:23 - unused_local_variable
+   info - Don't use 'BuildContext's across async gaps - lib\legacy\main_legacy.dart:9680:28 - use_build_context_synchronously
+   info - Invalid use of a private type in a public API - lib\legacy\main_legacy.dart:10067:3 - library_private_types_in_public_api
+   info - 'Share' is deprecated and shouldn't be used. Use SharePlus instead - lib\legacy\main_legacy.dart:10326:13 - deprecated_member_use
+   info - 'share' is deprecated and shouldn't be used. Use SharePlus.instance.share() instead - lib\legacy\main_legacy.dart:10326:19 - deprecated_member_use
+   info - Don't use 'BuildContext's across async gaps, guarded by an unrelated 'mounted' check - lib\legacy\main_legacy.dart:10708:56 - use_build_context_synchronously
+   info - Don't use 'BuildContext's across async gaps, guarded by an unrelated 'mounted' check - lib\legacy\main_legacy.dart:10712:43 - use_build_context_synchronously
+   info - Don't use 'BuildContext's across async gaps, guarded by an unrelated 'mounted' check - lib\legacy\main_legacy.dart:10763:56 - use_build_context_synchronously
+warning - The value of the local variable 'localeCode' isn't used - lib\legacy\main_legacy.dart:11027:13 - unused_local_variable
+warning - The declaration '_detailRowAlways' isn't referenced - lib\legacy\main_legacy.dart:11295:10 - unused_element
+warning - The declaration '_buildSpecCardSmall' isn't referenced - lib\legacy\main_legacy.dart:11369:10 - unused_element
+   info - Unnecessary use of multiple underscores - lib\legacy\main_legacy.dart:11420:31 - unnecessary_underscores
+warning - The declaration '_spec' isn't referenced - lib\legacy\main_legacy.dart:11513:10 - unused_element
+warning - A value for optional parameter 'isSecondary' isn't ever given - lib\legacy\main_legacy.dart:11541:10 - unused_element_parameter
+   info - Invalid use of a private type in a public API - lib\legacy\main_legacy.dart:11552:3 - library_private_types_in_public_api
+   info - Invalid use of a private type in a public API - lib\legacy\main_legacy.dart:11790:3 - library_private_types_in_public_api
+   info - Unnecessary use of multiple underscores - lib\legacy\main_legacy.dart:11938:47 - unnecessary_underscores
+   info - Invalid use of a private type in a public API - lib\legacy\main_legacy.dart:12755:3 - library_private_types_in_public_api
+   info - Unnecessary use of multiple underscores - lib\legacy\main_legacy.dart:13003:47 - unnecessary_underscores
+warning - The value of the local variable 'localeTag' isn't used - lib\legacy\main_legacy.dart:13015:35 - unused_local_variable
+   info - Invalid use of a private type in a public API - lib\legacy\main_legacy.dart:14051:3 - library_private_types_in_public_api
+warning - The declaration '_buildCurrencyButton' isn't referenced - lib\legacy\main_legacy.dart:14135:10 - unused_element
+   info - Unnecessary use of multiple underscores - lib\legacy\main_legacy.dart:14215:43 - unnecessary_underscores
+   info - Invalid use of a private type in a public API - lib\legacy\main_legacy.dart:14772:3 - library_private_types_in_public_api
+   info - Use of 'return' in a 'finally' clause - lib\legacy\main_legacy.dart:14826:21 - control_flow_in_finally
+   info - Use of 'return' in a 'finally' clause - lib\legacy\main_legacy.dart:15014:21 - control_flow_in_finally
+   info - Invalid use of a private type in a public API - lib\legacy\main_legacy.dart:16061:3 - library_private_types_in_public_api
+   info - Don't use 'BuildContext's across async gaps, guarded by an unrelated 'mounted' check - lib\legacy\main_legacy.dart:16224:58 - use_build_context_synchronously
+   info - Don't use 'BuildContext's across async gaps, guarded by an unrelated 'mounted' check - lib\legacy\main_legacy.dart:16228:45 - use_build_context_synchronously
+   info - Don't use 'BuildContext's across async gaps, guarded by an unrelated 'mounted' check - lib\legacy\main_legacy.dart:16239:39 - use_build_context_synchronously
+   info - Don't use 'BuildContext's across async gaps, guarded by an unrelated 'mounted' check - lib\legacy\main_legacy.dart:16248:39 - use_build_context_synchronously
+   info - Don't use 'BuildContext's across async gaps, guarded by an unrelated 'mounted' check - lib\legacy\main_legacy.dart:16253:56 - use_build_context_synchronously
+   info - Don't use 'BuildContext's across async gaps, guarded by an unrelated 'mounted' check - lib\legacy\main_legacy.dart:16264:49 - use_build_context_synchronously
+warning - The left operand can't be null, so the right operand is never executed - lib\legacy\main_legacy.dart:16372:17 - dead_null_aware_expression
+   info - Don't use 'BuildContext's across async gaps - lib\legacy\main_legacy.dart:16519:34 - use_build_context_synchronously
+   info - Don't use 'BuildContext's across async gaps - lib\legacy\main_legacy.dart:16523:21 - use_build_context_synchronously
+   info - 'Share' is deprecated and shouldn't be used. Use SharePlus instead - lib\legacy\main_legacy.dart:16596:45 - deprecated_member_use
+   info - 'share' is deprecated and shouldn't be used. Use SharePlus.instance.share() instead - lib\legacy\main_legacy.dart:16596:51 - deprecated_member_use
+warning - The value of the local variable 'columnWidth' isn't used - lib\legacy\main_legacy.dart:16647:28 - unused_local_variable
+warning - The declaration '_formatPrice' isn't referenced - lib\legacy\main_legacy.dart:17584:10 - unused_element
+warning - The value of the local variable 'locale' isn't used - lib\legacy\main_legacy.dart:17588:13 - unused_local_variable
+warning - The declaration '_getBodyTypeIcon' isn't referenced - lib\legacy\main_legacy.dart:18797:10 - unused_element
+warning - The declaration '_getColorValue' isn't referenced - lib\legacy\main_legacy.dart:18827:7 - unused_element
+   info - Invalid use of a private type in a public API - lib\legacy\main_legacy.dart:18865:3 - library_private_types_in_public_api
+warning - The declaration '_formatPrice' isn't referenced - lib\legacy\main_legacy.dart:18969:10 - unused_element
+warning - The value of the local variable 'locale' isn't used - lib\legacy\main_legacy.dart:18973:13 - unused_local_variable
+   info - Unnecessary use of multiple underscores - lib\legacy\main_legacy.dart:19105:39 - unnecessary_underscores
+   info - Invalid use of a private type in a public API - lib\legacy\main_legacy.dart:19155:3 - library_private_types_in_public_api
+   info - Invalid use of a private type in a public API - lib\legacy\main_legacy.dart:19215:3 - library_private_types_in_public_api
+   info - Don't use 'BuildContext's across async gaps - lib\legacy\main_legacy.dart:19257:35 - use_build_context_synchronously
+   info - Invalid use of a private type in a public API - lib\legacy\main_legacy.dart:19395:3 - library_private_types_in_public_api
+   info - Don't use 'BuildContext's across async gaps - lib\legacy\main_legacy.dart:19454:32 - use_build_context_synchronously
+   info - Don't use 'BuildContext's across async gaps - lib\legacy\main_legacy.dart:19456:49 - use_build_context_synchronously
+   info - Don't use 'BuildContext's across async gaps - lib\legacy\main_legacy.dart:19462:13 - use_build_context_synchronously
+   info - Don't use 'BuildContext's across async gaps - lib\legacy\main_legacy.dart:19479:35 - use_build_context_synchronously
+   info - Don't use 'BuildContext's across async gaps - lib\legacy\main_legacy.dart:19481:13 - use_build_context_synchronously
+   info - Don't use 'BuildContext's across async gaps - lib\legacy\main_legacy.dart:19497:35 - use_build_context_synchronously
+   info - Don't use 'BuildContext's across async gaps - lib\legacy\main_legacy.dart:19499:11 - use_build_context_synchronously
+   info - Don't use 'BuildContext's across async gaps - lib\legacy\main_legacy.dart:19514:9 - use_build_context_synchronously
+   info - Don't use 'BuildContext's across async gaps - lib\legacy\main_legacy.dart:19644:39 - use_build_context_synchronously
+   info - Don't use 'BuildContext's across async gaps - lib\legacy\main_legacy.dart:19664:35 - use_build_context_synchronously
+   info - 'groupValue' is deprecated and shouldn't be used. Use a RadioGroup ancestor to manage group value instead. This feature was deprecated after v3.32.0-0.0.pre - lib\legacy\main_legacy.dart:19733:23 - deprecated_member_use
+   info - 'onChanged' is deprecated and shouldn't be used. Use RadioGroup to handle value change instead. This feature was deprecated after v3.32.0-0.0.pre - lib\legacy\main_legacy.dart:19734:23 - deprecated_member_use
+   info - 'groupValue' is deprecated and shouldn't be used. Use a RadioGroup ancestor to manage group value instead. This feature was deprecated after v3.32.0-0.0.pre - lib\legacy\main_legacy.dart:19751:23 - deprecated_member_use
+   info - 'onChanged' is deprecated and shouldn't be used. Use RadioGroup to handle value change instead. This feature was deprecated after v3.32.0-0.0.pre - lib\legacy\main_legacy.dart:19752:23 - deprecated_member_use
+   info - Invalid use of a private type in a public API - lib\legacy\main_legacy.dart:19934:3 - library_private_types_in_public_api
+   info - Invalid use of a private type in a public API - lib\legacy\main_legacy.dart:20539:3 - library_private_types_in_public_api
+   info - Invalid use of a private type in a public API - lib\legacy\main_legacy.dart:20598:3 - library_private_types_in_public_api
+   info - Invalid use of a private type in a public API - lib\legacy\main_legacy.dart:20619:3 - library_private_types_in_public_api
+   info - Invalid use of a private type in a public API - lib\legacy\main_legacy.dart:20640:3 - library_private_types_in_public_api
+   info - Invalid use of a private type in a public API - lib\legacy\main_legacy.dart:20661:3 - library_private_types_in_public_api
+   info - Invalid use of a private type in a public API - lib\legacy\main_legacy.dart:20680:3 - library_private_types_in_public_api
+warning - The value of the field '_cacheEntries' isn't used - lib\legacy\main_legacy.dart:20692:13 - unused_field
+

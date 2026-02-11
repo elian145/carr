@@ -458,11 +458,13 @@ class _RegisterPageState extends State<RegisterPage> {
     setState(() => _isSendingOtp = true);
     // No-op: ensure imports handled above
     try {
-      final resp = await http.post(
-        Uri.parse('${ApiService.baseUrl}/auth/send_otp'),
-        headers: {'Content-Type': 'application/json'},
-        body: json.encode({'phone': _phoneController.text.trim()}),
-      );
+      final resp = await http
+          .post(
+            Uri.parse('${ApiService.baseUrl}/auth/send_otp'),
+            headers: {'Content-Type': 'application/json'},
+            body: json.encode({'phone': _phoneController.text.trim()}),
+          )
+          .timeout(const Duration(seconds: 30));
       if (!mounted) return;
       if (resp.statusCode == 200) {
         final data = json.decode(resp.body) as Map<String, dynamic>;
@@ -744,6 +746,7 @@ class _ForgotPasswordPageState extends State<ForgotPasswordPage> {
       final authService = Provider.of<AuthService>(context, listen: false);
       await authService.forgotPassword(_emailController.text);
 
+      if (!mounted) return;
       setState(() => _emailSent = true);
     } catch (e) {
       if (mounted) {

@@ -1,11 +1,8 @@
 import 'package:flutter/material.dart';
-import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:provider/provider.dart';
+import 'package:provider/single_child_widget.dart';
 
 import '../l10n/app_localizations.dart';
-import '../pages/analytics_page.dart';
-import '../pages/edit_profile_page.dart';
-import '../shared/i18n/ku_delegates.dart';
 import '../state/locale_controller.dart';
 import '../theme_provider.dart';
 import 'providers.dart';
@@ -16,44 +13,26 @@ class CarzoApp extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final List<SingleChildWidget> providers = buildAppProviders();
+    final routes = buildAppRoutes();
+
     return MultiProvider(
-      providers: buildAppProviders(),
+      providers: providers,
       child: ValueListenableBuilder<Locale?>(
         valueListenable: LocaleController.currentLocale,
         builder: (context, locale, _) {
           return Consumer<ThemeProvider>(
-            builder: (context, themeProvider, child) {
+            builder: (context, themeProvider, _) {
               return MaterialApp(
                 title: 'CARZO',
-                locale: locale,
-                supportedLocales: const [
-                  Locale('en'),
-                  Locale('ar'),
-                  Locale('ku'),
-                ],
-                localizationsDelegates: const [
-                  AppLocalizations.delegate,
-                  GlobalMaterialLocalizations.delegate,
-                  GlobalWidgetsLocalizations.delegate,
-                  GlobalCupertinoLocalizations.delegate,
-                  KuMaterialLocalizationsDelegate(),
-                  KuWidgetsLocalizationsDelegate(),
-                  KuCupertinoLocalizationsDelegate(),
-                ],
-                localeResolutionCallback: (deviceLocale, supported) {
-                  if (locale != null) return locale;
-                  if (deviceLocale == null) return const Locale('en');
-                  for (final l in supported) {
-                    if (l.languageCode == deviceLocale.languageCode) return l;
-                  }
-                  return const Locale('en');
-                },
+                debugShowCheckedModeBanner: false,
                 theme: AppThemes.lightTheme,
                 darkTheme: AppThemes.darkTheme,
                 themeMode: themeProvider.themeMode,
-                debugShowCheckedModeBanner: false,
-                initialRoute: '/',
-                routes: buildAppRoutes(),
+                locale: locale,
+                localizationsDelegates: AppLocalizations.localizationsDelegates,
+                supportedLocales: AppLocalizations.supportedLocales,
+                routes: routes,
               );
             },
           );
@@ -62,3 +41,4 @@ class CarzoApp extends StatelessWidget {
     );
   }
 }
+

@@ -2,11 +2,35 @@ import 'dart:convert';
 import 'dart:io';
 import 'dart:async';
 import 'package:web_socket_channel/web_socket_channel.dart';
+import 'package:web_socket_channel/io.dart';
 import 'package:web_socket_channel/status.dart' as status;
 import 'api_service.dart';
 import 'config.dart';
 
 class WebSocketService {
+  // If false, we attempt to authenticate via headers only (preferred), and do NOT
+  // include the token in the URL query string. Keep true by default for backward
+  // compatibility with servers that only support ?token=... on the Socket.IO WS upgrade.
+  static const bool _tokenInQuery = bool.fromEnvironment(
+    'WS_TOKEN_IN_QUERY',
+    defaultValue: true,
+  );
+
+  static final StreamController<Map<String, dynamic>> _messagesController =
+      StreamController<Map<String, dynamic>>.broadcast();
+  static final StreamController<Map<String, dynamic>> _notificationsController =
+      StreamController<Map<String, dynamic>>.broadcast();
+  static final StreamController<bool> _connectionController =
+      StreamController<bool>.broadcast();
+  static final StreamController<String> _errorController =
+      StreamController<String>.broadcast();
+
+  static Stream<Map<String, dynamic>> get messages => _messagesController.stream;
+  static Stream<Map<String, dynamic>> get notifications =>
+      _notificationsController.stream;
+  static Stream<bool> get connectionState => _connectionController.stream;
+  static Stream<String> get errors => _errorController.stream;
+
   static String get baseUrl {
     final base = apiBase();
     if (base.startsWith('https://')) {
@@ -20,10 +44,13 @@ class WebSocketService {
 
   static WebSocketChannel? _channel;
   static bool _isConnected = false;
+  static bool _isConnecting = false;
   static String? _currentRoom;
   static int _retries = 0;
   static DateTime? _lastAttemptAt;
   static Timer? _heartbeatTimer;
+  static final List<String> _pendingFrames = <String>[];
+  static const int _maxPendingFrames = 50;
 
   // Callbacks
   static Function(Map<String, dynamic>)? onMessage;
@@ -32,22 +59,82 @@ class WebSocketService {
   static Function()? onDisconnected;
   static Function(String)? onError;
 
+  static void _emitError(String message) {
+    try {
+      _errorController.add(message);
+    } catch (_) {}
+    onError?.call(message);
+  }
+
+  static void _emitConnected(bool connected) {
+    try {
+      _connectionController.add(connected);
+    } catch (_) {}
+    if (connected) {
+      onConnected?.call();
+    } else {
+      onDisconnected?.call();
+    }
+  }
+
+  static void _cleanupChannel() {
+    try {
+      _channel?.sink.close(status.goingAway);
+    } catch (_) {}
+    _channel = null;
+    _stopHeartbeat();
+  }
+
+  static void _flushPending() {
+    if (!_isConnected || _channel == null) return;
+    if (_pendingFrames.isEmpty) return;
+    final frames = List<String>.from(_pendingFrames);
+    _pendingFrames.clear();
+    for (final frame in frames) {
+      try {
+        _channel!.sink.add(frame);
+      } catch (e) {
+        _emitError('Send pending frame failed: $e');
+        // Put remaining back (best effort) and stop flushing.
+        final idx = frames.indexOf(frame);
+        if (idx >= 0 && idx + 1 < frames.length) {
+          _pendingFrames.addAll(frames.sublist(idx + 1));
+        }
+        break;
+      }
+    }
+  }
+
   // Connect to WebSocket
   static Future<void> connect() async {
     try {
       if (_isConnected) return;
+      if (_isConnecting) return;
+      _isConnecting = true;
 
       final accessToken = ApiService.accessToken;
 
       if (accessToken == null) {
-        onError?.call('No access token found');
+        _emitError('No access token found');
+        _isConnecting = false;
         return;
       }
 
-      final uri = Uri.parse(
-        '$baseUrl/socket.io/?EIO=4&transport=websocket&token=$accessToken',
+      // Ensure any stale channel is cleaned up before re-connecting
+      _cleanupChannel();
+
+      final qp = <String, String>{
+        'EIO': '4',
+        'transport': 'websocket',
+        if (_tokenInQuery) 'token': accessToken,
+      };
+      final uri = Uri.parse('$baseUrl/socket.io/').replace(queryParameters: qp);
+
+      // Prefer IO channel so we can attach Authorization header.
+      _channel = IOWebSocketChannel.connect(
+        uri,
+        headers: {HttpHeaders.authorizationHeader: 'Bearer $accessToken'},
       );
-      _channel = WebSocketChannel.connect(uri);
 
       _channel!.stream.listen(
         (data) {
@@ -55,35 +142,45 @@ class WebSocketService {
         },
         onError: (error) {
           _isConnected = false;
-          onError?.call('WebSocket error: $error');
+          _isConnecting = false;
+          _cleanupChannel();
+          _emitConnected(false);
+          _emitError('WebSocket error: $error');
           _scheduleReconnect();
         },
         onDone: () {
           _isConnected = false;
-          onDisconnected?.call();
+          _isConnecting = false;
+          _cleanupChannel();
+          _emitConnected(false);
           _scheduleReconnect();
         },
       );
 
       _isConnected = true;
-      onConnected?.call();
+      _isConnecting = false;
+      _emitConnected(true);
       _startHeartbeat();
+      _flushPending();
     } catch (e) {
       _isConnected = false;
-      onError?.call('Connection failed: $e');
+      _isConnecting = false;
+      _cleanupChannel();
+      _emitConnected(false);
+      _emitError('Connection failed: $e');
       _scheduleReconnect();
     }
   }
 
   // Disconnect from WebSocket
   static void disconnect() {
-    _channel?.sink.close(status.goingAway);
-    _channel = null;
+    _cleanupChannel();
     _isConnected = false;
+    _isConnecting = false;
     _currentRoom = null;
     _retries = 0;
     _lastAttemptAt = null;
-    _stopHeartbeat();
+    _emitConnected(false);
   }
 
   static void _scheduleReconnect() {
@@ -146,13 +243,19 @@ class WebSocketService {
           switch (eventName) {
             case 'connected':
               _isConnected = true;
-              onConnected?.call();
+              _emitConnected(true);
               break;
             case 'new_message':
-              onMessage?.call(eventPayload);
+              if (eventPayload is Map<String, dynamic>) {
+                _messagesController.add(eventPayload);
+                onMessage?.call(eventPayload);
+              }
               break;
             case 'new_notification':
-              onNotification?.call(eventPayload);
+              if (eventPayload is Map<String, dynamic>) {
+                _notificationsController.add(eventPayload);
+                onNotification?.call(eventPayload);
+              }
               break;
             case 'joined_chat':
               _currentRoom = eventPayload['room'];
@@ -161,22 +264,28 @@ class WebSocketService {
         }
       }
     } catch (e) {
-      onError?.call('Message parsing error: $e');
+      _emitError('Message parsing error: $e');
     }
   }
 
   // Send message
   static void sendMessage(String event, Map<String, dynamic> data) {
-    if (!_isConnected || _channel == null) {
-      onError?.call('Not connected to WebSocket');
-      return;
-    }
-
     try {
       final message = json.encode([event, data]);
-      _channel!.sink.add('42$message');
+      final frame = '42$message';
+      if (!_isConnected || _channel == null) {
+        // Queue and connect (best-effort) to avoid dropping user actions.
+        if (_pendingFrames.length >= _maxPendingFrames) {
+          _pendingFrames.removeAt(0);
+        }
+        _pendingFrames.add(frame);
+        // Fire-and-forget connect; once connected we'll flush.
+        unawaited(connect());
+        return;
+      }
+      _channel!.sink.add(frame);
     } catch (e) {
-      onError?.call('Send message error: $e');
+      _emitError('Send message error: $e');
     }
   }
 

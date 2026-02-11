@@ -1,8 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/cupertino.dart';
+import 'package:flutter/foundation.dart';
 import 'package:http/http.dart' as http;
 import 'dart:convert';
-import 'dart:developer' as developer;
 import 'package:google_fonts/google_fonts.dart';
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter_svg/flutter_svg.dart';
@@ -16,19 +16,16 @@ import 'package:video_thumbnail/video_thumbnail.dart';
 import 'dart:io';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:share_plus/share_plus.dart';
-import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import '../services/analytics_service.dart';
 import '../services/api_service.dart';
 import '../services/auth_service.dart';
 import '../shared/auth/token_store.dart';
 import '../state/locale_controller.dart' as app_state;
-import '../models/analytics_model.dart';
 import '../globals.dart';
 import '../pages/analytics_page.dart';
 import '../pages/edit_profile_page.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'package:firebase_messaging/firebase_messaging.dart';
-import 'package:mobile_scanner/mobile_scanner.dart';
 import '../l10n/app_localizations.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:intl/intl.dart';
@@ -50,6 +47,15 @@ const String kBuildSha = String.fromEnvironment(
   'BUILD_COMMIT_SHA',
   defaultValue: 'dev',
 );
+
+// Flutter sets this at compile time when running `flutter test`.
+const bool _kFlutterTest = bool.fromEnvironment('FLUTTER_TEST');
+
+void _debugLog(String message) {
+  if (kDebugMode) {
+    debugPrint(message);
+  }
+}
 
 // Fallback delegates to provide Material/Cupertino/Widgets localizations for 'ku'
 class KuMaterialLocalizationsDelegate
@@ -106,8 +112,9 @@ class KuWidgetsLocalizationsDelegate
 String getApiBase() {
   final base = apiBase();
   // On Android emulator, default LAN base is unreachable; use host alias so images load
-  if (Platform.isAndroid && base == 'http://192.168.1.7:5003')
+  if (Platform.isAndroid && base == 'http://192.168.1.7:5003') {
     return 'http://10.0.2.2:5000';
+  }
   return base;
 }
 
@@ -134,16 +141,16 @@ String _buildFullImageUrl(String rel) {
   // drop leading '/'
   if (s.startsWith('/')) s = s.substring(1);
   if (s.startsWith('static/')) {
-    return getApiBase() + '/' + s;
+    return '${getApiBase()}/$s';
   }
   if (s.startsWith('uploads/')) {
-    return getApiBase() + '/static/' + s;
+    return '${getApiBase()}/static/$s';
   }
   if (s.startsWith('car_photos/')) {
-    return getApiBase() + '/static/uploads/' + s;
+    return '${getApiBase()}/static/uploads/$s';
   }
   // default: assume already a path under uploads (e.g. make, dir/file.jpg)
-  return getApiBase() + '/static/uploads/' + s;
+  return '${getApiBase()}/static/uploads/$s';
 }
 
 /// Listing image widget using Image.network (avoids CachedNetworkImage HTTP issues on Android).
@@ -207,7 +214,7 @@ class _RetryingListingNetworkImageState
         final after = path.substring(idx + '/static/uploads/'.length);
         if (after.isNotEmpty && !after.contains('/')) {
           final newPath =
-              path.substring(0, idx) + '/static/uploads/car_photos/' + after;
+              '${path.substring(0, idx)}/static/uploads/car_photos/$after';
           return uri.replace(path: newPath).toString();
         }
       }
@@ -518,8 +525,9 @@ String _addedToComparisonTextGlobal(BuildContext context, int count) {
   final code = Localizations.localeOf(context).languageCode;
   final cnt = _localizeDigitsGlobal(context, count.toString());
   final max = _localizeDigitsGlobal(context, '5');
-  if (code == 'ar')
+  if (code == 'ar') {
     return 'ØªÙ…Øª Ø§Ù„Ø¥Ø¶Ø§ÙØ© Ø¥Ù„Ù‰ Ø§Ù„Ù…Ù‚Ø§Ø±Ù†Ø© ($cnt/$max)';
+  }
   if (code == 'ku') return 'Ø²ÛŒØ§Ø¯ Ú©Ø±Ø§ Ø¨Û† Ø¨Û•Ø±Û•ÙˆØ±Ø¯Ù† ($cnt/$max)';
   return 'Added to comparison ($cnt/$max)';
 }
@@ -527,10 +535,12 @@ String _addedToComparisonTextGlobal(BuildContext context, int count) {
 String _comparisonMaxLimitTextGlobal(BuildContext context) {
   final code = Localizations.localeOf(context).languageCode;
   final five = _localizeDigitsGlobal(context, '5');
-  if (code == 'ar')
+  if (code == 'ar') {
     return 'ÙŠÙ…ÙƒÙ† Ù…Ù‚Ø§Ø±Ù†Ø© $five Ø³ÙŠØ§Ø±Ø§Øª ÙƒØ­Ø¯ Ø£Ù‚ØµÙ‰';
-  if (code == 'ku')
+  }
+  if (code == 'ku') {
     return 'Ø²Û†Ø±ØªØ±ÛŒÙ† $five Ø¦Û†ØªÛ†Ù…Ø¨ÛŽÙ„ Ø¯Û•ØªÙˆØ§Ù†Ø±ÛŽØª Ø¨Û•Ø±Û•ÙˆØ±Ø¯ Ø¨Ú©Ø±ÛŽÙ†';
+  }
   return 'Maximum $five cars can be compared';
 }
 
@@ -599,26 +609,30 @@ String _videosOptionalTitleGlobal(BuildContext context) {
 
 String _pleaseSelectPhotoTextGlobal(BuildContext context) {
   final code = Localizations.localeOf(context).languageCode;
-  if (code == 'ar')
+  if (code == 'ar') {
     return 'ÙŠØ±Ø¬Ù‰ Ø§Ø®ØªÙŠØ§Ø± ØµÙˆØ±Ø© ÙˆØ§Ø­Ø¯Ø© Ø¹Ù„Ù‰ Ø§Ù„Ø£Ù‚Ù„';
-  if (code == 'ku')
+  }
+  if (code == 'ku') {
     return 'ØªÚ©Ø§ÛŒÛ• Ø¨Û•Ù„Ø§ÛŒÛ•Ù†ÛŒ Ú©Û•Ù…Û•ÙˆÛ• ÛŒÛ•Ú© ÙˆÛŽÙ†Û• Ù‡Û•Ù„Ø¨Ú˜ÛŽØ±Û•';
+  }
   return 'Please select at least one photo';
 }
 
 String _listingSubmittedSuccessTextGlobal(BuildContext context) {
   final code = Localizations.localeOf(context).languageCode;
   if (code == 'ar') return 'ØªÙ… Ø¥Ø±Ø³Ø§Ù„ Ø§Ù„Ø¥Ø¹Ù„Ø§Ù† Ø¨Ù†Ø¬Ø§Ø­!';
-  if (code == 'ku')
+  if (code == 'ku') {
     return 'Ú•ÛŽÚ©Ù„Ø§Ù… Ø¨Û•Ø³Û•Ø±ÙƒÛ•ÙˆØªÙˆÙˆÛŒÛŒ Ù†ÛŽØ±Ø¯Ø±Ø§!';
+  }
   return 'Listing submitted successfully!';
 }
 
 String _couldNotLoadListingsTextGlobal(BuildContext context) {
   final code = Localizations.localeOf(context).languageCode;
   if (code == 'ar') return 'ØªØ¹Ø°Ù‘Ø± ØªØ­Ù…ÙŠÙ„ Ø§Ù„Ø¥Ø¹Ù„Ø§Ù†Ø§Øª';
-  if (code == 'ku')
+  if (code == 'ku') {
     return 'Ù†Û•ØªÙˆØ§Ù†Ø±Ø§ Ú•ÛŽÚ©Ù„Ø§Ù…Û•Ú©Ø§Ù† Ø¨Ø§Ø±Ø¨Ú©Ø±ÛŽÙ†';
+  }
   return 'Could not load listings';
 }
 
@@ -1026,7 +1040,7 @@ Widget buildGlobalCarCard(BuildContext context, Map car) {
                   ),
                 ),
               // Image section
-              Container(
+              SizedBox(
                 height:
                     (car['is_quick_sell'] == true ||
                         car['is_quick_sell'] == 'true')
@@ -1070,10 +1084,7 @@ Widget buildGlobalCarCard(BuildContext context, Map car) {
                               ),
                               child: CachedNetworkImage(
                                 imageUrl:
-                                    getApiBase() +
-                                    '/static/images/brands/' +
-                                    brandId +
-                                    '.png',
+                                    '${getApiBase()}/static/images/brands/$brandId.png',
                                 placeholder: (context, url) => SizedBox(
                                   width: 24,
                                   height: 24,
@@ -1221,7 +1232,6 @@ Widget _buildGlobalCardImageCarousel(BuildContext context, Map car) {
     );
   }
 
-  final PageController controller = PageController();
   int currentIndex = 0;
 
   return StatefulBuilder(
@@ -1238,7 +1248,6 @@ Widget _buildGlobalCardImageCarousel(BuildContext context, Map car) {
               );
             },
             child: PageView.builder(
-              controller: controller,
               onPageChanged: (i) => setState(() => currentIndex = i),
               itemCount: urls.length,
               itemBuilder: (context, i) {
@@ -1345,7 +1354,7 @@ class NoAnimationsPageTransitionsBuilder extends PageTransitionsBuilder {
 class FullScreenGalleryPage extends StatefulWidget {
   final List<String> imageUrls;
   final int initialIndex;
-  const FullScreenGalleryPage({required this.imageUrls, this.initialIndex = 0});
+  const FullScreenGalleryPage({super.key, required this.imageUrls, this.initialIndex = 0});
   @override
   State<FullScreenGalleryPage> createState() => _FullScreenGalleryPageState();
 }
@@ -1437,10 +1446,10 @@ class ListingPreviewGalleryPage extends StatefulWidget {
   final int initialIndex;
 
   const ListingPreviewGalleryPage({
-    Key? key,
+    super.key,
     required this.imageFilesOrUrls,
     this.initialIndex = 0,
-  }) : super(key: key);
+  });
 
   @override
   State<ListingPreviewGalleryPage> createState() =>
@@ -1990,7 +1999,7 @@ class _SearchDialogState extends State<_SearchDialog> {
                 .replaceAll('Ã©', 'e')
                 .replaceAll('Ã¶', 'o');
         final logoUrl =
-            getApiBase() + '/static/images/brands/' + logoFile + '.png';
+            '${getApiBase()}/static/images/brands/$logoFile.png';
 
         return ListTile(
           leading: Container(
@@ -2045,7 +2054,7 @@ class _SearchDialogState extends State<_SearchDialog> {
                 .replaceAll('Ã©', 'e')
                 .replaceAll('Ã¶', 'o');
         final logoUrl =
-            getApiBase() + '/static/images/brands/' + logoFile + '.png';
+            '${getApiBase()}/static/images/brands/$logoFile.png';
 
         return ListTile(
           leading: Container(
@@ -2185,8 +2194,7 @@ class ComparisonButton extends StatelessWidget {
   final Map<String, dynamic> car;
   final bool isCompact;
 
-  const ComparisonButton({Key? key, required this.car, this.isCompact = false})
-    : super(key: key);
+  const ComparisonButton({super.key, required this.car, this.isCompact = false});
 
   @override
   Widget build(BuildContext context) {
@@ -2292,6 +2300,8 @@ class ComparisonButton extends StatelessWidget {
 }
 
 class MyApp extends StatelessWidget {
+  const MyApp({super.key});
+
   @override
   Widget build(BuildContext context) {
     return MultiProvider(
@@ -2543,7 +2553,7 @@ Future<String?> generateVideoThumbnail(String videoPath) async {
     );
     return thumbnailPath;
   } catch (e) {
-    print('Error generating video thumbnail: $e');
+    _debugLog('Error generating video thumbnail: $e');
     return null;
   }
 }
@@ -2628,6 +2638,8 @@ final Map<String, String> brandLogoFilenames = {
 };
 
 class HomePage extends StatefulWidget {
+  const HomePage({super.key});
+
   @override
   _HomePageState createState() => _HomePageState();
 }
@@ -2714,6 +2726,7 @@ class _HomePageState extends State<HomePage> {
       final raw = sp.getString(_filtersKey);
       if (raw == null || raw.isEmpty) return;
       final map = json.decode(raw) as Map<String, dynamic>;
+      if (!mounted) return;
       setState(() {
         selectedBrand = map['brand'];
         selectedModel = map['model'];
@@ -2809,7 +2822,7 @@ class _HomePageState extends State<HomePage> {
       final Map<String, dynamic> payload = {
         'id': DateTime.now().millisecondsSinceEpoch,
         'name': _generateSearchName(),
-        'filters': json.decode(await sp.getString(_filtersKey) ?? '{}'),
+        'filters': json.decode(sp.getString(_filtersKey) ?? '{}'),
         'notify': true,
         'created_at': DateTime.now().toIso8601String(),
       };
@@ -2907,42 +2920,56 @@ class _HomePageState extends State<HomePage> {
     if (selectedTrim?.isNotEmpty == true) filters['trim'] = selectedTrim!;
 
     // Price filters - apply individually, not requiring both
-    if (selectedMinPrice?.isNotEmpty == true)
+    if (selectedMinPrice?.isNotEmpty == true) {
       filters['min_price'] = selectedMinPrice!;
-    if (selectedMaxPrice?.isNotEmpty == true)
+    }
+    if (selectedMaxPrice?.isNotEmpty == true) {
       filters['max_price'] = selectedMaxPrice!;
+    }
 
     // Year filters - apply individually, not requiring both
-    if (selectedMinYear?.isNotEmpty == true)
+    if (selectedMinYear?.isNotEmpty == true) {
       filters['min_year'] = selectedMinYear!;
-    if (selectedMaxYear?.isNotEmpty == true)
+    }
+    if (selectedMaxYear?.isNotEmpty == true) {
       filters['max_year'] = selectedMaxYear!;
+    }
 
     // Mileage filters - apply individually, not requiring both
-    if (selectedMinMileage?.isNotEmpty == true)
+    if (selectedMinMileage?.isNotEmpty == true) {
       filters['min_mileage'] = selectedMinMileage!;
-    if (selectedMaxMileage?.isNotEmpty == true)
+    }
+    if (selectedMaxMileage?.isNotEmpty == true) {
       filters['max_mileage'] = selectedMaxMileage!;
+    }
 
     // Vehicle condition and specifications
-    if (selectedCondition?.isNotEmpty == true && selectedCondition != 'Any')
+    if (selectedCondition?.isNotEmpty == true && selectedCondition != 'Any') {
       filters['condition'] = selectedCondition!.toLowerCase();
+    }
     if (selectedTransmission?.isNotEmpty == true &&
-        selectedTransmission != 'Any')
+        selectedTransmission != 'Any') {
       filters['transmission'] = selectedTransmission!.toLowerCase();
-    if (selectedFuelType?.isNotEmpty == true && selectedFuelType != 'Any')
+    }
+    if (selectedFuelType?.isNotEmpty == true && selectedFuelType != 'Any') {
       filters['fuel_type'] = selectedFuelType!.toLowerCase();
-    if (selectedBodyType?.isNotEmpty == true && selectedBodyType != 'Any')
+    }
+    if (selectedBodyType?.isNotEmpty == true && selectedBodyType != 'Any') {
       filters['body_type'] = selectedBodyType!.toLowerCase();
-    if (selectedColor?.isNotEmpty == true && selectedColor != 'Any')
+    }
+    if (selectedColor?.isNotEmpty == true && selectedColor != 'Any') {
       filters['color'] = selectedColor!.toLowerCase();
-    if (selectedDriveType?.isNotEmpty == true && selectedDriveType != 'Any')
+    }
+    if (selectedDriveType?.isNotEmpty == true && selectedDriveType != 'Any') {
       filters['drive_type'] = selectedDriveType!.toLowerCase();
+    }
     if (selectedCylinderCount?.isNotEmpty == true &&
-        selectedCylinderCount != 'Any')
+        selectedCylinderCount != 'Any') {
       filters['cylinder_count'] = selectedCylinderCount!;
-    if (selectedSeating?.isNotEmpty == true && selectedSeating != 'Any')
+    }
+    if (selectedSeating?.isNotEmpty == true && selectedSeating != 'Any') {
       filters['seating'] = selectedSeating!;
+    }
 
     // Location and other filters
     if (selectedCity?.isNotEmpty == true) filters['city'] = selectedCity!;
@@ -2978,10 +3005,12 @@ class _HomePageState extends State<HomePage> {
     final parts = <String>[];
     if (selectedBrand?.isNotEmpty == true) parts.add(selectedBrand!);
     if (selectedModel?.isNotEmpty == true) parts.add(selectedModel!);
-    if (selectedCity?.isNotEmpty == true)
+    if (selectedCity?.isNotEmpty == true) {
       parts.add(_translateValueGlobal(context, selectedCity) ?? selectedCity!);
-    if (selectedMaxPrice?.isNotEmpty == true)
-      parts.add('\$' + (selectedMaxPrice ?? ''));
+    }
+    if (selectedMaxPrice?.isNotEmpty == true) {
+      parts.add('\$${selectedMaxPrice ?? ''}');
+    }
     return parts.isEmpty
         ? AppLocalizations.of(context)!.defaultSort
         : parts.join(' • ');
@@ -3574,14 +3603,35 @@ class _HomePageState extends State<HomePage> {
   bool useCustomMinMileage = false;
   bool useCustomMaxMileage = false;
 
+  // Controllers for manual (non-dropdown) filter inputs in the "More Filters" dialog.
+  // These avoid creating new controllers on every rebuild (which can cause churn/leaks).
+  late final TextEditingController _minPriceController;
+  late final TextEditingController _maxPriceController;
+  late final TextEditingController _minYearController;
+  late final TextEditingController _maxYearController;
+  late final TextEditingController _minMileageController;
+  late final TextEditingController _maxMileageController;
+
   @override
   void initState() {
     super.initState();
+    _minPriceController = TextEditingController();
+    _maxPriceController = TextEditingController();
+    _minYearController = TextEditingController();
+    _maxYearController = TextEditingController();
+    _minMileageController = TextEditingController();
+    _maxMileageController = TextEditingController();
     // Only clear filters, but preserve cached car data for better reliability
     _clearFiltersOnly();
     _resetAllFiltersInMemory();
     _loadBodyTypesFromAssets();
     WidgetsBinding.instance.addPostFrameCallback((_) {
+      // Avoid network calls during `flutter test` runs.
+      // `FLUTTER_TEST` isn't reliably set as a compile-time define for all builds,
+      // so we also check the runtime environment variable.
+      if (_kFlutterTest || Platform.environment.containsKey('FLUTTER_TEST')) {
+        return;
+      }
       fetchCars();
     });
     // Hook up infinite scroll
@@ -3600,6 +3650,12 @@ class _HomePageState extends State<HomePage> {
   @override
   void dispose() {
     _sortDebounceTimer?.cancel();
+    _minPriceController.dispose();
+    _maxPriceController.dispose();
+    _minYearController.dispose();
+    _maxYearController.dispose();
+    _minMileageController.dispose();
+    _maxMileageController.dispose();
     try {
       _homeScrollController.dispose();
     } catch (_) {}
@@ -3632,8 +3688,9 @@ class _HomePageState extends State<HomePage> {
         final String base = fileName
             .replaceAll('.svg', '')
             .replaceAll('.png', '');
-        if (base.toLowerCase() == 'default')
+        if (base.toLowerCase() == 'default') {
           continue; // skip default placeholder
+        }
 
         // Build a user-friendly label (title case, even if file uses underscores)
         final String label = base
@@ -3676,15 +3733,16 @@ class _HomePageState extends State<HomePage> {
     bool bypassCache = false,
     bool isRetry = false,
   }) async {
-    print(
+    _debugLog(
       'ðŸš€ fetchCars called with bypassCache: $bypassCache, isRetry: $isRetry',
     );
     // Analytics tracking for search fetch
-    if (mounted)
+    if (mounted) {
       setState(() {
         isLoading = true;
         loadErrorMessage = null;
       });
+    }
     Map<String, String> filters = _buildFilters();
     // Reset pagination
     _page = 1;
@@ -3698,19 +3756,19 @@ class _HomePageState extends State<HomePage> {
     );
 
     // Debug: Print the URL being called
-    print('ðŸ” Fetching cars from: $url');
-    print('ðŸ” Applied filters: $filters');
-    print('ðŸ” Sort parameter: ${filters['sort_by']}');
+    _debugLog('ðŸ” Fetching cars from: $url');
+    _debugLog('ðŸ” Applied filters: $filters');
+    _debugLog('ðŸ” Sort parameter: ${filters['sort_by']}');
 
     // Offline-first cache (skip cache if bypassCache is true)
     final sp = await SharedPreferences.getInstance();
-    final cacheKey = 'cache_home_' + query.hashCode.toString();
+    final cacheKey = 'cache_home_${query.hashCode}';
     String? cached;
     if (!bypassCache) {
       // Use cached data to improve reliability and reduce API dependency
       cached = sp.getString(cacheKey);
       if (cached != null && cached.isNotEmpty) {
-        print('ðŸ“¦ Using cached data for key: $cacheKey');
+        _debugLog('ðŸ“¦ Using cached data for key: $cacheKey');
         try {
           final decoded = json.decode(cached);
           List<dynamic> listSource;
@@ -3726,17 +3784,18 @@ class _HomePageState extends State<HomePage> {
               .map((e) => e.map((k, v) => MapEntry(k.toString(), v)))
               .toList()
               .cast<Map<String, dynamic>>();
-          if (mounted)
+          if (mounted) {
             setState(() {
               cars = parsed;
               isLoading = false;
               hasLoadedOnce = true;
               loadErrorMessage = null;
             });
+          }
         } catch (_) {}
       }
     } else {
-      print('ðŸš« Bypassing cache for key: $cacheKey');
+      _debugLog('ðŸš« Bypassing cache for key: $cacheKey');
     }
 
     try {
@@ -3757,8 +3816,8 @@ class _HomePageState extends State<HomePage> {
           )
           .timeout(timeout);
 
-      print('ðŸ“¡ Response status: ${response.statusCode}');
-      print('ðŸ“¡ Response body length: ${response.body.length}');
+      _debugLog('ðŸ“¡ Response status: ${response.statusCode}');
+      _debugLog('ðŸ“¡ Response body length: ${response.body.length}');
 
       if (response.statusCode == 200) {
         final decoded = json.decode(response.body);
@@ -3782,7 +3841,7 @@ class _HomePageState extends State<HomePage> {
             .toList()
             .cast<Map<String, dynamic>>();
 
-        print('ðŸ“Š Parsed ${parsed.length} cars from response');
+        _debugLog('ðŸ“Š Parsed ${parsed.length} cars from response');
 
         if (mounted) {
           setState(() {
@@ -3795,13 +3854,13 @@ class _HomePageState extends State<HomePage> {
         }
         // Save fresh cache
         unawaited(sp.setString(cacheKey, response.body));
-        print('âœ… Found ${parsed.length} cars with applied filters');
+        _debugLog('âœ… Found ${parsed.length} cars with applied filters');
         _page = 2; // next page to request
         // Reset retry count on success
         _fetchRetryCount = 0;
       } else {
-        print('âŒ Server error: ${response.statusCode}');
-        print('âŒ Response body: ${response.body}');
+        _debugLog('âŒ Server error: ${response.statusCode}');
+        _debugLog('âŒ Response body: ${response.body}');
         await _handleFetchError(
           bypassCache,
           cached,
@@ -3810,7 +3869,7 @@ class _HomePageState extends State<HomePage> {
         );
       }
     } catch (e) {
-      print('âŒ Network error: $e');
+      _debugLog('âŒ Network error: $e');
       await _handleFetchError(
         bypassCache,
         cached,
@@ -3827,7 +3886,7 @@ class _HomePageState extends State<HomePage> {
     bool isRetry = false,
   }) async {
     // Don't show error immediately - try fallback strategies first
-    print('ðŸ”„ Handling fetch error: $errorMessage, isRetry: $isRetry');
+    _debugLog('ðŸ”„ Handling fetch error: $errorMessage, isRetry: $isRetry');
 
     // First, attempt the alternative endpoint /api/cars (server returns { cars: [...], pagination: {...} })
     try {
@@ -3837,12 +3896,12 @@ class _HomePageState extends State<HomePage> {
 
     // If sorting failed and we have a sort parameter, try without sorting first
     if (selectedSortBy != null && selectedSortBy!.isNotEmpty && !isRetry) {
-      print('ðŸ”„ Sorting failed, trying without sort parameter');
+      _debugLog('ðŸ”„ Sorting failed, trying without sort parameter');
       try {
         await _fetchWithoutSort();
         return; // Success, don't show error
       } catch (e) {
-        print('âŒ Fallback without sort also failed: $e');
+        _debugLog('âŒ Fallback without sort also failed: $e');
       }
     }
 
@@ -3851,7 +3910,7 @@ class _HomePageState extends State<HomePage> {
         errorMessage == 'Network error' &&
         !isRetry) {
       _fetchRetryCount++;
-      print(
+      _debugLog(
         'ðŸ”„ Auto-retrying fetch (attempt $_fetchRetryCount/$_maxRetries)',
       );
       await Future.delayed(Duration(seconds: 1)); // Shorter delay for better UX
@@ -3860,7 +3919,7 @@ class _HomePageState extends State<HomePage> {
           await fetchCars(bypassCache: bypassCache, isRetry: true);
           return; // Success, don't show error
         } catch (e) {
-          print('âŒ Auto-retry failed: $e');
+          _debugLog('âŒ Auto-retry failed: $e');
         }
       }
     }
@@ -3903,8 +3962,9 @@ class _HomePageState extends State<HomePage> {
           listSource = decoded['cars'] as List;
           try {
             final pg = (decoded['pagination'] as Map?);
-            if (pg != null && pg['has_next'] is bool)
+            if (pg != null && pg['has_next'] is bool) {
               _hasNext = pg['has_next'] as bool;
+            }
           } catch (_) {}
         } else if (decoded is List) {
           listSource = decoded;
@@ -3971,7 +4031,7 @@ class _HomePageState extends State<HomePage> {
 
   Future<void> _fetchWithAlternativeHeaders(String sortValue) async {
     try {
-      print(
+      _debugLog(
         'ðŸ”„ Attempting fetch with alternative headers for sort: $sortValue',
       );
       Map<String, String> filters = _buildFilters();
@@ -3981,7 +4041,7 @@ class _HomePageState extends State<HomePage> {
         '${getApiBase()}/api/cars${query.isNotEmpty ? '?$query' : ''}',
       );
 
-      print('ðŸ” Alternative fetch URL: $url');
+      _debugLog('ðŸ” Alternative fetch URL: $url');
 
       final response = await http
           .get(
@@ -4021,19 +4081,19 @@ class _HomePageState extends State<HomePage> {
           });
         }
 
-        print('âœ… Alternative fetch successful: ${parsed.length} cars loaded');
+        _debugLog('âœ… Alternative fetch successful: ${parsed.length} cars loaded');
       } else {
         throw Exception('Server error: ${response.statusCode}');
       }
     } catch (e) {
-      print('âŒ Alternative fetch error: $e');
+      _debugLog('âŒ Alternative fetch error: $e');
       rethrow;
     }
   }
 
   Future<void> _fetchWithoutSort() async {
     try {
-      print('ðŸ”„ Attempting fetch without sort parameter');
+      _debugLog('ðŸ”„ Attempting fetch without sort parameter');
       Map<String, String> filters = _buildFilters(includeSort: false);
 
       String query = Uri(queryParameters: filters).query;
@@ -4041,7 +4101,7 @@ class _HomePageState extends State<HomePage> {
         '${getApiBase()}/api/cars${query.isNotEmpty ? '?$query' : ''}',
       );
 
-      print('ðŸ” Fallback URL: $url');
+      _debugLog('ðŸ” Fallback URL: $url');
 
       final response = await http.get(url).timeout(Duration(seconds: 10));
       if (response.statusCode == 200) {
@@ -4069,7 +4129,7 @@ class _HomePageState extends State<HomePage> {
           });
         }
 
-        print('âœ… Fallback fetch successful: ${parsed.length} cars loaded');
+        _debugLog('âœ… Fallback fetch successful: ${parsed.length} cars loaded');
 
         // Show a message that sorting was disabled
         if (mounted) {
@@ -4082,7 +4142,7 @@ class _HomePageState extends State<HomePage> {
           );
         }
       } else {
-        print('âŒ Fallback fetch failed: ${response.statusCode}');
+        _debugLog('âŒ Fallback fetch failed: ${response.statusCode}');
         if (mounted) {
           setState(() {
             loadErrorMessage = 'Server error: ${response.statusCode}';
@@ -4091,7 +4151,7 @@ class _HomePageState extends State<HomePage> {
         }
       }
     } catch (e) {
-      print('âŒ Fallback fetch error: $e');
+      _debugLog('âŒ Fallback fetch error: $e');
       if (mounted) {
         setState(() {
           loadErrorMessage = 'Network error';
@@ -4116,72 +4176,91 @@ class _HomePageState extends State<HomePage> {
     Map<String, String> filters = {};
 
     // Brand and Model filters
-    if (selectedBrand != null && selectedBrand!.isNotEmpty)
+    if (selectedBrand != null && selectedBrand!.isNotEmpty) {
       filters['brand'] = selectedBrand!;
-    if (selectedModel != null && selectedModel!.isNotEmpty)
+    }
+    if (selectedModel != null && selectedModel!.isNotEmpty) {
       filters['model'] = selectedModel!;
-    if (selectedTrim != null && selectedTrim!.isNotEmpty)
+    }
+    if (selectedTrim != null && selectedTrim!.isNotEmpty) {
       filters['trim'] = selectedTrim!;
+    }
 
     // Price filters - apply individually, not requiring both
-    if (selectedMinPrice != null && selectedMinPrice!.isNotEmpty)
+    if (selectedMinPrice != null && selectedMinPrice!.isNotEmpty) {
       filters['min_price'] = selectedMinPrice!;
-    if (selectedMaxPrice != null && selectedMaxPrice!.isNotEmpty)
+    }
+    if (selectedMaxPrice != null && selectedMaxPrice!.isNotEmpty) {
       filters['max_price'] = selectedMaxPrice!;
+    }
 
     // Year filters - apply individually, not requiring both
-    if (selectedMinYear != null && selectedMinYear!.isNotEmpty)
+    if (selectedMinYear != null && selectedMinYear!.isNotEmpty) {
       filters['min_year'] = selectedMinYear!;
-    if (selectedMaxYear != null && selectedMaxYear!.isNotEmpty)
+    }
+    if (selectedMaxYear != null && selectedMaxYear!.isNotEmpty) {
       filters['max_year'] = selectedMaxYear!;
+    }
 
     // Mileage filters - apply individually, not requiring both
-    if (selectedMinMileage != null && selectedMinMileage!.isNotEmpty)
+    if (selectedMinMileage != null && selectedMinMileage!.isNotEmpty) {
       filters['min_mileage'] = selectedMinMileage!;
-    if (selectedMaxMileage != null && selectedMaxMileage!.isNotEmpty)
+    }
+    if (selectedMaxMileage != null && selectedMaxMileage!.isNotEmpty) {
       filters['max_mileage'] = selectedMaxMileage!;
+    }
 
     // Vehicle condition and specifications
     if (selectedCondition != null &&
         selectedCondition!.isNotEmpty &&
-        selectedCondition != 'Any')
+        selectedCondition != 'Any') {
       filters['condition'] = selectedCondition!.toLowerCase();
+    }
     if (selectedTransmission != null &&
         selectedTransmission!.isNotEmpty &&
-        selectedTransmission != 'Any')
+        selectedTransmission != 'Any') {
       filters['transmission'] = selectedTransmission!.toLowerCase();
+    }
     if (selectedFuelType != null &&
         selectedFuelType!.isNotEmpty &&
-        selectedFuelType != 'Any')
+        selectedFuelType != 'Any') {
       filters['fuel_type'] = selectedFuelType!.toLowerCase();
+    }
     if (selectedBodyType != null &&
         selectedBodyType!.isNotEmpty &&
-        selectedBodyType != 'Any')
+        selectedBodyType != 'Any') {
       filters['body_type'] = selectedBodyType!.toLowerCase();
+    }
     if (selectedColor != null &&
         selectedColor!.isNotEmpty &&
-        selectedColor != 'Any')
+        selectedColor != 'Any') {
       filters['color'] = selectedColor!.toLowerCase();
+    }
     if (selectedDriveType != null &&
         selectedDriveType!.isNotEmpty &&
-        selectedDriveType != 'Any')
+        selectedDriveType != 'Any') {
       filters['drive_type'] = selectedDriveType!.toLowerCase();
+    }
     if (selectedCylinderCount != null &&
         selectedCylinderCount!.isNotEmpty &&
-        selectedCylinderCount != 'Any')
+        selectedCylinderCount != 'Any') {
       filters['cylinder_count'] = selectedCylinderCount!;
+    }
     if (selectedSeating != null &&
         selectedSeating!.isNotEmpty &&
-        selectedSeating != 'Any')
+        selectedSeating != 'Any') {
       filters['seating'] = selectedSeating!;
+    }
     if (selectedEngineSize != null &&
         selectedEngineSize!.isNotEmpty &&
-        selectedEngineSize != 'Any')
+        selectedEngineSize != 'Any') {
       filters['engine_size'] = selectedEngineSize!;
+    }
 
     // Location and other filters
-    if (selectedCity != null && selectedCity!.isNotEmpty)
+    if (selectedCity != null && selectedCity!.isNotEmpty) {
       filters['city'] = selectedCity!;
+    }
 
     // Only include sort if requested and valid
     if (includeSort) {
@@ -4205,7 +4284,7 @@ class _HomePageState extends State<HomePage> {
   }
 
   void onSortChanged() async {
-    print('ðŸ”„ Sort changed to: $selectedSortBy');
+    _debugLog('ðŸ”„ Sort changed to: $selectedSortBy');
     // Analytics tracking for sort changed
 
     // Cancel any pending sort operation
@@ -4230,11 +4309,11 @@ class _HomePageState extends State<HomePage> {
       final sp = await SharedPreferences.getInstance();
       final currentFilters = _buildFilters();
       final query = Uri(queryParameters: currentFilters).query;
-      final cacheKey = 'cache_home_' + query.hashCode.toString();
+      final cacheKey = 'cache_home_${query.hashCode}';
       await sp.remove(cacheKey);
-      print('ðŸ—‘ï¸ Cleared cache for current filters: $cacheKey');
+      _debugLog('ðŸ—‘ï¸ Cleared cache for current filters: $cacheKey');
     } catch (e) {
-      print('âŒ Error clearing cache: $e');
+      _debugLog('âŒ Error clearing cache: $e');
     }
 
     // Try the sort operation immediately
@@ -4244,12 +4323,12 @@ class _HomePageState extends State<HomePage> {
   Future<void> _performSortWithFallback() async {
     // Validate sort parameter before attempting
     final apiSortValue = _convertSortToApiValue(context, selectedSortBy);
-    print(
-      'ðŸ”„ Sort parameter validation: ${selectedSortBy} -> ${apiSortValue}',
+    _debugLog(
+      'ðŸ”„ Sort parameter validation: $selectedSortBy -> $apiSortValue',
     );
 
     if (apiSortValue == null || apiSortValue.isEmpty) {
-      print('âš ï¸ Invalid sort parameter, skipping sort');
+      _debugLog('âš ï¸ Invalid sort parameter, skipping sort');
       await fetchCars(bypassCache: true);
       return;
     }
@@ -4265,12 +4344,12 @@ class _HomePageState extends State<HomePage> {
 
     for (int i = 0; i < strategies.length; i++) {
       try {
-        print('ðŸ”„ Trying strategy ${i + 1}/${strategies.length}');
+        _debugLog('ðŸ”„ Trying strategy ${i + 1}/${strategies.length}');
         await strategies[i]();
-        print('âœ… Strategy ${i + 1} successful');
+        _debugLog('âœ… Strategy ${i + 1} successful');
         return;
       } catch (e) {
-        print('âŒ Strategy ${i + 1} failed: $e');
+        _debugLog('âŒ Strategy ${i + 1} failed: $e');
         if (i < strategies.length - 1) {
           await Future.delayed(Duration(milliseconds: 200));
         }
@@ -4287,14 +4366,14 @@ class _HomePageState extends State<HomePage> {
   }
 
   Future<void> _tryDirectSort(String apiSortValue) async {
-    print('ðŸ”„ Direct sort attempt with: $apiSortValue');
+    _debugLog('ðŸ”„ Direct sort attempt with: $apiSortValue');
 
     // Try up to 5 times with increasing delays and different approaches
     for (int attempt = 1; attempt <= 5; attempt++) {
       try {
         // Use different timeout and connection settings based on attempt
         final timeout = Duration(seconds: 10 + (attempt * 5));
-        print('ðŸ”„ Attempt $attempt with ${timeout.inSeconds}s timeout');
+        _debugLog('ðŸ”„ Attempt $attempt with ${timeout.inSeconds}s timeout');
 
         Map<String, String> filters = _buildFilters();
         String query = Uri(queryParameters: filters).query;
@@ -4335,17 +4414,17 @@ class _HomePageState extends State<HomePage> {
 
           // Save to cache
           final sp = await SharedPreferences.getInstance();
-          final cacheKey = 'cache_home_' + query.hashCode.toString();
+          final cacheKey = 'cache_home_${query.hashCode}';
           unawaited(sp.setString(cacheKey, response.body));
 
           unawaited(_autoSaveSearch());
-          print('âœ… Direct sort successful on attempt $attempt');
+          _debugLog('âœ… Direct sort successful on attempt $attempt');
           return;
         } else {
           throw Exception('Server error: ${response.statusCode}');
         }
       } catch (e) {
-        print('âŒ Direct sort attempt $attempt failed: $e');
+        _debugLog('âŒ Direct sort attempt $attempt failed: $e');
         if (attempt < 5) {
           await Future.delayed(Duration(milliseconds: 200 * attempt));
         } else {
@@ -4356,7 +4435,7 @@ class _HomePageState extends State<HomePage> {
   }
 
   Future<void> _tryAlternativeSort(String apiSortValue) async {
-    print('ðŸ”„ Alternative sort attempt with: $apiSortValue');
+    _debugLog('ðŸ”„ Alternative sort attempt with: $apiSortValue');
 
     // Try with different connection approaches
     for (int attempt = 1; attempt <= 3; attempt++) {
@@ -4401,13 +4480,13 @@ class _HomePageState extends State<HomePage> {
           }
 
           unawaited(_autoSaveSearch());
-          print('âœ… Alternative sort successful on attempt $attempt');
+          _debugLog('âœ… Alternative sort successful on attempt $attempt');
           return;
         } else {
           throw Exception('Server error: ${response.statusCode}');
         }
       } catch (e) {
-        print('âŒ Alternative sort attempt $attempt failed: $e');
+        _debugLog('âŒ Alternative sort attempt $attempt failed: $e');
         if (attempt < 3) {
           await Future.delayed(Duration(milliseconds: 300));
         } else {
@@ -4418,7 +4497,7 @@ class _HomePageState extends State<HomePage> {
   }
 
   Future<void> _trySimpleSort(String apiSortValue) async {
-    print('ðŸ”„ Simple sort attempt with: $apiSortValue');
+    _debugLog('ðŸ”„ Simple sort attempt with: $apiSortValue');
     // Try with minimal headers and shorter timeout
     Map<String, String> filters = _buildFilters();
     String query = Uri(queryParameters: filters).query;
@@ -4455,7 +4534,7 @@ class _HomePageState extends State<HomePage> {
   }
 
   Future<void> _tryConnectionReset(String apiSortValue) async {
-    print('ðŸ”„ Connection reset attempt with: $apiSortValue');
+    _debugLog('ðŸ”„ Connection reset attempt with: $apiSortValue');
 
     // Wait a bit longer and try with a completely fresh approach
     await Future.delayed(Duration(milliseconds: 1000));
@@ -4492,24 +4571,24 @@ class _HomePageState extends State<HomePage> {
         }
 
         unawaited(_autoSaveSearch());
-        print('âœ… Connection reset successful');
+        _debugLog('âœ… Connection reset successful');
       } else {
         throw Exception('Server error: ${response.statusCode}');
       }
     } catch (e) {
-      print('âŒ Connection reset failed: $e');
+      _debugLog('âŒ Connection reset failed: $e');
       rethrow;
     }
   }
 
   Future<void> _tryWithoutSort() async {
-    print('ðŸ”„ Fallback: trying without sort');
+    _debugLog('ðŸ”„ Fallback: trying without sort');
     try {
       await _fetchWithoutSort();
       // If we get here, try client-side sorting as a last resort
       await _tryClientSideSort();
     } catch (e) {
-      print('âŒ Fallback also failed: $e');
+      _debugLog('âŒ Fallback also failed: $e');
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
@@ -4523,7 +4602,7 @@ class _HomePageState extends State<HomePage> {
   }
 
   Future<void> _tryClientSideSort() async {
-    print('ðŸ”„ Attempting client-side sort');
+    _debugLog('ðŸ”„ Attempting client-side sort');
     final apiSortValue = _convertSortToApiValue(context, selectedSortBy);
     if (apiSortValue == null || selectedSortBy == null) return;
 
@@ -4594,7 +4673,7 @@ class _HomePageState extends State<HomePage> {
         });
       }
 
-      print('âœ… Client-side sort successful');
+      _debugLog('âœ… Client-side sort successful');
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
@@ -4605,7 +4684,7 @@ class _HomePageState extends State<HomePage> {
         );
       }
     } catch (e) {
-      print('âŒ Client-side sort failed: $e');
+      _debugLog('âŒ Client-side sort failed: $e');
       rethrow;
     }
   }
@@ -4992,17 +5071,13 @@ class _HomePageState extends State<HomePage> {
       String priceText = '';
       if (selectedMinPrice != null && selectedMaxPrice != null) {
         priceText =
-            _formatCurrencyGlobal(context, selectedMinPrice!) +
-            ' - ' +
-            _formatCurrencyGlobal(context, selectedMaxPrice!);
+            '${_formatCurrencyGlobal(context, selectedMinPrice!)} - ${_formatCurrencyGlobal(context, selectedMaxPrice!)}';
       } else if (selectedMinPrice != null) {
         priceText =
-            '${AppLocalizations.of(context)!.minPrice}: ' +
-            _formatCurrencyGlobal(context, selectedMinPrice!);
+            '${AppLocalizations.of(context)!.minPrice}: ${_formatCurrencyGlobal(context, selectedMinPrice!)}';
       } else if (selectedMaxPrice != null) {
         priceText =
-            '${AppLocalizations.of(context)!.maxPrice}: ' +
-            _formatCurrencyGlobal(context, selectedMaxPrice!);
+            '${AppLocalizations.of(context)!.maxPrice}: ${_formatCurrencyGlobal(context, selectedMaxPrice!)}';
       }
       chips.add(
         _buildFilterChip(
@@ -5522,10 +5597,7 @@ class _HomePageState extends State<HomePage> {
                                                                     'o',
                                                                   );
                                                           final logoUrl =
-                                                              getApiBase() +
-                                                              '/static/images/brands/' +
-                                                              logoFile +
-                                                              '.png';
+                                                              '${getApiBase()}/static/images/brands/$logoFile.png';
                                                           return InkWell(
                                                             borderRadius:
                                                                 BorderRadius.circular(
@@ -5693,16 +5765,13 @@ class _HomePageState extends State<HomePage> {
                                                 padding: EdgeInsets.all(2),
                                                 child: CachedNetworkImage(
                                                   imageUrl:
-                                                      getApiBase() +
-                                                      '/static/images/brands/' +
-                                                      (brandLogoFilenames[selectedBrand] ??
+                                                      '${getApiBase()}/static/images/brands/${brandLogoFilenames[selectedBrand] ??
                                                           selectedBrand!
                                                               .toLowerCase()
                                                               .replaceAll(
                                                                 ' ',
                                                                 '-',
-                                                              )) +
-                                                      '.png',
+                                                              )}.png',
                                                   placeholder: (context, url) =>
                                                       SizedBox(
                                                         width: 16,
@@ -5765,7 +5834,7 @@ class _HomePageState extends State<HomePage> {
                                         color: Colors.white,
                                         fontWeight: FontWeight.bold,
                                       ),
-                                      value:
+                                      initialValue:
                                           selectedModel != null &&
                                               (selectedModel!.isEmpty ||
                                                   (selectedBrand != null &&
@@ -5829,7 +5898,7 @@ class _HomePageState extends State<HomePage> {
                                                   ),
                                                 ),
                                               )
-                                              .toList(),
+                                              ,
                                       ],
                                       onChanged: (value) {
                                         setState(() {
@@ -5853,7 +5922,7 @@ class _HomePageState extends State<HomePage> {
                                         color: Colors.white,
                                         fontWeight: FontWeight.bold,
                                       ),
-                                      value:
+                                      initialValue:
                                           selectedTrim != null &&
                                               (selectedTrim!.isEmpty ||
                                                   (selectedBrand != null &&
@@ -5920,7 +5989,7 @@ class _HomePageState extends State<HomePage> {
                                                   ),
                                                 ),
                                               )
-                                              .toList(),
+                                              ,
                                       ],
                                       onChanged: (value) {
                                         setState(() {
@@ -6118,6 +6187,20 @@ class _HomePageState extends State<HomePage> {
                                     ),
                                   ),
                                   onPressed: () async {
+                                    // Sync manual-entry controllers to current selections
+                                    // (do this once when opening the dialog, not during typing).
+                                    _minPriceController.text =
+                                        selectedMinPrice ?? '';
+                                    _maxPriceController.text =
+                                        selectedMaxPrice ?? '';
+                                    _minYearController.text =
+                                        selectedMinYear ?? '';
+                                    _maxYearController.text =
+                                        selectedMaxYear ?? '';
+                                    _minMileageController.text =
+                                        selectedMinMileage ?? '';
+                                    _maxMileageController.text =
+                                        selectedMaxMileage ?? '';
                                     await showDialog(
                                       context: context,
                                       builder: (context) {
@@ -6170,7 +6253,7 @@ class _HomePageState extends State<HomePage> {
                                                                               DropdownButtonFormField<
                                                                                 String
                                                                               >(
-                                                                                value:
+                                                                                initialValue:
                                                                                     selectedMinPrice ??
                                                                                     '',
                                                                                 decoration: InputDecoration(
@@ -6224,8 +6307,9 @@ class _HomePageState extends State<HomePage> {
                                                                                         ) {
                                                                                           if (selectedMaxPrice ==
                                                                                                   null ||
-                                                                                              selectedMaxPrice!.isEmpty)
+                                                                                              selectedMaxPrice!.isEmpty) {
                                                                                             return true;
+                                                                                          }
                                                                                           final max = int.tryParse(
                                                                                             selectedMaxPrice!,
                                                                                           );
@@ -6249,7 +6333,7 @@ class _HomePageState extends State<HomePage> {
                                                                                           ),
                                                                                         ),
                                                                                       )
-                                                                                      .toList(),
+                                                                                      ,
                                                                                 ],
                                                                                 onChanged:
                                                                                     (
@@ -6295,7 +6379,7 @@ class _HomePageState extends State<HomePage> {
                                                                               DropdownButtonFormField<
                                                                                 String
                                                                               >(
-                                                                                value:
+                                                                                initialValue:
                                                                                     selectedMaxPrice ??
                                                                                     '',
                                                                                 decoration: InputDecoration(
@@ -6349,8 +6433,9 @@ class _HomePageState extends State<HomePage> {
                                                                                         ) {
                                                                                           if (selectedMinPrice ==
                                                                                                   null ||
-                                                                                              selectedMinPrice!.isEmpty)
+                                                                                              selectedMinPrice!.isEmpty) {
                                                                                             return true;
+                                                                                          }
                                                                                           final min = int.tryParse(
                                                                                             selectedMinPrice!,
                                                                                           );
@@ -6374,7 +6459,7 @@ class _HomePageState extends State<HomePage> {
                                                                                           ),
                                                                                         ),
                                                                                       )
-                                                                                      .toList(),
+                                                                                      ,
                                                                                 ],
                                                                                 onChanged:
                                                                                     (
@@ -6421,11 +6506,8 @@ class _HomePageState extends State<HomePage> {
                                                                       children: [
                                                                         Expanded(
                                                                           child: TextFormField(
-                                                                            controller: TextEditingController(
-                                                                              text:
-                                                                                  selectedMinPrice ??
-                                                                                  '',
-                                                                            ),
+                                                                            controller:
+                                                                                _minPriceController,
                                                                             decoration: InputDecoration(
                                                                               hintText: AppLocalizations.of(
                                                                                 context,
@@ -6469,6 +6551,10 @@ class _HomePageState extends State<HomePage> {
                                                                                           min >
                                                                                               max) {
                                                                                         selectedMaxPrice = selectedMinPrice;
+                                                                                        _maxPriceController
+                                                                                                .text =
+                                                                                            selectedMaxPrice ??
+                                                                                                '';
                                                                                       }
                                                                                     },
                                                                                   );
@@ -6484,11 +6570,8 @@ class _HomePageState extends State<HomePage> {
                                                                         ),
                                                                         Expanded(
                                                                           child: TextFormField(
-                                                                            controller: TextEditingController(
-                                                                              text:
-                                                                                  selectedMaxPrice ??
-                                                                                  '',
-                                                                            ),
+                                                                            controller:
+                                                                                _maxPriceController,
                                                                             decoration: InputDecoration(
                                                                               hintText: AppLocalizations.of(
                                                                                 context,
@@ -6532,6 +6615,10 @@ class _HomePageState extends State<HomePage> {
                                                                                           max <
                                                                                               min) {
                                                                                         selectedMinPrice = selectedMaxPrice;
+                                                                                        _minPriceController
+                                                                                                .text =
+                                                                                            selectedMinPrice ??
+                                                                                                '';
                                                                                       }
                                                                                     },
                                                                                   );
@@ -6550,8 +6637,16 @@ class _HomePageState extends State<HomePage> {
                                                         IconButton(
                                                           onPressed: () =>
                                                               setStateDialog(
-                                                                () => isPriceDropdown =
-                                                                    !isPriceDropdown,
+                                                                () {
+                                                                  if (isPriceDropdown) {
+                                                                    _minPriceController.text =
+                                                                        selectedMinPrice ?? '';
+                                                                    _maxPriceController.text =
+                                                                        selectedMaxPrice ?? '';
+                                                                  }
+                                                                  isPriceDropdown =
+                                                                      !isPriceDropdown;
+                                                                },
                                                               ),
                                                           icon: Icon(
                                                             isPriceDropdown
@@ -6604,7 +6699,7 @@ class _HomePageState extends State<HomePage> {
                                                                               DropdownButtonFormField<
                                                                                 String
                                                                               >(
-                                                                                value:
+                                                                                initialValue:
                                                                                     selectedMinYear ??
                                                                                     '',
                                                                                 decoration: InputDecoration(
@@ -6651,8 +6746,9 @@ class _HomePageState extends State<HomePage> {
                                                                                         ) {
                                                                                           if (selectedMaxYear ==
                                                                                                   null ||
-                                                                                              selectedMaxYear!.isEmpty)
+                                                                                              selectedMaxYear!.isEmpty) {
                                                                                             return true;
+                                                                                          }
                                                                                           final max = int.tryParse(
                                                                                             selectedMaxYear!,
                                                                                           );
@@ -6684,7 +6780,7 @@ class _HomePageState extends State<HomePage> {
                                                                                           ),
                                                                                         ),
                                                                                       )
-                                                                                      .toList(),
+                                                                                      ,
                                                                                 ],
                                                                                 onChanged:
                                                                                     (
@@ -6730,7 +6826,7 @@ class _HomePageState extends State<HomePage> {
                                                                               DropdownButtonFormField<
                                                                                 String
                                                                               >(
-                                                                                value:
+                                                                                initialValue:
                                                                                     selectedMaxYear ??
                                                                                     '',
                                                                                 decoration: InputDecoration(
@@ -6777,8 +6873,9 @@ class _HomePageState extends State<HomePage> {
                                                                                         ) {
                                                                                           if (selectedMinYear ==
                                                                                                   null ||
-                                                                                              selectedMinYear!.isEmpty)
+                                                                                              selectedMinYear!.isEmpty) {
                                                                                             return true;
+                                                                                          }
                                                                                           final min = int.tryParse(
                                                                                             selectedMinYear!,
                                                                                           );
@@ -6810,7 +6907,7 @@ class _HomePageState extends State<HomePage> {
                                                                                           ),
                                                                                         ),
                                                                                       )
-                                                                                      .toList(),
+                                                                                      ,
                                                                                 ],
                                                                                 onChanged:
                                                                                     (
@@ -6857,11 +6954,8 @@ class _HomePageState extends State<HomePage> {
                                                                       children: [
                                                                         Expanded(
                                                                           child: TextFormField(
-                                                                            controller: TextEditingController(
-                                                                              text:
-                                                                                  selectedMinYear ??
-                                                                                  '',
-                                                                            ),
+                                                                            controller:
+                                                                                _minYearController,
                                                                             decoration: InputDecoration(
                                                                               hintText: AppLocalizations.of(
                                                                                 context,
@@ -6886,9 +6980,24 @@ class _HomePageState extends State<HomePage> {
                                                                                   value,
                                                                                 ) {
                                                                                   setState(
-                                                                                    () => selectedMinYear = value.isEmpty
-                                                                                        ? null
-                                                                                        : value,
+                                                                                    () {
+                                                                                      selectedMinYear = value.isEmpty
+                                                                                          ? null
+                                                                                          : value;
+                                                                                      final min = int.tryParse(
+                                                                                        selectedMinYear ?? '',
+                                                                                      );
+                                                                                      final max = int.tryParse(
+                                                                                        selectedMaxYear ?? '',
+                                                                                      );
+                                                                                      if (min != null &&
+                                                                                          max != null &&
+                                                                                          min > max) {
+                                                                                        selectedMaxYear = selectedMinYear;
+                                                                                        _maxYearController.text =
+                                                                                            selectedMaxYear ?? '';
+                                                                                      }
+                                                                                    },
                                                                                   );
                                                                                   setStateDialog(
                                                                                     () {},
@@ -6902,11 +7011,8 @@ class _HomePageState extends State<HomePage> {
                                                                         ),
                                                                         Expanded(
                                                                           child: TextFormField(
-                                                                            controller: TextEditingController(
-                                                                              text:
-                                                                                  selectedMaxYear ??
-                                                                                  '',
-                                                                            ),
+                                                                            controller:
+                                                                                _maxYearController,
                                                                             decoration: InputDecoration(
                                                                               hintText: AppLocalizations.of(
                                                                                 context,
@@ -6931,9 +7037,24 @@ class _HomePageState extends State<HomePage> {
                                                                                   value,
                                                                                 ) {
                                                                                   setState(
-                                                                                    () => selectedMaxYear = value.isEmpty
-                                                                                        ? null
-                                                                                        : value,
+                                                                                    () {
+                                                                                      selectedMaxYear = value.isEmpty
+                                                                                          ? null
+                                                                                          : value;
+                                                                                      final min = int.tryParse(
+                                                                                        selectedMinYear ?? '',
+                                                                                      );
+                                                                                      final max = int.tryParse(
+                                                                                        selectedMaxYear ?? '',
+                                                                                      );
+                                                                                      if (min != null &&
+                                                                                          max != null &&
+                                                                                          max < min) {
+                                                                                        selectedMinYear = selectedMaxYear;
+                                                                                        _minYearController.text =
+                                                                                            selectedMinYear ?? '';
+                                                                                      }
+                                                                                    },
                                                                                   );
                                                                                   setStateDialog(
                                                                                     () {},
@@ -6950,8 +7071,16 @@ class _HomePageState extends State<HomePage> {
                                                         IconButton(
                                                           onPressed: () =>
                                                               setStateDialog(
-                                                                () => isYearDropdown =
-                                                                    !isYearDropdown,
+                                                                () {
+                                                                  if (isYearDropdown) {
+                                                                    _minYearController.text =
+                                                                        selectedMinYear ?? '';
+                                                                    _maxYearController.text =
+                                                                        selectedMaxYear ?? '';
+                                                                  }
+                                                                  isYearDropdown =
+                                                                      !isYearDropdown;
+                                                                },
                                                               ),
                                                           icon: Icon(
                                                             isYearDropdown
@@ -7005,7 +7134,7 @@ class _HomePageState extends State<HomePage> {
                                                                               DropdownButtonFormField<
                                                                                 String
                                                                               >(
-                                                                                value:
+                                                                                initialValue:
                                                                                     (selectedMinMileage !=
                                                                                             null &&
                                                                                         selectedMinMileage!.isNotEmpty)
@@ -7062,8 +7191,9 @@ class _HomePageState extends State<HomePage> {
                                                                                         ) {
                                                                                           if (selectedMaxMileage ==
                                                                                                   null ||
-                                                                                              selectedMaxMileage!.isEmpty)
+                                                                                              selectedMaxMileage!.isEmpty) {
                                                                                             return true;
+                                                                                          }
                                                                                           final max = int.tryParse(
                                                                                             selectedMaxMileage!,
                                                                                           );
@@ -7094,7 +7224,7 @@ class _HomePageState extends State<HomePage> {
                                                                                           ),
                                                                                         ),
                                                                                       )
-                                                                                      .toList(),
+                                                                                      ,
                                                                                 ],
                                                                                 onChanged:
                                                                                     (
@@ -7141,7 +7271,7 @@ class _HomePageState extends State<HomePage> {
                                                                               DropdownButtonFormField<
                                                                                 String
                                                                               >(
-                                                                                value:
+                                                                                initialValue:
                                                                                     (selectedMaxMileage !=
                                                                                             null &&
                                                                                         selectedMaxMileage!.isNotEmpty)
@@ -7199,8 +7329,9 @@ class _HomePageState extends State<HomePage> {
                                                                                           if (selectedMinMileage ==
                                                                                                   null ||
                                                                                               selectedMinMileage!.isNotEmpty ==
-                                                                                                  false)
+                                                                                                  false) {
                                                                                             return true;
+                                                                                          }
                                                                                           final min = int.tryParse(
                                                                                             selectedMinMileage!,
                                                                                           );
@@ -7231,7 +7362,7 @@ class _HomePageState extends State<HomePage> {
                                                                                           ),
                                                                                         ),
                                                                                       )
-                                                                                      .toList(),
+                                                                                      ,
                                                                                 ],
                                                                                 onChanged:
                                                                                     (
@@ -7279,11 +7410,8 @@ class _HomePageState extends State<HomePage> {
                                                                       children: [
                                                                         Expanded(
                                                                           child: TextFormField(
-                                                                            controller: TextEditingController(
-                                                                              text:
-                                                                                  selectedMinMileage ??
-                                                                                  '',
-                                                                            ),
+                                                                            controller:
+                                                                                _minMileageController,
                                                                             decoration: InputDecoration(
                                                                               hintText: AppLocalizations.of(
                                                                                 context,
@@ -7308,9 +7436,25 @@ class _HomePageState extends State<HomePage> {
                                                                                   value,
                                                                                 ) {
                                                                                   setState(
-                                                                                    () => selectedMinMileage = value.isEmpty
-                                                                                        ? null
-                                                                                        : value,
+                                                                                    () {
+                                                                                      selectedMinMileage = value.isEmpty
+                                                                                          ? null
+                                                                                          : value;
+                                                                                      final min = int.tryParse(
+                                                                                        selectedMinMileage ?? '',
+                                                                                      );
+                                                                                      final max = int.tryParse(
+                                                                                        selectedMaxMileage ?? '',
+                                                                                      );
+                                                                                      if (min != null &&
+                                                                                          max != null &&
+                                                                                          min > max) {
+                                                                                        selectedMaxMileage =
+                                                                                            selectedMinMileage;
+                                                                                        _maxMileageController
+                                                                                            .text = selectedMaxMileage ?? '';
+                                                                                      }
+                                                                                    },
                                                                                   );
                                                                                   setStateDialog(
                                                                                     () {},
@@ -7324,11 +7468,8 @@ class _HomePageState extends State<HomePage> {
                                                                         ),
                                                                         Expanded(
                                                                           child: TextFormField(
-                                                                            controller: TextEditingController(
-                                                                              text:
-                                                                                  selectedMaxMileage ??
-                                                                                  '',
-                                                                            ),
+                                                                            controller:
+                                                                                _maxMileageController,
                                                                             decoration: InputDecoration(
                                                                               hintText: AppLocalizations.of(
                                                                                 context,
@@ -7353,9 +7494,25 @@ class _HomePageState extends State<HomePage> {
                                                                                   value,
                                                                                 ) {
                                                                                   setState(
-                                                                                    () => selectedMaxMileage = value.isEmpty
-                                                                                        ? null
-                                                                                        : value,
+                                                                                    () {
+                                                                                      selectedMaxMileage = value.isEmpty
+                                                                                          ? null
+                                                                                          : value;
+                                                                                      final min = int.tryParse(
+                                                                                        selectedMinMileage ?? '',
+                                                                                      );
+                                                                                      final max = int.tryParse(
+                                                                                        selectedMaxMileage ?? '',
+                                                                                      );
+                                                                                      if (min != null &&
+                                                                                          max != null &&
+                                                                                          max < min) {
+                                                                                        selectedMinMileage =
+                                                                                            selectedMaxMileage;
+                                                                                        _minMileageController
+                                                                                            .text = selectedMinMileage ?? '';
+                                                                                      }
+                                                                                    },
                                                                                   );
                                                                                   setStateDialog(
                                                                                     () {},
@@ -7372,8 +7529,16 @@ class _HomePageState extends State<HomePage> {
                                                         IconButton(
                                                           onPressed: () =>
                                                               setStateDialog(
-                                                                () => isMileageDropdown =
-                                                                    !isMileageDropdown,
+                                                                () {
+                                                                  if (isMileageDropdown) {
+                                                                    _minMileageController.text =
+                                                                        selectedMinMileage ?? '';
+                                                                    _maxMileageController.text =
+                                                                        selectedMaxMileage ?? '';
+                                                                  }
+                                                                  isMileageDropdown =
+                                                                      !isMileageDropdown;
+                                                                },
                                                               ),
                                                           icon: Icon(
                                                             isMileageDropdown
@@ -7403,7 +7568,7 @@ class _HomePageState extends State<HomePage> {
                                                     DropdownButtonFormField<
                                                       String
                                                     >(
-                                                      value:
+                                                      initialValue:
                                                           selectedTitleStatus ??
                                                           '',
                                                       decoration: InputDecoration(
@@ -7475,7 +7640,7 @@ class _HomePageState extends State<HomePage> {
                                                       DropdownButtonFormField<
                                                         String
                                                       >(
-                                                        value:
+                                                        initialValue:
                                                             selectedDamagedParts ??
                                                             '',
                                                         decoration: InputDecoration(
@@ -7540,7 +7705,7 @@ class _HomePageState extends State<HomePage> {
                                                     DropdownButtonFormField<
                                                       String
                                                     >(
-                                                      value:
+                                                      initialValue:
                                                           selectedCondition ??
                                                           'Any',
                                                       decoration: InputDecoration(
@@ -7598,7 +7763,7 @@ class _HomePageState extends State<HomePage> {
                                                     DropdownButtonFormField<
                                                       String
                                                     >(
-                                                      value:
+                                                      initialValue:
                                                           _getValidTransmissionValue(),
                                                       decoration: InputDecoration(
                                                         labelText:
@@ -7649,7 +7814,7 @@ class _HomePageState extends State<HomePage> {
                                                                 ),
                                                               ),
                                                             )
-                                                            .toList(),
+                                                            ,
                                                       ],
                                                       onChanged: (value) =>
                                                           setState(
@@ -7664,7 +7829,7 @@ class _HomePageState extends State<HomePage> {
                                                     DropdownButtonFormField<
                                                       String
                                                     >(
-                                                      value:
+                                                      initialValue:
                                                           _getValidFuelTypeValue(),
                                                       decoration: InputDecoration(
                                                         labelText:
@@ -7715,7 +7880,7 @@ class _HomePageState extends State<HomePage> {
                                                                 ),
                                                               ),
                                                             )
-                                                            .toList(),
+                                                            ,
                                                       ],
                                                       onChanged: (value) =>
                                                           setState(
@@ -7728,14 +7893,16 @@ class _HomePageState extends State<HomePage> {
                                                     ),
                                                     SizedBox(height: 10),
                                                     TextFormField(
-                                                      readOnly: true,
-                                                      controller: TextEditingController(
-                                                        text:
-                                                            (selectedBodyType ??
-                                                            AppLocalizations.of(
-                                                              context,
-                                                            )!.any),
+                                                      key: ValueKey(
+                                                        'bodyType_${selectedBodyType ?? 'any'}',
                                                       ),
+                                                      readOnly: true,
+                                                      initialValue:
+                                                          (selectedBodyType ??
+                                                              AppLocalizations.of(
+                                                                context,
+                                                              )!
+                                                                  .any),
                                                       decoration: InputDecoration(
                                                         labelText:
                                                             AppLocalizations.of(
@@ -8039,18 +8206,20 @@ class _HomePageState extends State<HomePage> {
                                                     ),
                                                     SizedBox(height: 10),
                                                     TextFormField(
-                                                      readOnly: true,
-                                                      controller: TextEditingController(
-                                                        text:
-                                                            (_translateValueGlobal(
-                                                              context,
-                                                              selectedColor,
-                                                            ) ??
-                                                            selectedColor ??
-                                                            AppLocalizations.of(
-                                                              context,
-                                                            )!.any),
+                                                      key: ValueKey(
+                                                        'color_${selectedColor ?? 'any'}',
                                                       ),
+                                                      readOnly: true,
+                                                      initialValue:
+                                                          (_translateValueGlobal(
+                                                                context,
+                                                                selectedColor,
+                                                              ) ??
+                                                              selectedColor ??
+                                                              AppLocalizations.of(
+                                                                context,
+                                                              )!
+                                                                  .any),
                                                       decoration: InputDecoration(
                                                         labelText:
                                                             AppLocalizations.of(
@@ -8321,7 +8490,7 @@ class _HomePageState extends State<HomePage> {
                                                     DropdownButtonFormField<
                                                       String
                                                     >(
-                                                      value:
+                                                      initialValue:
                                                           _getValidDriveTypeValue(),
                                                       decoration: InputDecoration(
                                                         labelText:
@@ -8372,7 +8541,7 @@ class _HomePageState extends State<HomePage> {
                                                                 ),
                                                               ),
                                                             )
-                                                            .toList(),
+                                                            ,
                                                       ],
                                                       onChanged: (value) {
                                                         setState(
@@ -8390,7 +8559,7 @@ class _HomePageState extends State<HomePage> {
                                                     DropdownButtonFormField<
                                                       String
                                                     >(
-                                                      value:
+                                                      initialValue:
                                                           selectedCylinderCount ??
                                                           '',
                                                       decoration: InputDecoration(
@@ -8441,7 +8610,7 @@ class _HomePageState extends State<HomePage> {
                                                                 ),
                                                               ),
                                                             )
-                                                            .toList(),
+                                                            ,
                                                       ],
                                                       onChanged: (value) {
                                                         setState(
@@ -8459,7 +8628,7 @@ class _HomePageState extends State<HomePage> {
                                                     DropdownButtonFormField<
                                                       String
                                                     >(
-                                                      value:
+                                                      initialValue:
                                                           selectedSeating ?? '',
                                                       decoration: InputDecoration(
                                                         labelText:
@@ -8509,7 +8678,7 @@ class _HomePageState extends State<HomePage> {
                                                                 ),
                                                               ),
                                                             )
-                                                            .toList(),
+                                                            ,
                                                       ],
                                                       onChanged: (value) {
                                                         setState(
@@ -8527,7 +8696,7 @@ class _HomePageState extends State<HomePage> {
                                                     DropdownButtonFormField<
                                                       String
                                                     >(
-                                                      value:
+                                                      initialValue:
                                                           selectedEngineSize ??
                                                           '',
                                                       decoration: InputDecoration(
@@ -8575,7 +8744,7 @@ class _HomePageState extends State<HomePage> {
                                                                 ),
                                                               ),
                                                             )
-                                                            .toList(),
+                                                            ,
                                                       ],
                                                       onChanged: (value) {
                                                         setState(
@@ -8592,7 +8761,7 @@ class _HomePageState extends State<HomePage> {
                                                     DropdownButtonFormField<
                                                       String
                                                     >(
-                                                      value: selectedCity ?? '',
+                                                      initialValue: selectedCity ?? '',
                                                       decoration: InputDecoration(
                                                         labelText:
                                                             AppLocalizations.of(
@@ -8639,7 +8808,7 @@ class _HomePageState extends State<HomePage> {
                                                                 ),
                                                               ),
                                                             )
-                                                            .toList(),
+                                                            ,
                                                       ],
                                                       onChanged: (value) {
                                                         setState(
@@ -8816,7 +8985,7 @@ class _HomePageState extends State<HomePage> {
                                         child: Text(s),
                                       ),
                                     )
-                                    .toList(),
+                                    ,
                               ],
                             ),
                             ToggleButtons(
@@ -8978,7 +9147,6 @@ class _HomePageState extends State<HomePage> {
       );
     }
 
-    final PageController controller = PageController();
     int currentIndex = 0;
 
     return StatefulBuilder(
@@ -8995,7 +9163,6 @@ class _HomePageState extends State<HomePage> {
                 );
               },
               child: PageView.builder(
-                controller: controller,
                 onPageChanged: (i) => setState(() => currentIndex = i),
                 itemCount: urls.length,
                 itemBuilder: (context, i) {
@@ -9230,7 +9397,7 @@ class _HomePageState extends State<HomePage> {
 class SavedSearchesPage extends StatefulWidget {
   final dynamic parentState;
 
-  const SavedSearchesPage({Key? key, this.parentState}) : super(key: key);
+  const SavedSearchesPage({super.key, this.parentState});
 
   @override
   State<SavedSearchesPage> createState() => _SavedSearchesPageState();
@@ -9324,7 +9491,7 @@ class _SavedSearchesPageState extends State<SavedSearchesPage> {
         'notify': _items[index]['notify'] == true,
         'filters': _items[index]['filters'] ?? {},
       };
-      final url = Uri.parse(getApiBase() + '/api/saved_search/notify');
+      final url = Uri.parse('${getApiBase()}/api/saved_search/notify');
       await http.post(
         url,
         headers: {'Content-Type': 'application/json'},
@@ -10023,7 +10190,7 @@ String _getBodyTypeAsset(String bodyType) {
 // Placeholder classes for other pages
 class CarDetailsPage extends StatefulWidget {
   final String carId;
-  CarDetailsPage({required this.carId});
+  const CarDetailsPage({super.key, required this.carId});
   @override
   _CarDetailsPageState createState() => _CarDetailsPageState();
 }
@@ -10088,10 +10255,11 @@ class _CarDetailsPageState extends State<CarDetailsPage> {
       final res = await ApiService.toggleFavorite(targetId);
       final bool favorited =
           (res['is_favorited'] == true) || (res['favorited'] == true);
-      if (mounted)
+      if (mounted) {
         setState(() {
           isFavorite = favorited;
         });
+      }
       if (favorited) {
         unawaited(AnalyticsService.trackFavorite(targetId));
       }
@@ -10211,7 +10379,7 @@ class _CarDetailsPageState extends State<CarDetailsPage> {
         } catch (_) {}
       }
       final url = Uri.parse(
-        getApiBase() + '/api/cars/' + widget.carId.toString(),
+        '${getApiBase()}/api/cars/${widget.carId}',
       );
       final resp = await http.get(url);
       if (resp.statusCode == 200) {
@@ -10230,7 +10398,7 @@ class _CarDetailsPageState extends State<CarDetailsPage> {
           final Map<String, dynamic> map = Map<String, dynamic>.from(data);
           final dynamic inner = map['car'];
           final Map<String, dynamic> normalized = inner is Map
-              ? Map<String, dynamic>.from(inner as Map)
+              ? Map<String, dynamic>.from(inner)
               : map;
           setState(() {
             car = normalized;
@@ -10247,10 +10415,11 @@ class _CarDetailsPageState extends State<CarDetailsPage> {
           });
         }
       } else {
-        if (cached == null)
+        if (cached == null) {
           setState(() {
             loading = false;
           });
+        }
       }
     } catch (_) {
       setState(() {
@@ -10264,7 +10433,7 @@ class _CarDetailsPageState extends State<CarDetailsPage> {
       await AnalyticsService.trackView(widget.carId.toString());
     } catch (e) {
       // Silently fail - don't interrupt user experience
-      print('Failed to track view: $e');
+      _debugLog('Failed to track view: $e');
     }
   }
 
@@ -10280,14 +10449,14 @@ class _CarDetailsPageState extends State<CarDetailsPage> {
       final String year = car!['year']?.toString() ?? '';
       final String price = car!['price']?.toString() ?? '';
 
-      final String shareText = '$title - $brand $model ($year) - \$${price}';
+      final String shareText = '$title - $brand $model ($year) - \$$price';
 
       await Share.share(shareText);
 
       // Track share for analytics
       await AnalyticsService.trackShare(widget.carId.toString());
     } catch (e) {
-      print('Failed to share car: $e');
+      _debugLog('Failed to share car: $e');
     }
   }
 
@@ -10309,18 +10478,20 @@ class _CarDetailsPageState extends State<CarDetailsPage> {
         final simCached = sp.getString(simKey);
         if (simCached != null && simCached.isNotEmpty) {
           final simData = json.decode(simCached);
-          if (simData is List)
+          if (simData is List) {
             setState(() {
               similarCars = simData.cast<Map<String, dynamic>>();
             });
+          }
         }
         final relCached = sp.getString(relKey);
         if (relCached != null && relCached.isNotEmpty) {
           final relData = json.decode(relCached);
-          if (relData is List)
+          if (relData is List) {
             setState(() {
               relatedCars = relData.cast<Map<String, dynamic>>();
             });
+          }
         }
       } catch (_) {}
       // Similar: strictly same brand + model
@@ -11503,6 +11674,8 @@ class _SpecItem {
 
 // Multi-step sell page
 class SellCarPage extends StatefulWidget {
+  const SellCarPage({super.key});
+
   @override
   _SellCarPageState createState() => _SellCarPageState();
 }
@@ -11613,8 +11786,9 @@ class _SellCarPageState extends State<SellCarPage> {
               },
               itemCount: steps.length,
               itemBuilder: (context, index) {
-                if (index == 4)
+                if (index == 4) {
                   return SellStep5Page(key: ValueKey(_step5ImagesKey));
+                }
                 return steps[index];
               },
             ),
@@ -11738,6 +11912,8 @@ class _SellCarPageState extends State<SellCarPage> {
 
 // Step 1: Basic Information (Brand, Model, Trim, Year)
 class SellStep1Page extends StatefulWidget {
+  const SellStep1Page({super.key});
+
   @override
   _SellStep1PageState createState() => _SellStep1PageState();
 }
@@ -11755,7 +11931,7 @@ class _SellStep1PageState extends State<SellStep1Page> {
   bool isYearManualInput = false;
 
   // Focus node for keyboard management
-  FocusNode _yearFocusNode = FocusNode();
+  final FocusNode _yearFocusNode = FocusNode();
 
   // Controller for year input
   late TextEditingController _yearController;
@@ -11901,28 +12077,24 @@ class _SellStep1PageState extends State<SellStep1Page> {
                               isNumeric) {
                             final nf = _decimalFormatterGlobal(context);
                             displayText =
-                                _localizeDigitsGlobal(
+                                '${_localizeDigitsGlobal(
                                   context,
                                   nf.format(num.tryParse(value) ?? 0),
-                                ) +
-                                ' ' +
-                                AppLocalizations.of(context)!.unit_km;
+                                )} ${AppLocalizations.of(context)!.unit_km}';
                           } else if (lowerTitle.contains('year') && isNumeric) {
                             displayText = _localizeDigitsGlobal(context, value);
                           } else if (lowerTitle.contains('seating') &&
                               isNumeric) {
                             displayText =
-                                _localizeDigitsGlobal(context, value) +
-                                ' seats';
+                                '${_localizeDigitsGlobal(context, value)} seats';
                           } else if (lowerTitle.contains('cylinder') &&
                               isNumeric) {
                             displayText =
-                                _localizeDigitsGlobal(context, value) +
-                                ' cylinders';
+                                '${_localizeDigitsGlobal(context, value)} cylinders';
                           } else if (lowerTitle.contains('engine') &&
                               isNumeric) {
                             displayText =
-                                _localizeDigitsGlobal(context, value) + ' L';
+                                '${_localizeDigitsGlobal(context, value)} L';
                           } else {
                             final translated = _translateValueGlobal(
                               context,
@@ -12033,10 +12205,7 @@ class _SellStep1PageState extends State<SellStep1Page> {
                       final brand = brands[index];
                       final logoFile = _brandSlug(brand);
                       final logoUrl =
-                          getApiBase() +
-                          '/static/images/brands/' +
-                          logoFile +
-                          '.png';
+                          '${getApiBase()}/static/images/brands/$logoFile.png';
                       return InkWell(
                         borderRadius: BorderRadius.circular(12),
                         onTap: () => Navigator.pop(context, brand),
@@ -12069,8 +12238,7 @@ class _SellStep1PageState extends State<SellStep1Page> {
                                   ),
                                   errorWidget: (context, url, error) =>
                                       Image.network(
-                                        getApiBase() +
-                                            '/static/images/brands/default.png',
+                                        '${getApiBase()}/static/images/brands/default.png',
                                         fit: BoxFit.contain,
                                       ),
                                   fit: BoxFit.contain,
@@ -12437,15 +12605,11 @@ class _SellStep1PageState extends State<SellStep1Page> {
                             padding: const EdgeInsets.all(6),
                             child: CachedNetworkImage(
                               imageUrl:
-                                  getApiBase() +
-                                  '/static/images/brands/' +
-                                  _brandSlug(selectedBrand!) +
-                                  '.png',
+                                  '${getApiBase()}/static/images/brands/${_brandSlug(selectedBrand!)}.png',
                               fit: BoxFit.contain,
                               errorWidget: (context, url, error) =>
                                   Image.network(
-                                    getApiBase() +
-                                        '/static/images/brands/default.png',
+                                    '${getApiBase()}/static/images/brands/default.png',
                                     fit: BoxFit.contain,
                                   ),
                             ),
@@ -12496,10 +12660,11 @@ class _SellStep1PageState extends State<SellStep1Page> {
                 onTap: () async {
                   _dismissKeyboard();
                   final choice = await _pickFromList('Trim', availableTrims);
-                  if (choice != null)
+                  if (choice != null) {
                     setState(() {
                       selectedTrim = choice;
                     });
+                  }
                 },
                 child: buildFancySelector(
                   context,
@@ -12545,12 +12710,14 @@ class _SellStep1PageState extends State<SellStep1Page> {
                             });
                           },
                           validator: (value) {
-                            if (value == null || value.isEmpty)
+                            if (value == null || value.isEmpty) {
                               return 'Please enter year';
+                            }
                             final year = int.tryParse(value);
                             if (year == null) return 'Invalid year';
-                            if (year < 1900 || year > DateTime.now().year + 1)
+                            if (year < 1900 || year > DateTime.now().year + 1) {
                               return 'Year out of range';
+                            }
                             return null;
                           },
                         )
@@ -12564,10 +12731,11 @@ class _SellStep1PageState extends State<SellStep1Page> {
                                 'Year',
                                 availableYears,
                               );
-                              if (choice != null)
+                              if (choice != null) {
                                 setState(() {
                                   selectedYear = choice;
                                 });
+                              }
                             },
                             child: buildFancySelector(
                               context,
@@ -12635,14 +12803,18 @@ class _SellStep1PageState extends State<SellStep1Page> {
                 onPressed: () {
                   // Manual validation for required selectors (since we use custom tiles)
                   final List<String> missing = [];
-                  if (selectedBrand == null || (selectedBrand ?? '').isEmpty)
+                  if (selectedBrand == null || (selectedBrand ?? '').isEmpty) {
                     missing.add(AppLocalizations.of(context)!.brandLabel);
-                  if (selectedModel == null || (selectedModel ?? '').isEmpty)
+                  }
+                  if (selectedModel == null || (selectedModel ?? '').isEmpty) {
                     missing.add(AppLocalizations.of(context)!.modelLabel);
-                  if (selectedTrim == null || (selectedTrim ?? '').isEmpty)
+                  }
+                  if (selectedTrim == null || (selectedTrim ?? '').isEmpty) {
                     missing.add(AppLocalizations.of(context)!.trimLabel);
-                  if (selectedYear == null || (selectedYear ?? '').isEmpty)
+                  }
+                  if (selectedYear == null || (selectedYear ?? '').isEmpty) {
                     missing.add(AppLocalizations.of(context)!.yearLabel);
+                  }
 
                   if (missing.isNotEmpty) {
                     setState(() {
@@ -12660,9 +12832,7 @@ class _SellStep1PageState extends State<SellStep1Page> {
                     ScaffoldMessenger.of(context).showSnackBar(
                       SnackBar(
                         content: Text(
-                          _pleaseFillRequiredGlobal(context) +
-                              ': ' +
-                              missing.join(', '),
+                          '${_pleaseFillRequiredGlobal(context)}: ${missing.join(', ')}',
                         ),
                         backgroundColor: Colors.red,
                       ),
@@ -12707,6 +12877,8 @@ class _SellStep1PageState extends State<SellStep1Page> {
 
 // Step 2: Car Details (Mileage, Condition, Transmission, etc.)
 class SellStep2Page extends StatefulWidget {
+  const SellStep2Page({super.key});
+
   @override
   _SellStep2PageState createState() => _SellStep2PageState();
 }
@@ -12738,7 +12910,7 @@ class _SellStep2PageState extends State<SellStep2Page> {
   bool isMileageManualInput = false;
 
   // Focus node for keyboard management
-  FocusNode _mileageFocusNode = FocusNode();
+  final FocusNode _mileageFocusNode = FocusNode();
 
   // Controller for mileage input
   late TextEditingController _mileageController;
@@ -12973,28 +13145,24 @@ class _SellStep2PageState extends State<SellStep2Page> {
                             ).toLanguageTag();
                             final nf = _decimalFormatterGlobal(context);
                             displayText =
-                                _localizeDigitsGlobal(
+                                '${_localizeDigitsGlobal(
                                   context,
                                   nf.format(num.tryParse(value) ?? 0),
-                                ) +
-                                ' ' +
-                                AppLocalizations.of(context)!.unit_km;
+                                )} ${AppLocalizations.of(context)!.unit_km}';
                           } else if (lowerTitle.contains('year') && isNumeric) {
                             displayText = _localizeDigitsGlobal(context, value);
                           } else if (lowerTitle.contains('seating') &&
                               isNumeric) {
                             displayText =
-                                _localizeDigitsGlobal(context, value) +
-                                ' seats';
+                                '${_localizeDigitsGlobal(context, value)} seats';
                           } else if (lowerTitle.contains('cylinder') &&
                               isNumeric) {
                             displayText =
-                                _localizeDigitsGlobal(context, value) +
-                                ' cylinders';
+                                '${_localizeDigitsGlobal(context, value)} cylinders';
                           } else if (lowerTitle.contains('engine') &&
                               isNumeric) {
                             displayText =
-                                _localizeDigitsGlobal(context, value) + ' L';
+                                '${_localizeDigitsGlobal(context, value)} L';
                           } else {
                             final translated = _translateValueGlobal(
                               context,
@@ -13131,12 +13299,14 @@ class _SellStep2PageState extends State<SellStep2Page> {
                             });
                           },
                           validator: (value) {
-                            if (value == null || value.isEmpty)
+                            if (value == null || value.isEmpty) {
                               return 'Please enter mileage';
+                            }
                             final mileage = int.tryParse(value);
                             if (mileage == null) return 'Invalid mileage';
-                            if (mileage < 0)
+                            if (mileage < 0) {
                               return 'Mileage cannot be negative';
+                            }
                             return null;
                           },
                         )
@@ -13162,24 +13332,23 @@ class _SellStep2PageState extends State<SellStep2Page> {
                                 'Mileage (km)',
                                 miles,
                               );
-                              if (choice != null)
+                              if (choice != null) {
                                 setState(() => selectedMileage = choice);
+                              }
                             },
                             child: buildFancySelector(
                               context,
                               icon: Icons.speed,
                               label: 'Mileage (km) *',
                               value: selectedMileage != null
-                                  ? (_localizeDigitsGlobal(
+                                  ? ('${_localizeDigitsGlobal(
                                           context,
                                           _decimalFormatterGlobal(
                                             context,
                                           ).format(
                                             int.tryParse(selectedMileage!) ?? 0,
                                           ),
-                                        ) +
-                                        ' ' +
-                                        AppLocalizations.of(context)!.unit_km)
+                                        )} ${AppLocalizations.of(context)!.unit_km}')
                                   : null,
                               isError:
                                   errMileage &&
@@ -13242,8 +13411,9 @@ class _SellStep2PageState extends State<SellStep2Page> {
                     'Condition',
                     getAvailableConditions(),
                   );
-                  if (choice != null)
+                  if (choice != null) {
                     setState(() => selectedCondition = choice);
+                  }
                 },
                 child: buildFancySelector(
                   context,
@@ -13269,8 +13439,9 @@ class _SellStep2PageState extends State<SellStep2Page> {
                     'Transmission',
                     getAvailableTransmissions(),
                   );
-                  if (choice != null)
+                  if (choice != null) {
                     setState(() => selectedTransmission = choice);
+                  }
                 },
                 child: buildFancySelector(
                   context,
@@ -13639,8 +13810,9 @@ class _SellStep2PageState extends State<SellStep2Page> {
                     'Drive Type',
                     getAvailableDriveTypes(),
                   );
-                  if (choice != null)
+                  if (choice != null) {
                     setState(() => selectedDriveType = choice);
+                  }
                 },
                 child: buildFancySelector(
                   context,
@@ -13673,8 +13845,7 @@ class _SellStep2PageState extends State<SellStep2Page> {
                   label: 'Seating *',
                   value: selectedSeating == null
                       ? null
-                      : (_localizeDigitsGlobal(context, selectedSeating!) +
-                            ' seats'),
+                      : ('${_localizeDigitsGlobal(context, selectedSeating!)} seats'),
                   isError:
                       errSeating &&
                       (selectedSeating == null || selectedSeating!.isEmpty),
@@ -13691,10 +13862,11 @@ class _SellStep2PageState extends State<SellStep2Page> {
                     'Engine Size (L)',
                     getAvailableEngineSizes().where((e) => e != 'Any').toList(),
                   );
-                  if (choice != null)
+                  if (choice != null) {
                     setState(
                       () => selectedEngineSize = choice.replaceAll(' L', ''),
                     );
+                  }
                 },
                 child: buildFancySelector(
                   context,
@@ -13702,8 +13874,7 @@ class _SellStep2PageState extends State<SellStep2Page> {
                   label: 'Engine Size (L)',
                   value: selectedEngineSize == null
                       ? null
-                      : (_localizeDigitsGlobal(context, selectedEngineSize!) +
-                            ' L'),
+                      : ('${_localizeDigitsGlobal(context, selectedEngineSize!)} L'),
                 ),
               ),
             ),
@@ -13719,13 +13890,14 @@ class _SellStep2PageState extends State<SellStep2Page> {
                         .where((c) => c != 'Any')
                         .toList(),
                   );
-                  if (choice != null)
+                  if (choice != null) {
                     setState(
                       () => selectedCylinderCount = choice.replaceAll(
                         ' cylinders',
                         '',
                       ),
                     );
+                  }
                 },
                 child: buildFancySelector(
                   context,
@@ -13733,11 +13905,10 @@ class _SellStep2PageState extends State<SellStep2Page> {
                   label: 'Cylinder Count',
                   value: selectedCylinderCount == null
                       ? null
-                      : (_localizeDigitsGlobal(
+                      : ('${_localizeDigitsGlobal(
                               context,
                               selectedCylinderCount!,
-                            ) +
-                            ' cylinders'),
+                            )} cylinders'),
                 ),
               ),
             ),
@@ -13764,7 +13935,7 @@ class _SellStep2PageState extends State<SellStep2Page> {
                 child: buildFancySelector(
                   context,
                   icon: Icons.description,
-                  label: AppLocalizations.of(context)!.titleStatus + ' *',
+                  label: '${AppLocalizations.of(context)!.titleStatus} *',
                   value: _translateValueGlobal(context, selectedTitleStatus),
                   isError:
                       errTitle &&
@@ -13785,8 +13956,9 @@ class _SellStep2PageState extends State<SellStep2Page> {
                       AppLocalizations.of(context)!.damagedParts,
                       nums,
                     );
-                    if (choice != null)
+                    if (choice != null) {
                       setState(() => selectedDamagedParts = choice);
+                    }
                   },
                   child: buildFancySelector(
                     context,
@@ -13842,52 +14014,62 @@ class _SellStep2PageState extends State<SellStep2Page> {
                       onPressed: () {
                         final List<String> missing = [];
                         if (selectedMileage == null ||
-                            (selectedMileage ?? '').isEmpty)
+                            (selectedMileage ?? '').isEmpty) {
                           missing.add(
                             AppLocalizations.of(context)!.mileageLabel,
                           );
+                        }
                         if (selectedCondition == null ||
-                            (selectedCondition ?? '').isEmpty)
+                            (selectedCondition ?? '').isEmpty) {
                           missing.add(
                             AppLocalizations.of(context)!.conditionLabel,
                           );
+                        }
                         if (selectedTransmission == null ||
-                            (selectedTransmission ?? '').isEmpty)
+                            (selectedTransmission ?? '').isEmpty) {
                           missing.add(
                             AppLocalizations.of(context)!.transmissionLabel,
                           );
+                        }
                         if (selectedFuelType == null ||
-                            (selectedFuelType ?? '').isEmpty)
+                            (selectedFuelType ?? '').isEmpty) {
                           missing.add(
                             AppLocalizations.of(context)!.fuelTypeLabel,
                           );
+                        }
                         if (selectedBodyType == null ||
-                            (selectedBodyType ?? '').isEmpty)
+                            (selectedBodyType ?? '').isEmpty) {
                           missing.add(
                             AppLocalizations.of(context)!.selectBodyType,
                           );
+                        }
                         if (selectedColor == null ||
-                            (selectedColor ?? '').isEmpty)
+                            (selectedColor ?? '').isEmpty) {
                           missing.add(
                             AppLocalizations.of(context)!.selectColor,
                           );
+                        }
                         if (selectedDriveType == null ||
-                            (selectedDriveType ?? '').isEmpty)
+                            (selectedDriveType ?? '').isEmpty) {
                           missing.add(AppLocalizations.of(context)!.driveType);
+                        }
                         if (selectedSeating == null ||
-                            (selectedSeating ?? '').isEmpty)
+                            (selectedSeating ?? '').isEmpty) {
                           missing.add(AppLocalizations.of(context)!.seating);
+                        }
                         if (selectedTitleStatus == null ||
-                            (selectedTitleStatus ?? '').isEmpty)
+                            (selectedTitleStatus ?? '').isEmpty) {
                           missing.add(
                             AppLocalizations.of(context)!.titleStatus,
                           );
+                        }
                         if ((selectedTitleStatus?.toLowerCase() == 'damaged') &&
                             (selectedDamagedParts == null ||
-                                (selectedDamagedParts ?? '').isEmpty))
+                                (selectedDamagedParts ?? '').isEmpty)) {
                           missing.add(
                             AppLocalizations.of(context)!.damagedParts,
                           );
+                        }
                         if (missing.isNotEmpty) {
                           setState(() {
                             errMileage =
@@ -13926,9 +14108,7 @@ class _SellStep2PageState extends State<SellStep2Page> {
                           ScaffoldMessenger.of(context).showSnackBar(
                             SnackBar(
                               content: Text(
-                                _pleaseFillRequiredGlobal(context) +
-                                    ': ' +
-                                    missing.join(', '),
+                                '${_pleaseFillRequiredGlobal(context)}: ${missing.join(', ')}',
                               ),
                               backgroundColor: Colors.red,
                             ),
@@ -13993,6 +14173,8 @@ class _SellStep2PageState extends State<SellStep2Page> {
 
 // Step 3: Pricing & Contact Information
 class SellStep3Page extends StatefulWidget {
+  const SellStep3Page({super.key});
+
   @override
   _SellStep3PageState createState() => _SellStep3PageState();
 }
@@ -14007,7 +14189,7 @@ class _SellStep3PageState extends State<SellStep3Page> {
   String selectedCurrency = 'USD';
 
   // Focus node for keyboard management
-  FocusNode _priceFocusNode = FocusNode();
+  final FocusNode _priceFocusNode = FocusNode();
 
   // Controller for price input
   late TextEditingController _priceController;
@@ -14299,12 +14481,14 @@ class _SellStep3PageState extends State<SellStep3Page> {
                                 });
                               },
                               validator: (value) {
-                                if (value == null || value.isEmpty)
+                                if (value == null || value.isEmpty) {
                                   return 'Please enter price';
+                                }
                                 final price = int.tryParse(value);
                                 if (price == null) return 'Invalid price';
-                                if (price < 0)
+                                if (price < 0) {
                                   return 'Price cannot be negative';
+                                }
                                 return null;
                               },
                             )
@@ -14329,7 +14513,7 @@ class _SellStep3PageState extends State<SellStep3Page> {
                                                 (100000000 + (i + 1) * 1000000)
                                                     .toString(),
                                           ),
-                                        ].map((p) => 'IQD ' + p).toList()
+                                        ].map((p) => 'IQD $p').toList()
                                       : [
                                           ...List.generate(
                                             600,
@@ -14340,13 +14524,14 @@ class _SellStep3PageState extends State<SellStep3Page> {
                                             (i) => (300000 + (i + 1) * 10000)
                                                 .toString(),
                                           ),
-                                        ].map((p) => '\$' + p).toList();
+                                        ].map((p) => '\$$p').toList();
                                   final choice = await _pickFromList(
                                     'Price ($selectedCurrency)',
                                     priceOptions,
                                   );
-                                  if (choice != null)
+                                  if (choice != null) {
                                     setState(() => selectedPrice = choice);
+                                  }
                                 },
                                 child: buildFancySelector(
                                   context,
@@ -14499,12 +14684,14 @@ class _SellStep3PageState extends State<SellStep3Page> {
                 services.FilteringTextInputFormatter.allow(RegExp(r'[0-9]')),
                 services.LengthLimitingTextInputFormatter(10),
               ],
-              onChanged: (value) => contactPhone = '+964' + value,
+              onChanged: (value) => contactPhone = '+964$value',
               validator: (value) {
-                if (value == null || value.trim().isEmpty)
+                if (value == null || value.trim().isEmpty) {
                   return 'Please enter phone number';
-                if (value.trim().length < 10)
+                }
+                if (value.trim().length < 10) {
                   return 'Please enter a valid phone number';
+                }
                 return null;
               },
             ),
@@ -14551,7 +14738,7 @@ class _SellStep3PageState extends State<SellStep3Page> {
                         isQuickSell = value;
                       });
                     },
-                    activeColor: Colors.orange,
+                    activeThumbColor: Colors.orange,
                   ),
                 ],
               ),
@@ -14597,21 +14784,22 @@ class _SellStep3PageState extends State<SellStep3Page> {
                       onPressed: () {
                         final List<String> missing = [];
                         if (selectedPrice == null ||
-                            (selectedPrice ?? '').isEmpty)
+                            (selectedPrice ?? '').isEmpty) {
                           missing.add(AppLocalizations.of(context)!.priceLabel);
+                        }
                         if (selectedCity == null ||
-                            (selectedCity ?? '').isEmpty)
+                            (selectedCity ?? '').isEmpty) {
                           missing.add(AppLocalizations.of(context)!.cityLabel);
+                        }
                         if (contactPhone == null ||
-                            (contactPhone ?? '').trim().isEmpty)
+                            (contactPhone ?? '').trim().isEmpty) {
                           missing.add('Phone');
+                        }
                         if (missing.isNotEmpty) {
                           ScaffoldMessenger.of(context).showSnackBar(
                             SnackBar(
                               content: Text(
-                                _pleaseFillRequiredGlobal(context) +
-                                    ': ' +
-                                    missing.join(', '),
+                                '${_pleaseFillRequiredGlobal(context)}: ${missing.join(', ')}',
                               ),
                               backgroundColor: Colors.red,
                             ),
@@ -14706,6 +14894,8 @@ class _VideoPreviewPage extends StatelessWidget {
 
 // Step 4: Photos & Videos
 class SellStep4Page extends StatefulWidget {
+  const SellStep4Page({super.key});
+
   @override
   _SellStep4PageState createState() => _SellStep4PageState();
 }
@@ -14714,7 +14904,7 @@ class _SellStep4PageState extends State<SellStep4Page> {
   final ImagePicker _imagePicker = ImagePicker();
   // Can contain either local XFile (original picks) or server-relative paths (after "Blur Plates").
   List<dynamic> _selectedImages = [];
-  List<XFile> _selectedVideos = [];
+  final List<XFile> _selectedVideos = [];
   Map<String, dynamic>? _aiAnalysisResult;
   bool _isAnalyzing = false;
   bool _isProcessingImages = false;
@@ -14759,7 +14949,7 @@ class _SellStep4PageState extends State<SellStep4Page> {
         _showAnalysisResults(result['analysis']);
       }
     } catch (e) {
-      print('Error analyzing image: $e');
+      _debugLog('Error analyzing image: $e');
     } finally {
       if (!mounted) return;
       setState(() {
@@ -14848,11 +15038,11 @@ class _SellStep4PageState extends State<SellStep4Page> {
 
   Future<void> _processImages() async {
     if (_selectedImages.isEmpty) {
-      print('AI UI: No images selected for processing');
+      _debugLog('AI UI: No images selected for processing');
       return;
     }
 
-    print(
+    _debugLog(
       'AI UI: Starting image processing for ${_selectedImages.length} images',
     );
 
@@ -14873,12 +15063,12 @@ class _SellStep4PageState extends State<SellStep4Page> {
         return;
       }
 
-      print('AI UI: Calling AiService.processCarImagesToServerPayload...');
+      _debugLog('AI UI: Calling AiService.processCarImagesToServerPayload...');
       final payload = await AiService.processCarImagesToServerPayload(local);
       final paths = payload?['paths'] ?? const <String>[];
       final b64 = payload?['base64'] ?? const <String>[];
 
-      if (paths == null || paths.isEmpty) {
+      if (paths.isEmpty) {
         if (!mounted) return;
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
@@ -14916,7 +15106,7 @@ class _SellStep4PageState extends State<SellStep4Page> {
           }
         }
       } catch (e) {
-        print('AI UI: Failed to build local previews from base64: $e');
+        _debugLog('AI UI: Failed to build local previews from base64: $e');
       }
 
       if (!mounted) return;
@@ -14943,7 +15133,7 @@ class _SellStep4PageState extends State<SellStep4Page> {
         context,
       ).showSnackBar(SnackBar(content: Text('Plates blurred successfully.')));
     } catch (e) {
-      print('AI UI: Error processing images: $e');
+      _debugLog('AI UI: Error processing images: $e');
       if (!mounted) return;
       ScaffoldMessenger.of(
         context,
@@ -15472,11 +15662,11 @@ class ListingPreviewWidget extends StatefulWidget {
   final bool fullPage;
 
   const ListingPreviewWidget({
-    Key? key,
+    super.key,
     required this.carData,
     required this.imageFilesOrUrls,
     this.fullPage = false,
-  }) : super(key: key);
+  });
 
   @override
   State<ListingPreviewWidget> createState() => _ListingPreviewWidgetState();
@@ -15994,7 +16184,7 @@ class _ListingPreviewWidgetState extends State<ListingPreviewWidget> {
 
 // Step 5: Review & Submit
 class SellStep5Page extends StatefulWidget {
-  const SellStep5Page({Key? key}) : super(key: key);
+  const SellStep5Page({super.key});
   @override
   _SellStep5PageState createState() => _SellStep5PageState();
 }
@@ -16110,7 +16300,7 @@ class _SellStep5PageState extends State<SellStep5Page> {
                                     if (isEmpty) missing.add(k);
                                   }
                                   if (missing.isNotEmpty) {
-                                    final stepFor = (String k) {
+                                    int stepFor(String k) {
                                       const step1 = {
                                         'brand',
                                         'model',
@@ -16131,7 +16321,7 @@ class _SellStep5PageState extends State<SellStep5Page> {
                                       if (step1.contains(k)) return 1;
                                       if (step2.contains(k)) return 2;
                                       return 3;
-                                    };
+                                    }
                                     final first = missing.first;
                                     final targetStep = stepFor(first);
                                     // Navigate user to the step containing the first missing field
@@ -16143,8 +16333,7 @@ class _SellStep5PageState extends State<SellStep5Page> {
                                     ScaffoldMessenger.of(context).showSnackBar(
                                       SnackBar(
                                         content: Text(
-                                          'Please complete: ' +
-                                              missing.join(', '),
+                                          'Please complete: ${missing.join(', ')}',
                                         ),
                                         backgroundColor: Colors.red,
                                       ),
@@ -16341,10 +16530,10 @@ class _SellStep5PageState extends State<SellStep5Page> {
     }..removeWhere((k, v) => v == null || (v is String && v.trim().isEmpty));
 
     try {
-      final url = Uri.parse(getApiBase() + '/api/cars');
+      final url = Uri.parse('${getApiBase()}/api/cars');
       final headers = {
         'Content-Type': 'application/json',
-        if (existingToken != null) 'Authorization': 'Bearer $existingToken',
+        'Authorization': 'Bearer $existingToken',
       };
 
       final response = await http
@@ -16466,13 +16655,13 @@ class _SellStep5PageState extends State<SellStep5Page> {
             );
           } catch (_) {}
         }
-        print('Listing created successfully');
+        _debugLog('Listing created successfully');
         return;
       } else if (response.statusCode == 401) {
-        print('Submission failed: Authentication failed');
+        _debugLog('Submission failed: Authentication failed');
         throw Exception('Authentication failed. Please log in again.');
       } else {
-        print('Submission failed: ${response.statusCode} - ${response.body}');
+        _debugLog('Submission failed: ${response.statusCode} - ${response.body}');
         dynamic errorData;
         try {
           errorData = json.decode(response.body);
@@ -16508,6 +16697,8 @@ class _SellStep5PageState extends State<SellStep5Page> {
 
 // Car Comparison Page
 class CarComparisonPage extends StatelessWidget {
+  const CarComparisonPage({super.key});
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -17105,7 +17296,7 @@ class CarComparisonPage extends StatelessWidget {
                                                 ),
                                               ),
                                             )
-                                            .toList(),
+                                            ,
                                       ],
                               ),
                             ),
@@ -18796,6 +18987,8 @@ Color _getColorValue(String colorName) {
 // Removed stray closing brace that caused a syntax error
 
 class FavoritesPage extends StatefulWidget {
+  const FavoritesPage({super.key});
+
   @override
   _FavoritesPageState createState() => _FavoritesPageState();
 }
@@ -18840,10 +19033,10 @@ class _FavoritesPageState extends State<FavoritesPage> {
         } catch (_) {}
       }
       // Backend endpoint is /api/user/favorites
-      final url = Uri.parse(getApiBase() + '/api/user/favorites');
+      final url = Uri.parse('${getApiBase()}/api/user/favorites');
       final resp = await http.get(
         url,
-        headers: {'Authorization': 'Bearer ' + tok},
+        headers: {'Authorization': 'Bearer $tok'},
       );
       if (resp.statusCode == 200) {
         final decoded = json.decode(resp.body);
@@ -18872,10 +19065,11 @@ class _FavoritesPageState extends State<FavoritesPage> {
         _error = e.toString();
       });
     } finally {
-      if (mounted)
+      if (mounted) {
         setState(() {
           _loading = false;
         });
+      }
     }
   }
 
@@ -19083,6 +19277,8 @@ class _FavoritesPageState extends State<FavoritesPage> {
 }
 
 class ChatListPage extends StatefulWidget {
+  const ChatListPage({super.key});
+
   @override
   _ChatListPageState createState() => _ChatListPageState();
 }
@@ -19141,6 +19337,8 @@ class _ChatListPageState extends State<ChatListPage> {
 }
 
 class LoginPage extends StatefulWidget {
+  const LoginPage({super.key});
+
   @override
   _LoginPageState createState() => _LoginPageState();
 }
@@ -19157,7 +19355,7 @@ class _LoginPageState extends State<LoginPage> {
       _loading = true;
     });
     try {
-      final url = Uri.parse(getApiBase() + '/api/auth/login');
+      final url = Uri.parse('${getApiBase()}/api/auth/login');
       final resp = await http.post(
         url,
         headers: {'Content-Type': 'application/json'},
@@ -19182,7 +19380,7 @@ class _LoginPageState extends State<LoginPage> {
         if (!mounted) return;
         Navigator.pushReplacementNamed(context, '/');
       } else {
-        final msg = resp.body.length > 0
+        final msg = resp.body.isNotEmpty
             ? resp.body
             : AppLocalizations.of(context)!.couldNotSubmitListing;
         if (!mounted) return;
@@ -19216,10 +19414,11 @@ class _LoginPageState extends State<LoginPage> {
         ),
       );
     } finally {
-      if (mounted)
+      if (mounted) {
         setState(() {
           _loading = false;
         });
+      }
     }
   }
 
@@ -19318,6 +19517,8 @@ class _LoginPageState extends State<LoginPage> {
 }
 
 class SignupPage extends StatefulWidget {
+  const SignupPage({super.key});
+
   @override
   _SignupPageState createState() => _SignupPageState();
 }
@@ -19365,11 +19566,11 @@ class _SignupPageState extends State<SignupPage> {
       _loading = true;
     });
     try {
-      final url = Uri.parse(getApiBase() + '/api/auth/send_otp');
+      final url = Uri.parse('${getApiBase()}/api/auth/send_otp');
       final resp = await http.post(
         url,
         headers: {'Content-Type': 'application/json'},
-        body: json.encode({'phone': '+964' + phone}),
+        body: json.encode({'phone': '+964$phone'}),
       );
       if (resp.statusCode == 200) {
         final data = json.decode(resp.body);
@@ -19383,7 +19584,7 @@ class _SignupPageState extends State<SignupPage> {
               content: Text(AppLocalizations.of(context)!.verificationCodeSent),
             ),
           );
-        } else if (data['dev_code'] != null) {
+        } else if (data['dev_code'] != null && kDebugMode) {
           final String code = data['dev_code'].toString();
           showDialog(
             context: context,
@@ -19451,10 +19652,11 @@ class _SignupPageState extends State<SignupPage> {
         ),
       );
     } finally {
-      if (mounted)
+      if (mounted) {
         setState(() {
           _loading = false;
         });
+      }
     }
   }
 
@@ -19464,7 +19666,7 @@ class _SignupPageState extends State<SignupPage> {
       _loading = true;
     });
     try {
-      final url = Uri.parse(getApiBase() + '/api/auth/signup');
+      final url = Uri.parse('${getApiBase()}/api/auth/signup');
 
       // Prepare request body based on auth type
       Map<String, dynamic> requestBody = {
@@ -19477,7 +19679,7 @@ class _SignupPageState extends State<SignupPage> {
         requestBody['email'] = email;
       } else {
         final phone = _phoneController.text.trim();
-        requestBody['phone'] = '+964' + phone;
+        requestBody['phone'] = '+964$phone';
         requestBody['otp_code'] = _otpController.text.trim();
       }
 
@@ -19524,7 +19726,7 @@ class _SignupPageState extends State<SignupPage> {
           Navigator.pushReplacementNamed(context, '/');
         } else {
           // No token returned: try logging in automatically
-          final loginUrl = Uri.parse(getApiBase() + '/api/auth/login');
+          final loginUrl = Uri.parse('${getApiBase()}/api/auth/login');
           final loginResp = await http.post(
             loginUrl,
             headers: {'Content-Type': 'application/json'},
@@ -19585,7 +19787,7 @@ class _SignupPageState extends State<SignupPage> {
           }
         }
       } else {
-        final msg = resp.body.length > 0
+        final msg = resp.body.isNotEmpty
             ? resp.body
             : AppLocalizations.of(context)!.couldNotSubmitListing;
         if (!mounted) return;
@@ -19619,10 +19821,11 @@ class _SignupPageState extends State<SignupPage> {
         ),
       );
     } finally {
-      if (mounted)
+      if (mounted) {
         setState(() {
           _loading = false;
         });
+      }
     }
   }
 
@@ -19698,8 +19901,9 @@ class _SignupPageState extends State<SignupPage> {
                     hintText: 'Enter your email address',
                   ),
                   validator: (v) {
-                    if (v == null || v.trim().isEmpty)
+                    if (v == null || v.trim().isEmpty) {
                       return 'Email is required';
+                    }
                     if (!RegExp(
                       r'^[\w-\.]+@([\w-]+\.)+[\w-]{2,4}$',
                     ).hasMatch(v.trim())) {
@@ -19765,10 +19969,12 @@ class _SignupPageState extends State<SignupPage> {
                 ),
                 validator: (v) {
                   final value = (v ?? '').trim();
-                  if (value.isEmpty)
+                  if (value.isEmpty) {
                     return '${AppLocalizations.of(context)!.usernameLabel} is required';
-                  if (value.length < 3)
+                  }
+                  if (value.length < 3) {
                     return 'Username must be at least 3 characters';
+                  }
                   return null;
                 },
               ),
@@ -19850,6 +20056,8 @@ class _SignupPageState extends State<SignupPage> {
 }
 
 class ProfilePage extends StatefulWidget {
+  const ProfilePage({super.key});
+
   @override
   _ProfilePageState createState() => _ProfilePageState();
 }
@@ -19857,21 +20065,21 @@ class ProfilePage extends StatefulWidget {
 class _ProfilePageState extends State<ProfilePage> {
   Map<String, dynamic>? me;
   bool _loading = true;
+  late final AuthService _authService;
 
   @override
   void initState() {
     super.initState();
     _loadMe();
     // Listen to auth service changes
-    Provider.of<AuthService>(context, listen: false).addListener(_onAuthChange);
+    _authService = Provider.of<AuthService>(context, listen: false);
+    _authService.addListener(_onAuthChange);
   }
 
   @override
   void dispose() {
-    Provider.of<AuthService>(
-      context,
-      listen: false,
-    ).removeListener(_onAuthChange);
+    // Do not use context in dispose; the element is being deactivated.
+    _authService.removeListener(_onAuthChange);
     super.dispose();
   }
 
@@ -19890,19 +20098,20 @@ class _ProfilePageState extends State<ProfilePage> {
         });
         return;
       }
-      final url = Uri.parse(getApiBase() + '/api/auth/me');
+      final url = Uri.parse('${getApiBase()}/api/auth/me');
       final resp = await http.get(
         url,
-        headers: {'Authorization': 'Bearer ' + tok},
+        headers: {'Authorization': 'Bearer $tok'},
       );
       if (resp.statusCode == 200) {
         me = json.decode(resp.body) as Map<String, dynamic>;
       }
     } catch (_) {}
-    if (mounted)
+    if (mounted) {
       setState(() {
         _loading = false;
       });
+    }
   }
 
   void refreshProfile() {
@@ -20064,9 +20273,7 @@ class _ProfilePageState extends State<ProfilePage> {
                         ? CircleAvatar(
                             radius: 24,
                             backgroundImage: NetworkImage(
-                              getApiBase() +
-                                  '/static/' +
-                                  me!['profile_picture'].toString(),
+                              '${getApiBase()}/static/${me!['profile_picture']}',
                             ),
                             backgroundColor: Colors.grey[200],
                           )
@@ -20454,6 +20661,8 @@ class _ProfilePageState extends State<ProfilePage> {
 }
 
 class PaymentHistoryPage extends StatefulWidget {
+  const PaymentHistoryPage({super.key});
+
   @override
   _PaymentHistoryPageState createState() => _PaymentHistoryPageState();
 }
@@ -20511,6 +20720,8 @@ class _PaymentHistoryPageState extends State<PaymentHistoryPage> {
 }
 
 class PaymentInitiatePage extends StatefulWidget {
+  const PaymentInitiatePage({super.key});
+
   @override
   _PaymentInitiatePageState createState() => _PaymentInitiatePageState();
 }
@@ -20531,7 +20742,7 @@ class _PaymentInitiatePageState extends State<PaymentInitiatePage> {
 
 class ChatConversationPage extends StatefulWidget {
   final String conversationId;
-  ChatConversationPage({required this.conversationId});
+  const ChatConversationPage({super.key, required this.conversationId});
   @override
   _ChatConversationPageState createState() => _ChatConversationPageState();
 }
@@ -20552,7 +20763,7 @@ class _ChatConversationPageState extends State<ChatConversationPage> {
 
 class PaymentStatusPage extends StatefulWidget {
   final String paymentId;
-  PaymentStatusPage({required this.paymentId});
+  const PaymentStatusPage({super.key, required this.paymentId});
   @override
   _PaymentStatusPageState createState() => _PaymentStatusPageState();
 }
@@ -20573,7 +20784,7 @@ class _PaymentStatusPageState extends State<PaymentStatusPage> {
 
 class EditListingPage extends StatefulWidget {
   final Map car;
-  EditListingPage({required this.car});
+  const EditListingPage({super.key, required this.car});
   @override
   _EditListingPageState createState() => _EditListingPageState();
 }
@@ -20591,18 +20802,22 @@ class _EditListingPageState extends State<EditListingPage> {
 }
 
 class MyListingsPage extends StatefulWidget {
+  const MyListingsPage({super.key});
+
   @override
   _MyListingsPageState createState() => _MyListingsPageState();
 }
 
 class SettingsPage extends StatefulWidget {
+  const SettingsPage({super.key});
+
   @override
   State<SettingsPage> createState() => _SettingsPageState();
 }
 
 class _SettingsPageState extends State<SettingsPage> {
   bool _pushEnabled = true;
-  int _cacheEntries = 0;
+  final int _cacheEntries = 0;
 
   @override
   void initState() {
@@ -20612,6 +20827,7 @@ class _SettingsPageState extends State<SettingsPage> {
 
   Future<void> _load() async {
     final sp = await SharedPreferences.getInstance();
+    if (!mounted) return;
     setState(() {
       _pushEnabled = sp.getBool('push_enabled') ?? true;
     });
@@ -20620,6 +20836,7 @@ class _SettingsPageState extends State<SettingsPage> {
   Future<void> _togglePush(bool v) async {
     final sp = await SharedPreferences.getInstance();
     await sp.setBool('push_enabled', v);
+    if (!mounted) return;
     setState(() {
       _pushEnabled = v;
     });
@@ -20627,7 +20844,7 @@ class _SettingsPageState extends State<SettingsPage> {
     if (token != null && token.isNotEmpty) {
       try {
         await http.post(
-          Uri.parse(getApiBase() + '/api/push/preferences'),
+          Uri.parse('${getApiBase()}/api/push/preferences'),
           headers: {'Content-Type': 'application/json'},
           body: json.encode({'push_token': token, 'enabled': v}),
         );
@@ -20705,7 +20922,7 @@ class _MyListingsPageState extends State<MyListingsPage> {
         return;
       }
 
-      final url = Uri.parse(getApiBase() + '/api/my_listings');
+      final url = Uri.parse('${getApiBase()}/api/my_listings');
       final response = await http.get(
         url,
         headers: {
@@ -20720,19 +20937,19 @@ class _MyListingsPageState extends State<MyListingsPage> {
           myListings = data.cast<Map<String, dynamic>>();
           isLoading = false;
         });
-        print('MyListings loaded: ${myListings.length} listings');
+        _debugLog('MyListings loaded: ${myListings.length} listings');
       } else if (response.statusCode == 401) {
         setState(() {
           error = 'Please log in to view your listings';
           isLoading = false;
         });
-        print('MyListings API returned 401 - Authentication failed');
+        _debugLog('MyListings API returned 401 - Authentication failed');
       } else {
         setState(() {
           error = 'Failed to load listings. Please try again.';
           isLoading = false;
         });
-        print(
+        _debugLog(
           'MyListings API error: ${response.statusCode} - ${response.body}',
         );
       }
@@ -20995,19 +21212,19 @@ class _MyListingsPageState extends State<MyListingsPage> {
         if (brand.isNotEmpty) brand.toLowerCase(),
         if (model.isNotEmpty) model,
       ].join(' ');
-      displayTitle = yearStr.isNotEmpty ? (base + ' (' + yearStr + ')') : base;
+      displayTitle = yearStr.isNotEmpty ? ('$base ($yearStr)') : base;
     }
 
-    final num? _mileageNum = () {
+    final num? mileageNum = () {
       final v = listing['mileage'];
       if (v == null) return null;
       if (v is num) return v;
       final s = v.toString().replaceAll(RegExp(r'[^0-9.-]'), '');
       return num.tryParse(s);
     }();
-    final String _mileageFormatted = _mileageNum == null
+    final String mileageFormatted = mileageNum == null
         ? (listing['mileage']?.toString() ?? '')
-        : _decimalFormatterGlobal(context).format(_mileageNum);
+        : _decimalFormatterGlobal(context).format(mileageNum);
 
     final car = {
       'id': listing['id'],
@@ -21015,7 +21232,7 @@ class _MyListingsPageState extends State<MyListingsPage> {
       'title': displayTitle,
       'price': listing['price'],
       'year': listing['year'],
-      'mileage': _mileageFormatted,
+      'mileage': mileageFormatted,
       'city': listing['city'],
       'image_url': listing['image_url'],
       'images': listing['images'],

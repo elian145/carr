@@ -6,6 +6,9 @@ import 'config.dart';
 import '../shared/auth/token_store.dart';
 
 class ApiService {
+  static const Duration _defaultTimeout = Duration(seconds: 30);
+  static const Duration _uploadTimeout = Duration(seconds: 180);
+
   static String get baseUrl {
     return apiBaseApi();
   }
@@ -94,24 +97,32 @@ class ApiService {
 
     switch (method.toUpperCase()) {
       case 'GET':
-        response = await http.get(url, headers: requestHeaders);
+        response = await http
+            .get(url, headers: requestHeaders)
+            .timeout(_defaultTimeout);
         break;
       case 'POST':
-        response = await http.post(
-          url,
-          headers: requestHeaders,
-          body: body != null ? json.encode(body) : null,
-        );
+        response = await http
+            .post(
+              url,
+              headers: requestHeaders,
+              body: body != null ? json.encode(body) : null,
+            )
+            .timeout(_defaultTimeout);
         break;
       case 'PUT':
-        response = await http.put(
-          url,
-          headers: requestHeaders,
-          body: body != null ? json.encode(body) : null,
-        );
+        response = await http
+            .put(
+              url,
+              headers: requestHeaders,
+              body: body != null ? json.encode(body) : null,
+            )
+            .timeout(_defaultTimeout);
         break;
       case 'DELETE':
-        response = await http.delete(url, headers: requestHeaders);
+        response = await http
+            .delete(url, headers: requestHeaders)
+            .timeout(_defaultTimeout);
         break;
       default:
         throw Exception('Unsupported HTTP method: $method');
@@ -125,24 +136,32 @@ class ApiService {
 
         switch (method.toUpperCase()) {
           case 'GET':
-            response = await http.get(url, headers: requestHeaders);
+            response = await http
+                .get(url, headers: requestHeaders)
+                .timeout(_defaultTimeout);
             break;
           case 'POST':
-            response = await http.post(
-              url,
-              headers: requestHeaders,
-              body: body != null ? json.encode(body) : null,
-            );
+            response = await http
+                .post(
+                  url,
+                  headers: requestHeaders,
+                  body: body != null ? json.encode(body) : null,
+                )
+                .timeout(_defaultTimeout);
             break;
           case 'PUT':
-            response = await http.put(
-              url,
-              headers: requestHeaders,
-              body: body != null ? json.encode(body) : null,
-            );
+            response = await http
+                .put(
+                  url,
+                  headers: requestHeaders,
+                  body: body != null ? json.encode(body) : null,
+                )
+                .timeout(_defaultTimeout);
             break;
           case 'DELETE':
-            response = await http.delete(url, headers: requestHeaders);
+            response = await http
+                .delete(url, headers: requestHeaders)
+                .timeout(_defaultTimeout);
             break;
         }
       } else {
@@ -166,11 +185,13 @@ class ApiService {
     String otp = '000000';
     if ((phoneNumber ?? '').trim().isNotEmpty) {
       try {
-        final r = await http.post(
-          Uri.parse('$baseUrl/auth/send_otp'),
-          headers: _getHeaders(includeAuth: false),
-          body: json.encode({'phone': phoneNumber}),
-        );
+        final r = await http
+            .post(
+              Uri.parse('$baseUrl/auth/send_otp'),
+              headers: _getHeaders(includeAuth: false),
+              body: json.encode({'phone': phoneNumber}),
+            )
+            .timeout(_defaultTimeout);
         if (r.statusCode == 200) {
           final d = json.decode(r.body);
           // When SMS isn’t configured, backend returns dev_code
@@ -179,19 +200,21 @@ class ApiService {
       } catch (_) {}
     }
 
-    final response = await http.post(
-      Uri.parse('$baseUrl/auth/signup'),
-      headers: _getHeaders(includeAuth: false),
-      body: json.encode({
-        'username': username,
-        'email': email,
-        'phone': (phoneNumber ?? '').replaceAll(RegExp(r'[^0-9]'), ''),
-        'password': password,
-        'first_name': firstName,
-        'last_name': lastName,
-        'otp_code': otp,
-      }),
-    );
+    final response = await http
+        .post(
+          Uri.parse('$baseUrl/auth/signup'),
+          headers: _getHeaders(includeAuth: false),
+          body: json.encode({
+            'username': username,
+            'email': email,
+            'phone': (phoneNumber ?? '').replaceAll(RegExp(r'[^0-9]'), ''),
+            'password': password,
+            'first_name': firstName,
+            'last_name': lastName,
+            'otp_code': otp,
+          }),
+        )
+        .timeout(_defaultTimeout);
 
     return _handleResponse(response);
   }
@@ -200,11 +223,13 @@ class ApiService {
     String emailOrPhone,
     String password,
   ) async {
-    final response = await http.post(
-      Uri.parse('$baseUrl/auth/login'),
-      headers: _getHeaders(includeAuth: false),
-      body: json.encode({'username': emailOrPhone, 'password': password}),
-    );
+    final response = await http
+        .post(
+          Uri.parse('$baseUrl/auth/login'),
+          headers: _getHeaders(includeAuth: false),
+          body: json.encode({'username': emailOrPhone, 'password': password}),
+        )
+        .timeout(_defaultTimeout);
 
     // Accept either legacy {'token': '<jwt>'} or new {'access_token': '...', 'refresh_token': '...'}
     final data = _handleResponse(response);
@@ -224,11 +249,13 @@ class ApiService {
   }
 
   static Future<Map<String, dynamic>> forgotPassword(String email) async {
-    final response = await http.post(
-      Uri.parse('$baseUrl/auth/forgot-password'),
-      headers: _getHeaders(includeAuth: false),
-      body: json.encode({'email': email}),
-    );
+    final response = await http
+        .post(
+          Uri.parse('$baseUrl/auth/forgot-password'),
+          headers: _getHeaders(includeAuth: false),
+          body: json.encode({'email': email}),
+        )
+        .timeout(_defaultTimeout);
 
     return _handleResponse(response);
   }
@@ -237,21 +264,25 @@ class ApiService {
     String token,
     String newPassword,
   ) async {
-    final response = await http.post(
-      Uri.parse('$baseUrl/auth/reset-password'),
-      headers: _getHeaders(includeAuth: false),
-      body: json.encode({'token': token, 'password': newPassword}),
-    );
+    final response = await http
+        .post(
+          Uri.parse('$baseUrl/auth/reset-password'),
+          headers: _getHeaders(includeAuth: false),
+          body: json.encode({'token': token, 'password': newPassword}),
+        )
+        .timeout(_defaultTimeout);
 
     return _handleResponse(response);
   }
 
   static Future<Map<String, dynamic>> verifyEmail(String token) async {
-    final response = await http.post(
-      Uri.parse('$baseUrl/auth/verify-email'),
-      headers: _getHeaders(includeAuth: false),
-      body: json.encode({'token': token}),
-    );
+    final response = await http
+        .post(
+          Uri.parse('$baseUrl/auth/verify-email'),
+          headers: _getHeaders(includeAuth: false),
+          body: json.encode({'token': token}),
+        )
+        .timeout(_defaultTimeout);
 
     return _handleResponse(response);
   }
@@ -289,7 +320,7 @@ class ApiService {
       await http.MultipartFile.fromPath('file', imageFile.path),
     );
 
-    final response = await request.send();
+    final response = await request.send().timeout(_uploadTimeout);
     final responseBody = await response.stream.bytesToString();
 
     if (response.statusCode >= 200 && response.statusCode < 300) {
@@ -339,19 +370,23 @@ class ApiService {
         .map((e) => '${e.key}=${Uri.encodeComponent(e.value)}')
         .join('&');
 
-    final response = await http.get(
-      Uri.parse('$baseUrl/cars?$queryString'),
-      headers: _getHeaders(includeAuth: false),
-    );
+    final response = await http
+        .get(
+          Uri.parse('$baseUrl/cars?$queryString'),
+          headers: _getHeaders(includeAuth: false),
+        )
+        .timeout(_defaultTimeout);
 
     return _handleResponse(response);
   }
 
   static Future<Map<String, dynamic>> getCar(String carId) async {
-    final response = await http.get(
-      Uri.parse('$baseUrl/cars/$carId'),
-      headers: _getHeaders(includeAuth: false),
-    );
+    final response = await http
+        .get(
+          Uri.parse('$baseUrl/cars/$carId'),
+          headers: _getHeaders(includeAuth: false),
+        )
+        .timeout(_defaultTimeout);
 
     return _handleResponse(response);
   }
@@ -399,7 +434,7 @@ class ApiService {
       request.files.add(await http.MultipartFile.fromPath('images', file.path));
     }
 
-    final response = await request.send();
+    final response = await request.send().timeout(_uploadTimeout);
     final responseBody = await response.stream.bytesToString();
 
     if (response.statusCode >= 200 && response.statusCode < 300) {
@@ -451,7 +486,7 @@ class ApiService {
       request.files.add(await http.MultipartFile.fromPath('video', file.path));
     }
 
-    final response = await request.send();
+    final response = await request.send().timeout(_uploadTimeout);
     final responseBody = await response.stream.bytesToString();
 
     if (response.statusCode >= 200 && response.statusCode < 300) {

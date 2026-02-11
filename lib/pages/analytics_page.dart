@@ -269,12 +269,14 @@ class _AnalyticsPageState extends State<AnalyticsPage> {
 
     try {
       final listings = await AnalyticsService.getUserListingsAnalytics();
+      if (!mounted) return;
       setState(() {
         _listings = listings;
         _summary = AnalyticsSummary.fromListings(listings);
         _isLoading = false;
       });
     } catch (e) {
+      if (!mounted) return;
       setState(() {
         _error = 'Failed to load your listings: ${e.toString()}';
         _isLoading = false;
@@ -799,86 +801,9 @@ class _AnalyticsPageState extends State<AnalyticsPage> {
       );
     }
 
-    final PageController controller = PageController();
-    int currentIndex = 0;
-
-    return StatefulBuilder(
-      builder: (context, setState) {
-        return Stack(
-          fit: StackFit.expand,
-          children: [
-            GestureDetector(
-              onTap: () {
-                Navigator.pushNamed(
-                  context,
-                  '/car_detail',
-                  arguments: {'carId': car['id']},
-                );
-              },
-              child: PageView.builder(
-                controller: controller,
-                onPageChanged: (i) => setState(() => currentIndex = i),
-                itemCount: urls.length,
-                itemBuilder: (context, i) {
-                  final url = urls[i];
-                  return CachedNetworkImage(
-                    imageUrl: url,
-                    fit: BoxFit.cover,
-                    placeholder: (context, url) => Container(
-                      color: Colors.white10,
-                      child: Center(
-                        child: SizedBox(
-                          width: 20,
-                          height: 20,
-                          child: CircularProgressIndicator(
-                            strokeWidth: 2,
-                            valueColor: AlwaysStoppedAnimation<Color>(
-                              Color(0xFFFF6B00),
-                            ),
-                          ),
-                        ),
-                      ),
-                    ),
-                    errorWidget: (context, url, error) => Container(
-                      color: Colors.grey[900],
-                      child: Icon(
-                        Icons.directions_car,
-                        size: 60,
-                        color: Colors.grey[400],
-                      ),
-                    ),
-                  );
-                },
-              ),
-            ),
-            if (urls.length > 1)
-              Positioned(
-                bottom: 8,
-                left: 0,
-                right: 0,
-                child: SingleChildScrollView(
-                  scrollDirection: Axis.horizontal,
-                  child: Row(
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    children: List.generate(urls.length, (i) {
-                      final active = i == currentIndex;
-                      return AnimatedContainer(
-                        duration: Duration(milliseconds: 200),
-                        margin: EdgeInsets.symmetric(horizontal: 3),
-                        width: active ? 8 : 6,
-                        height: active ? 8 : 6,
-                        decoration: BoxDecoration(
-                          color: active ? Colors.white : Colors.white70,
-                          shape: BoxShape.circle,
-                        ),
-                      );
-                    }),
-                  ),
-                ),
-              ),
-          ],
-        );
-      },
+    return _AnalyticsImageCarousel(
+      urls: urls,
+      carId: (car['id'] ?? '').toString(),
     );
   }
 
@@ -1428,6 +1353,113 @@ class _AnalyticsPageState extends State<AnalyticsPage> {
           ),
         ],
       ),
+    );
+  }
+}
+
+class _AnalyticsImageCarousel extends StatefulWidget {
+  final List<String> urls;
+  final String carId;
+
+  const _AnalyticsImageCarousel({required this.urls, required this.carId});
+
+  @override
+  State<_AnalyticsImageCarousel> createState() => _AnalyticsImageCarouselState();
+}
+
+class _AnalyticsImageCarouselState extends State<_AnalyticsImageCarousel> {
+  late final PageController _controller;
+  int _currentIndex = 0;
+
+  @override
+  void initState() {
+    super.initState();
+    _controller = PageController();
+  }
+
+  @override
+  void dispose() {
+    _controller.dispose();
+    super.dispose();
+  }
+
+  void _openDetail() {
+    Navigator.pushNamed(
+      context,
+      '/car_detail',
+      arguments: {'carId': widget.carId},
+    );
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Stack(
+      fit: StackFit.expand,
+      children: [
+        GestureDetector(
+          onTap: _openDetail,
+          child: PageView.builder(
+            controller: _controller,
+            onPageChanged: (i) => setState(() => _currentIndex = i),
+            itemCount: widget.urls.length,
+            itemBuilder: (context, i) {
+              final url = widget.urls[i];
+              return CachedNetworkImage(
+                imageUrl: url,
+                fit: BoxFit.cover,
+                placeholder: (context, url) => Container(
+                  color: Colors.white10,
+                  child: Center(
+                    child: SizedBox(
+                      width: 20,
+                      height: 20,
+                      child: CircularProgressIndicator(
+                        strokeWidth: 2,
+                        valueColor: AlwaysStoppedAnimation<Color>(
+                          Color(0xFFFF6B00),
+                        ),
+                      ),
+                    ),
+                  ),
+                ),
+                errorWidget: (context, url, error) => Container(
+                  color: Colors.grey[900],
+                  child: Icon(
+                    Icons.directions_car,
+                    size: 60,
+                    color: Colors.grey[400],
+                  ),
+                ),
+              );
+            },
+          ),
+        ),
+        if (widget.urls.length > 1)
+          Positioned(
+            bottom: 8,
+            left: 0,
+            right: 0,
+            child: SingleChildScrollView(
+              scrollDirection: Axis.horizontal,
+              child: Row(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: List.generate(widget.urls.length, (i) {
+                  final active = i == _currentIndex;
+                  return AnimatedContainer(
+                    duration: Duration(milliseconds: 200),
+                    margin: EdgeInsets.symmetric(horizontal: 3),
+                    width: active ? 8 : 6,
+                    height: active ? 8 : 6,
+                    decoration: BoxDecoration(
+                      color: active ? Colors.white : Colors.white70,
+                      shape: BoxShape.circle,
+                    ),
+                  );
+                }),
+              ),
+            ),
+          ),
+      ],
     );
   }
 }

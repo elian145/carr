@@ -18,11 +18,12 @@ String apiBase() {
   return kApiBase;
 }
 
-/// Same as getApiBase() in main: on Android emulator use host 10.0.2.2:5000 so blur/API reach backend.
+/// On Android emulator, 10.0.2.2 maps to the host machine.
+/// Keep port consistent with the default API base unless overridden via --dart-define.
 String effectiveApiBase() {
   final base = apiBase();
   if (Platform.isAndroid && base == 'http://192.168.1.7:5003') {
-    return 'http://10.0.2.2:5000';
+    return 'http://10.0.2.2:5003';
   }
   return base;
 }

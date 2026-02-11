@@ -49,7 +49,11 @@ class CarComparisonStore extends ChangeNotifier {
           .map((e) => json.encode(e))
           .toList();
       await sp.setStringList('comparison_cars', encoded);
-    } catch (_) {}
+    } catch (e) {
+      if (kDebugMode) {
+        debugPrint('CarComparisonStore: failed saving prefs: $e');
+      }
+    }
   }
 
   Future<void> _loadFromPrefs() async {
@@ -79,6 +83,10 @@ class CarComparisonStore extends ChangeNotifier {
       }
 
       if (changed) notifyListeners();
-    } catch (_) {}
+    } catch (e) {
+      if (kDebugMode) {
+        debugPrint('CarComparisonStore: failed loading prefs: $e');
+      }
+    }
   }
 }

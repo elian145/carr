@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'dart:async';
 import 'package:provider/provider.dart';
 import '../l10n/app_localizations.dart';
 import '../services/websocket_service.dart';
@@ -82,9 +83,13 @@ class ChatListPage extends StatefulWidget {
 
 class _ChatListPageState extends State<ChatListPage> {
   final List<ChatMessage> _messages = [];
+  final TextEditingController _carIdController = TextEditingController();
   final TextEditingController _messageController = TextEditingController();
   final ScrollController _scrollController = ScrollController();
   String? _currentCarId;
+  StreamSubscription<Map<String, dynamic>>? _messageSub;
+  StreamSubscription<Map<String, dynamic>>? _notificationSub;
+  StreamSubscription<String>? _errorSub;
 
   @override
   void initState() {
@@ -93,25 +98,40 @@ class _ChatListPageState extends State<ChatListPage> {
   }
 
   void _setupWebSocketListeners() {
-    WebSocketService.onMessage = (message) {
-      if (mounted) {
-        setState(() {
-          _messages.add(ChatMessage.fromJson(message));
-        });
-        _scrollToBottom();
-      }
-    };
+    _messageSub?.cancel();
+    _notificationSub?.cancel();
+    _errorSub?.cancel();
 
-    WebSocketService.onNotification = (notification) {
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text(notification['message']),
-            backgroundColor: Colors.blue,
-          ),
-        );
-      }
-    };
+    _messageSub = WebSocketService.messages.listen((message) {
+      if (!mounted) return;
+      setState(() {
+        _messages.add(ChatMessage.fromJson(message));
+      });
+      _scrollToBottom();
+    });
+
+    _notificationSub = WebSocketService.notifications.listen((notification) {
+      if (!mounted) return;
+      final msg = (notification['message'] ?? '').toString();
+      if (msg.isEmpty) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(msg),
+          backgroundColor: Colors.blue,
+        ),
+      );
+    });
+
+    _errorSub = WebSocketService.errors.listen((err) {
+      if (!mounted) return;
+      if (err.trim().isEmpty) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(err),
+          backgroundColor: Colors.red,
+        ),
+      );
+    });
   }
 
   void _scrollToBottom() {
@@ -138,6 +158,10 @@ class _ChatListPageState extends State<ChatListPage> {
 
   @override
   void dispose() {
+    _messageSub?.cancel();
+    _notificationSub?.cancel();
+    _errorSub?.cancel();
+    _carIdController.dispose();
     _messageController.dispose();
     _scrollController.dispose();
     super.dispose();
@@ -152,6 +176,39 @@ class _ChatListPageState extends State<ChatListPage> {
       ),
       body: Column(
         children: [
+          Padding(
+            padding: const EdgeInsets.fromLTRB(16, 16, 16, 8),
+            child: Row(
+              children: [
+                Expanded(
+                  child: TextField(
+                    controller: _carIdController,
+                    decoration: const InputDecoration(
+                      labelText: 'Car ID (chat room)',
+                      border: OutlineInputBorder(),
+                    ),
+                    onSubmitted: (_) {
+                      final id = _carIdController.text.trim();
+                      if (id.isEmpty) return;
+                      setState(() => _currentCarId = id);
+                      WebSocketService.joinChat(id);
+                    },
+                  ),
+                ),
+                const SizedBox(width: 8),
+                IconButton(
+                  onPressed: () {
+                    final id = _carIdController.text.trim();
+                    if (id.isEmpty) return;
+                    setState(() => _currentCarId = id);
+                    WebSocketService.joinChat(id);
+                  },
+                  icon: const Icon(Icons.login),
+                  tooltip: 'Join',
+                ),
+              ],
+            ),
+          ),
           // Chat messages
           Expanded(
             child: _messages.isEmpty
@@ -271,6 +328,7 @@ class _ChatConversationPageState extends State<ChatConversationPage> {
   final List<ChatMessage> _messages = [];
   final TextEditingController _messageController = TextEditingController();
   final ScrollController _scrollController = ScrollController();
+  StreamSubscription<Map<String, dynamic>>? _messageSub;
 
   @override
   void initState() {
@@ -280,14 +338,21 @@ class _ChatConversationPageState extends State<ChatConversationPage> {
   }
 
   void _setupWebSocketListeners() {
-    WebSocketService.onMessage = (message) {
-      if (mounted) {
-        setState(() {
-          _messages.add(ChatMessage.fromJson(message));
-        });
-        _scrollToBottom();
+    _messageSub?.cancel();
+    _messageSub = WebSocketService.messages.listen((message) {
+      // Optional: filter by carId when payload includes it
+      final payloadCarId = message['car_id']?.toString();
+      if (payloadCarId != null &&
+          payloadCarId.isNotEmpty &&
+          payloadCarId != widget.carId) {
+        return;
       }
-    };
+      if (!mounted) return;
+      setState(() {
+        _messages.add(ChatMessage.fromJson(message));
+      });
+      _scrollToBottom();
+    });
   }
 
   void _joinChat() {
@@ -318,6 +383,7 @@ class _ChatConversationPageState extends State<ChatConversationPage> {
 
   @override
   void dispose() {
+    _messageSub?.cancel();
     _messageController.dispose();
     _scrollController.dispose();
     WebSocketService.leaveChat();
@@ -447,6 +513,7 @@ class NotificationsPage extends StatefulWidget {
 
 class _NotificationsPageState extends State<NotificationsPage> {
   final List<AppNotification> _notifications = [];
+  StreamSubscription<Map<String, dynamic>>? _notificationSub;
 
   @override
   void initState() {
@@ -455,13 +522,19 @@ class _NotificationsPageState extends State<NotificationsPage> {
   }
 
   void _setupWebSocketListeners() {
-    WebSocketService.onNotification = (notification) {
-      if (mounted) {
-        setState(() {
-          _notifications.insert(0, AppNotification.fromJson(notification));
-        });
-      }
-    };
+    _notificationSub?.cancel();
+    _notificationSub = WebSocketService.notifications.listen((notification) {
+      if (!mounted) return;
+      setState(() {
+        _notifications.insert(0, AppNotification.fromJson(notification));
+      });
+    });
+  }
+
+  @override
+  void dispose() {
+    _notificationSub?.cancel();
+    super.dispose();
   }
 
   @override

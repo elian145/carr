@@ -107,7 +107,11 @@ class AuthService extends ChangeNotifier {
           _currentUser = (me['user'] is Map<String, dynamic>)
               ? Map<String, dynamic>.from(me['user'])
               : Map<String, dynamic>.from(me);
-        } catch (_) {}
+        } catch (e) {
+          if (kDebugMode) {
+            developer.log('Profile fetch failed: $e', name: 'AuthService');
+          }
+        }
       }
       _isAuthenticated = true;
 

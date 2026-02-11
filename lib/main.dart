@@ -1,8 +1,9 @@
-import 'package:flutter/widgets.dart';
+import 'package:flutter/material.dart';
 
 import 'app/app.dart';
 import 'app/bootstrap.dart';
 
-Future<void> main() async {
-  await bootstrapAndRun(const CarzoApp());
+void main() {
+  bootstrapAndRun(const CarzoApp());
 }
+
