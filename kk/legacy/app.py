@@ -7,7 +7,7 @@ from ..config import get_app_env
 if get_app_env() == "production":
     raise RuntimeError(
         "Legacy backend module `kk.legacy.app` must not be used in production. "
-        "Use `kk/app_new.py` instead."
+        "Use `kk.wsgi:app` (Gunicorn) / `kk.app_factory.create_app()` instead."
     )
 if (os.environ.get("ALLOW_LEGACY_BACKEND") or "").strip().lower() not in ("1", "true", "yes", "on"):
     raise RuntimeError(

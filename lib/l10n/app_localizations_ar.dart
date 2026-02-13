@@ -666,4 +666,146 @@ class AppLocalizationsAr extends AppLocalizations {
 
   @override
   String get city_salaheldeen => 'صلاح الدين';
+
+  @override
+  String get sellTitle => 'بيع';
+
+  @override
+  String get createListingButton => 'إنشاء إعلان';
+
+  @override
+  String get creatingListing => 'جارٍ إنشاء الإعلان...';
+
+  @override
+  String get uploadingPhotos => 'جارٍ رفع الصور...';
+
+  @override
+  String get uploadingVideos => 'جارٍ رفع الفيديو...';
+
+  @override
+  String addPhotosCount(Object count) {
+    return 'إضافة صور ($count)';
+  }
+
+  @override
+  String addVideoCount(Object count) {
+    return 'إضافة فيديو ($count)';
+  }
+
+  @override
+  String get pleaseFixHighlightedFields => 'يرجى إصلاح الحقول المحددة';
+
+  @override
+  String get listingCreated => 'تم إنشاء الإعلان';
+
+  @override
+  String get listingTitle => 'الإعلان';
+
+  @override
+  String get shareAction => 'مشاركة';
+
+  @override
+  String get callAction => 'اتصال';
+
+  @override
+  String get chatAction => 'دردشة';
+
+  @override
+  String get favoriteAction => 'مفضلة';
+
+  @override
+  String get favoritesAction => 'المفضلة';
+
+  @override
+  String get editProfileAction => 'تعديل الملف الشخصي';
+
+  @override
+  String get descriptionTitle => 'الوصف';
+
+  @override
+  String get retryAction => 'إعادة المحاولة';
+
+  @override
+  String get sellerPhoneNotAvailable => 'رقم البائع غير متوفر';
+
+  @override
+  String get couldNotStartCall => 'تعذر بدء الاتصال';
+
+  @override
+  String get myListingsTitle => 'إعلاناتي';
+
+  @override
+  String get deleteListingTitle => 'حذف الإعلان؟';
+
+  @override
+  String get deleteListingBody => 'سيتم إزالته من الإعلانات العامة.';
+
+  @override
+  String get cancelAction => 'إلغاء';
+
+  @override
+  String get deleteAction => 'حذف';
+
+  @override
+  String get editAction => 'تعديل';
+
+  @override
+  String get comparisonEmptyHint => 'أضف سيارات للمقارنة من الإعلانات.';
+
+  @override
+  String get comparisonSpecLabel => 'المواصفة';
+
+  @override
+  String get removeAction => 'إزالة';
+
+  @override
+  String get settingsThemeTitle => 'المظهر';
+
+  @override
+  String get settingsLanguageTitle => 'اللغة';
+
+  @override
+  String get settingsSystem => 'النظام';
+
+  @override
+  String get settingsLight => 'فاتح';
+
+  @override
+  String get settingsDark => 'داكن';
+
+  @override
+  String get enabledLabel => 'مفعل';
+
+  @override
+  String get disabledLabel => 'معطل';
+
+  @override
+  String get accountLabel => 'الحساب';
+
+  @override
+  String get apiLabel => 'واجهة API';
+
+  @override
+  String get noFavoritesYet => 'لا توجد مفضلات بعد';
+
+  @override
+  String get descriptionOptionalLabel => 'الوصف (اختياري)';
+
+  @override
+  String get plateBlurNote => 'ملاحظة: طمس اللوحة مفعل افتراضياً للخصوصية.';
+
+  @override
+  String get invalidField => 'غير صالح';
+
+  @override
+  String get currencyLabel => 'العملة';
+
+  @override
+  String get engineTypeLabel => 'نوع المحرك';
+
+  @override
+  String get locationLabel => 'الموقع';
+
+  @override
+  String get chooseAuthMethodTitle => 'اختر طريقة التسجيل:';
 }

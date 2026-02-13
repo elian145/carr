@@ -9,6 +9,7 @@ from flask_jwt_extended import jwt_required
 from ..auth import get_current_user, log_user_action, validate_user_input
 from ..models import User, db
 from ..security import generate_secure_filename, validate_file_upload
+from ..time_utils import utcnow
 
 bp = Blueprint("user", __name__)
 
@@ -55,7 +56,7 @@ def update_profile():
             current_user.email = data["email"]
             current_user.is_verified = False
 
-        current_user.updated_at = datetime.utcnow()
+        current_user.updated_at = utcnow()
         db.session.commit()
 
         log_user_action(current_user, "profile_update")
@@ -94,7 +95,7 @@ def upload_profile_picture():
         file.save(file_path)
 
         current_user.profile_picture = f"uploads/profile_pictures/{filename}"
-        current_user.updated_at = datetime.utcnow()
+        current_user.updated_at = utcnow()
         db.session.commit()
 
         log_user_action(current_user, "profile_picture_upload")

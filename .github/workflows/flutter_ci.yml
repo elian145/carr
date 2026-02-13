@@ -44,7 +44,7 @@ jobs:
         run: flutter analyze
 
       - name: Run tests
-        run: flutter test --no-pub
+        run: flutter test --no-pub --dart-define=API_BASE=http://127.0.0.1:8081
 
       - name: Build APK (debug)
         run: flutter build apk --debug --no-pub

@@ -5,6 +5,9 @@ from typing import Dict
 
 logger = logging.getLogger(__name__)
 
+def _env() -> str:
+    return (os.environ.get("APP_ENV") or os.environ.get("FLASK_ENV") or "production").strip().lower()
+
 
 class CarAnalysisService:
     """
@@ -58,8 +61,10 @@ class CarAnalysisService:
                 "analysis_timestamp": str(datetime.now()),
             }
         except Exception as e:
-            logger.error(f"Error analyzing car image: {e}")
-            return {"error": str(e)}
+            logger.exception("Error analyzing car image")
+            if _env() in ("development", "testing"):
+                return {"error": str(e)}
+            return {"error": "analysis_failed"}
 
 
 # Singleton used across kk scripts and apps

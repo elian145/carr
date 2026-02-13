@@ -13,6 +13,13 @@ logger = logging.getLogger(__name__)
 
 _API_KEY_RE = re.compile(r"(api_key=)([^&\s]+)", re.IGNORECASE)
 
+def _env() -> str:
+	return (os.environ.get("APP_ENV") or os.environ.get("FLASK_ENV") or "production").strip().lower()
+
+def _public_error(msg: str) -> str:
+	# In production, don't leak stack traces / dependency paths / internal details.
+	return msg if _env() in ("development", "testing") else "internal_error"
+
 
 def _redact_api_key(message: str) -> str:
 	"""Redact api_key query parameter to avoid leaking secrets in logs/metadata."""
@@ -167,7 +174,7 @@ def _normalize_image_bytes_for_inference(image_bytes: bytes, output_ext: str) ->
 		from PIL import Image, ImageOps  # type: ignore
 		from io import BytesIO
 	except Exception as e:
-		return image_bytes, {"normalize_status": "pillow_missing", "normalize_error": str(e)}
+		return image_bytes, {"normalize_status": "pillow_missing", "normalize_error": _public_error(str(e))}
 
 	try:
 		# Allow PIL to open HEIC (iPhone) if pillow-heif is installed.
@@ -211,7 +218,7 @@ def _normalize_image_bytes_for_inference(image_bytes: bytes, output_ext: str) ->
 		return out.getvalue(), {"normalize_status": "normalized", "normalize_format": fmt}
 	except Exception as e:
 		# If anything goes wrong, fall back to original bytes
-		return image_bytes, {"normalize_status": "normalize_failed", "normalize_error": str(e)}
+		return image_bytes, {"normalize_status": "normalize_failed", "normalize_error": _public_error(str(e))}
 
 
 def _odd(n: int) -> int:
@@ -247,7 +254,7 @@ def blur_license_plates(
 		import cv2  # type: ignore
 		import numpy as np  # type: ignore
 	except Exception as e:
-		return image_bytes, {"status": "opencv_missing", "error": str(e)}
+		return image_bytes, {"status": "opencv_missing", "error": _public_error(str(e))}
 
 	try:
 		# Normalize EXIF orientation *before* detection and decoding, so boxes match pixels.
@@ -313,7 +320,7 @@ def blur_license_plates(
 		return bytes(out.tobytes()), {**norm_meta, **det_meta, "status": "blurred", "plates": len(boxes), "applied": applied}
 	except Exception as e:
 		logger.warning("License-plate blurring failed: %s", e, exc_info=True)
-		return image_bytes, {"status": "error", "error": str(e)}
+		return image_bytes, {"status": "error", "error": _public_error(str(e))}
 
 
 _DETECTOR_SINGLETON: Optional[RoboflowPlateDetector] = None

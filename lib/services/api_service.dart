@@ -5,6 +5,21 @@ import 'package:image_picker/image_picker.dart';
 import 'config.dart';
 import '../shared/auth/token_store.dart';
 
+class ApiException implements Exception {
+  final int statusCode;
+  final String message;
+  final Map<String, dynamic>? body;
+
+  ApiException({
+    required this.statusCode,
+    required this.message,
+    this.body,
+  });
+
+  @override
+  String toString() => message;
+}
+
 class ApiService {
   static const Duration _defaultTimeout = Duration(seconds: 30);
   static const Duration _uploadTimeout = Duration(seconds: 180);
@@ -14,17 +29,24 @@ class ApiService {
   }
 
   static String? _accessToken;
+  static String? _refreshToken;
 
   // Initialize tokens from storage
   static Future<void> initializeTokens() async {
     await TokenStore.load();
     _accessToken = TokenStore.token;
+    _refreshToken = TokenStore.refreshToken;
   }
 
   // Save tokens to storage
   static Future<void> _saveAccessToken(String accessToken) async {
     await TokenStore.save(accessToken);
     _accessToken = TokenStore.token;
+  }
+
+  static Future<void> _saveRefreshToken(String? refreshToken) async {
+    await TokenStore.saveRefresh(refreshToken);
+    _refreshToken = TokenStore.refreshToken;
   }
 
   /// Set the current access token (best-effort persisted).
@@ -39,10 +61,27 @@ class ApiService {
     await _saveAccessToken(t);
   }
 
+  /// Set the current refresh token (best-effort persisted).
+  static Future<void> setRefreshToken(String? token) async {
+    final t = (token ?? '').trim();
+    if (t.isEmpty) {
+      await _saveRefreshToken(null);
+      return;
+    }
+    await _saveRefreshToken(t);
+  }
+
+  /// Set both access and refresh tokens (best-effort persisted).
+  static Future<void> setTokens({String? accessToken, String? refreshToken}) async {
+    await setAccessToken(accessToken);
+    await setRefreshToken(refreshToken);
+  }
+
   // Clear tokens
   static Future<void> clearTokens() async {
     await TokenStore.clear();
     _accessToken = null;
+    _refreshToken = null;
   }
 
   // Get headers with authorization
@@ -67,19 +106,46 @@ class ApiService {
       final Map<String, dynamic> err = body.isNotEmpty
           ? json.decode(body)
           : <String, dynamic>{};
-      throw Exception(
-        err['error'] ??
-            err['message'] ??
-            'API request failed (${response.statusCode})',
+      final msg = (err['message'] ?? err['error'] ?? '').toString().trim();
+      throw ApiException(
+        statusCode: code,
+        message: msg.isNotEmpty ? msg : 'API request failed ($code)',
+        body: err,
       );
     } catch (_) {
-      throw Exception('API request failed (${response.statusCode})');
+      throw ApiException(statusCode: code, message: 'API request failed ($code)');
     }
   }
 
   // Refresh access token
   static Future<bool> _refreshAccessToken() async {
-    // No refresh token endpoint in backend; always fail
+    final rt = (_refreshToken ?? '').trim();
+    if (rt.isEmpty) return false;
+    try {
+      final response = await http
+          .post(
+            Uri.parse('$baseUrl/auth/refresh'),
+            headers: {
+              'Content-Type': 'application/json',
+              'Authorization': 'Bearer $rt',
+            },
+          )
+          .timeout(_defaultTimeout);
+      if (response.statusCode >= 200 && response.statusCode < 300) {
+        final data = response.body.isNotEmpty
+            ? json.decode(response.body)
+            : <String, dynamic>{};
+        final String? access = (data['access_token'] as String?)?.trim();
+        final String? refresh = (data['refresh_token'] as String?)?.trim();
+        if (access != null && access.isNotEmpty) {
+          await _saveAccessToken(access);
+          if (refresh != null && refresh.isNotEmpty) {
+            await _saveRefreshToken(refresh);
+          }
+          return true;
+        }
+      }
+    } catch (_) {}
     return false;
   }
 
@@ -182,24 +248,6 @@ class ApiService {
     required String lastName,
     String? phoneNumber,
   }) async {
-    String otp = '000000';
-    if ((phoneNumber ?? '').trim().isNotEmpty) {
-      try {
-        final r = await http
-            .post(
-              Uri.parse('$baseUrl/auth/send_otp'),
-              headers: _getHeaders(includeAuth: false),
-              body: json.encode({'phone': phoneNumber}),
-            )
-            .timeout(_defaultTimeout);
-        if (r.statusCode == 200) {
-          final d = json.decode(r.body);
-          // When SMS isn’t configured, backend returns dev_code
-          otp = (d['dev_code'] ?? otp).toString();
-        }
-      } catch (_) {}
-    }
-
     final response = await http
         .post(
           Uri.parse('$baseUrl/auth/signup'),
@@ -211,12 +259,24 @@ class ApiService {
             'password': password,
             'first_name': firstName,
             'last_name': lastName,
-            'otp_code': otp,
           }),
         )
         .timeout(_defaultTimeout);
 
-    return _handleResponse(response);
+    final data = _handleResponse(response);
+    final String? legacyToken = (data['token'] as String?)?.trim();
+    final String? access = (data['access_token'] as String?)?.trim();
+    final String? refresh = (data['refresh_token'] as String?)?.trim();
+    final token = (legacyToken != null && legacyToken.isNotEmpty)
+        ? legacyToken
+        : access;
+    if (token != null && token.isNotEmpty) {
+      await _saveAccessToken(token);
+    }
+    if (refresh != null && refresh.isNotEmpty) {
+      await _saveRefreshToken(refresh);
+    }
+    return data;
   }
 
   static Future<Map<String, dynamic>> login(
@@ -235,16 +295,96 @@ class ApiService {
     final data = _handleResponse(response);
     final String? legacyToken = (data['token'] as String?)?.trim();
     final String? access = (data['access_token'] as String?)?.trim();
+    final String? refresh = (data['refresh_token'] as String?)?.trim();
     final token = (legacyToken != null && legacyToken.isNotEmpty)
         ? legacyToken
         : access;
     if (token != null && token.isNotEmpty) {
       await _saveAccessToken(token);
     }
+    if (refresh != null && refresh.isNotEmpty) {
+      await _saveRefreshToken(refresh);
+    }
+    return data;
+  }
+
+  // Phone OTP (Option D)
+  static Future<Map<String, dynamic>> phoneStart({
+    required String phoneNumber,
+    String? username,
+    String? firstName,
+    String? lastName,
+    String? email,
+    String? password,
+  }) async {
+    final response = await http
+        .post(
+          Uri.parse('$baseUrl/auth/phone/start'),
+          headers: _getHeaders(includeAuth: false),
+          body: json.encode({
+            'phone_number': phoneNumber,
+            if ((username ?? '').trim().isNotEmpty) 'username': username,
+            if ((firstName ?? '').trim().isNotEmpty) 'first_name': firstName,
+            if ((lastName ?? '').trim().isNotEmpty) 'last_name': lastName,
+            if ((email ?? '').trim().isNotEmpty) 'email': email,
+            if ((password ?? '').trim().isNotEmpty) 'password': password,
+          }),
+        )
+        .timeout(_defaultTimeout);
+    return _handleResponse(response);
+  }
+
+  static Future<Map<String, dynamic>> phoneVerify({
+    required String phoneNumber,
+    required String code,
+    String? username,
+    String? firstName,
+    String? lastName,
+    String? email,
+    String? password,
+  }) async {
+    final response = await http
+        .post(
+          Uri.parse('$baseUrl/auth/phone/verify'),
+          headers: _getHeaders(includeAuth: false),
+          body: json.encode({
+            'phone_number': phoneNumber,
+            'code': code,
+            if ((username ?? '').trim().isNotEmpty) 'username': username,
+            if ((firstName ?? '').trim().isNotEmpty) 'first_name': firstName,
+            if ((lastName ?? '').trim().isNotEmpty) 'last_name': lastName,
+            if ((email ?? '').trim().isNotEmpty) 'email': email,
+            if ((password ?? '').trim().isNotEmpty) 'password': password,
+          }),
+        )
+        .timeout(_defaultTimeout);
+
+    final data = _handleResponse(response);
+    final String? access = (data['access_token'] as String?)?.trim();
+    final String? refresh = (data['refresh_token'] as String?)?.trim();
+    if (access != null && access.isNotEmpty) {
+      await _saveAccessToken(access);
+    }
+    if (refresh != null && refresh.isNotEmpty) {
+      await _saveRefreshToken(refresh);
+    }
     return data;
   }
 
   static Future<void> logout() async {
+    // Best-effort server-side revocation; then clear locally.
+    try {
+      final headers = _getHeaders();
+      final rt = (_refreshToken ?? '').trim();
+      final body = (rt.isNotEmpty) ? json.encode({'refresh_token': rt}) : null;
+      await http
+          .post(
+            Uri.parse('$baseUrl/auth/logout'),
+            headers: headers,
+            body: body,
+          )
+          .timeout(_defaultTimeout);
+    } catch (_) {}
     await clearTokens();
   }
 
@@ -253,7 +393,8 @@ class ApiService {
         .post(
           Uri.parse('$baseUrl/auth/forgot-password'),
           headers: _getHeaders(includeAuth: false),
-          body: json.encode({'email': email}),
+          // Backwards-compatible: backend historically used phone_number.
+          body: json.encode({'email': email, 'phone_number': email}),
         )
         .timeout(_defaultTimeout);
 
@@ -416,9 +557,10 @@ class ApiService {
     String carId,
     List<XFile> imageFiles,
   ) async {
-    // IMPORTANT: Do not blur on submit. Blurring only happens when user taps "Blur Plates"
-    // which uses /api/process-car-images. Here we always skip blur.
-    const String query = '?skip_blur=1';
+    // IMPORTANT:
+    // Backend is privacy-default (blurring enabled by default).
+    // Only skip blurring when explicitly requested via `FORCE_SKIP_BLUR=true` (dev/testing).
+    final String query = forceSkipBlur() ? '?skip_blur=1' : '';
     final request = http.MultipartRequest(
       'POST',
       Uri.parse('$baseUrl/cars/$carId/images$query'),
@@ -482,8 +624,9 @@ class ApiService {
     }
 
     // Add files
+    // Backend expects `request.files["files"]` (list).
     for (final file in videoFiles) {
-      request.files.add(await http.MultipartFile.fromPath('video', file.path));
+      request.files.add(await http.MultipartFile.fromPath('files', file.path));
     }
 
     final response = await request.send().timeout(_uploadTimeout);
@@ -520,6 +663,16 @@ class ApiService {
   static Future<bool> isCarFavorited(String carId) async {
     final res = await _makeAuthenticatedRequest('GET', '/cars/$carId/favorite');
     return (res['is_favorited'] == true) || (res['favorited'] == true);
+  }
+
+  static Future<Map<String, dynamic>> getMyListings({
+    int page = 1,
+    int perPage = 20,
+  }) async {
+    return await _makeAuthenticatedRequest(
+      'GET',
+      '/user/my-listings?page=$page&per_page=$perPage',
+    );
   }
 
   // Check if user is authenticated

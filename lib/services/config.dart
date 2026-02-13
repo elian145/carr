@@ -55,6 +55,24 @@ String apiBaseApi() {
   return base.endsWith('/api') ? base : '$base/api';
 }
 
+/// Socket.IO is currently served by the listings backend (kk) on port 5000 in dev,
+/// while the API proxy runs on 5003. In production, you should front both behind
+/// the same domain and reverse-proxy `/socket.io/` to the backend.
+String effectiveSocketIoBase() {
+  final base = effectiveApiBase().trim();
+  if (base.isEmpty) {
+    if (Platform.isAndroid) return 'http://10.0.2.2:5000';
+    return 'http://localhost:5000';
+  }
+  try {
+    final uri = Uri.parse(base);
+    if (uri.hasPort && uri.port == 5003) {
+      return uri.replace(port: 5000).toString();
+    }
+  } catch (_) {}
+  return base;
+}
+
 bool forceSkipBlur() {
   return kForceSkipBlur;
 }

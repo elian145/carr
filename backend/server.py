@@ -248,4 +248,5 @@ def create_app():
 
 if __name__ == "__main__":
 	port = int(os.getenv("PORT", "5000"))
-	app.run(host="0.0.0.0", port=port, debug=False)
+	# Threaded server helps with many concurrent image/static requests in dev.
+	app.run(host="0.0.0.0", port=port, debug=False, threaded=True)

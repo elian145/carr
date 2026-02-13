@@ -667,4 +667,149 @@ class AppLocalizationsKu extends AppLocalizations {
 
   @override
   String get city_salaheldeen => 'سەلاحەدین';
+
+  @override
+  String get sellTitle => 'فرۆشتن';
+
+  @override
+  String get createListingButton => 'ڕێکلام دروست بکە';
+
+  @override
+  String get creatingListing => 'ڕێکلام دروست دەکرێت...';
+
+  @override
+  String get uploadingPhotos => 'وێنەکان بار دەکرێن...';
+
+  @override
+  String get uploadingVideos => 'ڤیدیۆ بار دەکرێت...';
+
+  @override
+  String addPhotosCount(Object count) {
+    return 'وێنە زیاد بکە ($count)';
+  }
+
+  @override
+  String addVideoCount(Object count) {
+    return 'ڤیدیۆ زیاد بکە ($count)';
+  }
+
+  @override
+  String get pleaseFixHighlightedFields =>
+      'تکایە ئەو خانانە چاک بکە کە دیاریکراون';
+
+  @override
+  String get listingCreated => 'ڕێکلام دروست کرا';
+
+  @override
+  String get listingTitle => 'ڕێکلام';
+
+  @override
+  String get shareAction => 'هاوبەشکردن';
+
+  @override
+  String get callAction => 'پەیوەندی';
+
+  @override
+  String get chatAction => 'چات';
+
+  @override
+  String get favoriteAction => 'دڵخواز';
+
+  @override
+  String get favoritesAction => 'دڵخوازەکان';
+
+  @override
+  String get editProfileAction => 'دەستکاری پرۆفایل';
+
+  @override
+  String get descriptionTitle => 'وەسف';
+
+  @override
+  String get retryAction => 'دووبارە هەوڵدانەوە';
+
+  @override
+  String get sellerPhoneNotAvailable => 'ژمارەی فرۆشیار بەردەست نییە';
+
+  @override
+  String get couldNotStartCall => 'نەتوانرا پەیوەندی دەستپێبکرێت';
+
+  @override
+  String get myListingsTitle => 'ڕێکلامەکانم';
+
+  @override
+  String get deleteListingTitle => 'ڕێکلام بسڕێتەوە؟';
+
+  @override
+  String get deleteListingBody => 'ئەمە لە ڕێکلامە گشتییەکان لادەبرێت.';
+
+  @override
+  String get cancelAction => 'هەڵوەشاندنەوە';
+
+  @override
+  String get deleteAction => 'سڕینەوە';
+
+  @override
+  String get editAction => 'دەستکاری';
+
+  @override
+  String get comparisonEmptyHint =>
+      'ئۆتۆمبێل زیاد بکە بۆ بەراوردکردن لە ڕێکلامەکانەوە.';
+
+  @override
+  String get comparisonSpecLabel => 'تایبەتمەندی';
+
+  @override
+  String get removeAction => 'لابردن';
+
+  @override
+  String get settingsThemeTitle => 'ڕووکار';
+
+  @override
+  String get settingsLanguageTitle => 'زمان';
+
+  @override
+  String get settingsSystem => 'سیستەم';
+
+  @override
+  String get settingsLight => 'ڕوون';
+
+  @override
+  String get settingsDark => 'تاریک';
+
+  @override
+  String get enabledLabel => 'چالاک';
+
+  @override
+  String get disabledLabel => 'ناچالاک';
+
+  @override
+  String get accountLabel => 'هەژمار';
+
+  @override
+  String get apiLabel => 'API';
+
+  @override
+  String get noFavoritesYet => 'هێشتا هیچ دڵخوازێک نییە';
+
+  @override
+  String get descriptionOptionalLabel => 'وەسف (هەلبژاردە)';
+
+  @override
+  String get plateBlurNote =>
+      'تێبینی: شاردنەوەی ژمارەی پڵێت بە بنەڕەت چالاکە بۆ پاراستنی تایبەتمەندی.';
+
+  @override
+  String get invalidField => 'نەگونجاوە';
+
+  @override
+  String get currencyLabel => 'دراو';
+
+  @override
+  String get engineTypeLabel => 'جۆری مۆتۆر';
+
+  @override
+  String get locationLabel => 'شوێن';
+
+  @override
+  String get chooseAuthMethodTitle => 'ڕێگای چوونەژوورەوە هەڵبژێرە:';
 }

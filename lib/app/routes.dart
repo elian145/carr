@@ -1,9 +1,17 @@
 import 'package:flutter/material.dart';
 
 import '../pages/analytics_page.dart';
+import '../pages/auth_pages.dart' as auth;
 import '../pages/chat_pages.dart' as chat;
 import '../pages/edit_profile_page.dart';
-import '../legacy/main_legacy.dart' as legacy;
+import '../pages/home_page.dart' as modern;
+import '../pages/favorites_page.dart' as favorites;
+import '../pages/profile_page.dart' as profile;
+import '../pages/sell_page.dart' as sell;
+import '../pages/settings_page.dart' as settings;
+import '../pages/car_detail_page.dart' as details;
+import '../pages/my_listings_page.dart' as mine;
+import '../pages/comparison_page.dart' as comparison;
 
 class _RouteArgsErrorPage extends StatelessWidget {
   final String routeName;
@@ -27,22 +35,22 @@ Map<String, WidgetBuilder> buildAppRoutes() {
   }
 
   return {
-    '/': (context) => legacy.HomePage(),
-    '/sell': (context) => legacy.SellCarPage(),
-    '/settings': (context) => legacy.SettingsPage(),
-    '/favorites': (context) => legacy.FavoritesPage(),
+    '/': (context) => const modern.HomePage(),
+    '/sell': (context) => const sell.SellPage(),
+    '/settings': (context) => const settings.SettingsPage(),
+    '/favorites': (context) => const favorites.FavoritesPage(),
     '/chat': (context) => const chat.ChatListPage(),
-    '/login': (context) => legacy.LoginPage(),
-    '/signup': (context) => legacy.SignupPage(),
-    '/profile': (context) => legacy.ProfilePage(),
+    '/login': (context) => const auth.LoginPage(),
+    '/signup': (context) => const auth.RegisterPage(),
+    '/register': (context) => const auth.RegisterPage(),
+    '/forgot-password': (context) => const auth.ForgotPasswordPage(),
+    '/profile': (context) => const profile.ProfilePage(),
     '/edit-profile': (context) => EditProfilePage(),
-    '/payment/history': (context) => legacy.PaymentHistoryPage(),
-    '/payment/initiate': (context) => legacy.PaymentInitiatePage(),
     '/car_detail': (context) {
       final args = argsMap(context);
       final carId = args?['carId'];
       if (carId == null) return const _RouteArgsErrorPage(routeName: '/car_detail');
-      return legacy.CarDetailsPage(carId: carId.toString());
+      return details.CarDetailPage(carId: carId.toString());
     },
     '/chat/conversation': (context) {
       final args = argsMap(context);
@@ -58,20 +66,8 @@ Map<String, WidgetBuilder> buildAppRoutes() {
         receiverId: args['receiverId']?.toString(),
       );
     },
-    '/payment/status': (context) {
-      final args = argsMap(context);
-      final paymentId = args?['paymentId'];
-      if (paymentId == null) return const _RouteArgsErrorPage(routeName: '/payment/status');
-      return legacy.PaymentStatusPage(paymentId: paymentId);
-    },
-    '/edit': (context) {
-      final args = argsMap(context);
-      final car = args?['car'];
-      if (car == null) return const _RouteArgsErrorPage(routeName: '/edit');
-      return legacy.EditListingPage(car: car);
-    },
-    '/my_listings': (context) => legacy.MyListingsPage(),
-    '/comparison': (context) => legacy.CarComparisonPage(),
+    '/my_listings': (context) => const mine.MyListingsPage(),
+    '/comparison': (context) => const comparison.ComparisonPage(),
     '/analytics': (context) => AnalyticsPage(),
   };
 }

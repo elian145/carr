@@ -803,7 +803,7 @@ class _AnalyticsPageState extends State<AnalyticsPage> {
 
     return _AnalyticsImageCarousel(
       urls: urls,
-      carId: (car['id'] ?? '').toString(),
+      carId: (car['id'] ?? car['public_id'] ?? '').toString(),
     );
   }
 

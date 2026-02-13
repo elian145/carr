@@ -4,14 +4,14 @@ import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 
-import 'package:car_listing_app/app/app.dart';
+import 'package:car_listing_app/legacy/main_legacy.dart' as legacy;
 import 'package:car_listing_app/services/config.dart';
 
 /// A best-effort full-app smoke test.
 ///
 /// What it covers:
-/// - Boots the real app widget tree (`CarzoApp`)
-/// - Navigates through every named route in `buildAppRoutes()`
+/// - Boots the legacy app widget tree (`legacy.MyApp`) to match production UI
+/// - Navigates through every named route in the legacy app routes table
 /// - Uses a local fake HTTP server so pages that load data on initState
 ///   don't hang or hit real networks during CI/dev tests
 ///
@@ -21,18 +21,30 @@ import 'package:car_listing_app/services/config.dart';
 /// Note: WebSocket flows are intentionally not fully exercised here because
 /// that requires a real Socket.IO server.
 void main() {
-  const int port = 8081;
+  int port = 8081;
   HttpServer? server;
 
   setUpAll(() async {
     // Ensure tests are pointed at our local fake server.
-    final base = apiBase();
-    if (base != 'http://127.0.0.1:$port') {
+    // We read the port from API_BASE so developers can avoid collisions if needed.
+    final base = apiBase().trim();
+    if (base.isEmpty) {
       throw StateError(
-        'Smoke test expects API_BASE=http://127.0.0.1:$port but got "$base". '
+        'Smoke test requires API_BASE to point to a local fake server. '
         'Run: flutter test --dart-define=API_BASE=http://127.0.0.1:$port',
       );
     }
+    final uri = Uri.parse(base);
+    if (!(uri.scheme == 'http' || uri.scheme == 'https')) {
+      throw StateError('Smoke test API_BASE must be http(s), got: "$base"');
+    }
+    if (!uri.hasPort) {
+      throw StateError(
+        'Smoke test API_BASE must include a port, got: "$base". '
+        'Example: http://127.0.0.1:$port',
+      );
+    }
+    port = uri.port;
 
     server = await HttpServer.bind(InternetAddress.loopbackIPv4, port);
     server!.listen((req) async {
@@ -52,12 +64,36 @@ void main() {
 
       // Proxy-style API paths
       if (path.startsWith('/api/')) {
+        // Handle car detail paths: /api/cars/<id>
+        if (path.startsWith('/api/cars/') && path.length > '/api/cars/'.length) {
+          final id = path.substring('/api/cars/'.length);
+          return jsonOk({
+            'car': {
+              'id': id,
+              'title': 'Test car',
+              'brand': 'toyota',
+              'model': 'camry',
+              'year': 2020,
+              'price': 10000,
+              'currency': 'USD',
+              'location': 'Erbil',
+              'image_url': '',
+              'images': <dynamic>[],
+              'seller': {'id': 'seller_1', 'username': 'seller'},
+            },
+          });
+        }
         // Minimal stubs required by pages that auto-load.
         switch (path) {
           case '/api/analytics/listings':
             return jsonOk(<dynamic>[]);
           case '/api/my_listings':
             return jsonOk(<dynamic>[]);
+          case '/api/user/my-listings':
+            return jsonOk({
+              'cars': <dynamic>[],
+              'pagination': {'has_next': false},
+            });
           case '/api/cars':
             // Legacy code sometimes expects either [] or {cars:[], pagination:{has_next:false}}
             return jsonOk({
@@ -72,6 +108,15 @@ void main() {
           case '/api/auth/me':
             return jsonOk({
               'user': {'id': 1, 'username': 'test'},
+            });
+          case '/api/user/profile':
+            return jsonOk({
+              'user': {'id': 1, 'username': 'test'},
+            });
+          case '/api/user/favorites':
+            return jsonOk({
+              'cars': <dynamic>[],
+              'pagination': {'has_next': false},
             });
           case '/api/auth/send_otp':
             return jsonOk({'sent': false, 'dev_code': '123456'});
@@ -96,7 +141,7 @@ void main() {
   });
 
   testWidgets('Full app smoke: boot and visit all routes', (tester) async {
-    await tester.pumpWidget(const CarzoApp());
+    await tester.pumpWidget(const legacy.MyApp());
     // Avoid pumpAndSettle here: many screens contain indeterminate animations
     // (e.g. progress indicators) which would never "settle".
     await tester.pump();
@@ -139,8 +184,7 @@ void main() {
     );
     await pushNamed(
       '/chat/conversation',
-      // Use carId; route also accepts legacy conversationId.
-      args: {'carId': '1'},
+      args: {'conversationId': '1'},
     );
     await pushNamed(
       '/payment/status',

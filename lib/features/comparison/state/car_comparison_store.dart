@@ -17,21 +17,31 @@ class CarComparisonStore extends ChangeNotifier {
 
   int get comparisonCount => _comparisonCars.length;
 
-  bool isCarInComparison(int carId) {
-    return _comparisonCars.any((car) => car['id'] == carId);
+  String? _carKey(dynamic raw) {
+    if (raw == null) return null;
+    final s = raw.toString().trim();
+    return s.isEmpty ? null : s;
+  }
+
+  bool isCarInComparison(String carId) {
+    return _comparisonCars.any((car) => (car['id'] ?? car['public_id'] ?? '').toString() == carId);
   }
 
   void addCarToComparison(Map<String, dynamic> car) {
     if (_comparisonCars.length >= 5) return;
-    if (!isCarInComparison(car['id'])) {
-      _comparisonCars.add(car);
+    final id = _carKey(car['id'] ?? car['public_id'] ?? car['car_id'] ?? car['carId']);
+    if (id == null) return;
+    if (!isCarInComparison(id)) {
+      final normalized = Map<String, dynamic>.from(car);
+      normalized['id'] = id;
+      _comparisonCars.add(normalized);
       _saveToPrefs();
       notifyListeners();
     }
   }
 
-  void removeCarFromComparison(int carId) {
-    _comparisonCars.removeWhere((car) => car['id'] == carId);
+  void removeCarFromComparison(String carId) {
+    _comparisonCars.removeWhere((car) => (car['id'] ?? car['public_id'] ?? '').toString() == carId);
     _saveToPrefs();
     notifyListeners();
   }
@@ -70,11 +80,10 @@ class CarComparisonStore extends ChangeNotifier {
       for (final Map<String, dynamic> car in loaded) {
         final dynamic rawId =
             car['id'] ?? car['car_id'] ?? car['carId'] ?? car['uuid'];
-        final int loadedId = rawId is int
-            ? rawId
-            : (rawId is String ? (int.tryParse(rawId) ?? rawId.hashCode) : -1);
+        final loadedId = _carKey(rawId);
+        if (loadedId == null) continue;
 
-        if (!_comparisonCars.any((c) => c['id'] == loadedId)) {
+        if (!_comparisonCars.any((c) => (c['id'] ?? '').toString() == loadedId)) {
           final normalized = Map<String, dynamic>.from(car);
           normalized['id'] = loadedId;
           _comparisonCars.add(normalized);

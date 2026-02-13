@@ -1,20 +1,12 @@
+import 'dart:async';
 import 'dart:convert';
 import 'dart:io';
-import 'dart:async';
 import 'package:flutter/foundation.dart' show kReleaseMode;
-import 'package:web_socket_channel/web_socket_channel.dart';
-import 'package:web_socket_channel/io.dart';
-import 'package:web_socket_channel/status.dart' as status;
+import 'package:socket_io_client/socket_io_client.dart' as io;
 import 'api_service.dart';
 import 'config.dart';
 
 class WebSocketService {
-  // SECURITY: never put JWTs in URLs in release builds (URLs leak via logs/proxies).
-  static bool get _tokenInQuery {
-    if (kReleaseMode) return false;
-    return const bool.fromEnvironment('WS_TOKEN_IN_QUERY', defaultValue: false);
-  }
-
   static final StreamController<Map<String, dynamic>> _messagesController =
       StreamController<Map<String, dynamic>>.broadcast();
   static final StreamController<Map<String, dynamic>> _notificationsController =
@@ -30,29 +22,12 @@ class WebSocketService {
   static Stream<bool> get connectionState => _connectionController.stream;
   static Stream<String> get errors => _errorController.stream;
 
-  static String get baseUrl {
-    final base = effectiveApiBase();
-    if (base.startsWith('https://')) {
-      return base.replaceFirst('https://', 'wss://');
-    }
-    if (base.startsWith('http://')) {
-      if (kReleaseMode) {
-        throw StateError('Release builds require HTTPS/WSS. Refusing ws://');
-      }
-      return base.replaceFirst('http://', 'ws://');
-    }
-    return 'ws://$base';
-  }
+  static String get baseHttpUrl => effectiveSocketIoBase();
 
-  static WebSocketChannel? _channel;
+  static io.Socket? _socket;
   static bool _isConnected = false;
   static bool _isConnecting = false;
   static String? _currentRoom;
-  static int _retries = 0;
-  static DateTime? _lastAttemptAt;
-  static Timer? _heartbeatTimer;
-  static final List<String> _pendingFrames = <String>[];
-  static const int _maxPendingFrames = 50;
 
   // Callbacks
   static Function(Map<String, dynamic>)? onMessage;
@@ -79,35 +54,14 @@ class WebSocketService {
     }
   }
 
-  static void _cleanupChannel() {
+  static void _cleanupSocket() {
     try {
-      _channel?.sink.close(status.goingAway);
+      _socket?.dispose();
     } catch (_) {}
-    _channel = null;
-    _stopHeartbeat();
+    _socket = null;
   }
 
-  static void _flushPending() {
-    if (!_isConnected || _channel == null) return;
-    if (_pendingFrames.isEmpty) return;
-    final frames = List<String>.from(_pendingFrames);
-    _pendingFrames.clear();
-    for (final frame in frames) {
-      try {
-        _channel!.sink.add(frame);
-      } catch (e) {
-        _emitError('Send pending frame failed: $e');
-        // Put remaining back (best effort) and stop flushing.
-        final idx = frames.indexOf(frame);
-        if (idx >= 0 && idx + 1 < frames.length) {
-          _pendingFrames.addAll(frames.sublist(idx + 1));
-        }
-        break;
-      }
-    }
-  }
-
-  // Connect to WebSocket
+  // Connect to Socket.IO (with polling fallback)
   static Future<void> connect() async {
     try {
       if (_isConnected) return;
@@ -122,170 +76,117 @@ class WebSocketService {
         return;
       }
 
-      // Ensure any stale channel is cleaned up before re-connecting
-      _cleanupChannel();
+      _cleanupSocket();
 
-      final qp = <String, String>{
-        'EIO': '4',
-        'transport': 'websocket',
-        if (_tokenInQuery) 'token': accessToken,
+      final base = baseHttpUrl;
+      if (kReleaseMode && !base.startsWith('https://')) {
+        throw StateError('Release builds require HTTPS/WSS. Refusing insecure Socket.IO.');
+      }
+
+      final opts = <String, dynamic>{
+        'transports': ['websocket', 'polling'],
+        'path': '/socket.io/',
+        'autoConnect': false,
+        'reconnection': true,
+        'reconnectionAttempts': 10,
+        'reconnectionDelay': 500,
+        'reconnectionDelayMax': 3000,
+        'timeout': 8000,
+        // Attach auth header (works for both websocket + polling on mobile/desktop).
+        'extraHeaders': {HttpHeaders.authorizationHeader: 'Bearer $accessToken'},
       };
-      final uri = Uri.parse('$baseUrl/socket.io/').replace(queryParameters: qp);
 
-      // Prefer IO channel so we can attach Authorization header.
-      _channel = IOWebSocketChannel.connect(
-        uri,
-        headers: {HttpHeaders.authorizationHeader: 'Bearer $accessToken'},
-      );
+      _socket = io.io(base, opts);
 
-      _channel!.stream.listen(
-        (data) {
-          _handleMessage(data);
-        },
-        onError: (error) {
-          _isConnected = false;
-          _isConnecting = false;
-          _cleanupChannel();
-          _emitConnected(false);
-          _emitError('WebSocket error: $error');
-          _scheduleReconnect();
-        },
-        onDone: () {
-          _isConnected = false;
-          _isConnecting = false;
-          _cleanupChannel();
-          _emitConnected(false);
-          _scheduleReconnect();
-        },
-      );
+      _socket!.on('connect', (_) {
+        _isConnected = true;
+        _isConnecting = false;
+        _emitConnected(true);
+        // Re-join room if we had one.
+        final roomCar = _currentRoom;
+        if (roomCar != null && roomCar.isNotEmpty) {
+          joinChat(roomCar);
+        }
+      });
 
-      _isConnected = true;
+      _socket!.on('disconnect', (_) {
+        _isConnected = false;
+        _isConnecting = false;
+        _emitConnected(false);
+      });
+
+      _socket!.on('connect_error', (err) {
+        _isConnected = false;
+        _isConnecting = false;
+        _emitConnected(false);
+        _emitError('Socket connect error: $err');
+      });
+
+      _socket!.on('error', (err) {
+        final msg = (err is Map && err['message'] != null) ? err['message'].toString() : err.toString();
+        _emitError(msg);
+      });
+
+      _socket!.on('new_message', (payload) {
+        if (payload is Map) {
+          final m = Map<String, dynamic>.from(payload as Map);
+          _messagesController.add(m);
+          onMessage?.call(m);
+        }
+      });
+
+      _socket!.on('new_notification', (payload) {
+        if (payload is Map) {
+          final n = Map<String, dynamic>.from(payload as Map);
+          _notificationsController.add(n);
+          onNotification?.call(n);
+        }
+      });
+
+      _socket!.on('joined_chat', (payload) {
+        try {
+          if (payload is Map && payload['car_id'] != null) {
+            _currentRoom = payload['car_id'].toString();
+          }
+        } catch (_) {}
+      });
+
+      _socket!.connect();
       _isConnecting = false;
-      _emitConnected(true);
-      _startHeartbeat();
-      _flushPending();
     } catch (e) {
       _isConnected = false;
       _isConnecting = false;
-      _cleanupChannel();
+      _cleanupSocket();
       _emitConnected(false);
       _emitError('Connection failed: $e');
-      _scheduleReconnect();
     }
   }
 
-  // Disconnect from WebSocket
+  // Disconnect
   static void disconnect() {
-    _cleanupChannel();
+    try {
+      _socket?.disconnect();
+    } catch (_) {}
+    _cleanupSocket();
     _isConnected = false;
     _isConnecting = false;
     _currentRoom = null;
-    _retries = 0;
-    _lastAttemptAt = null;
     _emitConnected(false);
   }
 
-  static void _scheduleReconnect() {
-    if (_isConnected) return;
-    final now = DateTime.now();
-    if (_lastAttemptAt != null &&
-        now.difference(_lastAttemptAt!).inSeconds < 2) {
-      return;
-    }
-    _lastAttemptAt = now;
-    _retries = (_retries + 1).clamp(1, 6);
-    final delayMs = (500 * _retries);
-    Future.delayed(Duration(milliseconds: delayMs), () {
-      if (!_isConnected) {
-        connect();
-      }
-    });
-  }
-
-  static void _startHeartbeat() {
-    _stopHeartbeat();
-    // Socket.IO ping frame is '2'
-    _heartbeatTimer = Timer.periodic(const Duration(seconds: 25), (_) {
-      try {
-        if (_isConnected && _channel != null) {
-          _channel!.sink.add('2');
-        }
-      } catch (_) {}
-    });
-  }
-
-  static void _stopHeartbeat() {
-    try {
-      _heartbeatTimer?.cancel();
-    } catch (_) {}
-    _heartbeatTimer = null;
-  }
-
-  // Handle incoming messages
-  static void _handleMessage(dynamic data) {
-    try {
-      final message = data.toString();
-
-      // Handle Socket.IO protocol messages
-      if (message.startsWith('0')) {
-        // Connection acknowledgment
-        return;
-      } else if (message.startsWith('40')) {
-        // Connected to namespace
-        return;
-      } else if (message.startsWith('42')) {
-        // Event message
-        final eventData = message.substring(2);
-        final decoded = json.decode(eventData);
-
-        if (decoded is List && decoded.length >= 2) {
-          final eventName = decoded[0];
-          final eventPayload = decoded[1];
-
-          switch (eventName) {
-            case 'connected':
-              _isConnected = true;
-              _emitConnected(true);
-              break;
-            case 'new_message':
-              if (eventPayload is Map<String, dynamic>) {
-                _messagesController.add(eventPayload);
-                onMessage?.call(eventPayload);
-              }
-              break;
-            case 'new_notification':
-              if (eventPayload is Map<String, dynamic>) {
-                _notificationsController.add(eventPayload);
-                onNotification?.call(eventPayload);
-              }
-              break;
-            case 'joined_chat':
-              _currentRoom = eventPayload['room'];
-              break;
-          }
-        }
-      }
-    } catch (e) {
-      _emitError('Message parsing error: $e');
-    }
-  }
-
-  // Send message
   static void sendMessage(String event, Map<String, dynamic> data) {
     try {
-      final message = json.encode([event, data]);
-      final frame = '42$message';
-      if (!_isConnected || _channel == null) {
-        // Queue and connect (best-effort) to avoid dropping user actions.
-        if (_pendingFrames.length >= _maxPendingFrames) {
-          _pendingFrames.removeAt(0);
-        }
-        _pendingFrames.add(frame);
-        // Fire-and-forget connect; once connected we'll flush.
+      if (_socket == null || !_isConnected) {
         unawaited(connect());
+        // Best-effort: emit after connect by slight delay.
+        Future.delayed(const Duration(milliseconds: 400), () {
+          try {
+            _socket?.emit(event, data);
+          } catch (_) {}
+        });
         return;
       }
-      _channel!.sink.add(frame);
+      _socket!.emit(event, data);
     } catch (e) {
       _emitError('Send message error: $e');
     }
@@ -298,8 +199,10 @@ class WebSocketService {
 
   // Leave current chat room
   static void leaveChat() {
-    if (_currentRoom != null) {
-      sendMessage('leave_chat', {'room': _currentRoom});
+    final carId = _currentRoom;
+    if (carId != null && carId.isNotEmpty) {
+      // Best-effort: server will handle missing room, but we can compute it.
+      sendMessage('leave_chat', {'room': 'chat:$carId'});
       _currentRoom = null;
     }
   }

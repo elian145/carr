@@ -27,6 +27,23 @@ flutter build appbundle --flavor prod --release
 
 Use `--flavor dev` or `--flavor stage` for other environments.
 
+### Run on Android (emulator or device)
+
+The app uses **product flavors** (dev, stage, prod). You must pass a flavor when running:
+
+```bash
+flutter run -d <device_id> --flavor dev
+```
+
+Example with Android emulator:
+
+```bash
+flutter devices
+flutter run -d emulator-5554 --flavor dev
+```
+
+Without `--flavor dev`, Gradle may build successfully but Flutter will report "failed to produce an .apk file" because it cannot locate the flavor-specific APK.
+
 # Car Listings App - Complete Backend & Frontend System
 
 A comprehensive car listing application with real-time chat, notifications, user authentication, and admin dashboard.
@@ -152,10 +169,12 @@ If you deploy the backend to the public internet, do **not** run it in debug mod
 
 7. **Start the backend server**
    ```bash
-   python app_new.py
+   APP_ENV=development python -m kk.app_new
    ```
 
-The backend will be available at `http://localhost:5000`
+The backend will be available at `http://localhost:8081` (or `PORT` if set).
+
+For production deployment details (Gunicorn/Celery/Redis/Socket.IO scaling), see `DEPLOYMENT.md`.
 
 ### Frontend Setup (Flutter)
 

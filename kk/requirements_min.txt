@@ -16,6 +16,7 @@ python-multipart==0.0.6
 redis==5.0.1
 celery==5.3.4
 gunicorn==21.2.0
+psycopg[binary]
 marshmallow==3.20.1
 marshmallow-sqlalchemy==0.29.0
 email-validator==2.1.0
@@ -23,6 +24,7 @@ phonenumbers==8.13.26
 python-jose[cryptography]==3.3.0
 cryptography==45.0.7
 requests==2.31.0
+sentry-sdk
 # Needed for Roboflow plate blurring
 opencv-python-headless
 numpy

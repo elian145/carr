@@ -7,8 +7,6 @@ import '../services/auth_service.dart';
 import '../l10n/app_localizations.dart';
 import '../services/api_service.dart';
 import '../widgets/theme_toggle_widget.dart';
-import 'package:http/http.dart' as http;
-import 'dart:convert';
 
 // Lightweight i18n helpers for auth pages
 String _lang(BuildContext context) =>
@@ -48,9 +46,13 @@ String _pleaseEnterPassword(BuildContext context) {
 
 String _loginFailedText(BuildContext context, String message) {
   final c = _lang(context);
-  if (c == 'ar') return 'فشل تسجيل الدخول: $message';
-  if (c == 'ku') return 'هەڵە لە چوونەژوورەوە: $message';
-  return 'Login failed: $message';
+  final isServerError = message.contains('500') || message.contains('502') || message.contains('ProxyNotConfigured');
+  final hint = isServerError
+      ? ' Make sure the listings server (port 5000) and proxy (5003) are running.'
+      : '';
+  if (c == 'ar') return 'فشل تسجيل الدخول: $message$hint';
+  if (c == 'ku') return 'هەڵە لە چوونەژوورەوە: $message$hint';
+  return 'Login failed: $message$hint';
 }
 
 String _forgotPasswordQuestion(BuildContext context) {
@@ -380,6 +382,7 @@ class RegisterPage extends StatefulWidget {
 
 class _RegisterPageState extends State<RegisterPage> {
   final _formKey = GlobalKey<FormState>();
+  final _otpController = TextEditingController();
   final _usernameController = TextEditingController();
   final _emailController = TextEditingController();
   final _passwordController = TextEditingController();
@@ -392,9 +395,12 @@ class _RegisterPageState extends State<RegisterPage> {
   bool _isLoading = false;
   bool _isSendingOtp = false;
   String? _devOtp;
+  bool _otpSent = false;
+  String _authType = 'email'; // 'email' | 'phone'
 
   @override
   void dispose() {
+    _otpController.dispose();
     _usernameController.dispose();
     _emailController.dispose();
     _passwordController.dispose();
@@ -405,32 +411,63 @@ class _RegisterPageState extends State<RegisterPage> {
     super.dispose();
   }
 
+  bool _hasPassword() => _passwordController.text.trim().isNotEmpty;
+
   Future<void> _register() async {
-    if (!_formKey.currentState!.validate()) return;
+    if (!_formKey.currentState!.validate()) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Please fix the highlighted fields'),
+        ),
+      );
+      return;
+    }
 
     setState(() => _isLoading = true);
 
     try {
       final authService = Provider.of<AuthService>(context, listen: false);
-      await authService.register(
-        username: _usernameController.text,
-        email: _emailController.text,
-        password: _passwordController.text,
-        firstName: _firstNameController.text,
-        lastName: _lastNameController.text,
-        phoneNumber: _phoneController.text.isNotEmpty
-            ? _phoneController.text
-            : null,
-      );
-
-      if (mounted) {
+      if (_authType == 'phone') {
+        final res = await ApiService.phoneVerify(
+          phoneNumber: _phoneController.text.trim(),
+          code: _otpController.text.trim(),
+          username: _usernameController.text.trim(),
+          firstName: _firstNameController.text.trim(),
+          lastName: _lastNameController.text.trim(),
+          email: _emailController.text.trim(),
+          password: _hasPassword() ? _passwordController.text : null,
+        );
+        // Load profile + connect websocket
+        await authService.initialize();
+        if (!mounted) return;
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(res['message']?.toString() ?? 'Signed in'),
+            backgroundColor: Colors.green,
+          ),
+        );
+        Navigator.pushReplacementNamed(context, '/');
+      } else {
+        await authService.register(
+          username: _usernameController.text,
+          email: _emailController.text,
+          password: _passwordController.text,
+          firstName: _firstNameController.text,
+          lastName: _lastNameController.text,
+          phoneNumber: _phoneController.text.isNotEmpty
+              ? _phoneController.text
+              : null,
+        );
+        await authService.initialize();
+        if (!mounted) return;
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
             content: Text(_registrationSuccess(context)),
             backgroundColor: Colors.green,
           ),
         );
-        Navigator.pushReplacementNamed(context, '/login');
+        Navigator.pushReplacementNamed(context, '/');
       }
     } catch (e) {
       if (mounted) {
@@ -456,35 +493,29 @@ class _RegisterPageState extends State<RegisterPage> {
       return;
     }
     setState(() => _isSendingOtp = true);
-    // No-op: ensure imports handled above
     try {
-      final resp = await http
-          .post(
-            Uri.parse('${ApiService.baseUrl}/auth/send_otp'),
-            headers: {'Content-Type': 'application/json'},
-            body: json.encode({'phone': _phoneController.text.trim()}),
-          )
-          .timeout(const Duration(seconds: 30));
+      final resp = await ApiService.phoneStart(
+        phoneNumber: _phoneController.text.trim(),
+        username: _usernameController.text.trim(),
+        firstName: _firstNameController.text.trim(),
+        lastName: _lastNameController.text.trim(),
+        email: _emailController.text.trim(),
+        password: _hasPassword() ? _passwordController.text : null,
+      );
       if (!mounted) return;
-      if (resp.statusCode == 200) {
-        final data = json.decode(resp.body) as Map<String, dynamic>;
-        setState(() {
-          _devOtp = (data['dev_code'] ?? '').toString();
-        });
-        if (_devOtp != null && _devOtp!.isNotEmpty && kDebugMode) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(
-              content: Text(AppLocalizations.of(context)!.devOtpCode(_devOtp!)),
-            ),
-          );
-        } else {
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(content: Text(AppLocalizations.of(context)!.otpSent)),
-          );
-        }
+      setState(() {
+        _otpSent = true;
+        _devOtp = (resp['dev_code'] ?? '').toString();
+      });
+      if (_devOtp != null && _devOtp!.isNotEmpty && kDebugMode) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(AppLocalizations.of(context)!.devOtpCode(_devOtp!)),
+          ),
+        );
       } else {
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text(AppLocalizations.of(context)!.otpFailed)),
+          SnackBar(content: Text(AppLocalizations.of(context)!.otpSent)),
         );
       }
     } catch (e) {
@@ -528,6 +559,47 @@ class _RegisterPageState extends State<RegisterPage> {
                 textAlign: TextAlign.center,
               ),
               const SizedBox(height: 24),
+              // Authentication Type Selection
+              Text(
+                AppLocalizations.of(context)!.chooseAuthMethodTitle,
+                style: Theme.of(context).textTheme.titleMedium,
+              ),
+              const SizedBox(height: 8),
+              Row(
+                children: [
+                  Expanded(
+                    child: RadioListTile<String>(
+                      title: Text(AppLocalizations.of(context)!.emailLabel),
+                      value: 'email',
+                      groupValue: _authType,
+                      onChanged: (v) {
+                        if (v == null) return;
+                        setState(() {
+                          _authType = v;
+                          _otpSent = false;
+                          _otpController.clear();
+                        });
+                      },
+                    ),
+                  ),
+                  Expanded(
+                    child: RadioListTile<String>(
+                      title: Text(AppLocalizations.of(context)!.phoneLabel),
+                      value: 'phone',
+                      groupValue: _authType,
+                      onChanged: (v) {
+                        if (v == null) return;
+                        setState(() {
+                          _authType = v;
+                          _otpSent = false;
+                          _otpController.clear();
+                        });
+                      },
+                    ),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 16),
               Row(
                 children: [
                   Expanded(
@@ -591,6 +663,10 @@ class _RegisterPageState extends State<RegisterPage> {
                 ),
                 keyboardType: TextInputType.emailAddress,
                 validator: (value) {
+                  if (_authType == 'phone') {
+                    // optional in phone OTP mode
+                    return null;
+                  }
                   if (value == null || value.isEmpty) {
                     return AppLocalizations.of(context)!.emailLabel;
                   }
@@ -615,20 +691,52 @@ class _RegisterPageState extends State<RegisterPage> {
                   FilteringTextInputFormatter.allow(RegExp(r'[0-9+ ]')),
                   LengthLimitingTextInputFormatter(20),
                 ],
+                validator: (value) {
+                  if (_authType != 'phone') return null;
+                  if (value == null || value.trim().isEmpty) {
+                    return AppLocalizations.of(context)!.requiredField;
+                  }
+                  return null;
+                },
               ),
-              const SizedBox(height: 8),
-              Align(
-                alignment: Alignment.centerRight,
-                child: TextButton.icon(
-                  onPressed: _isSendingOtp ? null : _sendOtp,
-                  icon: const Icon(Icons.sms),
-                  label: Text(
-                    _isSendingOtp
-                        ? '...'
-                        : AppLocalizations.of(context)!.sendOtp,
+              if (_authType == 'phone') ...[
+                const SizedBox(height: 8),
+                Align(
+                  alignment: Alignment.centerRight,
+                  child: TextButton.icon(
+                    onPressed: _isSendingOtp ? null : _sendOtp,
+                    icon: const Icon(Icons.sms),
+                    label: Text(
+                      _isSendingOtp ? '...' : AppLocalizations.of(context)!.sendOtp,
+                    ),
                   ),
                 ),
-              ),
+                const SizedBox(height: 12),
+                TextFormField(
+                  controller: _otpController,
+                  decoration: InputDecoration(
+                    labelText: AppLocalizations.of(context)!.sendCode,
+                    prefixIcon: const Icon(Icons.password),
+                    border: const OutlineInputBorder(),
+                  ),
+                  keyboardType: TextInputType.number,
+                  inputFormatters: [
+                    FilteringTextInputFormatter.digitsOnly,
+                    LengthLimitingTextInputFormatter(6),
+                  ],
+                  validator: (value) {
+                    if (_authType != 'phone') return null;
+                    if (!_otpSent) return AppLocalizations.of(context)!.sendCodeFirst;
+                    if (value == null || value.trim().isEmpty) {
+                      return AppLocalizations.of(context)!.requiredField;
+                    }
+                    if (value.trim().length != 6) {
+                      return AppLocalizations.of(context)!.requiredField;
+                    }
+                    return null;
+                  },
+                ),
+              ],
               const SizedBox(height: 16),
               TextFormField(
                 controller: _passwordController,
@@ -649,11 +757,26 @@ class _RegisterPageState extends State<RegisterPage> {
                   ),
                 ),
                 validator: (value) {
-                  if (value == null || value.isEmpty) {
-                    return _pleaseEnterPassword(context);
+                  // Optional password for phone OTP mode (passwordless auth).
+                  if (_authType == 'phone' && (value == null || value.isEmpty)) {
+                    return null;
                   }
+                  if (value == null || value.isEmpty) return _pleaseEnterPassword(context);
                   if (value.length < 8) {
                     return AppLocalizations.of(context)!.passwordMin8;
+                  }
+                  // Keep client-side validation aligned with backend `kk.auth.validate_password`
+                  if (!RegExp(r'[A-Z]').hasMatch(value)) {
+                    return 'Password must contain at least one uppercase letter';
+                  }
+                  if (!RegExp(r'[a-z]').hasMatch(value)) {
+                    return 'Password must contain at least one lowercase letter';
+                  }
+                  if (!RegExp(r'\d').hasMatch(value)) {
+                    return 'Password must contain at least one number';
+                  }
+                  if (!RegExp(r'[!@#$%^&*(),.?":{}|<>]').hasMatch(value)) {
+                    return 'Password must contain at least one special character';
                   }
                   return null;
                 },
@@ -681,12 +804,11 @@ class _RegisterPageState extends State<RegisterPage> {
                   ),
                 ),
                 validator: (value) {
-                  if (value == null || value.isEmpty) {
-                    return _pleaseConfirmPassword(context);
-                  }
-                  if (value != _passwordController.text) {
-                    return _passwordsDoNotMatch(context);
-                  }
+                  final pw = _passwordController.text;
+                  // In phone OTP mode, confirm is only required if password is provided.
+                  if (_authType == 'phone' && pw.trim().isEmpty) return null;
+                  if (value == null || value.isEmpty) return _pleaseConfirmPassword(context);
+                  if (value != pw) return _passwordsDoNotMatch(context);
                   return null;
                 },
               ),

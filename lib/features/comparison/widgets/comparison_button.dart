@@ -12,11 +12,11 @@ class ComparisonButton extends StatelessWidget {
 
   const ComparisonButton({super.key, required this.car, this.isCompact = false});
 
-  int? _carId() {
-    final raw = car['id'] ?? car['car_id'] ?? car['carId'];
-    if (raw is int) return raw;
-    if (raw is String) return int.tryParse(raw);
-    return null;
+  String? _carId() {
+    final raw = car['id'] ?? car['public_id'] ?? car['car_id'] ?? car['carId'];
+    final s = raw?.toString().trim();
+    if (s == null || s.isEmpty) return null;
+    return s;
   }
 
   @override

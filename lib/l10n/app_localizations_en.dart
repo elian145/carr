@@ -667,4 +667,147 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get city_salaheldeen => 'Salaheldeen';
+
+  @override
+  String get sellTitle => 'Sell';
+
+  @override
+  String get createListingButton => 'Create listing';
+
+  @override
+  String get creatingListing => 'Creating listing...';
+
+  @override
+  String get uploadingPhotos => 'Uploading photos...';
+
+  @override
+  String get uploadingVideos => 'Uploading videos...';
+
+  @override
+  String addPhotosCount(Object count) {
+    return 'Add photos ($count)';
+  }
+
+  @override
+  String addVideoCount(Object count) {
+    return 'Add video ($count)';
+  }
+
+  @override
+  String get pleaseFixHighlightedFields => 'Please fix the highlighted fields';
+
+  @override
+  String get listingCreated => 'Listing created';
+
+  @override
+  String get listingTitle => 'Listing';
+
+  @override
+  String get shareAction => 'Share';
+
+  @override
+  String get callAction => 'Call';
+
+  @override
+  String get chatAction => 'Chat';
+
+  @override
+  String get favoriteAction => 'Favorite';
+
+  @override
+  String get favoritesAction => 'Favorites';
+
+  @override
+  String get editProfileAction => 'Edit profile';
+
+  @override
+  String get descriptionTitle => 'Description';
+
+  @override
+  String get retryAction => 'Retry';
+
+  @override
+  String get sellerPhoneNotAvailable => 'Seller phone not available';
+
+  @override
+  String get couldNotStartCall => 'Could not start a call';
+
+  @override
+  String get myListingsTitle => 'My listings';
+
+  @override
+  String get deleteListingTitle => 'Delete listing?';
+
+  @override
+  String get deleteListingBody => 'This will remove it from public listings.';
+
+  @override
+  String get cancelAction => 'Cancel';
+
+  @override
+  String get deleteAction => 'Delete';
+
+  @override
+  String get editAction => 'Edit';
+
+  @override
+  String get comparisonEmptyHint => 'Add cars to comparison from listings.';
+
+  @override
+  String get comparisonSpecLabel => 'Spec';
+
+  @override
+  String get removeAction => 'Remove';
+
+  @override
+  String get settingsThemeTitle => 'Theme';
+
+  @override
+  String get settingsLanguageTitle => 'Language';
+
+  @override
+  String get settingsSystem => 'System';
+
+  @override
+  String get settingsLight => 'Light';
+
+  @override
+  String get settingsDark => 'Dark';
+
+  @override
+  String get enabledLabel => 'Enabled';
+
+  @override
+  String get disabledLabel => 'Disabled';
+
+  @override
+  String get accountLabel => 'Account';
+
+  @override
+  String get apiLabel => 'API';
+
+  @override
+  String get noFavoritesYet => 'No favorites yet';
+
+  @override
+  String get descriptionOptionalLabel => 'Description (optional)';
+
+  @override
+  String get plateBlurNote =>
+      'Note: Plate blurring is enabled by default for privacy.';
+
+  @override
+  String get invalidField => 'Invalid';
+
+  @override
+  String get currencyLabel => 'Currency';
+
+  @override
+  String get engineTypeLabel => 'Engine type';
+
+  @override
+  String get locationLabel => 'Location';
+
+  @override
+  String get chooseAuthMethodTitle => 'Choose authentication method:';
 }

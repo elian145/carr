@@ -2200,12 +2200,17 @@ class ComparisonButton extends StatelessWidget {
   Widget build(BuildContext context) {
     return Consumer<CarComparisonStore>(
       builder: (context, comparisonStore, child) {
-        final dynamic rawId =
-            car['id'] ?? car['car_id'] ?? car['carId'] ?? car['uuid'];
-        final int carId = rawId is int
-            ? rawId
-            : (rawId is String ? (int.tryParse(rawId) ?? rawId.hashCode) : -1);
-        final isInComparison = comparisonStore.isCarInComparison(carId);
+        // Comparison store uses string IDs (public_id preferred).
+        final String carId = (car['public_id'] ??
+                car['id'] ??
+                car['car_id'] ??
+                car['carId'] ??
+                car['uuid'])
+            .toString()
+            .trim();
+        final isInComparison = carId.isNotEmpty
+            ? comparisonStore.isCarInComparison(carId)
+            : false;
         final canAddMore = comparisonStore.canAddMore;
 
         return Container(
@@ -2234,10 +2239,9 @@ class ComparisonButton extends StatelessWidget {
                       duration: Duration(seconds: 1),
                     ),
                   );
-                } else if (canAddMore && carId != -1) {
+                } else if (canAddMore && carId.isNotEmpty) {
                   final normalized = Map<String, dynamic>.from(car);
-                  normalized['id'] =
-                      carId; // ensure consistent numeric ID stored
+                  normalized['id'] = carId; // ensure consistent string ID stored
                   comparisonStore.addCarToComparison(normalized);
                   ScaffoldMessenger.of(context).showSnackBar(
                     SnackBar(
@@ -6253,6 +6257,7 @@ class _HomePageState extends State<HomePage> {
                                                                               DropdownButtonFormField<
                                                                                 String
                                                                               >(
+                                                                                isExpanded: true,
                                                                                 initialValue:
                                                                                     selectedMinPrice ??
                                                                                     '',
@@ -6379,6 +6384,7 @@ class _HomePageState extends State<HomePage> {
                                                                               DropdownButtonFormField<
                                                                                 String
                                                                               >(
+                                                                                isExpanded: true,
                                                                                 initialValue:
                                                                                     selectedMaxPrice ??
                                                                                     '',
@@ -10362,14 +10368,14 @@ class _CarDetailsPageState extends State<CarDetailsPage> {
         try {
           final data = json.decode(cached);
           if (data is Map) {
-            setState(() {
+            if (mounted) setState(() {
               car = Map<String, dynamic>.from(data);
               loading = false;
             });
             _precacheListingImages();
             unawaited(_loadFavoriteStatus());
           } else if (data is List && data.isNotEmpty) {
-            setState(() {
+            if (mounted) setState(() {
               car = Map<String, dynamic>.from(data.first);
               loading = false;
             });
@@ -10381,11 +10387,11 @@ class _CarDetailsPageState extends State<CarDetailsPage> {
       final url = Uri.parse(
         '${getApiBase()}/api/cars/${widget.carId}',
       );
-      final resp = await http.get(url);
+      final resp = await http.get(url).timeout(const Duration(seconds: 20));
       if (resp.statusCode == 200) {
         final data = json.decode(resp.body);
         if (data is List && data.isNotEmpty) {
-          setState(() {
+          if (mounted) setState(() {
             car = Map<String, dynamic>.from(data.first);
             loading = false;
           });
@@ -10400,7 +10406,7 @@ class _CarDetailsPageState extends State<CarDetailsPage> {
           final Map<String, dynamic> normalized = inner is Map
               ? Map<String, dynamic>.from(inner)
               : map;
-          setState(() {
+          if (mounted) setState(() {
             car = normalized;
             loading = false;
           });
@@ -10410,19 +10416,19 @@ class _CarDetailsPageState extends State<CarDetailsPage> {
           unawaited(sp.setString(cacheKey, json.encode(car)));
           _trackView();
         } else {
-          setState(() {
+          if (mounted) setState(() {
             loading = false;
           });
         }
       } else {
-        if (cached == null) {
+        if (cached == null && mounted) {
           setState(() {
             loading = false;
           });
         }
       }
     } catch (_) {
-      setState(() {
+      if (mounted) setState(() {
         loading = false;
       });
     }
@@ -10465,6 +10471,7 @@ class _CarDetailsPageState extends State<CarDetailsPage> {
     final String? brand = car!['brand']?.toString();
     final String? model = car!['model']?.toString();
     if (brand == null || brand.isEmpty) return;
+    if (!mounted) return;
     setState(() {
       loadingSimilar = true;
       loadingRelated = true;
@@ -10478,7 +10485,7 @@ class _CarDetailsPageState extends State<CarDetailsPage> {
         final simCached = sp.getString(simKey);
         if (simCached != null && simCached.isNotEmpty) {
           final simData = json.decode(simCached);
-          if (simData is List) {
+          if (simData is List && mounted) {
             setState(() {
               similarCars = simData.cast<Map<String, dynamic>>();
             });
@@ -10487,7 +10494,7 @@ class _CarDetailsPageState extends State<CarDetailsPage> {
         final relCached = sp.getString(relKey);
         if (relCached != null && relCached.isNotEmpty) {
           final relData = json.decode(relCached);
-          if (relData is List) {
+          if (relData is List && mounted) {
             setState(() {
               relatedCars = relData.cast<Map<String, dynamic>>();
             });
@@ -10507,8 +10514,8 @@ class _CarDetailsPageState extends State<CarDetailsPage> {
             // ensure newest first handled by API default
           },
         );
-        final simResp = await http.get(simUrl);
-        if (simResp.statusCode == 200) {
+        final simResp = await http.get(simUrl).timeout(const Duration(seconds: 15));
+        if (simResp.statusCode == 200 && mounted) {
           final simData = json.decode(simResp.body);
           if (simData is List) {
             final list = simData
@@ -10516,14 +10523,14 @@ class _CarDetailsPageState extends State<CarDetailsPage> {
                 .map<Map<String, dynamic>>((e) => Map<String, dynamic>.from(e))
                 .where((e) => e['id']?.toString() != widget.carId.toString())
                 .toList();
-            setState(() {
+            if (mounted) setState(() {
               similarCars = list.take(12).toList();
             });
             unawaited(sp.setString(simKey, json.encode(similarCars)));
           }
         }
       } else {
-        setState(() {
+        if (mounted) setState(() {
           similarCars = [];
         });
       }
@@ -10567,8 +10574,8 @@ class _CarDetailsPageState extends State<CarDetailsPage> {
         path: '/cars',
         queryParameters: qp,
       );
-      final relResp = await http.get(relUrl);
-      if (relResp.statusCode == 200) {
+      final relResp = await http.get(relUrl).timeout(const Duration(seconds: 15));
+      if (relResp.statusCode == 200 && mounted) {
         final relData = json.decode(relResp.body);
         if (relData is List) {
           final list = relData
@@ -10576,7 +10583,7 @@ class _CarDetailsPageState extends State<CarDetailsPage> {
               .map<Map<String, dynamic>>((e) => Map<String, dynamic>.from(e))
               .where((e) => e['id']?.toString() != widget.carId.toString())
               .toList();
-          setState(() {
+          if (mounted) setState(() {
             relatedCars = list.take(12).toList();
           });
           unawaited(sp.setString(relKey, json.encode(relatedCars)));
@@ -11228,119 +11235,112 @@ class _CarDetailsPageState extends State<CarDetailsPage> {
   }
 
   Widget _buildSpecsGrid() {
+    String _orDash(String? s) {
+      final v = (s ?? '').toString().trim();
+      return v.isEmpty ? '—' : v;
+    }
+
     // Primary fields
+    final String yearVal = car!['year'] != null
+        ? _localizeDigitsGlobal(context, car!['year'].toString())
+        : '—';
+    final String mileageVal = car!['mileage'] != null
+        ? '${_localizeDigitsGlobal(context, _formatPrice(car!['mileage'].toString()))} ${AppLocalizations.of(context)!.unit_km}'
+        : '—';
+
+    final String? transRaw = _getFirstNonEmpty(car!, ['transmission']);
+    final String transmissionVal =
+        _orDash(_translateValueGlobal(context, transRaw) ?? transRaw);
+
+    final String? cityRaw = _getFirstNonEmpty(car!, ['city', 'location']);
+    final String cityVal =
+        _orDash(_translateValueGlobal(context, cityRaw) ?? cityRaw);
+
+    final String titleStatusVal = _orDash(
+      car!['title_status'] != null
+          ? (car!['title_status'].toString().toLowerCase() == 'damaged'
+              ? (AppLocalizations.of(context)!.value_title_damaged +
+                  (car!['damaged_parts'] != null
+                      ? ' (${_localizeDigitsGlobal(context, car!['damaged_parts'].toString())} ${AppLocalizations.of(context)!.damagedParts})'
+                      : ''))
+              : AppLocalizations.of(context)!.value_title_clean)
+          : null,
+    );
+
+    final String? fuelRaw = _getFirstNonEmpty(car!, ['fuel_type', 'fuelType', 'fuel']);
+    final String fuelVal = _orDash(_translateValueGlobal(context, fuelRaw) ?? fuelRaw);
+
     final List<_SpecItem> primary = [
       _SpecItem(
         icon: Icons.calendar_month,
         label: AppLocalizations.of(context)!.yearLabel,
-        value: car!['year'] != null
-            ? _localizeDigitsGlobal(context, car!['year'].toString())
-            : null,
+        value: yearVal,
       ),
       _SpecItem(
         icon: Icons.speed,
         label: AppLocalizations.of(context)!.mileageLabel,
-        value: car!['mileage'] != null
-            ? '${_localizeDigitsGlobal(context, _formatPrice(car!['mileage'].toString()))} ${AppLocalizations.of(context)!.unit_km}'
-            : null,
+        value: mileageVal,
       ),
       _SpecItem(
         icon: Icons.settings,
         label: AppLocalizations.of(context)!.transmissionLabel,
-        value: _translateValueGlobal(
-          context,
-          _getFirstNonEmpty(car!, ['transmission']),
-        ),
+        value: transmissionVal,
       ),
       _SpecItem(
         icon: Icons.location_city,
         label: AppLocalizations.of(context)!.cityLabel,
-        value: car!['city'] != null
-            ? _translateValueGlobal(context, car!['city'].toString()) ??
-                  car!['city'].toString()
-            : null,
+        value: cityVal,
       ),
       _SpecItem(
         icon: Icons.assignment_turned_in,
         label: AppLocalizations.of(context)!.titleStatus,
-        value: car!['title_status'] != null
-            ? (car!['title_status'].toString().toLowerCase() == 'damaged'
-                  ? (AppLocalizations.of(context)!.value_title_damaged +
-                        (car!['damaged_parts'] != null
-                            ? ' (${_localizeDigitsGlobal(context, car!['damaged_parts'].toString())} ${AppLocalizations.of(context)!.damagedParts})'
-                            : ''))
-                  : AppLocalizations.of(context)!.value_title_clean)
-            : null,
+        value: titleStatusVal,
       ),
       _SpecItem(
         icon: Icons.local_gas_station,
         label: AppLocalizations.of(context)!.detail_fuel,
-        value: _translateValueGlobal(
-          context,
-          _getFirstNonEmpty(car!, ['fuel_type']),
-        ),
+        value: fuelVal,
       ),
     ];
 
-    // Vertical list for detailed specs below the big labels
+    // Vertical list: all specs except the top 6; show "—" when value is missing
     final String? engineSize = _getFirstNonEmpty(car!, [
       'engine_size',
       'engineSize',
       'engine',
     ]);
+    final String engineSizeDisplay = engineSize != null
+        ? '${_localizeDigitsGlobal(context, engineSize.toString())}${AppLocalizations.of(context)!.unit_liter_suffix}'
+        : '';
     final List<Widget> details = [
-      _detailRow(
-        icon: Icons.place,
-        label: AppLocalizations.of(context)!.cityLabel,
-        value: _translateValueGlobal(
-          context,
-          _getFirstNonEmpty(car!, ['city']),
-        ),
-      ),
       _detailRow(
         icon: Icons.check_circle,
         label: AppLocalizations.of(context)!.detail_condition,
-        value: _translateValueGlobal(
+        value: _orDash(_translateValueGlobal(
           context,
           _getFirstNonEmpty(car!, ['condition']),
-        ),
-      ),
-      _detailRow(
-        icon: Icons.settings,
-        label: AppLocalizations.of(context)!.transmissionLabel,
-        value: _translateValueGlobal(
-          context,
-          _getFirstNonEmpty(car!, ['transmission']),
-        ),
-      ),
-      _detailRow(
-        icon: Icons.local_gas_station,
-        label: AppLocalizations.of(context)!.detail_fuel,
-        value: _translateValueGlobal(
-          context,
-          _getFirstNonEmpty(car!, ['fuel_type', 'fuelType', 'fuel']),
-        ),
+        )),
       ),
       _detailRow(
         icon: Icons.directions_car_filled,
         label: AppLocalizations.of(context)!.detail_body,
-        value: _translateValueGlobal(
+        value: _orDash(_translateValueGlobal(
           context,
           _getFirstNonEmpty(car!, ['body_type', 'bodyType', 'body']),
-        ),
+        )),
       ),
       _detailRow(
         icon: Icons.color_lens,
         label: AppLocalizations.of(context)!.detail_color,
-        value: _translateValueGlobal(
+        value: _orDash(_translateValueGlobal(
           context,
           _getFirstNonEmpty(car!, ['color']),
-        ),
+        )),
       ),
       _detailRow(
         icon: Icons.drive_eta,
         label: AppLocalizations.of(context)!.detail_drive,
-        value: _translateValueGlobal(
+        value: _orDash(_translateValueGlobal(
           context,
           _getFirstNonEmpty(car!, [
             'drive_type',
@@ -11348,12 +11348,12 @@ class _CarDetailsPageState extends State<CarDetailsPage> {
             'drivetrain',
             'drive',
           ]),
-        ),
+        )),
       ),
       _detailRow(
         icon: Icons.settings_input_component,
         label: AppLocalizations.of(context)!.detail_cylinders,
-        value: _localizeDigitsGlobal(
+        value: _orDash(_localizeDigitsGlobal(
           context,
           _getFirstNonEmpty(car!, [
                 'cylinder_count',
@@ -11361,45 +11361,44 @@ class _CarDetailsPageState extends State<CarDetailsPage> {
                 'cylinderCount',
               ]) ??
               '',
-        ),
+        )),
       ),
       _detailRow(
         icon: Icons.straighten,
         label: AppLocalizations.of(context)!.detail_engine,
-        value: engineSize != null
-            ? '${_localizeDigitsGlobal(context, engineSize.toString())}${AppLocalizations.of(context)!.unit_liter_suffix}'
-            : null,
+        value: _orDash(engineSizeDisplay),
       ),
       _detailRow(
         icon: Icons.airline_seat_recline_normal,
         label: AppLocalizations.of(context)!.detail_seating,
-        value: _localizeDigitsGlobal(
+        value: _orDash(_localizeDigitsGlobal(
           context,
           _getFirstNonEmpty(car!, ['seating', 'seats', 'seatCount']) ?? '',
-        ),
+        )),
+      ),
+      _detailRow(
+        icon: Icons.settings,
+        label: AppLocalizations.of(context)!.transmissionLabel,
+        value: _orDash(_translateValueGlobal(
+          context,
+          _getFirstNonEmpty(car!, ['transmission']),
+        )),
       ),
       _detailRow(
         icon: Icons.assignment_turned_in,
         label: AppLocalizations.of(context)!.titleStatus,
-        value: car!['title_status'] != null
-            ? (car!['title_status'].toString().toLowerCase() == 'damaged'
+        value: _orDash(
+          car!['title_status'] != null
+              ? (car!['title_status'].toString().toLowerCase() == 'damaged'
                   ? (AppLocalizations.of(context)!.value_title_damaged +
-                        (car!['damaged_parts'] != null
-                            ? ' (${_localizeDigitsGlobal(context, car!['damaged_parts'].toString())} ${AppLocalizations.of(context)!.damagedParts})'
-                            : ''))
+                      (car!['damaged_parts'] != null
+                          ? ' (${_localizeDigitsGlobal(context, car!['damaged_parts'].toString())} ${AppLocalizations.of(context)!.damagedParts})'
+                          : ''))
                   : AppLocalizations.of(context)!.value_title_clean)
-            : null,
-      ),
-      _detailRow(
-        icon: Icons.phone,
-        label: AppLocalizations.of(context)!.phoneLabel,
-        value: _getFirstNonEmpty(car!, ['contact_phone']),
+              : null,
+        ),
       ),
     ];
-
-    final primItems = primary
-        .where((i) => i.value != null && i.value!.isNotEmpty)
-        .toList();
 
     final primGrid = GridView.builder(
       shrinkWrap: true,
@@ -11410,8 +11409,8 @@ class _CarDetailsPageState extends State<CarDetailsPage> {
         mainAxisSpacing: 12,
         childAspectRatio: 1.5,
       ),
-      itemCount: primItems.length,
-      itemBuilder: (context, index) => _buildSpecCard(primItems[index]),
+      itemCount: primary.length,
+      itemBuilder: (context, index) => _buildSpecCard(primary[index]),
     );
 
     return Column(
@@ -15870,35 +15869,11 @@ class _ListingPreviewWidgetState extends State<ListingPreviewWidget> {
     ]);
     final List<Widget> details = [
       _detailRow(
-        icon: Icons.place,
-        label: loc.cityLabel,
-        value: _translateValueGlobal(
-          context,
-          _getFirstNonEmpty(data, ['city']),
-        ),
-      ),
-      _detailRow(
         icon: Icons.check_circle,
         label: loc.detail_condition,
         value: _translateValueGlobal(
           context,
           _getFirstNonEmpty(data, ['condition']),
-        ),
-      ),
-      _detailRow(
-        icon: Icons.settings,
-        label: loc.transmissionLabel,
-        value: _translateValueGlobal(
-          context,
-          _getFirstNonEmpty(data, ['transmission']),
-        ),
-      ),
-      _detailRow(
-        icon: Icons.local_gas_station,
-        label: loc.detail_fuel,
-        value: _translateValueGlobal(
-          context,
-          _getFirstNonEmpty(data, ['fuel_type', 'fuelType', 'fuel']),
         ),
       ),
       _detailRow(
@@ -15957,18 +15932,6 @@ class _ListingPreviewWidgetState extends State<ListingPreviewWidget> {
           context,
           _getFirstNonEmpty(data, ['seating', 'seats', 'seatCount']) ?? '',
         ),
-      ),
-      _detailRow(
-        icon: Icons.assignment_turned_in,
-        label: loc.titleStatus,
-        value: data['title_status'] != null
-            ? (data['title_status'].toString().toLowerCase() == 'damaged'
-                  ? (loc.value_title_damaged +
-                        (data['damaged_parts'] != null
-                            ? ' (${_localizeDigitsGlobal(context, data['damaged_parts'].toString())} ${loc.damagedParts})'
-                            : ''))
-                  : loc.value_title_clean)
-            : null,
       ),
       _detailRow(
         icon: Icons.phone,
@@ -16445,7 +16408,8 @@ class _SellStep5PageState extends State<SellStep5Page> {
     );
   }
 
-  Future<void> _submitListing(Map<String, dynamic> carData) async {
+  /// Returns the created car id on success so caller can navigate to listing page; null otherwise.
+  Future<String?> _submitListing(Map<String, dynamic> carData) async {
     // Require authentication before allowing submission
     final existingToken = ApiService.accessToken;
     if (existingToken == null || existingToken.isEmpty) {
@@ -16656,7 +16620,7 @@ class _SellStep5PageState extends State<SellStep5Page> {
           } catch (_) {}
         }
         _debugLog('Listing created successfully');
-        return;
+        return carId;
       } else if (response.statusCode == 401) {
         _debugLog('Submission failed: Authentication failed');
         throw Exception('Authentication failed. Please log in again.');
@@ -19706,11 +19670,13 @@ class _SignupPageState extends State<SignupPage> {
       }
       requestBody['username'] = username;
 
-      final resp = await http.post(
-        url,
-        headers: {'Content-Type': 'application/json'},
-        body: json.encode(requestBody),
-      );
+      final resp = await http
+          .post(
+            url,
+            headers: {'Content-Type': 'application/json'},
+            body: json.encode(requestBody),
+          )
+          .timeout(const Duration(seconds: 25));
       if (resp.statusCode >= 200 && resp.statusCode < 300) {
         final data = json.decode(resp.body);
         // Support both legacy {token} and new {access_token}; or no token (email verification flow)
@@ -19727,14 +19693,16 @@ class _SignupPageState extends State<SignupPage> {
         } else {
           // No token returned: try logging in automatically
           final loginUrl = Uri.parse('${getApiBase()}/api/auth/login');
-          final loginResp = await http.post(
-            loginUrl,
-            headers: {'Content-Type': 'application/json'},
-            body: json.encode({
-              'username': _usernameController.text.trim(),
-              'password': _passwordController.text,
-            }),
-          );
+          final loginResp = await http
+              .post(
+                loginUrl,
+                headers: {'Content-Type': 'application/json'},
+                body: json.encode({
+                  'username': _usernameController.text.trim(),
+                  'password': _passwordController.text,
+                }),
+              )
+              .timeout(const Duration(seconds: 15));
           if (loginResp.statusCode >= 200 && loginResp.statusCode < 300) {
             final loginData = json.decode(loginResp.body);
             final String? lLegacy = (loginData['token'] as String?)?.trim();
@@ -19807,11 +19775,16 @@ class _SignupPageState extends State<SignupPage> {
       }
     } catch (e) {
       if (!mounted) return;
+      final errMsg = e.toString().contains('TimeoutException') ||
+              e.toString().contains('Connection timed out') ||
+              e.toString().contains('SocketException')
+          ? '${e.toString()}\n\nMake sure the proxy (port 5003) and listings server (5000) are running.'
+          : e.toString();
       showDialog(
         context: context,
         builder: (_) => AlertDialog(
           title: Text(AppLocalizations.of(context)!.errorTitle),
-          content: Text(e.toString()),
+          content: Text(errMsg),
           actions: [
             TextButton(
               onPressed: () => Navigator.pop(context),

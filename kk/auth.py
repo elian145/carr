@@ -75,7 +75,9 @@ def create_password_reset_token(user):
     
     # Create new token
     token = secrets.token_urlsafe(32)
-    expires_at = datetime.utcnow() + timedelta(hours=1)
+    from .time_utils import utcnow
+
+    expires_at = utcnow() + timedelta(hours=1)
     
     reset_token = PasswordReset(
         user_id=user.id,
@@ -95,7 +97,9 @@ def create_email_verification_token(user):
     
     # Create new token
     token = secrets.token_urlsafe(32)
-    expires_at = datetime.utcnow() + timedelta(days=1)
+    from .time_utils import utcnow
+
+    expires_at = utcnow() + timedelta(days=1)
     
     verification_token = EmailVerification(
         user_id=user.id,
@@ -205,9 +209,10 @@ def rate_limit_check(user_id, action, limit=10, window_minutes=60):
     """Check if user has exceeded rate limit for an action"""
     try:
         from .models import UserAction
-        from datetime import datetime, timedelta
+        from datetime import timedelta
+        from .time_utils import utcnow
         
-        window_start = datetime.utcnow() - timedelta(minutes=window_minutes)
+        window_start = utcnow() - timedelta(minutes=window_minutes)
         
         recent_actions = UserAction.query.filter(
             UserAction.user_id == user_id,
@@ -229,7 +234,9 @@ def generate_secure_filename(filename):
     _, ext = os.path.splitext(filename)
     
     # Generate secure filename with timestamp
-    timestamp = datetime.utcnow().strftime('%Y%m%d_%H%M%S')
+    from .time_utils import utcnow
+
+    timestamp = utcnow().strftime('%Y%m%d_%H%M%S')
     random_string = secrets.token_hex(8)
     
     return f"{timestamp}_{random_string}{ext}"

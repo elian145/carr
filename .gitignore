@@ -63,6 +63,10 @@ signing.properties
 # Scratch outputs (never commit)
 tools/scratch/
 
+# Local scratch scripts (never commit)
+kk/_*.py
+kk/check_*.py
+
 # Accidental CLI artifact files (repo root)
 Get
 Run

@@ -14,5 +14,9 @@ jwt = JWTManager()
 mail = Mail()
 
 # SocketIO can be initialized with `init_app`.
-socketio = SocketIO(async_mode="threading")
+#
+# NOTE: do not hardcode `async_mode` here. We select it at `init_app()` time
+# based on env/config so dev works without extra deps and production can use
+# eventlet/gevent when configured.
+socketio = SocketIO()
 
