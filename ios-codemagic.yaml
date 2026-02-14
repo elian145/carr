@@ -49,7 +49,7 @@ workflows:
           flutter analyze
       - name: Flutter unit tests
         script: |
-          flutter test
+          flutter test --dart-define=API_BASE=http://127.0.0.1:8081
       - name: Simplify for Sideloadly compatibility
         script: |
           # Remove capabilities that cause Guru Meditation in Sideloadly

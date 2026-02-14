@@ -6,10 +6,14 @@ import 'package:flutter/foundation.dart' show kReleaseMode;
 
 // Base like: https://api.example.com (NO trailing slash)
 // - Debug: can use http:// for local development
-// - Release: must be https://
+// - Release: must be https:// (unless SIDELOAD_BUILD=true on iOS)
 const String kApiBase = String.fromEnvironment(
   'API_BASE',
   defaultValue: '',
+);
+const bool kSideloadBuild = bool.fromEnvironment(
+  'SIDELOAD_BUILD',
+  defaultValue: false,
 );
 const bool kForceSkipBlur = bool.fromEnvironment(
   'FORCE_SKIP_BLUR',
@@ -32,7 +36,11 @@ String effectiveApiBase() {
       );
     }
     if (!base.startsWith('https://')) {
-      throw StateError('In release builds, API_BASE must start with https://');
+      // Sideload builds (typically for Sideloadly) may need to call a LAN HTTP API.
+      // This is only allowed on iOS when explicitly opted-in at compile time.
+      if (!(kSideloadBuild && Platform.isIOS && base.startsWith('http://'))) {
+        throw StateError('In release builds, API_BASE must start with https://');
+      }
     }
     return base;
   }
@@ -44,7 +52,8 @@ String effectiveApiBase() {
   }
 
   // Legacy default mapping for existing dev setups.
-  if (Platform.isAndroid && base == 'http://192.168.1.7:5003') {
+  if (Platform.isAndroid &&
+      (base == 'http://192.168.1.7:5003' || base == 'http://192.168.1.8:5003')) {
     return 'http://10.0.2.2:5003';
   }
   return base;

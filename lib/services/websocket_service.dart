@@ -6,6 +6,12 @@ import 'package:socket_io_client/socket_io_client.dart' as io;
 import 'api_service.dart';
 import 'config.dart';
 
+// Sideload build flag to allow LAN HTTP Socket.IO on iOS release builds.
+const bool kSideloadBuild = bool.fromEnvironment(
+  'SIDELOAD_BUILD',
+  defaultValue: false,
+);
+
 class WebSocketService {
   static final StreamController<Map<String, dynamic>> _messagesController =
       StreamController<Map<String, dynamic>>.broadcast();
@@ -80,7 +86,11 @@ class WebSocketService {
 
       final base = baseHttpUrl;
       if (kReleaseMode && !base.startsWith('https://')) {
-        throw StateError('Release builds require HTTPS/WSS. Refusing insecure Socket.IO.');
+        if (!(kSideloadBuild && Platform.isIOS && base.startsWith('http://'))) {
+          throw StateError(
+            'Release builds require HTTPS/WSS. Refusing insecure Socket.IO.',
+          );
+        }
       }
 
       final opts = <String, dynamic>{

@@ -361,7 +361,7 @@ class _CarDetailPageState extends State<CarDetailPage> {
     add(loc?.trimLabel ?? 'Trim', car['trim']);
     if (car['seating'] != null && (car['seating'] is int || car['seating'] is String)) {
       final n = car['seating'].toString().trim();
-      if (n.isNotEmpty && n != '0') rows.add(MapEntry(loc?.seating ?? 'Seating', '$n'));
+      if (n.isNotEmpty && n != '0') rows.add(MapEntry(loc?.seating ?? 'Seating', n));
     }
     if (rows.isEmpty) return const SizedBox.shrink();
     return Column(
@@ -618,7 +618,8 @@ class _CarDetailPageState extends State<CarDetailPage> {
                               width: 40,
                               height: 40,
                               fit: BoxFit.contain,
-                              errorBuilder: (_, __, ___) => const SizedBox(width: 40, height: 40),
+                              errorBuilder: (context, error, stackTrace) =>
+                                  const SizedBox(width: 40, height: 40),
                             ),
                           ),
                         ),

@@ -68,7 +68,7 @@ workflows:
       - name: Analyze
         script: flutter analyze
       - name: Tests
-        script: flutter test --no-pub
+        script: flutter test --no-pub --dart-define=API_BASE=http://127.0.0.1:8081
       - name: Build APK (debug)
         script: flutter build apk --debug --no-pub --flavor "$FLAVOR"
     artifacts:
@@ -82,6 +82,9 @@ workflows:
       flutter: stable
       vars:
         FLAVOR: prod
+        # IMPORTANT: Do NOT include /api in API_BASE. The app adds /api itself.
+        # Release builds require HTTPS.
+        API_BASE: "https://api.example.com"
       # Configure these in Codemagic UI (Environment variables / Secure):
       # - CM_KEYSTORE (base64 of your .jks)
       # - CM_KEYSTORE_PASSWORD
@@ -111,11 +114,11 @@ workflows:
       - name: Analyze
         script: flutter analyze
       - name: Tests
-        script: flutter test --no-pub
+        script: flutter test --no-pub --dart-define=API_BASE=http://127.0.0.1:8081
       - name: Build APK (release)
-        script: flutter build apk --release --no-pub --flavor "$FLAVOR"
+        script: flutter build apk --release --no-pub --flavor "$FLAVOR" --dart-define=API_BASE="$API_BASE"
       - name: Build App Bundle (release)
-        script: flutter build appbundle --release --no-pub --flavor "$FLAVOR"
+        script: flutter build appbundle --release --no-pub --flavor "$FLAVOR" --dart-define=API_BASE="$API_BASE"
     artifacts:
       - build/app/outputs/flutter-apk/*.apk
       - build/app/outputs/bundle/*/*.aab
@@ -129,11 +132,11 @@ workflows:
       xcode: latest
       cocoapods: default
       vars:
-        # For iPhone on same Wi‑Fi use your PC LAN IP (run ipconfig).
-        # For real device over internet or ATS: use HTTPS (e.g. Cloudflare tunnel).
+        # For iPhone on same Wi‑Fi you can use your PC LAN IP (run ipconfig).
+        # For real device over internet or when ATS is strict: use HTTPS (e.g. Cloudflare tunnel).
         # Override in Codemagic UI (Environment variables) if needed.
         # IMPORTANT: Do NOT include /api in API_BASE. The app adds /api itself.
-        API_BASE: "http://192.168.1.7:5003"
+        API_BASE: "https://api.example.com"
         FORCE_SKIP_BLUR: "false"
     scripts:
       - name: Flutter version
@@ -142,13 +145,23 @@ workflows:
         script: |
           flutter clean
           flutter pub get
+      - name: Sideloadly compatibility (ATS + entitlements)
+        script: |
+          # Allow HTTP (ATS) if you set API_BASE=http://... for LAN testing.
+          /usr/libexec/PlistBuddy -c 'Add :NSAppTransportSecurity:NSAllowsArbitraryLoads bool YES' ios/Runner/Info.plist 2>/dev/null || true
+          # Remove capabilities that can break Sideloadly installs
+          /usr/libexec/PlistBuddy -c 'Delete :com.apple.security.application-groups' ios/Runner/Runner.entitlements 2>/dev/null || true
+          /usr/libexec/PlistBuddy -c 'Delete :keychain-access-groups' ios/Runner/Runner.entitlements 2>/dev/null || true
+          /usr/libexec/PlistBuddy -c 'Delete :aps-environment' ios/Runner/Runner.entitlements 2>/dev/null || true
+          /usr/libexec/PlistBuddy -c 'Delete :UIBackgroundModes' ios/Runner/Info.plist 2>/dev/null || true
       - name: Analyze + tests
         script: |
           flutter analyze
-          flutter test
+          flutter test --dart-define=API_BASE=http://127.0.0.1:8081
       - name: Build iOS app (no codesign)
         script: |
           flutter build ios --release --no-codesign \
+            --dart-define=SIDELOAD_BUILD=true \
             --dart-define=API_BASE="$API_BASE" \
             --dart-define=FORCE_SKIP_BLUR="$FORCE_SKIP_BLUR"
       - name: Package unsigned IPA for Sideloadly
