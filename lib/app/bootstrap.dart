@@ -7,6 +7,7 @@ import 'package:shared_preferences/shared_preferences.dart';
 
 import '../services/api_service.dart';
 import '../services/auth_service.dart';
+import '../services/config.dart';
 import '../state/locale_controller.dart';
 
 // Firebase is optional for sideload builds.
@@ -18,6 +19,8 @@ const bool kSideloadBuild = bool.fromEnvironment(
   'SIDELOAD_BUILD',
   defaultValue: false,
 );
+
+const String _apiBaseOverrideKey = 'api_base_override';
 
 Future<void> bootstrapAndRun(Widget app) async {
   runZonedGuarded(
@@ -31,6 +34,13 @@ Future<void> bootstrapAndRun(Widget app) async {
         } catch (_) {}
         FlutterError.presentError(details);
       };
+
+      // Load runtime API override early so first screen uses it.
+      try {
+        final sp = await SharedPreferences.getInstance();
+        final override = sp.getString(_apiBaseOverrideKey);
+        setRuntimeApiBaseOverride(override);
+      } catch (_) {}
 
       // Minimal pre-run init only (fast): load tokens if available.
       try {

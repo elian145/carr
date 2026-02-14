@@ -20,7 +20,31 @@ const bool kForceSkipBlur = bool.fromEnvironment(
   defaultValue: false,
 );
 
+String? _runtimeApiBaseOverride;
+
+/// Allow changing API base at runtime (for sideload/local dev scenarios).
+///
+/// - Debug/Profile: allowed
+/// - Release: only allowed for iOS sideload builds (SIDELOAD_BUILD=true)
+bool allowRuntimeApiBaseOverride() {
+  if (!kReleaseMode) return true;
+  return kSideloadBuild && Platform.isIOS;
+}
+
+/// Set a runtime override (persist it yourself if needed).
+void setRuntimeApiBaseOverride(String? base) {
+  if (!allowRuntimeApiBaseOverride()) return;
+  final v = (base ?? '').trim();
+  _runtimeApiBaseOverride = v.isEmpty ? null : v;
+}
+
+String? runtimeApiBaseOverride() {
+  return allowRuntimeApiBaseOverride() ? _runtimeApiBaseOverride : null;
+}
+
 String apiBase() {
+  final o = runtimeApiBaseOverride();
+  if (o != null && o.trim().isNotEmpty) return o.trim();
   return kApiBase.trim();
 }
 

@@ -6,27 +6,55 @@ workflows:
       xcode: latest
       vars:
         # IMPORTANT: Do NOT include /api in API_BASE. The app adds /api itself.
-        # Release builds enforce HTTPS. Override in Codemagic UI.
-        API_BASE: "https://api.example.com"
+        # For sideload builds you can use LAN HTTP.
+        # Override in Codemagic UI if your PC IP changes.
+        API_BASE: "http://192.168.1.8:5003"
+        FORCE_SKIP_BLUR: "false"
     scripts:
       - name: Flutter pub get
         script: |
           flutter --version
           flutter pub get
+      - name: Sideloadly compatibility (ATS + entitlements)
+        script: |
+          # Allow HTTP (ATS) if you set API_BASE=http://... for LAN testing.
+          /usr/libexec/PlistBuddy -c 'Add :NSAppTransportSecurity:NSAllowsArbitraryLoads bool YES' ios/Runner/Info.plist 2>/dev/null || true
+          # Remove capabilities that can break Sideloadly installs
+          /usr/libexec/PlistBuddy -c 'Delete :com.apple.security.application-groups' ios/Runner/Runner.entitlements 2>/dev/null || true
+          /usr/libexec/PlistBuddy -c 'Delete :keychain-access-groups' ios/Runner/Runner.entitlements 2>/dev/null || true
+          /usr/libexec/PlistBuddy -c 'Delete :aps-environment' ios/Runner/Runner.entitlements 2>/dev/null || true
+          /usr/libexec/PlistBuddy -c 'Delete :UIBackgroundModes' ios/Runner/Info.plist 2>/dev/null || true
+      - name: Analyze + tests
+        script: |
+          flutter analyze
+          flutter test --dart-define=API_BASE=http://127.0.0.1:8081
       - name: Build iOS (no codesign)
         script: |
-          flutter build ios --release --no-codesign --dart-define=API_BASE=${API_BASE}
+          flutter build ios --release --no-codesign \
+            --dart-define=SIDELOAD_BUILD=true \
+            --dart-define=API_BASE="${API_BASE}" \
+            --dart-define=FORCE_SKIP_BLUR="${FORCE_SKIP_BLUR}"
       - name: Create unsigned IPA
         script: |
-          cd build/ios/iphoneos
-          rm -rf Payload
-          mkdir -p Payload
-          # Runner.app is the default Flutter product name
-          mv Runner.app Payload/
-          zip -qry app-unsigned.ipa Payload
+          set -e
+          DEST_DIR="$CM_BUILD_DIR/build/ios/ipa"
+          mkdir -p "$DEST_DIR"
+          APP_SRC="$CM_BUILD_DIR/build/ios/iphoneos/Runner.app"
+          if [ ! -d "$APP_SRC" ]; then
+            echo "Runner.app not found at $APP_SRC"
+            echo "Listing build/ios:"
+            ls -la "$CM_BUILD_DIR/build/ios" || true
+            exit 1
+          fi
+          TMP_DIR=$(mktemp -d)
+          mkdir -p "$TMP_DIR/Payload"
+          cp -R "$APP_SRC" "$TMP_DIR/Payload/Runner.app"
+          (cd "$TMP_DIR" && zip -qry Runner-unsigned.ipa Payload)
+          mv "$TMP_DIR/Runner-unsigned.ipa" "$DEST_DIR/Runner-unsigned.ipa"
+          echo "Created unsigned IPA at $DEST_DIR/Runner-unsigned.ipa"
     artifacts:
-      - build/ios/iphoneos/app-unsigned.ipa
-      - build/ios/iphoneos/Payload/Runner.app
+      - build/ios/ipa/*.ipa
+      - build/ios/iphoneos/Runner.app
 
   android_release_unsigned:
     name: Android APK (release, unsigned)
@@ -136,7 +164,9 @@ workflows:
         # For real device over internet or when ATS is strict: use HTTPS (e.g. Cloudflare tunnel).
         # Override in Codemagic UI (Environment variables) if needed.
         # IMPORTANT: Do NOT include /api in API_BASE. The app adds /api itself.
-        API_BASE: "https://api.example.com"
+        # Default points to this repo's typical Windows LAN IP.
+        # Override in Codemagic UI if your PC IP changes.
+        API_BASE: "http://192.168.1.8:5003"
         FORCE_SKIP_BLUR: "false"
     scripts:
       - name: Flutter version

@@ -17,9 +17,11 @@ class SettingsPage extends StatefulWidget {
 
 class _SettingsPageState extends State<SettingsPage> {
   static const String _pushKey = 'push_enabled';
+  static const String _apiOverrideKey = 'api_base_override';
 
   bool _pushEnabled = true;
   bool _loading = true;
+  String? _apiOverride;
 
   @override
   void initState() {
@@ -31,15 +33,18 @@ class _SettingsPageState extends State<SettingsPage> {
     try {
       final sp = await SharedPreferences.getInstance();
       final enabled = sp.getBool(_pushKey);
+      final apiOverride = sp.getString(_apiOverrideKey);
       if (!mounted) return;
       setState(() {
         _pushEnabled = enabled ?? true;
+        _apiOverride = apiOverride?.trim().isEmpty == true ? null : apiOverride?.trim();
         _loading = false;
       });
     } catch (_) {
       if (!mounted) return;
       setState(() {
         _pushEnabled = true;
+        _apiOverride = null;
         _loading = false;
       });
     }
@@ -59,6 +64,70 @@ class _SettingsPageState extends State<SettingsPage> {
     } else {
       await LocaleController.setLocale(Locale(code));
     }
+  }
+
+  Future<void> _editApiBase() async {
+    if (!allowRuntimeApiBaseOverride()) return;
+    final controller = TextEditingController(
+      text: _apiOverride ?? effectiveApiBase(),
+    );
+
+    final String? next = await showDialog<String>(
+      context: context,
+      builder: (context) {
+        return AlertDialog(
+          title: const Text('API base'),
+          content: TextField(
+            controller: controller,
+            decoration: const InputDecoration(
+              hintText: 'http://192.168.1.8:5003',
+            ),
+            autocorrect: false,
+            enableSuggestions: false,
+            keyboardType: TextInputType.url,
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(context),
+              child: const Text('Cancel'),
+            ),
+            TextButton(
+              onPressed: () => Navigator.pop(context, ''),
+              child: const Text('Reset'),
+            ),
+            ElevatedButton(
+              onPressed: () => Navigator.pop(context, controller.text),
+              child: const Text('Save'),
+            ),
+          ],
+        );
+      },
+    );
+
+    if (next == null) return;
+    final v = next.trim();
+
+    try {
+      final sp = await SharedPreferences.getInstance();
+      if (v.isEmpty) {
+        await sp.remove(_apiOverrideKey);
+        setRuntimeApiBaseOverride(null);
+      } else {
+        // Basic normalization (don’t enforce scheme here; config.dart will validate for release).
+        await sp.setString(_apiOverrideKey, v);
+        setRuntimeApiBaseOverride(v);
+      }
+    } catch (_) {}
+
+    if (!mounted) return;
+    setState(() {
+      _apiOverride = v.isEmpty ? null : v;
+    });
+
+    if (!mounted) return;
+    ScaffoldMessenger.of(context).showSnackBar(
+      const SnackBar(content: Text('API base updated. Pull to refresh listings.')),
+    );
   }
 
   @override
@@ -160,7 +229,16 @@ class _SettingsPageState extends State<SettingsPage> {
                 const Divider(height: 1),
                 ListTile(
                   title: Text(loc?.apiLabel ?? 'API'),
-                  subtitle: Text(effectiveApiBase()),
+                  subtitle: Text(
+                    _apiOverride == null
+                        ? effectiveApiBase()
+                        : '${effectiveApiBase()}\n(override: $_apiOverride)',
+                  ),
+                  isThreeLine: _apiOverride != null,
+                  trailing: allowRuntimeApiBaseOverride()
+                      ? const Icon(Icons.edit_outlined)
+                      : null,
+                  onTap: allowRuntimeApiBaseOverride() ? _editApiBase : null,
                 ),
                 const Divider(height: 1),
                 if (auth.isAuthenticated) ...[
