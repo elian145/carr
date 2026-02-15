@@ -80,7 +80,7 @@ class _SettingsPageState extends State<SettingsPage> {
           content: TextField(
             controller: controller,
             decoration: const InputDecoration(
-              hintText: 'http://192.168.1.8:5003',
+              hintText: 'http://192.168.1.16:5003',
             ),
             autocorrect: false,
             enableSuggestions: false,
