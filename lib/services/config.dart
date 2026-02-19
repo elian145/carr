@@ -19,6 +19,14 @@ const bool kForceSkipBlur = bool.fromEnvironment(
   'FORCE_SKIP_BLUR',
   defaultValue: false,
 );
+/// Opt-in for insecure HTTP in *release* builds.
+///
+/// This is intended ONLY for local development / emulator usage.
+/// Keep default false so production builds still require HTTPS.
+const bool kAllowInsecureHttpInRelease = bool.fromEnvironment(
+  'ALLOW_INSECURE_HTTP',
+  defaultValue: false,
+);
 
 String? _runtimeApiBaseOverride;
 
@@ -62,7 +70,12 @@ String effectiveApiBase() {
     if (!base.startsWith('https://')) {
       // Sideload builds (typically for Sideloadly) may need to call a LAN HTTP API.
       // This is only allowed on iOS when explicitly opted-in at compile time.
-      if (!(kSideloadBuild && Platform.isIOS && base.startsWith('http://'))) {
+      final bool allowIosSideloadHttp =
+          kSideloadBuild && Platform.isIOS && base.startsWith('http://');
+      final bool allowAndroidLocalHttp =
+          kAllowInsecureHttpInRelease && Platform.isAndroid && base.startsWith('http://');
+
+      if (!(allowIosSideloadHttp || allowAndroidLocalHttp)) {
         throw StateError('In release builds, API_BASE must start with https://');
       }
     }

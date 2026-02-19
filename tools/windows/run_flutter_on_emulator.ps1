@@ -20,6 +20,6 @@ Write-Host \"Using device: $id\"
 
 flutter pub get
 # --flavor dev required: app has product flavors (dev/stage/prod); Flutter needs it to find the APK
-flutter run -d $id --flavor dev --dart-define=API_BASE=http://10.0.2.2:5000
+flutter run -d $id --flavor dev --dart-define=API_BASE=http://10.0.2.2:5000 --dart-define=ALLOW_INSECURE_HTTP=true
 
 

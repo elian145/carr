@@ -5,12 +5,15 @@
 # backend (with static fallback for repo-root uploads) is the one in use.
 
 $ErrorActionPreference = 'Stop'
-Set-Location $PSScriptRoot
+# Run from repo root so servers and Flutter run in the right place
+$repoRoot = (Split-Path (Split-Path $PSScriptRoot -Parent) -Parent)
+Set-Location $repoRoot
 
 # 1) Start backend (kk :5000, proxy :5003)
 Write-Host 'Starting backend servers... (Close any old server windows so images load correctly.)'
-& "$PSScriptRoot\start_servers.ps1"
-Start-Sleep -Seconds 3
+& "$repoRoot\start_servers.ps1"
+# Wait for kk to bind so listing images don't fail with "Connection closed while receiving data"
+Start-Sleep -Seconds 8
 
 # 2) Find Android emulator
 Write-Host 'Detecting Android emulator...'
@@ -26,4 +29,5 @@ Write-Host "Using device: $deviceId"
 # 3) Run app in release mode (avoids hang after install; no hot reload)
 # For debug + hot reload, run manually: flutter run -d $deviceId --flavor dev --dart-define=API_BASE=http://10.0.2.2:5000
 Write-Host 'Building and launching app (release mode)...'
-flutter run -d $deviceId --flavor dev --release --dart-define=API_BASE=http://10.0.2.2:5000
+# Allow HTTP in release for local emulator dev only (see lib/services/config.dart).
+flutter run -d $deviceId --flavor dev --release --dart-define=API_BASE=http://10.0.2.2:5000 --dart-define=ALLOW_INSECURE_HTTP=true

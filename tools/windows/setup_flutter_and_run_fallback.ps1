@@ -81,6 +81,6 @@ flutter --version
 
 Set-Location 'C:\Users\VeeStore\Desktop\car_listing_app'
 flutter pub get
-flutter run --dart-define=API_BASE=http://10.0.2.2:5000
+flutter run --dart-define=API_BASE=http://10.0.2.2:5000 --dart-define=ALLOW_INSECURE_HTTP=true
 
 
