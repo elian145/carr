@@ -1097,9 +1097,10 @@ _ALLOWED_IMAGE_TYPES = {
 @jwt_required()
 def sign_r2_upload():
     """
-    Return a presigned POST for direct-to-R2 upload.
+    Return a presigned URL for direct-to-R2 upload.
 
-    Recommended: use presigned POST (not PUT) so we can enforce a size limit via policy.
+    Cloudflare R2 does NOT support presigned POST uploads (S3 POST policy) and will
+    return 501. Use a presigned PUT URL instead.
     """
     try:
         current_user = get_current_user()
@@ -1145,18 +1146,13 @@ def sign_r2_upload():
             safe = msg.replace(_r2_required_env("R2_ACCESS_KEY_ID") if os.environ.get("R2_ACCESS_KEY_ID") else "", "<redacted>")
             return jsonify({"message": "R2 not configured", "detail": safe}), 500
 
-        conditions = [
-            ["content-length-range", 1, _max_image_bytes()],
-            ["eq", "$Content-Type", content_type],
-            ["starts-with", "$key", f"listings/{current_user.public_id}/{car.public_id}/"],
-        ]
-        fields = {"Content-Type": content_type}
-
-        upload = client.generate_presigned_post(
-            Bucket=bucket,
-            Key=key,
-            Fields=fields,
-            Conditions=conditions,
+        upload_url = client.generate_presigned_url(
+            ClientMethod="put_object",
+            Params={
+                "Bucket": bucket,
+                "Key": key,
+                "ContentType": content_type,
+            },
             ExpiresIn=60,
         )
 
@@ -1166,7 +1162,11 @@ def sign_r2_upload():
         return (
             jsonify(
                 {
-                    "upload": upload,  # { url, fields }
+                    "upload": {
+                        "method": "PUT",
+                        "url": upload_url,
+                        "headers": {"Content-Type": content_type},
+                    },
                     "public_url": public_url,
                     "object_key": key,
                     "expires_in": 60,

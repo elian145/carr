@@ -371,10 +371,11 @@ class ApiService {
     }
   }
 
-  /// Request a presigned POST to upload an image directly to Cloudflare R2.
+  /// Request a presigned upload payload to upload an image directly to Cloudflare R2.
   ///
   /// Returns:
-  /// - upload: { url, fields }
+  /// - upload: { method, url, headers }  (preferred for R2)
+  ///   or legacy: { url, fields }        (presigned POST for S3-compatible services)
   /// - public_url: final public URL to store/display
   static Future<Map<String, dynamic>> signR2ImageUpload({
     required String carId,
@@ -395,27 +396,56 @@ class ApiService {
     return res;
   }
 
-  /// Upload a file to R2 using a presigned POST payload returned by [signR2ImageUpload].
-  static Future<void> uploadToPresignedPost({
-    required String url,
-    required Map<String, dynamic> fields,
+  /// Upload a file using the payload returned by [signR2ImageUpload].
+  ///
+  /// Supports:
+  /// - Presigned PUT (Cloudflare R2)
+  /// - Presigned POST (legacy S3 POST policy)
+  static Future<void> uploadToSignedUpload({
+    required Map<String, dynamic> upload,
     required XFile file,
   }) async {
-    final req = http.MultipartRequest('POST', Uri.parse(url));
-    fields.forEach((k, v) {
-      if (v == null) return;
-      req.fields[k] = v.toString();
-    });
-    req.files.add(
-      await http.MultipartFile.fromPath(
-        'file',
-        file.path,
-      ),
-    );
-    final resp = await req.send();
+    final String? method = (upload['method'] as String?)?.toUpperCase();
+    final String url = (upload['url'] ?? '').toString();
+    if (url.isEmpty) {
+      throw Exception('Upload URL is missing');
+    }
+
+    // Legacy presigned POST shape: { url, fields }
+    final dynamic fieldsDyn = upload['fields'];
+    if (fieldsDyn is Map) {
+      final req = http.MultipartRequest('POST', Uri.parse(url));
+      fieldsDyn.forEach((k, v) {
+        if (k == null || v == null) return;
+        req.fields[k.toString()] = v.toString();
+      });
+      req.files.add(await http.MultipartFile.fromPath('file', file.path));
+      final resp = await req.send();
+      if (resp.statusCode < 200 || resp.statusCode >= 300) {
+        final body = await resp.stream.bytesToString();
+        throw Exception('Upload failed (${resp.statusCode}): $body');
+      }
+      return;
+    }
+
+    // Preferred R2 presigned PUT: { method: "PUT", url, headers }
+    if (method != null && method != 'PUT') {
+      throw Exception('Unsupported upload method: $method');
+    }
+
+    final headersDyn = upload['headers'];
+    final Map<String, String> headers = {};
+    if (headersDyn is Map) {
+      headersDyn.forEach((k, v) {
+        if (k == null || v == null) return;
+        headers[k.toString()] = v.toString();
+      });
+    }
+
+    final bytes = await file.readAsBytes();
+    final resp = await http.put(Uri.parse(url), headers: headers, body: bytes);
     if (resp.statusCode < 200 || resp.statusCode >= 300) {
-      final body = await resp.stream.bytesToString();
-      throw Exception('R2 upload failed (${resp.statusCode}): $body');
+      throw Exception('Upload failed (${resp.statusCode}): ${resp.body}');
     }
   }
 
