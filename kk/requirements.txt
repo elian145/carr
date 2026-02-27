@@ -5,6 +5,7 @@ Flask-JWT-Extended==4.6.0
 Flask-CORS==4.0.0
 Flask-Mail==0.9.1
 Flask-SocketIO==5.3.6
+eventlet==0.36.1
 Werkzeug==3.0.1
 bcrypt==4.1.2
 Flask-Bcrypt==1.0.1
