@@ -1130,8 +1130,14 @@ def sign_r2_upload():
         ext = _ALLOWED_IMAGE_TYPES[content_type]
         key = f"listings/{current_user.public_id}/{car.public_id}/{uuid.uuid4().hex}{ext}"
 
-        bucket = _r2_bucket()
-        client = _r2_client()
+        try:
+            bucket = _r2_bucket()
+            client = _r2_client()
+        except Exception as e:
+            # Misconfiguration: return a helpful message without leaking secrets.
+            msg = str(e) or "R2 is not configured"
+            safe = msg.replace(_r2_required_env("R2_ACCESS_KEY_ID") if os.environ.get("R2_ACCESS_KEY_ID") else "", "<redacted>")
+            return jsonify({"message": "R2 not configured", "detail": safe}), 500
 
         conditions = [
             ["content-length-range", 1, _max_image_bytes()],
@@ -1165,7 +1171,40 @@ def sign_r2_upload():
         )
     except Exception as e:
         logger.exception("sign_r2_upload failed")
-        return jsonify({"message": "Failed to sign upload"}), 500
+        return jsonify({"message": "Failed to sign upload", "detail": str(e)[:500]}), 500
+
+
+@app.route("/api/media/r2/status", methods=["GET"])
+def r2_status():
+    """Safe diagnostics to confirm R2 env is wired (no secrets)."""
+    try:
+        present = lambda k: bool((os.environ.get(k) or "").strip())
+        public_base = (os.environ.get("R2_PUBLIC_BASE") or "").strip().rstrip("/")
+        return (
+            jsonify(
+                {
+                    "configured": all(
+                        present(k)
+                        for k in (
+                            "R2_ACCOUNT_ID",
+                            "R2_BUCKET",
+                            "R2_ACCESS_KEY_ID",
+                            "R2_SECRET_ACCESS_KEY",
+                            "R2_PUBLIC_BASE",
+                        )
+                    ),
+                    "public_base": public_base,
+                    "bucket": (os.environ.get("R2_BUCKET") or "").strip(),
+                    "account_id_present": present("R2_ACCOUNT_ID"),
+                    "access_key_present": present("R2_ACCESS_KEY_ID"),
+                    "secret_key_present": present("R2_SECRET_ACCESS_KEY"),
+                    "max_image_mb": int((os.environ.get("R2_MAX_IMAGE_MB") or "10").strip() or "10"),
+                }
+            ),
+            200,
+        )
+    except Exception as e:
+        return jsonify({"configured": False, "message": str(e)[:300]}), 200
 
 
 @app.route("/api/cars/<car_id>/images/attach", methods=["POST"])
