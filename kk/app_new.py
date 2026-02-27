@@ -1235,6 +1235,15 @@ def attach_car_image_urls(car_id):
             return jsonify({"message": "urls is required"}), 400
 
         public_base = _r2_public_base()
+        existing_urls = set()
+        try:
+            if car.images:
+                for img in car.images:
+                    u = str(getattr(img, "image_url", "") or "").strip()
+                    if u:
+                        existing_urls.add(u)
+        except Exception:
+            existing_urls = set()
         attached = []
         # Keep ordering stable after existing images.
         next_order = 0
@@ -1251,6 +1260,9 @@ def attach_car_image_urls(car_id):
             # Recommended: only allow attaching URLs under our public base.
             if public_base and not s.startswith(public_base + "/"):
                 continue
+            # Dedupe: don't attach the same URL twice.
+            if s in existing_urls:
+                continue
             ci = CarImage(
                 car_id=car.id,
                 image_url=s,
@@ -1260,6 +1272,7 @@ def attach_car_image_urls(car_id):
             next_order += 1
             db.session.add(ci)
             attached.append(ci)
+            existing_urls.add(s)
 
         db.session.commit()
 
