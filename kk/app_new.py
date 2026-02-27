@@ -59,9 +59,15 @@ def missing_token_callback(error):
 @jwt.token_in_blocklist_loader
 def check_if_token_revoked(jwt_header, jwt_payload):
     """Check if token is blacklisted"""
-    jti = jwt_payload['jti']
-    token = TokenBlacklist.query.filter_by(jti=jti).first()
-    return token is not None
+    try:
+        jti = jwt_payload['jti']
+        token = TokenBlacklist.query.filter_by(jti=jti).first()
+        return token is not None
+    except Exception:
+        # If the blacklist table isn't migrated yet (or DB hiccups), don't 500 every
+        # authenticated request. We fail open here to keep the API functional.
+        logger.exception("Token blacklist check failed; treating token as not revoked")
+        return False
 
 @jwt.revoked_token_loader
 def revoked_token_callback(jwt_header, jwt_payload):
@@ -1649,7 +1655,10 @@ def not_found(error):
 
 @app.errorhandler(500)
 def internal_error(error):
-    db.session.rollback()
+    try:
+        db.session.rollback()
+    except Exception:
+        logger.exception("Rollback failed during 500 handler")
     return jsonify({'message': 'Internal server error'}), 500
 
 # Database initialization is handled at process start below for Flask 3 compatibility
