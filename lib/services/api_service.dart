@@ -371,6 +371,66 @@ class ApiService {
     }
   }
 
+  /// Request a presigned POST to upload an image directly to Cloudflare R2.
+  ///
+  /// Returns:
+  /// - upload: { url, fields }
+  /// - public_url: final public URL to store/display
+  static Future<Map<String, dynamic>> signR2ImageUpload({
+    required String carId,
+    required String filename,
+    required String contentType,
+    int? sizeBytes,
+  }) async {
+    final res = await _makeAuthenticatedRequest(
+      'POST',
+      '/media/r2/sign-upload',
+      body: {
+        'listing_id': carId,
+        'filename': filename,
+        'content_type': contentType,
+        if (sizeBytes != null) 'size_bytes': sizeBytes,
+      },
+    );
+    return res;
+  }
+
+  /// Upload a file to R2 using a presigned POST payload returned by [signR2ImageUpload].
+  static Future<void> uploadToPresignedPost({
+    required String url,
+    required Map<String, dynamic> fields,
+    required XFile file,
+  }) async {
+    final req = http.MultipartRequest('POST', Uri.parse(url));
+    fields.forEach((k, v) {
+      if (v == null) return;
+      req.fields[k] = v.toString();
+    });
+    req.files.add(
+      await http.MultipartFile.fromPath(
+        'file',
+        file.path,
+      ),
+    );
+    final resp = await req.send();
+    if (resp.statusCode < 200 || resp.statusCode >= 300) {
+      final body = await resp.stream.bytesToString();
+      throw Exception('R2 upload failed (${resp.statusCode}): $body');
+    }
+  }
+
+  /// Attach already-uploaded R2 public URLs to a listing.
+  static Future<Map<String, dynamic>> attachCarImageUrls({
+    required String carId,
+    required List<String> urls,
+  }) async {
+    return await _makeAuthenticatedRequest(
+      'POST',
+      '/cars/$carId/images/attach',
+      body: {'urls': urls},
+    );
+  }
+
   static Future<Map<String, dynamic>> uploadCarVideos(String carId, List<XFile> videoFiles) async {
     final request = http.MultipartRequest(
       'POST',

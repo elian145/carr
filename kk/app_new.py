@@ -16,6 +16,10 @@ import logging
 from datetime import datetime, timedelta
 import secrets
 from functools import wraps
+import uuid
+
+import boto3
+from botocore.config import Config as BotoConfig
 
 # Initialize Flask app
 app = Flask(__name__)
@@ -1034,6 +1038,199 @@ def upload_car_images(car_id):
     except Exception as e:
         logger.error(f"Upload car images error: {str(e)}")
         return jsonify({'message': 'Failed to upload images'}), 500
+
+
+def _r2_required_env(name: str) -> str:
+    v = (os.environ.get(name) or "").strip()
+    if not v:
+        raise RuntimeError(f"Missing required env var: {name}")
+    return v
+
+
+def _r2_public_base() -> str:
+    return (os.environ.get("R2_PUBLIC_BASE") or "").strip().rstrip("/")
+
+
+def _r2_bucket() -> str:
+    return _r2_required_env("R2_BUCKET")
+
+
+def _r2_client():
+    account_id = _r2_required_env("R2_ACCOUNT_ID")
+    access_key = _r2_required_env("R2_ACCESS_KEY_ID")
+    secret_key = _r2_required_env("R2_SECRET_ACCESS_KEY")
+    endpoint = f"https://{account_id}.r2.cloudflarestorage.com"
+    # Cloudflare R2 is S3-compatible; use v4 signing.
+    return boto3.client(
+        "s3",
+        endpoint_url=endpoint,
+        aws_access_key_id=access_key,
+        aws_secret_access_key=secret_key,
+        region_name="auto",
+        config=BotoConfig(signature_version="s3v4"),
+    )
+
+
+def _max_image_bytes() -> int:
+    try:
+        mb = int((os.environ.get("R2_MAX_IMAGE_MB") or "10").strip())
+        mb = max(1, min(50, mb))
+        return mb * 1024 * 1024
+    except Exception:
+        return 10 * 1024 * 1024
+
+
+_ALLOWED_IMAGE_TYPES = {
+    "image/jpeg": ".jpg",
+    "image/png": ".png",
+    "image/webp": ".webp",
+}
+
+
+@app.route("/api/media/r2/sign-upload", methods=["POST"])
+@jwt_required()
+def sign_r2_upload():
+    """
+    Return a presigned POST for direct-to-R2 upload.
+
+    Recommended: use presigned POST (not PUT) so we can enforce a size limit via policy.
+    """
+    try:
+        current_user = get_current_user()
+        if not current_user:
+            return jsonify({"message": "User not found"}), 404
+
+        data = request.get_json(silent=True) or {}
+        listing_id = str(data.get("listing_id") or data.get("car_id") or "").strip()
+        filename = str(data.get("filename") or "").strip()
+        content_type = str(data.get("content_type") or data.get("contentType") or "").strip().lower()
+        size_bytes = data.get("size_bytes") or data.get("sizeBytes")
+
+        if not listing_id:
+            return jsonify({"message": "listing_id is required"}), 400
+        if not filename:
+            return jsonify({"message": "filename is required"}), 400
+        if content_type not in _ALLOWED_IMAGE_TYPES:
+            return jsonify({"message": "Only jpg/png/webp images are allowed"}), 400
+
+        try:
+            size_int = int(size_bytes) if size_bytes is not None else None
+        except Exception:
+            size_int = None
+        if size_int is not None and (size_int <= 0 or size_int > _max_image_bytes()):
+            return jsonify({"message": "File too large"}), 400
+
+        # Ensure listing exists and the user owns it (or admin).
+        car = Car.query.filter_by(public_id=listing_id).first()
+        if not car:
+            return jsonify({"message": "Car not found"}), 404
+        if car.seller_id != current_user.id and not getattr(current_user, "is_admin", False):
+            return jsonify({"message": "Not authorized"}), 403
+
+        ext = _ALLOWED_IMAGE_TYPES[content_type]
+        key = f"listings/{current_user.public_id}/{car.public_id}/{uuid.uuid4().hex}{ext}"
+
+        bucket = _r2_bucket()
+        client = _r2_client()
+
+        conditions = [
+            ["content-length-range", 1, _max_image_bytes()],
+            ["eq", "$Content-Type", content_type],
+            ["starts-with", "$key", f"listings/{current_user.public_id}/{car.public_id}/"],
+        ]
+        fields = {"Content-Type": content_type}
+
+        upload = client.generate_presigned_post(
+            Bucket=bucket,
+            Key=key,
+            Fields=fields,
+            Conditions=conditions,
+            ExpiresIn=60,
+        )
+
+        public_base = _r2_public_base()
+        public_url = f"{public_base}/{key}" if public_base else ""
+
+        return (
+            jsonify(
+                {
+                    "upload": upload,  # { url, fields }
+                    "public_url": public_url,
+                    "object_key": key,
+                    "expires_in": 60,
+                    "max_bytes": _max_image_bytes(),
+                }
+            ),
+            200,
+        )
+    except Exception as e:
+        logger.exception("sign_r2_upload failed")
+        return jsonify({"message": "Failed to sign upload"}), 500
+
+
+@app.route("/api/cars/<car_id>/images/attach", methods=["POST"])
+@jwt_required()
+def attach_car_image_urls(car_id):
+    """Attach already uploaded R2 image URLs to a listing."""
+    try:
+        current_user = get_current_user()
+        if not current_user:
+            return jsonify({"message": "User not found"}), 404
+
+        car = Car.query.filter_by(public_id=car_id).first()
+        if not car:
+            return jsonify({"message": "Car not found"}), 404
+
+        if car.seller_id != current_user.id and not getattr(current_user, "is_admin", False):
+            return jsonify({"message": "Not authorized"}), 403
+
+        data = request.get_json(silent=True) or {}
+        urls = data.get("urls") or data.get("images") or data.get("paths") or []
+        if not isinstance(urls, list) or not urls:
+            return jsonify({"message": "urls is required"}), 400
+
+        public_base = _r2_public_base()
+        attached = []
+        # Keep ordering stable after existing images.
+        next_order = 0
+        try:
+            if car.images:
+                next_order = max(int(getattr(img, "order", 0) or 0) for img in car.images) + 1
+        except Exception:
+            next_order = 0
+
+        for u in urls:
+            s = str(u or "").strip()
+            if not s:
+                continue
+            # Recommended: only allow attaching URLs under our public base.
+            if public_base and not s.startswith(public_base + "/"):
+                continue
+            ci = CarImage(
+                car_id=car.id,
+                image_url=s,
+                is_primary=(len(car.images) == 0 and len(attached) == 0),
+                order=next_order,
+            )
+            next_order += 1
+            db.session.add(ci)
+            attached.append(ci)
+
+        db.session.commit()
+
+        return (
+            jsonify(
+                {
+                    "message": f"{len(attached)} images attached successfully",
+                    "images": [img.to_dict() for img in attached],
+                }
+            ),
+            201,
+        )
+    except Exception:
+        logger.exception("attach_car_image_urls failed")
+        db.session.rollback()
+        return jsonify({"message": "Failed to attach images"}), 500
 
 @app.route('/api/cars/<car_id>/videos', methods=['POST'])
 @jwt_required()
