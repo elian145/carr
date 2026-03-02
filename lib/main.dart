@@ -29,8 +29,12 @@ import 'package:provider/provider.dart';
 import 'theme_provider.dart';
 import 'widgets/theme_toggle_widget.dart';
 import 'services/config.dart';
+import 'services/auth_service.dart';
+import 'pages/auth_pages.dart';
 // Sideload build flag to disable services that require entitlements on iOS
 const bool kSideloadBuild = bool.fromEnvironment('SIDELOAD_BUILD', defaultValue: false);
+// Build/commit badge shown on HomePage (long-press to copy).
+const String kBuildSha = String.fromEnvironment('BUILD_COMMIT_SHA', defaultValue: 'dev');
 
 // Fallback delegates to provide Material/Cupertino/Widgets localizations for 'ku'
 class KuMaterialLocalizationsDelegate extends LocalizationsDelegate<MaterialLocalizations> {
@@ -1410,11 +1414,11 @@ class ComparisonButton extends StatelessWidget {
 class MyApp extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
-    const String _buildSha = String.fromEnvironment('BUILD_COMMIT_SHA', defaultValue: 'dev');
     return MultiProvider(
       providers: [
         ChangeNotifierProvider(create: (context) => ThemeProvider()),
         ChangeNotifierProvider(create: (context) => CarComparisonStore()),
+        ChangeNotifierProvider(create: (context) => AuthService()),
       ],
       child: ValueListenableBuilder<Locale?>(
         valueListenable: LocaleController.currentLocale,
@@ -1457,6 +1461,7 @@ class MyApp extends StatelessWidget {
         '/favorites': (context) => FavoritesPage(),
         '/chat': (context) => ChatListPage(),
         '/login': (context) => LoginPage(),
+        '/forgot-password': (context) => const ForgotPasswordPage(),
         '/signup': (context) => SignupPage(),
         '/profile': (context) => ProfilePage(),
         '/payment/history': (context) => PaymentHistoryPage(),
@@ -3470,9 +3475,9 @@ class _HomePageState extends State<HomePage> {
             bottom: 8,
             child: GestureDetector(
               onLongPress: () async {
-                await Clipboard.setData(ClipboardData(text: _buildSha));
+                await services.Clipboard.setData(services.ClipboardData(text: kBuildSha));
                 if (mounted) {
-                  ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Commit: ' + _buildSha + ' copied')));
+                  ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Commit: ' + kBuildSha + ' copied')));
                 }
               },
               child: Container(
@@ -3488,7 +3493,7 @@ class _HomePageState extends State<HomePage> {
                     Icon(Icons.tag, size: 12, color: Colors.white70),
                     SizedBox(width: 4),
                     Text(
-                      _buildSha,
+                      kBuildSha,
                       style: TextStyle(color: Colors.white70, fontSize: 11, letterSpacing: 0.5),
                     ),
                   ],
@@ -6419,57 +6424,58 @@ final String raw = car!['contact_phone'].toString();
                                       } catch (_) {}
                                     },
                                     child: Container(
-                                    decoration: BoxDecoration(
-                                      borderRadius: BorderRadius.circular(12),
-                                      color: Colors.grey[900],
-                                    ),
-                                    child: ClipRRect(
-                                      borderRadius: BorderRadius.circular(12),
-                                      child: Stack(
-                                        alignment: Alignment.center,
-                                        children: [
-                                          Container(
-                                            width: double.infinity,
-                                            height: double.infinity,
-                                            color: Colors.grey[800],
-                                            child: Icon(
-                                              Icons.videocam,
-                                              size: 48,
-                                              color: Colors.grey[400],
+                                      decoration: BoxDecoration(
+                                        borderRadius: BorderRadius.circular(12),
+                                        color: Colors.grey[900],
+                                      ),
+                                      child: ClipRRect(
+                                        borderRadius: BorderRadius.circular(12),
+                                        child: Stack(
+                                          alignment: Alignment.center,
+                                          children: [
+                                            Container(
+                                              width: double.infinity,
+                                              height: double.infinity,
+                                              color: Colors.grey[800],
+                                              child: Icon(
+                                                Icons.videocam,
+                                                size: 48,
+                                                color: Colors.grey[400],
+                                              ),
                                             ),
-                                          ),
-                                          Container(
-                                            decoration: BoxDecoration(
-                                              color: Colors.black54,
-                                              shape: BoxShape.circle,
-                                            ),
-                                            padding: EdgeInsets.all(12),
-                                            child: Icon(
-                                              Icons.play_arrow,
-                                              color: Colors.white,
-                                              size: 32,
-                                            ),
-                                          ),
-                                          Positioned(
-                                            bottom: 8,
-                                            left: 8,
-                                            child: Container(
-                                              padding: EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                                            Container(
                                               decoration: BoxDecoration(
                                                 color: Colors.black54,
-                                                borderRadius: BorderRadius.circular(4),
+                                                shape: BoxShape.circle,
                                               ),
-                                              child: Text(
-                                                AppLocalizations.of(context)!.videoIndex((index + 1).toString()),
-                                                style: TextStyle(
-                                                  color: Colors.white,
-                                                  fontSize: 12,
-                                                  fontWeight: FontWeight.w500,
+                                              padding: EdgeInsets.all(12),
+                                              child: Icon(
+                                                Icons.play_arrow,
+                                                color: Colors.white,
+                                                size: 32,
+                                              ),
+                                            ),
+                                            Positioned(
+                                              bottom: 8,
+                                              left: 8,
+                                              child: Container(
+                                                padding: EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                                                decoration: BoxDecoration(
+                                                  color: Colors.black54,
+                                                  borderRadius: BorderRadius.circular(4),
+                                                ),
+                                                child: Text(
+                                                  AppLocalizations.of(context)!.videoIndex((index + 1).toString()),
+                                                  style: TextStyle(
+                                                    color: Colors.white,
+                                                    fontSize: 12,
+                                                    fontWeight: FontWeight.w500,
+                                                  ),
                                                 ),
                                               ),
                                             ),
-                                          ),
-                                        ],
+                                          ],
+                                        ),
                                       ),
                                     ),
                                   );
@@ -11523,6 +11529,13 @@ class _LoginPageState extends State<LoginPage> {
                 obscureText: true,
                 decoration: InputDecoration(labelText: AppLocalizations.of(context)!.passwordLabel),
                 validator: (v) => (v==null || v.isEmpty) ? AppLocalizations.of(context)!.requiredField : null,
+              ),
+              Align(
+                alignment: Alignment.centerRight,
+                child: TextButton(
+                  onPressed: () => Navigator.pushNamed(context, '/forgot-password'),
+                  child: Text(AppLocalizations.of(context)!.forgotPassword),
+                ),
               ),
               SizedBox(height: 20),
               ElevatedButton(
