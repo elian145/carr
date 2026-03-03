@@ -564,6 +564,9 @@ class AppLocalizationsKu extends AppLocalizations {
   String get passwordLabel => 'وشەی نهێنی';
 
   @override
+  String get forgotPassword => 'وشەی نهێنیت لەبیرچووەتەوە؟';
+
+  @override
   String get emailLabel => 'ئیمەیل';
 
   @override

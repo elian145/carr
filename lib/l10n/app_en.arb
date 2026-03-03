@@ -190,6 +190,7 @@
   "loggedIn": "Logged in",
   "usernameLabel": "Username",
   "passwordLabel": "Password",
+  "forgotPassword": "Forgot password?",
   "emailLabel": "Email",
   "phoneLabel": "Phone",
   "logout": "Logout",

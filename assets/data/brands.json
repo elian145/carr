@@ -1,0 +1,222 @@
+[
+  {
+    "id": "toyota",
+    "name": "Toyota"
+  },
+  {
+    "id": "kia",
+    "name": "Kia"
+  },
+  {
+    "id": "nissan",
+    "name": "Nissan"
+  },
+  {
+    "id": "hyundai",
+    "name": "Hyundai"
+  },
+  {
+    "id": "genesis",
+    "name": "Genesis"
+  },
+  {
+    "id": "mg",
+    "name": "MG"
+  },
+  {
+    "id": "chevrolet",
+    "name": "Chevrolet"
+  },
+  {
+    "id": "ford",
+    "name": "Ford"
+  },
+  {
+    "id": "jetour",
+    "name": "Jetour"
+  },
+  {
+    "id": "soueast",
+    "name": "Soueast"
+  },
+  {
+    "id": "gac",
+    "name": "GAC"
+  },
+  {
+    "id": "gwm",
+    "name": "GWM"
+  },
+  {
+    "id": "mercedes_benz",
+    "name": "Mercedes-Benz"
+  },
+  {
+    "id": "mercedes_maybach",
+    "name": "Mercedes-Maybach"
+  },
+  {
+    "id": "bmw",
+    "name": "BMW"
+  },
+  {
+    "id": "volkswagen",
+    "name": "Volkswagen"
+  },
+  {
+    "id": "byd",
+    "name": "BYD"
+  },
+  {
+    "id": "mitsubishi",
+    "name": "Mitsubishi"
+  },
+  {
+    "id": "geely",
+    "name": "Geely"
+  },
+  {
+    "id": "chery",
+    "name": "Chery"
+  },
+  {
+    "id": "dodge",
+    "name": "Dodge"
+  },
+  {
+    "id": "ram",
+    "name": "RAM"
+  },
+  {
+    "id": "cadillac",
+    "name": "Cadillac"
+  },
+  {
+    "id": "jeep",
+    "name": "Jeep"
+  },
+  {
+    "id": "audi",
+    "name": "Audi"
+  },
+  {
+    "id": "honda",
+    "name": "Honda"
+  },
+  {
+    "id": "lexus",
+    "name": "Lexus"
+  },
+  {
+    "id": "mazda",
+    "name": "Mazda"
+  },
+  {
+    "id": "subaru",
+    "name": "Subaru"
+  },
+  {
+    "id": "suzuki",
+    "name": "Suzuki"
+  },
+  {
+    "id": "isuzu",
+    "name": "Isuzu"
+  },
+  {
+    "id": "infiniti",
+    "name": "Infiniti"
+  },
+  {
+    "id": "gmc",
+    "name": "GMC"
+  },
+  {
+    "id": "chrysler",
+    "name": "Chrysler"
+  },
+  {
+    "id": "lincoln",
+    "name": "Lincoln"
+  },
+  {
+    "id": "porsche",
+    "name": "Porsche"
+  },
+  {
+    "id": "land_rover",
+    "name": "Land Rover"
+  },
+  {
+    "id": "jaguar",
+    "name": "Jaguar"
+  },
+  {
+    "id": "bentley",
+    "name": "Bentley"
+  },
+  {
+    "id": "rolls_royce",
+    "name": "Rolls-Royce"
+  },
+  {
+    "id": "changan",
+    "name": "Changan"
+  },
+  {
+    "id": "baic",
+    "name": "BAIC"
+  },
+  {
+    "id": "foton",
+    "name": "Foton"
+  },
+  {
+    "id": "dongfeng",
+    "name": "DongFeng"
+  },
+  {
+    "id": "tesla",
+    "name": "Tesla"
+  },
+  {
+    "id": "leapmotor",
+    "name": "Leapmotor"
+  },
+  {
+    "id": "xpeng",
+    "name": "XPeng"
+  },
+  {
+    "id": "peugeot",
+    "name": "Peugeot"
+  },
+  {
+    "id": "renault",
+    "name": "Renault"
+  },
+  {
+    "id": "skoda",
+    "name": "Skoda"
+  },
+  {
+    "id": "volvo",
+    "name": "Volvo"
+  },
+  {
+    "id": "ferrari",
+    "name": "Ferrari"
+  },
+  {
+    "id": "lamborghini",
+    "name": "Lamborghini"
+  },
+  {
+    "id": "maserati",
+    "name": "Maserati"
+  },
+  {
+    "id": "aston_martin",
+    "name": "Aston Martin"
+  }
+]

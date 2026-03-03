@@ -190,6 +190,7 @@
   "loggedIn": "چووەژور",
   "usernameLabel": "ناوی بەکارهێنەر",
   "passwordLabel": "وشەی نهێنی",
+  "forgotPassword": "وشەی نهێنیت لەبیرچووەتەوە؟",
   "emailLabel": "ئیمەیل",
   "phoneLabel": "تەلەفۆن",
   "logout": "چوونەدەرەوە",

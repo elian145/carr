@@ -564,6 +564,9 @@ class AppLocalizationsEn extends AppLocalizations {
   String get passwordLabel => 'Password';
 
   @override
+  String get forgotPassword => 'Forgot password?';
+
+  @override
   String get emailLabel => 'Email';
 
   @override

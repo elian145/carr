@@ -30,7 +30,11 @@ import 'theme_provider.dart';
 import 'widgets/theme_toggle_widget.dart';
 import 'services/config.dart';
 import 'services/auth_service.dart';
+import 'services/car_data_service.dart';
 import 'pages/auth_pages.dart';
+import 'pages/change_password_page.dart';
+import 'state/language_provider.dart';
+import 'state/locale_controller.dart';
 // Sideload build flag to disable services that require entitlements on iOS
 const bool kSideloadBuild = bool.fromEnvironment('SIDELOAD_BUILD', defaultValue: false);
 // Build/commit badge shown on HomePage (long-press to copy).
@@ -782,27 +786,7 @@ class AuthStore {
   }
 }
 
-class LocaleController {
-  static final ValueNotifier<Locale?> currentLocale = ValueNotifier<Locale?>(null);
-
-  static Future<void> loadSavedLocale() async {
-    final sp = await SharedPreferences.getInstance();
-    final code = sp.getString('app_locale');
-    if (code != null && code.isNotEmpty) {
-      currentLocale.value = Locale(code);
-    }
-  }
-
-  static Future<void> setLocale(Locale? locale) async {
-    currentLocale.value = locale;
-    final sp = await SharedPreferences.getInstance();
-    if (locale == null) {
-      await sp.remove('app_locale');
-    } else {
-      await sp.setString('app_locale', locale.languageCode);
-    }
-  }
-}
+// LocaleController is defined in lib/state/locale_controller.dart (imported via language_provider)
 
 Widget buildLanguageMenu() {
   return PopupMenuButton<String>(
@@ -1419,6 +1403,7 @@ class MyApp extends StatelessWidget {
         ChangeNotifierProvider(create: (context) => ThemeProvider()),
         ChangeNotifierProvider(create: (context) => CarComparisonStore()),
         ChangeNotifierProvider(create: (context) => AuthService()),
+        ChangeNotifierProvider(create: (context) => LanguageProvider()),
       ],
       child: ValueListenableBuilder<Locale?>(
         valueListenable: LocaleController.currentLocale,
@@ -1464,6 +1449,7 @@ class MyApp extends StatelessWidget {
         '/forgot-password': (context) => const ForgotPasswordPage(),
         '/signup': (context) => SignupPage(),
         '/profile': (context) => ProfilePage(),
+        '/change-password': (context) => const ChangePasswordPage(),
         '/payment/history': (context) => PaymentHistoryPage(),
         '/payment/initiate': (context) => PaymentInitiatePage(),
         '/car_detail': (context) {
@@ -2062,83 +2048,21 @@ class _HomePageState extends State<HomePage> {
   }
 
   // Static options
-  final List<String> homeBrands = [
-    'Toyota', 'Volkswagen', 'Ford', 'Honda', 'Hyundai', 'Nissan', 'Chevrolet', 'Kia', 'Mercedes-Benz', 'BMW', 'Audi', 'Lexus', 'Mazda', 'Subaru', 'Volvo', 'Jeep', 'RAM', 'GMC', 'Buick', 'Cadillac', 'Lincoln', 'Mitsubishi', 'Acura', 'Infiniti', 'Tesla', 'Mini', 'Porsche', 'Land Rover', 'Jaguar', 'Fiat', 'Renault', 'Peugeot', 'Citroën', 'Škoda', 'SEAT', 'Dacia', 'Chery', 'BYD', 'Great Wall', 'FAW', 'Roewe', 'Proton', 'Perodua', 'Tata', 'Mahindra', 'Lada', 'ZAZ', 'Daewoo', 'SsangYong', 'Changan', 'Haval', 'Wuling', 'Baojun', 'Nio', 'XPeng', 'Li Auto', 'VinFast', 'Ferrari', 'Lamborghini', 'Bentley', 'Rolls-Royce', 'Aston Martin', 'McLaren', 'Maserati', 'Bugatti', 'Pagani', 'Koenigsegg', 'Polestar', 'Rivian', 'Lucid', 'Alfa Romeo', 'Lancia', 'Abarth', 'Opel', 'DS', 'MAN', 'Iran Khodro', 'Genesis', 'Isuzu', 'Datsun', 'JAC Motors', 'JAC Trucks', 'KTM', 'Alpina', 'Brabus', 'Mansory', 'Bestune', 'Hongqi', 'Dongfeng', 'FAW Jiefang', 'Foton', 'Leapmotor', 'GAC', 'SAIC', 'MG', 'Vauxhall', 'Smart'
-  ];
-  final Map<String, List<String>> models = {
-    'BMW': ['X3', 'X5', 'X7', '3 Series', '5 Series', '7 Series', 'M3', 'M5', 'X1', 'X6'],
-    'Mercedes-Benz': ['C-Class', 'E-Class', 'S-Class', 'GLC', 'GLE', 'GLS', 'A-Class', 'CLA', 'GLA', 'AMG GT'],
-    'Audi': ['A3', 'A4', 'A6', 'A8', 'Q3', 'Q5', 'Q7', 'Q8', 'RS6', 'TT'],
-    'Toyota': ['Camry', 'Corolla', 'RAV4', 'Highlander', 'Tacoma', 'Tundra', 'Prius', 'Avalon', '4Runner', 'Sequoia'],
-    'Honda': ['Civic', 'Accord', 'CR-V', 'Pilot', 'Ridgeline', 'Odyssey', 'HR-V', 'Passport', 'Insight', 'Clarity'],
-    'Nissan': ['Altima', 'Maxima', 'Rogue', 'Murano', 'Pathfinder', 'Frontier', 'Titan', 'Leaf', 'Sentra', 'Versa'],
-    'Ford': ['F-150', 'Mustang', 'Explorer', 'Escape', 'Edge', 'Ranger', 'Bronco', 'Mach-E', 'Focus', 'Fusion'],
-    'Chevrolet': ['Silverado', 'Camaro', 'Equinox', 'Tahoe', 'Suburban', 'Colorado', 'Corvette', 'Malibu', 'Cruze', 'Traverse'],
-    'Hyundai': ['Elantra', 'Sonata', 'Tucson', 'Santa Fe', 'Palisade', 'Kona', 'Venue', 'Accent', 'Veloster', 'Ioniq'],
-    'Kia': ['Forte', 'K5', 'Sportage', 'Telluride', 'Sorento', 'Soul', 'Rio', 'Stinger', 'EV6', 'Niro']
-  };
-  
-  
+  // Loaded from assets/data/ via CarDataService
+  List<String> homeBrands = [];
+  Map<String, List<String>> models = {};
+  Map<String, Map<String, List<String>>> trimsByBrandModel = {};
 
-  
+  Future<void> _loadCatalog() async {
+    try {
+      final svc = CarDataService.instance;
+      final b = await svc.getBrandNames();
+      final m = await svc.buildModelMap();
+      final t = await svc.buildTrimMap();
+      if (mounted) setState(() { homeBrands = b; models = m; trimsByBrandModel = t; });
+    } catch (_) {}
+  }
 
-  // Trims by brand and model for Add Listing (scoped to this page)
-  final Map<String, Map<String, List<String>>> trimsByBrandModel = {
-    'BMW': {
-      'X3': ['Base', 'xDrive30i', 'M40i'],
-      'X5': ['Base', 'xDrive40i', 'M50i'],
-      '3 Series': ['320i', '330i', 'M340i', 'M3'],
-    },
-    'Mercedes-Benz': {
-      'C-Class': ['C 200', 'C 300', 'AMG C 43', 'AMG C 63'],
-      'E-Class': ['E 200', 'E 300', 'E 450', 'AMG E 53'],
-      'GLC': ['GLC 200', 'GLC 300', 'AMG GLC 43'],
-    },
-    'Audi': {
-      'A4': ['30 TDI', '35 TDI', '40 TFSI', '45 TFSI', 'S4', 'RS4'],
-      'Q5': ['40 TDI', '45 TFSI', 'SQ5'],
-    },
-    'Toyota': {
-      'Camry': ['L', 'LE', 'SE', 'XSE', 'XLE'],
-      'Corolla': ['L', 'LE', 'SE', 'XSE', 'XLE'],
-      'RAV4': ['LE', 'XLE', 'XLE Premium', 'Adventure', 'Limited', 'TRD Off-Road'],
-    },
-    'Honda': {
-      'Civic': ['LX', 'Sport', 'EX', 'EX-L', 'Touring', 'Si', 'Type R'],
-      'Accord': ['LX', 'Sport', 'EX-L', 'Touring'],
-    },
-    'Nissan': {
-      'Altima': ['S', 'SV', 'SR', 'SL', 'Platinum'],
-      'Rogue': ['S', 'SV', 'SL', 'Platinum'],
-    },
-    'Ford': {
-      'F-150': ['XL', 'XLT', 'Lariat', 'King Ranch', 'Platinum', 'Limited', 'Raptor'],
-      'Explorer': ['XLT', 'Limited', 'ST', 'Platinum'],
-    },
-    'Chevrolet': {
-      'Silverado': ['WT', 'Custom', 'LT', 'RST', 'LTZ', 'High Country'],
-      'Camaro': ['1LS', '1LT', '2LT', '3LT', '1SS', '2SS', 'ZL1'],
-    },
-    'Hyundai': {
-      'Elantra': ['SE', 'SEL', 'Limited', 'N Line'],
-      'Tucson': ['SE', 'SEL', 'Limited', 'N Line'],
-    },
-    'Kia': {
-      'Sportage': ['LX', 'EX', 'SX', 'X-Line'],
-      'Sorento': ['LX', 'S', 'EX', 'SX', 'SX Prestige'],
-    },
-  };
-
-  
-
-  
-  
-  
-
-  // DUPLICATE REMOVED: trimsByBrandModel
-
-  
-  
   final List<String> trims = ['Base', 'Sport', 'Luxury', 'Premium', 'Limited', 'Platinum', 'Signature', 'Touring', 'SE', 'LE', 'XLE', 'XSE'];
   final List<String> conditions = ['Any', 'New', 'Used'];
   final List<String> transmissions = ['Any', 'Automatic', 'Manual'];
@@ -2178,6 +2102,7 @@ class _HomePageState extends State<HomePage> {
     _clearFiltersOnly();
     _resetAllFiltersInMemory();
     _loadBodyTypesFromAssets();
+    _loadCatalog();
     WidgetsBinding.instance.addPostFrameCallback((_) {
       fetchCars();
     });
@@ -7060,6 +6985,7 @@ class _SellStep1PageState extends State<SellStep1Page> {
   void initState() {
     super.initState();
     _resetSellFilters();
+    _loadCatalog();
   }
   
   Future<void> _resetSellFilters() async {
@@ -7247,52 +7173,20 @@ class _SellStep1PageState extends State<SellStep1Page> {
     );
   }
   
-  final List<String> brands = [
-    'Toyota', 'Volkswagen', 'Ford', 'Honda', 'Hyundai', 'Nissan', 'Chevrolet', 'Kia', 
-    'Mercedes-Benz', 'BMW', 'Audi', 'Lexus', 'Mazda', 'Subaru', 'Volvo', 'Jeep', 'RAM', 
-    'GMC', 'Buick', 'Cadillac', 'Lincoln', 'Mitsubishi', 'Acura', 'Infiniti', 'Tesla', 
-    'Mini', 'Porsche', 'Land Rover', 'Jaguar', 'Fiat', 'Renault', 'Peugeot', 'Citroën', 
-    'Škoda', 'SEAT', 'Dacia', 'Chery', 'BYD', 'Great Wall', 'FAW', 'Roewe', 'Proton', 
-    'Perodua', 'Tata', 'Mahindra', 'Lada', 'ZAZ', 'Daewoo', 'SsangYong', 'Changan', 
-    'Haval', 'Wuling', 'Baojun', 'Nio', 'XPeng', 'Li Auto', 'VinFast', 'Ferrari', 
-    'Lamborghini', 'Bentley', 'Rolls-Royce', 'Aston Martin', 'McLaren', 'Maserati', 
-    'Bugatti', 'Pagani', 'Koenigsegg', 'Polestar', 'Rivian', 'Lucid', 'Alfa Romeo', 
-    'Lancia', 'Abarth', 'Opel', 'DS', 'MAN', 'Iran Khodro', 'Genesis', 'Isuzu', 
-    'Datsun', 'JAC Motors', 'JAC Trucks', 'KTM', 'Alpina', 'Brabus', 'Mansory', 
-    'Bestune', 'Hongqi', 'Dongfeng', 'FAW Jiefang', 'Foton', 'Leapmotor', 'GAC', 
-    'SAIC', 'MG', 'Vauxhall', 'Smart'
-  ];
-  
-  final Map<String, List<String>> models = {
-    'BMW': ['X3', 'X5', 'X7', '3 Series', '5 Series', '7 Series', 'M3', 'M5', 'X1', 'X6'],
-    'Mercedes-Benz': ['C-Class', 'E-Class', 'S-Class', 'GLC', 'GLE', 'GLS', 'A-Class', 'CLA', 'GLA', 'AMG GT'],
-    'Audi': ['A3', 'A4', 'A6', 'A8', 'Q3', 'Q5', 'Q7', 'Q8', 'RS6', 'TT'],
-    'Toyota': ['Camry', 'Corolla', 'RAV4', 'Highlander', 'Tacoma', 'Tundra', 'Prius', 'Avalon', '4Runner', 'Sequoia'],
-    'Honda': ['Civic', 'Accord', 'CR-V', 'Pilot', 'Ridgeline', 'Odyssey', 'HR-V', 'Passport', 'Insight', 'Clarity'],
-    'Nissan': ['Altima', 'Maxima', 'Rogue', 'Murano', 'Pathfinder', 'Frontier', 'Titan', 'Leaf', 'Sentra', 'Versa'],
-    'Ford': ['F-150', 'Mustang', 'Explorer', 'Escape', 'Edge', 'Ranger', 'Bronco', 'Mach-E', 'Focus', 'Fusion'],
-    'Chevrolet': ['Silverado', 'Camaro', 'Equinox', 'Tahoe', 'Suburban', 'Colorado', 'Corvette', 'Malibu', 'Cruze', 'Traverse'],
-    'Hyundai': ['Elantra', 'Sonata', 'Tucson', 'Santa Fe', 'Palisade', 'Kona', 'Venue', 'Accent', 'Veloster', 'Ioniq'],
-    'Kia': ['Forte', 'K5', 'Sportage', 'Telluride', 'Sorento', 'Soul', 'Rio', 'Stinger', 'EV6', 'Niro']
-  };
-  
-  final Map<String, Map<String, List<String>>> trimsByBrandModel = {
-    'BMW': {
-      'X3': ['Base', 'xDrive30i', 'M40i'],
-      'X5': ['Base', 'xDrive40i', 'M50i'],
-      '3 Series': ['320i', '330i', 'M340i', 'M3'],
-    },
-    'Toyota': {
-      'Camry': ['L', 'LE', 'SE', 'XSE', 'XLE'],
-      'Corolla': ['L', 'LE', 'SE', 'XSE', 'XLE'],
-      'RAV4': ['LE', 'XLE', 'XLE Premium', 'Adventure', 'Limited', 'TRD Off-Road'],
-    },
-    'Mercedes-Benz': {
-      'C-Class': ['C 200', 'C 300', 'AMG C 43', 'AMG C 63'],
-      'E-Class': ['E 200', 'E 300', 'E 450', 'AMG E 53'],
-      'GLC': ['GLC 200', 'GLC 300', 'AMG GLC 43'],
-    },
-  };
+  // Loaded from assets/data/ via CarDataService
+  List<String> brands = [];
+  Map<String, List<String>> models = {};
+  Map<String, Map<String, List<String>>> trimsByBrandModel = {};
+
+  Future<void> _loadCatalog() async {
+    try {
+      final svc = CarDataService.instance;
+      final b = await svc.getBrandNames();
+      final m = await svc.buildModelMap();
+      final t = await svc.buildTrimMap();
+      if (mounted) setState(() { brands = b; models = m; trimsByBrandModel = t; });
+    } catch (_) {}
+  }
   
   List<String> get availableYears {
     final currentYear = DateTime.now().year;
@@ -12065,7 +11959,6 @@ class _ProfilePageState extends State<ProfilePage> {
                     Icons.edit_outlined,
                     'Edit Profile',
                     () {
-                      // TODO: Implement edit profile functionality
                       ScaffoldMessenger.of(context).showSnackBar(
                         SnackBar(content: Text('Edit profile feature coming soon!')),
                       );
@@ -12073,13 +11966,16 @@ class _ProfilePageState extends State<ProfilePage> {
                   ),
                   SizedBox(height: 12),
                   _buildActionButton(
+                    Icons.lock_outline,
+                    'Change Password',
+                    () => Navigator.pushNamed(context, '/change-password'),
+                  ),
+                  SizedBox(height: 12),
+                  _buildActionButton(
                     Icons.settings_outlined,
                     'Settings',
                     () {
-                      // TODO: Implement settings functionality
-                      ScaffoldMessenger.of(context).showSnackBar(
-                        SnackBar(content: Text('Settings feature coming soon!')),
-                      );
+                      Navigator.pushNamed(context, '/settings');
                     },
                   ),
                   SizedBox(height: 12),

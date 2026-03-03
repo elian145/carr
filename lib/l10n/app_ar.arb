@@ -190,6 +190,7 @@
   "loggedIn": "تم تسجيل الدخول",
   "usernameLabel": "اسم المستخدم",
   "passwordLabel": "كلمة المرور",
+  "forgotPassword": "نسيت كلمة المرور؟",
   "emailLabel": "البريد الإلكتروني",
   "phoneLabel": "الهاتف",
   "logout": "تسجيل الخروج",

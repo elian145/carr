@@ -563,6 +563,9 @@ class AppLocalizationsAr extends AppLocalizations {
   String get passwordLabel => 'كلمة المرور';
 
   @override
+  String get forgotPassword => 'نسيت كلمة المرور؟';
+
+  @override
   String get emailLabel => 'البريد الإلكتروني';
 
   @override
