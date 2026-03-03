@@ -31,6 +31,7 @@ import 'widgets/theme_toggle_widget.dart';
 import 'services/config.dart';
 // Sideload build flag to disable services that require entitlements on iOS
 const bool kSideloadBuild = bool.fromEnvironment('SIDELOAD_BUILD', defaultValue: false);
+const String kBuildCommitSha = String.fromEnvironment('BUILD_COMMIT_SHA', defaultValue: 'dev');
 
 // Fallback delegates to provide Material/Cupertino/Widgets localizations for 'ku'
 class KuMaterialLocalizationsDelegate extends LocalizationsDelegate<MaterialLocalizations> {
@@ -75,6 +76,14 @@ class KuWidgetsLocalizationsDelegate extends LocalizationsDelegate<WidgetsLocali
 
 String getApiBase() {
   return apiBase();
+}
+
+String _resolveMediaUrlGlobal(String relOrAbs) {
+  return resolveMediaUrl(relOrAbs);
+}
+
+String? _coerceImagePathGlobal(dynamic entry) {
+  return coerceImagePath(entry);
 }
 
 String _localizeDigitsGlobal(BuildContext context, String input) {
@@ -652,15 +661,12 @@ Widget _buildGlobalCardImageCarousel(BuildContext context, Map car) {
     final List<String> u = [];
     final String primary = (car['image_url'] ?? '').toString();
     final List<dynamic> imgs = (car['images'] is List) ? (car['images'] as List) : const [];
-    if (primary.isNotEmpty) {
-      u.add(getApiBase() + '/static/uploads/' + primary);
-    }
+    if (primary.isNotEmpty) u.add(_resolveMediaUrlGlobal(primary));
     for (final dynamic it in imgs) {
-      final s = it.toString();
-      if (s.isNotEmpty) {
-        final full = getApiBase() + '/static/uploads/' + s;
-        if (!u.contains(full)) u.add(full);
-      }
+      final s = _coerceImagePathGlobal(it) ?? '';
+      if (s.isEmpty) continue;
+      final full = _resolveMediaUrlGlobal(s);
+      if (!u.contains(full)) u.add(full);
     }
     return u;
   }();
@@ -1410,7 +1416,6 @@ class ComparisonButton extends StatelessWidget {
 class MyApp extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
-    const String _buildSha = String.fromEnvironment('BUILD_COMMIT_SHA', defaultValue: 'dev');
     return MultiProvider(
       providers: [
         ChangeNotifierProvider(create: (context) => ThemeProvider()),
@@ -3470,9 +3475,9 @@ class _HomePageState extends State<HomePage> {
             bottom: 8,
             child: GestureDetector(
               onLongPress: () async {
-                await Clipboard.setData(ClipboardData(text: _buildSha));
+                await services.Clipboard.setData(services.ClipboardData(text: kBuildCommitSha));
                 if (mounted) {
-                  ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Commit: ' + _buildSha + ' copied')));
+                  ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Commit: ' + kBuildCommitSha + ' copied')));
                 }
               },
               child: Container(
@@ -3488,7 +3493,7 @@ class _HomePageState extends State<HomePage> {
                     Icon(Icons.tag, size: 12, color: Colors.white70),
                     SizedBox(width: 4),
                     Text(
-                      _buildSha,
+                      kBuildCommitSha,
                       style: TextStyle(color: Colors.white70, fontSize: 11, letterSpacing: 0.5),
                     ),
                   ],
@@ -4984,14 +4989,13 @@ class _HomePageState extends State<HomePage> {
       final String primary = (car['image_url'] ?? '').toString();
       final List<dynamic> imgs = (car['images'] is List) ? (car['images'] as List) : const [];
       if (primary.isNotEmpty) {
-        u.add(getApiBase() + '/static/uploads/' + primary);
+        u.add(_resolveMediaUrlGlobal(primary));
       }
       for (final dynamic it in imgs) {
-        final s = it.toString();
-        if (s.isNotEmpty) {
-          final full = getApiBase() + '/static/uploads/' + s;
-          if (!u.contains(full)) u.add(full);
-        }
+        final s = _coerceImagePathGlobal(it) ?? '';
+        if (s.isEmpty) continue;
+        final full = _resolveMediaUrlGlobal(s);
+        if (!u.contains(full)) u.add(full);
       }
       return u;
     }();
@@ -5915,14 +5919,13 @@ class _CarDetailsPageState extends State<CarDetailsPage> {
       final String primary = (car!['image_url'] ?? '').toString();
       final List<dynamic> imgs = (car!['images'] is List) ? (car!['images'] as List) : const [];
       if (primary.isNotEmpty) {
-        urls.add(getApiBase() + '/static/uploads/' + primary);
+        urls.add(_resolveMediaUrlGlobal(primary));
       }
       for (final dynamic it in imgs) {
-        final s = it.toString();
-        if (s.isNotEmpty) {
-          final full = getApiBase() + '/static/uploads/' + s;
-          if (!urls.contains(full)) urls.add(full);
-        }
+        final s = _coerceImagePathGlobal(it) ?? '';
+        if (s.isEmpty) continue;
+        final full = _resolveMediaUrlGlobal(s);
+        if (!urls.contains(full)) urls.add(full);
       }
     }
     return urls;
@@ -5933,11 +5936,10 @@ class _CarDetailsPageState extends State<CarDetailsPage> {
     if (car != null) {
       final List<dynamic> videos = (car!['videos'] is List) ? (car!['videos'] as List) : const [];
       for (final dynamic it in videos) {
-        final s = it.toString();
-        if (s.isNotEmpty) {
-          final full = getApiBase() + '/static/uploads/' + s;
-          if (!urls.contains(full)) urls.add(full);
-        }
+        final s = _coerceImagePathGlobal(it) ?? '';
+        if (s.isEmpty) continue;
+        final full = _resolveMediaUrlGlobal(s);
+        if (!urls.contains(full)) urls.add(full);
       }
     }
     return urls;
@@ -6419,57 +6421,58 @@ final String raw = car!['contact_phone'].toString();
                                       } catch (_) {}
                                     },
                                     child: Container(
-                                    decoration: BoxDecoration(
-                                      borderRadius: BorderRadius.circular(12),
-                                      color: Colors.grey[900],
-                                    ),
-                                    child: ClipRRect(
-                                      borderRadius: BorderRadius.circular(12),
-                                      child: Stack(
-                                        alignment: Alignment.center,
-                                        children: [
-                                          Container(
-                                            width: double.infinity,
-                                            height: double.infinity,
-                                            color: Colors.grey[800],
-                                            child: Icon(
-                                              Icons.videocam,
-                                              size: 48,
-                                              color: Colors.grey[400],
+                                      decoration: BoxDecoration(
+                                        borderRadius: BorderRadius.circular(12),
+                                        color: Colors.grey[900],
+                                      ),
+                                      child: ClipRRect(
+                                        borderRadius: BorderRadius.circular(12),
+                                        child: Stack(
+                                          alignment: Alignment.center,
+                                          children: [
+                                            Container(
+                                              width: double.infinity,
+                                              height: double.infinity,
+                                              color: Colors.grey[800],
+                                              child: Icon(
+                                                Icons.videocam,
+                                                size: 48,
+                                                color: Colors.grey[400],
+                                              ),
                                             ),
-                                          ),
-                                          Container(
-                                            decoration: BoxDecoration(
-                                              color: Colors.black54,
-                                              shape: BoxShape.circle,
-                                            ),
-                                            padding: EdgeInsets.all(12),
-                                            child: Icon(
-                                              Icons.play_arrow,
-                                              color: Colors.white,
-                                              size: 32,
-                                            ),
-                                          ),
-                                          Positioned(
-                                            bottom: 8,
-                                            left: 8,
-                                            child: Container(
-                                              padding: EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                                            Container(
                                               decoration: BoxDecoration(
                                                 color: Colors.black54,
-                                                borderRadius: BorderRadius.circular(4),
+                                                shape: BoxShape.circle,
                                               ),
-                                              child: Text(
-                                                AppLocalizations.of(context)!.videoIndex((index + 1).toString()),
-                                                style: TextStyle(
-                                                  color: Colors.white,
-                                                  fontSize: 12,
-                                                  fontWeight: FontWeight.w500,
+                                              padding: EdgeInsets.all(12),
+                                              child: Icon(
+                                                Icons.play_arrow,
+                                                color: Colors.white,
+                                                size: 32,
+                                              ),
+                                            ),
+                                            Positioned(
+                                              bottom: 8,
+                                              left: 8,
+                                              child: Container(
+                                                padding: EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                                                decoration: BoxDecoration(
+                                                  color: Colors.black54,
+                                                  borderRadius: BorderRadius.circular(4),
+                                                ),
+                                                child: Text(
+                                                  AppLocalizations.of(context)!.videoIndex((index + 1).toString()),
+                                                  style: TextStyle(
+                                                    color: Colors.white,
+                                                    fontSize: 12,
+                                                    fontWeight: FontWeight.w500,
+                                                  ),
                                                 ),
                                               ),
                                             ),
-                                          ),
-                                        ],
+                                          ],
+                                        ),
                                       ),
                                     ),
                                   );
@@ -6816,10 +6819,10 @@ final String raw = car!['contact_phone'].toString();
                 final List<dynamic> imgs = (data['images'] is List) ? (data['images'] as List) : const [];
                 final String rel = primary.isNotEmpty
                     ? primary
-                    : (imgs.isNotEmpty ? imgs.first.toString() : '');
+                    : (imgs.isNotEmpty ? (_coerceImagePathGlobal(imgs.first) ?? '') : '');
                 if (rel.isNotEmpty) {
                   return CachedNetworkImage(
-                    imageUrl: getApiBase() + '/static/uploads/' + rel,
+                    imageUrl: _resolveMediaUrlGlobal(rel),
                     height: 110,
                     width: 160,
                     fit: BoxFit.cover,
@@ -9173,86 +9176,89 @@ class _SellStep5PageState extends State<SellStep5Page> {
     final city = (carData['city']?.toString() ?? 'Baghdad').toLowerCase();
     final title = '$brand $model $trim'.trim();
 
-    final payload = {
-      'title': title,
-      'brand': brand.toLowerCase().replaceAll(' ', '-'),
+    String _contentTypeForFilename(String name) {
+      final n = name.toLowerCase();
+      if (n.endsWith('.png')) return 'image/png';
+      if (n.endsWith('.webp')) return 'image/webp';
+      return 'image/jpeg';
+    }
+
+    String _basename(String path) {
+      final p = path.replaceAll('\\', '/');
+      final idx = p.lastIndexOf('/');
+      return idx >= 0 ? p.substring(idx + 1) : p;
+    }
+
+    final payload = <String, dynamic>{
+      'brand': brand,
       'model': model,
-      'trim': trim,
       'year': year,
-      'price': price,
       'mileage': mileage,
-      'condition': condition,
+      'engine_type': fuelType,
       'transmission': transmission,
-      'fuel_type': fuelType,
-      'color': color,
-      'body_type': bodyType,
-      'seating': seating,
       'drive_type': driveType,
-      'title_status': titleStatus,
-      'damaged_parts': damagedParts,
-      'cylinder_count': cylinderCount,
-      'engine_size': engineSize,
-      'city': city,
-      'contact_phone': (carData['contact_phone']?.toString() ?? '').trim(),
-      'is_quick_sell': carData['is_quick_sell'] ?? false,
+      'condition': condition,
+      'body_type': bodyType,
+      'price': price ?? 0,
+      'location': city,
+      if ((carData['description']?.toString() ?? '').trim().isNotEmpty) 'description': carData['description'].toString().trim(),
+      if (color.isNotEmpty) 'color': color,
     };
 
     try {
-      final url = Uri.parse(getApiBase() + '/cars');
-      final headers = {
-        'Content-Type': 'application/json',
-        if (existingToken != null) 'Authorization': 'Bearer $existingToken',
-      };
-
-      final response = await http.post(
-        url,
-        headers: headers,
-        body: json.encode(payload),
-      );
-
-      if (response.statusCode == 201) {
-        // Success - listing created
-        final Map<String, dynamic> created = json.decode(response.body);
-        final int carId = created['id'];
-        // Upload images if any were selected in the form flow
-        try {
-          final dynamic maybeImgs = carData['images'];
-          final List<dynamic> imgs = (maybeImgs is List) ? maybeImgs : const [];
-          if (imgs.isNotEmpty) {
-            final uploadUrl = Uri.parse(getApiBase() + '/api/cars/' + carId.toString() + '/images');
-            final request = http.MultipartRequest('POST', uploadUrl);
-            final tok = ApiService.accessToken;
-            if (tok != null) request.headers['Authorization'] = 'Bearer ' + tok;
-            for (final dynamic img in imgs) {
-              try {
-                String? path;
-                if (img is XFile) {
-                  path = img.path;
-                } else if (img is String) {
-                  path = img;
-                }
-                if (path != null && path.isNotEmpty) {
-                  request.files.add(await http.MultipartFile.fromPath('image', path));
-                }
-              } catch (_) {}
-            }
-            final uploadResp = await request.send();
-            if (uploadResp.statusCode != 201) {
-              final uploadHttpResp = await http.Response.fromStream(uploadResp);
-              throw Exception('Image upload failed: ' + uploadResp.statusCode.toString() + ' ' + uploadHttpResp.body);
-            }
-          }
-        } catch (_) {}
-        print('Listing created successfully');
-        return;
-      } else if (response.statusCode == 401) {
-        print('Submission failed: Authentication failed');
-        throw Exception('Authentication failed. Please log in again.');
-      } else {
-        print('Submission failed: ${response.statusCode} - ${response.body}');
-        final errorData = json.decode(response.body);
-        throw Exception(errorData['error'] ?? 'Failed to create listing');
+      // Create listing using the hosted API.
+      final created = await ApiService.createCar(payload);
+      final carObj = (created['car'] is Map<String, dynamic>)
+          ? Map<String, dynamic>.from(created['car'])
+          : (created is Map<String, dynamic> ? created : <String, dynamic>{});
+      final createdCarId = (carObj['id'] ?? carObj['public_id'] ?? carObj['publicId'])?.toString();
+      if (createdCarId == null || createdCarId.isEmpty) {
+        throw Exception('Listing created but missing id');
       }
+
+      // Upload selected images to R2 and attach URLs.
+      final dynamic maybeImgs = carData['images'];
+      final List<dynamic> imgs = (maybeImgs is List) ? maybeImgs : const [];
+      if (imgs.isNotEmpty) {
+        final uploadedUrls = <String>[];
+        for (final dynamic img in imgs) {
+          XFile? xf;
+          if (img is XFile) {
+            xf = img;
+          } else if (img is String && img.trim().isNotEmpty) {
+            xf = XFile(img.trim());
+          }
+          if (xf == null) continue;
+
+          final filename = _basename(xf.path);
+          final contentType = _contentTypeForFilename(filename);
+          int? sizeBytes;
+          try {
+            sizeBytes = await xf.length();
+          } catch (_) {}
+
+          final signed = await ApiService.signR2ImageUpload(
+            carId: createdCarId,
+            filename: filename,
+            contentType: contentType,
+            sizeBytes: sizeBytes,
+          );
+
+          final upload = (signed['upload'] is Map<String, dynamic>)
+              ? Map<String, dynamic>.from(signed['upload'])
+              : <String, dynamic>{};
+          await ApiService.uploadToSignedUpload(upload: upload, file: xf);
+
+          final publicUrl = (signed['public_url'] ?? '').toString();
+          if (publicUrl.isNotEmpty) uploadedUrls.add(publicUrl);
+        }
+
+        if (uploadedUrls.isNotEmpty) {
+          await ApiService.attachCarImageUrls(carId: createdCarId, urls: uploadedUrls);
+        }
+      }
+
+      return;
     } catch (e) {
       if (e.toString().contains('SocketException') || e.toString().contains('HandshakeException')) {
         throw Exception('Network error. Please check your connection.');
@@ -11318,11 +11324,7 @@ class _FavoritesPageState extends State<FavoritesPage> {
                           final String title = (car['title']?.toString() ?? '').trim();
                           final String imageUrl = (car['image_url']?.toString() ?? '').trim();
                           final String? rel = imageUrl.isEmpty ? null : imageUrl;
-                          final String fullImg = rel == null
-                              ? ''
-                              : (rel.startsWith('http')
-                                  ? rel
-                                  : (getApiBase() + '/static/uploads/' + rel));
+                          final String fullImg = rel == null ? '' : _resolveMediaUrlGlobal(rel);
                           return InkWell(
                             onTap: () {
                               final int? id = car['id'] is int ? car['id'] as int : int.tryParse(car['id']?.toString() ?? '');
@@ -13034,14 +13036,13 @@ class _MyListingsPageState extends State<MyListingsPage> {
       final String primary = (car['image_url'] ?? '').toString();
       final List<dynamic> imgs = (car['images'] is List) ? (car['images'] as List) : const [];
       if (primary.isNotEmpty) {
-        u.add(getApiBase() + '/static/uploads/' + primary);
+        u.add(_resolveMediaUrlGlobal(primary));
       }
       for (final dynamic it in imgs) {
-        final s = it.toString();
-        if (s.isNotEmpty) {
-          final full = getApiBase() + '/static/uploads/' + s;
-          if (!u.contains(full)) u.add(full);
-        }
+        final s = _coerceImagePathGlobal(it) ?? '';
+        if (s.isEmpty) continue;
+        final full = _resolveMediaUrlGlobal(s);
+        if (!u.contains(full)) u.add(full);
       }
       return u;
     }();

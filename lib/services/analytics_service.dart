@@ -35,9 +35,7 @@ class AnalyticsService {
             // Ensure image URLs are full URLs
             if (json['image_url'] != null && json['image_url'].toString().isNotEmpty) {
               final imageUrl = json['image_url'].toString();
-              if (!imageUrl.startsWith('http')) {
-                json['image_url'] = '$_imageBaseUrl/static/uploads/$imageUrl';
-              }
+              json['image_url'] = resolveMediaUrl(imageUrl);
             }
             return ListingAnalytics.fromJson(json);
           }).toList();
@@ -72,7 +70,7 @@ class AnalyticsService {
           String? fullImageUrl;
           final imageUrl = listing['image_url']?.toString();
           if (imageUrl != null && imageUrl.isNotEmpty) {
-            fullImageUrl = '$_imageBaseUrl/static/uploads/$imageUrl';
+            fullImageUrl = resolveMediaUrl(imageUrl);
           }
           
           return ListingAnalytics(

@@ -285,6 +285,40 @@ def reset_password():
         logger.error(f"Reset password error: {str(e)}")
         return jsonify({'message': 'Password reset failed'}), 500
 
+
+@app.route('/api/auth/change-password', methods=['POST'])
+@jwt_required()
+def change_password():
+    """Change password for the authenticated user."""
+    try:
+        current_user = get_current_user()
+        if not current_user:
+            return jsonify({'message': 'User not found'}), 404
+
+        data = request.get_json(silent=True) or {}
+        current_password = (data.get('current_password') or data.get('currentPassword') or '').strip()
+        new_password = (data.get('new_password') or data.get('newPassword') or '').strip()
+
+        if not current_password or not new_password:
+            return jsonify({'message': 'Current and new password are required'}), 400
+
+        if not current_user.check_password(current_password):
+            return jsonify({'message': 'Current password is incorrect'}), 400
+
+        is_valid, message = validate_password(new_password)
+        if not is_valid:
+            return jsonify({'message': message}), 400
+
+        current_user.set_password(new_password)
+        db.session.commit()
+
+        log_user_action(current_user, 'change_password')
+        return jsonify({'message': 'Password updated'}), 200
+    except Exception as e:
+        logger.error(f"Change password error: {str(e)}")
+        db.session.rollback()
+        return jsonify({'message': 'Failed to update password'}), 500
+
 @app.route('/api/auth/verify-phone', methods=['POST'])
 def verify_phone():
     """Phone verification endpoint"""

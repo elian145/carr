@@ -174,6 +174,21 @@ class AuthService extends ChangeNotifier {
     }
   }
 
+  Future<void> changePassword({
+    required String currentPassword,
+    required String newPassword,
+  }) async {
+    _setLoading(true);
+    try {
+      await ApiService.changePassword(
+        currentPassword: currentPassword,
+        newPassword: newPassword,
+      );
+    } finally {
+      _setLoading(false);
+    }
+  }
+
   // Update profile
   Future<Map<String, dynamic>> updateProfile(Map<String, dynamic> profileData) async {
     _setLoading(true);

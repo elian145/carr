@@ -709,14 +709,13 @@ class _AnalyticsPageState extends State<AnalyticsPage> {
       final String primary = (car['image_url'] ?? '').toString();
       final List<dynamic> imgs = (car['images'] is List) ? (car['images'] as List) : const [];
       if (primary.isNotEmpty) {
-        u.add(getApiBase() + '/static/uploads/' + primary);
+        u.add(resolveMediaUrl(primary));
       }
       for (final dynamic it in imgs) {
-        final s = it.toString();
-        if (s.isNotEmpty) {
-          final full = getApiBase() + '/static/uploads/' + s;
-          if (!u.contains(full)) u.add(full);
-        }
+        final s = coerceImagePath(it) ?? '';
+        if (s.isEmpty) continue;
+        final full = resolveMediaUrl(s);
+        if (!u.contains(full)) u.add(full);
       }
       return u;
     }();

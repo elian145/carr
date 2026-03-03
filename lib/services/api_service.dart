@@ -198,7 +198,7 @@ class ApiService {
     );
 
     final data = _handleResponse(response);
-    final String? token = (data['token'] as String?)?.trim();
+    final String? token = ((data['access_token'] ?? data['token'] ?? data['accessToken']) as String?)?.trim();
     if (token != null && token.isNotEmpty) {
       await _saveAccessToken(token);
     }
@@ -232,6 +232,20 @@ class ApiService {
     return _handleResponse(response);
   }
 
+  static Future<Map<String, dynamic>> changePassword({
+    required String currentPassword,
+    required String newPassword,
+  }) async {
+    return await _makeAuthenticatedRequest(
+      'POST',
+      '/auth/change-password',
+      body: {
+        'current_password': currentPassword,
+        'new_password': newPassword,
+      },
+    );
+  }
+
   static Future<Map<String, dynamic>> verifyEmail(String token) async {
     final response = await http.post(
       Uri.parse('$baseUrl/auth/verify-email'),
@@ -244,7 +258,7 @@ class ApiService {
 
   // User profile methods
   static Future<Map<String, dynamic>> getProfile() async {
-    return await _makeAuthenticatedRequest('GET', '/auth/me');
+    return await _makeAuthenticatedRequest('GET', '/user/profile');
   }
 
   static Future<Map<String, dynamic>> updateProfile(Map<String, dynamic> profileData) async {
