@@ -28,6 +28,7 @@ import 'package:intl/intl.dart';
 import 'package:provider/provider.dart';
 import 'theme_provider.dart';
 import 'widgets/theme_toggle_widget.dart';
+import 'pages/forgot_password_screen.dart';
 import 'services/config.dart';
 // Sideload build flag to disable services that require entitlements on iOS
 const bool kSideloadBuild = bool.fromEnvironment('SIDELOAD_BUILD', defaultValue: false);
@@ -1463,6 +1464,7 @@ class MyApp extends StatelessWidget {
         '/chat': (context) => ChatListPage(),
         '/login': (context) => LoginPage(),
         '/signup': (context) => SignupPage(),
+        '/forgot-password': (context) => const ForgotPasswordScreen(),
         '/profile': (context) => ProfilePage(),
         '/payment/history': (context) => PaymentHistoryPage(),
         '/payment/initiate': (context) => PaymentInitiatePage(),
