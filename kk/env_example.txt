@@ -44,3 +44,27 @@ PASSWORD_RESET_EXPIRY=3600
 # File Upload Configuration
 UPLOAD_FOLDER=static/uploads
 MAX_CONTENT_LENGTH=104857600  # 100MB in bytes
+
+# Roboflow License Plate Detection (Hosted API)
+# Your hosted endpoint pattern:
+# https://serverless.roboflow.com/<project>/<version>?api_key=...
+ROBOFLOW_API_KEY=your_roboflow_api_key
+# Optional single-var override (recommended): "<project>/<version>"
+# Example: ROBOFLOW_MODEL=plate-detector-i9vkk/5
+ROBOFLOW_MODEL=
+ROBOFLOW_PROJECT=plate-detector-i9vkk
+ROBOFLOW_VERSION=5
+ROBOFLOW_ENDPOINT_BASE=https://serverless.roboflow.com
+ROBOFLOW_TIMEOUT_S=60
+# Optional tuning (Roboflow supports these query params; values are % 0-100, or 0-1.0 fraction)
+# Lower confidence detects more plates but can increase false positives.
+# 0 is the absolute lowest (most permissive).
+ROBOFLOW_CONFIDENCE=0
+ROBOFLOW_OVERLAP=30
+
+# License plate blurring behavior
+PLATE_BLUR_ENABLED=1
+# Expand detected box (set >0 only if you want extra margin). 0 = exact box.
+PLATE_BLUR_EXPAND=0
+# If 1, also saves an "original_*" copy next to the blurred image
+PLATE_BLUR_KEEP_ORIGINAL=0

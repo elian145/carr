@@ -72,7 +72,7 @@ class CarService extends ChangeNotifier {
       );
 
       final newCars = List<Map<String, dynamic>>.from(response['cars']);
-      
+
       if (refresh) {
         _cars = newCars;
       } else {
@@ -82,7 +82,6 @@ class CarService extends ChangeNotifier {
       final pagination = response['pagination'];
       _hasMore = pagination['has_next'];
       _currentPage++;
-
     } catch (e) {
       developer.log('Get cars error: $e', name: 'CarService');
       rethrow;
@@ -112,13 +111,24 @@ class CarService extends ChangeNotifier {
 
     try {
       final response = await ApiService.createCar(carData);
-      
+
+      // If AI just processed images on server, attach paths immediately to the local car object
+      try {
+        final paths = ApiService.getLastProcessedServerPaths();
+        if (paths != null &&
+            paths.isNotEmpty &&
+            response['car'] is Map<String, dynamic>) {
+          response['car']['images'] = List<String>.from(paths);
+          response['car']['image_url'] = paths.first;
+        }
+      } catch (_) {}
+
       // Add to local list
       if (response['car'] != null) {
         _cars.insert(0, response['car']);
         notifyListeners();
       }
-      
+
       return response;
     } catch (e) {
       developer.log('Create car error: $e', name: 'CarService');
@@ -128,31 +138,40 @@ class CarService extends ChangeNotifier {
     }
   }
 
+  // Add a created car to local store (used for optimistic UI on submit flows)
+  void addCarLocal(Map<String, dynamic> car) {
+    _cars.insert(0, car);
+    notifyListeners();
+  }
+
   // Update car listing
-  Future<Map<String, dynamic>> updateCar(String carId, Map<String, dynamic> carData) async {
+  Future<Map<String, dynamic>> updateCar(
+    String carId,
+    Map<String, dynamic> carData,
+  ) async {
     _setLoading(true);
 
     try {
       final response = await ApiService.updateCar(carId, carData);
-      
+
       // Update local data
       if (response['car'] != null) {
         final updatedCar = response['car'];
-        
+
         // Update in cars list
         final index = _cars.indexWhere((car) => car['id'] == carId);
         if (index != -1) {
           _cars[index] = updatedCar;
         }
-        
+
         // Update current car if it's the same
         if (_currentCar?['id'] == carId) {
           _currentCar = updatedCar;
         }
-        
+
         notifyListeners();
       }
-      
+
       return response;
     } catch (e) {
       developer.log('Update car error: $e', name: 'CarService');
@@ -168,15 +187,15 @@ class CarService extends ChangeNotifier {
 
     try {
       await ApiService.deleteCar(carId);
-      
+
       // Remove from local list
       _cars.removeWhere((car) => car['id'] == carId);
-      
+
       // Clear current car if it's the same
       if (_currentCar?['id'] == carId) {
         _currentCar = null;
       }
-      
+
       notifyListeners();
     } catch (e) {
       developer.log('Delete car error: $e', name: 'CarService');
@@ -187,30 +206,57 @@ class CarService extends ChangeNotifier {
   }
 
   // Upload car images
-  Future<Map<String, dynamic>> uploadCarImages(String carId, List<XFile> imageFiles) async {
+  Future<Map<String, dynamic>> uploadCarImages(
+    String carId,
+    List<XFile> imageFiles,
+  ) async {
     _setLoading(true);
 
     try {
       final response = await ApiService.uploadCarImages(carId, imageFiles);
-      
+
       // Update local car data
-      if (response['images'] != null) {
-        final newImages = response['images'];
-        
+      // Accept either { images: [...] } or { uploaded: [...] } from backend
+      final dynamic imagesField = response['images'] ?? response['uploaded'];
+      if (imagesField != null) {
+        final newImages = imagesField;
+
         // Update in cars list
         final carIndex = _cars.indexWhere((car) => car['id'] == carId);
         if (carIndex != -1) {
-          _cars[carIndex]['images'] = [..._cars[carIndex]['images'], ...newImages];
+          _cars[carIndex]['images'] = [
+            ..._cars[carIndex]['images'],
+            ...newImages,
+          ];
+          // Update primary image if backend provided one and we don't have it yet
+          final String? newPrimary = (response['image_url'] as String?)?.trim();
+          if ((newPrimary != null && newPrimary.isNotEmpty)) {
+            _cars[carIndex]['image_url'] = newPrimary;
+          } else if ((_cars[carIndex]['image_url'] == null ||
+                  (_cars[carIndex]['image_url'] as String).isEmpty) &&
+              newImages is List &&
+              newImages.isNotEmpty) {
+            _cars[carIndex]['image_url'] = newImages.first.toString();
+          }
         }
-        
+
         // Update current car if it's the same
         if (_currentCar?['id'] == carId) {
           _currentCar!['images'] = [..._currentCar!['images'], ...newImages];
+          final String? newPrimary = (response['image_url'] as String?)?.trim();
+          if ((newPrimary != null && newPrimary.isNotEmpty)) {
+            _currentCar!['image_url'] = newPrimary;
+          } else if ((_currentCar!['image_url'] == null ||
+                  (_currentCar!['image_url'] as String).isEmpty) &&
+              newImages is List &&
+              newImages.isNotEmpty) {
+            _currentCar!['image_url'] = newImages.first.toString();
+          }
         }
-        
+
         notifyListeners();
       }
-      
+
       return response;
     } catch (e) {
       developer.log('Upload car images error: $e', name: 'CarService');
@@ -220,31 +266,93 @@ class CarService extends ChangeNotifier {
     }
   }
 
+  // Attach already-processed images by server paths (used after "Blur Plates")
+  Future<Map<String, dynamic>> attachCarImages(
+    String carId,
+    List<String> paths,
+  ) async {
+    _setLoading(true);
+    try {
+      final response = await ApiService.attachCarImages(carId, paths);
+
+      final dynamic imagesField = response['images'] ?? response['uploaded'];
+      if (imagesField != null) {
+        final newImages = imagesField;
+        final carIndex = _cars.indexWhere((car) => car['id'] == carId);
+        if (carIndex != -1) {
+          _cars[carIndex]['images'] = [
+            ...(_cars[carIndex]['images'] ?? const []),
+            ...newImages,
+          ];
+          final String? newPrimary = (response['image_url'] as String?)?.trim();
+          if (newPrimary != null && newPrimary.isNotEmpty) {
+            _cars[carIndex]['image_url'] = newPrimary;
+          } else if ((_cars[carIndex]['image_url'] == null ||
+                  (_cars[carIndex]['image_url'] as String).isEmpty) &&
+              newImages is List &&
+              newImages.isNotEmpty) {
+            _cars[carIndex]['image_url'] = newImages.first.toString();
+          }
+        }
+
+        if (_currentCar?['id'] == carId) {
+          _currentCar!['images'] = [
+            ...(_currentCar!['images'] ?? const []),
+            ...newImages,
+          ];
+          final String? newPrimary = (response['image_url'] as String?)?.trim();
+          if (newPrimary != null && newPrimary.isNotEmpty) {
+            _currentCar!['image_url'] = newPrimary;
+          } else if ((_currentCar!['image_url'] == null ||
+                  (_currentCar!['image_url'] as String).isEmpty) &&
+              newImages is List &&
+              newImages.isNotEmpty) {
+            _currentCar!['image_url'] = newImages.first.toString();
+          }
+        }
+        notifyListeners();
+      }
+
+      return response;
+    } catch (e) {
+      developer.log('Attach car images error: $e', name: 'CarService');
+      rethrow;
+    } finally {
+      _setLoading(false);
+    }
+  }
+
   // Upload car videos
-  Future<Map<String, dynamic>> uploadCarVideos(String carId, List<XFile> videoFiles) async {
+  Future<Map<String, dynamic>> uploadCarVideos(
+    String carId,
+    List<XFile> videoFiles,
+  ) async {
     _setLoading(true);
 
     try {
       final response = await ApiService.uploadCarVideos(carId, videoFiles);
-      
+
       // Update local car data
       if (response['videos'] != null) {
         final newVideos = response['videos'];
-        
+
         // Update in cars list
         final carIndex = _cars.indexWhere((car) => car['id'] == carId);
         if (carIndex != -1) {
-          _cars[carIndex]['videos'] = [..._cars[carIndex]['videos'], ...newVideos];
+          _cars[carIndex]['videos'] = [
+            ..._cars[carIndex]['videos'],
+            ...newVideos,
+          ];
         }
-        
+
         // Update current car if it's the same
         if (_currentCar?['id'] == carId) {
           _currentCar!['videos'] = [..._currentCar!['videos'], ...newVideos];
         }
-        
+
         notifyListeners();
       }
-      
+
       return response;
     } catch (e) {
       developer.log('Upload car videos error: $e', name: 'CarService');
@@ -278,18 +386,18 @@ class CarService extends ChangeNotifier {
     try {
       final response = await ApiService.toggleFavorite(carId);
       final isFavorited = response['is_favorited'];
-      
+
       // Update local data
       final carIndex = _cars.indexWhere((car) => car['id'] == carId);
       if (carIndex != -1) {
         _cars[carIndex]['is_favorited'] = isFavorited;
       }
-      
+
       // Update current car if it's the same
       if (_currentCar?['id'] == carId) {
         _currentCar!['is_favorited'] = isFavorited;
       }
-      
+
       // Update favorites list
       if (isFavorited) {
         // Add to favorites
@@ -299,7 +407,7 @@ class CarService extends ChangeNotifier {
         // Remove from favorites
         _favorites.removeWhere((car) => car['id'] == carId);
       }
-      
+
       notifyListeners();
     } catch (e) {
       developer.log('Toggle favorite error: $e', name: 'CarService');
@@ -351,26 +459,54 @@ class CarService extends ChangeNotifier {
   // Get price range
   Map<String, double> getPriceRange() {
     if (_cars.isEmpty) return {'min': 0.0, 'max': 0.0};
-    
-    final prices = _cars.map((car) => car['price'] as double).toList();
+
+    // Be robust to price coming as String or num
+    final List<double> prices = [];
+    for (final car in _cars) {
+      final dynamic raw = car['price'];
+      if (raw == null) continue;
+      if (raw is num) {
+        prices.add(raw.toDouble());
+      } else {
+        final parsed = double.tryParse(
+          raw.toString().replaceAll(RegExp(r'[^0-9.-]'), ''),
+        );
+        if (parsed != null) prices.add(parsed);
+      }
+    }
+
+    if (prices.isEmpty) return {'min': 0.0, 'max': 0.0};
+
     prices.sort();
-    
-    return {
-      'min': prices.first,
-      'max': prices.last,
-    };
+
+    return {'min': prices.first, 'max': prices.last};
   }
 
   // Get year range
   Map<String, int> getYearRange() {
     if (_cars.isEmpty) return {'min': 0, 'max': 0};
-    
-    final years = _cars.map((car) => car['year'] as int).toList();
+
+    // Be robust to year coming as String or num
+    final List<int> years = [];
+    for (final car in _cars) {
+      final dynamic raw = car['year'];
+      if (raw == null) continue;
+      if (raw is int) {
+        years.add(raw);
+      } else if (raw is num) {
+        years.add(raw.toInt());
+      } else {
+        final parsed = int.tryParse(
+          raw.toString().replaceAll(RegExp(r'[^0-9-]'), ''),
+        );
+        if (parsed != null) years.add(parsed);
+      }
+    }
+
+    if (years.isEmpty) return {'min': 0, 'max': 0};
+
     years.sort();
-    
-    return {
-      'min': years.first,
-      'max': years.last,
-    };
+
+    return {'min': years.first, 'max': years.last};
   }
 }

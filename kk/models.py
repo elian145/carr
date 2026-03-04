@@ -8,17 +8,20 @@ import os
 db = SQLAlchemy()
 bcrypt = Bcrypt()
 
+# Use a single UTC helper (avoids deprecated datetime.utcnow()).
+from .time_utils import utcnow
+
 # Association tables for many-to-many relationships
 user_favorites = db.Table('user_favorites',
     db.Column('user_id', db.Integer, db.ForeignKey('user.id'), primary_key=True),
     db.Column('car_id', db.Integer, db.ForeignKey('car.id'), primary_key=True),
-    db.Column('created_at', db.DateTime, default=datetime.utcnow)
+    db.Column('created_at', db.DateTime, default=utcnow)
 )
 
 user_viewed_listings = db.Table('user_viewed_listings',
     db.Column('user_id', db.Integer, db.ForeignKey('user.id'), primary_key=True),
     db.Column('car_id', db.Integer, db.ForeignKey('car.id'), primary_key=True),
-    db.Column('viewed_at', db.DateTime, default=datetime.utcnow)
+    db.Column('viewed_at', db.DateTime, default=utcnow)
 )
 
 class User(db.Model):
@@ -28,16 +31,23 @@ class User(db.Model):
     public_id = db.Column(db.String(50), unique=True, default=lambda: str(uuid.uuid4()))
     username = db.Column(db.String(80), unique=True, nullable=False, index=True)
     email = db.Column(db.String(120), unique=True, nullable=True, index=True)  # Made optional
+    password = db.Column(db.String(120), nullable=True)  # Legacy field - deprecated, kept for compatibility
     password_hash = db.Column(db.String(128), nullable=False)
     phone_number = db.Column(db.String(20), unique=True, nullable=False, index=True)  # Made required and unique
     first_name = db.Column(db.String(50), nullable=False)
     last_name = db.Column(db.String(50), nullable=False)
     profile_picture = db.Column(db.String(200), nullable=True)
     is_verified = db.Column(db.Boolean, default=False)
+    # Phone verification (OTP) - stored as hash, never plaintext
+    phone_verification_code_hash = db.Column(db.Text, nullable=True)
+    phone_verification_expires_at = db.Column(db.DateTime, nullable=True)
+    phone_verification_attempts = db.Column(db.Integer, default=0)
+    phone_verification_last_sent_at = db.Column(db.DateTime, nullable=True)
+    phone_verification_locked_until = db.Column(db.DateTime, nullable=True)
     is_active = db.Column(db.Boolean, default=True)
     is_admin = db.Column(db.Boolean, default=False)
-    created_at = db.Column(db.DateTime, default=datetime.utcnow)
-    updated_at = db.Column(db.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+    created_at = db.Column(db.DateTime, default=utcnow)
+    updated_at = db.Column(db.DateTime, default=utcnow, onupdate=utcnow)
     last_login = db.Column(db.DateTime, nullable=True)
     
     # Relationships
@@ -54,11 +64,29 @@ class User(db.Model):
     
     def set_password(self, password):
         """Hash and set password"""
-        self.password_hash = bcrypt.generate_password_hash(password).decode('utf-8')
+        hashed = bcrypt.generate_password_hash(password).decode('utf-8')
+        self.password_hash = hashed
+        # Legacy compatibility: some existing SQLite schemas still have a NOT NULL
+        # constraint on the deprecated `password` column. Store the same bcrypt hash
+        # there to avoid insert failures while keeping plaintext out of the DB.
+        try:
+            self.password = hashed
+        except Exception:
+            # If the column doesn't exist in a different schema, ignore.
+            pass
     
     def check_password(self, password):
-        """Check if provided password matches hash"""
-        return bcrypt.check_password_hash(self.password_hash, password)
+        """Check if provided password matches hash. Supports legacy DBs where only password column exists."""
+        try:
+            h = getattr(self, "password_hash", None)
+            if h:
+                return bcrypt.check_password_hash(h, password)
+            p = getattr(self, "password", None)
+            if p:
+                return bcrypt.check_password_hash(p, password)
+        except Exception:
+            pass
+        return False
     
     def generate_tokens(self):
         """Generate access and refresh tokens"""
@@ -81,8 +109,9 @@ class User(db.Model):
             'last_login': self.last_login.isoformat() if self.last_login else None
         }
         
-        # Only include email if it exists
-        if self.email:
+        # Only include email if it exists and isn't an internal placeholder.
+        # Phone OTP flows may create a stable placeholder email for legacy DB schemas.
+        if self.email and not str(self.email).lower().endswith("@phone.local"):
             data['email'] = self.email
         
         if include_private:
@@ -104,20 +133,26 @@ class Car(db.Model):
     seller_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False)
     
     # Basic car information
+    title = db.Column(db.String(200), nullable=False, default='')  # Some legacy DBs require NOT NULL
+    title_status = db.Column(db.String(20), nullable=False, default='active')
     brand = db.Column(db.String(50), nullable=False, index=True)
     model = db.Column(db.String(50), nullable=False, index=True)
+    trim = db.Column(db.String(50), nullable=False, default='base')
     year = db.Column(db.Integer, nullable=False, index=True)
     mileage = db.Column(db.Integer, nullable=False)
     engine_type = db.Column(db.String(50), nullable=False)  # Gas, Diesel, Electric, Hybrid
+    fuel_type = db.Column(db.String(20), nullable=False, default='gasoline')
     transmission = db.Column(db.String(20), nullable=False)  # Manual, Automatic, CVT
     drive_type = db.Column(db.String(20), nullable=False)  # FWD, RWD, AWD, 4WD
     condition = db.Column(db.String(20), nullable=False)  # New, Used, Certified
     body_type = db.Column(db.String(30), nullable=False)  # Sedan, SUV, Hatchback, etc.
+    status = db.Column(db.String(20), nullable=False, default='active')
     
     # Pricing and location
     price = db.Column(db.Float, nullable=False, index=True)
     currency = db.Column(db.String(3), default='USD')
     location = db.Column(db.String(100), nullable=False, index=True)
+    seating = db.Column(db.Integer, nullable=False, default=5)
     latitude = db.Column(db.Float, nullable=True)
     longitude = db.Column(db.Float, nullable=True)
     
@@ -126,13 +161,25 @@ class Car(db.Model):
     color = db.Column(db.String(30), nullable=True)
     fuel_economy = db.Column(db.String(20), nullable=True)  # MPG or L/100km
     vin = db.Column(db.String(17), nullable=True, unique=True)
+    engine_size = db.Column(db.Float, nullable=True)  # liters
+    cylinder_count = db.Column(db.Integer, nullable=True)
     
     # Status and metadata
     is_active = db.Column(db.Boolean, default=True, index=True)
     is_featured = db.Column(db.Boolean, default=False)
     views_count = db.Column(db.Integer, default=0)
-    created_at = db.Column(db.DateTime, default=datetime.utcnow, index=True)
-    updated_at = db.Column(db.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+    created_at = db.Column(db.DateTime, default=utcnow, index=True)
+    updated_at = db.Column(db.DateTime, default=utcnow, onupdate=utcnow)
+    
+    # AI Analysis fields
+    ai_analyzed = db.Column(db.Boolean, default=False)
+    ai_detected_brand = db.Column(db.String(50), nullable=True)
+    ai_detected_model = db.Column(db.String(50), nullable=True)
+    ai_detected_color = db.Column(db.String(20), nullable=True)
+    ai_detected_body_type = db.Column(db.String(20), nullable=True)
+    ai_detected_condition = db.Column(db.String(20), nullable=True)
+    ai_confidence_score = db.Column(db.Float, nullable=True)
+    ai_analysis_timestamp = db.Column(db.DateTime, nullable=True)
     
     # Relationships
     images = db.relationship('CarImage', backref='car', lazy=True, cascade='all, delete-orphan')
@@ -140,24 +187,34 @@ class Car(db.Model):
     messages = db.relationship('Message', backref='car', lazy=True)
     
     def to_dict(self, include_private=False):
-        """Convert car to dictionary"""
+        """Convert car to dictionary. id is public_id when set, else numeric id so detail link works."""
         data = {
-            'id': self.public_id,
+            'id': self.public_id if getattr(self, "public_id", None) else str(self.id),
+            'title': getattr(self, "title", None) or f"{self.brand} {self.model} {self.year}".strip(),
             'brand': self.brand,
             'model': self.model,
+            'trim': getattr(self, "trim", None) or "",
             'year': self.year,
             'mileage': self.mileage,
             'engine_type': self.engine_type,
+            'fuel_type': getattr(self, "fuel_type", None),
             'transmission': self.transmission,
             'drive_type': self.drive_type,
             'condition': self.condition,
             'body_type': self.body_type,
+            'title_status': getattr(self, "title_status", None),
+            'status': getattr(self, "status", None),
             'price': self.price,
             'currency': self.currency,
             'location': self.location,
+            'seating': getattr(self, "seating", None),
             'description': self.description,
             'color': self.color,
             'fuel_economy': self.fuel_economy,
+            'vin': getattr(self, "vin", None),
+            'engine_size': getattr(self, "engine_size", None),
+            'cylinder_count': getattr(self, "cylinder_count", None),
+            'cylinders': getattr(self, "cylinder_count", None),  # alias for app
             'is_active': self.is_active,
             'is_featured': self.is_featured,
             'views_count': self.views_count,
@@ -165,22 +222,34 @@ class Car(db.Model):
             'updated_at': self.updated_at.isoformat() if self.updated_at else None,
             'images': [img.to_dict() for img in self.images],
             'videos': [video.to_dict() for video in self.videos],
-            'seller': self.seller.to_dict() if self.seller else None
+            'seller': self.seller.to_dict() if self.seller else None,
+            # AI Analysis fields
+            'ai_analyzed': self.ai_analyzed,
+            'ai_detected_brand': self.ai_detected_brand,
+            'ai_detected_model': self.ai_detected_model,
+            'ai_detected_color': self.ai_detected_color,
+            'ai_detected_body_type': self.ai_detected_body_type,
+            'ai_detected_condition': self.ai_detected_condition,
+            'ai_confidence_score': self.ai_confidence_score,
+            'ai_analysis_timestamp': self.ai_analysis_timestamp.isoformat() if self.ai_analysis_timestamp else None
         }
         
         if include_private:
             data.update({
-                'vin': self.vin,
                 'latitude': self.latitude,
                 'longitude': self.longitude
             })
         
         return data
     
-    def increment_views(self):
-        """Increment view count"""
-        self.views_count += 1
-        db.session.commit()
+    def increment_views(self, commit: bool = False):
+        """Increment view count (caller controls commit)."""
+        try:
+            self.views_count = int(self.views_count or 0) + 1
+        except Exception:
+            self.views_count = 1
+        if commit:
+            db.session.commit()
     
     def __repr__(self):
         return f'<Car {self.brand} {self.model} {self.year}>'
@@ -193,7 +262,7 @@ class CarImage(db.Model):
     image_url = db.Column(db.String(200), nullable=False)
     is_primary = db.Column(db.Boolean, default=False)
     order = db.Column(db.Integer, default=0)
-    created_at = db.Column(db.DateTime, default=datetime.utcnow)
+    created_at = db.Column(db.DateTime, default=utcnow)
     
     def to_dict(self):
         return {
@@ -215,7 +284,7 @@ class CarVideo(db.Model):
     thumbnail_url = db.Column(db.String(200), nullable=True)
     duration = db.Column(db.Integer, nullable=True)  # Duration in seconds
     order = db.Column(db.Integer, default=0)
-    created_at = db.Column(db.DateTime, default=datetime.utcnow)
+    created_at = db.Column(db.DateTime, default=utcnow)
     
     def to_dict(self):
         return {
@@ -233,14 +302,14 @@ class ListingAnalytics(db.Model):
     __tablename__ = 'listing_analytics'
     
     id = db.Column(db.Integer, primary_key=True)
-    car_id = db.Column(db.Integer, db.ForeignKey('car.id'), nullable=False)
+    car_id = db.Column(db.Integer, db.ForeignKey('car.id'), nullable=False, unique=True, index=True)
     views = db.Column(db.Integer, default=0)
     messages = db.Column(db.Integer, default=0)
     calls = db.Column(db.Integer, default=0)
     shares = db.Column(db.Integer, default=0)
     favorites = db.Column(db.Integer, default=0)
-    created_at = db.Column(db.DateTime, default=datetime.utcnow)
-    updated_at = db.Column(db.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+    created_at = db.Column(db.DateTime, default=utcnow)
+    updated_at = db.Column(db.DateTime, default=utcnow, onupdate=utcnow)
     
     # Relationship
     car = db.relationship('Car', backref='analytics')
@@ -251,7 +320,8 @@ class ListingAnalytics(db.Model):
             if car and car.images:
                 path = car.images[0].image_url or ''
                 return path[8:] if path.startswith('uploads/') else path
-            return (car.image_url or '').lstrip('/') if car else ''
+            # Car model does not store a direct `image_url` field; keep empty when no images.
+            return ''
         
         return {
             'listing_id': self.car.public_id if self.car else str(self.car_id),
@@ -272,27 +342,27 @@ class ListingAnalytics(db.Model):
     
     def increment_views(self):
         self.views += 1
-        self.updated_at = datetime.utcnow()
+        self.updated_at = utcnow()
         db.session.commit()
     
     def increment_messages(self):
         self.messages += 1
-        self.updated_at = datetime.utcnow()
+        self.updated_at = utcnow()
         db.session.commit()
     
     def increment_calls(self):
         self.calls += 1
-        self.updated_at = datetime.utcnow()
+        self.updated_at = utcnow()
         db.session.commit()
     
     def increment_shares(self):
         self.shares += 1
-        self.updated_at = datetime.utcnow()
+        self.updated_at = utcnow()
         db.session.commit()
     
     def increment_favorites(self):
         self.favorites += 1
-        self.updated_at = datetime.utcnow()
+        self.updated_at = utcnow()
         db.session.commit()
     
     def __repr__(self):
@@ -303,13 +373,19 @@ class Message(db.Model):
     
     id = db.Column(db.Integer, primary_key=True)
     public_id = db.Column(db.String(50), unique=True, default=lambda: str(uuid.uuid4()))
-    sender_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False)
-    receiver_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False)
-    car_id = db.Column(db.Integer, db.ForeignKey('car.id'), nullable=True)
+    sender_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False, index=True)
+    receiver_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False, index=True)
+    car_id = db.Column(db.Integer, db.ForeignKey('car.id'), nullable=True, index=True)
     content = db.Column(db.Text, nullable=False)
     message_type = db.Column(db.String(20), default='text')  # text, image, file
-    is_read = db.Column(db.Boolean, default=False)
-    created_at = db.Column(db.DateTime, default=datetime.utcnow, index=True)
+    is_read = db.Column(db.Boolean, default=False, index=True)
+    created_at = db.Column(db.DateTime, default=utcnow, index=True)
+
+    __table_args__ = (
+        db.Index("ix_message_receiver_is_read_created_at", "receiver_id", "is_read", "created_at"),
+        db.Index("ix_message_car_created_at", "car_id", "created_at"),
+        db.Index("ix_message_sender_created_at", "sender_id", "created_at"),
+    )
     
     def to_dict(self):
         return {
@@ -338,7 +414,7 @@ class Notification(db.Model):
     notification_type = db.Column(db.String(50), nullable=False)  # message, listing, favorite, etc.
     is_read = db.Column(db.Boolean, default=False)
     data = db.Column(db.JSON, nullable=True)  # Additional data for the notification
-    created_at = db.Column(db.DateTime, default=datetime.utcnow, index=True)
+    created_at = db.Column(db.DateTime, default=utcnow, index=True)
     
     def to_dict(self):
         return {
@@ -363,7 +439,7 @@ class UserAction(db.Model):
     target_type = db.Column(db.String(50), nullable=True)  # car, user, message, etc.
     target_id = db.Column(db.String(50), nullable=True)
     action_metadata = db.Column(db.JSON, nullable=True)
-    created_at = db.Column(db.DateTime, default=datetime.utcnow, index=True)
+    created_at = db.Column(db.DateTime, default=utcnow, index=True)
     
     def to_dict(self):
         return {
@@ -386,10 +462,10 @@ class PasswordReset(db.Model):
     token = db.Column(db.String(100), unique=True, nullable=False)
     expires_at = db.Column(db.DateTime, nullable=False)
     is_used = db.Column(db.Boolean, default=False)
-    created_at = db.Column(db.DateTime, default=datetime.utcnow)
+    created_at = db.Column(db.DateTime, default=utcnow)
     
     def is_expired(self):
-        return datetime.utcnow() > self.expires_at
+        return utcnow() > self.expires_at
     
     def __repr__(self):
         return f'<PasswordReset {self.token}>'
@@ -402,10 +478,10 @@ class EmailVerification(db.Model):
     token = db.Column(db.String(100), unique=True, nullable=False)
     expires_at = db.Column(db.DateTime, nullable=False)
     is_used = db.Column(db.Boolean, default=False)
-    created_at = db.Column(db.DateTime, default=datetime.utcnow)
+    created_at = db.Column(db.DateTime, default=utcnow)
     
     def is_expired(self):
-        return datetime.utcnow() > self.expires_at
+        return utcnow() > self.expires_at
     
     def __repr__(self):
         return f'<EmailVerification {self.token}>'
@@ -417,7 +493,7 @@ class TokenBlacklist(db.Model):
     jti = db.Column(db.String(36), nullable=False, unique=True, index=True)  # JWT ID
     token_type = db.Column(db.String(10), nullable=False)  # 'access' or 'refresh'
     user_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=True)
-    revoked_at = db.Column(db.DateTime, nullable=False, default=datetime.utcnow)
+    revoked_at = db.Column(db.DateTime, nullable=False, default=utcnow)
     expires_at = db.Column(db.DateTime, nullable=False)
     
     def __repr__(self):

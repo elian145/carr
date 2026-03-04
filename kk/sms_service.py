@@ -9,6 +9,9 @@ from typing import Optional
 
 logger = logging.getLogger(__name__)
 
+def _app_env() -> str:
+    return (os.environ.get("APP_ENV") or os.environ.get("FLASK_ENV") or "development").strip().lower()
+
 class SMSService:
     """SMS service for sending messages"""
     
@@ -71,6 +74,9 @@ class SMSService:
     
     def _send_via_console(self, phone_number: str, reset_code: str) -> bool:
         """Send SMS via console (for development)"""
+        if _app_env() == "production":
+            logger.error("SMS_PROVIDER=console is not allowed in production")
+            return False
         print(f"\n{'='*50}")
         print(f"SMS TO: {phone_number}")
         print(f"MESSAGE: Your password reset code is: {reset_code}")
@@ -133,6 +139,9 @@ class SMSService:
     
     def _send_verification_via_console(self, phone_number: str, verification_code: str) -> bool:
         """Send verification SMS via console (for development)"""
+        if _app_env() == "production":
+            logger.error("SMS_PROVIDER=console is not allowed in production")
+            return False
         print(f"\n{'='*50}")
         print(f"VERIFICATION SMS TO: {phone_number}")
         print(f"MESSAGE: Your verification code is: {verification_code}")

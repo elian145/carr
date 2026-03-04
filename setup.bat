@@ -63,9 +63,8 @@ echo 2. Start the backend: cd kk ^&^& venv\Scripts\activate.bat ^&^& python app_
 echo 3. Start the Flutter app: flutter run
 echo.
 echo Admin credentials:
-echo   Username: admin
-echo   Password: admin123
-echo   Email: admin@carlistings.com
+echo   IMPORTANT: Do not use default credentials in production.
+echo   Provision an admin account securely (env/bootstrap), and rotate passwords.
 echo.
 echo Backend will be available at: http://localhost:5000
 echo Admin dashboard: http://localhost:5000/api/admin/dashboard

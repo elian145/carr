@@ -1,61 +1,127 @@
 // Centralized runtime configuration for API endpoints and assets
 // Values come from --dart-define so we can point to a LAN server on device
 
-// Base like: http://192.168.1.50:5000 (NO trailing slash)
-const String kApiBase = String.fromEnvironment('API_BASE', defaultValue: 'http://localhost:5000');
+import 'dart:io' show Platform;
+import 'package:flutter/foundation.dart' show kReleaseMode;
+
+// Base like: https://api.example.com (NO trailing slash)
+// - Debug: can use http:// for local development
+// - Release: must be https:// (unless SIDELOAD_BUILD=true on iOS)
+const String kApiBase = String.fromEnvironment(
+  'API_BASE',
+  defaultValue: '',
+);
+const bool kSideloadBuild = bool.fromEnvironment(
+  'SIDELOAD_BUILD',
+  defaultValue: false,
+);
+const bool kForceSkipBlur = bool.fromEnvironment(
+  'FORCE_SKIP_BLUR',
+  defaultValue: false,
+);
+/// Opt-in for insecure HTTP in *release* builds.
+///
+/// This is intended ONLY for local development / emulator usage.
+/// Keep default false so production builds still require HTTPS.
+const bool kAllowInsecureHttpInRelease = bool.fromEnvironment(
+  'ALLOW_INSECURE_HTTP',
+  defaultValue: false,
+);
+
+String? _runtimeApiBaseOverride;
+
+/// Allow changing API base at runtime (for sideload/local dev scenarios).
+///
+/// - Debug/Profile: allowed
+/// - Release: only allowed for iOS sideload builds (SIDELOAD_BUILD=true)
+bool allowRuntimeApiBaseOverride() {
+  if (!kReleaseMode) return true;
+  return kSideloadBuild && Platform.isIOS;
+}
+
+/// Set a runtime override (persist it yourself if needed).
+void setRuntimeApiBaseOverride(String? base) {
+  if (!allowRuntimeApiBaseOverride()) return;
+  final v = (base ?? '').trim();
+  _runtimeApiBaseOverride = v.isEmpty ? null : v;
+}
+
+String? runtimeApiBaseOverride() {
+  return allowRuntimeApiBaseOverride() ? _runtimeApiBaseOverride : null;
+}
 
 String apiBase() {
-  return kApiBase;
+  final o = runtimeApiBaseOverride();
+  if (o != null && o.trim().isNotEmpty) return o.trim();
+  return kApiBase.trim();
+}
+
+/// On Android emulator, 10.0.2.2 maps to the host machine.
+/// Keep port consistent with the default API base unless overridden via --dart-define.
+String effectiveApiBase() {
+  final base = apiBase();
+
+  if (kReleaseMode) {
+    if (base.isEmpty) {
+      throw StateError(
+        'Missing API_BASE. Provide --dart-define=API_BASE=https://<your-domain>',
+      );
+    }
+    if (!base.startsWith('https://')) {
+      // Sideload builds (typically for Sideloadly) may need to call a LAN HTTP API.
+      // This is only allowed on iOS when explicitly opted-in at compile time.
+      final bool allowIosSideloadHttp =
+          kSideloadBuild && Platform.isIOS && base.startsWith('http://');
+      final bool allowAndroidLocalHttp =
+          kAllowInsecureHttpInRelease && Platform.isAndroid && base.startsWith('http://');
+
+      if (!(allowIosSideloadHttp || allowAndroidLocalHttp)) {
+        throw StateError('In release builds, API_BASE must start with https://');
+      }
+    }
+    return base;
+  }
+
+  // Debug/dev defaults: local backend convenience.
+  if (base.isEmpty) {
+    if (Platform.isAndroid) return 'http://10.0.2.2:5003';
+    return 'http://localhost:5003';
+  }
+
+  // Legacy default mapping for existing dev setups.
+  if (Platform.isAndroid &&
+      (base == 'http://192.168.1.7:5003' || base == 'http://192.168.1.8:5003')) {
+    return 'http://10.0.2.2:5003';
+  }
+  return base;
 }
 
 String apiBaseApi() {
-  final base = apiBase();
-  return base.endsWith('/api') ? base : base + '/api';
+  final base = effectiveApiBase();
+  return base.endsWith('/api') ? base : '$base/api';
 }
 
-/// Resolves a media path (relative) or URL (absolute) to a fetchable URL.
-///
-/// Supports:
-/// - Absolute URLs (http/https): returned as-is
-/// - Relative paths like:
-///   - `car_photos/foo.jpg`         -> `$API_BASE/static/uploads/car_photos/foo.jpg`
-///   - `uploads/car_photos/foo.jpg` -> `$API_BASE/static/uploads/car_photos/foo.jpg`
-String resolveMediaUrl(String relOrAbs) {
-  final s = relOrAbs.trim();
-  if (s.isEmpty) return s;
-  final lower = s.toLowerCase();
-  if (lower.startsWith('http://') || lower.startsWith('https://')) return s;
-
-  final base = apiBase();
-  var p = s;
-  if (p.startsWith('/')) p = p.substring(1);
-
-  // Already a fully qualified static path.
-  if (p.startsWith('static/')) return '$base/$p';
-
-  // Backend can return `uploads/...` relative to the static root.
-  if (p.startsWith('uploads/')) return '$base/static/$p';
-
-  // Default: assume it's under static/uploads/...
-  return '$base/static/uploads/$p';
-}
-
-/// Extracts a usable image path from various API shapes.
-///
-/// Accepts:
-/// - `String` entries (already a path or URL)
-/// - `{ image_url: "..." }` entries
-String? coerceImagePath(dynamic entry) {
-  if (entry == null) return null;
-  if (entry is String) return entry.trim();
-  if (entry is Map) {
-    final v = entry['image_url'] ??
-        entry['imageUrl'] ??
-        entry['video_url'] ??
-        entry['videoUrl'] ??
-        entry['url'];
-    if (v is String) return v.trim();
+/// Socket.IO is currently served by the listings backend (kk) on port 5000 in dev,
+/// while the API proxy runs on 5003. In production, you should front both behind
+/// the same domain and reverse-proxy `/socket.io/` to the backend.
+String effectiveSocketIoBase() {
+  final base = effectiveApiBase().trim();
+  if (base.isEmpty) {
+    if (Platform.isAndroid) return 'http://10.0.2.2:5000';
+    return 'http://localhost:5000';
   }
-  return entry.toString().trim();
+  try {
+    final uri = Uri.parse(base);
+    if (uri.hasPort && uri.port == 5003) {
+      return uri.replace(port: 5000).toString();
+    }
+  } catch (_) {}
+  return base;
 }
 
+bool forceSkipBlur() {
+  return kForceSkipBlur;
+}
+
+// No third-party plate API keys are exposed to the client.
+// All license plate blurring is performed server-side via the backend.

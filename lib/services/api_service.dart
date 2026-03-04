@@ -1,55 +1,97 @@
 import 'dart:convert';
 import 'dart:io';
 import 'package:http/http.dart' as http;
-import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:image_picker/image_picker.dart';
 import 'config.dart';
+import '../shared/auth/token_store.dart';
+
+class ApiException implements Exception {
+  final int statusCode;
+  final String message;
+  final Map<String, dynamic>? body;
+
+  ApiException({
+    required this.statusCode,
+    required this.message,
+    this.body,
+  });
+
+  @override
+  String toString() => message;
+}
 
 class ApiService {
+  static const Duration _defaultTimeout = Duration(seconds: 30);
+  static const Duration _uploadTimeout = Duration(seconds: 180);
+
   static String get baseUrl {
     return apiBaseApi();
   }
+
   static String? _accessToken;
-  static const FlutterSecureStorage _storage = FlutterSecureStorage();
+  static String? _refreshToken;
 
   // Initialize tokens from storage
   static Future<void> initializeTokens() async {
-    // Align with AuthStore key; guard against keychain issues on sideload builds
-    try {
-      _accessToken = await _storage.read(key: 'auth_token');
-    } catch (_) {
-      _accessToken = null;
-    }
+    await TokenStore.load();
+    _accessToken = TokenStore.token;
+    _refreshToken = TokenStore.refreshToken;
   }
 
   // Save tokens to storage
   static Future<void> _saveAccessToken(String accessToken) async {
-    try {
-      await _storage.write(key: 'auth_token', value: accessToken);
-      _accessToken = accessToken;
-    } catch (_) {
-      _accessToken = accessToken;
+    await TokenStore.save(accessToken);
+    _accessToken = TokenStore.token;
+  }
+
+  static Future<void> _saveRefreshToken(String? refreshToken) async {
+    await TokenStore.saveRefresh(refreshToken);
+    _refreshToken = TokenStore.refreshToken;
+  }
+
+  /// Set the current access token (best-effort persisted).
+  /// Use this when the app obtains a token outside of [ApiService.login],
+  /// e.g. after signup or external auth.
+  static Future<void> setAccessToken(String? token) async {
+    final t = (token ?? '').trim();
+    if (t.isEmpty) {
+      await clearTokens();
+      return;
     }
+    await _saveAccessToken(t);
+  }
+
+  /// Set the current refresh token (best-effort persisted).
+  static Future<void> setRefreshToken(String? token) async {
+    final t = (token ?? '').trim();
+    if (t.isEmpty) {
+      await _saveRefreshToken(null);
+      return;
+    }
+    await _saveRefreshToken(t);
+  }
+
+  /// Set both access and refresh tokens (best-effort persisted).
+  static Future<void> setTokens({String? accessToken, String? refreshToken}) async {
+    await setAccessToken(accessToken);
+    await setRefreshToken(refreshToken);
   }
 
   // Clear tokens
   static Future<void> clearTokens() async {
-    try {
-      await _storage.delete(key: 'auth_token');
-    } catch (_) {}
+    await TokenStore.clear();
     _accessToken = null;
+    _refreshToken = null;
   }
 
   // Get headers with authorization
   static Map<String, String> _getHeaders({bool includeAuth = true}) {
-    Map<String, String> headers = {
-      'Content-Type': 'application/json',
-    };
-    
+    Map<String, String> headers = {'Content-Type': 'application/json'};
+
     if (includeAuth && _accessToken != null) {
       headers['Authorization'] = 'Bearer $_accessToken';
     }
-    
+
     return headers;
   }
 
@@ -61,16 +103,49 @@ class ApiService {
       return body.isNotEmpty ? json.decode(body) : <String, dynamic>{};
     }
     try {
-      final Map<String, dynamic> err = body.isNotEmpty ? json.decode(body) : <String, dynamic>{};
-      throw Exception(err['error'] ?? err['message'] ?? 'API request failed (${response.statusCode})');
+      final Map<String, dynamic> err = body.isNotEmpty
+          ? json.decode(body)
+          : <String, dynamic>{};
+      final msg = (err['message'] ?? err['error'] ?? '').toString().trim();
+      throw ApiException(
+        statusCode: code,
+        message: msg.isNotEmpty ? msg : 'API request failed ($code)',
+        body: err,
+      );
     } catch (_) {
-      throw Exception('API request failed (${response.statusCode})');
+      throw ApiException(statusCode: code, message: 'API request failed ($code)');
     }
   }
 
   // Refresh access token
   static Future<bool> _refreshAccessToken() async {
-    // No refresh token endpoint in backend; always fail
+    final rt = (_refreshToken ?? '').trim();
+    if (rt.isEmpty) return false;
+    try {
+      final response = await http
+          .post(
+            Uri.parse('$baseUrl/auth/refresh'),
+            headers: {
+              'Content-Type': 'application/json',
+              'Authorization': 'Bearer $rt',
+            },
+          )
+          .timeout(_defaultTimeout);
+      if (response.statusCode >= 200 && response.statusCode < 300) {
+        final data = response.body.isNotEmpty
+            ? json.decode(response.body)
+            : <String, dynamic>{};
+        final String? access = (data['access_token'] as String?)?.trim();
+        final String? refresh = (data['refresh_token'] as String?)?.trim();
+        if (access != null && access.isNotEmpty) {
+          await _saveAccessToken(access);
+          if (refresh != null && refresh.isNotEmpty) {
+            await _saveRefreshToken(refresh);
+          }
+          return true;
+        }
+      }
+    } catch (_) {}
     return false;
   }
 
@@ -85,27 +160,35 @@ class ApiService {
     final requestHeaders = {..._getHeaders(), ...?headers};
 
     http.Response response;
-    
+
     switch (method.toUpperCase()) {
       case 'GET':
-        response = await http.get(url, headers: requestHeaders);
+        response = await http
+            .get(url, headers: requestHeaders)
+            .timeout(_defaultTimeout);
         break;
       case 'POST':
-        response = await http.post(
-          url,
-          headers: requestHeaders,
-          body: body != null ? json.encode(body) : null,
-        );
+        response = await http
+            .post(
+              url,
+              headers: requestHeaders,
+              body: body != null ? json.encode(body) : null,
+            )
+            .timeout(_defaultTimeout);
         break;
       case 'PUT':
-        response = await http.put(
-          url,
-          headers: requestHeaders,
-          body: body != null ? json.encode(body) : null,
-        );
+        response = await http
+            .put(
+              url,
+              headers: requestHeaders,
+              body: body != null ? json.encode(body) : null,
+            )
+            .timeout(_defaultTimeout);
         break;
       case 'DELETE':
-        response = await http.delete(url, headers: requestHeaders);
+        response = await http
+            .delete(url, headers: requestHeaders)
+            .timeout(_defaultTimeout);
         break;
       default:
         throw Exception('Unsupported HTTP method: $method');
@@ -116,27 +199,35 @@ class ApiService {
       if (await _refreshAccessToken()) {
         // Retry request with new token
         requestHeaders['Authorization'] = 'Bearer $_accessToken';
-        
+
         switch (method.toUpperCase()) {
           case 'GET':
-            response = await http.get(url, headers: requestHeaders);
+            response = await http
+                .get(url, headers: requestHeaders)
+                .timeout(_defaultTimeout);
             break;
           case 'POST':
-            response = await http.post(
-              url,
-              headers: requestHeaders,
-              body: body != null ? json.encode(body) : null,
-            );
+            response = await http
+                .post(
+                  url,
+                  headers: requestHeaders,
+                  body: body != null ? json.encode(body) : null,
+                )
+                .timeout(_defaultTimeout);
             break;
           case 'PUT':
-            response = await http.put(
-              url,
-              headers: requestHeaders,
-              body: body != null ? json.encode(body) : null,
-            );
+            response = await http
+                .put(
+                  url,
+                  headers: requestHeaders,
+                  body: body != null ? json.encode(body) : null,
+                )
+                .timeout(_defaultTimeout);
             break;
           case 'DELETE':
-            response = await http.delete(url, headers: requestHeaders);
+            response = await http
+                .delete(url, headers: requestHeaders)
+                .timeout(_defaultTimeout);
             break;
         }
       } else {
@@ -157,81 +248,147 @@ class ApiService {
     required String lastName,
     String? phoneNumber,
   }) async {
-    String otp = '000000';
-    if ((phoneNumber ?? '').trim().isNotEmpty) {
-      try {
-        final r = await http.post(
-          Uri.parse('$baseUrl/auth/send_otp'),
+    final response = await http
+        .post(
+          Uri.parse('$baseUrl/auth/signup'),
           headers: _getHeaders(includeAuth: false),
-          body: json.encode({'phone': phoneNumber}),
-        );
-        if (r.statusCode == 200) {
-          final d = json.decode(r.body);
-          // When SMS isn’t configured, backend returns dev_code
-          otp = (d['dev_code'] ?? otp).toString();
-        }
-      } catch (_) {}
+          body: json.encode({
+            'username': username,
+            'email': email,
+            'phone': (phoneNumber ?? '').replaceAll(RegExp(r'[^0-9]'), ''),
+            'password': password,
+            'first_name': firstName,
+            'last_name': lastName,
+          }),
+        )
+        .timeout(_defaultTimeout);
+
+    final data = _handleResponse(response);
+    final String? legacyToken = (data['token'] as String?)?.trim();
+    final String? access = (data['access_token'] as String?)?.trim();
+    final String? refresh = (data['refresh_token'] as String?)?.trim();
+    final token = (legacyToken != null && legacyToken.isNotEmpty)
+        ? legacyToken
+        : access;
+    if (token != null && token.isNotEmpty) {
+      await _saveAccessToken(token);
     }
+    if (refresh != null && refresh.isNotEmpty) {
+      await _saveRefreshToken(refresh);
+    }
+    return data;
+  }
 
-    final response = await http.post(
-      Uri.parse('$baseUrl/auth/signup'),
-      headers: _getHeaders(includeAuth: false),
-      body: json.encode({
-        'username': username,
-        'phone': phoneNumber ?? '',
-        'password': password,
-        'otp_code': otp,
-      }),
-    );
+  static Future<Map<String, dynamic>> login(
+    String emailOrPhone,
+    String password,
+  ) async {
+    final response = await http
+        .post(
+          Uri.parse('$baseUrl/auth/login'),
+          headers: _getHeaders(includeAuth: false),
+          body: json.encode({'username': emailOrPhone, 'password': password}),
+        )
+        .timeout(_defaultTimeout);
 
+    // Accept either legacy {'token': '<jwt>'} or new {'access_token': '...', 'refresh_token': '...'}
+    final data = _handleResponse(response);
+    final String? legacyToken = (data['token'] as String?)?.trim();
+    final String? access = (data['access_token'] as String?)?.trim();
+    final String? refresh = (data['refresh_token'] as String?)?.trim();
+    final token = (legacyToken != null && legacyToken.isNotEmpty)
+        ? legacyToken
+        : access;
+    if (token != null && token.isNotEmpty) {
+      await _saveAccessToken(token);
+    }
+    if (refresh != null && refresh.isNotEmpty) {
+      await _saveRefreshToken(refresh);
+    }
+    return data;
+  }
+
+  // Phone OTP (Option D)
+  static Future<Map<String, dynamic>> phoneStart({
+    required String phoneNumber,
+    String? username,
+    String? firstName,
+    String? lastName,
+    String? email,
+    String? password,
+  }) async {
+    final response = await http
+        .post(
+          Uri.parse('$baseUrl/auth/phone/start'),
+          headers: _getHeaders(includeAuth: false),
+          body: json.encode({
+            'phone_number': phoneNumber,
+            if ((username ?? '').trim().isNotEmpty) 'username': username,
+            if ((firstName ?? '').trim().isNotEmpty) 'first_name': firstName,
+            if ((lastName ?? '').trim().isNotEmpty) 'last_name': lastName,
+            if ((email ?? '').trim().isNotEmpty) 'email': email,
+            if ((password ?? '').trim().isNotEmpty) 'password': password,
+          }),
+        )
+        .timeout(_defaultTimeout);
     return _handleResponse(response);
   }
 
-  static Future<Map<String, dynamic>> login(String username, String password) async {
-    final response = await http.post(
-      Uri.parse('$baseUrl/auth/login'),
-      headers: _getHeaders(includeAuth: false),
-      body: json.encode({
-        'username': username,
-        'password': password,
-      }),
-    );
+  static Future<Map<String, dynamic>> phoneVerify({
+    required String phoneNumber,
+    required String code,
+    String? username,
+    String? firstName,
+    String? lastName,
+    String? email,
+    String? password,
+  }) async {
+    final response = await http
+        .post(
+          Uri.parse('$baseUrl/auth/phone/verify'),
+          headers: _getHeaders(includeAuth: false),
+          body: json.encode({
+            'phone_number': phoneNumber,
+            'code': code,
+            if ((username ?? '').trim().isNotEmpty) 'username': username,
+            if ((firstName ?? '').trim().isNotEmpty) 'first_name': firstName,
+            if ((lastName ?? '').trim().isNotEmpty) 'last_name': lastName,
+            if ((email ?? '').trim().isNotEmpty) 'email': email,
+            if ((password ?? '').trim().isNotEmpty) 'password': password,
+          }),
+        )
+        .timeout(_defaultTimeout);
 
     final data = _handleResponse(response);
-    final String? token = ((data['access_token'] ?? data['token'] ?? data['accessToken']) as String?)?.trim();
-    if (token != null && token.isNotEmpty) {
-      await _saveAccessToken(token);
+    final String? access = (data['access_token'] as String?)?.trim();
+    final String? refresh = (data['refresh_token'] as String?)?.trim();
+    if (access != null && access.isNotEmpty) {
+      await _saveAccessToken(access);
+    }
+    if (refresh != null && refresh.isNotEmpty) {
+      await _saveRefreshToken(refresh);
     }
     return data;
   }
 
   static Future<void> logout() async {
+    // Best-effort server-side revocation; then clear locally.
+    try {
+      final headers = _getHeaders();
+      final rt = (_refreshToken ?? '').trim();
+      final body = (rt.isNotEmpty) ? json.encode({'refresh_token': rt}) : null;
+      await http
+          .post(
+            Uri.parse('$baseUrl/auth/logout'),
+            headers: headers,
+            body: body,
+          )
+          .timeout(_defaultTimeout);
+    } catch (_) {}
     await clearTokens();
   }
 
-  static Future<Map<String, dynamic>> forgotPassword(String email) async {
-    final response = await http.post(
-      Uri.parse('$baseUrl/auth/forgot-password'),
-      headers: _getHeaders(includeAuth: false),
-      body: json.encode({'email': email}),
-    );
-
-    return _handleResponse(response);
-  }
-
-  static Future<Map<String, dynamic>> resetPassword(String token, String newPassword) async {
-    final response = await http.post(
-      Uri.parse('$baseUrl/auth/reset-password'),
-      headers: _getHeaders(includeAuth: false),
-      body: json.encode({
-        'token': token,
-        'password': newPassword,
-      }),
-    );
-
-    return _handleResponse(response);
-  }
-
+  /// Change password (authenticated). Requires current and new password.
   static Future<Map<String, dynamic>> changePassword({
     required String currentPassword,
     required String newPassword,
@@ -246,26 +403,64 @@ class ApiService {
     );
   }
 
+  static Future<Map<String, dynamic>> forgotPassword(String email) async {
+    final response = await http
+        .post(
+          Uri.parse('$baseUrl/auth/forgot-password'),
+          headers: _getHeaders(includeAuth: false),
+          // Backwards-compatible: backend historically used phone_number.
+          body: json.encode({'email': email, 'phone_number': email}),
+        )
+        .timeout(_defaultTimeout);
+
+    return _handleResponse(response);
+  }
+
+  static Future<Map<String, dynamic>> resetPassword(
+    String token,
+    String newPassword,
+  ) async {
+    final response = await http
+        .post(
+          Uri.parse('$baseUrl/auth/reset-password'),
+          headers: _getHeaders(includeAuth: false),
+          body: json.encode({'token': token, 'password': newPassword}),
+        )
+        .timeout(_defaultTimeout);
+
+    return _handleResponse(response);
+  }
+
   static Future<Map<String, dynamic>> verifyEmail(String token) async {
-    final response = await http.post(
-      Uri.parse('$baseUrl/auth/verify-email'),
-      headers: _getHeaders(includeAuth: false),
-      body: json.encode({'token': token}),
-    );
+    final response = await http
+        .post(
+          Uri.parse('$baseUrl/auth/verify-email'),
+          headers: _getHeaders(includeAuth: false),
+          body: json.encode({'token': token}),
+        )
+        .timeout(_defaultTimeout);
 
     return _handleResponse(response);
   }
 
   // User profile methods
   static Future<Map<String, dynamic>> getProfile() async {
-    return await _makeAuthenticatedRequest('GET', '/user/profile');
+    return await _makeAuthenticatedRequest('GET', '/auth/me');
   }
 
-  static Future<Map<String, dynamic>> updateProfile(Map<String, dynamic> profileData) async {
-    return await _makeAuthenticatedRequest('PUT', '/user/profile', body: profileData);
+  static Future<Map<String, dynamic>> updateProfile(
+    Map<String, dynamic> profileData,
+  ) async {
+    return await _makeAuthenticatedRequest(
+      'PUT',
+      '/user/profile',
+      body: profileData,
+    );
   }
 
-  static Future<Map<String, dynamic>> uploadProfilePicture(XFile imageFile) async {
+  static Future<Map<String, dynamic>> uploadProfilePicture(
+    XFile imageFile,
+  ) async {
     final request = http.MultipartRequest(
       'POST',
       Uri.parse('$baseUrl/user/upload-profile-picture'),
@@ -277,9 +472,11 @@ class ApiService {
     }
 
     // Add file
-    request.files.add(await http.MultipartFile.fromPath('file', imageFile.path));
+    request.files.add(
+      await http.MultipartFile.fromPath('file', imageFile.path),
+    );
 
-    final response = await request.send();
+    final response = await request.send().timeout(_uploadTimeout);
     final responseBody = await response.stream.bytesToString();
 
     if (response.statusCode >= 200 && response.statusCode < 300) {
@@ -329,39 +526,59 @@ class ApiService {
         .map((e) => '${e.key}=${Uri.encodeComponent(e.value)}')
         .join('&');
 
-    final response = await http.get(
-      Uri.parse('$baseUrl/cars?$queryString'),
-      headers: _getHeaders(includeAuth: false),
-    );
+    final response = await http
+        .get(
+          Uri.parse('$baseUrl/cars?$queryString'),
+          headers: _getHeaders(includeAuth: false),
+        )
+        .timeout(_defaultTimeout);
 
     return _handleResponse(response);
   }
 
   static Future<Map<String, dynamic>> getCar(String carId) async {
-    final response = await http.get(
-      Uri.parse('$baseUrl/cars/$carId'),
-      headers: _getHeaders(includeAuth: false),
-    );
+    final response = await http
+        .get(
+          Uri.parse('$baseUrl/cars/$carId'),
+          headers: _getHeaders(includeAuth: false),
+        )
+        .timeout(_defaultTimeout);
 
     return _handleResponse(response);
   }
 
-  static Future<Map<String, dynamic>> createCar(Map<String, dynamic> carData) async {
+  static Future<Map<String, dynamic>> createCar(
+    Map<String, dynamic> carData,
+  ) async {
     return await _makeAuthenticatedRequest('POST', '/cars', body: carData);
   }
 
-  static Future<Map<String, dynamic>> updateCar(String carId, Map<String, dynamic> carData) async {
-    return await _makeAuthenticatedRequest('PUT', '/cars/$carId', body: carData);
+  static Future<Map<String, dynamic>> updateCar(
+    String carId,
+    Map<String, dynamic> carData,
+  ) async {
+    return await _makeAuthenticatedRequest(
+      'PUT',
+      '/cars/$carId',
+      body: carData,
+    );
   }
 
   static Future<Map<String, dynamic>> deleteCar(String carId) async {
     return await _makeAuthenticatedRequest('DELETE', '/cars/$carId');
   }
 
-  static Future<Map<String, dynamic>> uploadCarImages(String carId, List<XFile> imageFiles) async {
+  static Future<Map<String, dynamic>> uploadCarImages(
+    String carId,
+    List<XFile> imageFiles,
+  ) async {
+    // IMPORTANT:
+    // Backend is privacy-default (blurring enabled by default).
+    // Only skip blurring when explicitly requested via `FORCE_SKIP_BLUR=true` (dev/testing).
+    final String query = forceSkipBlur() ? '?skip_blur=1' : '';
     final request = http.MultipartRequest(
       'POST',
-      Uri.parse('$baseUrl/cars/$carId/images'),
+      Uri.parse('$baseUrl/cars/$carId/images$query'),
     );
 
     // Add authorization header
@@ -369,105 +586,78 @@ class ApiService {
       request.headers['Authorization'] = 'Bearer $_accessToken';
     }
 
-    // Add files
+    // Add files once under 'images' (backend accepts 'files', 'images', 'image', etc. and extends one list — do not send same file under multiple keys or backend gets duplicates)
     for (final file in imageFiles) {
-      request.files.add(await http.MultipartFile.fromPath('files', file.path));
+      request.files.add(await http.MultipartFile.fromPath('images', file.path));
     }
 
-    final response = await request.send();
+    final response = await request.send().timeout(_uploadTimeout);
     final responseBody = await response.stream.bytesToString();
 
     if (response.statusCode >= 200 && response.statusCode < 300) {
-      return json.decode(responseBody);
+      // Backend compatibility: some endpoints return { uploaded: [...] }
+      // Normalize to { images: [...] } expected by UI services
+      final Map<String, dynamic> data = json.decode(responseBody);
+      if (!data.containsKey('images') && data.containsKey('uploaded')) {
+        data['images'] = List.from(data['uploaded'] as List);
+      }
+      return data;
     } else {
       final error = json.decode(responseBody);
       throw Exception(error['message'] ?? 'Upload failed');
     }
   }
 
-  /// Request a presigned upload payload to upload an image directly to Cloudflare R2.
-  ///
-  /// Returns:
-  /// - upload: { method, url, headers }  (preferred for R2)
-  ///   or legacy: { url, fields }        (presigned POST for S3-compatible services)
-  /// - public_url: final public URL to store/display
+  static Future<Map<String, dynamic>> attachCarImages(
+    String carId,
+    List<String> paths,
+  ) async {
+    return await _makeAuthenticatedRequest(
+      'POST',
+      '/cars/$carId/images/attach',
+      body: {'paths': paths},
+    );
+  }
+
+  /// Request a presigned R2 PUT URL for one image. Returns { upload_url, key, public_url? }.
   static Future<Map<String, dynamic>> signR2ImageUpload({
-    required String carId,
-    required String filename,
-    required String contentType,
-    int? sizeBytes,
+    String? filename,
+    String? contentType,
   }) async {
-    final res = await _makeAuthenticatedRequest(
+    final body = <String, dynamic>{};
+    if (filename != null && filename.isNotEmpty) body['filename'] = filename;
+    if (contentType != null && contentType.isNotEmpty) body['content_type'] = contentType;
+    return await _makeAuthenticatedRequest(
       'POST',
       '/media/r2/sign-upload',
-      body: {
-        'listing_id': carId,
-        'filename': filename,
-        'content_type': contentType,
-        if (sizeBytes != null) 'size_bytes': sizeBytes,
-      },
+      body: body.isNotEmpty ? body : null,
     );
-    return res;
   }
 
-  /// Upload a file using the payload returned by [signR2ImageUpload].
-  ///
-  /// Supports:
-  /// - Presigned PUT (Cloudflare R2)
-  /// - Presigned POST (legacy S3 POST policy)
-  static Future<void> uploadToSignedUpload({
-    required Map<String, dynamic> upload,
-    required XFile file,
-  }) async {
-    final String? method = (upload['method'] as String?)?.toUpperCase();
-    final String url = (upload['url'] ?? '').toString();
-    if (url.isEmpty) {
-      throw Exception('Upload URL is missing');
-    }
-
-    // Legacy presigned POST shape: { url, fields }
-    final dynamic fieldsDyn = upload['fields'];
-    if (fieldsDyn is Map) {
-      final req = http.MultipartRequest('POST', Uri.parse(url));
-      fieldsDyn.forEach((k, v) {
-        if (k == null || v == null) return;
-        req.fields[k.toString()] = v.toString();
-      });
-      req.files.add(await http.MultipartFile.fromPath('file', file.path));
-      final resp = await req.send();
-      if (resp.statusCode < 200 || resp.statusCode >= 300) {
-        final body = await resp.stream.bytesToString();
-        throw Exception('Upload failed (${resp.statusCode}): $body');
-      }
-      return;
-    }
-
-    // Preferred R2 presigned PUT: { method: "PUT", url, headers }
-    if (method != null && method != 'PUT') {
-      throw Exception('Unsupported upload method: $method');
-    }
-
-    final headersDyn = upload['headers'];
-    final Map<String, String> headers = {};
-    if (headersDyn is Map) {
-      headersDyn.forEach((k, v) {
-        if (k == null || v == null) return;
-        headers[k.toString()] = v.toString();
-      });
-    }
-
+  /// Upload file bytes to a presigned PUT URL (e.g. R2). No auth header.
+  static Future<void> uploadToSignedUpload(String uploadUrl, XFile file) async {
     final bytes = await file.readAsBytes();
-    final resp = await http.put(Uri.parse(url), headers: headers, body: bytes);
-    if (resp.statusCode < 200 || resp.statusCode >= 300) {
-      throw Exception('Upload failed (${resp.statusCode}): ${resp.body}');
+    final uri = Uri.parse(uploadUrl);
+    final response = await http.put(
+      uri,
+      body: bytes,
+      headers: <String, String>{
+        'Content-Type': file.mimeType ?? 'image/jpeg',
+      },
+    ).timeout(_uploadTimeout);
+    if (response.statusCode < 200 || response.statusCode >= 300) {
+      throw ApiException(
+        statusCode: response.statusCode,
+        message: response.body.isNotEmpty ? response.body : 'Upload failed',
+      );
     }
   }
 
-  /// Attach already-uploaded R2 public URLs to a listing.
-  static Future<Map<String, dynamic>> attachCarImageUrls({
-    required String carId,
-    required List<String> urls,
-  }) async {
+  /// Attach image URLs (e.g. R2 public URLs) to a car listing.
+  static Future<Map<String, dynamic>> attachCarImageUrls(
+    String carId,
+    List<String> urls,
+  ) async {
     return await _makeAuthenticatedRequest(
       'POST',
       '/cars/$carId/images/attach',
@@ -475,7 +665,15 @@ class ApiService {
     );
   }
 
-  static Future<Map<String, dynamic>> uploadCarVideos(String carId, List<XFile> videoFiles) async {
+  static List<String>? getLastProcessedServerPaths() {
+    // Attach-based flow removed; always return null so callers skip.
+    return null;
+  }
+
+  static Future<Map<String, dynamic>> uploadCarVideos(
+    String carId,
+    List<XFile> videoFiles,
+  ) async {
     final request = http.MultipartRequest(
       'POST',
       Uri.parse('$baseUrl/cars/$carId/videos'),
@@ -487,15 +685,21 @@ class ApiService {
     }
 
     // Add files
+    // Backend expects `request.files["files"]` (list).
     for (final file in videoFiles) {
       request.files.add(await http.MultipartFile.fromPath('files', file.path));
     }
 
-    final response = await request.send();
+    final response = await request.send().timeout(_uploadTimeout);
     final responseBody = await response.stream.bytesToString();
 
     if (response.statusCode >= 200 && response.statusCode < 300) {
-      return json.decode(responseBody);
+      // Normalize { uploaded: [...] } -> { videos: [...] }
+      final Map<String, dynamic> data = json.decode(responseBody);
+      if (!data.containsKey('videos') && data.containsKey('uploaded')) {
+        data['videos'] = List.from(data['uploaded'] as List);
+      }
+      return data;
     } else {
       final error = json.decode(responseBody);
       throw Exception(error['message'] ?? 'Upload failed');
@@ -503,12 +707,33 @@ class ApiService {
   }
 
   // Favorites methods
-  static Future<Map<String, dynamic>> getFavorites({int page = 1, int perPage = 20}) async {
-    return await _makeAuthenticatedRequest('GET', '/user/favorites?page=$page&per_page=$perPage');
+  static Future<Map<String, dynamic>> getFavorites({
+    int page = 1,
+    int perPage = 20,
+  }) async {
+    return await _makeAuthenticatedRequest(
+      'GET',
+      '/user/favorites?page=$page&per_page=$perPage',
+    );
   }
 
   static Future<Map<String, dynamic>> toggleFavorite(String carId) async {
     return await _makeAuthenticatedRequest('POST', '/cars/$carId/favorite');
+  }
+
+  static Future<bool> isCarFavorited(String carId) async {
+    final res = await _makeAuthenticatedRequest('GET', '/cars/$carId/favorite');
+    return (res['is_favorited'] == true) || (res['favorited'] == true);
+  }
+
+  static Future<Map<String, dynamic>> getMyListings({
+    int page = 1,
+    int perPage = 20,
+  }) async {
+    return await _makeAuthenticatedRequest(
+      'GET',
+      '/user/my-listings?page=$page&per_page=$perPage',
+    );
   }
 
   // Check if user is authenticated

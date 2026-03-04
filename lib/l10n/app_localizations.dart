@@ -1389,6 +1389,282 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Salaheldeen'**
   String get city_salaheldeen;
+
+  /// No description provided for @sellTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Sell'**
+  String get sellTitle;
+
+  /// No description provided for @createListingButton.
+  ///
+  /// In en, this message translates to:
+  /// **'Create listing'**
+  String get createListingButton;
+
+  /// No description provided for @creatingListing.
+  ///
+  /// In en, this message translates to:
+  /// **'Creating listing...'**
+  String get creatingListing;
+
+  /// No description provided for @uploadingPhotos.
+  ///
+  /// In en, this message translates to:
+  /// **'Uploading photos...'**
+  String get uploadingPhotos;
+
+  /// No description provided for @uploadingVideos.
+  ///
+  /// In en, this message translates to:
+  /// **'Uploading videos...'**
+  String get uploadingVideos;
+
+  /// No description provided for @addPhotosCount.
+  ///
+  /// In en, this message translates to:
+  /// **'Add photos ({count})'**
+  String addPhotosCount(Object count);
+
+  /// No description provided for @addVideoCount.
+  ///
+  /// In en, this message translates to:
+  /// **'Add video ({count})'**
+  String addVideoCount(Object count);
+
+  /// No description provided for @pleaseFixHighlightedFields.
+  ///
+  /// In en, this message translates to:
+  /// **'Please fix the highlighted fields'**
+  String get pleaseFixHighlightedFields;
+
+  /// No description provided for @listingCreated.
+  ///
+  /// In en, this message translates to:
+  /// **'Listing created'**
+  String get listingCreated;
+
+  /// No description provided for @listingTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Listing'**
+  String get listingTitle;
+
+  /// No description provided for @shareAction.
+  ///
+  /// In en, this message translates to:
+  /// **'Share'**
+  String get shareAction;
+
+  /// No description provided for @callAction.
+  ///
+  /// In en, this message translates to:
+  /// **'Call'**
+  String get callAction;
+
+  /// No description provided for @chatAction.
+  ///
+  /// In en, this message translates to:
+  /// **'Chat'**
+  String get chatAction;
+
+  /// No description provided for @favoriteAction.
+  ///
+  /// In en, this message translates to:
+  /// **'Favorite'**
+  String get favoriteAction;
+
+  /// No description provided for @favoritesAction.
+  ///
+  /// In en, this message translates to:
+  /// **'Favorites'**
+  String get favoritesAction;
+
+  /// No description provided for @editProfileAction.
+  ///
+  /// In en, this message translates to:
+  /// **'Edit profile'**
+  String get editProfileAction;
+
+  /// No description provided for @descriptionTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Description'**
+  String get descriptionTitle;
+
+  /// No description provided for @retryAction.
+  ///
+  /// In en, this message translates to:
+  /// **'Retry'**
+  String get retryAction;
+
+  /// No description provided for @sellerPhoneNotAvailable.
+  ///
+  /// In en, this message translates to:
+  /// **'Seller phone not available'**
+  String get sellerPhoneNotAvailable;
+
+  /// No description provided for @couldNotStartCall.
+  ///
+  /// In en, this message translates to:
+  /// **'Could not start a call'**
+  String get couldNotStartCall;
+
+  /// No description provided for @myListingsTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'My listings'**
+  String get myListingsTitle;
+
+  /// No description provided for @deleteListingTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Delete listing?'**
+  String get deleteListingTitle;
+
+  /// No description provided for @deleteListingBody.
+  ///
+  /// In en, this message translates to:
+  /// **'This will remove it from public listings.'**
+  String get deleteListingBody;
+
+  /// No description provided for @cancelAction.
+  ///
+  /// In en, this message translates to:
+  /// **'Cancel'**
+  String get cancelAction;
+
+  /// No description provided for @deleteAction.
+  ///
+  /// In en, this message translates to:
+  /// **'Delete'**
+  String get deleteAction;
+
+  /// No description provided for @editAction.
+  ///
+  /// In en, this message translates to:
+  /// **'Edit'**
+  String get editAction;
+
+  /// No description provided for @comparisonEmptyHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Add cars to comparison from listings.'**
+  String get comparisonEmptyHint;
+
+  /// No description provided for @comparisonSpecLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'Spec'**
+  String get comparisonSpecLabel;
+
+  /// No description provided for @removeAction.
+  ///
+  /// In en, this message translates to:
+  /// **'Remove'**
+  String get removeAction;
+
+  /// No description provided for @settingsThemeTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Theme'**
+  String get settingsThemeTitle;
+
+  /// No description provided for @settingsLanguageTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Language'**
+  String get settingsLanguageTitle;
+
+  /// No description provided for @settingsSystem.
+  ///
+  /// In en, this message translates to:
+  /// **'System'**
+  String get settingsSystem;
+
+  /// No description provided for @settingsLight.
+  ///
+  /// In en, this message translates to:
+  /// **'Light'**
+  String get settingsLight;
+
+  /// No description provided for @settingsDark.
+  ///
+  /// In en, this message translates to:
+  /// **'Dark'**
+  String get settingsDark;
+
+  /// No description provided for @enabledLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'Enabled'**
+  String get enabledLabel;
+
+  /// No description provided for @disabledLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'Disabled'**
+  String get disabledLabel;
+
+  /// No description provided for @accountLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'Account'**
+  String get accountLabel;
+
+  /// No description provided for @apiLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'API'**
+  String get apiLabel;
+
+  /// No description provided for @noFavoritesYet.
+  ///
+  /// In en, this message translates to:
+  /// **'No favorites yet'**
+  String get noFavoritesYet;
+
+  /// No description provided for @descriptionOptionalLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'Description (optional)'**
+  String get descriptionOptionalLabel;
+
+  /// No description provided for @plateBlurNote.
+  ///
+  /// In en, this message translates to:
+  /// **'Note: Plate blurring is enabled by default for privacy.'**
+  String get plateBlurNote;
+
+  /// No description provided for @invalidField.
+  ///
+  /// In en, this message translates to:
+  /// **'Invalid'**
+  String get invalidField;
+
+  /// No description provided for @currencyLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'Currency'**
+  String get currencyLabel;
+
+  /// No description provided for @engineTypeLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'Engine type'**
+  String get engineTypeLabel;
+
+  /// No description provided for @locationLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'Location'**
+  String get locationLabel;
+
+  /// No description provided for @chooseAuthMethodTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Choose authentication method:'**
+  String get chooseAuthMethodTitle;
 }
 
 class _AppLocalizationsDelegate

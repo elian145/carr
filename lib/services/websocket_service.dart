@@ -1,25 +1,40 @@
+import 'dart:async';
 import 'dart:convert';
 import 'dart:io';
-import 'dart:async';
-import 'package:web_socket_channel/web_socket_channel.dart';
-import 'package:web_socket_channel/status.dart' as status;
+import 'package:flutter/foundation.dart' show kReleaseMode;
+import 'package:socket_io_client/socket_io_client.dart' as io;
 import 'api_service.dart';
 import 'config.dart';
 
+// Sideload build flag to allow LAN HTTP Socket.IO on iOS release builds.
+const bool kSideloadBuild = bool.fromEnvironment(
+  'SIDELOAD_BUILD',
+  defaultValue: false,
+);
+
 class WebSocketService {
-  static String get baseUrl {
-    final base = apiBase();
-    if (base.startsWith('https://')) return base.replaceFirst('https://', 'wss://');
-    if (base.startsWith('http://')) return base.replaceFirst('http://', 'ws://');
-    return 'ws://' + base;
-  }
-  static WebSocketChannel? _channel;
+  static final StreamController<Map<String, dynamic>> _messagesController =
+      StreamController<Map<String, dynamic>>.broadcast();
+  static final StreamController<Map<String, dynamic>> _notificationsController =
+      StreamController<Map<String, dynamic>>.broadcast();
+  static final StreamController<bool> _connectionController =
+      StreamController<bool>.broadcast();
+  static final StreamController<String> _errorController =
+      StreamController<String>.broadcast();
+
+  static Stream<Map<String, dynamic>> get messages => _messagesController.stream;
+  static Stream<Map<String, dynamic>> get notifications =>
+      _notificationsController.stream;
+  static Stream<bool> get connectionState => _connectionController.stream;
+  static Stream<String> get errors => _errorController.stream;
+
+  static String get baseHttpUrl => effectiveSocketIoBase();
+
+  static io.Socket? _socket;
   static bool _isConnected = false;
+  static bool _isConnecting = false;
   static String? _currentRoom;
-  static int _retries = 0;
-  static DateTime? _lastAttemptAt;
-  static Timer? _heartbeatTimer;
-  
+
   // Callbacks
   static Function(Map<String, dynamic>)? onMessage;
   static Function(Map<String, dynamic>)? onNotification;
@@ -27,145 +42,163 @@ class WebSocketService {
   static Function()? onDisconnected;
   static Function(String)? onError;
 
-  // Connect to WebSocket
+  static void _emitError(String message) {
+    try {
+      _errorController.add(message);
+    } catch (_) {}
+    onError?.call(message);
+  }
+
+  static void _emitConnected(bool connected) {
+    try {
+      _connectionController.add(connected);
+    } catch (_) {}
+    if (connected) {
+      onConnected?.call();
+    } else {
+      onDisconnected?.call();
+    }
+  }
+
+  static void _cleanupSocket() {
+    try {
+      _socket?.dispose();
+    } catch (_) {}
+    _socket = null;
+  }
+
+  // Connect to Socket.IO (with polling fallback)
   static Future<void> connect() async {
     try {
       if (_isConnected) return;
+      if (_isConnecting) return;
+      _isConnecting = true;
 
       final accessToken = ApiService.accessToken;
-      
+
       if (accessToken == null) {
-        onError?.call('No access token found');
+        _emitError('No access token found');
+        _isConnecting = false;
         return;
       }
 
-      final uri = Uri.parse('$baseUrl/socket.io/?EIO=4&transport=websocket&token=$accessToken');
-      _channel = WebSocketChannel.connect(uri);
+      _cleanupSocket();
 
-      _channel!.stream.listen(
-        (data) {
-          _handleMessage(data);
-        },
-        onError: (error) {
-          _isConnected = false;
-          onError?.call('WebSocket error: $error');
-          _scheduleReconnect();
-        },
-        onDone: () {
-          _isConnected = false;
-          onDisconnected?.call();
-          _scheduleReconnect();
-        },
-      );
+      final base = baseHttpUrl;
+      if (kReleaseMode && !base.startsWith('https://')) {
+        if (!(kSideloadBuild && Platform.isIOS && base.startsWith('http://'))) {
+          throw StateError(
+            'Release builds require HTTPS/WSS. Refusing insecure Socket.IO.',
+          );
+        }
+      }
 
-      _isConnected = true;
-      onConnected?.call();
-      _startHeartbeat();
-      
+      final opts = <String, dynamic>{
+        'transports': ['websocket', 'polling'],
+        'path': '/socket.io/',
+        'autoConnect': false,
+        'reconnection': true,
+        'reconnectionAttempts': 10,
+        'reconnectionDelay': 500,
+        'reconnectionDelayMax': 3000,
+        'timeout': 8000,
+        // Attach auth header (works for both websocket + polling on mobile/desktop).
+        'extraHeaders': {HttpHeaders.authorizationHeader: 'Bearer $accessToken'},
+      };
+
+      _socket = io.io(base, opts);
+
+      _socket!.on('connect', (_) {
+        _isConnected = true;
+        _isConnecting = false;
+        _emitConnected(true);
+        // Re-join room if we had one.
+        final roomCar = _currentRoom;
+        if (roomCar != null && roomCar.isNotEmpty) {
+          joinChat(roomCar);
+        }
+      });
+
+      _socket!.on('disconnect', (_) {
+        _isConnected = false;
+        _isConnecting = false;
+        _emitConnected(false);
+      });
+
+      _socket!.on('connect_error', (err) {
+        _isConnected = false;
+        _isConnecting = false;
+        _emitConnected(false);
+        _emitError('Socket connect error: $err');
+      });
+
+      _socket!.on('error', (err) {
+        final msg = (err is Map && err['message'] != null) ? err['message'].toString() : err.toString();
+        _emitError(msg);
+      });
+
+      _socket!.on('new_message', (payload) {
+        if (payload is Map) {
+          final m = Map<String, dynamic>.from(payload as Map);
+          _messagesController.add(m);
+          onMessage?.call(m);
+        }
+      });
+
+      _socket!.on('new_notification', (payload) {
+        if (payload is Map) {
+          final n = Map<String, dynamic>.from(payload as Map);
+          _notificationsController.add(n);
+          onNotification?.call(n);
+        }
+      });
+
+      _socket!.on('joined_chat', (payload) {
+        try {
+          if (payload is Map && payload['car_id'] != null) {
+            _currentRoom = payload['car_id'].toString();
+          }
+        } catch (_) {}
+      });
+
+      _socket!.connect();
+      _isConnecting = false;
     } catch (e) {
       _isConnected = false;
-      onError?.call('Connection failed: $e');
-      _scheduleReconnect();
+      _isConnecting = false;
+      _cleanupSocket();
+      _emitConnected(false);
+      _emitError('Connection failed: $e');
     }
   }
 
-  // Disconnect from WebSocket
+  // Disconnect
   static void disconnect() {
-    _channel?.sink.close(status.goingAway);
-    _channel = null;
+    try {
+      _socket?.disconnect();
+    } catch (_) {}
+    _cleanupSocket();
     _isConnected = false;
+    _isConnecting = false;
     _currentRoom = null;
-    _retries = 0;
-    _lastAttemptAt = null;
-    _stopHeartbeat();
+    _emitConnected(false);
   }
 
-  static void _scheduleReconnect() {
-    if (_isConnected) return;
-    final now = DateTime.now();
-    if (_lastAttemptAt != null && now.difference(_lastAttemptAt!).inSeconds < 2) return;
-    _lastAttemptAt = now;
-    _retries = (_retries + 1).clamp(1, 6);
-    final delayMs = (500 * _retries);
-    Future.delayed(Duration(milliseconds: delayMs), () {
-      if (!_isConnected) {
-        connect();
-      }
-    });
-  }
-
-  static void _startHeartbeat() {
-    _stopHeartbeat();
-    // Socket.IO ping frame is '2'
-    _heartbeatTimer = Timer.periodic(const Duration(seconds: 25), (_) {
-      try {
-        if (_isConnected && _channel != null) {
-          _channel!.sink.add('2');
-        }
-      } catch (_) {}
-    });
-  }
-
-  static void _stopHeartbeat() {
-    try { _heartbeatTimer?.cancel(); } catch (_) {}
-    _heartbeatTimer = null;
-  }
-
-  // Handle incoming messages
-  static void _handleMessage(dynamic data) {
-    try {
-      final message = data.toString();
-      
-      // Handle Socket.IO protocol messages
-      if (message.startsWith('0')) {
-        // Connection acknowledgment
-        return;
-      } else if (message.startsWith('40')) {
-        // Connected to namespace
-        return;
-      } else if (message.startsWith('42')) {
-        // Event message
-        final eventData = message.substring(2);
-        final decoded = json.decode(eventData);
-        
-        if (decoded is List && decoded.length >= 2) {
-          final eventName = decoded[0];
-          final eventPayload = decoded[1];
-          
-          switch (eventName) {
-            case 'connected':
-              _isConnected = true;
-              onConnected?.call();
-              break;
-            case 'new_message':
-              onMessage?.call(eventPayload);
-              break;
-            case 'new_notification':
-              onNotification?.call(eventPayload);
-              break;
-            case 'joined_chat':
-              _currentRoom = eventPayload['room'];
-              break;
-          }
-        }
-      }
-    } catch (e) {
-      onError?.call('Message parsing error: $e');
-    }
-  }
-
-  // Send message
   static void sendMessage(String event, Map<String, dynamic> data) {
-    if (!_isConnected || _channel == null) {
-      onError?.call('Not connected to WebSocket');
-      return;
-    }
-
     try {
-      final message = json.encode([event, data]);
-      _channel!.sink.add('42$message');
+      if (_socket == null || !_isConnected) {
+        unawaited(connect());
+        // Best-effort: emit after connect by slight delay.
+        Future.delayed(const Duration(milliseconds: 400), () {
+          try {
+            _socket?.emit(event, data);
+          } catch (_) {}
+        });
+        return;
+      }
+      _socket!.emit(event, data);
     } catch (e) {
-      onError?.call('Send message error: $e');
+      _emitError('Send message error: $e');
     }
   }
 
@@ -176,23 +209,26 @@ class WebSocketService {
 
   // Leave current chat room
   static void leaveChat() {
-    if (_currentRoom != null) {
-      sendMessage('leave_chat', {'room': _currentRoom});
+    final carId = _currentRoom;
+    if (carId != null && carId.isNotEmpty) {
+      // Best-effort: server will handle missing room, but we can compute it.
+      sendMessage('leave_chat', {'room': 'chat:$carId'});
       _currentRoom = null;
     }
   }
 
   // Send chat message
-  static void sendChatMessage(String carId, String content, {String? receiverId}) {
-    final messageData = {
-      'car_id': carId,
-      'content': content,
-    };
-    
+  static void sendChatMessage(
+    String carId,
+    String content, {
+    String? receiverId,
+  }) {
+    final messageData = {'car_id': carId, 'content': content};
+
     if (receiverId != null) {
       messageData['receiver_id'] = receiverId;
     }
-    
+
     sendMessage('send_message', messageData);
   }
 

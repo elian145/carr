@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'dart:async';
 import 'package:provider/provider.dart';
 import '../l10n/app_localizations.dart';
 import '../services/websocket_service.dart';
@@ -8,10 +9,12 @@ import '../theme_provider.dart';
 String _digitsLocalized(BuildContext context, String input) {
   final code = Localizations.localeOf(context).languageCode;
   if (code == 'ar' || code == 'ku') {
-    const western = ['0','1','2','3','4','5','6','7','8','9'];
-    const eastern = ['٠','١','٢','٣','٤','٥','٦','٧','٨','٩'];
+    const western = ['0', '1', '2', '3', '4', '5', '6', '7', '8', '9'];
+    const eastern = ['٠', '١', '٢', '٣', '٤', '٥', '٦', '٧', '٨', '٩'];
     var out = input;
-    for (int i = 0; i < western.length; i++) { out = out.replaceAll(western[i], eastern[i]); }
+    for (int i = 0; i < western.length; i++) {
+      out = out.replaceAll(western[i], eastern[i]);
+    }
     return out;
   }
   return input;
@@ -40,8 +43,6 @@ String _relativeTime(BuildContext context, DateTime dateTime) {
   return 'Just now';
 }
 
- 
-
 String _noMessagesText(BuildContext context) {
   final code = Localizations.localeOf(context).languageCode;
   if (code == 'ar') return 'لا رسائل بعد. ابدأ محادثة!';
@@ -50,7 +51,7 @@ String _noMessagesText(BuildContext context) {
 }
 
 class _ThemeToggleAction extends StatelessWidget {
-  const _ThemeToggleAction({Key? key}) : super(key: key);
+  const _ThemeToggleAction({super.key});
 
   @override
   Widget build(BuildContext context) {
@@ -64,7 +65,9 @@ class _ThemeToggleAction extends StatelessWidget {
           onPressed: () {
             themeProvider.toggleTheme();
           },
-          tooltip: themeProvider.isDarkMode ? 'Switch to Light Mode' : 'Switch to Dark Mode',
+          tooltip: themeProvider.isDarkMode
+              ? 'Switch to Light Mode'
+              : 'Switch to Dark Mode',
         );
       },
     );
@@ -75,15 +78,18 @@ class ChatListPage extends StatefulWidget {
   const ChatListPage({super.key});
 
   @override
-  _ChatListPageState createState() => _ChatListPageState();
+  State<ChatListPage> createState() => _ChatListPageState();
 }
 
 class _ChatListPageState extends State<ChatListPage> {
   final List<ChatMessage> _messages = [];
+  final TextEditingController _carIdController = TextEditingController();
   final TextEditingController _messageController = TextEditingController();
   final ScrollController _scrollController = ScrollController();
   String? _currentCarId;
-  bool _isLoading = false;
+  StreamSubscription<Map<String, dynamic>>? _messageSub;
+  StreamSubscription<Map<String, dynamic>>? _notificationSub;
+  StreamSubscription<String>? _errorSub;
 
   @override
   void initState() {
@@ -92,25 +98,40 @@ class _ChatListPageState extends State<ChatListPage> {
   }
 
   void _setupWebSocketListeners() {
-    WebSocketService.onMessage = (message) {
-      if (mounted) {
-        setState(() {
-          _messages.add(ChatMessage.fromJson(message));
-        });
-        _scrollToBottom();
-      }
-    };
+    _messageSub?.cancel();
+    _notificationSub?.cancel();
+    _errorSub?.cancel();
 
-    WebSocketService.onNotification = (notification) {
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text(notification['message']),
-            backgroundColor: Colors.blue,
-          ),
-        );
-      }
-    };
+    _messageSub = WebSocketService.messages.listen((message) {
+      if (!mounted) return;
+      setState(() {
+        _messages.add(ChatMessage.fromJson(message));
+      });
+      _scrollToBottom();
+    });
+
+    _notificationSub = WebSocketService.notifications.listen((notification) {
+      if (!mounted) return;
+      final msg = (notification['message'] ?? '').toString();
+      if (msg.isEmpty) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(msg),
+          backgroundColor: Colors.blue,
+        ),
+      );
+    });
+
+    _errorSub = WebSocketService.errors.listen((err) {
+      if (!mounted) return;
+      if (err.trim().isEmpty) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(err),
+          backgroundColor: Colors.red,
+        ),
+      );
+    });
   }
 
   void _scrollToBottom() {
@@ -137,6 +158,10 @@ class _ChatListPageState extends State<ChatListPage> {
 
   @override
   void dispose() {
+    _messageSub?.cancel();
+    _notificationSub?.cancel();
+    _errorSub?.cancel();
+    _carIdController.dispose();
     _messageController.dispose();
     _scrollController.dispose();
     super.dispose();
@@ -151,6 +176,39 @@ class _ChatListPageState extends State<ChatListPage> {
       ),
       body: Column(
         children: [
+          Padding(
+            padding: const EdgeInsets.fromLTRB(16, 16, 16, 8),
+            child: Row(
+              children: [
+                Expanded(
+                  child: TextField(
+                    controller: _carIdController,
+                    decoration: const InputDecoration(
+                      labelText: 'Car ID (chat room)',
+                      border: OutlineInputBorder(),
+                    ),
+                    onSubmitted: (_) {
+                      final id = _carIdController.text.trim();
+                      if (id.isEmpty) return;
+                      setState(() => _currentCarId = id);
+                      WebSocketService.joinChat(id);
+                    },
+                  ),
+                ),
+                const SizedBox(width: 8),
+                IconButton(
+                  onPressed: () {
+                    final id = _carIdController.text.trim();
+                    if (id.isEmpty) return;
+                    setState(() => _currentCarId = id);
+                    WebSocketService.joinChat(id);
+                  },
+                  icon: const Icon(Icons.login),
+                  tooltip: 'Join',
+                ),
+              ],
+            ),
+          ),
           // Chat messages
           Expanded(
             child: _messages.isEmpty
@@ -161,14 +219,22 @@ class _ChatListPageState extends State<ChatListPage> {
                     itemCount: _messages.length,
                     itemBuilder: (context, index) {
                       final message = _messages[index];
-                      final authService = Provider.of<AuthService>(context, listen: false);
+                      final authService = Provider.of<AuthService>(
+                        context,
+                        listen: false,
+                      );
                       final isMe = message.senderId == authService.userId;
 
                       return Align(
-                        alignment: isMe ? Alignment.centerRight : Alignment.centerLeft,
+                        alignment: isMe
+                            ? Alignment.centerRight
+                            : Alignment.centerLeft,
                         child: Container(
                           margin: const EdgeInsets.symmetric(vertical: 4),
-                          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: 16,
+                            vertical: 12,
+                          ),
                           decoration: BoxDecoration(
                             color: isMe
                                 ? Theme.of(context).primaryColor
@@ -210,9 +276,7 @@ class _ChatListPageState extends State<ChatListPage> {
             decoration: BoxDecoration(
               color: Theme.of(context).cardColor,
               border: Border(
-                top: BorderSide(
-                  color: Theme.of(context).dividerColor,
-                ),
+                top: BorderSide(color: Theme.of(context).dividerColor),
               ),
             ),
             child: Row(
@@ -223,7 +287,10 @@ class _ChatListPageState extends State<ChatListPage> {
                     decoration: InputDecoration(
                       hintText: AppLocalizations.of(context)!.typeMessage,
                       border: OutlineInputBorder(),
-                      contentPadding: EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                      contentPadding: EdgeInsets.symmetric(
+                        horizontal: 16,
+                        vertical: 12,
+                      ),
                     ),
                     maxLines: null,
                     onSubmitted: (_) => _sendMessage(),
@@ -245,29 +312,23 @@ class _ChatListPageState extends State<ChatListPage> {
       ),
     );
   }
-
-  
 }
 
 class ChatConversationPage extends StatefulWidget {
   final String carId;
   final String? receiverId;
 
-  const ChatConversationPage({
-    super.key,
-    required this.carId,
-    this.receiverId,
-  });
+  const ChatConversationPage({super.key, required this.carId, this.receiverId});
 
   @override
-  _ChatConversationPageState createState() => _ChatConversationPageState();
+  State<ChatConversationPage> createState() => _ChatConversationPageState();
 }
 
 class _ChatConversationPageState extends State<ChatConversationPage> {
   final List<ChatMessage> _messages = [];
   final TextEditingController _messageController = TextEditingController();
   final ScrollController _scrollController = ScrollController();
-  bool _isLoading = false;
+  StreamSubscription<Map<String, dynamic>>? _messageSub;
 
   @override
   void initState() {
@@ -277,14 +338,21 @@ class _ChatConversationPageState extends State<ChatConversationPage> {
   }
 
   void _setupWebSocketListeners() {
-    WebSocketService.onMessage = (message) {
-      if (mounted) {
-        setState(() {
-          _messages.add(ChatMessage.fromJson(message));
-        });
-        _scrollToBottom();
+    _messageSub?.cancel();
+    _messageSub = WebSocketService.messages.listen((message) {
+      // Optional: filter by carId when payload includes it
+      final payloadCarId = message['car_id']?.toString();
+      if (payloadCarId != null &&
+          payloadCarId.isNotEmpty &&
+          payloadCarId != widget.carId) {
+        return;
       }
-    };
+      if (!mounted) return;
+      setState(() {
+        _messages.add(ChatMessage.fromJson(message));
+      });
+      _scrollToBottom();
+    });
   }
 
   void _joinChat() {
@@ -315,6 +383,7 @@ class _ChatConversationPageState extends State<ChatConversationPage> {
 
   @override
   void dispose() {
+    _messageSub?.cancel();
     _messageController.dispose();
     _scrollController.dispose();
     WebSocketService.leaveChat();
@@ -332,21 +401,30 @@ class _ChatConversationPageState extends State<ChatConversationPage> {
         children: [
           // Chat messages
           Expanded(
-            child: _messages.isEmpty ? Center(child: Text(_noMessagesText(context)))
+            child: _messages.isEmpty
+                ? Center(child: Text(_noMessagesText(context)))
                 : ListView.builder(
                     controller: _scrollController,
                     padding: const EdgeInsets.all(16),
                     itemCount: _messages.length,
                     itemBuilder: (context, index) {
                       final message = _messages[index];
-                      final authService = Provider.of<AuthService>(context, listen: false);
+                      final authService = Provider.of<AuthService>(
+                        context,
+                        listen: false,
+                      );
                       final isMe = message.senderId == authService.userId;
 
                       return Align(
-                        alignment: isMe ? Alignment.centerRight : Alignment.centerLeft,
+                        alignment: isMe
+                            ? Alignment.centerRight
+                            : Alignment.centerLeft,
                         child: Container(
                           margin: const EdgeInsets.symmetric(vertical: 4),
-                          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: 16,
+                            vertical: 12,
+                          ),
                           decoration: BoxDecoration(
                             color: isMe
                                 ? Theme.of(context).primaryColor
@@ -388,9 +466,7 @@ class _ChatConversationPageState extends State<ChatConversationPage> {
             decoration: BoxDecoration(
               color: Theme.of(context).cardColor,
               border: Border(
-                top: BorderSide(
-                  color: Theme.of(context).dividerColor,
-                ),
+                top: BorderSide(color: Theme.of(context).dividerColor),
               ),
             ),
             child: Row(
@@ -401,7 +477,10 @@ class _ChatConversationPageState extends State<ChatConversationPage> {
                     decoration: InputDecoration(
                       hintText: AppLocalizations.of(context)!.typeMessage,
                       border: OutlineInputBorder(),
-                      contentPadding: EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                      contentPadding: EdgeInsets.symmetric(
+                        horizontal: 16,
+                        vertical: 12,
+                      ),
                     ),
                     maxLines: null,
                     onSubmitted: (_) => _sendMessage(),
@@ -423,19 +502,18 @@ class _ChatConversationPageState extends State<ChatConversationPage> {
       ),
     );
   }
-
-  
 }
 
 class NotificationsPage extends StatefulWidget {
-  const NotificationsPage({Key? key}) : super(key: key);
+  const NotificationsPage({super.key});
 
   @override
-  _NotificationsPageState createState() => _NotificationsPageState();
+  State<NotificationsPage> createState() => _NotificationsPageState();
 }
 
 class _NotificationsPageState extends State<NotificationsPage> {
   final List<AppNotification> _notifications = [];
+  StreamSubscription<Map<String, dynamic>>? _notificationSub;
 
   @override
   void initState() {
@@ -444,13 +522,19 @@ class _NotificationsPageState extends State<NotificationsPage> {
   }
 
   void _setupWebSocketListeners() {
-    WebSocketService.onNotification = (notification) {
-      if (mounted) {
-        setState(() {
-          _notifications.insert(0, AppNotification.fromJson(notification));
-        });
-      }
-    };
+    _notificationSub?.cancel();
+    _notificationSub = WebSocketService.notifications.listen((notification) {
+      if (!mounted) return;
+      setState(() {
+        _notifications.insert(0, AppNotification.fromJson(notification));
+      });
+    });
+  }
+
+  @override
+  void dispose() {
+    _notificationSub?.cancel();
+    super.dispose();
   }
 
   @override
@@ -461,9 +545,7 @@ class _NotificationsPageState extends State<NotificationsPage> {
         actions: [const _ThemeToggleAction()],
       ),
       body: _notifications.isEmpty
-          ? Center(
-              child: Text(AppLocalizations.of(context)!.noCarsFound),
-            )
+          ? Center(child: Text(AppLocalizations.of(context)!.noCarsFound))
           : ListView.builder(
               padding: const EdgeInsets.all(16),
               itemCount: _notifications.length,
@@ -475,12 +557,16 @@ class _NotificationsPageState extends State<NotificationsPage> {
                   child: ListTile(
                     leading: Icon(
                       _getNotificationIcon(notification.notificationType),
-                      color: notification.isRead ? Colors.grey : Theme.of(context).primaryColor,
+                      color: notification.isRead
+                          ? Colors.grey
+                          : Theme.of(context).primaryColor,
                     ),
                     title: Text(
                       notification.title,
                       style: TextStyle(
-                        fontWeight: notification.isRead ? FontWeight.normal : FontWeight.bold,
+                        fontWeight: notification.isRead
+                            ? FontWeight.normal
+                            : FontWeight.bold,
                       ),
                     ),
                     subtitle: Text(notification.message),

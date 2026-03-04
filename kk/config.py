@@ -4,9 +4,48 @@ from dotenv import load_dotenv
 
 load_dotenv()
 
+_DEV_SECRET_FALLBACK = "dev-only-insecure-secret"
+_DEV_JWT_SECRET_FALLBACK = "dev-only-insecure-jwt-secret"
+
+def get_app_env() -> str:
+    """
+    Determine the runtime environment.
+
+    Preferred: APP_ENV=development|production|testing
+    Fallbacks: FLASK_ENV (legacy), then development.
+    """
+    env = (os.environ.get("APP_ENV") or os.environ.get("FLASK_ENV") or "").strip().lower()
+    # SECURITY: default to production if unset, so accidental deploys
+    # don't run with DEBUG=True, permissive CORS, and dev secrets.
+    return env or "production"
+
+def validate_required_secrets(env: str | None = None) -> None:
+    """
+    Fail fast outside development/testing if critical secrets are missing.
+    """
+    env_name = (env or get_app_env()).strip().lower()
+    if env_name in ("development", "testing"):
+        return
+    missing: list[str] = []
+    for key in ('SECRET_KEY', 'JWT_SECRET_KEY'):
+        if not (os.environ.get(key) or '').strip():
+            missing.append(key)
+    if missing:
+        raise RuntimeError(
+            "Missing required environment variables for production: "
+            + ", ".join(missing)
+            + ". Set them (and restart) before running with APP_ENV=production."
+        )
+    # Also reject the known-insecure dev fallbacks if they were explicitly set.
+    if (os.environ.get("SECRET_KEY") or "").strip() == _DEV_SECRET_FALLBACK:
+        raise RuntimeError("SECRET_KEY is set to an insecure dev fallback; set a strong production secret.")
+    if (os.environ.get("JWT_SECRET_KEY") or "").strip() == _DEV_JWT_SECRET_FALLBACK:
+        raise RuntimeError("JWT_SECRET_KEY is set to an insecure dev fallback; set a strong production secret.")
+
 class Config:
     # Basic Flask Configuration
-    SECRET_KEY = os.environ.get('SECRET_KEY') or 'dev-secret-key-change-in-production'
+    # In production, secrets are REQUIRED (validated via validate_required_secrets()).
+    SECRET_KEY = os.environ.get("SECRET_KEY") or _DEV_SECRET_FALLBACK
     
     # Database Configuration
     SQLALCHEMY_DATABASE_URI = os.environ.get('DATABASE_URL') or 'sqlite:///car_listings.db'
@@ -24,7 +63,7 @@ class Config:
         SQLALCHEMY_DATABASE_URI = f'postgresql://{POSTGRES_USER}:{POSTGRES_PASSWORD}@{POSTGRES_HOST}:{POSTGRES_PORT}/{POSTGRES_DB}'
     
     # JWT Configuration
-    JWT_SECRET_KEY = os.environ.get('JWT_SECRET_KEY') or 'jwt-secret-string'
+    JWT_SECRET_KEY = os.environ.get("JWT_SECRET_KEY") or _DEV_JWT_SECRET_FALLBACK
     JWT_ACCESS_TOKEN_EXPIRES = timedelta(hours=24)
     JWT_REFRESH_TOKEN_EXPIRES = timedelta(days=30)
     JWT_BLACKLIST_ENABLED = True
@@ -33,7 +72,7 @@ class Config:
     # File Upload Configuration
     UPLOAD_FOLDER = 'static/uploads'
     MAX_CONTENT_LENGTH = 100 * 1024 * 1024  # 100MB
-    ALLOWED_EXTENSIONS = {'png', 'jpg', 'jpeg', 'gif', 'webp'}
+    ALLOWED_EXTENSIONS = {'png', 'jpg', 'jpeg', 'gif', 'webp', 'heic', 'heif'}
     ALLOWED_VIDEO_EXTENSIONS = {'mp4', 'mov', 'avi', 'mkv', 'webm'}
     
     # Email Configuration
@@ -58,11 +97,17 @@ class Config:
     POSTS_PER_PAGE = 20
     MESSAGES_PER_PAGE = 50
     
-    # File Storage
+    # File Storage (local + optional R2)
     AWS_ACCESS_KEY_ID = os.environ.get('AWS_ACCESS_KEY_ID')
     AWS_SECRET_ACCESS_KEY = os.environ.get('AWS_SECRET_ACCESS_KEY')
     AWS_BUCKET_NAME = os.environ.get('AWS_BUCKET_NAME')
     AWS_REGION = os.environ.get('AWS_REGION', 'us-east-1')
+    # Cloudflare R2 (S3-compatible). When set, presigned upload is available.
+    R2_ACCOUNT_ID = os.environ.get('R2_ACCOUNT_ID', '').strip()
+    R2_ACCESS_KEY_ID = os.environ.get('R2_ACCESS_KEY_ID') or os.environ.get('AWS_ACCESS_KEY_ID')
+    R2_SECRET_ACCESS_KEY = os.environ.get('R2_SECRET_ACCESS_KEY') or os.environ.get('AWS_SECRET_ACCESS_KEY')
+    R2_BUCKET_NAME = os.environ.get('R2_BUCKET_NAME', '').strip()
+    R2_PUBLIC_URL = (os.environ.get('R2_PUBLIC_URL') or '').strip()  # e.g. https://pub-xxx.r2.dev
     
     # Firebase Configuration (for push notifications)
     FIREBASE_SERVER_KEY = os.environ.get('FIREBASE_SERVER_KEY')
@@ -70,7 +115,8 @@ class Config:
 
 class DevelopmentConfig(Config):
     DEBUG = True
-    SQLALCHEMY_DATABASE_URI = os.environ.get('DEV_DATABASE_URL') or 'sqlite:///car_listings_dev.db'
+    # Use instance folder explicitly to avoid stale root DBs and ensure correct schema
+    SQLALCHEMY_DATABASE_URI = os.environ.get('DEV_DATABASE_URL') or 'sqlite:///instance/car_listings_dev.db'
 
 class ProductionConfig(Config):
     DEBUG = False
