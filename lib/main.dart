@@ -6982,6 +6982,7 @@ class _SellCarPageState extends State<SellCarPage> {
           Expanded(
             child: PageView.builder(
               controller: _pageController,
+              physics: const NeverScrollableScrollPhysics(),
               onPageChanged: (index) {
                 setState(() {
                   currentStep = index;
