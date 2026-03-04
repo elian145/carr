@@ -135,7 +135,9 @@ def create_app():
     using_legacy_db = False
 
     if database_url:
-        # Honor explicit DB URL (Postgres, etc.)
+        # Use psycopg (v3) driver for postgresql:// URLs (we have psycopg, not psycopg2)
+        if database_url.startswith("postgresql://") and not database_url.startswith("postgresql+psycopg"):
+            database_url = "postgresql+psycopg" + database_url[len("postgresql"):]
         app.config["SQLALCHEMY_DATABASE_URI"] = database_url
     elif env_db:
         db_path = env_db
