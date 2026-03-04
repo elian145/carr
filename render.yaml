@@ -1,0 +1,11 @@
+# Render Blueprint: use this when creating or updating the web service from the repo.
+# See: https://render.com/docs/blueprint-spec
+services:
+  - type: web
+    runtime: python
+    name: carr
+    # Build: install backend deps (Render sets PYTHON_VERSION if needed)
+    buildCommand: pip install -r kk/requirements.txt
+    # Start: app factory + gunicorn config (bind uses PORT automatically)
+    startCommand: gunicorn "kk.wsgi:app" -c "gunicorn.conf.py"
+    healthCheckPath: /health

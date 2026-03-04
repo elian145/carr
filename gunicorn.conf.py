@@ -1,7 +1,8 @@
 import os
 
-# Bind to 0.0.0.0 for containers / cloud
-bind = os.environ.get("BIND", "0.0.0.0:5003")
+# Bind: use BIND if set, else 0.0.0.0:PORT (Render/Heroku set PORT), else 0.0.0.0:5003
+_port = os.environ.get("PORT", "5003")
+bind = os.environ.get("BIND") or f"0.0.0.0:{_port}"
 
 # Reasonable defaults; override in env.
 #
