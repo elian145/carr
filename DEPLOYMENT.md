@@ -152,9 +152,11 @@ Do **not** commit real secrets; use a secret manager or CI-provided env vars.
 
 1. **New Web Service**
    - Connect this repo; set root directory if needed.
-   - Build command: (none or `pip install -r kk/requirements.txt` if you use a Dockerfile).
-   - Start command: `gunicorn "kk.wsgi:app" -c "gunicorn.conf.py"`  
-     Or use the **Procfile**: Render will use `web: gunicorn ...` automatically.
+   - Build command: `pip install -r kk/requirements.txt`
+   - **Start command (required):** use **one** of:
+     - `bash start_render.sh`   (recommended; uses script in repo)
+     - `gunicorn "kk.wsgi:app" -c "gunicorn.conf.py"`
+   - **Do not use** `--chdir kk` or `app_new:app` — that breaks imports and causes `ImportError: attempted relative import with no known parent package`.
 
 2. **Environment**
    - Set `APP_ENV=production`, `SECRET_KEY`, `JWT_SECRET_KEY`.

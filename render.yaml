@@ -6,6 +6,6 @@ services:
     name: carr
     # Build: install backend deps (Render sets PYTHON_VERSION if needed)
     buildCommand: pip install -r kk/requirements.txt
-    # Start: app factory + gunicorn config (bind uses PORT automatically)
-    startCommand: gunicorn "kk.wsgi:app" -c "gunicorn.conf.py"
+    # Start: must use kk.wsgi:app from repo root (do NOT use --chdir kk app_new:app)
+    startCommand: bash start_render.sh
     healthCheckPath: /health
