@@ -1,10 +1,12 @@
 #!/usr/bin/env bash
 # Start command for Render (and any PaaS that runs from repo root).
 # Use this as Render "Start Command":  bash start_render.sh
-# Or set Start Command to:  gunicorn "kk.wsgi:app" -c "gunicorn.conf.py"
 set -e
-cd "$(dirname "$0")"
-# Apply DB migrations before starting (required when APP_ENV=production and schema not yet initialized).
+# Ensure we run from repo root (where kk/ and gunicorn.conf.py live).
+ROOT="$(cd "$(dirname "${BASH_SOURCE[0]:-$0}")" && pwd)"
+cd "$ROOT"
 export FLASK_APP=kk.wsgi:app
-flask db upgrade
+echo "Running database migrations..."
+python -m flask db upgrade
+echo "Starting gunicorn..."
 exec gunicorn "kk.wsgi:app" -c "gunicorn.conf.py"

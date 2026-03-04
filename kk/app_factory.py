@@ -159,7 +159,10 @@ def create_app():
         app.config["SQLALCHEMY_DATABASE_URI"] = f"sqlite:///{db_path}"
 
     db.init_app(app)
-    migrate.init_app(app, db)
+    # Migrations live at repo root (migrations/), not inside kk/
+    repo_root = os.path.dirname(app.root_path)
+    migrations_dir = os.path.join(repo_root, "migrations")
+    migrate.init_app(app, db, directory=migrations_dir)
     jwt.init_app(app)
     mail.init_app(app)
 
