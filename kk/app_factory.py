@@ -212,8 +212,14 @@ def create_app():
             has_alembic_version = insp.has_table("alembic_version")
             auto_migrate = (os.getenv("AUTO_MIGRATE") or "1").strip().lower() not in ("0", "false", "no", "off")
             # Avoid re-entrant migrations when the developer is explicitly running `flask db ...`.
-            argv = [a.lower() for a in sys.argv if isinstance(a, str)]
-            running_flask_db_cmd = any(a.endswith("flask") or a.endswith("flask.exe") for a in argv[:1]) and "db" in argv[1:3]
+            argv = [str(a).lower() for a in sys.argv if isinstance(a, str)]
+            running_flask_db_cmd = (
+                "db" in argv
+                and any(
+                    "flask" in a or a.endswith("flask.exe")
+                    for a in (argv[:4] if len(argv) >= 4 else argv)
+                )
+            )
             if running_flask_db_cmd:
                 auto_migrate = False
 
@@ -240,6 +246,11 @@ def create_app():
                             db.create_all()
                     else:
                         db.create_all()
+                elif running_flask_db_cmd:
+                    # Allow `flask db upgrade` to run in production when tables are missing.
+                    from flask_migrate import upgrade as fm_upgrade
+
+                    fm_upgrade()
                 else:
                     raise RuntimeError(
                         "Database schema is not initialized (missing core tables). "
