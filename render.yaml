@@ -1,11 +1,15 @@
 # Render Blueprint: use this when creating or updating the web service from the repo.
 # See: https://render.com/docs/blueprint-spec
+#
+# Required: In Render Dashboard → Service → Environment, set:
+#   APP_ENV=production
+#   SECRET_KEY=<long random string, e.g. openssl rand -hex 32>
+#   JWT_SECRET_KEY=<long random string>
+#   DATABASE_URL=<postgresql://...>  (or leave unset to use SQLite on ephemeral disk)
 services:
   - type: web
     runtime: python
     name: carr
-    # Build: install backend deps (Render sets PYTHON_VERSION if needed)
     buildCommand: pip install -r kk/requirements.txt
-    # Start: must use kk.wsgi:app from repo root (do NOT use --chdir kk app_new:app)
     startCommand: bash start_render.sh
     healthCheckPath: /health
