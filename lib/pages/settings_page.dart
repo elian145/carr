@@ -246,6 +246,11 @@ class _SettingsPageState extends State<SettingsPage> {
                     title: Text(loc?.accountLabel ?? 'Account'),
                     subtitle: Text(auth.userName.isEmpty ? (loc?.loggedIn ?? 'Logged in') : auth.userName),
                   ),
+                  ListTile(
+                    title: const Text('Change password'),
+                    leading: const Icon(Icons.lock_outline),
+                    onTap: () => Navigator.pushNamed(context, '/change-password'),
+                  ),
                   Padding(
                     padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
                     child: ElevatedButton.icon(

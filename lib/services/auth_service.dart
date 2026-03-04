@@ -156,7 +156,7 @@ class AuthService extends ChangeNotifier {
     }
   }
 
-  // Reset password
+  // Reset password (with token from forgot-password flow)
   Future<Map<String, dynamic>> resetPassword(
     String token,
     String newPassword,
@@ -165,6 +165,25 @@ class AuthService extends ChangeNotifier {
 
     try {
       final response = await ApiService.resetPassword(token, newPassword);
+      return response;
+    } catch (e) {
+      rethrow;
+    } finally {
+      _setLoading(false);
+    }
+  }
+
+  // Change password (authenticated user: current + new password)
+  Future<Map<String, dynamic>> changePassword({
+    required String currentPassword,
+    required String newPassword,
+  }) async {
+    _setLoading(true);
+    try {
+      final response = await ApiService.changePassword(
+        currentPassword: currentPassword,
+        newPassword: newPassword,
+      );
       return response;
     } catch (e) {
       rethrow;

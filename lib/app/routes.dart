@@ -3,10 +3,12 @@ import 'package:flutter/material.dart';
 import '../pages/analytics_page.dart';
 import '../pages/auth_pages.dart' as auth;
 import '../pages/chat_pages.dart' as chat;
+import '../pages/change_password_page.dart';
 import '../pages/edit_profile_page.dart';
 import '../pages/home_page.dart' as modern;
 import '../pages/favorites_page.dart' as favorites;
 import '../pages/profile_page.dart' as profile;
+import '../pages/reset_password_page.dart';
 import '../pages/sell_page.dart' as sell;
 import '../pages/settings_page.dart' as settings;
 import '../pages/car_detail_page.dart' as details;
@@ -44,6 +46,8 @@ Map<String, WidgetBuilder> buildAppRoutes() {
     '/signup': (context) => const auth.RegisterPage(),
     '/register': (context) => const auth.RegisterPage(),
     '/forgot-password': (context) => const auth.ForgotPasswordPage(),
+    '/reset-password': (context) => const ResetPasswordPage(),
+    '/change-password': (context) => const ChangePasswordPage(),
     '/profile': (context) => const profile.ProfilePage(),
     '/edit-profile': (context) => EditProfilePage(),
     '/car_detail': (context) {

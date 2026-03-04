@@ -97,11 +97,17 @@ class Config:
     POSTS_PER_PAGE = 20
     MESSAGES_PER_PAGE = 50
     
-    # File Storage
+    # File Storage (local + optional R2)
     AWS_ACCESS_KEY_ID = os.environ.get('AWS_ACCESS_KEY_ID')
     AWS_SECRET_ACCESS_KEY = os.environ.get('AWS_SECRET_ACCESS_KEY')
     AWS_BUCKET_NAME = os.environ.get('AWS_BUCKET_NAME')
     AWS_REGION = os.environ.get('AWS_REGION', 'us-east-1')
+    # Cloudflare R2 (S3-compatible). When set, presigned upload is available.
+    R2_ACCOUNT_ID = os.environ.get('R2_ACCOUNT_ID', '').strip()
+    R2_ACCESS_KEY_ID = os.environ.get('R2_ACCESS_KEY_ID') or os.environ.get('AWS_ACCESS_KEY_ID')
+    R2_SECRET_ACCESS_KEY = os.environ.get('R2_SECRET_ACCESS_KEY') or os.environ.get('AWS_SECRET_ACCESS_KEY')
+    R2_BUCKET_NAME = os.environ.get('R2_BUCKET_NAME', '').strip()
+    R2_PUBLIC_URL = (os.environ.get('R2_PUBLIC_URL') or '').strip()  # e.g. https://pub-xxx.r2.dev
     
     # Firebase Configuration (for push notifications)
     FIREBASE_SERVER_KEY = os.environ.get('FIREBASE_SERVER_KEY')

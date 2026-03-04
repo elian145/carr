@@ -388,6 +388,21 @@ class ApiService {
     await clearTokens();
   }
 
+  /// Change password (authenticated). Requires current and new password.
+  static Future<Map<String, dynamic>> changePassword({
+    required String currentPassword,
+    required String newPassword,
+  }) async {
+    return await _makeAuthenticatedRequest(
+      'POST',
+      '/auth/change-password',
+      body: {
+        'current_password': currentPassword,
+        'new_password': newPassword,
+      },
+    );
+  }
+
   static Future<Map<String, dynamic>> forgotPassword(String email) async {
     final response = await http
         .post(
@@ -601,6 +616,52 @@ class ApiService {
       'POST',
       '/cars/$carId/images/attach',
       body: {'paths': paths},
+    );
+  }
+
+  /// Request a presigned R2 PUT URL for one image. Returns { upload_url, key, public_url? }.
+  static Future<Map<String, dynamic>> signR2ImageUpload({
+    String? filename,
+    String? contentType,
+  }) async {
+    final body = <String, dynamic>{};
+    if (filename != null && filename.isNotEmpty) body['filename'] = filename;
+    if (contentType != null && contentType.isNotEmpty) body['content_type'] = contentType;
+    return await _makeAuthenticatedRequest(
+      'POST',
+      '/media/r2/sign-upload',
+      body: body.isNotEmpty ? body : null,
+    );
+  }
+
+  /// Upload file bytes to a presigned PUT URL (e.g. R2). No auth header.
+  static Future<void> uploadToSignedUpload(String uploadUrl, XFile file) async {
+    final bytes = await file.readAsBytes();
+    final uri = Uri.parse(uploadUrl);
+    final response = await http.put(
+      uri,
+      body: bytes,
+      headers: <String, String>{
+        'Content-Type': file.mimeType ?? 'image/jpeg',
+      },
+    ).timeout(_uploadTimeout);
+    if (response.statusCode < 200 || response.statusCode >= 300) {
+      throw ApiException(
+        statusCode: response.statusCode,
+        message: response.body.isNotEmpty ? response.body : 'Upload failed',
+      );
+    }
+  }
+
+  /// Attach image URLs (e.g. R2 public URLs) to a car listing.
+  static Future<Map<String, dynamic>> attachCarImageUrls(
+    String carId,
+    List<String> urls,
+  ) async {
+    return await _makeAuthenticatedRequest(
+      'POST',
+      '/cars/$carId/images/attach',
+      body: {'urls': urls},
     );
   }
 

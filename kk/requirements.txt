@@ -25,6 +25,7 @@ phonenumbers==8.13.26
 python-jose[cryptography]==3.3.0
 cryptography==45.0.7
 requests==2.31.0
+boto3>=1.28.0
 sentry-sdk
 # License plate detection + blurring
 opencv-python-headless

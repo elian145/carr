@@ -409,6 +409,42 @@ def logout():
         return jsonify({"message": "Logout failed"}), 500
 
 
+@bp.route("/api/auth/change-password", methods=["POST"])
+@jwt_required()
+def change_password():
+    """Change password for the authenticated user (current + new password)."""
+    try:
+        current_user = get_current_user()
+        if not current_user:
+            return jsonify({"message": "User not found"}), 404
+
+        data = request.get_json(silent=True) or {}
+        data = validate_input_sanitization(data)
+        current = (data.get("current_password") or data.get("current") or "").strip()
+        new_pass = (data.get("new_password") or data.get("password") or "").strip()
+
+        if not current:
+            return jsonify({"message": "Current password is required"}), 400
+        if not new_pass:
+            return jsonify({"message": "New password is required"}), 400
+
+        if not current_user.check_password(current):
+            return jsonify({"message": "Current password is incorrect"}), 400
+
+        is_valid, message = validate_password(new_pass)
+        if not is_valid:
+            return jsonify({"message": message}), 400
+
+        from ..time_utils import utcnow
+        current_user.set_password(new_pass)
+        current_user.updated_at = utcnow()
+        db.session.commit()
+        log_user_action(current_user, "password_change")
+        return jsonify({"message": "Password changed successfully"}), 200
+    except Exception:
+        return jsonify({"message": "Failed to change password"}), 500
+
+
 @bp.route("/api/auth/forgot-password", methods=["POST"])
 def forgot_password():
     """Forgot password endpoint"""

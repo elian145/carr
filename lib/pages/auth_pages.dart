@@ -162,6 +162,13 @@ String _backToLogin(BuildContext context) {
   return 'Back to Login';
 }
 
+String _enterResetCode(BuildContext context) {
+  final c = _lang(context);
+  if (c == 'ar') return 'أدخل رمز إعادة التعيين';
+  if (c == 'ku') return 'کۆدی ڕێکخستنەوە بنووسە';
+  return 'I have the code – set new password';
+}
+
 String _backText(BuildContext context) {
   final c = _lang(context);
   if (c == 'ar') return 'رجوع';
@@ -953,6 +960,13 @@ class _ForgotPasswordPageState extends State<ForgotPasswordPage> {
                 ),
               ] else ...[
                 ElevatedButton(
+                  onPressed: () {
+                    Navigator.pushNamed(context, '/reset-password');
+                  },
+                  child: Text(_enterResetCode(context)),
+                ),
+                const SizedBox(height: 12),
+                OutlinedButton(
                   onPressed: () {
                     Navigator.pushReplacementNamed(context, '/login');
                   },

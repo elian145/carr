@@ -148,3 +148,25 @@ Minimum env:
 
 Do **not** commit real secrets; use a secret manager or CI-provided env vars.
 
+## Deploy to Render (or similar PaaS)
+
+1. **New Web Service**
+   - Connect this repo; set root directory if needed.
+   - Build command: (none or `pip install -r kk/requirements.txt` if you use a Dockerfile).
+   - Start command: `gunicorn "kk.wsgi:app" -c "gunicorn.conf.py"`  
+     Or use the **Procfile**: Render will use `web: gunicorn ...` automatically.
+
+2. **Environment**
+   - Set `APP_ENV=production`, `SECRET_KEY`, `JWT_SECRET_KEY`.
+   - Set `DATABASE_URL` (e.g. Render PostgreSQL) or `DB_PATH` for SQLite.
+   - For Socket.IO and scaling: set `REDIS_URL` (e.g. Render Redis) and optionally `SOCKETIO_ASYNC_MODE=eventlet`.
+   - Set `CORS_ORIGINS` to your frontend origin(s).
+
+3. **Optional worker**
+   - Add a **Background Worker** with start command:  
+     `celery -A kk.tasks.celery_app.celery_app worker --loglevel=info`  
+     and the same env vars (including `REDIS_URL`).
+
+4. **Cloudflare**
+   - If you put Render behind Cloudflare, enable WebSockets and use timeouts ≥ 65s for `/socket.io/`.
+

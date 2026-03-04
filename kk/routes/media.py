@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import os
+import secrets
 from datetime import datetime
 
 from flask import Blueprint, current_app, jsonify, request
@@ -15,6 +16,36 @@ from ..security import generate_secure_filename, validate_file_upload
 bp = Blueprint("media", __name__)
 
 
+def _r2_configured() -> bool:
+    """True if R2 is configured (account + bucket + credentials)."""
+    c = current_app.config
+    return bool(
+        c.get("R2_ACCOUNT_ID")
+        and c.get("R2_BUCKET_NAME")
+        and c.get("R2_ACCESS_KEY_ID")
+        and c.get("R2_SECRET_ACCESS_KEY")
+    )
+
+
+def _r2_client():
+    """S3-compatible client for Cloudflare R2."""
+    import boto3
+    from botocore.config import Config
+
+    c = current_app.config
+    account_id = c["R2_ACCOUNT_ID"]
+    region = (os.environ.get("R2_REGION") or "auto").strip() or "auto"
+    endpoint = f"https://{account_id}.r2.cloudflarestorage.com"
+    return boto3.client(
+        "s3",
+        region_name=region,
+        endpoint_url=endpoint,
+        aws_access_key_id=c["R2_ACCESS_KEY_ID"],
+        aws_secret_access_key=c["R2_SECRET_ACCESS_KEY"],
+        config=Config(signature_version="s3v4"),
+    )
+
+
 def _get_car_by_any_id(car_id: str):
     car = Car.query.filter_by(public_id=car_id).first()
     if not car and str(car_id).isdigit():
@@ -23,6 +54,51 @@ def _get_car_by_any_id(car_id: str):
         except Exception:
             car = None
     return car
+
+
+@bp.route("/api/media/r2/sign-upload", methods=["POST"])
+@jwt_required()
+def r2_sign_upload():
+    """
+    Return a presigned PUT URL for uploading one image to R2.
+    Body: { "filename": "photo.jpg", "content_type": "image/jpeg" } (optional).
+    Response: { "upload_url": "<presigned PUT URL>", "key": "<object key>", "public_url": "<optional public URL>" }.
+    """
+    if not _r2_configured():
+        return jsonify({"message": "R2 storage is not configured"}), 503
+
+    try:
+        current_user = get_current_user()
+        if not current_user:
+            return jsonify({"message": "User not found"}), 404
+
+        data = request.get_json(silent=True) or {}
+        raw_name = (data.get("filename") or data.get("name") or "image.jpg").strip()
+        if not raw_name or "/" in raw_name or "\\" in raw_name:
+            raw_name = "image.jpg"
+        ext = os.path.splitext(raw_name)[1].lower() or ".jpg"
+        if ext not in {".jpg", ".jpeg", ".png", ".gif", ".webp", ".heic", ".heif"}:
+            ext = ".jpg"
+        key = f"car_photos/{secrets.token_hex(8)}{ext}"
+
+        client = _r2_client()
+        bucket = current_app.config["R2_BUCKET_NAME"]
+        content_type = (data.get("content_type") or "image/jpeg").strip() or "image/jpeg"
+
+        presigned_url = client.generate_presigned_url(
+            "put_object",
+            Params={"Bucket": bucket, "Key": key, "ContentType": content_type},
+            ExpiresIn=900,
+        )
+
+        out = {"upload_url": presigned_url, "key": key}
+        public_base = current_app.config.get("R2_PUBLIC_URL")
+        if public_base:
+            out["public_url"] = f"{public_base.rstrip('/')}/{key}"
+        return jsonify(out), 200
+    except Exception as e:
+        current_app.logger.warning("R2 sign-upload failed: %s", e)
+        return jsonify({"message": "Failed to generate upload URL"}), 500
 
 
 @bp.route("/api/cars/<car_id>/images", methods=["POST"])
@@ -115,7 +191,7 @@ def upload_car_images(car_id: str):
 @bp.route("/api/cars/<car_id>/images/attach", methods=["POST"])
 @jwt_required()
 def attach_car_images(car_id: str):
-    """Attach already-processed images by relative paths without re-uploading/saving files."""
+    """Attach images by relative paths (uploads/...) or full URLs (e.g. R2 public URL)."""
     try:
         current_user = get_current_user()
         if not current_user:
@@ -129,15 +205,21 @@ def attach_car_images(car_id: str):
             return jsonify({"message": "Not authorized to attach images for this listing"}), 403
 
         data = request.get_json(silent=True) or {}
-        paths = data.get("paths") or []
+        paths = data.get("paths") or data.get("urls") or []
         if not isinstance(paths, list) or not paths:
-            return jsonify({"message": "No image paths provided"}), 400
+            return jsonify({"message": "No image paths or URLs provided"}), 400
 
         attached = []
         upload_root = os.path.abspath(os.path.join(current_app.root_path, "static", "uploads"))
         for rel in paths:
             try:
                 rel_str = str(rel or "").strip().lstrip("/").replace("\\", "/")
+                # Full URL (e.g. R2 public URL): store as-is
+                if rel_str.lower().startswith("http://") or rel_str.lower().startswith("https://"):
+                    ci = CarImage(car_id=car.id, image_url=rel_str, is_primary=len(car.images) == 0)
+                    db.session.add(ci)
+                    attached.append(ci)
+                    continue
                 if not rel_str.lower().startswith("uploads/"):
                     continue
                 subpath = os.path.relpath(rel_str, "uploads").replace("\\", "/")
