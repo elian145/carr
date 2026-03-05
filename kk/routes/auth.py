@@ -885,7 +885,16 @@ def compat_signup():
                 "phone_digits": (phone_digits or "")[:32],
             },
         )
-        return jsonify({"message": "Signup failed. Please try again."}), 500
+        debug_signup = (os.getenv("DEBUG_SIGNUP_ERRORS") or "").strip().lower() in (
+            "1",
+            "true",
+            "yes",
+            "on",
+        )
+        message = "Signup failed. Please try again."
+        if debug_signup:
+            message = f"Signup failed: {str(e)}"
+        return jsonify({"message": message}), 500
 
 
 @bp.route("/api/auth/me", methods=["GET"])
