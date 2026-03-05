@@ -1,10 +1,12 @@
 from __future__ import annotations
 
 import base64
+import json
 import logging
 import os
 import re
-from concurrent.futures import ThreadPoolExecutor
+import subprocess
+import sys
 from dataclasses import dataclass
 from typing import Any, Dict, Iterable, List, Optional, Tuple
 
@@ -12,19 +14,55 @@ import requests
 
 logger = logging.getLogger(__name__)
 
-# Run Roboflow HTTP in a real OS thread to avoid eventlet monkey-patch recursion.
-_roboflow_executor = ThreadPoolExecutor(max_workers=4, thread_name_prefix="roboflow")
+# Subprocess script runs in a clean interpreter (no eventlet), avoiding recursion.
+_roboflow_script_path: Optional[str] = None
+
+def _get_roboflow_script_path() -> Optional[str]:
+	global _roboflow_script_path
+	if _roboflow_script_path is None:
+		_here = os.path.dirname(os.path.abspath(__file__))
+		_path = os.path.join(_here, "..", "tools", "roboflow_http.py")
+		if os.path.isfile(_path):
+			_roboflow_script_path = os.path.normpath(os.path.abspath(_path))
+		else:
+			_roboflow_script_path = ""
+	return _roboflow_script_path or None
 
 
-def _roboflow_http_post(
+def _roboflow_via_subprocess(
+	script_path: str,
 	url: str,
 	params: Dict[str, Any],
 	data: str,
-	headers: Dict[str, str],
-	timeout: Tuple[int, int],
-) -> requests.Response:
-	"""Perform Roboflow POST in a worker thread (avoids eventlet recursion)."""
-	return requests.post(url, params=params, data=data, headers=headers, timeout=timeout)
+	timeout_connect: int = 5,
+	timeout_read: int = 60,
+) -> Optional[Dict[str, Any]]:
+	"""Call Roboflow via standalone script in subprocess; returns response dict or None on failure."""
+	payload = {
+		"url": url,
+		"params": params,
+		"data": data,
+		"timeout_connect": timeout_connect,
+		"timeout_read": timeout_read,
+	}
+	try:
+		proc = subprocess.run(
+			[sys.executable, script_path],
+			input=json.dumps(payload),
+			capture_output=True,
+			text=True,
+			timeout=timeout_read + 20,
+			env=os.environ,
+		)
+		out = (proc.stdout or "").strip()
+		if not out:
+			return None
+		result = json.loads(out)
+		if isinstance(result, dict) and "error" in result:
+			raise RuntimeError(result["error"])
+		return result if isinstance(result, dict) else None
+	except (subprocess.TimeoutExpired, ValueError, RuntimeError) as e:
+		raise e
 
 
 _API_KEY_RE = re.compile(r"(api_key=)([^&\s]+)", re.IGNORECASE)
@@ -129,19 +167,30 @@ class RoboflowPlateDetector:
 				params["confidence"] = int(self.confidence)
 			if self.overlap is not None:
 				params["overlap"] = int(self.overlap)
-			# Run HTTP in a real thread so eventlet monkey-patching doesn't cause recursion.
-			timeout_tuple = (5, self.timeout_s)
-			future = _roboflow_executor.submit(
-				_roboflow_http_post,
-				self._url(),
-				params,
-				b64,
-				{"Content-Type": "application/x-www-form-urlencoded"},
-				timeout_tuple,
-			)
-			resp = future.result(timeout=self.timeout_s + 15)
-			resp.raise_for_status()
-			payload: Dict[str, Any] = resp.json() if resp.content else {}
+			# Subprocess avoids eventlet monkey-patch recursion (clean interpreter).
+			script_path = _get_roboflow_script_path()
+			if script_path:
+				payload = _roboflow_via_subprocess(
+					script_path,
+					self._url(),
+					params,
+					b64,
+					timeout_connect=5,
+					timeout_read=self.timeout_s,
+				)
+				if payload is None:
+					raise RuntimeError("subprocess returned no payload")
+			else:
+				# Fallback when script missing (e.g. dev); can still recurse under eventlet.
+				resp = requests.post(
+					self._url(),
+					params=params,
+					data=b64,
+					headers={"Content-Type": "application/x-www-form-urlencoded"},
+					timeout=(5, self.timeout_s),
+				)
+				resp.raise_for_status()
+				payload = resp.json() if resp.content else {}
 		except Exception as e:
 			# Avoid leaking the API key, which can appear in exception messages/URLs.
 			msg = _redact_api_key(str(e))
