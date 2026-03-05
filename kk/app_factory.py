@@ -6,6 +6,7 @@ from dotenv import load_dotenv
 from flask import Flask
 from flask_cors import CORS
 from werkzeug.middleware.proxy_fix import ProxyFix
+from sqlalchemy.pool import NullPool
 
 from .config import config, get_app_env, validate_required_secrets
 from .extensions import db, jwt, mail, migrate, socketio
@@ -157,6 +158,16 @@ def create_app():
     if not database_url and db_path:
         os.makedirs(os.path.dirname(db_path), exist_ok=True)
         app.config["SQLALCHEMY_DATABASE_URI"] = f"sqlite:///{db_path}"
+
+    # For production Postgres (psycopg v3), disable SQLAlchemy's QueuePool and
+    # use NullPool instead to avoid threading.Condition notify() issues like
+    # "cannot notify on un-acquired lock" on some PaaS platforms.
+    uri_lower = (app.config.get("SQLALCHEMY_DATABASE_URI") or "").strip().lower()
+    if env_name == "production" and uri_lower.startswith("postgresql"):
+        engine_opts = dict(app.config.get("SQLALCHEMY_ENGINE_OPTIONS") or {})
+        engine_opts.setdefault("poolclass", NullPool)
+        engine_opts.setdefault("pool_pre_ping", True)
+        app.config["SQLALCHEMY_ENGINE_OPTIONS"] = engine_opts
 
     db.init_app(app)
     # Migrations live at repo root (migrations/), not inside kk/
