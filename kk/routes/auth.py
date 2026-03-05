@@ -783,7 +783,7 @@ def phone_verify():
 
 
 @bp.route("/api/auth/signup", methods=["POST"])
-@rate_limit(max_requests=5, window_minutes=60)  # 5 signups per hour per IP (compat route)
+@rate_limit(max_requests=1000, window_minutes=60)  # relaxed limit for mobile signup route
 def compat_signup():
     """
     Compatibility signup endpoint for mobile client.
