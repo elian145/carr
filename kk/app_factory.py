@@ -214,7 +214,8 @@ def create_app():
             has_car = insp.has_table("car")
             has_alembic_version = insp.has_table("alembic_version")
             auto_migrate = (os.getenv("AUTO_MIGRATE") or "1").strip().lower() not in ("0", "false", "no", "off")
-            # Avoid re-entrant migrations when the developer is explicitly running `flask db ...`.
+            # Detect when the process was started via `flask db ...` so we can be permissive
+            # about missing tables (Render `start_render.sh` runs `python -m flask db upgrade`).
             argv = [str(a).lower() for a in sys.argv if isinstance(a, str)]
             running_flask_db_cmd = (
                 "db" in argv
@@ -223,8 +224,6 @@ def create_app():
                     for a in (argv[:4] if len(argv) >= 4 else argv)
                 )
             )
-            if running_flask_db_cmd:
-                auto_migrate = False
 
             alembic_version_set = False
             if has_alembic_version:
@@ -238,22 +237,25 @@ def create_app():
                     alembic_version_set = False
 
             if not (has_user and has_car):
-                if env_name in ("development", "testing"):
-                    if auto_migrate:
-                        try:
-                            from flask_migrate import upgrade as fm_upgrade
-
-                            fm_upgrade()
-                        except Exception:
-                            # Fallback for dev if migrations are misconfigured.
-                            db.create_all()
-                    else:
-                        db.create_all()
-                elif running_flask_db_cmd:
-                    # Allow `flask db upgrade` to run in production when tables are missing.
+                if running_flask_db_cmd:
+                    # When invoked via `flask db upgrade`, allow migrations to create the schema
+                    # even in production environments.
                     from flask_migrate import upgrade as fm_upgrade
 
                     fm_upgrade()
+                elif auto_migrate:
+                    try:
+                        from flask_migrate import upgrade as fm_upgrade
+
+                        fm_upgrade()
+                    except Exception:
+                        if env_name in ("development", "testing"):
+                            # Fallback for dev if migrations are misconfigured.
+                            db.create_all()
+                        else:
+                            raise
+                elif env_name in ("development", "testing"):
+                    db.create_all()
                 else:
                     raise RuntimeError(
                         "Database schema is not initialized (missing core tables). "
