@@ -94,7 +94,6 @@ class RoboflowPlateDetector:
 		self.timeout_s = int(timeout_s)
 		self.confidence = confidence
 		self.overlap = overlap
-		self._session = requests.Session()
 
 	def is_configured(self) -> bool:
 		return bool(self.api_key and self.project and self.version and self.endpoint_base)
@@ -114,7 +113,8 @@ class RoboflowPlateDetector:
 				params["confidence"] = int(self.confidence)
 			if self.overlap is not None:
 				params["overlap"] = int(self.overlap)
-			resp = self._session.post(
+			# Use requests.post (no Session) to avoid recursion under eventlet/gunicorn.
+			resp = requests.post(
 				self._url(),
 				params=params,
 				data=b64,
