@@ -238,7 +238,7 @@ def get_cars():
         )
     except Exception as e:
         current_app.logger.exception("get_cars failed: %s", e)
-        return jsonify({"message": "Failed to get cars"}), 500
+        return jsonify({"message": f"Failed to get cars: {str(e)}"}), 500
 
 
 @bp.route("/cars", methods=["GET"])
@@ -345,7 +345,7 @@ def get_cars_alias():
         return jsonify(cars), 200
     except Exception as e:
         current_app.logger.exception("get_cars_alias failed: %s", e)
-        return jsonify({"message": "Failed to get cars"}), 500
+        return jsonify({"message": f"Failed to get cars: {str(e)}"}), 500
 
 
 @bp.route("/api/cars/<car_id>", methods=["GET"])
@@ -488,8 +488,9 @@ def create_car():
         db.session.commit()
         log_user_action(current_user, "create_listing", "car", car.public_id)
         return jsonify({"message": "Car listing created successfully", "car": car.to_dict()}), 201
-    except Exception:
-        return jsonify({"message": "Failed to create car listing"}), 500
+    except Exception as e:
+        current_app.logger.exception("create_car failed: %s", e)
+        return jsonify({"message": f"Failed to create car listing: {str(e)}"}), 500
 
 
 @bp.route("/api/cars/<car_id>", methods=["PUT"])
