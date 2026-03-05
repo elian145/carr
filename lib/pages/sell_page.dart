@@ -86,6 +86,39 @@ class _SellPageState extends State<SellPage> {
     }
   }
 
+  /// Upload listing photos via R2 when configured, otherwise fall back to multipart.
+  Future<void> _uploadCarImages(String carId) async {
+    try {
+      final publicUrls = <String>[];
+      for (final file in _images) {
+        final sign = await ApiService.signR2ImageUpload(
+          filename: file.name,
+          contentType: file.mimeType,
+        );
+        final uploadUrl = sign['upload_url'] as String?;
+        final publicUrl = sign['public_url'] as String?;
+        if (uploadUrl == null ||
+            uploadUrl.isEmpty ||
+            publicUrl == null ||
+            publicUrl.isEmpty) {
+          await ApiService.uploadCarImages(carId, _images);
+          return;
+        }
+        await ApiService.uploadToSignedUpload(uploadUrl, file);
+        publicUrls.add(publicUrl);
+      }
+      await ApiService.attachCarImageUrls(carId, publicUrls);
+    } on ApiException catch (e) {
+      if (e.statusCode == 503) {
+        await ApiService.uploadCarImages(carId, _images);
+      } else {
+        rethrow;
+      }
+    } catch (_) {
+      await ApiService.uploadCarImages(carId, _images);
+    }
+  }
+
   Future<void> _submit() async {
     if (_submitting) return;
     final loc = AppLocalizations.of(context);
@@ -150,7 +183,7 @@ class _SellPageState extends State<SellPage> {
 
       if (_images.isNotEmpty) {
         setState(() => _stage = loc?.uploadingPhotos ?? 'Uploading photos...');
-        await ApiService.uploadCarImages(carId, _images);
+        await _uploadCarImages(carId);
       }
       if (_videos.isNotEmpty) {
         setState(() => _stage = loc?.uploadingVideos ?? 'Uploading videos...');
