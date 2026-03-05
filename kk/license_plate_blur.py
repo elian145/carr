@@ -4,12 +4,28 @@ import base64
 import logging
 import os
 import re
+from concurrent.futures import ThreadPoolExecutor
 from dataclasses import dataclass
 from typing import Any, Dict, Iterable, List, Optional, Tuple
 
 import requests
 
 logger = logging.getLogger(__name__)
+
+# Run Roboflow HTTP in a real OS thread to avoid eventlet monkey-patch recursion.
+_roboflow_executor = ThreadPoolExecutor(max_workers=4, thread_name_prefix="roboflow")
+
+
+def _roboflow_http_post(
+	url: str,
+	params: Dict[str, Any],
+	data: str,
+	headers: Dict[str, str],
+	timeout: Tuple[int, int],
+) -> requests.Response:
+	"""Perform Roboflow POST in a worker thread (avoids eventlet recursion)."""
+	return requests.post(url, params=params, data=data, headers=headers, timeout=timeout)
+
 
 _API_KEY_RE = re.compile(r"(api_key=)([^&\s]+)", re.IGNORECASE)
 
@@ -113,14 +129,17 @@ class RoboflowPlateDetector:
 				params["confidence"] = int(self.confidence)
 			if self.overlap is not None:
 				params["overlap"] = int(self.overlap)
-			# Use requests.post (no Session) to avoid recursion under eventlet/gunicorn.
-			resp = requests.post(
+			# Run HTTP in a real thread so eventlet monkey-patching doesn't cause recursion.
+			timeout_tuple = (5, self.timeout_s)
+			future = _roboflow_executor.submit(
+				_roboflow_http_post,
 				self._url(),
-				params=params,
-				data=b64,
-				headers={"Content-Type": "application/x-www-form-urlencoded"},
-				timeout=(5, self.timeout_s),
+				params,
+				b64,
+				{"Content-Type": "application/x-www-form-urlencoded"},
+				timeout_tuple,
 			)
+			resp = future.result(timeout=self.timeout_s + 15)
 			resp.raise_for_status()
 			payload: Dict[str, Any] = resp.json() if resp.content else {}
 		except Exception as e:
