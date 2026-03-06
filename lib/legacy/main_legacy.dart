@@ -4259,7 +4259,11 @@ class _HomePageState extends State<HomePage> {
 
           if (mounted) {
             setState(() {
-              cars = parsed;
+              if (parsed.isNotEmpty) {
+                cars = parsed;
+              } else if (cars.isEmpty) {
+                cars = parsed;
+              }
               isLoading = false;
               hasLoadedOnce = true;
               loadErrorMessage = null;
@@ -4326,7 +4330,11 @@ class _HomePageState extends State<HomePage> {
 
           if (mounted) {
             setState(() {
-              cars = parsed;
+              if (parsed.isNotEmpty) {
+                cars = parsed;
+              } else if (cars.isEmpty) {
+                cars = parsed;
+              }
               isLoading = false;
               hasLoadedOnce = true;
               loadErrorMessage = null;
@@ -4375,7 +4383,11 @@ class _HomePageState extends State<HomePage> {
 
       if (mounted) {
         setState(() {
-          cars = parsed;
+          if (parsed.isNotEmpty) {
+            cars = parsed;
+          } else if (cars.isEmpty) {
+            cars = parsed;
+          }
           isLoading = false;
           hasLoadedOnce = true;
           loadErrorMessage = null;
@@ -4417,7 +4429,11 @@ class _HomePageState extends State<HomePage> {
 
         if (mounted) {
           setState(() {
-            cars = parsed;
+            if (parsed.isNotEmpty) {
+              cars = parsed;
+            } else if (cars.isEmpty) {
+              cars = parsed;
+            }
             isLoading = false;
             hasLoadedOnce = true;
             loadErrorMessage = null;
