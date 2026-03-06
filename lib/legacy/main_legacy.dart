@@ -2649,6 +2649,118 @@ class HomePage extends StatefulWidget {
   _HomePageState createState() => _HomePageState();
 }
 
+/// Empty state with sort dropdown. When a sort is already selected, triggers
+/// a one-time auto-fetch so listings appear without clicking "Apply Filters".
+class _EmptyStateWithSort extends StatefulWidget {
+  final String? selectedSortBy;
+  final List<String> sortOptions;
+  final ValueChanged<String> onSortChanged;
+  final VoidCallback onApplyFilters;
+  final VoidCallback onAutoFetch;
+
+  const _EmptyStateWithSort({
+    required this.selectedSortBy,
+    required this.sortOptions,
+    required this.onSortChanged,
+    required this.onApplyFilters,
+    required this.onAutoFetch,
+  });
+
+  @override
+  State<_EmptyStateWithSort> createState() => _EmptyStateWithSortState();
+}
+
+class _EmptyStateWithSortState extends State<_EmptyStateWithSort> {
+  bool _didAutoFetch = false;
+
+  @override
+  void initState() {
+    super.initState();
+    if (widget.selectedSortBy != null && widget.selectedSortBy!.isNotEmpty) {
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (!_didAutoFetch && mounted) {
+          _didAutoFetch = true;
+          widget.onAutoFetch();
+        }
+      });
+    }
+  }
+
+  @override
+  void didUpdateWidget(_EmptyStateWithSort oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (widget.selectedSortBy != null &&
+        widget.selectedSortBy != oldWidget.selectedSortBy &&
+        !_didAutoFetch) {
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (!_didAutoFetch && mounted) {
+          _didAutoFetch = true;
+          widget.onAutoFetch();
+        }
+      });
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final sortOptions = widget.sortOptions;
+    final defaultSort = sortOptions.isNotEmpty ? sortOptions.first : '';
+    final value = widget.selectedSortBy ?? defaultSort;
+
+    final effectiveValue =
+        value.isNotEmpty && sortOptions.contains(value) ? value : defaultSort;
+
+    return Center(
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Text(
+            AppLocalizations.of(context)!.noCarsFound,
+            style: TextStyle(color: Colors.white70),
+          ),
+          SizedBox(height: 16),
+          Padding(
+            padding: EdgeInsets.symmetric(horizontal: 24),
+            child: DropdownButtonFormField<String>(
+              value: effectiveValue,
+              decoration: InputDecoration(
+                labelText: AppLocalizations.of(context)!.sortBy,
+                filled: true,
+                fillColor: Colors.black.withOpacity(0.2),
+                labelStyle: TextStyle(color: Colors.white70),
+                border: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(12),
+                ),
+              ),
+              dropdownColor: Colors.grey[900],
+              style: TextStyle(color: Colors.white),
+              items: sortOptions
+                  .map(
+                    (s) => DropdownMenuItem(
+                      value: s,
+                      child: Text(s),
+                    ),
+                  )
+                  .toList(),
+              onChanged: (v) {
+                if (v == null) return;
+                widget.onSortChanged(v);
+              },
+            ),
+          ),
+          SizedBox(height: 16),
+          OutlinedButton(
+            onPressed: widget.onApplyFilters,
+            child: Text(
+              AppLocalizations.of(context)!.applyFilters,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
 class _HomePageState extends State<HomePage> {
   List<Map<String, dynamic>> cars = [];
   bool isLoading = true;
@@ -2698,6 +2810,10 @@ class _HomePageState extends State<HomePage> {
 
   // Bottom bar tab selection for inline pages (payments, chat, saved, etc.)
   int? _selectedBottomTabIndex;
+
+  /// When we show "No cars found" with a sort selected, we auto-fetch once so
+  /// listings appear without the user clicking "Apply Filters".
+  bool _autoFetchedForEmptyWithSort = false;
 
   void _resetAllFiltersInMemory() {
     selectedBrand = null;
@@ -3525,6 +3641,7 @@ class _HomePageState extends State<HomePage> {
               isLoading = false;
               hasLoadedOnce = true;
               loadErrorMessage = null;
+              if (parsed.isNotEmpty) _autoFetchedForEmptyWithSort = false;
             });
           }
         } catch (_) {}
@@ -3585,6 +3702,7 @@ class _HomePageState extends State<HomePage> {
             hasLoadedOnce = true;
             loadErrorMessage =
                 null; // Clear any previous error message on success
+            if (parsed.isNotEmpty) _autoFetchedForEmptyWithSort = false;
           });
         }
         // Save fresh cache
@@ -4031,11 +4149,12 @@ class _HomePageState extends State<HomePage> {
     // Reset retry count when sorting changes
     _fetchRetryCount = 0;
 
-    // Clear any previous error messages
+    // Clear any previous error messages but do NOT set isLoading = true so we
+    // keep showing the current list until the sorted result arrives (avoids
+    // flashing "No cars found" + "Apply Filters" when only sort changed).
     if (mounted) {
       setState(() {
         loadErrorMessage = null;
-        isLoading = true;
       });
     }
 
@@ -8666,23 +8785,27 @@ class _HomePageState extends State<HomePage> {
                   else if (cars.isEmpty)
                     SliverFillRemaining(
                       hasScrollBody: false,
-                      child: Center(
-                        child: Column(
-                          mainAxisSize: MainAxisSize.min,
-                          children: [
-                            Text(
-                              AppLocalizations.of(context)!.noCarsFound,
-                              style: TextStyle(color: Colors.white70),
-                            ),
-                            SizedBox(height: 8),
-                            OutlinedButton(
-                              onPressed: () => onFilterChanged(),
-                              child: Text(
-                                AppLocalizations.of(context)!.applyFilters,
-                              ),
-                            ),
-                          ],
-                        ),
+                      child: _EmptyStateWithSort(
+                        selectedSortBy: selectedSortBy,
+                        sortOptions: getLocalizedSortOptions(context),
+                        onSortChanged: (value) {
+                          setState(() {
+                            selectedSortBy = value == getLocalizedSortOptions(context).first
+                                ? null
+                                : value;
+                          });
+                          _persistFilters();
+                          onFilterChanged();
+                        },
+                        onApplyFilters: onFilterChanged,
+                        onAutoFetch: () {
+                          if (!_autoFetchedForEmptyWithSort &&
+                              selectedSortBy != null &&
+                              selectedSortBy!.isNotEmpty) {
+                            _autoFetchedForEmptyWithSort = true;
+                            onFilterChanged();
+                          }
+                        },
                       ),
                     )
                   else ...[
