@@ -11258,28 +11258,6 @@ class _CarDetailsPageState extends State<CarDetailsPage> {
           _getFirstNonEmpty(car!, ['seating', 'seats', 'seatCount']) ?? '',
         )),
       ),
-      _detailRow(
-        icon: Icons.settings,
-        label: AppLocalizations.of(context)!.transmissionLabel,
-        value: _orDash(_translateValueGlobal(
-          context,
-          _getFirstNonEmpty(car!, ['transmission']),
-        )),
-      ),
-      _detailRow(
-        icon: Icons.assignment_turned_in,
-        label: AppLocalizations.of(context)!.titleStatus,
-        value: _orDash(
-          car!['title_status'] != null
-              ? (car!['title_status'].toString().toLowerCase() == 'damaged'
-                  ? (AppLocalizations.of(context)!.value_title_damaged +
-                      (car!['damaged_parts'] != null
-                          ? ' (${_localizeDigitsGlobal(context, car!['damaged_parts'].toString())} ${AppLocalizations.of(context)!.damagedParts})'
-                          : ''))
-                  : AppLocalizations.of(context)!.value_title_clean)
-              : null,
-        ),
-      ),
     ];
 
     final primGrid = GridView.builder(

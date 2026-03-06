@@ -354,6 +354,7 @@ class _CarDetailPageState extends State<CarDetailPage> {
     add(loc?.engineTypeLabel ?? 'Engine', car['engine_type']);
     add(loc?.driveType ?? 'Drive type', car['drive_type']);
     add(loc?.bodyTypeLabel ?? 'Body type', car['body_type']);
+    add(loc?.conditionLabel ?? 'Condition', car['condition']);
     add(loc?.colorLabel ?? 'Color', car['color']);
     add('Fuel economy', car['fuel_economy']);
     add(loc?.trimLabel ?? 'Trim', car['trim']);
