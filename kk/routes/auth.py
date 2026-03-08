@@ -566,6 +566,9 @@ def forgot_password():
 
         # Prevent account enumeration: always return 200.
         if not user:
+            current_app.logger.info(
+                "[FORGOT-PASSWORD] No account found for this email/phone; no email sent (still return 200)."
+            )
             return jsonify({"message": "If the account exists, a reset code has been sent"}), 200
 
         token = create_password_reset_token(user)
