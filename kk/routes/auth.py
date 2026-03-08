@@ -509,6 +509,11 @@ def forgot_password():
         user_email = (getattr(user, "email", None) or "").strip().lower()
         if user_email and not user_email.endswith("@phone.local"):
             _send_password_reset_email(user_email, token)
+        else:
+            current_app.logger.info(
+                "[FORGOT-PASSWORD] Not sending email: user has no real email (or placeholder @phone.local). "
+                "Set MAIL_USERNAME/MAIL_PASSWORD on Render and ensure the account has an email."
+            )
 
         return jsonify({"message": "If the account exists, a reset code has been sent"}), 200
 

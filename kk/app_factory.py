@@ -118,6 +118,13 @@ def create_app():
                 "CORS_ORIGINS is not set. This is fine for mobile-only clients, "
                 "but browser clients will be blocked by CORS unless you set an allowlist."
             )
+        if not (app.config.get("MAIL_USERNAME") and app.config.get("MAIL_PASSWORD")):
+            app.logger.warning(
+                "MAIL_USERNAME and/or MAIL_PASSWORD not set. Forgot-password will not send emails. "
+                "Set both in Render Environment (use Gmail App Password for Gmail) and redeploy."
+            )
+        else:
+            app.logger.info("Password reset email is configured (MAIL_* set).")
 
     # DB selection
     #

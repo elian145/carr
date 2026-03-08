@@ -42,5 +42,6 @@ If these are not set, forgot-password still returns 200 but **no email is sent**
 ## Quick check
 
 1. Set `APP_ENV=production` and all required env vars.
-2. Deploy; confirm health/root endpoint returns 200.
-3. Test signup → login → forgot-password with a real email; check inbox (and spam) for the reset code.
+2. **For password reset emails:** In Render → your service → Environment, add `MAIL_USERNAME` and `MAIL_PASSWORD` (for Gmail use an [App Password](https://support.google.com/accounts/answer/185833)). Redeploy. Logs will show "Password reset email is configured" at startup if set.
+3. Deploy; confirm health/root endpoint returns 200.
+4. Test signup → login → forgot-password with a **real email** (the account must have an email, not just phone). Check inbox and spam for the reset code.
