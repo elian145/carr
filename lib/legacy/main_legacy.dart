@@ -38,6 +38,7 @@ import '../services/ai_service.dart';
 import '../services/car_service.dart';
 import '../services/deep_link_service.dart';
 import '../pages/auth_pages.dart' as auth_pages;
+import '../pages/reset_password_page.dart';
 import '../features/comparison/state/car_comparison_store.dart';
 import '../data/car_catalog.dart';
 
@@ -2444,7 +2445,7 @@ class MyApp extends StatelessWidget {
                   AuthGuard(child: MyListingsPage()),
               '/comparison': (context) => CarComparisonPage(),
               '/analytics': (context) => AnalyticsPage(),
-              '/reset-password': (context) => auth_pages.ResetPasswordPage(),
+              '/reset-password': (context) => ResetPasswordPage(),
               '/forgot-password': (context) => auth_pages.ForgotPasswordPage(),
             },
           ),
@@ -19093,6 +19094,10 @@ class _LoginPageState extends State<LoginPage> {
                         child: CircularProgressIndicator(strokeWidth: 2),
                       )
                     : Text(AppLocalizations.of(context)!.navLogin),
+              ),
+              TextButton(
+                onPressed: () => Navigator.pushNamed(context, '/forgot-password'),
+                child: const Text('Forgot password?'),
               ),
               TextButton(
                 onPressed: () =>

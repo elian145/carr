@@ -198,6 +198,13 @@ String _resetEmailSent(BuildContext context, String email) {
   return "We've sent a password reset link to $email. Please check your email and follow the instructions.";
 }
 
+String _checkSpamHint(BuildContext context) {
+  final c = _lang(context);
+  if (c == 'ar') return 'إن لم تجد الرسالة، تحقق من مجلد البريد العشوائي. يُرسل الرابط فقط إذا وُجد حساب لهذا البريد.';
+  if (c == 'ku') return 'ئەگەر نەت بینی، پشکنینی سپام بکە. بەستەرەکە تەنها ئەگەر هەژمارێک بۆ ئەم ئیمەیڵە هەبێت نێردرێت.';
+  return "If you don't see it, check your spam or junk folder. The link is only sent if an account exists for this email.";
+}
+
 String _registrationSuccess(BuildContext context) {
   final c = _lang(context);
   if (c == 'ar') {
@@ -931,6 +938,14 @@ class _ForgotPasswordPageState extends State<ForgotPasswordPage> {
                 textAlign: TextAlign.center,
                 style: Theme.of(context).textTheme.bodyMedium,
               ),
+              if (_emailSent) ...[
+                const SizedBox(height: 16),
+                Text(
+                  _checkSpamHint(context),
+                  textAlign: TextAlign.center,
+                  style: Theme.of(context).textTheme.bodySmall,
+                ),
+              ],
               const SizedBox(height: 32),
               if (!_emailSent) ...[
                 TextFormField(
