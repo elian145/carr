@@ -24,12 +24,15 @@ accesslog = "-"
 errorlog = "-"
 loglevel = os.environ.get("LOG_LEVEL", "info").lower()
 
-# Socket.IO: use a websocket-friendly worker when configured.
+# Socket.IO: use eventlet/gevent only when a message queue is configured.
+# Without Redis, use the default sync worker to avoid eventlet monkey-patch
+# errors with Flask/Werkzeug (Working outside of application context).
 # NOTE: For gevent support you'll need gevent/gevent-websocket installed.
 _sio_async = (os.environ.get("SOCKETIO_ASYNC_MODE") or "").strip().lower()
-if _sio_async == "eventlet":
+_use_async_worker = bool(_mq)  # only with Redis/message queue
+if _use_async_worker and _sio_async == "eventlet":
     worker_class = "eventlet"
-elif _sio_async == "gevent":
+elif _use_async_worker and _sio_async == "gevent":
     worker_class = "gevent"
 
 # Basic hardening
