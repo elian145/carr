@@ -8,6 +8,7 @@ import time
 from datetime import datetime, timedelta
 
 from flask import Blueprint, current_app, jsonify, request
+from flask_mail import Message
 from flask_jwt_extended import (
     create_access_token,
     create_refresh_token,
@@ -27,6 +28,7 @@ from ..auth import (
     validate_user_input,
     verify_password_reset_token,
 )
+from ..extensions import mail
 from ..models import PasswordReset, TokenBlacklist, User, db
 from ..security import rate_limit, validate_input_sanitization
 
@@ -445,7 +447,34 @@ def change_password():
         return jsonify({"message": "Failed to change password"}), 500
 
 
+def _send_password_reset_email(to_email: str, token: str) -> None:
+    """Send password reset email with the token. No-op if mail is not configured."""
+    if not current_app.config.get("MAIL_USERNAME") or not current_app.config.get("MAIL_PASSWORD"):
+        current_app.logger.warning(
+            "[FORGOT-PASSWORD] MAIL_USERNAME or MAIL_PASSWORD not set in env; skipping email. "
+            "Add both in Render Environment and redeploy."
+        )
+        return
+    try:
+        sender = current_app.config.get("MAIL_DEFAULT_SENDER") or current_app.config.get("MAIL_USERNAME")
+        subject = "Reset your CARZO password"
+        body = (
+            "You requested a password reset. Use the code below in the CARZO app to set a new password.\n\n"
+            f"Reset code: {token}\n\n"
+            "This code expires in 1 hour. If you did not request this, you can ignore this email.\n"
+        )
+        msg = Message(subject=subject, sender=sender, recipients=[to_email], body=body)
+        mail.send(msg)
+        current_app.logger.info("[FORGOT-PASSWORD] Password reset email sent to %s***", to_email[:3])
+    except Exception as e:
+        # Log without including token (production-safe). Do not re-raise so we still return 200.
+        current_app.logger.exception(
+            "[FORGOT-PASSWORD] Failed to send email to %s***: %s", to_email[:3], str(e)[:200]
+        )
+
+
 @bp.route("/api/auth/forgot-password", methods=["POST"])
+@rate_limit(max_requests=5, window_minutes=15)  # 5 requests per 15 min per IP
 def forgot_password():
     """Forgot password endpoint"""
     try:
@@ -476,6 +505,11 @@ def forgot_password():
 
             send_password_reset_sms(dest_phone, token)
 
+        # Send password reset email when user has a real email (and mail is configured).
+        user_email = (getattr(user, "email", None) or "").strip().lower()
+        if user_email and not user_email.endswith("@phone.local"):
+            _send_password_reset_email(user_email, token)
+
         return jsonify({"message": "If the account exists, a reset code has been sent"}), 200
 
     except Exception:
@@ -483,6 +517,7 @@ def forgot_password():
 
 
 @bp.route("/api/auth/reset-password", methods=["POST"])
+@rate_limit(max_requests=10, window_minutes=15)  # 10 attempts per 15 min per IP
 def reset_password():
     """Reset password endpoint"""
     try:
