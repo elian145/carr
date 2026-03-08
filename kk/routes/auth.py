@@ -18,6 +18,7 @@ from flask_jwt_extended import (
     get_jwt_identity,
     jwt_required,
 )
+from sqlalchemy import func
 from sqlalchemy.exc import IntegrityError
 
 from ..auth import (
@@ -560,7 +561,8 @@ def forgot_password():
         if phone_digits:
             user = User.query.filter_by(phone_number=phone_digits).first()
         elif email:
-            user = User.query.filter_by(email=email).first()
+            # Look up case-insensitively: signup may store "User@Gmail.com", we receive lowercase
+            user = User.query.filter(func.lower(User.email) == email).first()
         else:
             return jsonify({"message": "Phone number or email is required"}), 400
 
