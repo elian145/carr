@@ -19417,9 +19417,14 @@ class _SignupPageState extends State<SignupPage> {
     } catch (e) {
       if (!mounted) return;
       developer.log('Signup failed', name: 'SignupPage', error: e);
-      final message = kDebugMode && e is ApiException
-          ? (e as ApiException).message
-          : 'Signup failed. Please check your details and try again.';
+      String message = 'Signup failed. Please check your details and try again.';
+      if (e is ApiException) {
+        if (e.statusCode == 409) {
+          message = 'An account with this email already exists. Try logging in or use Forgot password.';
+        } else if (kDebugMode) {
+          message = e.message;
+        }
+      }
       showDialog(
         context: context,
         builder: (_) => AlertDialog(

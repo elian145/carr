@@ -486,9 +486,14 @@ class _RegisterPageState extends State<RegisterPage> {
     } catch (e) {
       developer.log('Registration failed', name: 'RegisterPage', error: e);
       if (mounted) {
-        final message = kDebugMode && e is ApiException
-            ? (e as ApiException).message
-            : _registrationFailedMessage(context);
+        String message = _registrationFailedMessage(context);
+        if (e is ApiException) {
+          if (e.statusCode == 409) {
+            message = 'An account with this email already exists. Try logging in or use Forgot password.';
+          } else if (kDebugMode) {
+            message = e.message;
+          }
+        }
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
             content: Text(message),
