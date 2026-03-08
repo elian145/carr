@@ -7,6 +7,7 @@ import secrets
 import time
 from datetime import datetime, timedelta
 
+import requests
 from flask import Blueprint, current_app, jsonify, request
 from flask_mail import Message
 from flask_jwt_extended import (
@@ -448,29 +449,93 @@ def change_password():
 
 
 def _send_password_reset_email(to_email: str, token: str) -> None:
-    """Send password reset email with the token. No-op if mail is not configured."""
+    """Send password reset email. Prefer Resend (best deliverability), then SendGrid, then SMTP."""
+    subject = "Reset your CARZO password"
+    body = (
+        "You requested a password reset. Use the code below in the CARZO app to set a new password.\n\n"
+        f"Reset code: {token}\n\n"
+        "This code expires in 1 hour. If you did not request this, you can ignore this email.\n"
+    )
+    from_addr = (
+        os.environ.get("RESEND_FROM_EMAIL")
+        or os.environ.get("SENDGRID_FROM_EMAIL")
+        or current_app.config.get("MAIL_DEFAULT_SENDER")
+        or current_app.config.get("MAIL_USERNAME")
+    )
+    from_addr = (from_addr or "").strip() if from_addr else ""
+    if "<" in str(from_addr) and ">" in str(from_addr):
+        from_name = str(from_addr).split("<")[0].strip().strip('"') or "CARZO"
+        from_email_only = str(from_addr).split("<")[-1].replace(">", "").strip()
+    else:
+        from_name = "CARZO"
+        from_email_only = from_addr or ""
+
+    # 1) Resend (recommended: simple API, good deliverability, works on Render free tier)
+    resend_key = (os.environ.get("RESEND_API_KEY") or "").strip()
+    resend_from = (os.environ.get("RESEND_FROM_EMAIL") or "").strip() or "onboarding@resend.dev"
+    if resend_key:
+        if "<" in resend_from and ">" in resend_from:
+            resend_from_str = resend_from
+        else:
+            resend_from_str = f"CARZO <{resend_from}>"
+        try:
+            r = requests.post(
+                "https://api.resend.com/emails",
+                json={
+                    "from": resend_from_str,
+                    "to": [to_email],
+                    "subject": subject,
+                    "text": body,
+                },
+                headers={"Authorization": f"Bearer {resend_key}", "Content-Type": "application/json"},
+                timeout=15,
+            )
+            if 200 <= r.status_code < 300:
+                current_app.logger.info("[FORGOT-PASSWORD] Password reset email sent via Resend to %s***", to_email[:3])
+                return
+            current_app.logger.warning("[FORGOT-PASSWORD] Resend returned %s: %s", r.status_code, (r.text or "")[:300])
+        except Exception as e:
+            current_app.logger.exception("[FORGOT-PASSWORD] Resend request failed: %s", str(e)[:200])
+        return
+
+    # 2) SendGrid (works on Render free tier)
+    sendgrid_key = (os.environ.get("SENDGRID_API_KEY") or "").strip()
+    if sendgrid_key and from_email_only:
+        try:
+            payload = {
+                "personalizations": [{"to": [{"email": to_email}]}],
+                "from": {"email": from_email_only, "name": from_name},
+                "subject": subject,
+                "content": [{"type": "text/plain", "value": body}],
+            }
+            r = requests.post(
+                "https://api.sendgrid.com/v3/mail/send",
+                json=payload,
+                headers={"Authorization": f"Bearer {sendgrid_key}", "Content-Type": "application/json"},
+                timeout=15,
+            )
+            if 200 <= r.status_code < 300:
+                current_app.logger.info("[FORGOT-PASSWORD] Password reset email sent via SendGrid to %s***", to_email[:3])
+                return
+            current_app.logger.warning("[FORGOT-PASSWORD] SendGrid returned %s: %s", r.status_code, (r.text or "")[:300])
+        except Exception as e:
+            current_app.logger.exception("[FORGOT-PASSWORD] SendGrid request failed: %s", str(e)[:200])
+        return
+
+    # 3) SMTP (Flask-Mail; blocked on Render free tier)
     if not current_app.config.get("MAIL_USERNAME") or not current_app.config.get("MAIL_PASSWORD"):
         current_app.logger.warning(
-            "[FORGOT-PASSWORD] MAIL_USERNAME or MAIL_PASSWORD not set in env; skipping email. "
-            "Add both in Render Environment and redeploy."
+            "[FORGOT-PASSWORD] No RESEND_API_KEY, SENDGRID_API_KEY, or MAIL_* set. "
+            "On Render free tier use Resend (RESEND_API_KEY + RESEND_FROM_EMAIL) or SendGrid."
         )
         return
     try:
         sender = current_app.config.get("MAIL_DEFAULT_SENDER") or current_app.config.get("MAIL_USERNAME")
-        subject = "Reset your CARZO password"
-        body = (
-            "You requested a password reset. Use the code below in the CARZO app to set a new password.\n\n"
-            f"Reset code: {token}\n\n"
-            "This code expires in 1 hour. If you did not request this, you can ignore this email.\n"
-        )
         msg = Message(subject=subject, sender=sender, recipients=[to_email], body=body)
         mail.send(msg)
-        current_app.logger.info("[FORGOT-PASSWORD] Password reset email sent to %s***", to_email[:3])
+        current_app.logger.info("[FORGOT-PASSWORD] Password reset email sent (SMTP) to %s***", to_email[:3])
     except Exception as e:
-        # Log without including token (production-safe). Do not re-raise so we still return 200.
-        current_app.logger.exception(
-            "[FORGOT-PASSWORD] Failed to send email to %s***: %s", to_email[:3], str(e)[:200]
-        )
+        current_app.logger.exception("[FORGOT-PASSWORD] SMTP failed to %s***: %s", to_email[:3], str(e)[:200])
 
 
 @bp.route("/api/auth/forgot-password", methods=["POST"])

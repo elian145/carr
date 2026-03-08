@@ -118,13 +118,19 @@ def create_app():
                 "CORS_ORIGINS is not set. This is fine for mobile-only clients, "
                 "but browser clients will be blocked by CORS unless you set an allowlist."
             )
-        if not (app.config.get("MAIL_USERNAME") and app.config.get("MAIL_PASSWORD")):
-            app.logger.warning(
-                "MAIL_USERNAME and/or MAIL_PASSWORD not set. Forgot-password will not send emails. "
-                "Set both in Render Environment (use Gmail App Password for Gmail) and redeploy."
-            )
+        has_resend = bool((os.environ.get("RESEND_API_KEY") or "").strip())
+        has_sendgrid = bool((os.environ.get("SENDGRID_API_KEY") or "").strip())
+        has_smtp = app.config.get("MAIL_USERNAME") and app.config.get("MAIL_PASSWORD")
+        if has_resend:
+            app.logger.info("Password reset email is configured (Resend; works on Render free tier).")
+        elif has_sendgrid:
+            app.logger.info("Password reset email is configured (SendGrid; works on Render free tier).")
+        elif has_smtp:
+            app.logger.info("Password reset email is configured (SMTP).")
         else:
-            app.logger.info("Password reset email is configured (MAIL_* set).")
+            app.logger.warning(
+                "Password reset email not configured. On Render free tier use Resend (RESEND_API_KEY + RESEND_FROM_EMAIL) or SendGrid. SMTP is blocked on free tier."
+            )
 
     # DB selection
     #
