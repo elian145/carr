@@ -486,10 +486,14 @@ class _RegisterPageState extends State<RegisterPage> {
     } catch (e) {
       developer.log('Registration failed', name: 'RegisterPage', error: e);
       if (mounted) {
+        final message = kDebugMode && e is ApiException
+            ? (e as ApiException).message
+            : _registrationFailedMessage(context);
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: Text(_registrationFailedMessage(context)),
+            content: Text(message),
             backgroundColor: Colors.red,
+            duration: const Duration(seconds: 5),
           ),
         );
       }
@@ -888,10 +892,14 @@ class _ForgotPasswordPageState extends State<ForgotPasswordPage> {
     } catch (e) {
       developer.log('Forgot password failed', name: 'ForgotPasswordPage', error: e);
       if (mounted) {
+        final message = kDebugMode && e is ApiException
+            ? (e as ApiException).message
+            : _failedToSendResetEmailMessage(context);
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: Text(_failedToSendResetEmailMessage(context)),
+            content: Text(message),
             backgroundColor: Colors.red,
+            duration: const Duration(seconds: 5),
           ),
         );
       }

@@ -19417,13 +19417,14 @@ class _SignupPageState extends State<SignupPage> {
     } catch (e) {
       if (!mounted) return;
       developer.log('Signup failed', name: 'SignupPage', error: e);
+      final message = kDebugMode && e is ApiException
+          ? (e as ApiException).message
+          : 'Signup failed. Please check your details and try again.';
       showDialog(
         context: context,
         builder: (_) => AlertDialog(
           title: Text(AppLocalizations.of(context)!.errorTitle),
-          content: const Text(
-            'Signup failed. Please check your details and try again.',
-          ),
+          content: Text(message),
           actions: [
             TextButton(
               onPressed: () => Navigator.pop(context),
