@@ -24,20 +24,20 @@ def _parse_cors_origins() -> list[str]:
         return []
     return [o.strip() for o in raw.split(",") if o.strip()]
 
-def _socketio_async_mode(env_name: str) -> str | None:
+def _socketio_async_mode(env_name: str, has_message_queue: bool) -> str | None:
     """
     Socket.IO async mode selection.
 
     - Dev default: threading (no extra deps)
-    - Production: eventlet if available (best for many concurrent sockets)
-
-    Override with:
-    - SOCKETIO_ASYNC_MODE=eventlet|gevent|threading
+    - Production: eventlet only when a message queue (e.g. REDIS_URL) is set.
+      Without a message queue we use gthread worker; eventlet would monkey-patch
+      the process and break gunicorn's arbiter ("do not call blocking functions
+      from the mainloop"). Override with SOCKETIO_ASYNC_MODE=eventlet|gevent|threading.
     """
     raw = (os.environ.get("SOCKETIO_ASYNC_MODE") or "").strip().lower()
     if raw:
         return raw
-    if env_name == "production":
+    if env_name == "production" and has_message_queue:
         return "eventlet"
     return "threading"
 
@@ -179,7 +179,7 @@ def create_app():
 
     cors_origins = _parse_cors_origins()
     sio_mq = _socketio_message_queue_url(env_name)
-    sio_async = _socketio_async_mode(env_name)
+    sio_async = _socketio_async_mode(env_name, has_message_queue=bool(sio_mq))
     if env_name == "production":
         # When running behind a reverse proxy (Cloudflare/Nginx/etc), trust one hop of
         # X-Forwarded-* so URL generation, request.remote_addr, and scheme work correctly.
