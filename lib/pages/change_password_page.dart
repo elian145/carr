@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
+import 'dart:developer' as developer;
 
 import '../services/api_service.dart';
 import '../services/auth_service.dart';
@@ -54,18 +55,20 @@ class _ChangePasswordPageState extends State<ChangePasswordPage> {
       );
       Navigator.pop(context);
     } on ApiException catch (e) {
+      developer.log('Change password failed', name: 'ChangePasswordPage', error: e);
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text(e.message),
+        const SnackBar(
+          content: Text('Unable to change password. Please check your current password and try again.'),
           backgroundColor: Colors.red,
         ),
       );
     } catch (e) {
+      developer.log('Change password failed', name: 'ChangePasswordPage', error: e);
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text(e.toString()),
+        const SnackBar(
+          content: Text('Unable to change password. Please try again later.'),
           backgroundColor: Colors.red,
         ),
       );
@@ -125,6 +128,18 @@ class _ChangePasswordPageState extends State<ChangePasswordPage> {
                   }
                   if (v.length < 8) {
                     return 'Password must be at least 8 characters';
+                  }
+                  if (!RegExp(r'[A-Z]').hasMatch(v)) {
+                    return 'Password must contain at least one uppercase letter';
+                  }
+                  if (!RegExp(r'[a-z]').hasMatch(v)) {
+                    return 'Password must contain at least one lowercase letter';
+                  }
+                  if (!RegExp(r'\d').hasMatch(v)) {
+                    return 'Password must contain at least one number';
+                  }
+                  if (!RegExp(r'[!@#$%^&*(),.?":{}|<>]').hasMatch(v)) {
+                    return 'Password must contain at least one special character';
                   }
                   return null;
                 },

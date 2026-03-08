@@ -3,6 +3,7 @@ import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 /// Single source of truth for the app auth token.
 ///
 /// Both API services and UI should use this instead of duplicating storage logic.
+/// Uses [FlutterSecureStorage] default options (strong encryption on Android/iOS).
 class TokenStore {
   static const FlutterSecureStorage _storage = FlutterSecureStorage();
   static String? _token;

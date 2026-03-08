@@ -3,6 +3,7 @@ import 'package:flutter/cupertino.dart';
 import 'package:flutter/foundation.dart';
 import 'package:http/http.dart' as http;
 import 'dart:convert';
+import 'dart:developer' as developer;
 import 'package:google_fonts/google_fonts.dart';
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter_svg/flutter_svg.dart';
@@ -35,6 +36,8 @@ import '../widgets/theme_toggle_widget.dart';
 import '../services/config.dart';
 import '../services/ai_service.dart';
 import '../services/car_service.dart';
+import '../services/deep_link_service.dart';
+import '../pages/auth_pages.dart' as auth_pages;
 import '../features/comparison/state/car_comparison_store.dart';
 import '../data/car_catalog.dart';
 
@@ -43,6 +46,9 @@ const bool kSideloadBuild = bool.fromEnvironment(
   'SIDELOAD_BUILD',
   defaultValue: false,
 );
+
+/// Navigator key for deep link handling (e.g. reset-password from email link).
+final GlobalKey<NavigatorState> _appNavigatorKey = GlobalKey<NavigatorState>();
 // Build commit SHA for on-device verification
 const String kBuildSha = String.fromEnvironment(
   'BUILD_COMMIT_SHA',
@@ -2267,33 +2273,35 @@ class ComparisonButton extends StatelessWidget {
                   );
                 }
               },
-              child: Padding(
-                padding: EdgeInsets.symmetric(
-                  horizontal: isCompact ? 8 : 12,
-                  vertical: isCompact ? 6 : 8,
-                ),
-                child: Row(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    Icon(
-                      isInComparison ? Icons.check : Icons.compare_arrows,
-                      color: Colors.white,
-                      size: isCompact ? 16 : 18,
-                    ),
-                    if (!isCompact) ...[
-                      SizedBox(width: 4),
-                      Text(
-                        isInComparison
-                            ? _addedLabelGlobal(context)
-                            : _compareLabelGlobal(context),
-                        style: TextStyle(
-                          color: Colors.white,
-                          fontSize: 12,
-                          fontWeight: FontWeight.w600,
-                        ),
+              child: Center(
+                child: Padding(
+                  padding: EdgeInsets.symmetric(
+                    horizontal: isCompact ? 8 : 12,
+                    vertical: isCompact ? 6 : 8,
+                  ),
+                  child: Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Icon(
+                        isInComparison ? Icons.check : Icons.compare_arrows,
+                        color: Colors.white,
+                        size: isCompact ? 16 : 18,
                       ),
+                      if (!isCompact) ...[
+                        SizedBox(width: 4),
+                        Text(
+                          isInComparison
+                              ? _addedLabelGlobal(context)
+                              : _compareLabelGlobal(context),
+                          style: TextStyle(
+                            color: Colors.white,
+                            fontSize: 12,
+                            fontWeight: FontWeight.w600,
+                          ),
+                        ),
+                      ],
                     ],
-                  ],
+                  ),
                 ),
               ),
             ),
@@ -2302,6 +2310,48 @@ class ComparisonButton extends StatelessWidget {
       },
     );
   }
+}
+
+/// Redirects to /login if the user is not authenticated; otherwise shows [child].
+class AuthGuard extends StatelessWidget {
+  const AuthGuard({super.key, required this.child});
+  final Widget child;
+
+  @override
+  Widget build(BuildContext context) {
+    final auth = Provider.of<AuthService>(context);
+    if (auth.isAuthenticated) return child;
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (context.mounted) {
+        Navigator.pushReplacementNamed(context, '/login');
+      }
+    });
+    return const Scaffold(
+      body: Center(child: CircularProgressIndicator()),
+    );
+  }
+}
+
+/// Wraps [MaterialApp] and inits deep link handling after first frame.
+class _AppWithDeepLinks extends StatefulWidget {
+  const _AppWithDeepLinks({required this.child});
+  final Widget child;
+
+  @override
+  State<_AppWithDeepLinks> createState() => _AppWithDeepLinksState();
+}
+
+class _AppWithDeepLinksState extends State<_AppWithDeepLinks> {
+  @override
+  void initState() {
+    super.initState();
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      DeepLinkService.instance.init(_appNavigatorKey);
+    });
+  }
+
+  @override
+  Widget build(BuildContext context) => widget.child;
 }
 
 class MyApp extends StatelessWidget {
@@ -2318,7 +2368,9 @@ class MyApp extends StatelessWidget {
       child: ValueListenableBuilder<Locale?>(
         valueListenable: LocaleController.currentLocale,
         builder: (context, locale, _) => Consumer<ThemeProvider>(
-          builder: (context, themeProvider, child) => MaterialApp(
+          builder: (context, themeProvider, child) => _AppWithDeepLinks(
+          child: MaterialApp(
+            navigatorKey: _appNavigatorKey,
             title: 'CARZO',
             locale: locale,
             supportedLocales: const [Locale('en'), Locale('ar'), Locale('ku')],
@@ -2346,17 +2398,18 @@ class MyApp extends StatelessWidget {
             initialRoute: '/',
             routes: {
               '/': (context) => HomePage(),
-              // Replace old AddListingPage with new multi-step SellCarPage route
-              '/sell': (context) => SellCarPage(),
+              '/sell': (context) => AuthGuard(child: SellCarPage()),
               '/settings': (context) => SettingsPage(),
-              '/favorites': (context) => FavoritesPage(),
-              '/chat': (context) => ChatListPage(),
+              '/favorites': (context) => AuthGuard(child: FavoritesPage()),
+              '/chat': (context) => AuthGuard(child: ChatListPage()),
               '/login': (context) => LoginPage(),
               '/signup': (context) => SignupPage(),
-              '/profile': (context) => ProfilePage(),
-              '/edit-profile': (context) => EditProfilePage(),
-              '/payment/history': (context) => PaymentHistoryPage(),
-              '/payment/initiate': (context) => PaymentInitiatePage(),
+              '/profile': (context) => AuthGuard(child: ProfilePage()),
+              '/edit-profile': (context) => AuthGuard(child: EditProfilePage()),
+              '/payment/history': (context) =>
+                  AuthGuard(child: PaymentHistoryPage()),
+              '/payment/initiate': (context) =>
+                  AuthGuard(child: PaymentInitiatePage()),
               '/car_detail': (context) {
                 final args =
                     ModalRoute.of(context)!.settings.arguments
@@ -2367,8 +2420,10 @@ class MyApp extends StatelessWidget {
                 final args =
                     ModalRoute.of(context)!.settings.arguments
                         as Map<String, dynamic>;
-                return ChatConversationPage(
-                  conversationId: args['conversationId'],
+                return AuthGuard(
+                  child: ChatConversationPage(
+                    conversationId: args['conversationId'],
+                  ),
                 );
               },
               '/payment/status': (context) {
@@ -2381,13 +2436,19 @@ class MyApp extends StatelessWidget {
                 final args =
                     ModalRoute.of(context)!.settings.arguments
                         as Map<String, dynamic>;
-                return EditListingPage(car: args['car']);
+                return AuthGuard(
+                  child: EditListingPage(car: args['car']),
+                );
               },
-              '/my_listings': (context) => MyListingsPage(),
+              '/my_listings': (context) =>
+                  AuthGuard(child: MyListingsPage()),
               '/comparison': (context) => CarComparisonPage(),
               '/analytics': (context) => AnalyticsPage(),
+              '/reset-password': (context) => auth_pages.ResetPasswordPage(),
+              '/forgot-password': (context) => auth_pages.ForgotPasswordPage(),
             },
           ),
+        ),
         ),
       ),
     );
@@ -10922,54 +10983,67 @@ class _CarDetailsPageState extends State<CarDetailsPage> {
                           ),
                           SizedBox(height: 24),
                         ],
-                        Row(
+                        Column(
+                          mainAxisSize: MainAxisSize.min,
                           children: [
-                            Expanded(
-                              child: Column(
-                                crossAxisAlignment: CrossAxisAlignment.stretch,
-                                children: [
-                                  FilledButton.icon(
-                                    onPressed: _toggleFavoriteOnServer,
-                                    icon: Icon(
-                                      isFavorite
-                                          ? Icons.favorite
-                                          : Icons.favorite_border,
-                                    ),
-                                    label: Text(
-                                      isFavorite
-                                          ? AppLocalizations.of(context)!.saved
-                                          : AppLocalizations.of(context)!.save,
+                            Row(
+                              children: [
+                                Expanded(
+                                  child: SizedBox(
+                                    height: 48,
+                                    child: FilledButton.icon(
+                                      onPressed: _toggleFavoriteOnServer,
+                                      icon: Icon(
+                                        isFavorite
+                                            ? Icons.favorite
+                                            : Icons.favorite_border,
+                                        size: 20,
+                                      ),
+                                      label: Text(
+                                        isFavorite
+                                            ? AppLocalizations.of(context)!.saved
+                                            : AppLocalizations.of(context)!.save,
+                                      ),
                                     ),
                                   ),
-                                  SizedBox(height: 8),
-                                  SizedBox(
-                                    width: double.infinity,
+                                ),
+                                SizedBox(width: 8),
+                                Expanded(
+                                  child: SizedBox(
+                                    height: 48,
+                                    child: OutlinedButton.icon(
+                                      onPressed: _shareCar,
+                                      icon: Icon(Icons.share, size: 20),
+                                      label: Text('Share'),
+                                    ),
+                                  ),
+                                ),
+                              ],
+                            ),
+                            SizedBox(height: 8),
+                            Row(
+                              children: [
+                                Expanded(
+                                  child: SizedBox(
+                                    height: 48,
                                     child: ComparisonButton(car: car!),
                                   ),
-                                ],
-                              ),
-                            ),
-                            SizedBox(width: 8),
-                            Expanded(
-                              child: Column(
-                                crossAxisAlignment: CrossAxisAlignment.stretch,
-                                children: [
-                                  OutlinedButton.icon(
-                                    onPressed: _shareCar,
-                                    icon: Icon(Icons.share),
-                                    label: Text('Share'),
-                                  ),
-                                  SizedBox(height: 8),
-                                  OutlinedButton.icon(
-                                    onPressed: () =>
-                                        Navigator.of(context).maybePop(),
-                                    icon: Icon(Icons.list_alt),
-                                    label: Text(
-                                      AppLocalizations.of(context)!.backToList,
+                                ),
+                                SizedBox(width: 8),
+                                Expanded(
+                                  child: SizedBox(
+                                    height: 48,
+                                    child: OutlinedButton.icon(
+                                      onPressed: () =>
+                                          Navigator.of(context).maybePop(),
+                                      icon: Icon(Icons.list_alt, size: 20),
+                                      label: Text(
+                                        AppLocalizations.of(context)!.backToList,
+                                      ),
                                     ),
                                   ),
-                                ],
-                              ),
+                                ),
+                              ],
                             ),
                           ],
                         ),
@@ -18943,56 +19017,23 @@ class _LoginPageState extends State<LoginPage> {
       _loading = true;
     });
     try {
-      final url = Uri.parse('${getApiBase()}/api/auth/login');
-      final resp = await http.post(
-        url,
-        headers: {'Content-Type': 'application/json'},
-        body: json.encode({
-          'username': _usernameController.text.trim(),
-          'password': _passwordController.text,
-        }),
+      final authService = Provider.of<AuthService>(context, listen: false);
+      await authService.login(
+        _usernameController.text.trim(),
+        _passwordController.text,
       );
-      if (resp.statusCode >= 200 && resp.statusCode < 300) {
-        final data = json.decode(resp.body);
-        // Support both legacy {token} and new {access_token}
-        final String? legacyToken = (data['token'] as String?)?.trim();
-        final String? access = (data['access_token'] as String?)?.trim();
-        final String? token = (legacyToken != null && legacyToken.isNotEmpty)
-            ? legacyToken
-            : access;
-        if (token != null && token.isNotEmpty) {
-          // Store token in memory (simple for now); can add SharedPreferences later
-          await AuthStore.saveToken(token);
-          await ApiService.setAccessToken(token); // Sync even if storage fails
-        }
-        if (!mounted) return;
-        Navigator.pushReplacementNamed(context, '/');
-      } else {
-        final msg = resp.body.isNotEmpty
-            ? resp.body
-            : AppLocalizations.of(context)!.couldNotSubmitListing;
-        if (!mounted) return;
-        showDialog(
-          context: context,
-          builder: (_) => AlertDialog(
-            title: Text(AppLocalizations.of(context)!.errorTitle),
-            content: Text(msg),
-            actions: [
-              TextButton(
-                onPressed: () => Navigator.pop(context),
-                child: Text(AppLocalizations.of(context)!.okAction),
-              ),
-            ],
-          ),
-        );
-      }
+      if (!mounted) return;
+      Navigator.pushReplacementNamed(context, '/');
     } catch (e) {
       if (!mounted) return;
+      developer.log('Login failed', name: 'LoginPage', error: e);
       showDialog(
         context: context,
         builder: (_) => AlertDialog(
           title: Text(AppLocalizations.of(context)!.errorTitle),
-          content: Text(e.toString()),
+          content: const Text(
+            'Login failed. Please check your credentials and try again.',
+          ),
           actions: [
             TextButton(
               onPressed: () => Navigator.pop(context),
@@ -19250,165 +19291,134 @@ class _SignupPageState extends State<SignupPage> {
 
   Future<void> _signup() async {
     if (!_formKey.currentState!.validate()) return;
-    setState(() {
-      _loading = true;
-    });
-    try {
-      final url = Uri.parse('${getApiBase()}/api/auth/signup');
-
-      // Prepare request body based on auth type
-      Map<String, dynamic> requestBody = {
-        'password': _passwordController.text,
-        'auth_type': _authType,
-      };
-
-      if (_authType == 'email') {
-        final email = _emailController.text.trim();
-        requestBody['email'] = email;
-      } else {
-        final phone = _phoneController.text.trim();
-        requestBody['phone'] = '+964$phone';
-        requestBody['otp_code'] = _otpController.text.trim();
-      }
-
-      // Username (required)
-      final username = _usernameController.text.trim();
-      if (username.isEmpty) {
-        if (!mounted) return;
-        showDialog(
-          context: context,
-          builder: (_) => AlertDialog(
-            title: Text(AppLocalizations.of(context)!.errorTitle),
-            content: Text(
-              '${AppLocalizations.of(context)!.usernameLabel} is required',
-            ),
-            actions: [
-              TextButton(
-                onPressed: () => Navigator.pop(context),
-                child: Text(AppLocalizations.of(context)!.okAction),
-              ),
-            ],
-          ),
-        );
-        return;
-      }
-      requestBody['username'] = username;
-
-      final resp = await http
-          .post(
-            url,
-            headers: {'Content-Type': 'application/json'},
-            body: json.encode(requestBody),
-          )
-          .timeout(const Duration(seconds: 25));
-      if (resp.statusCode >= 200 && resp.statusCode < 300) {
-        final data = json.decode(resp.body);
-        // Support both legacy {token} and new {access_token}; or no token (email verification flow)
-        final String? legacyToken = (data['token'] as String?)?.trim();
-        final String? access = (data['access_token'] as String?)?.trim();
-        final String? token = (legacyToken != null && legacyToken.isNotEmpty)
-            ? legacyToken
-            : access;
-        if (token != null && token.isNotEmpty) {
-          await AuthStore.saveToken(token);
-          await ApiService.setAccessToken(token); // Sync even if storage fails
-          if (!mounted) return;
-          Navigator.pushReplacementNamed(context, '/');
-        } else {
-          // No token returned: try logging in automatically
-          final loginUrl = Uri.parse('${getApiBase()}/api/auth/login');
-          final loginResp = await http
-              .post(
-                loginUrl,
-                headers: {'Content-Type': 'application/json'},
-                body: json.encode({
-                  'username': _usernameController.text.trim(),
-                  'password': _passwordController.text,
-                }),
-              )
-              .timeout(const Duration(seconds: 15));
-          if (loginResp.statusCode >= 200 && loginResp.statusCode < 300) {
-            final loginData = json.decode(loginResp.body);
-            final String? lLegacy = (loginData['token'] as String?)?.trim();
-            final String? lAccess = (loginData['access_token'] as String?)
-                ?.trim();
-            final String? loginToken = (lLegacy != null && lLegacy.isNotEmpty)
-                ? lLegacy
-                : lAccess;
-            if (loginToken != null && loginToken.isNotEmpty) {
-              await AuthStore.saveToken(loginToken);
-              await ApiService.setAccessToken(loginToken);
-              if (!mounted) return;
-              Navigator.pushReplacementNamed(context, '/');
-            } else {
-              if (!mounted) return;
-              showDialog(
-                context: context,
-                builder: (_) => AlertDialog(
-                  title: Text(AppLocalizations.of(context)!.errorTitle),
-                  content: Text(
-                    'Signup succeeded but login token was not provided.',
-                  ),
-                  actions: [
-                    TextButton(
-                      onPressed: () => Navigator.pop(context),
-                      child: Text(AppLocalizations.of(context)!.okAction),
-                    ),
-                  ],
-                ),
-              );
-            }
-          } else {
-            final msg = loginResp.body.isNotEmpty
-                ? loginResp.body
-                : AppLocalizations.of(context)!.couldNotSubmitListing;
-            if (!mounted) return;
-            showDialog(
-              context: context,
-              builder: (_) => AlertDialog(
-                title: Text(AppLocalizations.of(context)!.errorTitle),
-                content: Text(msg),
-                actions: [
-                  TextButton(
-                    onPressed: () => Navigator.pop(context),
-                    child: Text(AppLocalizations.of(context)!.okAction),
-                  ),
-                ],
-              ),
-            );
-          }
-        }
-      } else {
-        final msg = resp.body.isNotEmpty
-            ? resp.body
-            : AppLocalizations.of(context)!.couldNotSubmitListing;
-        if (!mounted) return;
-        showDialog(
-          context: context,
-          builder: (_) => AlertDialog(
-            title: Text(AppLocalizations.of(context)!.errorTitle),
-            content: Text(msg),
-            actions: [
-              TextButton(
-                onPressed: () => Navigator.pop(context),
-                child: Text(AppLocalizations.of(context)!.okAction),
-              ),
-            ],
-          ),
-        );
-      }
-    } catch (e) {
+    final username = _usernameController.text.trim();
+    if (username.isEmpty) {
       if (!mounted) return;
-      final errMsg = e.toString().contains('TimeoutException') ||
-              e.toString().contains('Connection timed out') ||
-              e.toString().contains('SocketException')
-          ? '${e.toString()}\n\nMake sure the proxy (port 5003) and listings server (5000) are running.'
-          : e.toString();
       showDialog(
         context: context,
         builder: (_) => AlertDialog(
           title: Text(AppLocalizations.of(context)!.errorTitle),
-          content: Text(errMsg),
+          content: Text(
+            '${AppLocalizations.of(context)!.usernameLabel} is required',
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(context),
+              child: Text(AppLocalizations.of(context)!.okAction),
+            ),
+          ],
+        ),
+      );
+      return;
+    }
+    setState(() {
+      _loading = true;
+    });
+    try {
+      final authService = Provider.of<AuthService>(context, listen: false);
+      if (_authType == 'email') {
+        await authService.register(
+          username: username,
+          email: _emailController.text.trim(),
+          password: _passwordController.text,
+          firstName: username,
+          lastName: '',
+          phoneNumber:
+              _phoneController.text.trim().isEmpty
+                  ? null
+                  : _phoneController.text.trim(),
+        );
+        await authService.initialize();
+        if (!mounted) return;
+        Navigator.pushReplacementNamed(context, '/');
+        return;
+      }
+      // Phone path: keep existing API calls for send_otp/signup, then persist tokens via ApiService
+      final url = Uri.parse('${getApiBase()}/api/auth/signup');
+      final Map<String, dynamic> requestBody = <String, dynamic>{
+        'password': _passwordController.text,
+        'auth_type': _authType,
+        'username': username,
+        'phone': '+964${_phoneController.text.trim()}',
+        'otp_code': _otpController.text.trim(),
+      };
+      final resp = await http
+          .post(
+            url,
+            headers: <String, String>{'Content-Type': 'application/json'},
+            body: json.encode(requestBody),
+          )
+          .timeout(const Duration(seconds: 25));
+      if (resp.statusCode >= 200 && resp.statusCode < 300) {
+        final data = json.decode(resp.body) as Map<String, dynamic>;
+        final String? legacyToken = (data['token'] as String?)?.trim();
+        final String? access = (data['access_token'] as String?)?.trim();
+        final String? refresh = (data['refresh_token'] as String?)?.trim();
+        final String? token = (legacyToken != null && legacyToken.isNotEmpty)
+            ? legacyToken
+            : access;
+        if (token != null && token.isNotEmpty) {
+          await ApiService.setAccessToken(token);
+          if (refresh != null && refresh.isNotEmpty) {
+            await ApiService.setRefreshToken(refresh);
+          }
+          await authService.initialize();
+          if (!mounted) return;
+          Navigator.pushReplacementNamed(context, '/');
+          return;
+        }
+        // No token: try login so we get tokens and profile
+        try {
+          await authService.login(username, _passwordController.text);
+          if (!mounted) return;
+          Navigator.pushReplacementNamed(context, '/');
+        } catch (_) {
+          if (!mounted) return;
+          showDialog(
+            context: context,
+            builder: (_) => AlertDialog(
+              title: Text(AppLocalizations.of(context)!.errorTitle),
+              content: const Text(
+                'Signup succeeded. Please log in to continue.',
+              ),
+              actions: [
+                TextButton(
+                  onPressed: () => Navigator.pop(context),
+                  child: Text(AppLocalizations.of(context)!.okAction),
+                ),
+              ],
+            ),
+          );
+        }
+        return;
+      }
+      final msg = resp.body.isNotEmpty
+          ? resp.body
+          : AppLocalizations.of(context)!.couldNotSubmitListing;
+      if (!mounted) return;
+      showDialog(
+        context: context,
+        builder: (_) => AlertDialog(
+          title: Text(AppLocalizations.of(context)!.errorTitle),
+          content: Text(msg),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(context),
+              child: Text(AppLocalizations.of(context)!.okAction),
+            ),
+          ],
+        ),
+      );
+    } catch (e) {
+      if (!mounted) return;
+      developer.log('Signup failed', name: 'SignupPage', error: e);
+      showDialog(
+        context: context,
+        builder: (_) => AlertDialog(
+          title: Text(AppLocalizations.of(context)!.errorTitle),
+          content: const Text(
+            'Signup failed. Please check your details and try again.',
+          ),
           actions: [
             TextButton(
               onPressed: () => Navigator.pop(context),
@@ -19581,9 +19591,27 @@ class _SignupPageState extends State<SignupPage> {
                 decoration: InputDecoration(
                   labelText: AppLocalizations.of(context)!.passwordLabel,
                 ),
-                validator: (v) => (v == null || v.isEmpty)
-                    ? AppLocalizations.of(context)!.requiredField
-                    : null,
+                validator: (v) {
+                  if (v == null || v.isEmpty) {
+                    return AppLocalizations.of(context)!.requiredField;
+                  }
+                  if (v.length < 8) {
+                    return 'Password must be at least 8 characters';
+                  }
+                  if (!RegExp(r'[A-Z]').hasMatch(v)) {
+                    return 'Password must contain at least one uppercase letter';
+                  }
+                  if (!RegExp(r'[a-z]').hasMatch(v)) {
+                    return 'Password must contain at least one lowercase letter';
+                  }
+                  if (!RegExp(r'\d').hasMatch(v)) {
+                    return 'Password must contain at least one number';
+                  }
+                  if (!RegExp(r'[!@#$%^&*(),.?":{}|<>]').hasMatch(v)) {
+                    return 'Password must contain at least one special character';
+                  }
+                  return null;
+                },
               ),
               SizedBox(height: 20),
               ElevatedButton(

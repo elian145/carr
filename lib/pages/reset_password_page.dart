@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
+import 'dart:developer' as developer;
 
 import '../services/api_service.dart';
 import '../services/auth_service.dart';
@@ -22,6 +23,18 @@ class _ResetPasswordPageState extends State<ResetPasswordPage> {
   bool _obscurePassword = true;
   bool _obscureConfirm = true;
   bool _isLoading = false;
+
+  @override
+  void initState() {
+    super.initState();
+    final args = ModalRoute.of(context)?.settings.arguments;
+    if (args is Map<String, dynamic>) {
+      final token = args['token']?.toString().trim();
+      if (token != null && token.isNotEmpty) {
+        _codeController.text = token;
+      }
+    }
+  }
 
   @override
   void dispose() {
@@ -50,18 +63,20 @@ class _ResetPasswordPageState extends State<ResetPasswordPage> {
       );
       Navigator.pushNamedAndRemoveUntil(context, '/login', (route) => false);
     } on ApiException catch (e) {
+      developer.log('Reset password failed', name: 'ResetPasswordPage', error: e);
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text(e.message),
+        const SnackBar(
+          content: Text('Unable to reset password. Please check the code and try again.'),
           backgroundColor: Colors.red,
         ),
       );
     } catch (e) {
+      developer.log('Reset password failed', name: 'ResetPasswordPage', error: e);
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text(e.toString()),
+        const SnackBar(
+          content: Text('Unable to reset password. Please try again later.'),
           backgroundColor: Colors.red,
         ),
       );
@@ -122,6 +137,18 @@ class _ResetPasswordPageState extends State<ResetPasswordPage> {
                   }
                   if (v.length < 8) {
                     return 'Password must be at least 8 characters';
+                  }
+                  if (!RegExp(r'[A-Z]').hasMatch(v)) {
+                    return 'Password must contain at least one uppercase letter';
+                  }
+                  if (!RegExp(r'[a-z]').hasMatch(v)) {
+                    return 'Password must contain at least one lowercase letter';
+                  }
+                  if (!RegExp(r'\d').hasMatch(v)) {
+                    return 'Password must contain at least one number';
+                  }
+                  if (!RegExp(r'[!@#$%^&*(),.?":{}|<>]').hasMatch(v)) {
+                    return 'Password must contain at least one special character';
                   }
                   return null;
                 },

@@ -2,8 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/services.dart';
 import 'package:provider/provider.dart';
+import 'dart:developer' as developer;
 import '../services/auth_service.dart';
-// Removed unused imports
 import '../l10n/app_localizations.dart';
 import '../services/api_service.dart';
 import '../widgets/theme_toggle_widget.dart';
@@ -44,15 +44,12 @@ String _pleaseEnterPassword(BuildContext context) {
   return 'Please enter your password';
 }
 
-String _loginFailedText(BuildContext context, String message) {
+/// User-facing message for login failure (no server/exception details).
+String _loginFailedMessage(BuildContext context) {
   final c = _lang(context);
-  final isServerError = message.contains('500') || message.contains('502') || message.contains('ProxyNotConfigured');
-  final hint = isServerError
-      ? ' Make sure the listings server (port 5000) and proxy (5003) are running.'
-      : '';
-  if (c == 'ar') return 'فشل تسجيل الدخول: $message$hint';
-  if (c == 'ku') return 'هەڵە لە چوونەژوورەوە: $message$hint';
-  return 'Login failed: $message$hint';
+  if (c == 'ar') return 'فشل تسجيل الدخول. تحقق من بياناتك وحاول مرة أخرى.';
+  if (c == 'ku') return 'هەڵە لە چوونەژوورەوە. تکایە دووبارە هەوڵ بدەرەوە.';
+  return 'Login failed. Please check your credentials and try again.';
 }
 
 String _forgotPasswordQuestion(BuildContext context) {
@@ -212,18 +209,20 @@ String _registrationSuccess(BuildContext context) {
   return 'Registration successful! Please check your email for verification.';
 }
 
-String _registrationFailed(BuildContext context, String msg) {
+/// User-facing message for registration failure (no server/exception details).
+String _registrationFailedMessage(BuildContext context) {
   final c = _lang(context);
-  if (c == 'ar') return 'فشل التسجيل: $msg';
-  if (c == 'ku') return 'هەڵە لە خۆتۆمارکردن: $msg';
-  return 'Registration failed: $msg';
+  if (c == 'ar') return 'فشل التسجيل. تحقق من البيانات وحاول مرة أخرى.';
+  if (c == 'ku') return 'هەڵە لە خۆتۆمارکردن. تکایە دووبارە هەوڵ بدەرەوە.';
+  return 'Registration failed. Please check your details and try again.';
 }
 
-String _failedToSendResetEmail(BuildContext context, String msg) {
+/// User-facing message when reset email fails (no server/exception details).
+String _failedToSendResetEmailMessage(BuildContext context) {
   final c = _lang(context);
-  if (c == 'ar') return 'فشل إرسال بريد الاستعادة: $msg';
-  if (c == 'ku') return 'نەتوانرا ئیمەیلی ڕێکخستنەوە بنێردرێت: $msg';
-  return 'Failed to send reset email: $msg';
+  if (c == 'ar') return 'فشل إرسال رابط إعادة التعيين. تحقق من البريد وحاول لاحقاً.';
+  if (c == 'ku') return 'نەتوانرا ئیمەییلی ڕێکخستنەوە بنێردرێت. دووبارە هەوڵ بدەرەوە.';
+  return 'Failed to send reset link. Check your email and try again later.';
 }
 
 class LoginPage extends StatefulWidget {
@@ -263,10 +262,11 @@ class _LoginPageState extends State<LoginPage> {
         Navigator.pushReplacementNamed(context, '/');
       }
     } catch (e) {
+      developer.log('Login failed', name: 'LoginPage', error: e);
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: Text(_loginFailedText(context, e.toString())),
+            content: Text(_loginFailedMessage(context)),
             backgroundColor: Colors.red,
           ),
         );
@@ -477,10 +477,11 @@ class _RegisterPageState extends State<RegisterPage> {
         Navigator.pushReplacementNamed(context, '/');
       }
     } catch (e) {
+      developer.log('Registration failed', name: 'RegisterPage', error: e);
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: Text(_registrationFailed(context, e.toString())),
+            content: Text(_registrationFailedMessage(context)),
             backgroundColor: Colors.red,
           ),
         );
@@ -878,10 +879,11 @@ class _ForgotPasswordPageState extends State<ForgotPasswordPage> {
       if (!mounted) return;
       setState(() => _emailSent = true);
     } catch (e) {
+      developer.log('Forgot password failed', name: 'ForgotPasswordPage', error: e);
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: Text(_failedToSendResetEmail(context, e.toString())),
+            content: Text(_failedToSendResetEmailMessage(context)),
             backgroundColor: Colors.red,
           ),
         );
