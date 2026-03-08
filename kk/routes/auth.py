@@ -450,6 +450,8 @@ def change_password():
 
 def _send_password_reset_email(to_email: str, token: str) -> None:
     """Send password reset email. Prefer Resend (best deliverability), then SendGrid, then SMTP."""
+    to_mask = (to_email[:3] + "***") if len(to_email) >= 3 else "***"
+    current_app.logger.info("[FORGOT-PASSWORD] Sending reset email to %s", to_mask)
     subject = "Reset your CARZO password"
     body = (
         "You requested a password reset. Use the code below in the CARZO app to set a new password.\n\n"
@@ -491,11 +493,16 @@ def _send_password_reset_email(to_email: str, token: str) -> None:
                 timeout=15,
             )
             if 200 <= r.status_code < 300:
-                current_app.logger.info("[FORGOT-PASSWORD] Password reset email sent via Resend to %s***", to_email[:3])
+                current_app.logger.info("[FORGOT-PASSWORD] Resend accepted email for %s (check inbox and spam)", to_mask)
                 return
-            current_app.logger.warning("[FORGOT-PASSWORD] Resend returned %s: %s", r.status_code, (r.text or "")[:300])
+            err_body = (r.text or "").strip() or "(no body)"
+            current_app.logger.warning(
+                "[FORGOT-PASSWORD] Resend rejected: status=%s body=%s",
+                r.status_code,
+                err_body[:500],
+            )
         except Exception as e:
-            current_app.logger.exception("[FORGOT-PASSWORD] Resend request failed: %s", str(e)[:200])
+            current_app.logger.exception("[FORGOT-PASSWORD] Resend error: %s", str(e))
         return
 
     # 2) SendGrid (works on Render free tier)
