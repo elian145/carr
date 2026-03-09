@@ -554,19 +554,29 @@ def forgot_password():
         data = request.get_json(silent=True) or {}
         data = validate_input_sanitization(data)
         raw_phone = (data.get("phone_number") or data.get("phone") or "").strip()
-        email = (data.get("email") or "").strip().lower()
+        raw_email = (data.get("email") or "").strip()
+        email = raw_email.lower()
 
         phone_digits = _normalize_phone(raw_phone)
         user = None
-        if phone_digits:
-            user = User.query.filter_by(phone_number=phone_digits).first()
-        elif email:
-            # Look up case-insensitively: signup may store "User@Gmail.com", we receive lowercase
+
+        # Important: the mobile client sends both "email" and "phone_number" with
+        # the same value for backwards compatibility. In that common case we must
+        # treat this as an email-based reset, not as a phone reset (otherwise the
+        # presence of digits in the email would make us only look up by phone).
+        if email:
+            # Look up case-insensitively by email first.
             user = User.query.filter(func.lower(User.email) == email).first()
-            # Fallback: signup may use email prefix as username; or "email" field might be username
+            # Fallback: some legacy flows may put username into the "email" field.
             if not user:
                 user = User.query.filter(func.lower(User.username) == email).first()
-        else:
+
+        # Only do a phone-based lookup when we have a real phone input that isn't
+        # just the same string as the email field.
+        if not user and phone_digits and raw_phone and raw_phone != raw_email:
+            user = User.query.filter_by(phone_number=phone_digits).first()
+
+        if not user and not (email or phone_digits):
             return jsonify({"message": "Phone number or email is required"}), 400
 
         # Prevent account enumeration: always return 200.
