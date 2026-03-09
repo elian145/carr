@@ -451,22 +451,31 @@ class ApiService {
   /// Send 6-digit SMS code to phone (for verification). Rate-limited.
   static Future<Map<String, dynamic>> sendPhoneVerificationCode(String phoneNumber) async {
     final apiRoot = baseUrl.endsWith('/api') ? baseUrl : '$baseUrl/api';
+    final url = '$apiRoot/auth/send-verification';
     final response = await http
         .post(
-          Uri.parse('$apiRoot/auth/send-verification'),
+          Uri.parse(url),
           headers: _getHeaders(includeAuth: false),
           body: json.encode({'phone_number': phoneNumber}),
         )
         .timeout(_defaultTimeout);
+    if (response.statusCode == 404) {
+      throw ApiException(
+        statusCode: 404,
+        message: 'Endpoint not found (404). Tried: $url',
+        body: <String, dynamic>{'status': 404},
+      );
+    }
     return _handleResponse(response);
   }
 
   /// Verify phone with 6-digit code.
   static Future<Map<String, dynamic>> verifyPhone(String phoneNumber, String code) async {
     final apiRoot = baseUrl.endsWith('/api') ? baseUrl : '$baseUrl/api';
+    final url = '$apiRoot/auth/verify-phone';
     final response = await http
         .post(
-          Uri.parse('$apiRoot/auth/verify-phone'),
+          Uri.parse(url),
           headers: _getHeaders(includeAuth: false),
           body: json.encode({
             'phone_number': phoneNumber,
@@ -474,6 +483,13 @@ class ApiService {
           }),
         )
         .timeout(_defaultTimeout);
+    if (response.statusCode == 404) {
+      throw ApiException(
+        statusCode: 404,
+        message: 'Endpoint not found (404). Tried: $url',
+        body: <String, dynamic>{'status': 404},
+      );
+    }
     return _handleResponse(response);
   }
 
