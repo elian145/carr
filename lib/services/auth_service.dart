@@ -192,12 +192,25 @@ class AuthService extends ChangeNotifier {
     }
   }
 
-  // Verify email
+  // Verify email (with token from verification email link or manual entry)
   Future<Map<String, dynamic>> verifyEmail(String token) async {
     _setLoading(true);
-
     try {
       final response = await ApiService.verifyEmail(token);
+      await initialize();
+      return response;
+    } catch (e) {
+      rethrow;
+    } finally {
+      _setLoading(false);
+    }
+  }
+
+  // Send verification email to current user (authenticated)
+  Future<Map<String, dynamic>> sendEmailVerification() async {
+    _setLoading(true);
+    try {
+      final response = await ApiService.sendEmailVerification();
       return response;
     } catch (e) {
       rethrow;

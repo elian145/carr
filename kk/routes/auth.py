@@ -22,12 +22,14 @@ from sqlalchemy import func
 from sqlalchemy.exc import IntegrityError
 
 from ..auth import (
+    create_email_verification_token,
     create_password_reset_token,
     get_current_user,
     log_user_action,
     validate_email,
     validate_password,
     validate_user_input,
+    verify_email_verification_token,
     verify_password_reset_token,
 )
 from ..extensions import mail
@@ -546,6 +548,71 @@ def _send_password_reset_email(to_email: str, token: str) -> None:
         current_app.logger.exception("[FORGOT-PASSWORD] SMTP failed to %s***: %s", to_email[:3], str(e)[:200])
 
 
+def _send_email_verification_email(to_email: str, token: str) -> bool:
+    """Send email verification link (Resend/SendGrid/SMTP). Returns True if sent."""
+    subject = "Verify your CARZO email"
+    link = f"carzo://auth/verify-email?token={token}"
+    body = (
+        f"Please verify your email by opening this link in the CARZO app:\n\n{link}\n\n"
+        "Or enter the verification code in the app. This link expires in 24 hours.\n"
+        "If you did not request this, you can ignore this email.\n"
+    )
+    to_mask = (to_email[:3] + "***") if len(to_email) >= 3 else "***"
+    resend_key = (os.environ.get("RESEND_API_KEY") or "").strip()
+    resend_from = (os.environ.get("RESEND_FROM_EMAIL") or "").strip() or "onboarding@resend.dev"
+    if resend_key:
+        resend_from_str = resend_from if ("<" in resend_from and ">" in resend_from) else f"CARZO <{resend_from}>"
+        try:
+            r = requests.post(
+                "https://api.resend.com/emails",
+                json={"from": resend_from_str, "to": [to_email], "subject": subject, "text": body},
+                headers={"Authorization": f"Bearer {resend_key}", "Content-Type": "application/json"},
+                timeout=15,
+            )
+            if 200 <= r.status_code < 300:
+                current_app.logger.info("[EMAIL-VERIFY] Verification email sent to %s", to_mask)
+                return True
+            current_app.logger.warning("[EMAIL-VERIFY] Resend returned %s: %s", r.status_code, (r.text or "")[:200])
+        except Exception as e:
+            current_app.logger.exception("[EMAIL-VERIFY] Resend failed: %s", str(e))
+        return False
+    sendgrid_key = (os.environ.get("SENDGRID_API_KEY") or "").strip()
+    from_addr = (current_app.config.get("MAIL_DEFAULT_SENDER") or current_app.config.get("MAIL_USERNAME")) or ""
+    if isinstance(from_addr, str) and "<" in from_addr and ">" in from_addr:
+        from_name, from_email_only = from_addr.split("<")[0].strip().strip('"') or "CARZO", from_addr.split("<")[-1].replace(">", "").strip()
+    else:
+        from_name, from_email_only = "CARZO", (from_addr or "").strip()
+    if sendgrid_key and from_email_only:
+        try:
+            r = requests.post(
+                "https://api.sendgrid.com/v3/mail/send",
+                json={
+                    "personalizations": [{"to": [{"email": to_email}]}],
+                    "from": {"email": from_email_only, "name": from_name},
+                    "subject": subject,
+                    "content": [{"type": "text/plain", "value": body}],
+                },
+                headers={"Authorization": f"Bearer {sendgrid_key}", "Content-Type": "application/json"},
+                timeout=15,
+            )
+            if 200 <= r.status_code < 300:
+                current_app.logger.info("[EMAIL-VERIFY] Verification email sent to %s", to_mask)
+                return True
+        except Exception as e:
+            current_app.logger.exception("[EMAIL-VERIFY] SendGrid failed: %s", str(e))
+        return False
+    if current_app.config.get("MAIL_USERNAME") and current_app.config.get("MAIL_PASSWORD"):
+        try:
+            sender = current_app.config.get("MAIL_DEFAULT_SENDER") or current_app.config.get("MAIL_USERNAME")
+            msg = Message(subject=subject, sender=sender, recipients=[to_email], body=body)
+            mail.send(msg)
+            current_app.logger.info("[EMAIL-VERIFY] Verification email sent (SMTP) to %s", to_mask)
+            return True
+        except Exception as e:
+            current_app.logger.exception("[EMAIL-VERIFY] SMTP failed: %s", str(e))
+    return False
+
+
 @bp.route("/api/auth/forgot-password", methods=["POST"])
 @rate_limit(max_requests=5, window_minutes=15)  # 5 requests per 15 min per IP
 def forgot_password():
@@ -651,6 +718,46 @@ def reset_password():
             "[RESET-PASSWORD] Unexpected error (token_len=%s): %s", token_len, str(e)
         )
         return jsonify({"message": "Password reset failed"}), 500
+
+
+@bp.route("/api/auth/send-email-verification", methods=["POST"])
+@jwt_required()
+@rate_limit(max_requests=5, window_minutes=15)
+def send_email_verification():
+    """Send email verification link to the current user's email."""
+    try:
+        current_user = get_current_user()
+        if not current_user:
+            return jsonify({"message": "Unauthorized"}), 401
+        user_email = (getattr(current_user, "email", None) or "").strip().lower()
+        if not user_email or user_email.endswith("@phone.local"):
+            return jsonify({"message": "No email address to verify"}), 400
+        token = create_email_verification_token(current_user)
+        if _send_email_verification_email(user_email, token):
+            return jsonify({"message": "Verification email sent. Check your inbox and spam."}), 200
+        return jsonify({"message": "Failed to send verification email. Try again later."}), 500
+    except Exception:
+        return jsonify({"message": "Failed to send verification email"}), 500
+
+
+@bp.route("/api/auth/verify-email", methods=["POST"])
+@rate_limit(max_requests=10, window_minutes=15)
+def verify_email():
+    """Verify email using token from the verification email link or code."""
+    try:
+        data = request.get_json(silent=True) or {}
+        token = (data.get("token") or "").strip()
+        if not token:
+            return jsonify({"message": "Token is required"}), 400
+        user, error = verify_email_verification_token(token)
+        if not user:
+            return jsonify({"message": error or "Invalid or expired token"}), 400
+        user.is_verified = True
+        db.session.commit()
+        log_user_action(user, "email_verified")
+        return jsonify({"message": "Email verified successfully"}), 200
+    except Exception:
+        return jsonify({"message": "Email verification failed"}), 500
 
 
 @bp.route("/api/auth/verify-phone", methods=["POST"])

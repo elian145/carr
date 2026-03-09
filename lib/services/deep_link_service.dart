@@ -35,6 +35,14 @@ class DeepLinkService {
           key.currentState!.pushNamed('/reset-password', arguments: <String, String>{'token': token});
         }
       });
+      return;
+    }
+    if (path.endsWith('verify-email') && token != null && token.isNotEmpty) {
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (key?.currentContext != null && key!.currentState != null) {
+          key.currentState!.pushNamed('/verify-email', arguments: <String, dynamic>{'token': token});
+        }
+      });
     }
   }
 

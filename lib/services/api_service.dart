@@ -443,6 +443,38 @@ class ApiService {
     return _handleResponse(response);
   }
 
+  /// Request a verification email for the current user (authenticated).
+  static Future<Map<String, dynamic>> sendEmailVerification() async {
+    return await _makeAuthenticatedRequest('POST', '/auth/send-email-verification');
+  }
+
+  /// Send 6-digit SMS code to phone (for verification). Rate-limited.
+  static Future<Map<String, dynamic>> sendPhoneVerificationCode(String phoneNumber) async {
+    final response = await http
+        .post(
+          Uri.parse('$baseUrl/auth/send-verification'),
+          headers: _getHeaders(includeAuth: false),
+          body: json.encode({'phone_number': phoneNumber}),
+        )
+        .timeout(_defaultTimeout);
+    return _handleResponse(response);
+  }
+
+  /// Verify phone with 6-digit code.
+  static Future<Map<String, dynamic>> verifyPhone(String phoneNumber, String code) async {
+    final response = await http
+        .post(
+          Uri.parse('$baseUrl/auth/verify-phone'),
+          headers: _getHeaders(includeAuth: false),
+          body: json.encode({
+            'phone_number': phoneNumber,
+            'verification_code': code,
+          }),
+        )
+        .timeout(_defaultTimeout);
+    return _handleResponse(response);
+  }
+
   // User profile methods
   static Future<Map<String, dynamic>> getProfile() async {
     return await _makeAuthenticatedRequest('GET', '/auth/me');

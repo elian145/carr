@@ -39,6 +39,7 @@ import '../services/car_service.dart';
 import '../services/deep_link_service.dart';
 import '../pages/auth_pages.dart' as auth_pages;
 import '../pages/reset_password_page.dart';
+import '../pages/verify_email_page.dart';
 import '../features/comparison/state/car_comparison_store.dart';
 import '../data/car_catalog.dart';
 
@@ -2446,6 +2447,11 @@ class MyApp extends StatelessWidget {
               '/comparison': (context) => CarComparisonPage(),
               '/analytics': (context) => AnalyticsPage(),
               '/reset-password': (context) => ResetPasswordPage(),
+              '/verify-email': (context) {
+                final args = ModalRoute.of(context)?.settings.arguments;
+                final token = args is Map ? (args['token'] ?? '').toString().trim() : '';
+                return VerifyEmailPage(initialToken: token.isNotEmpty ? token : null);
+              },
               '/forgot-password': (context) => auth_pages.ForgotPasswordPage(),
             },
           ),

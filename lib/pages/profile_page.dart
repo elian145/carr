@@ -17,6 +17,117 @@ class _ProfilePageState extends State<ProfilePage> {
   bool _loading = false;
   String? _error;
 
+  Future<void> _sendEmailVerification(BuildContext context, AuthService auth) async {
+    try {
+      await auth.sendEmailVerification();
+      if (!context.mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Verification email sent. Check your inbox and spam.'),
+          backgroundColor: Colors.green,
+        ),
+      );
+      await _refresh();
+    } catch (e) {
+      if (!context.mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(e.toString().replaceFirst('Exception: ', '')),
+          backgroundColor: Colors.red,
+        ),
+      );
+    }
+  }
+
+  Future<void> _showPhoneVerifyDialog(BuildContext context, String phone, AuthService auth) async {
+    final codeController = TextEditingController();
+    bool codeSent = false;
+    await showDialog<void>(
+      context: context,
+      barrierDismissible: false,
+      builder: (ctx) {
+        return StatefulBuilder(
+          builder: (ctx2, setDialogState) {
+            return AlertDialog(
+              title: const Text('Verify phone'),
+              content: SingleChildScrollView(
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  crossAxisAlignment: CrossAxisAlignment.stretch,
+                  children: [
+                    Text('A 6-digit code will be sent to $phone.'),
+                    const SizedBox(height: 16),
+                    TextField(
+                      controller: codeController,
+                      decoration: const InputDecoration(
+                        labelText: '6-digit code',
+                        border: OutlineInputBorder(),
+                      ),
+                      keyboardType: TextInputType.number,
+                      maxLength: 6,
+                    ),
+                  ],
+                ),
+              ),
+              actions: [
+                TextButton(
+                  onPressed: () => Navigator.pop(ctx),
+                  child: const Text('Cancel'),
+                ),
+                if (!codeSent)
+                  FilledButton(
+                    onPressed: () async {
+                      try {
+                        await ApiService.sendPhoneVerificationCode(phone);
+                        if (!ctx2.mounted) return;
+                        setDialogState(() => codeSent = true);
+                        ScaffoldMessenger.of(ctx2).showSnackBar(
+                          const SnackBar(content: Text('Code sent. Enter it above and tap Verify.')),
+                        );
+                      } catch (e) {
+                        if (!ctx2.mounted) return;
+                        ScaffoldMessenger.of(ctx2).showSnackBar(
+                          SnackBar(content: Text(e.toString().replaceFirst('Exception: ', '')), backgroundColor: Colors.red),
+                        );
+                      }
+                    },
+                    child: const Text('Send code'),
+                  ),
+                FilledButton(
+                  onPressed: () async {
+                    final code = codeController.text.trim();
+                    if (code.length != 6) {
+                      ScaffoldMessenger.of(ctx2).showSnackBar(
+                        const SnackBar(content: Text('Please enter the 6-digit code'), backgroundColor: Colors.orange),
+                      );
+                      return;
+                    }
+                    try {
+                      await ApiService.verifyPhone(phone, code);
+                      if (!ctx2.mounted) return;
+                      Navigator.pop(ctx);
+                      ScaffoldMessenger.of(ctx2).showSnackBar(
+                        const SnackBar(content: Text('Phone verified successfully'), backgroundColor: Colors.green),
+                      );
+                      _refresh();
+                    } catch (e) {
+                      if (!ctx2.mounted) return;
+                      ScaffoldMessenger.of(ctx2).showSnackBar(
+                        SnackBar(content: Text(e.toString().replaceFirst('Exception: ', '')), backgroundColor: Colors.red),
+                      );
+                    }
+                  },
+                  child: const Text('Verify'),
+                ),
+              ],
+            );
+          },
+        );
+      },
+    );
+    if (mounted) await _refresh();
+  }
+
   Future<void> _refresh() async {
     final auth = Provider.of<AuthService>(context, listen: false);
     setState(() {
@@ -47,6 +158,7 @@ class _ProfilePageState extends State<ProfilePage> {
     final username = (user?['username'] ?? '').toString();
     final email = (user?['email'] ?? '').toString();
     final phone = (user?['phone_number'] ?? '').toString();
+    final isVerified = user?['is_verified'] == true;
     final firstName = (user?['first_name'] ?? '').toString();
     final lastName = (user?['last_name'] ?? '').toString();
     final fullName = ('$firstName $lastName').trim();
@@ -174,6 +286,23 @@ class _ProfilePageState extends State<ProfilePage> {
                           title: Text(loc?.myListingsTitle ?? 'My listings'),
                           onTap: () => Navigator.pushNamed(context, '/my_listings'),
                         ),
+                        if (!isVerified && (email.isNotEmpty || phone.isNotEmpty)) ...[
+                          const Divider(height: 1),
+                          if (email.isNotEmpty && !email.endsWith('@phone.local'))
+                            ListTile(
+                              leading: const Icon(Icons.mark_email_unread_outlined),
+                              title: const Text('Verify email'),
+                              subtitle: const Text('Send a verification link to your email'),
+                              onTap: () => _sendEmailVerification(context, auth),
+                            ),
+                          if (phone.isNotEmpty)
+                            ListTile(
+                              leading: const Icon(Icons.phone_android_outlined),
+                              title: const Text('Verify phone'),
+                              subtitle: const Text('Receive a code by SMS'),
+                              onTap: () => _showPhoneVerifyDialog(context, phone, auth),
+                            ),
+                        ],
                       ],
                     ),
                   ),

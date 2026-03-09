@@ -142,8 +142,13 @@ def verify_email_verification_token(token):
         verification_token.is_used = True
         db.session.commit()
         return None, "Token has expired"
-    
-    return verification_token.user, None
+
+    user = User.query.get(verification_token.user_id)
+    if not user:
+        return None, "Invalid or expired token"
+    verification_token.is_used = True
+    db.session.commit()
+    return user, None
 
 def log_user_action(user, action_type, target_type=None, target_id=None, metadata=None):
     """Log user action for analytics"""

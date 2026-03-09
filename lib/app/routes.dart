@@ -9,6 +9,7 @@ import '../pages/home_page.dart' as modern;
 import '../pages/favorites_page.dart' as favorites;
 import '../pages/profile_page.dart' as profile;
 import '../pages/reset_password_page.dart';
+import '../pages/verify_email_page.dart';
 import '../pages/sell_page.dart' as sell;
 import '../pages/settings_page.dart' as settings;
 import '../pages/car_detail_page.dart' as details;
@@ -47,6 +48,11 @@ Map<String, WidgetBuilder> buildAppRoutes() {
     '/register': (context) => const auth.RegisterPage(),
     '/forgot-password': (context) => const auth.ForgotPasswordPage(),
     '/reset-password': (context) => const ResetPasswordPage(),
+    '/verify-email': (context) {
+      final args = argsMap(context);
+      final token = args != null ? (args['token'] ?? '').toString().trim() : '';
+      return VerifyEmailPage(initialToken: token.isNotEmpty ? token : null);
+    },
     '/change-password': (context) => const ChangePasswordPage(),
     '/profile': (context) => const profile.ProfilePage(),
     '/edit-profile': (context) => EditProfilePage(),
