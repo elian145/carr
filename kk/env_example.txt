@@ -18,7 +18,12 @@ POSTGRES_PASSWORD=postgres
 # Or use a full PostgreSQL URL
 # DATABASE_URL=postgresql+psycopg2://username:password@localhost:5432/car_listings
 
-# SMS Configuration (for password reset - optional)
+# SMS Configuration (for password reset and phone verification - optional)
+# Option 1: OTPIQ (Iraq – SMS/WhatsApp), https://otpiq.com
+# SMS_PROVIDER=otpiq
+# OTPIQ_API_KEY=sk_live_your_otpiq_api_key
+# OTPIQ_PROVIDER=sms
+# Option 2: Twilio
 # SMS_PROVIDER=twilio
 # TWILIO_ACCOUNT_SID=your-twilio-account-sid
 # TWILIO_AUTH_TOKEN=your-twilio-auth-token
