@@ -450,9 +450,10 @@ class ApiService {
 
   /// Send 6-digit SMS code to phone (for verification). Rate-limited.
   static Future<Map<String, dynamic>> sendPhoneVerificationCode(String phoneNumber) async {
+    final apiRoot = baseUrl.endsWith('/api') ? baseUrl : '$baseUrl/api';
     final response = await http
         .post(
-          Uri.parse('$baseUrl/auth/send-verification'),
+          Uri.parse('$apiRoot/auth/send-verification'),
           headers: _getHeaders(includeAuth: false),
           body: json.encode({'phone_number': phoneNumber}),
         )
@@ -462,9 +463,10 @@ class ApiService {
 
   /// Verify phone with 6-digit code.
   static Future<Map<String, dynamic>> verifyPhone(String phoneNumber, String code) async {
+    final apiRoot = baseUrl.endsWith('/api') ? baseUrl : '$baseUrl/api';
     final response = await http
         .post(
-          Uri.parse('$baseUrl/auth/verify-phone'),
+          Uri.parse('$apiRoot/auth/verify-phone'),
           headers: _getHeaders(includeAuth: false),
           body: json.encode({
             'phone_number': phoneNumber,
