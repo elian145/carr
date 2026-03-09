@@ -124,7 +124,12 @@ def verify_password_reset_token(token):
         db.session.commit()
         return None, "Token has expired"
     
-    return reset_token.user, None
+    # Models.PasswordReset does not define a relationship attribute; resolve the
+    # user explicitly via user_id so this works across all DBs.
+    user = User.query.get(reset_token.user_id)
+    if not user:
+        return None, "Invalid or expired token"
+    return user, None
 
 def verify_email_verification_token(token):
     """Verify email verification token"""
