@@ -563,6 +563,9 @@ def forgot_password():
         elif email:
             # Look up case-insensitively: signup may store "User@Gmail.com", we receive lowercase
             user = User.query.filter(func.lower(User.email) == email).first()
+            # Fallback: signup may use email prefix as username; or "email" field might be username
+            if not user:
+                user = User.query.filter(func.lower(User.username) == email).first()
         else:
             return jsonify({"message": "Phone number or email is required"}), 400
 
@@ -934,17 +937,23 @@ def compat_signup():
         if not is_valid:
             return jsonify({"message": message}), 400
 
-        from sqlalchemy import or_
+        # Uniqueness checks:
+        # - 409 is reserved for "email already in use" so the mobile client can
+        #   show a specific message about the email.
+        # - Username and phone collisions return 400 with specific messages.
+        email_lower = (email or "").strip().lower()
+        if email_lower:
+            existing_email = User.query.filter(func.lower(User.email) == email_lower).first()
+            if existing_email:
+                return jsonify({"message": "Account already exists. Please log in."}), 409
 
-        filters = [User.username == username]
-        if email:
-            filters.append(User.email == email)
-        filters.append(User.phone_number == phone_digits)
-        existing = User.query.filter(or_(*filters)).first()
-        if existing:
-            # SECURITY: never mutate an existing account via "signup".
-            # Direct the user to login or the password reset flow instead.
-            return jsonify({"message": "Account already exists. Please log in."}), 409
+        existing_phone = User.query.filter_by(phone_number=phone_digits).first()
+        if existing_phone:
+            return jsonify({"message": "Phone number already exists"}), 400
+
+        existing_username = User.query.filter(func.lower(User.username) == username.lower()).first()
+        if existing_username:
+            return jsonify({"message": "Username already exists"}), 400
 
         user = User(
             username=username,
