@@ -23,10 +23,17 @@ class _ResetPasswordPageState extends State<ResetPasswordPage> {
   bool _obscurePassword = true;
   bool _obscureConfirm = true;
   bool _isLoading = false;
+  bool _initializedFromArgs = false;
 
   @override
   void initState() {
     super.initState();
+  }
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    if (_initializedFromArgs) return;
     final args = ModalRoute.of(context)?.settings.arguments;
     if (args is Map<String, dynamic>) {
       final token = args['token']?.toString().trim();
@@ -34,6 +41,7 @@ class _ResetPasswordPageState extends State<ResetPasswordPage> {
         _codeController.text = token;
       }
     }
+    _initializedFromArgs = true;
   }
 
   @override
