@@ -615,8 +615,9 @@ def forgot_password():
 @rate_limit(max_requests=10, window_minutes=15)  # 10 attempts per 15 min per IP
 def reset_password():
     """Reset password endpoint"""
+    token = None  # for logging in case of unexpected errors
     try:
-        data = request.get_json()
+        data = request.get_json(silent=True) or {}
         token = data.get("token")
         new_password = data.get("password")
 
@@ -643,7 +644,12 @@ def reset_password():
 
         return jsonify({"message": "Password reset successful"}), 200
 
-    except Exception:
+    except Exception as e:
+        # Log without including the raw token value for safety.
+        token_len = len(str(token)) if token is not None else 0
+        current_app.logger.exception(
+            "[RESET-PASSWORD] Unexpected error (token_len=%s): %s", token_len, str(e)
+        )
         return jsonify({"message": "Password reset failed"}), 500
 
 
