@@ -841,6 +841,7 @@ def send_otp_legacy():
 def send_phone_verification():
     """Send phone verification code"""
     try:
+        db.session.rollback()
         data = request.get_json(silent=True) or {}
         data = validate_input_sanitization(data)
         raw_phone = (data.get("phone_number") or data.get("phone") or "").strip()
@@ -903,6 +904,7 @@ def send_phone_verification():
         return jsonify({"message": "Verification code sent successfully", "sent": True}), 200
 
     except Exception as e:
+        db.session.rollback()
         current_app.logger.exception("send_phone_verification failed: %s", e)
         msg = "Failed to send verification code"
         if current_app.config.get("DEBUG") or (os.environ.get("APP_ENV") or "").strip().lower() == "development":
