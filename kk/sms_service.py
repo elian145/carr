@@ -17,21 +17,23 @@ def _app_env() -> str:
     return (os.environ.get("APP_ENV") or os.environ.get("FLASK_ENV") or "development").strip().lower()
 
 def _normalize_phone_otpiq(phone: str) -> str:
-    """Normalize for OTPIQ (Iraq): intl format without +. Doc example is 12 digits: 964750123456."""
+    """Normalize for OTPIQ (Iraq): full E.164 without +, 964 + 10-digit national = 13 digits (e.g. 9647505070706)."""
     digits = "".join(c for c in (phone or "") if c.isdigit())
+    if len(digits) == 13 and digits.startswith("964"):
+        return digits
     if len(digits) == 12 and digits.startswith("964"):
         return digits
     if len(digits) == 11 and digits.startswith("0"):
         digits = digits[1:]
     if len(digits) == 11 and digits.startswith("64"):
-        out = "9" + digits
-        return out[:12]
+        return "9" + digits
+    if len(digits) == 11 and digits.startswith("4"):
+        return "96" + digits
     if len(digits) == 10:
-        out = "964" + digits
-        return out[:12]
+        return "964" + digits
+    if len(digits) == 11:
+        return "964" + digits
     if len(digits) >= 10 and len(digits) <= 15:
-        if digits.startswith("964") and len(digits) > 12:
-            return digits[:12]
         return digits
     return digits
 

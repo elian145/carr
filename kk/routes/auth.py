@@ -45,8 +45,10 @@ _SEND_OTP_WINDOW_MINUTES = 10
 
 def _normalize_phone(raw_phone: str) -> str:
     digits = "".join(ch for ch in (raw_phone or "") if ch.isdigit())
-    # Legacy clients commonly send Iraqi numbers; keep the last 11 digits
-    # to match the existing compat signup normalization.
+    if not digits:
+        return ""
+    if digits.startswith("964") and len(digits) >= 12:
+        digits = digits[3:]
     if len(digits) > 11:
         digits = digits[-11:]
     return digits
