@@ -38,6 +38,10 @@ from ..security import rate_limit, validate_input_sanitization
 
 bp = Blueprint("auth", __name__)
 
+# Configurable via RATE_LIMIT_SEND_OTP. Default 30 for easier testing; set to 3 in production if desired.
+_SEND_OTP_MAX_REQUESTS = int(os.environ.get("RATE_LIMIT_SEND_OTP", "30"))
+_SEND_OTP_WINDOW_MINUTES = 10
+
 
 def _normalize_phone(raw_phone: str) -> str:
     digits = "".join(ch for ch in (raw_phone or "") if ch.isdigit())
@@ -826,14 +830,14 @@ def verify_phone():
 
 
 @bp.route("/api/auth/send_otp", methods=["POST"])
-@rate_limit(max_requests=3, window_minutes=10)
+@rate_limit(max_requests=_SEND_OTP_MAX_REQUESTS, window_minutes=_SEND_OTP_WINDOW_MINUTES)
 def send_otp_legacy():
     """Legacy alias: same as send-verification, accepts 'phone' or 'phone_number'."""
     return send_phone_verification()
 
 
 @bp.route("/api/auth/send-verification", methods=["POST"])
-@rate_limit(max_requests=3, window_minutes=10)  # best-effort (in-memory) throttle per IP
+@rate_limit(max_requests=_SEND_OTP_MAX_REQUESTS, window_minutes=_SEND_OTP_WINDOW_MINUTES)
 def send_phone_verification():
     """Send phone verification code"""
     try:

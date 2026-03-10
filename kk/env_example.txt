@@ -45,6 +45,8 @@ AWS_REGION=us-east-1
 # Security Configuration
 BCRYPT_LOG_ROUNDS=12
 PASSWORD_RESET_EXPIRY=3600
+# Phone/OTP send limit: max requests per 10 min (default in code: 30 for testing). Production: RATE_LIMIT_SEND_OTP=3
+# RATE_LIMIT_SEND_OTP=3
 
 # File Upload Configuration
 UPLOAD_FOLDER=static/uploads

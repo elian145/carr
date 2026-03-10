@@ -19260,9 +19260,23 @@ class _SignupPageState extends State<SignupPage> {
           );
         }
       } else {
-        final msg = resp.body.isNotEmpty
+        String msg = resp.body.isNotEmpty
             ? resp.body
             : AppLocalizations.of(context)!.couldNotSubmitListing;
+        if (resp.statusCode == 429 && resp.body.isNotEmpty) {
+          try {
+            final data = json.decode(resp.body) as Map<String, dynamic>?;
+            final message = data?['message']?.toString() ?? msg;
+            final retryAfter = data?['retry_after'];
+            final seconds = retryAfter is int
+                ? retryAfter
+                : (retryAfter is num ? retryAfter.toInt() : null);
+            if (seconds != null && seconds > 0) {
+              final minutes = (seconds / 60).ceil();
+              msg = '$message Try again in $minutes minute${minutes == 1 ? '' : 's'}.';
+            }
+          } catch (_) {}
+        }
         showDialog(
           context: context,
           builder: (_) => AlertDialog(
