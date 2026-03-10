@@ -856,6 +856,9 @@ def send_phone_verification():
                 user = _get_or_create_user_for_phone(phone_digits)
             except ValueError as e:
                 return jsonify({"message": str(e)}), 400
+            except IntegrityError:
+                db.session.rollback()
+                return jsonify({"message": "Account already exists. Please log in."}), 400
 
         if user.is_verified:
             return jsonify({"message": "Phone number is already verified"}), 200
@@ -899,8 +902,12 @@ def send_phone_verification():
         # Legacy client expects sent: true on success.
         return jsonify({"message": "Verification code sent successfully", "sent": True}), 200
 
-    except Exception:
-        return jsonify({"message": "Failed to send verification code"}), 500
+    except Exception as e:
+        current_app.logger.exception("send_phone_verification failed: %s", e)
+        msg = "Failed to send verification code"
+        if current_app.config.get("DEBUG") or (os.environ.get("APP_ENV") or "").strip().lower() == "development":
+            msg = f"{msg}: {str(e)}"
+        return jsonify({"message": msg}), 500
 
 
 # --- Option D auth endpoints (email+password AND phone OTP as separate options) ---
