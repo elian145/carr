@@ -17,17 +17,21 @@ def _app_env() -> str:
     return (os.environ.get("APP_ENV") or os.environ.get("FLASK_ENV") or "development").strip().lower()
 
 def _normalize_phone_otpiq(phone: str) -> str:
-    """Normalize to E.164 for OTPIQ (Iraq): 964 + 10 digits = 12 digits total. No leading +."""
+    """Normalize for OTPIQ (Iraq): intl format without +. Doc example is 12 digits: 964750123456."""
     digits = "".join(c for c in (phone or "") if c.isdigit())
     if len(digits) == 12 and digits.startswith("964"):
         return digits
     if len(digits) == 11 and digits.startswith("0"):
         digits = digits[1:]
     if len(digits) == 11 and digits.startswith("64"):
-        return "9" + digits
+        out = "9" + digits
+        return out[:12]
     if len(digits) == 10:
-        return "964" + digits
+        out = "964" + digits
+        return out[:12]
     if len(digits) >= 10 and len(digits) <= 15:
+        if digits.startswith("964") and len(digits) > 12:
+            return digits[:12]
         return digits
     return digits
 
@@ -116,8 +120,9 @@ class SMSService:
             return False
         normalized = _normalize_phone_otpiq(phone_number)
         if len(normalized) < 10 or len(normalized) > 15:
-            logger.error("OTPIQ phone number must be 10–15 digits (intl format)")
+            logger.error("OTPIQ phone number must be 10–15 digits (intl format), got len=%s", len(normalized))
             return False
+        logger.info("OTPIQ phone: input=%r normalized=%s (len=%s)", phone_number, normalized, len(normalized))
         payload = {
             "smsType": "verification",
             "phoneNumber": normalized,
