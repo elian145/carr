@@ -463,25 +463,24 @@ class _RegisterPageState extends State<RegisterPage> {
         );
         Navigator.pushReplacementNamed(context, '/');
       } else {
-        await authService.register(
+        await authService.registerEmailWithVerification(
           username: _usernameController.text,
           email: _emailController.text,
           password: _passwordController.text,
           firstName: _firstNameController.text,
           lastName: _lastNameController.text,
-          phoneNumber: _phoneController.text.isNotEmpty
-              ? _phoneController.text
-              : null,
+          phoneNumber:
+              _phoneController.text.isNotEmpty ? _phoneController.text : null,
         );
-        await authService.initialize();
         if (!mounted) return;
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text(_registrationSuccess(context)),
+          const SnackBar(
+            content: Text(
+              'We sent a confirmation link to your email. Please verify your email to finish creating your account.',
+            ),
             backgroundColor: Colors.green,
           ),
         );
-        Navigator.pushReplacementNamed(context, '/');
       }
     } catch (e) {
       developer.log('Registration failed', name: 'RegisterPage', error: e);

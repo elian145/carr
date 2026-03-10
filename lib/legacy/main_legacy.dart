@@ -19356,7 +19356,7 @@ class _SignupPageState extends State<SignupPage> {
         await showDialog(
           context: context,
           builder: (_) => AlertDialog(
-            title: Text(AppLocalizations.of(context)!.successTitle),
+            title: const Text('Success'),
             content: const Text(
               'We sent a confirmation link to your email. '
               'Please verify your email to finish creating your account.',
