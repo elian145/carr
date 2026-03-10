@@ -59,8 +59,8 @@ class AuthService extends ChangeNotifier {
     }
   }
 
-  // Register new user
-  Future<Map<String, dynamic>> register({
+  // Start email-based registration (no account yet – user must confirm via email link)
+  Future<void> registerEmailWithVerification({
     required String username,
     required String email,
     required String password,
@@ -69,9 +69,8 @@ class AuthService extends ChangeNotifier {
     String? phoneNumber,
   }) async {
     _setLoading(true);
-
     try {
-      final response = await ApiService.register(
+      await ApiService.registerEmailRequest(
         username: username,
         email: email,
         password: password,
@@ -79,10 +78,23 @@ class AuthService extends ChangeNotifier {
         lastName: lastName,
         phoneNumber: phoneNumber,
       );
+    } finally {
+      _setLoading(false);
+    }
+  }
 
-      return response;
-    } catch (e) {
-      rethrow;
+  // Confirm signup from email link; creates account and logs user in.
+  Future<Map<String, dynamic>> confirmSignup(String token) async {
+    _setLoading(true);
+    try {
+      final data = await ApiService.confirmSignup(token);
+      if (data['user'] is Map<String, dynamic>) {
+        _currentUser = Map<String, dynamic>.from(data['user']);
+        _isAuthenticated = true;
+        await WebSocketService.connect();
+        notifyListeners();
+      }
+      return data;
     } finally {
       _setLoading(false);
     }

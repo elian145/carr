@@ -43,6 +43,17 @@ class DeepLinkService {
           key.currentState!.pushNamed('/verify-email', arguments: <String, dynamic>{'token': token});
         }
       });
+      return;
+    }
+    if (path.endsWith('confirm-signup') && token != null && token.isNotEmpty) {
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (key?.currentContext != null && key!.currentState != null) {
+          key.currentState!.pushNamed(
+            '/verify-email',
+            arguments: <String, dynamic>{'token': token, 'mode': 'signup'},
+          );
+        }
+      });
     }
   }
 

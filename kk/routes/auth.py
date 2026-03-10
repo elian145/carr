@@ -33,7 +33,7 @@ from ..auth import (
     verify_password_reset_token,
 )
 from ..extensions import mail
-from ..models import PasswordReset, TokenBlacklist, User, db
+from ..models import PasswordReset, PendingSignup, TokenBlacklist, User, db
 from ..security import rate_limit, validate_input_sanitization
 
 bp = Blueprint("auth", __name__)
@@ -190,6 +190,39 @@ def init_jwt_callbacks(jwt) -> None:
         return jsonify({"message": "Token has been revoked"}), 401
 
 
+def _send_signup_verification_email(to_email: str, token: str) -> bool:
+    """Send signup confirmation link. Returns True if sent."""
+    subject = "Confirm your CARZO signup"
+    link = f"carzo://auth/confirm-signup?token={token}"
+    body = (
+        f"Tap this link in the CARZO app to finish creating your account:\n\n{link}\n\n"
+        "This link expires in 24 hours.\n"
+        "If you did not request this signup, you can ignore this email.\n"
+    )
+    to_mask = (to_email[:3] + "***") if len(to_email) >= 3 else "***"
+    resend_key = (os.environ.get("RESEND_API_KEY") or "").strip()
+    resend_from = (os.environ.get("RESEND_FROM_EMAIL") or "").strip() or "onboarding@resend.dev"
+    if resend_key:
+        resend_from_str = resend_from if ("<" in resend_from and ">" in resend_from) else f"CARZO <{resend_from}>"
+        try:
+            r = requests.post(
+                "https://api.resend.com/emails",
+                json={"from": resend_from_str, "to": [to_email], "subject": subject, "text": body},
+                headers={"Authorization": f"Bearer {resend_key}", "Content-Type": "application/json"},
+                timeout=15,
+            )
+            if 200 <= r.status_code < 300:
+                current_app.logger.info("[SIGNUP-VERIFY] Signup email sent to %s", to_mask)
+                return True
+            current_app.logger.warning("[SIGNUP-VERIFY] Resend returned %s: %s", r.status_code, (r.text or "")[:200])
+        except Exception as e:
+            current_app.logger.exception("[SIGNUP-VERIFY] Resend failed: %s", str(e))
+        return False
+    # Fallbacks (SendGrid/SMTP) are not strictly required for signup; prefer explicit Resend config.
+    current_app.logger.warning("[SIGNUP-VERIFY] No email provider configured for signup confirmation")
+    return False
+
+
 @bp.route("/api/auth/register", methods=["POST"])
 @rate_limit(max_requests=5, window_minutes=60)  # 5 registrations per hour per IP
 def register():
@@ -232,6 +265,155 @@ def register():
     except Exception as e:
         current_app.logger.exception("registration failed: %s", e)
         return jsonify({"message": "Registration failed"}), 500
+
+
+@bp.route("/api/auth/register-request", methods=["POST"])
+@rate_limit(max_requests=5, window_minutes=60)
+def register_request():
+    """
+    Start email-based signup: validate input, create PendingSignup, send confirmation email.
+    The real User is only created after /api/auth/register-confirm succeeds.
+    """
+    try:
+        data = request.get_json(silent=True) or {}
+        data = validate_input_sanitization(data)
+
+        raw_email = (data.get("email") or "").strip()
+        raw_username = (data.get("username") or "").strip()
+        password = (data.get("password") or "").strip()
+        first_name = (data.get("first_name") or "User").strip()
+        last_name = (data.get("last_name") or "Demo").strip()
+        phone = (data.get("phone_number") or data.get("phone") or "").strip()
+
+        if not raw_email or not validate_email(raw_email):
+            return jsonify({"message": "Valid email is required"}), 400
+        if not raw_username:
+            return jsonify({"message": "Username is required"}), 400
+        is_valid, msg = validate_password(password)
+        if not is_valid:
+            return jsonify({"message": msg}), 400
+
+        email_lower = raw_email.lower()
+        if User.query.filter(func.lower(User.email) == email_lower).first():
+            return jsonify({"message": "Account already exists. Please log in."}), 409
+        if User.query.filter(func.lower(User.username) == raw_username.lower()).first():
+            return jsonify({"message": "Username already exists"}), 400
+
+        # Clear previous pending signups for this email.
+        PendingSignup.query.filter(
+            func.lower(PendingSignup.email) == email_lower,
+            PendingSignup.is_used.is_(False),
+        ).delete()
+
+        # Hash password once for pending record using User helper.
+        tmp_user = User(
+            username=raw_username or f"user_{secrets.token_hex(3)}",
+            phone_number="0000000000",
+            first_name=first_name,
+            last_name=last_name,
+        )
+        tmp_user.set_password(password)
+        pw_hash = tmp_user.password_hash
+
+        from ..time_utils import utcnow
+
+        token = secrets.token_urlsafe(32)
+        pending = PendingSignup(
+            email=raw_email,
+            username=raw_username,
+            password_hash=pw_hash,
+            first_name=first_name,
+            last_name=last_name,
+            phone_number=phone or None,
+            token=token,
+            created_at=utcnow(),
+            expires_at=utcnow() + timedelta(hours=24),
+        )
+        db.session.add(pending)
+        db.session.commit()
+
+        if not _send_signup_verification_email(raw_email, token):
+            return jsonify({"message": "Failed to send verification email"}), 500
+
+        return jsonify({"message": "Check your email to complete signup."}), 200
+    except Exception as e:
+        db.session.rollback()
+        current_app.logger.exception("register_request failed: %s", e)
+        return jsonify({"message": "Signup request failed"}), 500
+
+
+@bp.route("/api/auth/register-confirm", methods=["POST"])
+@rate_limit(max_requests=20, window_minutes=60)
+def register_confirm():
+    """
+    Complete email-based signup using a token from the confirmation email.
+    Creates a verified User and returns tokens.
+    """
+    try:
+        data = request.get_json(silent=True) or {}
+        token = (data.get("token") or "").strip()
+        if not token:
+            return jsonify({"message": "Token is required"}), 400
+
+        from ..time_utils import utcnow
+
+        now = utcnow()
+        pending = PendingSignup.query.filter_by(token=token, is_used=False).first()
+        if not pending or pending.expires_at <= now:
+            return jsonify({"message": "Invalid or expired token"}), 400
+
+        email_lower = pending.email.strip().lower()
+        if User.query.filter(func.lower(User.email) == email_lower).first():
+            return jsonify({"message": "Account already exists. Please log in."}), 409
+        if User.query.filter(func.lower(User.username) == pending.username.lower()).first():
+            return jsonify({"message": "Username already exists"}), 400
+        if pending.phone_number:
+            if User.query.filter_by(phone_number=pending.phone_number).first():
+                return jsonify({"message": "Phone number already exists"}), 400
+
+        phone_number = pending.phone_number
+        if not phone_number:
+            phone_number = f"070{secrets.randbelow(10**8):08d}"
+
+        user = User(
+            username=pending.username,
+            email=pending.email,
+            first_name=pending.first_name,
+            last_name=pending.last_name,
+            phone_number=phone_number,
+            is_active=True,
+            is_verified=True,
+            public_id=secrets.token_hex(8),
+        )
+        user.password_hash = pending.password_hash
+        try:
+            user.password = pending.password_hash
+        except Exception:
+            pass
+
+        db.session.add(user)
+        pending.is_used = True
+        db.session.commit()
+
+        identity = user.public_id
+        access_token = create_access_token(identity=identity)
+        refresh_token = create_refresh_token(identity=identity)
+        return (
+            jsonify(
+                {
+                    "message": "Signup confirmed",
+                    "token": access_token,
+                    "access_token": access_token,
+                    "refresh_token": refresh_token,
+                    "user": user.to_dict(),
+                }
+            ),
+            201,
+        )
+    except Exception as e:
+        db.session.rollback()
+        current_app.logger.exception("register_confirm failed: %s", e)
+        return jsonify({"message": "Signup confirmation failed"}), 500
 
 
 @bp.route("/api/auth/login", methods=["POST"])

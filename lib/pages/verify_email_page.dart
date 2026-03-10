@@ -49,15 +49,28 @@ class _VerifyEmailPageState extends State<VerifyEmailPage> {
     setState(() => _isLoading = true);
     try {
       final auth = Provider.of<AuthService>(context, listen: false);
-      await auth.verifyEmail(token);
+      final args = ModalRoute.of(context)?.settings.arguments;
+      final bool isSignup =
+          args is Map<String, dynamic> && (args['mode'] as String?) == 'signup';
+      if (isSignup) {
+        await auth.confirmSignup(token);
+      } else {
+        await auth.verifyEmail(token);
+      }
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('Email verified successfully'),
+        SnackBar(
+          content: Text(isSignup
+              ? 'Account created and email verified'
+              : 'Email verified successfully'),
           backgroundColor: Colors.green,
         ),
       );
-      Navigator.of(context).pop(true);
+      if (isSignup) {
+        Navigator.of(context).pushNamedAndRemoveUntil('/', (route) => false);
+      } else {
+        Navigator.of(context).pop(true);
+      }
     } on ApiException catch (e) {
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(

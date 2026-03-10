@@ -125,6 +125,28 @@ class User(db.Model):
     def __repr__(self):
         return f'<User {self.username}>'
 
+
+class PendingSignup(db.Model):
+    """
+    Pending email-based signup that must be confirmed before creating a real User.
+
+    We intentionally keep this minimal and independent of the main User schema so
+    we can evolve signup without breaking existing accounts.
+    """
+    __tablename__ = "pending_signup"
+
+    id = db.Column(db.Integer, primary_key=True)
+    email = db.Column(db.String(120), nullable=False, index=True)
+    username = db.Column(db.String(80), nullable=False)
+    password_hash = db.Column(db.String(128), nullable=False)
+    first_name = db.Column(db.String(50), nullable=False)
+    last_name = db.Column(db.String(50), nullable=False)
+    phone_number = db.Column(db.String(20), nullable=True)
+    token = db.Column(db.String(64), unique=True, nullable=False, index=True)
+    created_at = db.Column(db.DateTime, default=utcnow, nullable=False)
+    expires_at = db.Column(db.DateTime, nullable=False)
+    is_used = db.Column(db.Boolean, default=False, nullable=False)
+
 class Car(db.Model):
     __tablename__ = 'car'
     

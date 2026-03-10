@@ -19342,20 +19342,33 @@ class _SignupPageState extends State<SignupPage> {
     try {
       final authService = Provider.of<AuthService>(context, listen: false);
       if (_authType == 'email') {
-        await authService.register(
+        await authService.registerEmailWithVerification(
           username: username,
           email: _emailController.text.trim(),
           password: _passwordController.text,
           firstName: username,
           lastName: '',
-          phoneNumber:
-              _phoneController.text.trim().isEmpty
-                  ? null
-                  : _phoneController.text.trim(),
+          phoneNumber: _phoneController.text.trim().isEmpty
+              ? null
+              : _phoneController.text.trim(),
         );
-        await authService.initialize();
         if (!mounted) return;
-        Navigator.pushReplacementNamed(context, '/');
+        await showDialog(
+          context: context,
+          builder: (_) => AlertDialog(
+            title: Text(AppLocalizations.of(context)!.successTitle),
+            content: const Text(
+              'We sent a confirmation link to your email. '
+              'Please verify your email to finish creating your account.',
+            ),
+            actions: [
+              TextButton(
+                onPressed: () => Navigator.pop(context),
+                child: Text(AppLocalizations.of(context)!.okAction),
+              ),
+            ],
+          ),
+        );
         return;
       }
       // Phone path: keep existing API calls for send_otp/signup, then persist tokens via ApiService

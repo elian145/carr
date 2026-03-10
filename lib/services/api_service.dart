@@ -240,7 +240,7 @@ class ApiService {
   }
 
   // Authentication methods
-  static Future<Map<String, dynamic>> register({
+  static Future<Map<String, dynamic>> registerEmailRequest({
     required String username,
     required String email,
     required String password,
@@ -250,28 +250,37 @@ class ApiService {
   }) async {
     final response = await http
         .post(
-          Uri.parse('$baseUrl/auth/signup'),
+          Uri.parse('$baseUrl/auth/register-request'),
           headers: _getHeaders(includeAuth: false),
           body: json.encode({
             'username': username,
             'email': email,
-            'phone': (phoneNumber ?? '').replaceAll(RegExp(r'[^0-9]'), ''),
             'password': password,
             'first_name': firstName,
             'last_name': lastName,
+            if (phoneNumber != null && phoneNumber.trim().isNotEmpty)
+              'phone_number': phoneNumber.trim(),
           }),
         )
         .timeout(_defaultTimeout);
 
+    return _handleResponse(response);
+  }
+
+  static Future<Map<String, dynamic>> confirmSignup(String token) async {
+    final response = await http
+        .post(
+          Uri.parse('$baseUrl/auth/register-confirm'),
+          headers: _getHeaders(includeAuth: false),
+          body: json.encode({'token': token}),
+        )
+        .timeout(_defaultTimeout);
+
     final data = _handleResponse(response);
-    final String? legacyToken = (data['token'] as String?)?.trim();
     final String? access = (data['access_token'] as String?)?.trim();
     final String? refresh = (data['refresh_token'] as String?)?.trim();
-    final token = (legacyToken != null && legacyToken.isNotEmpty)
-        ? legacyToken
-        : access;
-    if (token != null && token.isNotEmpty) {
-      await _saveAccessToken(token);
+    if (access != null && access.isNotEmpty) {
+      await _saveAccessToken(access);
     }
     if (refresh != null && refresh.isNotEmpty) {
       await _saveRefreshToken(refresh);
