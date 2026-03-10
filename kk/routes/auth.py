@@ -99,19 +99,20 @@ def _get_or_create_user_for_phone(
     ln = (last_name or "").strip()
 
     # Legacy SQLite compatibility: some old DBs require a non-null, unique email.
-    # If no email was provided, derive a stable placeholder from the phone number.
-    # We treat this as internal-only (client should not rely on it).
+    # PRAGMA is SQLite-only; on PostgreSQL it would abort the transaction, so skip it.
     if not e:
         try:
             from sqlalchemy import text
 
-            row = db.session.execute(text("PRAGMA table_info(user)")).fetchall()
-            # (cid, name, type, notnull, dflt_value, pk)
-            email_required = any((r[1] == "email" and int(r[3] or 0) == 1) for r in row)
-            if email_required:
-                e = f"{phone_digits}@phone.local"
+            bind = db.session.get_bind()
+            if getattr(bind, "dialect", None) and getattr(bind.dialect, "name", None) == "sqlite":
+                row = db.session.execute(text("PRAGMA table_info(user)")).fetchall()
+                # (cid, name, type, notnull, dflt_value, pk)
+                email_required = any((r[1] == "email" and int(r[3] or 0) == 1) for r in row)
+                if email_required:
+                    e = f"{phone_digits}@phone.local"
         except Exception:
-            pass
+            db.session.rollback()
 
     if e:
         if not validate_email(e):
