@@ -849,10 +849,13 @@ def send_phone_verification():
         if not phone_digits:
             return jsonify({"message": "Phone number is required"}), 400
 
-        # For legacy flows, require the user to exist.
+        # For legacy signup flow: get or create user so we can send OTP to any phone.
         user = User.query.filter_by(phone_number=phone_digits).first()
         if not user:
-            return jsonify({"message": "User not found"}), 404
+            try:
+                user = _get_or_create_user_for_phone(phone_digits)
+            except ValueError as e:
+                return jsonify({"message": str(e)}), 400
 
         if user.is_verified:
             return jsonify({"message": "Phone number is already verified"}), 200
@@ -886,9 +889,15 @@ def send_phone_verification():
             user.phone_verification_attempts = 0
             user.phone_verification_locked_until = None
             db.session.commit()
-            return jsonify({"message": "Failed to send verification code"}), 500
+            err_msg = "Failed to send verification code"
+            # Legacy client expects 200 with sent: false and error (and optional dev_code in dev).
+            payload = {"sent": False, "error": err_msg, "message": err_msg}
+            if current_app.config.get("DEBUG") or (os.environ.get("APP_ENV") or "").strip().lower() == "development":
+                payload["dev_code"] = verification_code
+            return jsonify(payload), 200
 
-        return jsonify({"message": "Verification code sent successfully"}), 200
+        # Legacy client expects sent: true on success.
+        return jsonify({"message": "Verification code sent successfully", "sent": True}), 200
 
     except Exception:
         return jsonify({"message": "Failed to send verification code"}), 500
@@ -1041,6 +1050,7 @@ def phone_verify():
 def compat_signup():
     """
     Compatibility signup endpoint for mobile client.
+    Supports legacy phone flow: when otp_code + phone are sent, verify OTP and complete signup (update user, return tokens).
     """
     try:
         data = request.get_json(silent=True) or {}
@@ -1052,19 +1062,69 @@ def compat_signup():
         password = (data.get("password") or "").strip()
         first_name = (data.get("first_name") or "User").strip()
         last_name = (data.get("last_name") or "Demo").strip()
+        otp_code = (data.get("otp_code") or "").strip()
 
-        phone_digits = "".join(ch for ch in raw_phone if ch.isdigit())
-        if len(phone_digits) > 11:
-            phone_digits = phone_digits[-11:]
+        phone_digits = _normalize_phone(raw_phone)
 
+        # Legacy phone signup: user already received OTP via send_otp; verify code and complete account.
+        if otp_code and phone_digits:
+            user = User.query.filter_by(phone_number=phone_digits).first()
+            if not user:
+                return jsonify({"message": "User not found. Request a new code."}), 404
+            if not password:
+                return jsonify({"message": "Password is required"}), 400
+            is_valid, msg = validate_password(password)
+            if not is_valid:
+                return jsonify({"message": msg}), 400
+            from ..time_utils import utcnow
+            now = utcnow()
+            code_hash = getattr(user, "phone_verification_code_hash", None)
+            expires_at = getattr(user, "phone_verification_expires_at", None)
+            if not code_hash or not expires_at or expires_at <= now:
+                user.phone_verification_code_hash = None
+                user.phone_verification_expires_at = None
+                db.session.commit()
+                return jsonify({"message": "Invalid or expired code. Request a new one."}), 400
+            if len(otp_code) != 6 or not otp_code.isdigit():
+                return jsonify({"message": "Invalid verification code"}), 400
+            expected = _hash_phone_verification_code(phone_digits, otp_code)
+            if not hmac.compare_digest(code_hash, expected):
+                return jsonify({"message": "Invalid or expired verification code"}), 400
+            username = (raw_username or getattr(user, "username", "") or f"user_{secrets.token_hex(3)}").strip().lower()
+            if username and username != (getattr(user, "username") or ""):
+                existing = User.query.filter(func.lower(User.username) == username.lower()).first()
+                if existing and existing.id != user.id:
+                    return jsonify({"message": "Username already exists"}), 400
+                user.username = username
+            user.first_name = first_name or user.first_name or "User"
+            user.last_name = last_name or user.last_name or ""
+            user.set_password(password)
+            user.is_verified = True
+            user.phone_verification_code_hash = None
+            user.phone_verification_expires_at = None
+            user.phone_verification_attempts = 0
+            user.phone_verification_locked_until = None
+            db.session.commit()
+            log_user_action(user, "phone_verified")
+            identity = getattr(user, "public_id", None) or f"user:{user.id}"
+            access_token = create_access_token(identity=identity)
+            refresh_token = create_refresh_token(identity=identity)
+            return jsonify({
+                "message": "Signup successful",
+                "token": access_token,
+                "access_token": access_token,
+                "refresh_token": refresh_token,
+                "user": user.to_dict(),
+            }), 201
+
+        if not phone_digits:
+            phone_digits = f"070{secrets.randbelow(10**8):08d}"
         username = (
             raw_username
             or (email.split("@")[0] if email and "@" in email else "")
             or phone_digits
             or f"user_{secrets.token_hex(3)}"
         ).lower()
-        if not phone_digits:
-            phone_digits = f"070{secrets.randbelow(10**8):08d}"
         if not password:
             return jsonify({"message": "Password is required"}), 400
         is_valid, message = validate_password(password)
