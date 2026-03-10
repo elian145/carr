@@ -825,6 +825,13 @@ def verify_phone():
         return jsonify({"message": "Phone verification failed"}), 500
 
 
+@bp.route("/api/auth/send_otp", methods=["POST"])
+@rate_limit(max_requests=3, window_minutes=10)
+def send_otp_legacy():
+    """Legacy alias: same as send-verification, accepts 'phone' or 'phone_number'."""
+    return send_phone_verification()
+
+
 @bp.route("/api/auth/send-verification", methods=["POST"])
 @rate_limit(max_requests=3, window_minutes=10)  # best-effort (in-memory) throttle per IP
 def send_phone_verification():
