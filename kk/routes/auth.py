@@ -294,6 +294,15 @@ def register_request():
             return jsonify({"message": msg}), 400
 
         email_lower = raw_email.lower()
+
+        # Ensure pending_signup table exists (auto-create for environments without migrations).
+        try:
+            bind = db.session.get_bind()
+            if bind is not None:
+                PendingSignup.__table__.create(bind=bind, checkfirst=True)
+        except Exception:
+            # If auto-create fails, continue; subsequent queries will raise a clearer error.
+            db.session.rollback()
         if User.query.filter(func.lower(User.email) == email_lower).first():
             return jsonify({"message": "Account already exists. Please log in."}), 409
         if User.query.filter(func.lower(User.username) == raw_username.lower()).first():
@@ -358,6 +367,14 @@ def register_confirm():
         from ..time_utils import utcnow
 
         now = utcnow()
+
+        # Ensure pending_signup table exists before querying.
+        try:
+            bind = db.session.get_bind()
+            if bind is not None:
+                PendingSignup.__table__.create(bind=bind, checkfirst=True)
+        except Exception:
+            db.session.rollback()
         pending = PendingSignup.query.filter_by(token=token, is_used=False).first()
         if not pending or pending.expires_at <= now:
             return jsonify({"message": "Invalid or expired token"}), 400
