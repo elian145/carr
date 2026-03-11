@@ -8,7 +8,7 @@ import time
 from datetime import datetime, timedelta
 
 import requests
-from flask import Blueprint, current_app, jsonify, request
+from flask import Blueprint, current_app, jsonify, request, Response
 from flask_mail import Message
 from flask_jwt_extended import (
     create_access_token,
@@ -37,6 +37,49 @@ from ..models import EmailVerification, Message, PasswordReset, PendingSignup, T
 from ..security import rate_limit, validate_input_sanitization
 
 bp = Blueprint("auth", __name__)
+
+
+def _public_base_url() -> str:
+    """Base URL for confirmation/redirect links in emails (e.g. https://api.carzo.com)."""
+    base = (os.environ.get("PUBLIC_BASE_URL") or os.environ.get("CONFIRM_LINK_BASE_URL") or "").strip()
+    if base:
+        return base.rstrip("/")
+    if request and request.host:
+        scheme = "https" if request.is_secure else "http"
+        return f"{scheme}://{request.host}"
+    return ""
+
+
+@bp.route("/auth/confirm-signup", methods=["GET"])
+def confirm_signup_redirect():
+    """
+    Web fallback for signup confirmation. Email sends an https link here;
+    we redirect to carzo:// so the app opens on mobile, and show HTML for desktop.
+    """
+    token = (request.args.get("token") or "").strip()
+    if not token:
+        return Response(
+            "<!DOCTYPE html><html><body><p>Invalid or missing token.</p></body></html>",
+            status=400,
+            mimetype="text/html",
+        )
+    app_link = f"carzo://auth/confirm-signup?token={token}"
+    # Redirect so that when opened on mobile the app can intercept carzo://
+    html = f"""<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <title>Confirm signup - CARZO</title>
+  <meta http-equiv="refresh" content="0;url={app_link}">
+  <style>body {{ font-family: system-ui; max-width: 480px; margin: 2rem auto; padding: 1rem; }}</style>
+</head>
+<body>
+  <p>Redirecting to the CARZO app&hellip;</p>
+  <p>If nothing opens, <a href="{app_link}">tap here to open in the app</a>, or open the CARZO app and paste this link in the &quot;Verify email&quot; screen:</p>
+  <p style="word-break: break-all;"><code>{app_link}</code></p>
+</body>
+</html>"""
+    return Response(html, mimetype="text/html")
 
 # Configurable via RATE_LIMIT_SEND_OTP. Default 30 for easier testing; set to 3 in production if desired.
 _SEND_OTP_MAX_REQUESTS = int(os.environ.get("RATE_LIMIT_SEND_OTP", "30"))
@@ -193,9 +236,13 @@ def init_jwt_callbacks(jwt) -> None:
 def _send_signup_verification_email(to_email: str, token: str) -> bool:
     """Send signup confirmation link. Returns True if sent."""
     subject = "Confirm your CARZO signup"
-    link = f"carzo://auth/confirm-signup?token={token}"
+    base = _public_base_url()
+    app_link = f"carzo://auth/confirm-signup?token={token}"
+    # Prefer https link so the link opens in a browser and can redirect to the app or show fallback
+    primary_link = f"{base}/auth/confirm-signup?token={token}" if base else app_link
     body = (
-        f"Tap this link in the CARZO app to finish creating your account:\n\n{link}\n\n"
+        f"Tap this link to confirm your signup:\n\n{primary_link}\n\n"
+        "If the app does not open, open CARZO and go to Verify email, then paste the link there.\n"
         "This link expires in 24 hours.\n"
         "If you did not request this signup, you can ignore this email.\n"
     )

@@ -4,6 +4,18 @@ import 'package:provider/provider.dart';
 import '../services/api_service.dart';
 import '../services/auth_service.dart';
 
+/// If [input] looks like a confirmation link (carzo:// or https with token=), returns the token; otherwise returns [input] trimmed.
+String _tokenFromPastedInput(String input) {
+  final s = input.trim();
+  if (s.isEmpty) return s;
+  try {
+    final uri = Uri.parse(s);
+    final token = uri.queryParameters['token']?.trim();
+    if (token != null && token.isNotEmpty) return token;
+  } catch (_) {}
+  return s;
+}
+
 /// Verify email using the token from the verification email link or pasted manually.
 class VerifyEmailPage extends StatefulWidget {
   const VerifyEmailPage({super.key, this.initialToken});
@@ -38,14 +50,14 @@ class _VerifyEmailPageState extends State<VerifyEmailPage> {
       token = (args['token'] ?? '').toString().trim();
     }
     if (token != null && token.isNotEmpty) {
-      _tokenController.text = token;
+      _tokenController.text = _tokenFromPastedInput(token);
     }
     _initializedFromArgs = true;
   }
 
   Future<void> _submit() async {
     if (!_formKey.currentState!.validate()) return;
-    final token = _tokenController.text.trim();
+    final token = _tokenFromPastedInput(_tokenController.text);
     setState(() => _isLoading = true);
     try {
       final auth = Provider.of<AuthService>(context, listen: false);

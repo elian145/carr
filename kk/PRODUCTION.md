@@ -25,6 +25,7 @@ Simple API, good deliverability, works on Render free tier. Free tier: 100 email
 3. In Render → Environment add:
    - `RESEND_API_KEY` = your API key
    - `RESEND_FROM_EMAIL` = `onboarding@resend.dev` (testing) or your verified email/domain
+4. For **signup confirmation emails**, set `PUBLIC_BASE_URL` to your API’s public URL (e.g. `https://api.yourdomain.com`). The email will then use an https link that opens in the browser and redirects to the app or shows a fallback; without it, the link is `carzo://` and only works when opened on a device that has the app installed.
 
 ### Option B: SendGrid
 
