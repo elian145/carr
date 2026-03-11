@@ -128,6 +128,72 @@ class _ProfilePageState extends State<ProfilePage> {
     if (mounted) await _refresh();
   }
 
+  Future<void> _deleteAccountTapped() async {
+    final passwordResult = await showDialog<String?>(
+      context: context,
+      builder: (ctx) {
+        final passwordController = TextEditingController();
+        return AlertDialog(
+          title: const Text('Delete account'),
+          content: SingleChildScrollView(
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                const Text(
+                  'This will permanently delete your account and all your data (listings, messages, favorites). This cannot be undone.',
+                ),
+                const SizedBox(height: 16),
+                TextField(
+                  controller: passwordController,
+                  decoration: const InputDecoration(
+                    labelText: 'Password (optional)',
+                    hintText: 'Confirm with password if you have one',
+                  ),
+                  obscureText: true,
+                  autocorrect: false,
+                ),
+              ],
+            ),
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(ctx),
+              child: const Text('Cancel'),
+            ),
+            TextButton(
+              onPressed: () {
+                final p = passwordController.text.trim();
+                Navigator.pop(ctx, p);
+              },
+              child: Text(
+                'Delete my account',
+                style: TextStyle(color: Theme.of(context).colorScheme.error),
+              ),
+            ),
+          ],
+        );
+      },
+    );
+    if (passwordResult == null || !mounted) return;
+    try {
+      await AuthService().deleteAccount(password: passwordResult.isEmpty ? null : passwordResult);
+      if (!mounted) return;
+      Navigator.pushNamedAndRemoveUntil(context, '/login', (route) => false);
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Your account has been deleted')),
+      );
+    } catch (e) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(e.toString().replaceFirst('Exception: ', '')),
+          backgroundColor: Theme.of(context).colorScheme.error,
+        ),
+      );
+    }
+  }
+
   Future<void> _refresh() async {
     final auth = Provider.of<AuthService>(context, listen: false);
     setState(() {
@@ -303,6 +369,18 @@ class _ProfilePageState extends State<ProfilePage> {
                               onTap: () => _showPhoneVerifyDialog(context, phone, auth),
                             ),
                         ],
+                        const Divider(height: 1),
+                        ListTile(
+                          leading: Icon(Icons.delete_forever_outlined, color: Theme.of(context).colorScheme.error),
+                          title: Text(
+                            'Delete account',
+                            style: TextStyle(
+                              color: Theme.of(context).colorScheme.error,
+                              fontWeight: FontWeight.w500,
+                            ),
+                          ),
+                          onTap: _deleteAccountTapped,
+                        ),
                       ],
                     ),
                   ),

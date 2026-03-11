@@ -319,6 +319,17 @@ class _SettingsPageState extends State<SettingsPage> {
                     leading: const Icon(Icons.lock_outline),
                     onTap: () => Navigator.pushNamed(context, '/change-password'),
                   ),
+                  ListTile(
+                    title: Text(
+                      'Delete account',
+                      style: TextStyle(
+                        color: Theme.of(context).colorScheme.error,
+                        fontWeight: FontWeight.w500,
+                      ),
+                    ),
+                    leading: Icon(Icons.delete_forever_outlined, color: Theme.of(context).colorScheme.error),
+                    onTap: _deleteAccountTapped,
+                  ),
                   Padding(
                     padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
                     child: ElevatedButton.icon(
@@ -329,18 +340,6 @@ class _SettingsPageState extends State<SettingsPage> {
                       },
                       icon: const Icon(Icons.logout),
                       label: Text(loc?.logout ?? 'Logout'),
-                    ),
-                  ),
-                  const Divider(height: 1),
-                  Padding(
-                    padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-                    child: TextButton.icon(
-                      onPressed: _deleteAccountTapped,
-                      icon: Icon(Icons.delete_forever_outlined, size: 20, color: Theme.of(context).colorScheme.error),
-                      label: Text(
-                        'Delete account',
-                        style: TextStyle(color: Theme.of(context).colorScheme.error, fontWeight: FontWeight.w500),
-                      ),
                     ),
                   ),
                 ] else ...[
