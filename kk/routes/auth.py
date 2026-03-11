@@ -33,7 +33,7 @@ from ..auth import (
     verify_password_reset_token,
 )
 from ..extensions import mail
-from ..models import PasswordReset, PendingSignup, TokenBlacklist, User, db
+from ..models import EmailVerification, Message, PasswordReset, PendingSignup, TokenBlacklist, User, db
 from ..security import rate_limit, validate_input_sanitization
 
 bp = Blueprint("auth", __name__)
@@ -655,6 +655,52 @@ def change_password():
         return jsonify({"message": "Password changed successfully"}), 200
     except Exception:
         return jsonify({"message": "Failed to change password"}), 500
+
+
+@bp.route("/api/auth/delete-account", methods=["POST", "DELETE"])
+@jwt_required()
+def delete_account():
+    """Permanently delete the authenticated user's account and all related data."""
+    try:
+        current_user = get_current_user()
+        if not current_user:
+            return jsonify({"message": "Unauthorized"}), 401
+
+        data = request.get_json(silent=True) or {}
+        password = (data.get("password") or data.get("current_password") or "").strip()
+
+        # If password is provided, verify it for extra confirmation
+        if password and not current_user.check_password(password):
+            return jsonify({"message": "Incorrect password"}), 400
+
+        user_id = current_user.id
+
+        # Remove many-to-many associations so FK constraints don't block user delete
+        current_user.favorites = []
+        current_user.viewed_listings = []
+
+        # Delete messages where user is sender or receiver
+        Message.query.filter(
+            (Message.sender_id == user_id) | (Message.receiver_id == user_id),
+        ).delete(synchronize_session=False)
+
+        # Delete token blacklist entries for this user
+        TokenBlacklist.query.filter_by(user_id=user_id).delete()
+
+        # Delete password reset and email verification tokens
+        PasswordReset.query.filter_by(user_id=user_id).delete()
+        EmailVerification.query.filter_by(user_id=user_id).delete()
+
+        log_user_action(current_user, "account_deleted")
+
+        db.session.delete(current_user)
+        db.session.commit()
+
+        return jsonify({"message": "Account deleted successfully"}), 200
+    except Exception as e:
+        db.session.rollback()
+        current_app.logger.exception("delete_account failed: %s", e)
+        return jsonify({"message": "Failed to delete account"}), 500
 
 
 def _send_password_reset_email(to_email: str, token: str) -> None:

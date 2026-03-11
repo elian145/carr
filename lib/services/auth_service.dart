@@ -204,6 +204,21 @@ class AuthService extends ChangeNotifier {
     }
   }
 
+  /// Permanently delete the current user's account. Optionally pass [password] for confirmation.
+  /// Clears local auth state and disconnects WebSocket after successful deletion.
+  Future<void> deleteAccount({String? password}) async {
+    _setLoading(true);
+    try {
+      await ApiService.deleteAccount(password: password);
+      WebSocketService.disconnect();
+      await _clearAuthState();
+    } catch (e) {
+      rethrow;
+    } finally {
+      _setLoading(false);
+    }
+  }
+
   // Verify email (with token from verification email link or manual entry)
   Future<Map<String, dynamic>> verifyEmail(String token) async {
     _setLoading(true);

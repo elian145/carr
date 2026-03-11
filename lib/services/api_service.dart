@@ -412,6 +412,19 @@ class ApiService {
     );
   }
 
+  /// Permanently delete the current user's account. Optionally pass [password] for confirmation.
+  static Future<Map<String, dynamic>> deleteAccount({String? password}) async {
+    final body = <String, dynamic>{};
+    if (password != null && password.trim().isNotEmpty) {
+      body['password'] = password.trim();
+    }
+    return await _makeAuthenticatedRequest(
+      'POST',
+      '/auth/delete-account',
+      body: body.isNotEmpty ? body : null,
+    );
+  }
+
   static Future<Map<String, dynamic>> forgotPassword(String email) async {
     final response = await http
         .post(
