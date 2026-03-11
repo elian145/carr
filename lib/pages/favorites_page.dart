@@ -103,11 +103,15 @@ class _FavoritesPageState extends State<FavoritesPage> {
                 child: Column(
                   mainAxisSize: MainAxisSize.min,
                   children: [
-                    Text(loc?.loginRequired ?? 'Login required'),
+                    Text(
+                      loc?.notLoggedIn ??
+                          'You have to log in or sign up first.',
+                      textAlign: TextAlign.center,
+                    ),
                     const SizedBox(height: 12),
                     ElevatedButton(
                       onPressed: () => Navigator.pushNamed(context, '/login'),
-                      child: Text(loc?.loginAction ?? 'Login'),
+                      child: Text(loc?.loginAction ?? 'Log In'),
                     ),
                   ],
                 ),

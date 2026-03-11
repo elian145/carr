@@ -2315,6 +2315,8 @@ class ComparisonButton extends StatelessWidget {
 }
 
 /// Redirects to /login if the user is not authenticated; otherwise shows [child].
+/// Special-case: the Favorites page is allowed to show even when logged out
+/// so it can display its own "login/signup required" message.
 class AuthGuard extends StatelessWidget {
   const AuthGuard({super.key, required this.child});
   final Widget child;
@@ -2322,7 +2324,8 @@ class AuthGuard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final auth = Provider.of<AuthService>(context);
-    if (auth.isAuthenticated) return child;
+    // Allow FavoritesPage for logged-out users so it can show a friendly prompt.
+    if (auth.isAuthenticated || child is FavoritesPage) return child;
     WidgetsBinding.instance.addPostFrameCallback((_) {
       if (context.mounted) {
         Navigator.pushReplacementNamed(context, '/login');
