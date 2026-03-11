@@ -18673,7 +18673,9 @@ class _FavoritesPageState extends State<FavoritesPage> {
   @override
   void initState() {
     super.initState();
-    _loadFavorites();
+    // Delay loading until after first frame so that inherited widgets
+    // like Localizations are available when _loadFavorites runs.
+    WidgetsBinding.instance.addPostFrameCallback((_) => _loadFavorites());
   }
 
   Future<void> _loadFavorites() async {
