@@ -18669,6 +18669,7 @@ class _FavoritesPageState extends State<FavoritesPage> {
   List<Map<String, dynamic>> _favorites = [];
   bool _loading = true;
   String? _error;
+  bool _loginRequired = false;
 
   @override
   void initState() {
@@ -18682,12 +18683,13 @@ class _FavoritesPageState extends State<FavoritesPage> {
     setState(() {
       _loading = true;
       _error = null;
+      _loginRequired = false;
     });
     try {
       final tok = ApiService.accessToken;
       if (tok == null || tok.isEmpty) {
         setState(() {
-          _error = AppLocalizations.of(context)!.loginRequired;
+          _loginRequired = true;
           _loading = false;
         });
         return;
@@ -18727,7 +18729,7 @@ class _FavoritesPageState extends State<FavoritesPage> {
         }
       } else if (resp.statusCode == 401) {
         setState(() {
-          _error = AppLocalizations.of(context)!.loginRequired;
+          _loginRequired = true;
         });
       } else {
         setState(() {
@@ -18786,6 +18788,26 @@ class _FavoritesPageState extends State<FavoritesPage> {
       appBar: AppBar(title: Text(AppLocalizations.of(context)!.favoritesTitle)),
       body: _loading
           ? Center(child: CircularProgressIndicator())
+          : _loginRequired
+          ? Center(
+              child: Padding(
+                padding: const EdgeInsets.all(16),
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Text(
+                      AppLocalizations.of(context)!.notLoggedIn,
+                      textAlign: TextAlign.center,
+                    ),
+                    const SizedBox(height: 12),
+                    ElevatedButton(
+                      onPressed: () => Navigator.pushNamed(context, '/login'),
+                      child: Text(AppLocalizations.of(context)!.loginAction),
+                    ),
+                  ],
+                ),
+              ),
+            )
           : (_error != null)
           ? Center(child: Text(_error!))
           : (_favorites.isEmpty)
@@ -20111,6 +20133,13 @@ class _ProfilePageState extends State<ProfilePage> {
                       ),
                     );
                   }),
+                  SizedBox(height: 12),
+                  _buildActionButton(
+                    Icons.delete_forever_outlined,
+                    'Delete account',
+                    () => _showDeleteAccountDialog(context),
+                    color: Colors.red,
+                  ),
                 ],
               ),
             ),
@@ -20193,7 +20222,8 @@ class _ProfilePageState extends State<ProfilePage> {
     );
   }
 
-  Widget _buildActionButton(IconData icon, String title, VoidCallback onTap) {
+  Widget _buildActionButton(IconData icon, String title, VoidCallback onTap, {Color? color}) {
+    final accent = color ?? Color(0xFFFF6B00);
     return InkWell(
       onTap: onTap,
       borderRadius: BorderRadius.circular(12),
@@ -20209,17 +20239,17 @@ class _ProfilePageState extends State<ProfilePage> {
             Container(
               padding: EdgeInsets.all(8),
               decoration: BoxDecoration(
-                color: Color(0xFFFF6B00).withOpacity(0.1),
+                color: accent.withOpacity(0.1),
                 borderRadius: BorderRadius.circular(8),
               ),
-              child: Icon(icon, size: 20, color: Color(0xFFFF6B00)),
+              child: Icon(icon, size: 20, color: accent),
             ),
             SizedBox(width: 12),
             Text(
               title,
               style: TextStyle(
                 fontSize: 16,
-                color: Colors.grey[800],
+                color: color ?? Colors.grey[800],
                 fontWeight: FontWeight.w500,
               ),
             ),
@@ -20228,6 +20258,70 @@ class _ProfilePageState extends State<ProfilePage> {
           ],
         ),
       ),
+    );
+  }
+
+  void _showDeleteAccountDialog(BuildContext context) {
+    final passwordController = TextEditingController();
+    showDialog<void>(
+      context: context,
+      builder: (ctx) {
+        return AlertDialog(
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+          title: Text('Delete account', style: TextStyle(fontWeight: FontWeight.bold)),
+          content: SingleChildScrollView(
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  'This will permanently delete your account and all your data (listings, messages, favorites). This cannot be undone.',
+                ),
+                SizedBox(height: 16),
+                TextField(
+                  controller: passwordController,
+                  decoration: InputDecoration(
+                    labelText: 'Password (optional)',
+                    hintText: 'Confirm with password if you have one',
+                    border: OutlineInputBorder(),
+                  ),
+                  obscureText: true,
+                  autocorrect: false,
+                ),
+              ],
+            ),
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.of(ctx).pop(),
+              child: Text('Cancel', style: TextStyle(color: Colors.grey[600])),
+            ),
+            TextButton(
+              onPressed: () async {
+                final password = passwordController.text.trim();
+                Navigator.of(ctx).pop();
+                try {
+                  await AuthService().deleteAccount(password: password.isEmpty ? null : password);
+                  if (!context.mounted) return;
+                  Navigator.pushNamedAndRemoveUntil(context, '/login', (route) => false);
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    SnackBar(content: Text('Your account has been deleted')),
+                  );
+                } catch (e) {
+                  if (!context.mounted) return;
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    SnackBar(
+                      content: Text(e.toString().replaceFirst('Exception: ', '')),
+                      backgroundColor: Colors.red,
+                    ),
+                  );
+                }
+              },
+              child: Text('Delete my account', style: TextStyle(color: Colors.red, fontWeight: FontWeight.w600)),
+            ),
+          ],
+        );
+      },
     );
   }
 
