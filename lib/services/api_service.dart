@@ -21,7 +21,8 @@ class ApiException implements Exception {
 }
 
 class ApiService {
-  static const Duration _defaultTimeout = Duration(seconds: 30);
+  /// 60s to allow Render (and similar PaaS) cold starts on first request.
+  static const Duration _defaultTimeout = Duration(seconds: 60);
   static const Duration _uploadTimeout = Duration(seconds: 180);
 
   static String get baseUrl {

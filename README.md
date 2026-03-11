@@ -44,6 +44,18 @@ flutter run -d emulator-5554 --flavor dev
 
 Without `--flavor dev`, Gradle may build successfully but Flutter will report "failed to produce an .apk file" because it cannot locate the flavor-specific APK.
 
+## iOS testing (Codemagic + Sideloadly)
+
+To test the app on a real iPhone without a Mac or App Store:
+
+1. **Codemagic** builds an unsigned IPA in the cloud (workflow: **iOS (IPA for Sideloadly)** in `codemagic.yaml`). The build points at your **Render** server by default (`https://carr-5hrm.onrender.com`).
+2. Download **Runner-unsigned.ipa** from the build artifacts.
+3. Use **Sideloadly** on your PC to install the IPA on your iPhone (USB + Apple ID signing).
+
+Full steps, env vars, and troubleshooting: **[docs/IOS_TESTING.md](docs/IOS_TESTING.md)**.
+
+**Backend not working in the app?** (1) In a browser open `https://carr-5hrm.onrender.com/health` and `https://carr-5hrm.onrender.com/api/cars` to confirm Render is up. (2) In the app go to **Settings → API**, set the URL to `https://carr-5hrm.onrender.com`, Save, then refresh. (3) On free tier the first request after idle can take 30–60s — wait and retry. See [docs/IOS_TESTING.md#6-backend-not-working-in-the-app](docs/IOS_TESTING.md#6-backend-not-working-in-the-app).
+
 # Car Listings App - Complete Backend & Frontend System
 
 A comprehensive car listing application with real-time chat, notifications, user authentication, and admin dashboard.
@@ -392,9 +404,8 @@ flutter drive --target=test_driver/app.dart
    ```
 
 2. **iOS**
-   ```bash
-   flutter build ios --release
-   ```
+   - For **Sideloadly** (no Mac needed): use Codemagic workflow **iOS (IPA for Sideloadly)** and install the unsigned IPA via Sideloadly — see [docs/IOS_TESTING.md](docs/IOS_TESTING.md).
+   - For Xcode / TestFlight: `flutter build ios --release` (or `flutter build ipa` with signing).
 
 3. **Web**
    ```bash
