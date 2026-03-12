@@ -11,6 +11,44 @@ from .security import generate_secure_filename
 from .time_utils import utcnow
 
 
+def _r2_configured() -> bool:
+    """
+    True if Cloudflare R2 (or another S3-compatible backend) is configured.
+
+    We reuse the same config keys as the media blueprint:
+    - R2_ACCOUNT_ID
+    - R2_BUCKET_NAME
+    - R2_ACCESS_KEY_ID
+    - R2_SECRET_ACCESS_KEY
+    """
+    c = current_app.config
+    return bool(
+        c.get("R2_ACCOUNT_ID")
+        and c.get("R2_BUCKET_NAME")
+        and c.get("R2_ACCESS_KEY_ID")
+        and c.get("R2_SECRET_ACCESS_KEY")
+    )
+
+
+def _r2_client():
+    """Return an S3-compatible client for Cloudflare R2."""
+    import boto3
+    from botocore.config import Config
+
+    c = current_app.config
+    account_id = c["R2_ACCOUNT_ID"]
+    region = (os.environ.get("R2_REGION") or "auto").strip() or "auto"
+    endpoint = f"https://{account_id}.r2.cloudflarestorage.com"
+    return boto3.client(
+        "s3",
+        region_name=region,
+        endpoint_url=endpoint,
+        aws_access_key_id=c["R2_ACCESS_KEY_ID"],
+        aws_secret_access_key=c["R2_SECRET_ACCESS_KEY"],
+        config=Config(signature_version="s3v4"),
+    )
+
+
 def heic_to_jpeg(raw_bytes: bytes) -> Tuple[bytes, bool]:
     """Convert HEIC/HEIF bytes to JPEG. Returns (jpeg_bytes, True) on success."""
     try:
@@ -72,9 +110,8 @@ def process_and_store_image(file_storage, inline_base64: bool, *, skip_blur: boo
         b64 = None
         base_name = os.path.splitext(filename)[0]
         final_filename = f"processed_{timestamp}_{base_name}.jpg"
-        final_rel = os.path.join("uploads", "car_photos", final_filename).replace("\\", "/")
-        final_abs = os.path.join(current_app.root_path, "static", final_rel)
-        os.makedirs(os.path.dirname(final_abs), exist_ok=True)
+        # Default local-relative path under /static for backward compatibility.
+        final_rel_local = os.path.join("uploads", "car_photos", final_filename).replace("\\", "/")
 
         with open(temp_abs, "rb") as fp:
             raw_bytes = fp.read()
@@ -114,8 +151,39 @@ def process_and_store_image(file_storage, inline_base64: bool, *, skip_blur: boo
         except Exception:
             pass
 
-        with open(final_abs, "wb") as out:
-            out.write(out_bytes)
+        # Persist the optimized bytes: prefer Cloudflare R2 when configured,
+        # otherwise fall back to local filesystem under /static/uploads.
+        final_rel: str
+        if _r2_configured():
+            try:
+                client = _r2_client()
+                bucket = current_app.config["R2_BUCKET_NAME"]
+                key = f"car_photos/{final_filename}"
+                client.put_object(
+                    Bucket=bucket,
+                    Key=key,
+                    Body=out_bytes,
+                    ContentType="image/jpeg",
+                )
+                public_base = (current_app.config.get("R2_PUBLIC_URL") or "").strip()
+                if public_base:
+                    final_rel = f"{public_base.rstrip('/')}/{key}"
+                else:
+                    # Store the object key when no public base URL is configured.
+                    final_rel = key
+            except Exception:
+                # On any cloud failure, fall back to local disk to avoid breaking uploads.
+                final_abs = os.path.join(current_app.root_path, "static", final_rel_local)
+                os.makedirs(os.path.dirname(final_abs), exist_ok=True)
+                with open(final_abs, "wb") as out:
+                    out.write(out_bytes)
+                final_rel = final_rel_local
+        else:
+            final_abs = os.path.join(current_app.root_path, "static", final_rel_local)
+            os.makedirs(os.path.dirname(final_abs), exist_ok=True)
+            with open(final_abs, "wb") as out:
+                out.write(out_bytes)
+            final_rel = final_rel_local
 
         if inline_base64:
             try:
