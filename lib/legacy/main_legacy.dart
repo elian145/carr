@@ -2867,6 +2867,7 @@ class _HomePageState extends State<HomePage> {
   bool isPriceDropdown = true;
   bool isYearDropdown = true;
   bool isMileageDropdown = true;
+  bool isEngineSizeDropdown = true;
   static const String _filtersKey = 'home_filters_v1';
   static const String _sellFiltersKey = 'sell_filters_v1';
   static const String _savedSearchesKey = 'saved_searches_v1';
@@ -2885,6 +2886,9 @@ class _HomePageState extends State<HomePage> {
   /// When we show "No cars found" with a sort selected, we auto-fetch once so
   /// listings appear without the user clicking "Apply Filters".
   bool _autoFetchedForEmptyWithSort = false;
+
+  // Toggle state for inline engine size picker on the sell page.
+  bool isInlineEngineSizeDropdown = true;
 
   void _resetAllFiltersInMemory() {
     selectedBrand = null;
@@ -3533,6 +3537,7 @@ class _HomePageState extends State<HomePage> {
   late final TextEditingController _maxYearController;
   late final TextEditingController _minMileageController;
   late final TextEditingController _maxMileageController;
+  late final TextEditingController _engineSizeController;
 
   @override
   void initState() {
@@ -3543,6 +3548,7 @@ class _HomePageState extends State<HomePage> {
     _maxYearController = TextEditingController();
     _minMileageController = TextEditingController();
     _maxMileageController = TextEditingController();
+    _engineSizeController = TextEditingController();
     // Only clear filters, but preserve cached car data for better reliability
     _clearFiltersOnly();
     _resetAllFiltersInMemory();
@@ -3578,6 +3584,7 @@ class _HomePageState extends State<HomePage> {
     _maxYearController.dispose();
     _minMileageController.dispose();
     _maxMileageController.dispose();
+    _engineSizeController.dispose();
     try {
       _homeScrollController.dispose();
     } catch (_) {}
@@ -6154,6 +6161,8 @@ class _HomePageState extends State<HomePage> {
                                         selectedMinMileage ?? '';
                                     _maxMileageController.text =
                                         selectedMaxMileage ?? '';
+                                    _engineSizeController.text =
+                                        selectedEngineSize ?? '';
                                     await showDialog(
                                       context: context,
                                       builder: (context) {
@@ -8647,70 +8656,183 @@ class _HomePageState extends State<HomePage> {
                                                       },
                                                     ),
                                                     SizedBox(height: 10),
-                                                    // Engine Size Dropdown
-                                                    DropdownButtonFormField<
-                                                      String
-                                                    >(
-                                                      initialValue:
-                                                          selectedEngineSize ??
-                                                          '',
-                                                      decoration: InputDecoration(
-                                                        labelText:
-                                                            AppLocalizations.of(
-                                                              context,
-                                                            )!.engineSizeL,
-                                                        filled: true,
-                                                        fillColor: Colors.black
-                                                            .withOpacity(0.2),
-                                                        labelStyle: TextStyle(
-                                                          color: Colors.white,
+                                                    // Engine Size Dropdown / Manual input
+                                                    Row(
+                                                      children: [
+                                                        Expanded(
+                                                          child: isEngineSizeDropdown
+                                                              ? DropdownButtonFormField<
+                                                                  String
+                                                                >(
+                                                                  initialValue:
+                                                                      selectedEngineSize ??
+                                                                          '',
+                                                                  decoration:
+                                                                      InputDecoration(
+                                                                    labelText:
+                                                                        AppLocalizations.of(
+                                                                      context,
+                                                                    )!
+                                                                        .engineSizeL,
+                                                                    filled: true,
+                                                                    fillColor: Colors
+                                                                        .black
+                                                                        .withOpacity(
+                                                                      0.2,
+                                                                    ),
+                                                                    labelStyle:
+                                                                        TextStyle(
+                                                                      color: Colors
+                                                                          .white,
+                                                                    ),
+                                                                    border:
+                                                                        OutlineInputBorder(
+                                                                      borderRadius:
+                                                                          BorderRadius
+                                                                              .circular(
+                                                                        12,
+                                                                      ),
+                                                                    ),
+                                                                  ),
+                                                                  items: [
+                                                                    DropdownMenuItem(
+                                                                      value: '',
+                                                                      child: Text(
+                                                                        AppLocalizations.of(
+                                                                          context,
+                                                                        )!
+                                                                            .any,
+                                                                        style:
+                                                                            TextStyle(
+                                                                          color: Colors
+                                                                              .grey,
+                                                                        ),
+                                                                      ),
+                                                                    ),
+                                                                    ...getAvailableEngineSizes()
+                                                                        .where(
+                                                                          (e) =>
+                                                                              e !=
+                                                                              'Any',
+                                                                        )
+                                                                        .map(
+                                                                          (
+                                                                            e,
+                                                                          ) =>
+                                                                              DropdownMenuItem(
+                                                                            value:
+                                                                                e,
+                                                                            child:
+                                                                                Text(
+                                                                              '${_localizeDigitsGlobal(context, e)}${AppLocalizations.of(context)!.unit_liter_suffix}',
+                                                                            ),
+                                                                          ),
+                                                                        )
+                                                                        ,
+                                                                  ],
+                                                                  onChanged:
+                                                                      (value) {
+                                                                    setState(
+                                                                      () =>
+                                                                          selectedEngineSize =
+                                                                              value ==
+                                                                                      ''
+                                                                                  ? null
+                                                                                  : value,
+                                                                    );
+                                                                    _persistFilters();
+                                                                  },
+                                                                )
+                                                              : TextFormField(
+                                                                  controller:
+                                                                      _engineSizeController,
+                                                                  decoration:
+                                                                      InputDecoration(
+                                                                    labelText:
+                                                                        AppLocalizations.of(
+                                                                      context,
+                                                                    )!
+                                                                        .engineSizeL,
+                                                                    filled: true,
+                                                                    fillColor: Colors
+                                                                        .black
+                                                                        .withOpacity(
+                                                                      0.2,
+                                                                    ),
+                                                                    labelStyle:
+                                                                        TextStyle(
+                                                                      color: Colors
+                                                                          .white,
+                                                                    ),
+                                                                    border:
+                                                                        OutlineInputBorder(
+                                                                      borderRadius:
+                                                                          BorderRadius
+                                                                              .circular(
+                                                                        12,
+                                                                      ),
+                                                                    ),
+                                                                  ),
+                                                                  keyboardType:
+                                                                      const TextInputType
+                                                                              .numberWithOptions(
+                                                                    decimal: true,
+                                                                  ),
+                                                                  onChanged:
+                                                                      (value) {
+                                                                    setState(
+                                                                      () =>
+                                                                          selectedEngineSize =
+                                                                              value
+                                                                                  .isEmpty
+                                                                              ? null
+                                                                              : value,
+                                                                    );
+                                                                    _persistFilters();
+                                                                  },
+                                                                ),
                                                         ),
-                                                        border: OutlineInputBorder(
-                                                          borderRadius:
-                                                              BorderRadius.circular(
-                                                                12,
+                                                        const SizedBox(width: 8),
+                                                        IconButton(
+                                                          onPressed: () =>
+                                                              setStateDialog(
+                                                            () {
+                                                              if (isEngineSizeDropdown) {
+                                                                _engineSizeController
+                                                                        .text =
+                                                                    selectedEngineSize ??
+                                                                        '';
+                                                              }
+                                                              isEngineSizeDropdown =
+                                                                  !isEngineSizeDropdown;
+                                                            },
+                                                          ),
+                                                          icon: Icon(
+                                                            isEngineSizeDropdown
+                                                                ? Icons.edit
+                                                                : Icons.list,
+                                                            color: const Color(
+                                                              0xFFFF6B00,
+                                                            ),
+                                                          ),
+                                                          style: IconButton
+                                                              .styleFrom(
+                                                            backgroundColor:
+                                                                Colors.black
+                                                                    .withOpacity(
+                                                              0.2,
+                                                            ),
+                                                            shape:
+                                                                RoundedRectangleBorder(
+                                                              borderRadius:
+                                                                  BorderRadius
+                                                                      .circular(
+                                                                8,
                                                               ),
-                                                        ),
-                                                      ),
-                                                      items: [
-                                                        DropdownMenuItem(
-                                                          value: '',
-                                                          child: Text(
-                                                            AppLocalizations.of(
-                                                              context,
-                                                            )!.any,
-                                                            style: TextStyle(
-                                                              color:
-                                                                  Colors.grey,
                                                             ),
                                                           ),
                                                         ),
-                                                        ...getAvailableEngineSizes()
-                                                            .where(
-                                                              (e) => e != 'Any',
-                                                            )
-                                                            .map(
-                                                              (
-                                                                e,
-                                                              ) => DropdownMenuItem(
-                                                                value: e,
-                                                                child: Text(
-                                                                  '${_localizeDigitsGlobal(context, e)}${AppLocalizations.of(context)!.unit_liter_suffix}',
-                                                                ),
-                                                              ),
-                                                            )
-                                                            ,
                                                       ],
-                                                      onChanged: (value) {
-                                                        setState(
-                                                          () =>
-                                                              selectedEngineSize =
-                                                                  value == ''
-                                                                  ? null
-                                                                  : value,
-                                                        );
-                                                        _persistFilters();
-                                                      },
                                                     ),
                                                     SizedBox(height: 10),
                                                     DropdownButtonFormField<
@@ -18084,13 +18206,60 @@ Widget build(BuildContext context) {
                 validator: (v) => v == null || v.isEmpty ? AppLocalizations.of(context)!.selectSeating : null,
               ),
               SizedBox(height: 12),
-              // Engine Size Dropdown
-              DropdownButtonFormField<String>(
-                decoration: InputDecoration(labelText: AppLocalizations.of(context)!.engineSizeL),
-                value: selectedEngineSize != null && getAddCarAvailableEngineSizes().contains(selectedEngineSize) ? selectedEngineSize : null,
-                items: getAddCarAvailableEngineSizes().map((e) => DropdownMenuItem(value: e, child: Text('${_localizeDigitsGlobal(context, e)}${AppLocalizations.of(context)!.unit_liter_suffix}'))).toList(),
-                onChanged: (v) => setState(() => selectedEngineSize = v),
-                validator: (v) => v == null || v.isEmpty ? AppLocalizations.of(context)!.selectEngineSize : null,
+              // Engine Size Dropdown / Manual input
+              Row(
+                children: [
+                  Expanded(
+                    child: isInlineEngineSizeDropdown
+                        ? DropdownButtonFormField<String>(
+                            decoration: InputDecoration(labelText: AppLocalizations.of(context)!.engineSizeL),
+                            value: selectedEngineSize != null && getAddCarAvailableEngineSizes().contains(selectedEngineSize) ? selectedEngineSize : null,
+                            items: getAddCarAvailableEngineSizes()
+                                .map(
+                                  (e) => DropdownMenuItem(
+                                    value: e,
+                                    child: Text(
+                                      '${_localizeDigitsGlobal(context, e)}${AppLocalizations.of(context)!.unit_liter_suffix}',
+                                    ),
+                                  ),
+                                )
+                                .toList(),
+                            onChanged: (v) => setState(() => selectedEngineSize = v),
+                            validator: (v) => v == null || v.isEmpty ? AppLocalizations.of(context)!.selectEngineSize : null,
+                          )
+                        : TextFormField(
+                            decoration: InputDecoration(labelText: AppLocalizations.of(context)!.engineSizeL),
+                            keyboardType: const TextInputType.numberWithOptions(decimal: true),
+                            onChanged: (v) => setState(() => selectedEngineSize = v.isEmpty ? null : v),
+                            validator: (v) {
+                              if (v == null || v.isEmpty) {
+                                return AppLocalizations.of(context)!.selectEngineSize;
+                              }
+                              final parsed = double.tryParse(v);
+                              if (parsed == null || parsed <= 0) {
+                                return AppLocalizations.of(context)!.invalidField;
+                              }
+                              return null;
+                            },
+                          ),
+                  ),
+                  const SizedBox(width: 8),
+                  IconButton(
+                    onPressed: () => setState(() {
+                      isInlineEngineSizeDropdown = !isInlineEngineSizeDropdown;
+                    }),
+                    icon: Icon(
+                      isInlineEngineSizeDropdown ? Icons.edit : Icons.list,
+                      color: const Color(0xFFFF6B00),
+                    ),
+                    style: IconButton.styleFrom(
+                      backgroundColor: Colors.grey.withOpacity(0.2),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(8),
+                      ),
+                    ),
+                  ),
+                ],
               ),
               SizedBox(height: 12),
               // City Dropdown
