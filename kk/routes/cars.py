@@ -146,6 +146,26 @@ def _with_media_compat(car: Car) -> dict:
     return d
 
 
+def _safe_int(val, default=None):
+    """Parse int from request arg; return default if missing or invalid."""
+    if val is None or (isinstance(val, str) and val.strip() == ""):
+        return default
+    try:
+        return int(float(val))
+    except (TypeError, ValueError):
+        return default
+
+
+def _safe_float(val, default=None):
+    """Parse float from request arg; return default if missing or invalid."""
+    if val is None or (isinstance(val, str) and val.strip() == ""):
+        return default
+    try:
+        return float(val)
+    except (TypeError, ValueError):
+        return default
+
+
 @bp.route("/api/cars", methods=["GET"])
 def get_cars():
     """Get all cars with filtering and pagination."""
@@ -155,18 +175,29 @@ def get_cars():
             request.args.get("per_page", 20, type=int),
         )
 
+        # Query params: support both app names (min_* / max_*, city) and legacy (year_min, etc.)
         brand = request.args.get("brand")
         model = request.args.get("model")
-        year_min = request.args.get("year_min", type=int)
-        year_max = request.args.get("year_max", type=int)
-        price_min = request.args.get("price_min", type=float)
-        price_max = request.args.get("price_max", type=float)
-        location = request.args.get("location")
+        year_min = _safe_int(request.args.get("year_min")) or _safe_int(request.args.get("min_year"))
+        year_max = _safe_int(request.args.get("year_max")) or _safe_int(request.args.get("max_year"))
+        price_min = _safe_float(request.args.get("price_min")) or _safe_float(request.args.get("min_price"))
+        price_max = _safe_float(request.args.get("price_max")) or _safe_float(request.args.get("max_price"))
+        min_mileage = _safe_int(request.args.get("min_mileage"))
+        max_mileage = _safe_int(request.args.get("max_mileage"))
+        location = request.args.get("location") or request.args.get("city")
         condition = request.args.get("condition")
         body_type = request.args.get("body_type")
         transmission = request.args.get("transmission")
-        drive_type = request.args.get("drive_type")
+        drive_type = (request.args.get("drive_type") or "").strip().lower() or None
         engine_type = request.args.get("engine_type")
+        # More filters (from "More Filters" in app)
+        seating = _safe_int(request.args.get("seating"))
+        cylinder_count = _safe_int(request.args.get("cylinder_count"))
+        engine_size = _safe_float(request.args.get("engine_size"))
+        fuel_type = (request.args.get("fuel_type") or "").strip().lower() or None
+        color = (request.args.get("color") or "").strip().lower() or None
+        trim = request.args.get("trim")
+        title_status = (request.args.get("title_status") or "").strip().lower() or None
 
         query = (
             Car.query.filter_by(is_active=True)
@@ -181,14 +212,20 @@ def get_cars():
             query = query.filter(Car.brand.ilike(f"%{brand}%"))
         if model:
             query = query.filter(Car.model.ilike(f"%{model}%"))
+        if trim:
+            query = query.filter(Car.trim.ilike(f"%{trim}%"))
         if year_min:
             query = query.filter(Car.year >= year_min)
         if year_max:
             query = query.filter(Car.year <= year_max)
-        if price_min:
+        if price_min is not None:
             query = query.filter(Car.price >= price_min)
-        if price_max:
+        if price_max is not None:
             query = query.filter(Car.price <= price_max)
+        if min_mileage is not None:
+            query = query.filter(Car.mileage >= min_mileage)
+        if max_mileage is not None:
+            query = query.filter(Car.mileage <= max_mileage)
         if location:
             query = query.filter(Car.location.ilike(f"%{location}%"))
         if condition:
@@ -198,9 +235,21 @@ def get_cars():
         if transmission:
             query = query.filter(Car.transmission == transmission)
         if drive_type:
-            query = query.filter(Car.drive_type == drive_type)
+            query = query.filter(Car.drive_type.ilike(drive_type))
         if engine_type:
             query = query.filter(Car.engine_type == engine_type)
+        if fuel_type:
+            query = query.filter(Car.fuel_type.ilike(fuel_type))
+        if seating is not None:
+            query = query.filter(Car.seating == seating)
+        if cylinder_count is not None:
+            query = query.filter(Car.cylinder_count == cylinder_count)
+        if engine_size is not None:
+            query = query.filter(Car.engine_size == engine_size)
+        if color:
+            query = query.filter(Car.color.ilike(f"%{color}%"))
+        if title_status:
+            query = query.filter(Car.title_status == title_status)
 
         sort_by = (request.args.get("sort_by") or "").strip().lower()
         if sort_by == "newest":
