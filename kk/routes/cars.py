@@ -119,6 +119,9 @@ def _resolve_rel(rel: str) -> str:
     try:
         if not rel:
             return ""
+        # Cloud / external URLs are already absolute; keep as-is.
+        if rel.startswith("http://") or rel.startswith("https://"):
+            return rel
         norm = rel.lstrip("/").replace("\\", "/")
         if _static_exists(norm):
             return norm
