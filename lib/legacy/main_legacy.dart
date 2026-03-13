@@ -8778,6 +8778,15 @@ class _HomePageState extends State<HomePage> {
                                                                               .numberWithOptions(
                                                                     decimal: true,
                                                                   ),
+                                                                  inputFormatters: [
+                                                                    services
+                                                                        .FilteringTextInputFormatter
+                                                                        .allow(
+                                                                      RegExp(
+                                                                        r'[0-9.]',
+                                                                      ),
+                                                                    ),
+                                                                  ],
                                                                   onChanged:
                                                                       (value) {
                                                                     setState(
@@ -12737,24 +12746,30 @@ class _SellStep2PageState extends State<SellStep2Page> {
   bool errTitle = false;
   bool errDamagedParts = false;
   bool isMileageManualInput = false;
+  bool isEngineSizeManualInput = false;
 
-  // Focus node for keyboard management
+  // Focus nodes for keyboard management
   final FocusNode _mileageFocusNode = FocusNode();
+  final FocusNode _engineSizeFocusNode = FocusNode();
 
-  // Controller for mileage input
+  // Controllers for manual inputs
   late TextEditingController _mileageController;
+  late TextEditingController _engineSizeController;
 
   @override
   void initState() {
     super.initState();
     _mileageController = TextEditingController();
+    _engineSizeController = TextEditingController();
     _resetStep2();
   }
 
   @override
   void dispose() {
     _mileageFocusNode.dispose();
+    _engineSizeFocusNode.dispose();
     _mileageController.dispose();
+    _engineSizeController.dispose();
     super.dispose();
   }
 
@@ -13683,31 +13698,129 @@ class _SellStep2PageState extends State<SellStep2Page> {
             ),
             SizedBox(height: 16),
 
-            // Engine Size (Modal)
-            FormField<String>(
-              builder: (state) => GestureDetector(
-                onTap: () async {
-                  final choice = await _pickFromList(
-                    'Engine Size (L)',
-                    getAvailableEngineSizes().where((e) => e != 'Any').toList(),
-                  );
-                  if (choice != null) {
-                    setState(
-                      () => selectedEngineSize = choice.replaceAll(' L', ''),
-                    );
-                  }
-                },
-                child: buildFancySelector(
-                  context,
-                  icon: Icons.engineering,
-                  label: 'Engine Size (L)',
-                  value: selectedEngineSize == null
-                      ? null
-                      : ('${_localizeDigitsGlobal(context, selectedEngineSize!)} L'),
+            // Engine Size (Modal or Manual Input)
+            Row(
+              children: [
+                Expanded(
+                  child: isEngineSizeManualInput
+                      ? TextFormField(
+                          focusNode: _engineSizeFocusNode,
+                          controller: _engineSizeController,
+                          decoration: InputDecoration(
+                            labelText: 'Engine Size (L)',
+                            hintText: 'Enter engine size',
+                            filled: true,
+                            fillColor: Colors.black.withOpacity(0.2),
+                            labelStyle: const TextStyle(color: Colors.white),
+                            hintStyle: const TextStyle(color: Colors.white54),
+                            border: OutlineInputBorder(
+                              borderRadius: BorderRadius.circular(12),
+                            ),
+                            errorBorder: OutlineInputBorder(
+                              borderRadius: BorderRadius.circular(12),
+                              borderSide: const BorderSide(color: Colors.red),
+                            ),
+                          ),
+                          style: const TextStyle(color: Colors.white),
+                          keyboardType: const TextInputType.numberWithOptions(
+                            decimal: true,
+                          ),
+                          inputFormatters: [
+                            services.FilteringTextInputFormatter.allow(
+                              RegExp(r'[0-9.]'),
+                            ),
+                          ],
+                          onChanged: (value) {
+                            setState(() {
+                              selectedEngineSize =
+                                  value.isEmpty ? null : value.trim();
+                            });
+                          },
+                          validator: (value) {
+                            if (value == null || value.isEmpty) {
+                              return 'Please enter engine size';
+                            }
+                            final size = double.tryParse(value);
+                            if (size == null) return 'Invalid engine size';
+                            if (size <= 0) {
+                              return 'Engine size must be positive';
+                            }
+                            return null;
+                          },
+                        )
+                      : FormField<String>(
+                          validator: (_) =>
+                              (selectedEngineSize == null ||
+                                      selectedEngineSize!.isEmpty)
+                                  ? 'Please select engine size'
+                                  : null,
+                          builder: (state) => GestureDetector(
+                            onTap: () async {
+                              final choice = await _pickFromList(
+                                'Engine Size (L)',
+                                getAvailableEngineSizes()
+                                    .where((e) => e != 'Any')
+                                    .toList(),
+                              );
+                              if (choice != null) {
+                                setState(
+                                  () => selectedEngineSize =
+                                      choice.replaceAll(' L', ''),
+                                );
+                              }
+                            },
+                            child: buildFancySelector(
+                              context,
+                              icon: Icons.engineering,
+                              label: 'Engine Size (L)',
+                              value: selectedEngineSize == null
+                                  ? null
+                                  : ('${_localizeDigitsGlobal(context, selectedEngineSize!)} L'),
+                              isError: state.hasError,
+                            ),
+                          ),
+                        ),
                 ),
-              ),
+                const SizedBox(width: 8),
+                IconButton(
+                  onPressed: () {
+                    if (isEngineSizeManualInput) {
+                      // Confirm manual engine size and dismiss keyboard
+                      _engineSizeFocusNode.unfocus();
+                      FocusScope.of(context).unfocus();
+                      setState(() {
+                        isEngineSizeManualInput = false;
+                        if (_engineSizeController.text.isNotEmpty) {
+                          selectedEngineSize =
+                              _engineSizeController.text.trim();
+                        }
+                      });
+                    } else {
+                      // Switch from modal picker to manual input
+                      setState(() {
+                        isEngineSizeManualInput = true;
+                        _engineSizeController.clear();
+                        selectedEngineSize = null;
+                      });
+                    }
+                  },
+                  icon: Icon(
+                    isEngineSizeManualInput ? Icons.check : Icons.edit,
+                    color: const Color(0xFFFF6B00),
+                  ),
+                  style: IconButton.styleFrom(
+                    backgroundColor: Colors.grey.withOpacity(0.1),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(8),
+                    ),
+                  ),
+                  tooltip: isEngineSizeManualInput
+                      ? 'Confirm engine size'
+                      : 'Type manually',
+                ),
+              ],
             ),
-            SizedBox(height: 16),
+            const SizedBox(height: 16),
 
             // Cylinder Count (Modal)
             FormField<String>(
