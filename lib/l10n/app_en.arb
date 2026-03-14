@@ -396,6 +396,11 @@
   "verifyPhoneDialogTitle": "Verify phone",
   "verifyPhoneDialogMessage": "A 6-digit code will be sent to {phone}.",
   "sixDigitCodeLabel": "6-digit code",
-  "sendCodeButton": "Send code"
+  "sendCodeButton": "Send code",
+
+  "noListingsYet": "No Listings Yet",
+  "noListingsEmptyHint": "You haven't created any car listings yet.\nStart by adding your first car!",
+  "addYourFirstCar": "Add Your First Car",
+  "emailOrPhoneRequired": "Email or phone number is required"
 }
 

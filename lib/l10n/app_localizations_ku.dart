@@ -1172,4 +1172,17 @@ class AppLocalizationsKu extends AppLocalizations {
 
   @override
   String get sendCodeButton => 'ناردنی کۆد';
+
+  @override
+  String get noListingsYet => 'هێشتا هیچ ڕێکلامێک نییە';
+
+  @override
+  String get noListingsEmptyHint =>
+      'هێشتا هیچ ڕێکلامی ئۆتۆمبێلێکت دروست نەکردووە.\nدەست پێبکە بە زیادکردنی یەکەم ئۆتۆمبێلت!';
+
+  @override
+  String get addYourFirstCar => 'یەکەم ئۆتۆمبێلت زیاد بکە';
+
+  @override
+  String get emailOrPhoneRequired => 'ئیمەیل یان ژمارەی تەلەفۆن پێویستە';
 }

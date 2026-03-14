@@ -2325,6 +2325,30 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Send code'**
   String get sendCodeButton;
+
+  /// No description provided for @noListingsYet.
+  ///
+  /// In en, this message translates to:
+  /// **'No Listings Yet'**
+  String get noListingsYet;
+
+  /// No description provided for @noListingsEmptyHint.
+  ///
+  /// In en, this message translates to:
+  /// **'You haven\'t created any car listings yet.\nStart by adding your first car!'**
+  String get noListingsEmptyHint;
+
+  /// No description provided for @addYourFirstCar.
+  ///
+  /// In en, this message translates to:
+  /// **'Add Your First Car'**
+  String get addYourFirstCar;
+
+  /// No description provided for @emailOrPhoneRequired.
+  ///
+  /// In en, this message translates to:
+  /// **'Email or phone number is required'**
+  String get emailOrPhoneRequired;
 }
 
 class _AppLocalizationsDelegate

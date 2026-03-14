@@ -1170,4 +1170,17 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get sendCodeButton => 'Send code';
+
+  @override
+  String get noListingsYet => 'No Listings Yet';
+
+  @override
+  String get noListingsEmptyHint =>
+      'You haven\'t created any car listings yet.\nStart by adding your first car!';
+
+  @override
+  String get addYourFirstCar => 'Add Your First Car';
+
+  @override
+  String get emailOrPhoneRequired => 'Email or phone number is required';
 }

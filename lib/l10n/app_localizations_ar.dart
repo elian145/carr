@@ -1165,4 +1165,17 @@ class AppLocalizationsAr extends AppLocalizations {
 
   @override
   String get sendCodeButton => 'إرسال الرمز';
+
+  @override
+  String get noListingsYet => 'لا توجد إعلانات بعد';
+
+  @override
+  String get noListingsEmptyHint =>
+      'لم تنشئ أي إعلانات سيارات بعد.\nابدأ بإضافة سيارتك الأولى!';
+
+  @override
+  String get addYourFirstCar => 'أضف سيارتك الأولى';
+
+  @override
+  String get emailOrPhoneRequired => 'البريد الإلكتروني أو رقم الهاتف مطلوب';
 }

@@ -396,6 +396,11 @@
   "verifyPhoneDialogTitle": "پشتڕاستکردنەوەی تەلەفۆن",
   "verifyPhoneDialogMessage": "کۆدێکی ٦ ژمارە دەنێردرێت بۆ {phone}.",
   "sixDigitCodeLabel": "کۆدی ٦ ژمارە",
-  "sendCodeButton": "ناردنی کۆد"
+  "sendCodeButton": "ناردنی کۆد",
+
+  "noListingsYet": "هێشتا هیچ ڕێکلامێک نییە",
+  "noListingsEmptyHint": "هێشتا هیچ ڕێکلامی ئۆتۆمبێلێکت دروست نەکردووە.\nدەست پێبکە بە زیادکردنی یەکەم ئۆتۆمبێلت!",
+  "addYourFirstCar": "یەکەم ئۆتۆمبێلت زیاد بکە",
+  "emailOrPhoneRequired": "ئیمەیل یان ژمارەی تەلەفۆن پێویستە"
 }
 

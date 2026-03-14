@@ -321,11 +321,8 @@ String _localizeDigitsGlobal(BuildContext context, String input) {
       'Ù©',
       'Ù¬',
     ];
-    String out = input;
-    for (int i = 0; i < western.length; i++) {
-      out = out.replaceAll(western[i], eastern[i]);
-    }
-    return out;
+    // Skip digit conversion to avoid garbled display (mojibake).
+    return input;
   }
   return input;
 }
@@ -3233,18 +3230,35 @@ class _HomePageState extends State<HomePage> {
     'XSE',
   ];
   final List<String> conditions = ['Any', 'New', 'Used'];
-  final List<String> transmissions = ['Any', 'Automatic', 'Manual'];
+  // Same options as sell page (with 'Any' for filter)
+  final List<String> transmissions = [
+    'Any',
+    'Automatic',
+    'Manual',
+    'CVT',
+    'Semi-Automatic',
+  ];
   final List<String> fuelTypes = [
     'Any',
     'Gasoline',
     'Diesel',
     'Electric',
     'Hybrid',
-    'LPG',
     'Plug-in Hybrid',
   ];
-  // Use global caches so static helpers can access
-  List<String> bodyTypes = globalBodyTypes;
+  // Same options as sell page (with 'Any' for filter); keep fixed list so More Filters matches sell page
+  List<String> bodyTypes = [
+    'Any',
+    'Sedan',
+    'SUV',
+    'Hatchback',
+    'Coupe',
+    'Convertible',
+    'Wagon',
+    'Pickup',
+    'Van',
+    'Minivan',
+  ];
   final List<String> colors = [
     'Any',
     'Black',
@@ -3649,7 +3663,7 @@ class _HomePageState extends State<HomePage> {
         setState(() {
           final List<String> labels = labelToSvg.keys.toList()..sort();
           globalBodyTypes = ['Any', ...labels];
-          bodyTypes = globalBodyTypes;
+          // Keep bodyTypes as sell-page list so More Filters options stay aligned
           globalBodyTypeAssetMap = labelToSvg;
         });
       }
@@ -8998,7 +9012,7 @@ class _HomePageState extends State<HomePage> {
                                     _fetchRetryCount = 0;
                                     fetchCars(bypassCache: true);
                                   },
-                                  child: Text('Retry'),
+                                  child: Text(AppLocalizations.of(context)!.retryAction),
                                 ),
                                 OutlinedButton(
                                   onPressed: () => onFilterChanged(),
@@ -12833,21 +12847,24 @@ class _SellStep2PageState extends State<SellStep2Page> {
   ];
   final List<String> driveTypes = ['FWD', 'RWD', 'AWD', '4WD'];
   final List<String> seatings = ['2', '4', '5', '6', '7', '8'];
+  // Same engine size options as More Filters (0.5 to 16.0 step 0.1)
   final List<String> engineSizes = [
-    '1.0',
-    '1.2',
-    '1.4',
-    '1.6',
-    '1.8',
-    '2.0',
-    '2.2',
-    '2.4',
-    '2.5',
-    '3.0',
-    '3.5',
-    '4.0',
-    '5.0',
-    '6.0',
+    'Any',
+    '0.5', '0.6', '0.7', '0.8', '0.9', '1.0', '1.1', '1.2', '1.3', '1.4', '1.5',
+    '1.6', '1.7', '1.8', '1.9', '2.0', '2.1', '2.2', '2.3', '2.4', '2.5', '2.6',
+    '2.7', '2.8', '2.9', '3.0', '3.1', '3.2', '3.3', '3.4', '3.5', '3.6', '3.7',
+    '3.8', '3.9', '4.0', '4.1', '4.2', '4.3', '4.4', '4.5', '4.6', '4.7', '4.8',
+    '4.9', '5.0', '5.1', '5.2', '5.3', '5.4', '5.5', '5.6', '5.7', '5.8', '5.9',
+    '6.0', '6.1', '6.2', '6.3', '6.4', '6.5', '6.6', '6.7', '6.8', '6.9', '7.0',
+    '7.1', '7.2', '7.3', '7.4', '7.5', '7.6', '7.7', '7.8', '7.9', '8.0', '8.1',
+    '8.2', '8.3', '8.4', '8.5', '8.6', '8.7', '8.8', '8.9', '9.0', '9.1', '9.2',
+    '9.3', '9.4', '9.5', '9.6', '9.7', '9.8', '9.9', '10.0', '10.1', '10.2',
+    '10.3', '10.4', '10.5', '10.6', '10.7', '10.8', '10.9', '11.0', '11.1', '11.2',
+    '11.3', '11.4', '11.5', '11.6', '11.7', '11.8', '11.9', '12.0', '12.1', '12.2',
+    '12.3', '12.4', '12.5', '12.6', '12.7', '12.8', '12.9', '13.0', '13.1', '13.2',
+    '13.3', '13.4', '13.5', '13.6', '13.7', '13.8', '13.9', '14.0', '14.1', '14.2',
+    '14.3', '14.4', '14.5', '14.6', '14.7', '14.8', '14.9', '15.0', '15.1', '15.2',
+    '15.3', '15.4', '15.5', '15.6', '15.7', '15.8', '15.9', '16.0',
   ];
   final List<String> cylinderCounts = ['3', '4', '5', '6', '8', '10', '12'];
   final List<String> titleStatuses = ['Clean', 'Damaged'];
@@ -19093,7 +19110,7 @@ class _FavoritesPageState extends State<FavoritesPage> {
           : (_error != null)
           ? Center(child: Text(_error!))
           : (_favorites.isEmpty)
-          ? Center(child: Text('No favorites yet'))
+          ? Center(child: Text(AppLocalizations.of(context)!.noFavoritesYet))
           : RefreshIndicator(
               onRefresh: _loadFavorites,
               child: ListView.separated(
@@ -19381,11 +19398,11 @@ class _LoginPageState extends State<LoginPage> {
               TextFormField(
                 controller: _usernameController,
                 decoration: InputDecoration(
-                  labelText: 'Email or Phone Number',
-                  hintText: 'Enter your email address or phone number',
+                  labelText: AppLocalizations.of(context)!.emailOrPhoneLabel,
+                  hintText: AppLocalizations.of(context)!.enterEmailOrPhoneHint,
                 ),
                 validator: (v) => (v == null || v.trim().isEmpty)
-                    ? 'Email or phone number is required'
+                    ? AppLocalizations.of(context)!.emailOrPhoneRequired
                     : null,
               ),
               SizedBox(height: 12),
@@ -19412,7 +19429,7 @@ class _LoginPageState extends State<LoginPage> {
               ),
               TextButton(
                 onPressed: () => Navigator.pushNamed(context, '/forgot-password'),
-                child: const Text('Forgot password?'),
+                child: Text(AppLocalizations.of(context)!.forgotPasswordLink),
               ),
               TextButton(
                 onPressed: () =>
@@ -20356,7 +20373,7 @@ class _ProfilePageState extends State<ProfilePage> {
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Text(
-                    'Account Actions',
+                    AppLocalizations.of(context)!.accountActionsTitle,
                     style: TextStyle(
                       fontSize: 18,
                       fontWeight: FontWeight.bold,
@@ -20366,17 +20383,17 @@ class _ProfilePageState extends State<ProfilePage> {
                   SizedBox(height: 20),
                   _buildActionButton(
                     Icons.directions_car_outlined,
-                    'My Listings',
+                    AppLocalizations.of(context)!.myListingsTitle,
                     () {
                       Navigator.pushNamed(context, '/my_listings');
                     },
                   ),
                   SizedBox(height: 12),
-                  _buildActionButton(Icons.analytics_outlined, 'Analytics', () {
+                  _buildActionButton(Icons.analytics_outlined, AppLocalizations.of(context)!.analyticsTitle, () {
                     Navigator.pushNamed(context, '/analytics');
                   }),
                   SizedBox(height: 12),
-                  _buildActionButton(Icons.chat_outlined, 'Chat', () {
+                  _buildActionButton(Icons.chat_outlined, AppLocalizations.of(context)!.chatTitle, () {
                     Navigator.pushNamed(context, '/chat');
                   }),
                   SizedBox(height: 12),
@@ -20384,7 +20401,7 @@ class _ProfilePageState extends State<ProfilePage> {
                     builder: (context, comparisonStore, child) {
                       return _buildActionButton(
                         Icons.compare_arrows,
-                        'Car Comparison (${comparisonStore.comparisonCount})',
+                        AppLocalizations.of(context)!.carComparisonCount(comparisonStore.comparisonCount),
                         () {
                           Navigator.pushNamed(context, '/comparison');
                         },
@@ -20394,7 +20411,7 @@ class _ProfilePageState extends State<ProfilePage> {
                   SizedBox(height: 12),
                   _buildActionButton(
                     Icons.edit_outlined,
-                    'Edit Profile',
+                    AppLocalizations.of(context)!.editProfileAction,
                     () async {
                       final result = await Navigator.pushNamed(
                         context,
@@ -20407,18 +20424,18 @@ class _ProfilePageState extends State<ProfilePage> {
                     },
                   ),
                   SizedBox(height: 12),
-                  _buildActionButton(Icons.help_outline, 'Help & Support', () {
+                  _buildActionButton(Icons.help_outline, AppLocalizations.of(context)!.helpSupportTitle, () {
                     // TODO: Implement help functionality
                     ScaffoldMessenger.of(context).showSnackBar(
                       SnackBar(
-                        content: Text('Help & Support feature coming soon!'),
+                        content: Text(AppLocalizations.of(context)!.helpSupportComingSoon),
                       ),
                     );
                   }),
                   SizedBox(height: 12),
                   _buildActionButton(
                     Icons.delete_forever_outlined,
-                    'Delete account',
+                    AppLocalizations.of(context)!.deleteAccountTitle,
                     () => _showDeleteAccountDialog(context),
                     color: Colors.red,
                   ),
@@ -21015,7 +21032,7 @@ class _MyListingsPageState extends State<MyListingsPage> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: Text('My Listings'),
+        title: Text(AppLocalizations.of(context)!.myListingsTitle),
         backgroundColor: Color(0xFFFF6B00),
         foregroundColor: Colors.white,
         elevation: 0,
@@ -21109,7 +21126,7 @@ class _MyListingsPageState extends State<MyListingsPage> {
                   borderRadius: BorderRadius.circular(12),
                 ),
               ),
-              child: Text('Retry'),
+              child: Text(AppLocalizations.of(context)!.retryAction),
             ),
           ],
         ),
@@ -21138,7 +21155,7 @@ class _MyListingsPageState extends State<MyListingsPage> {
             ),
             SizedBox(height: 24),
             Text(
-              'No Listings Yet',
+              AppLocalizations.of(context)!.noListingsYet,
               style: TextStyle(
                 fontSize: 24,
                 fontWeight: FontWeight.bold,
@@ -21147,7 +21164,7 @@ class _MyListingsPageState extends State<MyListingsPage> {
             ),
             SizedBox(height: 8),
             Text(
-              'You haven\'t created any car listings yet.\nStart by adding your first car!',
+              AppLocalizations.of(context)!.noListingsEmptyHint,
               textAlign: TextAlign.center,
               style: TextStyle(fontSize: 16, color: Colors.grey[600]),
             ),
@@ -21167,7 +21184,7 @@ class _MyListingsPageState extends State<MyListingsPage> {
                 children: [
                   Icon(Icons.add),
                   SizedBox(width: 8),
-                  Text('Add Your First Car'),
+                  Text(AppLocalizations.of(context)!.addYourFirstCar),
                 ],
               ),
             ),
@@ -21200,7 +21217,7 @@ class _MyListingsPageState extends State<MyListingsPage> {
                 Icon(Icons.directions_car, color: Color(0xFFFF6B00)),
                 SizedBox(width: 12),
                 Text(
-                  'Your Listings (${myListings.length})',
+                  AppLocalizations.of(context)!.yourListingsCount(myListings.length),
                   style: TextStyle(
                     fontSize: 18,
                     fontWeight: FontWeight.bold,
@@ -21212,7 +21229,7 @@ class _MyListingsPageState extends State<MyListingsPage> {
                   onPressed: () =>
                       Navigator.pushReplacementNamed(context, '/sell'),
                   icon: Icon(Icons.add, size: 18),
-                  label: Text('Add New'),
+                  label: Text(AppLocalizations.of(context)!.addNewButton),
                   style: ElevatedButton.styleFrom(
                     backgroundColor: Color(0xFFFF6B00),
                     foregroundColor: Colors.white,
