@@ -67,26 +67,26 @@ class _SettingsPageState extends State<SettingsPage> {
   }
 
   Future<void> _deleteAccountTapped() async {
+    final loc = AppLocalizations.of(context)!;
     final passwordResult = await showDialog<String?>(
       context: context,
       builder: (ctx) {
         final passwordController = TextEditingController();
+        final locDialog = AppLocalizations.of(ctx)!;
         return AlertDialog(
-          title: const Text('Delete account'),
+          title: Text(locDialog.deleteAccountTitle),
           content: SingleChildScrollView(
             child: Column(
               mainAxisSize: MainAxisSize.min,
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                const Text(
-                  'This will permanently delete your account and all your data (listings, messages, favorites). This cannot be undone.',
-                ),
+                Text(locDialog.deleteAccountBody),
                 const SizedBox(height: 16),
                 TextField(
                   controller: passwordController,
-                  decoration: const InputDecoration(
-                    labelText: 'Password (optional)',
-                    hintText: 'Confirm with password if you have one',
+                  decoration: InputDecoration(
+                    labelText: locDialog.passwordOptionalConfirm,
+                    hintText: locDialog.confirmWithPasswordHint,
                   ),
                   obscureText: true,
                   autocorrect: false,
@@ -97,7 +97,7 @@ class _SettingsPageState extends State<SettingsPage> {
           actions: [
             TextButton(
               onPressed: () => Navigator.pop(ctx),
-              child: const Text('Cancel'),
+              child: Text(locDialog.cancelAction),
             ),
             TextButton(
               onPressed: () {
@@ -105,7 +105,7 @@ class _SettingsPageState extends State<SettingsPage> {
                 Navigator.pop(ctx, p); // empty string = no password, non-empty = password
               },
               child: Text(
-                'Delete my account',
+                locDialog.deleteMyAccount,
                 style: TextStyle(color: Theme.of(context).colorScheme.error),
               ),
             ),
@@ -121,7 +121,7 @@ class _SettingsPageState extends State<SettingsPage> {
       if (!mounted) return;
       Navigator.pushNamedAndRemoveUntil(context, '/login', (route) => false);
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Your account has been deleted')),
+        SnackBar(content: Text(loc.accountDeletedSnackbar)),
       );
     } catch (e) {
       if (!mounted) return;
@@ -139,16 +139,17 @@ class _SettingsPageState extends State<SettingsPage> {
     final controller = TextEditingController(
       text: _apiOverride ?? effectiveApiBase(),
     );
+    final loc = AppLocalizations.of(context)!;
 
     final String? next = await showDialog<String>(
       context: context,
       builder: (context) {
         return AlertDialog(
-          title: const Text('API base'),
+          title: Text(loc.apiBaseTitle),
           content: TextField(
             controller: controller,
-            decoration: const InputDecoration(
-              hintText: 'https://carr-5hrm.onrender.com',
+            decoration: InputDecoration(
+              hintText: loc.apiBaseHint,
             ),
             autocorrect: false,
             enableSuggestions: false,
@@ -157,15 +158,15 @@ class _SettingsPageState extends State<SettingsPage> {
           actions: [
             TextButton(
               onPressed: () => Navigator.pop(context),
-              child: const Text('Cancel'),
+              child: Text(loc.cancelAction),
             ),
             TextButton(
               onPressed: () => Navigator.pop(context, ''),
-              child: const Text('Reset'),
+              child: Text(loc.resetButton),
             ),
             ElevatedButton(
               onPressed: () => Navigator.pop(context, controller.text),
-              child: const Text('Save'),
+              child: Text(loc.save),
             ),
           ],
         );
@@ -194,7 +195,7 @@ class _SettingsPageState extends State<SettingsPage> {
 
     if (!mounted) return;
     ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(content: Text('API base updated. Pull to refresh listings.')),
+      SnackBar(content: Text(AppLocalizations.of(context)!.apiBaseUpdatedSnackbar)),
     );
   }
 
@@ -315,13 +316,13 @@ class _SettingsPageState extends State<SettingsPage> {
                     subtitle: Text(auth.userName.isEmpty ? (loc?.loggedIn ?? 'Logged in') : auth.userName),
                   ),
                   ListTile(
-                    title: const Text('Change password'),
+                    title: Text(loc?.changePasswordTitle ?? 'Change password'),
                     leading: const Icon(Icons.lock_outline),
                     onTap: () => Navigator.pushNamed(context, '/change-password'),
                   ),
                   ListTile(
                     title: Text(
-                      'Delete account',
+                      loc?.deleteAccountTitle ?? 'Delete account',
                       style: TextStyle(
                         color: Theme.of(context).colorScheme.error,
                         fontWeight: FontWeight.w500,

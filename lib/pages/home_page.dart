@@ -242,7 +242,7 @@ class _HomePageState extends State<HomePage> {
                                   crossAxisAlignment: CrossAxisAlignment.start,
                                   children: [
                                     Text(
-                                      carTitle.isEmpty ? 'Car' : carTitle,
+                                      carTitle.isEmpty ? (loc?.carLabel ?? 'Car') : carTitle,
                                       maxLines: 2,
                                       overflow: TextOverflow.ellipsis,
                                       style: const TextStyle(fontWeight: FontWeight.w600),

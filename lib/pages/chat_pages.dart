@@ -23,31 +23,20 @@ String _digitsLocalized(BuildContext context, String input) {
 String _relativeTime(BuildContext context, DateTime dateTime) {
   final now = DateTime.now();
   final diff = now.difference(dateTime);
-  final code = Localizations.localeOf(context).languageCode;
+  final loc = AppLocalizations.of(context)!;
   String formatNum(int n) => _digitsLocalized(context, n.toString());
   if (diff.inDays > 0) {
-    if (code == 'ar') return 'قبل ${formatNum(diff.inDays)} يوم';
-    if (code == 'ku') return 'پێش ${formatNum(diff.inDays)} ڕۆژ';
-    return '${diff.inDays}d ago';
+    return loc.timeDaysAgo(formatNum(diff.inDays.toString()));
   } else if (diff.inHours > 0) {
-    if (code == 'ar') return 'قبل ${formatNum(diff.inHours)} ساعة';
-    if (code == 'ku') return 'پێش ${formatNum(diff.inHours)} کاتژمێر';
-    return '${diff.inHours}h ago';
+    return loc.timeHoursAgo(formatNum(diff.inHours.toString()));
   } else if (diff.inMinutes > 0) {
-    if (code == 'ar') return 'قبل ${formatNum(diff.inMinutes)} دقيقة';
-    if (code == 'ku') return 'پێش ${formatNum(diff.inMinutes)} خولەک';
-    return '${diff.inMinutes}m ago';
+    return loc.timeMinutesAgo(formatNum(diff.inMinutes.toString()));
   }
-  if (code == 'ar') return 'الآن';
-  if (code == 'ku') return 'ئێستا';
-  return 'Just now';
+  return loc.justNow;
 }
 
 String _noMessagesText(BuildContext context) {
-  final code = Localizations.localeOf(context).languageCode;
-  if (code == 'ar') return 'لا رسائل بعد. ابدأ محادثة!';
-  if (code == 'ku') return 'هیچ نامەیەک نییە. گفتوگۆیەک دەست پێبکە!';
-  return 'No messages yet. Start a conversation!';
+  return AppLocalizations.of(context)!.noMessagesYet;
 }
 
 class _ThemeToggleAction extends StatelessWidget {
@@ -55,6 +44,7 @@ class _ThemeToggleAction extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final loc = AppLocalizations.of(context)!;
     return Consumer<ThemeProvider>(
       builder: (context, themeProvider, child) {
         return IconButton(
@@ -66,8 +56,8 @@ class _ThemeToggleAction extends StatelessWidget {
             themeProvider.toggleTheme();
           },
           tooltip: themeProvider.isDarkMode
-              ? 'Switch to Light Mode'
-              : 'Switch to Dark Mode',
+              ? loc.switchToLightMode
+              : loc.switchToDarkMode,
         );
       },
     );
@@ -183,9 +173,9 @@ class _ChatListPageState extends State<ChatListPage> {
                 Expanded(
                   child: TextField(
                     controller: _carIdController,
-                    decoration: const InputDecoration(
-                      labelText: 'Car ID (chat room)',
-                      border: OutlineInputBorder(),
+                    decoration: InputDecoration(
+                      labelText: AppLocalizations.of(context)!.carIdChatRoom,
+                      border: const OutlineInputBorder(),
                     ),
                     onSubmitted: (_) {
                       final id = _carIdController.text.trim();
@@ -204,7 +194,7 @@ class _ChatListPageState extends State<ChatListPage> {
                     WebSocketService.joinChat(id);
                   },
                   icon: const Icon(Icons.login),
-                  tooltip: 'Join',
+                  tooltip: AppLocalizations.of(context)!.joinLabel,
                 ),
               ],
             ),
@@ -246,7 +236,7 @@ class _ChatListPageState extends State<ChatListPage> {
                             children: [
                               if (!isMe)
                                 Text(
-                                  message.senderName ?? 'Unknown',
+                                  message.senderName ?? AppLocalizations.of(context)!.unknownSender,
                                   style: Theme.of(context).textTheme.bodySmall,
                                 ),
                               Text(
@@ -436,7 +426,7 @@ class _ChatConversationPageState extends State<ChatConversationPage> {
                             children: [
                               if (!isMe)
                                 Text(
-                                  message.senderName ?? 'Unknown',
+                                  message.senderName ?? AppLocalizations.of(context)!.unknownSender,
                                   style: Theme.of(context).textTheme.bodySmall,
                                 ),
                               Text(
@@ -571,7 +561,7 @@ class _NotificationsPageState extends State<NotificationsPage> {
                     ),
                     subtitle: Text(notification.message),
                     trailing: Text(
-                      _formatTime(notification.createdAt),
+                      _relativeTime(context, notification.createdAt),
                       style: Theme.of(context).textTheme.bodySmall,
                     ),
                     onTap: () {
@@ -597,18 +587,4 @@ class _NotificationsPageState extends State<NotificationsPage> {
     }
   }
 
-  String _formatTime(DateTime dateTime) {
-    final now = DateTime.now();
-    final difference = now.difference(dateTime);
-
-    if (difference.inDays > 0) {
-      return '${difference.inDays}d ago';
-    } else if (difference.inHours > 0) {
-      return '${difference.inHours}h ago';
-    } else if (difference.inMinutes > 0) {
-      return '${difference.inMinutes}m ago';
-    } else {
-      return 'Just now';
-    }
-  }
 }

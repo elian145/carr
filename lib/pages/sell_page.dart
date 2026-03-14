@@ -369,7 +369,7 @@ class _SellPageState extends State<SellPage> {
               const SizedBox(height: 10),
               DropdownButtonFormField<String>(
                 value: _transmission,
-                decoration: const InputDecoration(labelText: 'Transmission'),
+                decoration: InputDecoration(labelText: loc?.transmissionLabel ?? 'Transmission'),
                 items: const [
                   DropdownMenuItem(value: 'automatic', child: Text('Automatic')),
                   DropdownMenuItem(value: 'manual', child: Text('Manual')),
@@ -380,7 +380,7 @@ class _SellPageState extends State<SellPage> {
               const SizedBox(height: 10),
               DropdownButtonFormField<String>(
                 value: _driveType,
-                decoration: const InputDecoration(labelText: 'Drive type'),
+                decoration: InputDecoration(labelText: loc?.driveType ?? 'Drive type'),
                 items: const [
                   DropdownMenuItem(value: 'fwd', child: Text('FWD')),
                   DropdownMenuItem(value: 'rwd', child: Text('RWD')),
@@ -392,7 +392,7 @@ class _SellPageState extends State<SellPage> {
               const SizedBox(height: 10),
               DropdownButtonFormField<String>(
                 value: _condition,
-                decoration: const InputDecoration(labelText: 'Condition'),
+                decoration: InputDecoration(labelText: loc?.conditionLabel ?? 'Condition'),
                 items: const [
                   DropdownMenuItem(value: 'new', child: Text('New')),
                   DropdownMenuItem(value: 'used', child: Text('Used')),
@@ -403,7 +403,7 @@ class _SellPageState extends State<SellPage> {
               const SizedBox(height: 10),
               DropdownButtonFormField<String>(
                 value: _bodyType,
-                decoration: const InputDecoration(labelText: 'Body type'),
+                decoration: InputDecoration(labelText: loc?.bodyTypeLabel ?? 'Body type'),
                 items: const [
                   DropdownMenuItem(value: 'sedan', child: Text('Sedan')),
                   DropdownMenuItem(value: 'suv', child: Text('SUV')),

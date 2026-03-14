@@ -277,8 +277,10 @@ class _AnalyticsPageState extends State<AnalyticsPage> {
       });
     } catch (e) {
       if (!mounted) return;
+      if (!mounted) return;
+      final errMsg = e.toString();
       setState(() {
-        _error = 'Failed to load your listings: ${e.toString()}';
+        _error = errMsg;
         _isLoading = false;
       });
     }
@@ -288,7 +290,7 @@ class _AnalyticsPageState extends State<AnalyticsPage> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: Text('Analytics'),
+        title: Text(AppLocalizations.of(context)!.analyticsTitle),
         backgroundColor: Color(0xFFFF6B00),
         foregroundColor: Colors.white,
         elevation: 0,
@@ -304,13 +306,14 @@ class _AnalyticsPageState extends State<AnalyticsPage> {
         child: _isLoading
             ? Center(child: CircularProgressIndicator())
             : _error != null
-            ? _buildErrorState()
-            : _buildAnalyticsContent(),
+            ? _buildErrorState(context)
+            : _buildAnalyticsContent(context),
       ),
     );
   }
 
-  Widget _buildErrorState() {
+  Widget _buildErrorState(BuildContext context) {
+    final loc = AppLocalizations.of(context)!;
     return Center(
       child: Column(
         mainAxisAlignment: MainAxisAlignment.center,
@@ -318,9 +321,17 @@ class _AnalyticsPageState extends State<AnalyticsPage> {
           Icon(Icons.error_outline, size: 64, color: Colors.grey[400]),
           SizedBox(height: 16),
           Text(
-            _error!,
+            loc.failedToLoadListings,
             style: TextStyle(fontSize: 16, color: Colors.grey[600]),
           ),
+          if (_error != null && _error!.isNotEmpty) ...[
+            SizedBox(height: 8),
+            Text(
+              _error!,
+              style: TextStyle(fontSize: 12, color: Colors.grey[500]),
+              textAlign: TextAlign.center,
+            ),
+          ],
           SizedBox(height: 24),
           ElevatedButton(
             onPressed: _loadAnalytics,
@@ -328,16 +339,16 @@ class _AnalyticsPageState extends State<AnalyticsPage> {
               backgroundColor: Color(0xFFFF6B00),
               foregroundColor: Colors.white,
             ),
-            child: Text('Retry'),
+            child: Text(loc.retryAction),
           ),
         ],
       ),
     );
   }
 
-  Widget _buildAnalyticsContent() {
+  Widget _buildAnalyticsContent(BuildContext context) {
     if (_listings.isEmpty) {
-      return _buildEmptyState();
+      return _buildEmptyState(context);
     }
 
     return SingleChildScrollView(
@@ -345,15 +356,16 @@ class _AnalyticsPageState extends State<AnalyticsPage> {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           if (_summary != null)
-            Padding(padding: EdgeInsets.all(16), child: _buildSummaryCard()),
-          _buildListingSelection(),
+            Padding(padding: EdgeInsets.all(16), child: _buildSummaryCard(context)),
+          _buildListingSelection(context),
           SizedBox(height: 16),
         ],
       ),
     );
   }
 
-  Widget _buildEmptyState() {
+  Widget _buildEmptyState(BuildContext context) {
+    final loc = AppLocalizations.of(context)!;
     return Center(
       child: Column(
         mainAxisAlignment: MainAxisAlignment.center,
@@ -361,7 +373,7 @@ class _AnalyticsPageState extends State<AnalyticsPage> {
           Icon(Icons.analytics_outlined, size: 64, color: Colors.grey[400]),
           SizedBox(height: 16),
           Text(
-            'No Listings Found',
+            loc.noListingsFound,
             style: TextStyle(
               fontSize: 20,
               fontWeight: FontWeight.bold,
@@ -370,7 +382,7 @@ class _AnalyticsPageState extends State<AnalyticsPage> {
           ),
           SizedBox(height: 8),
           Text(
-            'Create your first listing to see analytics',
+            loc.createFirstListingForAnalytics,
             style: TextStyle(fontSize: 16, color: Colors.grey[500]),
           ),
           SizedBox(height: 24),
@@ -380,14 +392,15 @@ class _AnalyticsPageState extends State<AnalyticsPage> {
               backgroundColor: Color(0xFFFF6B00),
               foregroundColor: Colors.white,
             ),
-            child: Text('Create Listing'),
+            child: Text(loc.createListingButtonShort),
           ),
         ],
       ),
     );
   }
 
-  Widget _buildSummaryCard() {
+  Widget _buildSummaryCard(BuildContext context) {
+    final loc = AppLocalizations.of(context)!;
     return Container(
       width: double.infinity,
       padding: EdgeInsets.all(20),
@@ -410,7 +423,7 @@ class _AnalyticsPageState extends State<AnalyticsPage> {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Text(
-            'Analytics Overview',
+            loc.analyticsOverview,
             style: TextStyle(
               fontSize: 20,
               fontWeight: FontWeight.bold,
@@ -422,14 +435,16 @@ class _AnalyticsPageState extends State<AnalyticsPage> {
             children: [
               Expanded(
                 child: _buildSummaryItem(
-                  'Listings',
+                  context,
+                  loc.listingsLabel,
                   _summary!.totalListings.toString(),
                   Icons.directions_car,
                 ),
               ),
               Expanded(
                 child: _buildSummaryItem(
-                  'Views',
+                  context,
+                  loc.viewsLabel,
                   _summary!.totalViews.toString(),
                   Icons.visibility,
                 ),
@@ -441,14 +456,16 @@ class _AnalyticsPageState extends State<AnalyticsPage> {
             children: [
               Expanded(
                 child: _buildSummaryItem(
-                  'Messages',
+                  context,
+                  loc.messagesLabel,
                   _summary!.totalMessages.toString(),
                   Icons.message,
                 ),
               ),
               Expanded(
                 child: _buildSummaryItem(
-                  'Calls',
+                  context,
+                  loc.callsLabel,
                   _summary!.totalCalls.toString(),
                   Icons.phone,
                 ),
@@ -460,14 +477,16 @@ class _AnalyticsPageState extends State<AnalyticsPage> {
             children: [
               Expanded(
                 child: _buildSummaryItem(
-                  'Shares',
+                  context,
+                  loc.sharesLabel,
                   _summary!.totalShares.toString(),
                   Icons.share,
                 ),
               ),
               Expanded(
                 child: _buildSummaryItem(
-                  'Favorites',
+                  context,
+                  loc.favoritesLabel,
                   _summary!.totalFavorites.toString(),
                   Icons.favorite,
                 ),
@@ -479,7 +498,7 @@ class _AnalyticsPageState extends State<AnalyticsPage> {
     );
   }
 
-  Widget _buildSummaryItem(String label, String value, IconData icon) {
+  Widget _buildSummaryItem(BuildContext context, String label, String value, IconData icon) {
     return Column(
       children: [
         Icon(icon, color: Colors.white70, size: 20),
@@ -497,7 +516,7 @@ class _AnalyticsPageState extends State<AnalyticsPage> {
     );
   }
 
-  Widget _buildListingSelection() {
+  Widget _buildListingSelection(BuildContext context) {
     return GridView.builder(
       padding: EdgeInsets.all(8), // Same padding as home page
       shrinkWrap: true,

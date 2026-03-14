@@ -495,7 +495,7 @@ class AppLocalizationsKu extends AppLocalizations {
   String get otpSent => 'کۆد نێردرا';
 
   @override
-  String get otpFailed => 'نە成功ی ناردنی کۆد';
+  String get otpFailed => 'نەتوانرا کۆد بنێردرێت';
 
   @override
   String otpFailedWithMsg(Object msg) {
@@ -508,10 +508,10 @@ class AppLocalizationsKu extends AppLocalizations {
   }
 
   @override
-  String get english => 'English';
+  String get english => 'ئینگلیزی';
 
   @override
-  String get arabic => 'العربية';
+  String get arabic => 'عەرەبی';
 
   @override
   String get kurdish => 'کوردی';
@@ -812,4 +812,224 @@ class AppLocalizationsKu extends AppLocalizations {
 
   @override
   String get chooseAuthMethodTitle => 'ڕێگای چوونەژوورەوە هەڵبژێرە:';
+
+  @override
+  String get backAction => 'گەڕانەوە';
+
+  @override
+  String get verifyEmailTitle => 'پشتڕاستکردنەوەی ئیمەیل';
+
+  @override
+  String get accountCreatedAndEmailVerified =>
+      'هەژمار دروست کرا و ئیمەیل پشتڕاست کرا';
+
+  @override
+  String get emailVerifiedSuccessfully => 'ئیمەیل بە سەرکەوتوویی پشتڕاست کرا';
+
+  @override
+  String get verificationFailedMessage =>
+      'پشتڕاستکردنەوە شکستی هێنا. لینک یان کۆد بپشکنە و دووبارە هەوڵ بدەوە.';
+
+  @override
+  String get verifyEmailInstructions =>
+      'کۆدی پشتڕاستکردن لە ئیمەیلەکەمان کە ناردمان بۆت دابنێ، یان لینکی پشتڕاستکردن لەم ئەپەدا بکەرەوە.';
+
+  @override
+  String get verificationCodeLabel => 'کۆدی پشتڕاستکردن';
+
+  @override
+  String get verificationCodeHint => 'کۆد لە ئیمەیل یان لینکەکە لەبەر بکە';
+
+  @override
+  String get pleaseEnterVerificationCode => 'تکایە کۆدی پشتڕاستکردن دابنێ';
+
+  @override
+  String get passwordResetSuccess => 'وشەی نهێنی بە سەرکەوتوویی ڕێکخرایەوە';
+
+  @override
+  String get unableToResetPasswordCheckCode =>
+      'نەتوانرا وشەی نهێنی ڕێکبخرێتەوە. کۆد بپشکنە و دووبارە هەوڵ بدەوە.';
+
+  @override
+  String get unableToResetPasswordTryLater =>
+      'نەتوانرا وشەی نهێنی ڕێکبخرێتەوە. تکایە دواتر هەوڵ بدەوە.';
+
+  @override
+  String get resetPasswordTitle => 'ڕێکخستنەوەی وشەی نهێنی';
+
+  @override
+  String get resetPasswordInstructions =>
+      'کۆدەکە کە وەریت گرت دابنێ و وشەی نهێنییەکی نوێ هەڵبژێرە.';
+
+  @override
+  String get resetCodeLabel => 'کۆدی ڕێکخستنەوە';
+
+  @override
+  String get resetCodeHint => 'کۆدی ٦ ژمارە یان ژمارە و پیت';
+
+  @override
+  String get pleaseEnterResetCode => 'تکایە کۆدی ڕێکخستنەوە دابنێ';
+
+  @override
+  String get newPasswordLabel => 'وشەی نهێنی نوێ';
+
+  @override
+  String get pleaseEnterNewPassword => 'تکایە وشەی نهێنییەکی نوێ دابنێ';
+
+  @override
+  String get passwordUppercase =>
+      'وشەی نهێنی پێویستە لانیکەم یەک پیتی گەورە تێدابێت';
+
+  @override
+  String get passwordLowercase =>
+      'وشەی نهێنی پێویستە لانیکەم یەک پیتی بچووک تێدابێت';
+
+  @override
+  String get passwordNumber => 'وشەی نهێنی پێویستە لانیکەم یەک ژمارە تێدابێت';
+
+  @override
+  String get passwordSpecialChar =>
+      'وشەی نهێنی پێویستە لانیکەم یەک نیشانەی تایبەت تێدابێت';
+
+  @override
+  String get confirmNewPasswordLabel => 'وشەی نهێنی نوێ دووبارە بکەرەوە';
+
+  @override
+  String get passwordsDoNotMatch => 'وشەکانی نهێنی یەک ناگرنەوە';
+
+  @override
+  String get switchToLightMode => 'گۆڕین بۆ ڕووناک';
+
+  @override
+  String get switchToDarkMode => 'گۆڕین بۆ تاریک';
+
+  @override
+  String get carIdChatRoom => 'ناسنامەی ئۆتۆمبێل (ژووری چات)';
+
+  @override
+  String get joinLabel => 'بەشداری';
+
+  @override
+  String get unknownSender => 'نەناسراو';
+
+  @override
+  String get justNow => 'ئێستا';
+
+  @override
+  String get noMessagesYet => 'هێشتا نامەیەک نییە. گفتوگۆیەک دەست پێبکە!';
+
+  @override
+  String timeDaysAgo(Object count) {
+    return 'پێش $count ڕۆژ';
+  }
+
+  @override
+  String timeHoursAgo(Object count) {
+    return 'پێش $count کاتژمێر';
+  }
+
+  @override
+  String timeMinutesAgo(Object count) {
+    return 'پێش $count خولەک';
+  }
+
+  @override
+  String get deleteAccountTitle => 'سڕینەوەی هەژمار';
+
+  @override
+  String get deleteAccountBody =>
+      'هەژمارەکەت و هەموو داتاکەت (ڕێکلام، نامە، دڵخواز) بە تەواوی دەسڕێتەوە. ناگەڕێتەوە.';
+
+  @override
+  String get passwordOptionalConfirm => 'وشەی نهێنی (هەلبژاردە)';
+
+  @override
+  String get confirmWithPasswordHint =>
+      'بە وشەی نهێنی پشتڕاست بکەرەوە ئەگەر هەتبێت';
+
+  @override
+  String get deleteMyAccount => 'هەژمارەکەم بسڕمەوە';
+
+  @override
+  String get accountDeletedSnackbar => 'هەژمارەکەت سڕایەوە';
+
+  @override
+  String get apiBaseTitle => 'بنەڕەتی API';
+
+  @override
+  String get apiBaseHint => 'https://carr-5hrm.onrender.com';
+
+  @override
+  String get resetButton => 'ڕێکخستنەوە';
+
+  @override
+  String get apiBaseUpdatedSnackbar =>
+      'بنەڕەتی API نوێ کرا. بۆ نوێکردنەوەی ڕێکلامەکان ڕابکێشە.';
+
+  @override
+  String get changePasswordTitle => 'گۆڕینی وشەی نهێنی';
+
+  @override
+  String get analyticsTitle => 'شیکردنەوە';
+
+  @override
+  String get failedToLoadListings => 'بارکردنی ڕێکلامەکانت شکستی هێنا';
+
+  @override
+  String get noListingsFound => 'هیچ ڕێکلامێک نەدۆزرایەوە';
+
+  @override
+  String get createFirstListingForAnalytics =>
+      'یەکەم ڕێکلامت دروست بکە بۆ بینینی شیکردنەوە';
+
+  @override
+  String get createListingButtonShort => 'دروستکردنی ڕێکلام';
+
+  @override
+  String get analyticsOverview => 'پوختەی شیکردنەوە';
+
+  @override
+  String get listingsLabel => 'ڕێکلامەکان';
+
+  @override
+  String get viewsLabel => 'بینینەکان';
+
+  @override
+  String get messagesLabel => 'نامەکان';
+
+  @override
+  String get callsLabel => 'پەیوەندییەکان';
+
+  @override
+  String get sharesLabel => 'هاوبەشکردنەکان';
+
+  @override
+  String get favoritesLabel => 'دڵخوازەکان';
+
+  @override
+  String get analyticsDashboard => 'داشبۆردی شیکردنەوە';
+
+  @override
+  String get performanceInsights => 'تێڕوانینی کارایی';
+
+  @override
+  String get performanceMetrics => 'پێوەرەکانی کارایی';
+
+  @override
+  String get engagementLabel => 'بەشداری';
+
+  @override
+  String get engagementRate => 'ڕێژەی بەشداری';
+
+  @override
+  String get fuelEconomyLabel => 'بەکارهێنانی سووتەمەنی';
+
+  @override
+  String get comparisonTitle => 'بەراورد';
+
+  @override
+  String get noCarsSelected => 'هیچ ئۆتۆمبێلێک هەڵنەبژێردراوە';
+
+  @override
+  String get carLabel => 'ئۆتۆمبێل';
 }

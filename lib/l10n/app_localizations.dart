@@ -1665,6 +1665,408 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Choose authentication method:'**
   String get chooseAuthMethodTitle;
+
+  /// No description provided for @backAction.
+  ///
+  /// In en, this message translates to:
+  /// **'Back'**
+  String get backAction;
+
+  /// No description provided for @verifyEmailTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Verify email'**
+  String get verifyEmailTitle;
+
+  /// No description provided for @accountCreatedAndEmailVerified.
+  ///
+  /// In en, this message translates to:
+  /// **'Account created and email verified'**
+  String get accountCreatedAndEmailVerified;
+
+  /// No description provided for @emailVerifiedSuccessfully.
+  ///
+  /// In en, this message translates to:
+  /// **'Email verified successfully'**
+  String get emailVerifiedSuccessfully;
+
+  /// No description provided for @verificationFailedMessage.
+  ///
+  /// In en, this message translates to:
+  /// **'Verification failed. Check the link or code and try again.'**
+  String get verificationFailedMessage;
+
+  /// No description provided for @verifyEmailInstructions.
+  ///
+  /// In en, this message translates to:
+  /// **'Enter the verification code from the email we sent you, or open the verification link in this app.'**
+  String get verifyEmailInstructions;
+
+  /// No description provided for @verificationCodeLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'Verification code'**
+  String get verificationCodeLabel;
+
+  /// No description provided for @verificationCodeHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Paste the code from the email or the link'**
+  String get verificationCodeHint;
+
+  /// No description provided for @pleaseEnterVerificationCode.
+  ///
+  /// In en, this message translates to:
+  /// **'Please enter the verification code'**
+  String get pleaseEnterVerificationCode;
+
+  /// No description provided for @passwordResetSuccess.
+  ///
+  /// In en, this message translates to:
+  /// **'Password reset successfully'**
+  String get passwordResetSuccess;
+
+  /// No description provided for @unableToResetPasswordCheckCode.
+  ///
+  /// In en, this message translates to:
+  /// **'Unable to reset password. Please check the code and try again.'**
+  String get unableToResetPasswordCheckCode;
+
+  /// No description provided for @unableToResetPasswordTryLater.
+  ///
+  /// In en, this message translates to:
+  /// **'Unable to reset password. Please try again later.'**
+  String get unableToResetPasswordTryLater;
+
+  /// No description provided for @resetPasswordTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Reset password'**
+  String get resetPasswordTitle;
+
+  /// No description provided for @resetPasswordInstructions.
+  ///
+  /// In en, this message translates to:
+  /// **'Enter the code you received and choose a new password.'**
+  String get resetPasswordInstructions;
+
+  /// No description provided for @resetCodeLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'Reset code'**
+  String get resetCodeLabel;
+
+  /// No description provided for @resetCodeHint.
+  ///
+  /// In en, this message translates to:
+  /// **'6-digit or alphanumeric code'**
+  String get resetCodeHint;
+
+  /// No description provided for @pleaseEnterResetCode.
+  ///
+  /// In en, this message translates to:
+  /// **'Please enter the reset code'**
+  String get pleaseEnterResetCode;
+
+  /// No description provided for @newPasswordLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'New password'**
+  String get newPasswordLabel;
+
+  /// No description provided for @pleaseEnterNewPassword.
+  ///
+  /// In en, this message translates to:
+  /// **'Please enter a new password'**
+  String get pleaseEnterNewPassword;
+
+  /// No description provided for @passwordUppercase.
+  ///
+  /// In en, this message translates to:
+  /// **'Password must contain at least one uppercase letter'**
+  String get passwordUppercase;
+
+  /// No description provided for @passwordLowercase.
+  ///
+  /// In en, this message translates to:
+  /// **'Password must contain at least one lowercase letter'**
+  String get passwordLowercase;
+
+  /// No description provided for @passwordNumber.
+  ///
+  /// In en, this message translates to:
+  /// **'Password must contain at least one number'**
+  String get passwordNumber;
+
+  /// No description provided for @passwordSpecialChar.
+  ///
+  /// In en, this message translates to:
+  /// **'Password must contain at least one special character'**
+  String get passwordSpecialChar;
+
+  /// No description provided for @confirmNewPasswordLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'Confirm new password'**
+  String get confirmNewPasswordLabel;
+
+  /// No description provided for @passwordsDoNotMatch.
+  ///
+  /// In en, this message translates to:
+  /// **'Passwords do not match'**
+  String get passwordsDoNotMatch;
+
+  /// No description provided for @switchToLightMode.
+  ///
+  /// In en, this message translates to:
+  /// **'Switch to Light Mode'**
+  String get switchToLightMode;
+
+  /// No description provided for @switchToDarkMode.
+  ///
+  /// In en, this message translates to:
+  /// **'Switch to Dark Mode'**
+  String get switchToDarkMode;
+
+  /// No description provided for @carIdChatRoom.
+  ///
+  /// In en, this message translates to:
+  /// **'Car ID (chat room)'**
+  String get carIdChatRoom;
+
+  /// No description provided for @joinLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'Join'**
+  String get joinLabel;
+
+  /// No description provided for @unknownSender.
+  ///
+  /// In en, this message translates to:
+  /// **'Unknown'**
+  String get unknownSender;
+
+  /// No description provided for @justNow.
+  ///
+  /// In en, this message translates to:
+  /// **'Just now'**
+  String get justNow;
+
+  /// No description provided for @noMessagesYet.
+  ///
+  /// In en, this message translates to:
+  /// **'No messages yet. Start a conversation!'**
+  String get noMessagesYet;
+
+  /// No description provided for @timeDaysAgo.
+  ///
+  /// In en, this message translates to:
+  /// **'{count} days ago'**
+  String timeDaysAgo(Object count);
+
+  /// No description provided for @timeHoursAgo.
+  ///
+  /// In en, this message translates to:
+  /// **'{count} hours ago'**
+  String timeHoursAgo(Object count);
+
+  /// No description provided for @timeMinutesAgo.
+  ///
+  /// In en, this message translates to:
+  /// **'{count} minutes ago'**
+  String timeMinutesAgo(Object count);
+
+  /// No description provided for @deleteAccountTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Delete account'**
+  String get deleteAccountTitle;
+
+  /// No description provided for @deleteAccountBody.
+  ///
+  /// In en, this message translates to:
+  /// **'This will permanently delete your account and all your data (listings, messages, favorites). This cannot be undone.'**
+  String get deleteAccountBody;
+
+  /// No description provided for @passwordOptionalConfirm.
+  ///
+  /// In en, this message translates to:
+  /// **'Password (optional)'**
+  String get passwordOptionalConfirm;
+
+  /// No description provided for @confirmWithPasswordHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Confirm with password if you have one'**
+  String get confirmWithPasswordHint;
+
+  /// No description provided for @deleteMyAccount.
+  ///
+  /// In en, this message translates to:
+  /// **'Delete my account'**
+  String get deleteMyAccount;
+
+  /// No description provided for @accountDeletedSnackbar.
+  ///
+  /// In en, this message translates to:
+  /// **'Your account has been deleted'**
+  String get accountDeletedSnackbar;
+
+  /// No description provided for @apiBaseTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'API base'**
+  String get apiBaseTitle;
+
+  /// No description provided for @apiBaseHint.
+  ///
+  /// In en, this message translates to:
+  /// **'https://carr-5hrm.onrender.com'**
+  String get apiBaseHint;
+
+  /// No description provided for @resetButton.
+  ///
+  /// In en, this message translates to:
+  /// **'Reset'**
+  String get resetButton;
+
+  /// No description provided for @apiBaseUpdatedSnackbar.
+  ///
+  /// In en, this message translates to:
+  /// **'API base updated. Pull to refresh listings.'**
+  String get apiBaseUpdatedSnackbar;
+
+  /// No description provided for @changePasswordTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Change password'**
+  String get changePasswordTitle;
+
+  /// No description provided for @analyticsTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Analytics'**
+  String get analyticsTitle;
+
+  /// No description provided for @failedToLoadListings.
+  ///
+  /// In en, this message translates to:
+  /// **'Failed to load your listings'**
+  String get failedToLoadListings;
+
+  /// No description provided for @noListingsFound.
+  ///
+  /// In en, this message translates to:
+  /// **'No Listings Found'**
+  String get noListingsFound;
+
+  /// No description provided for @createFirstListingForAnalytics.
+  ///
+  /// In en, this message translates to:
+  /// **'Create your first listing to see analytics'**
+  String get createFirstListingForAnalytics;
+
+  /// No description provided for @createListingButtonShort.
+  ///
+  /// In en, this message translates to:
+  /// **'Create Listing'**
+  String get createListingButtonShort;
+
+  /// No description provided for @analyticsOverview.
+  ///
+  /// In en, this message translates to:
+  /// **'Analytics Overview'**
+  String get analyticsOverview;
+
+  /// No description provided for @listingsLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'Listings'**
+  String get listingsLabel;
+
+  /// No description provided for @viewsLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'Views'**
+  String get viewsLabel;
+
+  /// No description provided for @messagesLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'Messages'**
+  String get messagesLabel;
+
+  /// No description provided for @callsLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'Calls'**
+  String get callsLabel;
+
+  /// No description provided for @sharesLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'Shares'**
+  String get sharesLabel;
+
+  /// No description provided for @favoritesLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'Favorites'**
+  String get favoritesLabel;
+
+  /// No description provided for @analyticsDashboard.
+  ///
+  /// In en, this message translates to:
+  /// **'Analytics Dashboard'**
+  String get analyticsDashboard;
+
+  /// No description provided for @performanceInsights.
+  ///
+  /// In en, this message translates to:
+  /// **'Performance insights'**
+  String get performanceInsights;
+
+  /// No description provided for @performanceMetrics.
+  ///
+  /// In en, this message translates to:
+  /// **'Performance Metrics'**
+  String get performanceMetrics;
+
+  /// No description provided for @engagementLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'Engagement'**
+  String get engagementLabel;
+
+  /// No description provided for @engagementRate.
+  ///
+  /// In en, this message translates to:
+  /// **'Engagement Rate'**
+  String get engagementRate;
+
+  /// No description provided for @fuelEconomyLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'Fuel economy'**
+  String get fuelEconomyLabel;
+
+  /// No description provided for @comparisonTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Comparison'**
+  String get comparisonTitle;
+
+  /// No description provided for @noCarsSelected.
+  ///
+  /// In en, this message translates to:
+  /// **'No cars selected'**
+  String get noCarsSelected;
+
+  /// No description provided for @carLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'Car'**
+  String get carLabel;
 }
 
 class _AppLocalizationsDelegate

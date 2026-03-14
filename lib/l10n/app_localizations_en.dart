@@ -810,4 +810,225 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get chooseAuthMethodTitle => 'Choose authentication method:';
+
+  @override
+  String get backAction => 'Back';
+
+  @override
+  String get verifyEmailTitle => 'Verify email';
+
+  @override
+  String get accountCreatedAndEmailVerified =>
+      'Account created and email verified';
+
+  @override
+  String get emailVerifiedSuccessfully => 'Email verified successfully';
+
+  @override
+  String get verificationFailedMessage =>
+      'Verification failed. Check the link or code and try again.';
+
+  @override
+  String get verifyEmailInstructions =>
+      'Enter the verification code from the email we sent you, or open the verification link in this app.';
+
+  @override
+  String get verificationCodeLabel => 'Verification code';
+
+  @override
+  String get verificationCodeHint =>
+      'Paste the code from the email or the link';
+
+  @override
+  String get pleaseEnterVerificationCode =>
+      'Please enter the verification code';
+
+  @override
+  String get passwordResetSuccess => 'Password reset successfully';
+
+  @override
+  String get unableToResetPasswordCheckCode =>
+      'Unable to reset password. Please check the code and try again.';
+
+  @override
+  String get unableToResetPasswordTryLater =>
+      'Unable to reset password. Please try again later.';
+
+  @override
+  String get resetPasswordTitle => 'Reset password';
+
+  @override
+  String get resetPasswordInstructions =>
+      'Enter the code you received and choose a new password.';
+
+  @override
+  String get resetCodeLabel => 'Reset code';
+
+  @override
+  String get resetCodeHint => '6-digit or alphanumeric code';
+
+  @override
+  String get pleaseEnterResetCode => 'Please enter the reset code';
+
+  @override
+  String get newPasswordLabel => 'New password';
+
+  @override
+  String get pleaseEnterNewPassword => 'Please enter a new password';
+
+  @override
+  String get passwordUppercase =>
+      'Password must contain at least one uppercase letter';
+
+  @override
+  String get passwordLowercase =>
+      'Password must contain at least one lowercase letter';
+
+  @override
+  String get passwordNumber => 'Password must contain at least one number';
+
+  @override
+  String get passwordSpecialChar =>
+      'Password must contain at least one special character';
+
+  @override
+  String get confirmNewPasswordLabel => 'Confirm new password';
+
+  @override
+  String get passwordsDoNotMatch => 'Passwords do not match';
+
+  @override
+  String get switchToLightMode => 'Switch to Light Mode';
+
+  @override
+  String get switchToDarkMode => 'Switch to Dark Mode';
+
+  @override
+  String get carIdChatRoom => 'Car ID (chat room)';
+
+  @override
+  String get joinLabel => 'Join';
+
+  @override
+  String get unknownSender => 'Unknown';
+
+  @override
+  String get justNow => 'Just now';
+
+  @override
+  String get noMessagesYet => 'No messages yet. Start a conversation!';
+
+  @override
+  String timeDaysAgo(Object count) {
+    return '$count days ago';
+  }
+
+  @override
+  String timeHoursAgo(Object count) {
+    return '$count hours ago';
+  }
+
+  @override
+  String timeMinutesAgo(Object count) {
+    return '$count minutes ago';
+  }
+
+  @override
+  String get deleteAccountTitle => 'Delete account';
+
+  @override
+  String get deleteAccountBody =>
+      'This will permanently delete your account and all your data (listings, messages, favorites). This cannot be undone.';
+
+  @override
+  String get passwordOptionalConfirm => 'Password (optional)';
+
+  @override
+  String get confirmWithPasswordHint => 'Confirm with password if you have one';
+
+  @override
+  String get deleteMyAccount => 'Delete my account';
+
+  @override
+  String get accountDeletedSnackbar => 'Your account has been deleted';
+
+  @override
+  String get apiBaseTitle => 'API base';
+
+  @override
+  String get apiBaseHint => 'https://carr-5hrm.onrender.com';
+
+  @override
+  String get resetButton => 'Reset';
+
+  @override
+  String get apiBaseUpdatedSnackbar =>
+      'API base updated. Pull to refresh listings.';
+
+  @override
+  String get changePasswordTitle => 'Change password';
+
+  @override
+  String get analyticsTitle => 'Analytics';
+
+  @override
+  String get failedToLoadListings => 'Failed to load your listings';
+
+  @override
+  String get noListingsFound => 'No Listings Found';
+
+  @override
+  String get createFirstListingForAnalytics =>
+      'Create your first listing to see analytics';
+
+  @override
+  String get createListingButtonShort => 'Create Listing';
+
+  @override
+  String get analyticsOverview => 'Analytics Overview';
+
+  @override
+  String get listingsLabel => 'Listings';
+
+  @override
+  String get viewsLabel => 'Views';
+
+  @override
+  String get messagesLabel => 'Messages';
+
+  @override
+  String get callsLabel => 'Calls';
+
+  @override
+  String get sharesLabel => 'Shares';
+
+  @override
+  String get favoritesLabel => 'Favorites';
+
+  @override
+  String get analyticsDashboard => 'Analytics Dashboard';
+
+  @override
+  String get performanceInsights => 'Performance insights';
+
+  @override
+  String get performanceMetrics => 'Performance Metrics';
+
+  @override
+  String get engagementLabel => 'Engagement';
+
+  @override
+  String get engagementRate => 'Engagement Rate';
+
+  @override
+  String get fuelEconomyLabel => 'Fuel economy';
+
+  @override
+  String get comparisonTitle => 'Comparison';
+
+  @override
+  String get noCarsSelected => 'No cars selected';
+
+  @override
+  String get carLabel => 'Car';
 }

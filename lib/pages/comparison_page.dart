@@ -23,7 +23,7 @@ class ComparisonPage extends StatelessWidget {
 
     if (cars.isEmpty) {
       return Scaffold(
-        appBar: AppBar(title: Text(loc?.specificationsLabel ?? 'Comparison')),
+        appBar: AppBar(title: Text(loc?.comparisonTitle ?? 'Comparison')),
         body: Center(
           child: Padding(
             padding: const EdgeInsets.all(16),
@@ -32,10 +32,10 @@ class ComparisonPage extends StatelessWidget {
               children: [
                 const Icon(Icons.compare_arrows, size: 72, color: Colors.black26),
                 const SizedBox(height: 12),
-                Text(loc?.noCarsFound ?? 'No cars selected'),
+                Text(loc?.noCarsSelected ?? 'No cars selected'),
                 const SizedBox(height: 8),
-                const Text(
-                  'Add cars to comparison from listings.',
+                Text(
+                  loc?.comparisonEmptyHint ?? 'Add cars to comparison from listings.',
                   textAlign: TextAlign.center,
                 ),
                 const SizedBox(height: 16),
@@ -65,10 +65,10 @@ class ComparisonPage extends StatelessWidget {
 
     return Scaffold(
       appBar: AppBar(
-        title: Text(loc?.specificationsLabel ?? 'Comparison'),
+        title: Text(loc?.comparisonTitle ?? 'Comparison'),
         actions: [
           IconButton(
-            tooltip: 'Share',
+            tooltip: loc?.shareAction ?? 'Share',
             onPressed: () {
               final text = cars
                   .map((c) {
@@ -97,7 +97,7 @@ class ComparisonPage extends StatelessWidget {
           padding: const EdgeInsets.all(12),
           child: DataTable(
             columns: [
-              const DataColumn(label: Text('Spec')),
+              DataColumn(label: Text(loc?.comparisonSpecLabel ?? 'Spec')),
               ...cars.map((c) {
                 final title = _val(c, 'title');
                 final id = _val(c, 'id');
@@ -115,7 +115,7 @@ class ComparisonPage extends StatelessWidget {
                       ),
                       const SizedBox(width: 6),
                       IconButton(
-                        tooltip: 'Remove',
+                        tooltip: loc?.removeAction ?? 'Remove',
                         onPressed: () => store.removeCarFromComparison(id),
                         icon: const Icon(Icons.close, size: 18),
                       ),

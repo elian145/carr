@@ -508,7 +508,7 @@ class AppLocalizationsAr extends AppLocalizations {
   }
 
   @override
-  String get english => 'English';
+  String get english => 'الإنجليزية';
 
   @override
   String get arabic => 'العربية';
@@ -808,4 +808,224 @@ class AppLocalizationsAr extends AppLocalizations {
 
   @override
   String get chooseAuthMethodTitle => 'اختر طريقة التسجيل:';
+
+  @override
+  String get backAction => 'رجوع';
+
+  @override
+  String get verifyEmailTitle => 'التحقق من البريد الإلكتروني';
+
+  @override
+  String get accountCreatedAndEmailVerified =>
+      'تم إنشاء الحساب والتحقق من البريد';
+
+  @override
+  String get emailVerifiedSuccessfully => 'تم التحقق من البريد بنجاح';
+
+  @override
+  String get verificationFailedMessage =>
+      'فشل التحقق. تحقق من الرابط أو الرمز وحاول مرة أخرى.';
+
+  @override
+  String get verifyEmailInstructions =>
+      'أدخل رمز التحقق من الرسالة التي أرسلناها إليك، أو افتح رابط التحقق في التطبيق.';
+
+  @override
+  String get verificationCodeLabel => 'رمز التحقق';
+
+  @override
+  String get verificationCodeHint => 'الصق الرمز من الرسالة أو الرابط';
+
+  @override
+  String get pleaseEnterVerificationCode => 'يرجى إدخال رمز التحقق';
+
+  @override
+  String get passwordResetSuccess => 'تم إعادة تعيين كلمة المرور بنجاح';
+
+  @override
+  String get unableToResetPasswordCheckCode =>
+      'تعذر إعادة تعيين كلمة المرور. تحقق من الرمز وحاول مرة أخرى.';
+
+  @override
+  String get unableToResetPasswordTryLater =>
+      'تعذر إعادة تعيين كلمة المرور. يرجى المحاولة لاحقاً.';
+
+  @override
+  String get resetPasswordTitle => 'إعادة تعيين كلمة المرور';
+
+  @override
+  String get resetPasswordInstructions =>
+      'أدخل الرمز الذي استلمته واختر كلمة مرور جديدة.';
+
+  @override
+  String get resetCodeLabel => 'رمز إعادة التعيين';
+
+  @override
+  String get resetCodeHint => 'رمز من 6 أرقام أو أحرف وأرقام';
+
+  @override
+  String get pleaseEnterResetCode => 'يرجى إدخال رمز إعادة التعيين';
+
+  @override
+  String get newPasswordLabel => 'كلمة المرور الجديدة';
+
+  @override
+  String get pleaseEnterNewPassword => 'يرجى إدخال كلمة مرور جديدة';
+
+  @override
+  String get passwordUppercase =>
+      'يجب أن تحتوي كلمة المرور على حرف كبير واحد على الأقل';
+
+  @override
+  String get passwordLowercase =>
+      'يجب أن تحتوي كلمة المرور على حرف صغير واحد على الأقل';
+
+  @override
+  String get passwordNumber =>
+      'يجب أن تحتوي كلمة المرور على رقم واحد على الأقل';
+
+  @override
+  String get passwordSpecialChar =>
+      'يجب أن تحتوي كلمة المرور على رمز خاص واحد على الأقل';
+
+  @override
+  String get confirmNewPasswordLabel => 'تأكيد كلمة المرور الجديدة';
+
+  @override
+  String get passwordsDoNotMatch => 'كلمتا المرور غير متطابقتين';
+
+  @override
+  String get switchToLightMode => 'التبديل إلى الوضع الفاتح';
+
+  @override
+  String get switchToDarkMode => 'التبديل إلى الوضع الداكن';
+
+  @override
+  String get carIdChatRoom => 'معرف السيارة (غرفة الدردشة)';
+
+  @override
+  String get joinLabel => 'انضمام';
+
+  @override
+  String get unknownSender => 'غير معروف';
+
+  @override
+  String get justNow => 'الآن';
+
+  @override
+  String get noMessagesYet => 'لا توجد رسائل بعد. ابدأ محادثة!';
+
+  @override
+  String timeDaysAgo(Object count) {
+    return 'قبل $count يوم';
+  }
+
+  @override
+  String timeHoursAgo(Object count) {
+    return 'قبل $count ساعة';
+  }
+
+  @override
+  String timeMinutesAgo(Object count) {
+    return 'قبل $count دقيقة';
+  }
+
+  @override
+  String get deleteAccountTitle => 'حذف الحساب';
+
+  @override
+  String get deleteAccountBody =>
+      'سيتم حذف حسابك وجميع بياناتك (الإعلانات والرسائل والمفضلة) نهائياً. لا يمكن التراجع عن ذلك.';
+
+  @override
+  String get passwordOptionalConfirm => 'كلمة المرور (اختياري)';
+
+  @override
+  String get confirmWithPasswordHint => 'أكد بكلمة المرور إن وجدت';
+
+  @override
+  String get deleteMyAccount => 'حذف حسابي';
+
+  @override
+  String get accountDeletedSnackbar => 'تم حذف حسابك';
+
+  @override
+  String get apiBaseTitle => 'عنوان واجهة API';
+
+  @override
+  String get apiBaseHint => 'https://carr-5hrm.onrender.com';
+
+  @override
+  String get resetButton => 'إعادة تعيين';
+
+  @override
+  String get apiBaseUpdatedSnackbar =>
+      'تم تحديث عنوان API. اسحب لتحديث الإعلانات.';
+
+  @override
+  String get changePasswordTitle => 'تغيير كلمة المرور';
+
+  @override
+  String get analyticsTitle => 'التحليلات';
+
+  @override
+  String get failedToLoadListings => 'فشل تحميل إعلاناتك';
+
+  @override
+  String get noListingsFound => 'لا توجد إعلانات';
+
+  @override
+  String get createFirstListingForAnalytics =>
+      'أنشئ أول إعلان لك لعرض التحليلات';
+
+  @override
+  String get createListingButtonShort => 'إنشاء إعلان';
+
+  @override
+  String get analyticsOverview => 'نظرة عامة على التحليلات';
+
+  @override
+  String get listingsLabel => 'الإعلانات';
+
+  @override
+  String get viewsLabel => 'المشاهدات';
+
+  @override
+  String get messagesLabel => 'الرسائل';
+
+  @override
+  String get callsLabel => 'المكالمات';
+
+  @override
+  String get sharesLabel => 'المشاركات';
+
+  @override
+  String get favoritesLabel => 'المفضلة';
+
+  @override
+  String get analyticsDashboard => 'لوحة التحليلات';
+
+  @override
+  String get performanceInsights => 'رؤى الأداء';
+
+  @override
+  String get performanceMetrics => 'مقاييس الأداء';
+
+  @override
+  String get engagementLabel => 'التفاعل';
+
+  @override
+  String get engagementRate => 'معدل التفاعل';
+
+  @override
+  String get fuelEconomyLabel => 'استهلاك الوقود';
+
+  @override
+  String get comparisonTitle => 'المقارنة';
+
+  @override
+  String get noCarsSelected => 'لم يتم اختيار سيارات';
+
+  @override
+  String get carLabel => 'سيارة';
 }

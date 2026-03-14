@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
+import '../l10n/app_localizations.dart';
 import '../services/api_service.dart';
 import '../services/auth_service.dart';
 
@@ -70,11 +71,12 @@ class _VerifyEmailPageState extends State<VerifyEmailPage> {
         await auth.verifyEmail(token);
       }
       if (!mounted) return;
+      final loc = AppLocalizations.of(context)!;
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
           content: Text(isSignup
-              ? 'Account created and email verified'
-              : 'Email verified successfully'),
+              ? loc.accountCreatedAndEmailVerified
+              : loc.emailVerifiedSuccessfully),
           backgroundColor: Colors.green,
         ),
       );
@@ -94,8 +96,8 @@ class _VerifyEmailPageState extends State<VerifyEmailPage> {
     } catch (e) {
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('Verification failed. Check the link or code and try again.'),
+        SnackBar(
+          content: Text(AppLocalizations.of(context)!.verificationFailedMessage),
           backgroundColor: Colors.red,
         ),
       );
@@ -106,8 +108,9 @@ class _VerifyEmailPageState extends State<VerifyEmailPage> {
 
   @override
   Widget build(BuildContext context) {
+    final loc = AppLocalizations.of(context)!;
     return Scaffold(
-      appBar: AppBar(title: const Text('Verify email')),
+      appBar: AppBar(title: Text(loc.verifyEmailTitle)),
       body: SingleChildScrollView(
         padding: const EdgeInsets.all(24),
         child: Form(
@@ -117,21 +120,21 @@ class _VerifyEmailPageState extends State<VerifyEmailPage> {
             children: [
               const SizedBox(height: 24),
               Text(
-                'Enter the verification code from the email we sent you, or open the verification link in this app.',
+                loc.verifyEmailInstructions,
                 style: Theme.of(context).textTheme.bodyMedium,
               ),
               const SizedBox(height: 24),
               TextFormField(
                 controller: _tokenController,
-                decoration: const InputDecoration(
-                  labelText: 'Verification code',
-                  hintText: 'Paste the code from the email or the link',
-                  border: OutlineInputBorder(),
+                decoration: InputDecoration(
+                  labelText: loc.verificationCodeLabel,
+                  hintText: loc.verificationCodeHint,
+                  border: const OutlineInputBorder(),
                 ),
                 maxLines: 2,
                 validator: (v) {
                   if (v == null || v.trim().isEmpty) {
-                    return 'Please enter the verification code';
+                    return loc.pleaseEnterVerificationCode;
                   }
                   return null;
                 },
@@ -145,12 +148,12 @@ class _VerifyEmailPageState extends State<VerifyEmailPage> {
                         width: 24,
                         child: CircularProgressIndicator(strokeWidth: 2),
                       )
-                    : const Text('Verify email'),
+                    : Text(loc.verifyEmailTitle),
               ),
               const SizedBox(height: 12),
               TextButton(
                 onPressed: () => Navigator.pop(context),
-                child: const Text('Back'),
+                child: Text(loc.backAction),
               ),
             ],
           ),

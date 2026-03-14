@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'dart:developer' as developer;
 
+import '../l10n/app_localizations.dart';
 import '../services/api_service.dart';
 import '../services/auth_service.dart';
 import '../widgets/theme_toggle_widget.dart';
@@ -63,9 +64,10 @@ class _ResetPasswordPageState extends State<ResetPasswordPage> {
       final auth = Provider.of<AuthService>(context, listen: false);
       await auth.resetPassword(token, newPass);
       if (!mounted) return;
+      final loc = AppLocalizations.of(context)!;
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('Password reset successfully'),
+        SnackBar(
+          content: Text(loc.passwordResetSuccess),
           backgroundColor: Colors.green,
         ),
       );
@@ -74,8 +76,8 @@ class _ResetPasswordPageState extends State<ResetPasswordPage> {
       developer.log('Reset password failed', name: 'ResetPasswordPage', error: e);
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('Unable to reset password. Please check the code and try again.'),
+        SnackBar(
+          content: Text(AppLocalizations.of(context)!.unableToResetPasswordCheckCode),
           backgroundColor: Colors.red,
         ),
       );
@@ -83,8 +85,8 @@ class _ResetPasswordPageState extends State<ResetPasswordPage> {
       developer.log('Reset password failed', name: 'ResetPasswordPage', error: e);
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('Unable to reset password. Please try again later.'),
+        SnackBar(
+          content: Text(AppLocalizations.of(context)!.unableToResetPasswordTryLater),
           backgroundColor: Colors.red,
         ),
       );
@@ -95,9 +97,10 @@ class _ResetPasswordPageState extends State<ResetPasswordPage> {
 
   @override
   Widget build(BuildContext context) {
+    final loc = AppLocalizations.of(context)!;
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Reset password'),
+        title: Text(loc.resetPasswordTitle),
         actions: const [ThemeToggleWidget()],
       ),
       body: SingleChildScrollView(
@@ -109,20 +112,20 @@ class _ResetPasswordPageState extends State<ResetPasswordPage> {
             children: [
               const SizedBox(height: 24),
               Text(
-                'Enter the code you received and choose a new password.',
+                loc.resetPasswordInstructions,
                 style: Theme.of(context).textTheme.bodyMedium,
               ),
               const SizedBox(height: 24),
               TextFormField(
                 controller: _codeController,
-                decoration: const InputDecoration(
-                  labelText: 'Reset code',
-                  hintText: '6-digit or alphanumeric code',
-                  border: OutlineInputBorder(),
+                decoration: InputDecoration(
+                  labelText: loc.resetCodeLabel,
+                  hintText: loc.resetCodeHint,
+                  border: const OutlineInputBorder(),
                 ),
                 validator: (v) {
                   if (v == null || v.trim().isEmpty) {
-                    return 'Please enter the reset code';
+                    return loc.pleaseEnterResetCode;
                   }
                   return null;
                 },
@@ -132,7 +135,7 @@ class _ResetPasswordPageState extends State<ResetPasswordPage> {
                 controller: _passwordController,
                 obscureText: _obscurePassword,
                 decoration: InputDecoration(
-                  labelText: 'New password',
+                  labelText: loc.newPasswordLabel,
                   border: const OutlineInputBorder(),
                   suffixIcon: IconButton(
                     icon: Icon(_obscurePassword ? Icons.visibility_off : Icons.visibility),
@@ -141,22 +144,22 @@ class _ResetPasswordPageState extends State<ResetPasswordPage> {
                 ),
                 validator: (v) {
                   if (v == null || v.isEmpty) {
-                    return 'Please enter a new password';
+                    return loc.pleaseEnterNewPassword;
                   }
                   if (v.length < 8) {
-                    return 'Password must be at least 8 characters';
+                    return loc.passwordMin8;
                   }
                   if (!RegExp(r'[A-Z]').hasMatch(v)) {
-                    return 'Password must contain at least one uppercase letter';
+                    return loc.passwordUppercase;
                   }
                   if (!RegExp(r'[a-z]').hasMatch(v)) {
-                    return 'Password must contain at least one lowercase letter';
+                    return loc.passwordLowercase;
                   }
                   if (!RegExp(r'\d').hasMatch(v)) {
-                    return 'Password must contain at least one number';
+                    return loc.passwordNumber;
                   }
                   if (!RegExp(r'[!@#$%^&*(),.?":{}|<>]').hasMatch(v)) {
-                    return 'Password must contain at least one special character';
+                    return loc.passwordSpecialChar;
                   }
                   return null;
                 },
@@ -166,7 +169,7 @@ class _ResetPasswordPageState extends State<ResetPasswordPage> {
                 controller: _confirmController,
                 obscureText: _obscureConfirm,
                 decoration: InputDecoration(
-                  labelText: 'Confirm new password',
+                  labelText: loc.confirmNewPasswordLabel,
                   border: const OutlineInputBorder(),
                   suffixIcon: IconButton(
                     icon: Icon(_obscureConfirm ? Icons.visibility_off : Icons.visibility),
@@ -175,7 +178,7 @@ class _ResetPasswordPageState extends State<ResetPasswordPage> {
                 ),
                 validator: (v) {
                   if (v != _passwordController.text) {
-                    return 'Passwords do not match';
+                    return loc.passwordsDoNotMatch;
                   }
                   return null;
                 },
@@ -189,12 +192,12 @@ class _ResetPasswordPageState extends State<ResetPasswordPage> {
                         width: 24,
                         child: CircularProgressIndicator(strokeWidth: 2),
                       )
-                    : const Text('Reset password'),
+                    : Text(loc.resetPasswordTitle),
               ),
               const SizedBox(height: 16),
               TextButton(
                 onPressed: () => Navigator.pop(context),
-                child: const Text('Back'),
+                child: Text(loc.backAction),
               ),
             ],
           ),
