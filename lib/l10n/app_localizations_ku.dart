@@ -1412,4 +1412,30 @@ class AppLocalizationsKu extends AppLocalizations {
   String addedToComparison(Object count, Object max) {
     return 'زیادکرا بۆ بەراورد ($count/$max)';
   }
+
+  @override
+  String get today => 'ئەمڕۆ';
+
+  @override
+  String get yesterday => 'دوێنێ';
+
+  @override
+  String daysAgo(Object count) {
+    return 'پێش $count ڕۆژ';
+  }
+
+  @override
+  String get noFiltersApplied => 'هیچ فلتەرێک جێبەجێ نەکراوە';
+
+  @override
+  String get unnamedSearch => 'گەڕان بەبێ ناو';
+
+  @override
+  String get applySearch => 'جێبەجێکردنی گەڕان';
+
+  @override
+  String get renameTooltip => 'نازناو گۆڕین';
+
+  @override
+  String get deleteTooltip => 'سڕینەوە';
 }

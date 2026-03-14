@@ -1411,4 +1411,30 @@ class AppLocalizationsEn extends AppLocalizations {
   String addedToComparison(Object count, Object max) {
     return 'Added to comparison ($count/$max)';
   }
+
+  @override
+  String get today => 'Today';
+
+  @override
+  String get yesterday => 'Yesterday';
+
+  @override
+  String daysAgo(Object count) {
+    return '$count days ago';
+  }
+
+  @override
+  String get noFiltersApplied => 'No filters applied';
+
+  @override
+  String get unnamedSearch => 'Unnamed Search';
+
+  @override
+  String get applySearch => 'Apply Search';
+
+  @override
+  String get renameTooltip => 'Rename';
+
+  @override
+  String get deleteTooltip => 'Delete';
 }

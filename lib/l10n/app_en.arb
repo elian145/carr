@@ -478,6 +478,15 @@
   "clearAll": "Clear all",
   "comparisonMaxLimit": "Maximum {max} cars can be compared",
   "removedFromComparison": "Removed from comparison",
-  "addedToComparison": "Added to comparison ({count}/{max})"
+  "addedToComparison": "Added to comparison ({count}/{max})",
+
+  "today": "Today",
+  "yesterday": "Yesterday",
+  "daysAgo": "{count} days ago",
+  "noFiltersApplied": "No filters applied",
+  "unnamedSearch": "Unnamed Search",
+  "applySearch": "Apply Search",
+  "renameTooltip": "Rename",
+  "deleteTooltip": "Delete"
 }
 

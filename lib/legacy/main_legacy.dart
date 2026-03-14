@@ -457,7 +457,7 @@ Widget buildFancySelector(
               Text(
                 value == null || value.isEmpty
                     ? AppLocalizations.of(context)!.tapToSelect
-                    : value,
+                    : (value == 'Any' ? AppLocalizations.of(context)!.anyOption : value),
                 maxLines: 1,
                 overflow: TextOverflow.ellipsis,
                 style: TextStyle(
@@ -8017,11 +8017,13 @@ class _HomePageState extends State<HomePage> {
                                                                                         height: 8,
                                                                                       ),
                                                                                       Text(
-                                                                                        _translateValueGlobal(
-                                                                                              context,
-                                                                                              bodyTypeName,
-                                                                                            ) ??
-                                                                                            bodyTypeName,
+                                                                                        bodyTypeName == 'Any'
+                                                                                            ? AppLocalizations.of(context)!.anyOption
+                                                                                            : (_translateValueGlobal(
+                                                                                                  context,
+                                                                                                  bodyTypeName,
+                                                                                                ) ??
+                                                                                                bodyTypeName),
                                                                                         style: GoogleFonts.orbitron(
                                                                                           fontSize: 12,
                                                                                           color: isSelected
@@ -9517,22 +9519,22 @@ class _SavedSearchesPageState extends State<SavedSearchesPage> {
                   margin: EdgeInsets.symmetric(horizontal: 8, vertical: 4),
                   child: ListTile(
                     onTap: () => _showFilterDetails(
-                      item['name']?.toString() ?? 'Unnamed Search',
+                      item['name']?.toString() ?? AppLocalizations.of(context)!.unnamedSearch,
                       filters,
                     ),
                     leading: Icon(Icons.bookmark, color: Color(0xFFFF6B00)),
                     title: Text(
-                      item['name']?.toString() ?? 'Unnamed Search',
+                      item['name']?.toString() ?? AppLocalizations.of(context)!.unnamedSearch,
                       style: TextStyle(fontWeight: FontWeight.bold),
                     ),
                     subtitle: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
                         SizedBox(height: 4),
-                        _buildFilterChips(filters),
+                        _buildFilterChips(context, filters),
                         SizedBox(height: 4),
                         Text(
-                          _formatDate(item['created_at']?.toString() ?? ''),
+                          _formatDate(context, item['created_at']?.toString() ?? ''),
                           style: TextStyle(
                             fontSize: 12,
                             color: Colors.grey[600],
@@ -9546,17 +9548,17 @@ class _SavedSearchesPageState extends State<SavedSearchesPage> {
                         IconButton(
                           icon: Icon(Icons.search, color: Colors.green),
                           onPressed: () => _applySearch(filters),
-                          tooltip: 'Apply Search',
+                          tooltip: AppLocalizations.of(context)!.applySearch,
                         ),
                         IconButton(
                           icon: Icon(Icons.edit),
                           onPressed: () => _rename(index),
-                          tooltip: 'Rename',
+                          tooltip: AppLocalizations.of(context)!.renameTooltip,
                         ),
                         IconButton(
                           icon: Icon(Icons.delete, color: Colors.red),
                           onPressed: () => _delete(index),
-                          tooltip: 'Delete',
+                          tooltip: AppLocalizations.of(context)!.deleteTooltip,
                         ),
                       ],
                     ),
@@ -9568,147 +9570,88 @@ class _SavedSearchesPageState extends State<SavedSearchesPage> {
     );
   }
 
-  Widget _buildFilterChips(Map<String, dynamic> filters) {
+  Widget _buildFilterChips(BuildContext context, Map<String, dynamic> filters) {
     final chips = <Widget>[];
+    final l = AppLocalizations.of(context)!;
+    String tr(String? v) => _translateValueGlobal(context, v?.toString()) ?? v ?? '';
 
-    // Add filter chips for all criteria
     if (filters['brand'] != null) {
-      chips.add(_buildFilterChip('Brand', filters['brand'].toString()));
+      chips.add(_buildFilterChip(context, l.brandLabel, filters['brand'].toString()));
     }
     if (filters['model'] != null) {
-      chips.add(_buildFilterChip('Model', filters['model'].toString()));
+      chips.add(_buildFilterChip(context, l.modelLabel, filters['model'].toString()));
     }
     if (filters['trim'] != null) {
-      chips.add(_buildFilterChip('Trim', filters['trim'].toString()));
+      chips.add(_buildFilterChip(context, l.trimLabel, filters['trim'].toString()));
     }
     if (filters['city'] != null) {
-      chips.add(_buildFilterChip('City', filters['city'].toString()));
+      chips.add(_buildFilterChip(context, l.cityLabel, tr(filters['city'].toString())));
     }
     if (filters['min_price'] != null || filters['max_price'] != null) {
-      final priceRange =
-          '${filters['min_price'] ?? '0'} - ${filters['max_price'] ?? 'âˆž'}';
-      chips.add(_buildFilterChip('Price', priceRange));
+      final priceRange = '${filters['min_price'] ?? '0'} - ${filters['max_price'] ?? '∞'}';
+      chips.add(_buildFilterChip(context, l.priceLabel, priceRange));
     }
     if (filters['min_year'] != null || filters['max_year'] != null) {
-      final yearRange =
-          '${filters['min_year'] ?? '0'} - ${filters['max_year'] ?? 'âˆž'}';
-      chips.add(_buildFilterChip('Year', yearRange));
+      final yearRange = '${filters['min_year'] ?? '0'} - ${filters['max_year'] ?? '∞'}';
+      chips.add(_buildFilterChip(context, l.yearLabel, yearRange));
     }
     if (filters['min_mileage'] != null || filters['max_mileage'] != null) {
-      final mileageRange =
-          '${filters['min_mileage'] ?? '0'} - ${filters['max_mileage'] ?? 'âˆž'} km';
-      chips.add(_buildFilterChip('Mileage', mileageRange));
+      final mileageRange = '${filters['min_mileage'] ?? '0'} - ${filters['max_mileage'] ?? '∞'} ${l.unit_km}';
+      chips.add(_buildFilterChip(context, l.mileageLabel, mileageRange));
     }
     if (filters['transmission'] != null) {
-      chips.add(
-        _buildFilterChip(
-          'Transmission',
-          _capitalizeFirst(filters['transmission'].toString()),
-        ),
-      );
+      chips.add(_buildFilterChip(context, l.transmissionLabel, tr(filters['transmission'].toString())));
     }
     if (filters['condition'] != null) {
-      chips.add(
-        _buildFilterChip(
-          'Condition',
-          _capitalizeFirst(filters['condition'].toString()),
-        ),
-      );
+      chips.add(_buildFilterChip(context, l.conditionLabel, tr(filters['condition'].toString())));
     }
     if (filters['body_type'] != null) {
-      chips.add(
-        _buildFilterChip(
-          'Body Type',
-          _capitalizeFirst(filters['body_type'].toString()),
-        ),
-      );
+      chips.add(_buildFilterChip(context, l.bodyTypeLabel, tr(filters['body_type'].toString())));
     }
     if (filters['fuel_type'] != null) {
-      chips.add(
-        _buildFilterChip(
-          'Fuel Type',
-          _capitalizeFirst(filters['fuel_type'].toString()),
-        ),
-      );
+      chips.add(_buildFilterChip(context, l.fuelTypeLabel, tr(filters['fuel_type'].toString())));
     }
     if (filters['color'] != null) {
-      chips.add(
-        _buildFilterChip(
-          'Color',
-          _capitalizeFirst(filters['color'].toString()),
-        ),
-      );
+      chips.add(_buildFilterChip(context, l.colorLabel, tr(filters['color'].toString())));
     }
     if (filters['drive_type'] != null) {
-      chips.add(
-        _buildFilterChip(
-          'Drive Type',
-          filters['drive_type'].toString().toUpperCase(),
-        ),
-      );
+      chips.add(_buildFilterChip(context, l.driveType, tr(filters['drive_type'].toString())));
     }
     if (filters['cylinder_count'] != null) {
-      chips.add(
-        _buildFilterChip('Cylinders', filters['cylinder_count'].toString()),
-      );
+      chips.add(_buildFilterChip(context, l.cylinderCount, filters['cylinder_count'].toString()));
     }
     if (filters['seating'] != null) {
-      chips.add(
-        _buildFilterChip('Seating', '${filters['seating'].toString()} seats'),
-      );
+      chips.add(_buildFilterChip(context, l.seating, '${filters['seating'].toString()}'));
     }
     if (filters['engine_size'] != null) {
-      chips.add(
-        _buildFilterChip('Engine', '${filters['engine_size'].toString()}L'),
-      );
+      chips.add(_buildFilterChip(context, l.engineSizeL, '${filters['engine_size'].toString()}'));
     }
     if (filters['title_status'] != null) {
-      chips.add(
-        _buildFilterChip(
-          'Title',
-          _capitalizeFirst(filters['title_status'].toString()),
-        ),
-      );
+      chips.add(_buildFilterChip(context, l.status, tr(filters['title_status'].toString())));
     }
     if (filters['damaged_parts'] != null) {
-      chips.add(
-        _buildFilterChip('Damaged Parts', filters['damaged_parts'].toString()),
-      );
+      chips.add(_buildFilterChip(context, 'Damaged Parts', filters['damaged_parts'].toString()));
     }
     if (filters['sort_by'] != null) {
-      chips.add(
-        _buildFilterChip(
-          'Sort By',
-          _capitalizeFirst(filters['sort_by'].toString()),
-        ),
-      );
+      chips.add(_buildFilterChip(context, l.sortBy, _capitalizeFirst(filters['sort_by'].toString())));
     }
     if (filters['owners'] != null) {
-      chips.add(_buildFilterChip('Owners', filters['owners'].toString()));
+      chips.add(_buildFilterChip(context, 'Owners', filters['owners'].toString()));
     }
     if (filters['vin'] != null) {
-      chips.add(_buildFilterChip('VIN', filters['vin'].toString()));
+      chips.add(_buildFilterChip(context, 'VIN', filters['vin'].toString()));
     }
     if (filters['accident_history'] != null) {
-      chips.add(
-        _buildFilterChip(
-          'Accident History',
-          _capitalizeFirst(filters['accident_history'].toString()),
-        ),
-      );
+      chips.add(_buildFilterChip(context, 'Accident History', _capitalizeFirst(filters['accident_history'].toString())));
     }
 
     if (chips.isEmpty) {
-      return Text(
-        'No filters applied',
-        style: TextStyle(color: Colors.grey[600], fontSize: 12),
-      );
+      return Text(l.noFiltersApplied, style: TextStyle(color: Colors.grey[600], fontSize: 12));
     }
-
     return Wrap(spacing: 4, runSpacing: 4, children: chips);
   }
 
-  Widget _buildFilterChip(String label, String value) {
+  Widget _buildFilterChip(BuildContext context, String label, String value) {
     return Container(
       padding: EdgeInsets.symmetric(horizontal: 8, vertical: 4),
       decoration: BoxDecoration(
@@ -9723,18 +9666,20 @@ class _SavedSearchesPageState extends State<SavedSearchesPage> {
     );
   }
 
-  String _formatDate(String dateString) {
+  String _formatDate(BuildContext context, String dateString) {
     try {
       final date = DateTime.parse(dateString);
       final now = DateTime.now();
       final difference = now.difference(date);
+      final l = AppLocalizations.of(context)!;
+      final timeStr = '${date.hour.toString().padLeft(2, '0')}:${date.minute.toString().padLeft(2, '0')}';
 
       if (difference.inDays == 0) {
-        return 'Today ${date.hour.toString().padLeft(2, '0')}:${date.minute.toString().padLeft(2, '0')}';
+        return '${l.today} $timeStr';
       } else if (difference.inDays == 1) {
-        return 'Yesterday ${date.hour.toString().padLeft(2, '0')}:${date.minute.toString().padLeft(2, '0')}';
+        return '${l.yesterday} $timeStr';
       } else if (difference.inDays < 7) {
-        return '${difference.inDays} days ago';
+        return l.daysAgo(difference.inDays);
       } else {
         return '${date.day}/${date.month}/${date.year}';
       }
@@ -12060,6 +12005,8 @@ class _SellStep1PageState extends State<SellStep1Page> {
                               isNumeric) {
                             displayText =
                                 '${_localizeDigitsGlobal(context, value)} L';
+                          } else if (value == 'Any') {
+                            displayText = AppLocalizations.of(context)!.anyOption;
                           } else {
                             final translated = _translateValueGlobal(
                               context,
@@ -12902,6 +12849,8 @@ class _SellStep2PageState extends State<SellStep2Page> {
                               isNumeric) {
                             displayText =
                                 '${_localizeDigitsGlobal(context, value)} L';
+                          } else if (value == 'Any') {
+                            displayText = AppLocalizations.of(context)!.anyOption;
                           } else {
                             final translated = _translateValueGlobal(
                               context,
@@ -13355,11 +13304,13 @@ class _SellStep2PageState extends State<SellStep2Page> {
                                             ),
                                             const SizedBox(height: 8),
                                             Text(
-                                              _translateValueGlobal(
-                                                    context,
-                                                    bodyTypeName,
-                                                  ) ??
-                                                  bodyTypeName,
+                                              bodyTypeName == 'Any'
+                                                  ? AppLocalizations.of(context)!.anyOption
+                                                  : (_translateValueGlobal(
+                                                        context,
+                                                        bodyTypeName,
+                                                      ) ??
+                                                      bodyTypeName),
                                               style: GoogleFonts.orbitron(
                                                 fontSize: 12,
                                                 color: isSelected

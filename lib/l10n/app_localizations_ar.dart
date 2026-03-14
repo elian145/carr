@@ -1403,4 +1403,30 @@ class AppLocalizationsAr extends AppLocalizations {
   String addedToComparison(Object count, Object max) {
     return 'تمت الإضافة إلى المقارنة ($count/$max)';
   }
+
+  @override
+  String get today => 'اليوم';
+
+  @override
+  String get yesterday => 'أمس';
+
+  @override
+  String daysAgo(Object count) {
+    return 'منذ $count أيام';
+  }
+
+  @override
+  String get noFiltersApplied => 'لم يتم تطبيق فلاتر';
+
+  @override
+  String get unnamedSearch => 'بحث بدون اسم';
+
+  @override
+  String get applySearch => 'تطبيق البحث';
+
+  @override
+  String get renameTooltip => 'إعادة تسمية';
+
+  @override
+  String get deleteTooltip => 'حذف';
 }

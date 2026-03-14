@@ -478,6 +478,15 @@
   "clearAll": "هەموو پاکبکە",
   "comparisonMaxLimit": "ئەتوانیت {max} ئۆتۆمبێل بەراورد بکەیت",
   "removedFromComparison": "لە بەراورد لابرا",
-  "addedToComparison": "زیادکرا بۆ بەراورد ({count}/{max})"
+  "addedToComparison": "زیادکرا بۆ بەراورد ({count}/{max})",
+
+  "today": "ئەمڕۆ",
+  "yesterday": "دوێنێ",
+  "daysAgo": "پێش {count} ڕۆژ",
+  "noFiltersApplied": "هیچ فلتەرێک جێبەجێ نەکراوە",
+  "unnamedSearch": "گەڕان بەبێ ناو",
+  "applySearch": "جێبەجێکردنی گەڕان",
+  "renameTooltip": "نازناو گۆڕین",
+  "deleteTooltip": "سڕینەوە"
 }
 

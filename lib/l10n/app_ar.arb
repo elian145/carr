@@ -478,6 +478,15 @@
   "clearAll": "مسح الكل",
   "comparisonMaxLimit": "يمكن مقارنة {max} سيارات كحد أقصى",
   "removedFromComparison": "تمت الإزالة من المقارنة",
-  "addedToComparison": "تمت الإضافة إلى المقارنة ({count}/{max})"
+  "addedToComparison": "تمت الإضافة إلى المقارنة ({count}/{max})",
+
+  "today": "اليوم",
+  "yesterday": "أمس",
+  "daysAgo": "منذ {count} أيام",
+  "noFiltersApplied": "لم يتم تطبيق فلاتر",
+  "unnamedSearch": "بحث بدون اسم",
+  "applySearch": "تطبيق البحث",
+  "renameTooltip": "إعادة تسمية",
+  "deleteTooltip": "حذف"
 }
 

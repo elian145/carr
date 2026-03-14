@@ -2787,6 +2787,54 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Added to comparison ({count}/{max})'**
   String addedToComparison(Object count, Object max);
+
+  /// No description provided for @today.
+  ///
+  /// In en, this message translates to:
+  /// **'Today'**
+  String get today;
+
+  /// No description provided for @yesterday.
+  ///
+  /// In en, this message translates to:
+  /// **'Yesterday'**
+  String get yesterday;
+
+  /// No description provided for @daysAgo.
+  ///
+  /// In en, this message translates to:
+  /// **'{count} days ago'**
+  String daysAgo(Object count);
+
+  /// No description provided for @noFiltersApplied.
+  ///
+  /// In en, this message translates to:
+  /// **'No filters applied'**
+  String get noFiltersApplied;
+
+  /// No description provided for @unnamedSearch.
+  ///
+  /// In en, this message translates to:
+  /// **'Unnamed Search'**
+  String get unnamedSearch;
+
+  /// No description provided for @applySearch.
+  ///
+  /// In en, this message translates to:
+  /// **'Apply Search'**
+  String get applySearch;
+
+  /// No description provided for @renameTooltip.
+  ///
+  /// In en, this message translates to:
+  /// **'Rename'**
+  String get renameTooltip;
+
+  /// No description provided for @deleteTooltip.
+  ///
+  /// In en, this message translates to:
+  /// **'Delete'**
+  String get deleteTooltip;
 }
 
 class _AppLocalizationsDelegate
