@@ -2619,6 +2619,174 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Sell'**
   String get sellButton;
+
+  /// No description provided for @value_transmission_semi_automatic.
+  ///
+  /// In en, this message translates to:
+  /// **'semi-automatic'**
+  String get value_transmission_semi_automatic;
+
+  /// No description provided for @value_transmission_cvt.
+  ///
+  /// In en, this message translates to:
+  /// **'CVT'**
+  String get value_transmission_cvt;
+
+  /// No description provided for @value_condition_certified.
+  ///
+  /// In en, this message translates to:
+  /// **'Certified'**
+  String get value_condition_certified;
+
+  /// No description provided for @value_trim_base.
+  ///
+  /// In en, this message translates to:
+  /// **'Base'**
+  String get value_trim_base;
+
+  /// No description provided for @value_trim_sport.
+  ///
+  /// In en, this message translates to:
+  /// **'Sport'**
+  String get value_trim_sport;
+
+  /// No description provided for @value_trim_luxury.
+  ///
+  /// In en, this message translates to:
+  /// **'Luxury'**
+  String get value_trim_luxury;
+
+  /// No description provided for @value_color_black.
+  ///
+  /// In en, this message translates to:
+  /// **'Black'**
+  String get value_color_black;
+
+  /// No description provided for @value_color_white.
+  ///
+  /// In en, this message translates to:
+  /// **'White'**
+  String get value_color_white;
+
+  /// No description provided for @value_color_silver.
+  ///
+  /// In en, this message translates to:
+  /// **'Silver'**
+  String get value_color_silver;
+
+  /// No description provided for @value_color_gray.
+  ///
+  /// In en, this message translates to:
+  /// **'Gray'**
+  String get value_color_gray;
+
+  /// No description provided for @value_color_red.
+  ///
+  /// In en, this message translates to:
+  /// **'Red'**
+  String get value_color_red;
+
+  /// No description provided for @value_color_blue.
+  ///
+  /// In en, this message translates to:
+  /// **'Blue'**
+  String get value_color_blue;
+
+  /// No description provided for @value_color_green.
+  ///
+  /// In en, this message translates to:
+  /// **'Green'**
+  String get value_color_green;
+
+  /// No description provided for @value_color_yellow.
+  ///
+  /// In en, this message translates to:
+  /// **'Yellow'**
+  String get value_color_yellow;
+
+  /// No description provided for @value_color_orange.
+  ///
+  /// In en, this message translates to:
+  /// **'Orange'**
+  String get value_color_orange;
+
+  /// No description provided for @value_color_purple.
+  ///
+  /// In en, this message translates to:
+  /// **'Purple'**
+  String get value_color_purple;
+
+  /// No description provided for @value_color_brown.
+  ///
+  /// In en, this message translates to:
+  /// **'Brown'**
+  String get value_color_brown;
+
+  /// No description provided for @value_color_beige.
+  ///
+  /// In en, this message translates to:
+  /// **'Beige'**
+  String get value_color_beige;
+
+  /// No description provided for @value_color_gold.
+  ///
+  /// In en, this message translates to:
+  /// **'Gold'**
+  String get value_color_gold;
+
+  /// No description provided for @savedSearchesTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Saved Searches'**
+  String get savedSearchesTitle;
+
+  /// No description provided for @noSavedSearchesYet.
+  ///
+  /// In en, this message translates to:
+  /// **'No saved searches yet'**
+  String get noSavedSearchesYet;
+
+  /// No description provided for @savedSearchesHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Your searches will be automatically saved here'**
+  String get savedSearchesHint;
+
+  /// No description provided for @compareLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'compare +'**
+  String get compareLabel;
+
+  /// No description provided for @addedLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'Added'**
+  String get addedLabel;
+
+  /// No description provided for @clearAll.
+  ///
+  /// In en, this message translates to:
+  /// **'Clear all'**
+  String get clearAll;
+
+  /// No description provided for @comparisonMaxLimit.
+  ///
+  /// In en, this message translates to:
+  /// **'Maximum {max} cars can be compared'**
+  String comparisonMaxLimit(Object max);
+
+  /// No description provided for @removedFromComparison.
+  ///
+  /// In en, this message translates to:
+  /// **'Removed from comparison'**
+  String get removedFromComparison;
+
+  /// No description provided for @addedToComparison.
+  ///
+  /// In en, this message translates to:
+  /// **'Added to comparison ({count}/{max})'**
+  String addedToComparison(Object count, Object max);
 }
 
 class _AppLocalizationsDelegate

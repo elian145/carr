@@ -1322,4 +1322,93 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get sellButton => 'Sell';
+
+  @override
+  String get value_transmission_semi_automatic => 'semi-automatic';
+
+  @override
+  String get value_transmission_cvt => 'CVT';
+
+  @override
+  String get value_condition_certified => 'Certified';
+
+  @override
+  String get value_trim_base => 'Base';
+
+  @override
+  String get value_trim_sport => 'Sport';
+
+  @override
+  String get value_trim_luxury => 'Luxury';
+
+  @override
+  String get value_color_black => 'Black';
+
+  @override
+  String get value_color_white => 'White';
+
+  @override
+  String get value_color_silver => 'Silver';
+
+  @override
+  String get value_color_gray => 'Gray';
+
+  @override
+  String get value_color_red => 'Red';
+
+  @override
+  String get value_color_blue => 'Blue';
+
+  @override
+  String get value_color_green => 'Green';
+
+  @override
+  String get value_color_yellow => 'Yellow';
+
+  @override
+  String get value_color_orange => 'Orange';
+
+  @override
+  String get value_color_purple => 'Purple';
+
+  @override
+  String get value_color_brown => 'Brown';
+
+  @override
+  String get value_color_beige => 'Beige';
+
+  @override
+  String get value_color_gold => 'Gold';
+
+  @override
+  String get savedSearchesTitle => 'Saved Searches';
+
+  @override
+  String get noSavedSearchesYet => 'No saved searches yet';
+
+  @override
+  String get savedSearchesHint =>
+      'Your searches will be automatically saved here';
+
+  @override
+  String get compareLabel => 'compare +';
+
+  @override
+  String get addedLabel => 'Added';
+
+  @override
+  String get clearAll => 'Clear all';
+
+  @override
+  String comparisonMaxLimit(Object max) {
+    return 'Maximum $max cars can be compared';
+  }
+
+  @override
+  String get removedFromComparison => 'Removed from comparison';
+
+  @override
+  String addedToComparison(Object count, Object max) {
+    return 'Added to comparison ($count/$max)';
+  }
 }

@@ -447,6 +447,37 @@
   "photosRequired": "الصور (مطلوبة)",
   "videosOptional": "الفيديوهات (اختياري)",
   "status": "الحالة",
-  "sellButton": "بيع"
+  "sellButton": "بيع",
+
+  "value_transmission_semi_automatic": "نصف أوتوماتيك",
+  "value_transmission_cvt": "ناقل متغير",
+  "value_condition_certified": "معتمد",
+  "value_trim_base": "أساسي",
+  "value_trim_sport": "رياضي",
+  "value_trim_luxury": "فاخر",
+  "value_color_black": "أسود",
+  "value_color_white": "أبيض",
+  "value_color_silver": "فضيّ",
+  "value_color_gray": "رمادي",
+  "value_color_red": "أحمر",
+  "value_color_blue": "أزرق",
+  "value_color_green": "أخضر",
+  "value_color_yellow": "أصفر",
+  "value_color_orange": "برتقالي",
+  "value_color_purple": "بنفسجي",
+  "value_color_brown": "بني",
+  "value_color_beige": "بيج",
+  "value_color_gold": "ذهبي",
+
+  "savedSearchesTitle": "البحث المحفوظ",
+  "noSavedSearchesYet": "لا توجد عمليات بحث محفوظة بعد",
+  "savedSearchesHint": "سيتم حفظ بحثك تلقائياً هنا",
+
+  "compareLabel": "قارن +",
+  "addedLabel": "تمت الإضافة",
+  "clearAll": "مسح الكل",
+  "comparisonMaxLimit": "يمكن مقارنة {max} سيارات كحد أقصى",
+  "removedFromComparison": "تمت الإزالة من المقارنة",
+  "addedToComparison": "تمت الإضافة إلى المقارنة ({count}/{max})"
 }
 

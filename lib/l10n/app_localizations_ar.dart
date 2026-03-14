@@ -1315,4 +1315,92 @@ class AppLocalizationsAr extends AppLocalizations {
 
   @override
   String get sellButton => 'بيع';
+
+  @override
+  String get value_transmission_semi_automatic => 'نصف أوتوماتيك';
+
+  @override
+  String get value_transmission_cvt => 'ناقل متغير';
+
+  @override
+  String get value_condition_certified => 'معتمد';
+
+  @override
+  String get value_trim_base => 'أساسي';
+
+  @override
+  String get value_trim_sport => 'رياضي';
+
+  @override
+  String get value_trim_luxury => 'فاخر';
+
+  @override
+  String get value_color_black => 'أسود';
+
+  @override
+  String get value_color_white => 'أبيض';
+
+  @override
+  String get value_color_silver => 'فضيّ';
+
+  @override
+  String get value_color_gray => 'رمادي';
+
+  @override
+  String get value_color_red => 'أحمر';
+
+  @override
+  String get value_color_blue => 'أزرق';
+
+  @override
+  String get value_color_green => 'أخضر';
+
+  @override
+  String get value_color_yellow => 'أصفر';
+
+  @override
+  String get value_color_orange => 'برتقالي';
+
+  @override
+  String get value_color_purple => 'بنفسجي';
+
+  @override
+  String get value_color_brown => 'بني';
+
+  @override
+  String get value_color_beige => 'بيج';
+
+  @override
+  String get value_color_gold => 'ذهبي';
+
+  @override
+  String get savedSearchesTitle => 'البحث المحفوظ';
+
+  @override
+  String get noSavedSearchesYet => 'لا توجد عمليات بحث محفوظة بعد';
+
+  @override
+  String get savedSearchesHint => 'سيتم حفظ بحثك تلقائياً هنا';
+
+  @override
+  String get compareLabel => 'قارن +';
+
+  @override
+  String get addedLabel => 'تمت الإضافة';
+
+  @override
+  String get clearAll => 'مسح الكل';
+
+  @override
+  String comparisonMaxLimit(Object max) {
+    return 'يمكن مقارنة $max سيارات كحد أقصى';
+  }
+
+  @override
+  String get removedFromComparison => 'تمت الإزالة من المقارنة';
+
+  @override
+  String addedToComparison(Object count, Object max) {
+    return 'تمت الإضافة إلى المقارنة ($count/$max)';
+  }
 }

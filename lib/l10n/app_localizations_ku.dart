@@ -1324,4 +1324,92 @@ class AppLocalizationsKu extends AppLocalizations {
 
   @override
   String get sellButton => 'فرۆشتن';
+
+  @override
+  String get value_transmission_semi_automatic => 'نیمی ئۆتۆماتیک';
+
+  @override
+  String get value_transmission_cvt => 'CVT';
+
+  @override
+  String get value_condition_certified => 'سەلمانراو';
+
+  @override
+  String get value_trim_base => 'بنەڕەتی';
+
+  @override
+  String get value_trim_sport => 'وەرزشی';
+
+  @override
+  String get value_trim_luxury => 'لوکس';
+
+  @override
+  String get value_color_black => 'ڕەش';
+
+  @override
+  String get value_color_white => 'سپی';
+
+  @override
+  String get value_color_silver => 'نقره‌یی';
+
+  @override
+  String get value_color_gray => 'خۆڵەمێش';
+
+  @override
+  String get value_color_red => 'سور';
+
+  @override
+  String get value_color_blue => 'شین';
+
+  @override
+  String get value_color_green => 'سەوز';
+
+  @override
+  String get value_color_yellow => 'زەرد';
+
+  @override
+  String get value_color_orange => 'پرتەقاڵی';
+
+  @override
+  String get value_color_purple => 'مۆر';
+
+  @override
+  String get value_color_brown => 'قاوەیی';
+
+  @override
+  String get value_color_beige => 'بێژ';
+
+  @override
+  String get value_color_gold => 'زێڕین';
+
+  @override
+  String get savedSearchesTitle => 'گەڕانە پاشەکەوتکراوەکان';
+
+  @override
+  String get noSavedSearchesYet => 'هێشتا هیچ گەڕانێک پاشەکەوت نەکراوە';
+
+  @override
+  String get savedSearchesHint => 'گەڕانەکانت خۆکارانە لێرە پاشەکەوت دەکرێن';
+
+  @override
+  String get compareLabel => 'بەراورد +';
+
+  @override
+  String get addedLabel => 'زیادکرا';
+
+  @override
+  String get clearAll => 'هەموو پاکبکە';
+
+  @override
+  String comparisonMaxLimit(Object max) {
+    return 'ئەتوانیت $max ئۆتۆمبێل بەراورد بکەیت';
+  }
+
+  @override
+  String get removedFromComparison => 'لە بەراورد لابرا';
+
+  @override
+  String addedToComparison(Object count, Object max) {
+    return 'زیادکرا بۆ بەراورد ($count/$max)';
+  }
 }

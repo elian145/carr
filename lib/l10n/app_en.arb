@@ -447,6 +447,37 @@
   "photosRequired": "Photos (Required)",
   "videosOptional": "Videos (Optional)",
   "status": "Status",
-  "sellButton": "Sell"
+  "sellButton": "Sell",
+
+  "value_transmission_semi_automatic": "semi-automatic",
+  "value_transmission_cvt": "CVT",
+  "value_condition_certified": "Certified",
+  "value_trim_base": "Base",
+  "value_trim_sport": "Sport",
+  "value_trim_luxury": "Luxury",
+  "value_color_black": "Black",
+  "value_color_white": "White",
+  "value_color_silver": "Silver",
+  "value_color_gray": "Gray",
+  "value_color_red": "Red",
+  "value_color_blue": "Blue",
+  "value_color_green": "Green",
+  "value_color_yellow": "Yellow",
+  "value_color_orange": "Orange",
+  "value_color_purple": "Purple",
+  "value_color_brown": "Brown",
+  "value_color_beige": "Beige",
+  "value_color_gold": "Gold",
+
+  "savedSearchesTitle": "Saved Searches",
+  "noSavedSearchesYet": "No saved searches yet",
+  "savedSearchesHint": "Your searches will be automatically saved here",
+
+  "compareLabel": "compare +",
+  "addedLabel": "Added",
+  "clearAll": "Clear all",
+  "comparisonMaxLimit": "Maximum {max} cars can be compared",
+  "removedFromComparison": "Removed from comparison",
+  "addedToComparison": "Added to comparison ({count}/{max})"
 }
 

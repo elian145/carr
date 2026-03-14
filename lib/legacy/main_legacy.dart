@@ -512,54 +512,27 @@ String _noTextGlobal(BuildContext context) {
 }
 
 String _removedFromComparisonTextGlobal(BuildContext context) {
-  final code = Localizations.localeOf(context).languageCode;
-  if (code == 'ar') return 'ØªÙ…Øª Ø§Ù„Ø¥Ø²Ø§Ù„Ø© Ù…Ù† Ø§Ù„Ù…Ù‚Ø§Ø±Ù†Ø©';
-  if (code == 'ku') return 'Ù„Û• Ø¨Û•Ø±Û•ÙˆØ±Ø¯Ù† Ù„Ø§Ø¨Ø±Ø§';
-  return 'Removed from comparison';
+  return AppLocalizations.of(context)!.removedFromComparison;
 }
 
 String _addedToComparisonTextGlobal(BuildContext context, int count) {
-  final code = Localizations.localeOf(context).languageCode;
-  final cnt = _localizeDigitsGlobal(context, count.toString());
-  final max = _localizeDigitsGlobal(context, '5');
-  if (code == 'ar') {
-    return 'ØªÙ…Øª Ø§Ù„Ø¥Ø¶Ø§ÙØ© Ø¥Ù„Ù‰ Ø§Ù„Ù…Ù‚Ø§Ø±Ù†Ø© ($cnt/$max)';
-  }
-  if (code == 'ku') return 'Ø²ÛŒØ§Ø¯ Ú©Ø±Ø§ Ø¨Û† Ø¨Û•Ø±Û•ÙˆØ±Ø¯Ù† ($cnt/$max)';
-  return 'Added to comparison ($cnt/$max)';
+  return AppLocalizations.of(context)!.addedToComparison(count, 5);
 }
 
 String _comparisonMaxLimitTextGlobal(BuildContext context) {
-  final code = Localizations.localeOf(context).languageCode;
-  final five = _localizeDigitsGlobal(context, '5');
-  if (code == 'ar') {
-    return 'ÙŠÙ…ÙƒÙ† Ù…Ù‚Ø§Ø±Ù†Ø© $five Ø³ÙŠØ§Ø±Ø§Øª ÙƒØ­Ø¯ Ø£Ù‚ØµÙ‰';
-  }
-  if (code == 'ku') {
-    return 'Ø²Û†Ø±ØªØ±ÛŒÙ† $five Ø¦Û†ØªÛ†Ù…Ø¨ÛŽÙ„ Ø¯Û•ØªÙˆØ§Ù†Ø±ÛŽØª Ø¨Û•Ø±Û•ÙˆØ±Ø¯ Ø¨Ú©Ø±ÛŽÙ†';
-  }
-  return 'Maximum $five cars can be compared';
+  return AppLocalizations.of(context)!.comparisonMaxLimit(5);
 }
 
 String _compareLabelGlobal(BuildContext context) {
-  final code = Localizations.localeOf(context).languageCode;
-  if (code == 'ar') return 'Ù‚Ø§Ø±Ù† +';
-  if (code == 'ku') return 'Ø¨Û•Ø±Ø§ÙˆØ±Ø¯Ú©Ø±Ø¯Ù† +';
-  return 'compare +';
+  return AppLocalizations.of(context)!.compareLabel;
 }
 
 String _addedLabelGlobal(BuildContext context) {
-  final code = Localizations.localeOf(context).languageCode;
-  if (code == 'ar') return 'ØªÙ…Øª Ø§Ù„Ø¥Ø¶Ø§ÙØ©';
-  if (code == 'ku') return 'Ø²ÛŒØ§Ø¯ Ú©Ø±Ø§';
-  return 'Added';
+  return AppLocalizations.of(context)!.addedLabel;
 }
 
 String _clearAllTextGlobal(BuildContext context) {
-  final code = Localizations.localeOf(context).languageCode;
-  if (code == 'ar') return 'Ù…Ø³Ø­ Ø§Ù„ÙƒÙ„';
-  if (code == 'ku') return 'Ù‡Û•Ù…ÙˆÙˆ Ù¾Ø§Ú© Ø¨Ú©Û•';
-  return 'Clear all';
+  return AppLocalizations.of(context)!.clearAll;
 }
 
 String _tapToSelectTextGlobal(BuildContext context) {
@@ -653,41 +626,23 @@ String? _translateValueGlobal(BuildContext context, String? raw) {
       return loc.value_condition_used;
     case 'base':
     case 'standard':
-      return Localizations.localeOf(context).languageCode == 'ar'
-          ? 'Ø£Ø³Ø§Ø³ÙŠ'
-          : Localizations.localeOf(context).languageCode == 'ku'
-          ? 'Ø¨Ù†Û•Ú•Û•ØªÛŒ'
-          : 'Base';
+      return loc.value_trim_base;
     case 'sport':
-      return Localizations.localeOf(context).languageCode == 'ar'
-          ? 'Ø±ÙŠØ§Ø¶ÙŠ'
-          : Localizations.localeOf(context).languageCode == 'ku'
-          ? 'ÙˆÛ•Ø±Ø²Ø´ÛŒ'
-          : 'Sport';
+      return loc.value_trim_sport;
     case 'luxury':
-      return Localizations.localeOf(context).languageCode == 'ar'
-          ? 'ÙØ§Ø®Ø±'
-          : Localizations.localeOf(context).languageCode == 'ku'
-          ? 'Ù„ÙˆÚ©Ø³'
-          : 'Luxury';
+      return loc.value_trim_luxury;
     case 'certified':
-      return Localizations.localeOf(context).languageCode == 'ar'
-          ? 'Ù…Ø¹ØªÙ…Ø¯'
-          : Localizations.localeOf(context).languageCode == 'ku'
-          ? 'Ø³Û•Ù„Ù…ÛŽÙ†Ø±Ø§Ùˆ'
-          : 'certified';
+      return loc.value_condition_certified;
     case 'automatic':
       return loc.value_transmission_automatic;
     case 'manual':
       return loc.value_transmission_manual;
+    case 'cvt':
+      return loc.value_transmission_cvt;
     case 'semi-automatic':
     case 'semi automatic':
     case 'semi auto':
-      return Localizations.localeOf(context).languageCode == 'ar'
-          ? 'Ù†ØµÙ Ø£ÙˆØªÙˆÙ…Ø§ØªÙŠÙƒ'
-          : Localizations.localeOf(context).languageCode == 'ku'
-          ? 'Ù†ÛŒÙ…Û• Ø¦Û†ØªÛ†Ù…Ø§ØªÛŒÚ©'
-          : 'semi-automatic';
+      return loc.value_transmission_semi_automatic;
     case 'gasoline':
       return loc.value_fuel_gasoline;
     case 'diesel':
@@ -758,86 +713,34 @@ String? _translateValueGlobal(BuildContext context, String? raw) {
       return loc.value_body_scooter;
     case 'super bike':
       return loc.value_body_super_bike;
-    // Colors (AR + KU)
+    // Colors
     case 'black':
-      return Localizations.localeOf(context).languageCode == 'ar'
-          ? 'Ø£Ø³ÙˆØ¯'
-          : Localizations.localeOf(context).languageCode == 'ku'
-          ? 'Ú•Û•Ø´'
-          : 'Black';
+      return loc.value_color_black;
     case 'white':
-      return Localizations.localeOf(context).languageCode == 'ar'
-          ? 'Ø£Ø¨ÙŠØ¶'
-          : Localizations.localeOf(context).languageCode == 'ku'
-          ? 'Ø³Ù¾ÛŒ'
-          : 'White';
+      return loc.value_color_white;
     case 'silver':
-      return Localizations.localeOf(context).languageCode == 'ar'
-          ? 'ÙØ¶ÙŠ'
-          : Localizations.localeOf(context).languageCode == 'ku'
-          ? 'Ù†Û•Ù‚Ø±Û•ÛŒ'
-          : 'Silver';
+      return loc.value_color_silver;
     case 'gray':
     case 'grey':
-      return Localizations.localeOf(context).languageCode == 'ar'
-          ? 'Ø±Ù…Ø§Ø¯ÙŠ'
-          : Localizations.localeOf(context).languageCode == 'ku'
-          ? 'Ø®Û†ÚµÛ•Ù¾ÛŽÙˆ'
-          : 'Gray';
+      return loc.value_color_gray;
     case 'red':
-      return Localizations.localeOf(context).languageCode == 'ar'
-          ? 'Ø£Ø­Ù…Ø±'
-          : Localizations.localeOf(context).languageCode == 'ku'
-          ? 'Ø³Û†Ø±'
-          : 'Red';
+      return loc.value_color_red;
     case 'blue':
-      return Localizations.localeOf(context).languageCode == 'ar'
-          ? 'Ø£Ø²Ø±Ù‚'
-          : Localizations.localeOf(context).languageCode == 'ku'
-          ? 'Ø´ÛŒÙ†'
-          : 'Blue';
+      return loc.value_color_blue;
     case 'green':
-      return Localizations.localeOf(context).languageCode == 'ar'
-          ? 'Ø£Ø®Ø¶Ø±'
-          : Localizations.localeOf(context).languageCode == 'ku'
-          ? 'Ø³Û•ÙˆØ²'
-          : 'Green';
+      return loc.value_color_green;
     case 'yellow':
-      return Localizations.localeOf(context).languageCode == 'ar'
-          ? 'Ø£ØµÙØ±'
-          : Localizations.localeOf(context).languageCode == 'ku'
-          ? 'Ø²Û•Ø±Ø¯'
-          : 'Yellow';
+      return loc.value_color_yellow;
     case 'orange':
-      return Localizations.localeOf(context).languageCode == 'ar'
-          ? 'Ø¨Ø±ØªÙ‚Ø§Ù„ÙŠ'
-          : Localizations.localeOf(context).languageCode == 'ku'
-          ? 'Ù¾Ø±ØªÛ•Ù‚Û•ÚµÛŒ'
-          : 'Orange';
+      return loc.value_color_orange;
     case 'purple':
-      return Localizations.localeOf(context).languageCode == 'ar'
-          ? 'Ø¨Ù†ÙØ³Ø¬ÙŠ'
-          : Localizations.localeOf(context).languageCode == 'ku'
-          ? 'Ù…Û†Ø±'
-          : 'Purple';
+      return loc.value_color_purple;
     case 'brown':
-      return Localizations.localeOf(context).languageCode == 'ar'
-          ? 'Ø¨Ù†ÙŠ'
-          : Localizations.localeOf(context).languageCode == 'ku'
-          ? 'Ù‚Ø§ÙˆÛ•ÛŒÛŒ'
-          : 'Brown';
+      return loc.value_color_brown;
     case 'beige':
-      return Localizations.localeOf(context).languageCode == 'ar'
-          ? 'Ø¨ÙŠØ¬'
-          : Localizations.localeOf(context).languageCode == 'ku'
-          ? 'Ø¨ÛŽÚ˜ÛŒ'
-          : 'Beige';
+      return loc.value_color_beige;
     case 'gold':
-      return Localizations.localeOf(context).languageCode == 'ar'
-          ? 'Ø°Ù‡Ø¨ÙŠ'
-          : Localizations.localeOf(context).languageCode == 'ku'
-          ? 'Ø²ÛŽÚ•ÛŒ'
-          : 'Gold';
+      return loc.value_color_gold;
     // Cities
     case 'baghdad':
       return Localizations.localeOf(context).languageCode == 'ar'
@@ -5321,7 +5224,7 @@ class _HomePageState extends State<HomePage> {
         ),
         actions: [
           IconButton(
-            tooltip: 'Saved Searches',
+            tooltip: AppLocalizations.of(context)!.savedSearchesTitle,
             onPressed: () => Navigator.push(
               context,
               MaterialPageRoute(
@@ -9580,7 +9483,7 @@ class _SavedSearchesPageState extends State<SavedSearchesPage> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: Text('Saved Searches')),
+      appBar: AppBar(title: Text(AppLocalizations.of(context)!.savedSearchesTitle)),
       body: _loading
           ? Center(child: CircularProgressIndicator())
           : _items.isEmpty
@@ -9591,12 +9494,12 @@ class _SavedSearchesPageState extends State<SavedSearchesPage> {
                   Icon(Icons.search_off, size: 64, color: Colors.grey),
                   SizedBox(height: 16),
                   Text(
-                    'No saved searches yet',
+                    AppLocalizations.of(context)!.noSavedSearchesYet,
                     style: TextStyle(fontSize: 18, color: Colors.grey),
                   ),
                   SizedBox(height: 8),
                   Text(
-                    'Your searches will be automatically saved here',
+                    AppLocalizations.of(context)!.savedSearchesHint,
                     style: TextStyle(color: Colors.grey[600]),
                   ),
                 ],
@@ -11142,7 +11045,7 @@ class _CarDetailsPageState extends State<CarDetailsPage> {
                                     child: OutlinedButton.icon(
                                       onPressed: _shareCar,
                                       icon: Icon(Icons.share, size: 20),
-                                      label: Text('Share'),
+                                      label: Text(AppLocalizations.of(context)!.shareAction),
                                     ),
                                   ),
                                 ),
@@ -16606,7 +16509,7 @@ class CarComparisonPage extends StatelessWidget {
         elevation: 0,
         actions: [
           IconButton(
-            tooltip: 'Share',
+            tooltip: AppLocalizations.of(context)!.shareAction,
             onPressed: () async {
               try {
                 final store = Provider.of<CarComparisonStore>(

@@ -447,6 +447,37 @@
   "photosRequired": "وێنەکان (پێویست)",
   "videosOptional": "ڤیدیۆکان (ئارەزوومەندانە)",
   "status": "دۆخ",
-  "sellButton": "فرۆشتن"
+  "sellButton": "فرۆشتن",
+
+  "value_transmission_semi_automatic": "نیمی ئۆتۆماتیک",
+  "value_transmission_cvt": "CVT",
+  "value_condition_certified": "سەلمانراو",
+  "value_trim_base": "بنەڕەتی",
+  "value_trim_sport": "وەرزشی",
+  "value_trim_luxury": "لوکس",
+  "value_color_black": "ڕەش",
+  "value_color_white": "سپی",
+  "value_color_silver": "نقره‌یی",
+  "value_color_gray": "خۆڵەمێش",
+  "value_color_red": "سور",
+  "value_color_blue": "شین",
+  "value_color_green": "سەوز",
+  "value_color_yellow": "زەرد",
+  "value_color_orange": "پرتەقاڵی",
+  "value_color_purple": "مۆر",
+  "value_color_brown": "قاوەیی",
+  "value_color_beige": "بێژ",
+  "value_color_gold": "زێڕین",
+
+  "savedSearchesTitle": "گەڕانە پاشەکەوتکراوەکان",
+  "noSavedSearchesYet": "هێشتا هیچ گەڕانێک پاشەکەوت نەکراوە",
+  "savedSearchesHint": "گەڕانەکانت خۆکارانە لێرە پاشەکەوت دەکرێن",
+
+  "compareLabel": "بەراورد +",
+  "addedLabel": "زیادکرا",
+  "clearAll": "هەموو پاکبکە",
+  "comparisonMaxLimit": "ئەتوانیت {max} ئۆتۆمبێل بەراورد بکەیت",
+  "removedFromComparison": "لە بەراورد لابرا",
+  "addedToComparison": "زیادکرا بۆ بەراورد ({count}/{max})"
 }
 
