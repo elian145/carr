@@ -456,7 +456,7 @@ Widget buildFancySelector(
               const SizedBox(height: 2),
               Text(
                 value == null || value.isEmpty
-                    ? _tapToSelectTextGlobal(context)
+                    ? AppLocalizations.of(context)!.tapToSelect
                     : value,
                 maxLines: 1,
                 overflow: TextOverflow.ellipsis,
@@ -475,24 +475,15 @@ Widget buildFancySelector(
 }
 
 String _cancelTextGlobal(BuildContext context) {
-  final code = Localizations.localeOf(context).languageCode;
-  if (code == 'ar') return 'Ø¥Ù„ØºØ§Ø¡';
-  if (code == 'ku') return 'Ù¾Ø§Ø´Ú¯Û•Ø²Ø¨ÙˆÙˆÙ†Û•ÙˆÛ•';
-  return 'Cancel';
+  return AppLocalizations.of(context)!.cancelAction;
 }
 
 String _contactForPriceGlobal(BuildContext context) {
-  final code = Localizations.localeOf(context).languageCode;
-  if (code == 'ar') return 'Ø§ØªØµÙ„ Ù„Ù„Ø³Ø¹Ø±';
-  if (code == 'ku') return 'Ù†Ø±Ø® Ø¨Ù¾Ø±Ø³Û• Ø¨Û• Ù¾Û•ÛŒÙˆÛ•Ù†Ø¯ÛŒ';
-  return 'Contact for price';
+  return AppLocalizations.of(context)!.contactForPrice;
 }
 
 String _pleaseFillRequiredGlobal(BuildContext context) {
-  final code = Localizations.localeOf(context).languageCode;
-  if (code == 'ar') return 'ÙŠØ±Ø¬Ù‰ Ø¥ÙƒÙ…Ø§Ù„';
-  if (code == 'ku') return 'ØªÚ©Ø§ÛŒÛ• Ù¾Ú• Ø¨Ú©Û•Ø±Û•ÙˆÛ•';
-  return 'Please complete';
+  return AppLocalizations.of(context)!.pleaseFillRequired;
 }
 
 NumberFormat _decimalFormatterGlobal(BuildContext context) {
@@ -572,45 +563,27 @@ String _clearAllTextGlobal(BuildContext context) {
 }
 
 String _tapToSelectTextGlobal(BuildContext context) {
-  final code = Localizations.localeOf(context).languageCode;
-  if (code == 'ar') return 'Ø§Ø®ØªØ±';
-  if (code == 'ku') return 'Ù‡Û•Ù„Ø¨Ú˜ÛŽØ±Û•';
-  return 'Tap to select';
+  return AppLocalizations.of(context)!.tapToSelect;
 }
 
 String _comparisonClearedTextGlobal(BuildContext context) {
-  final code = Localizations.localeOf(context).languageCode;
-  if (code == 'ar') return 'ØªÙ… Ù…Ø³Ø­ Ø§Ù„Ù…Ù‚Ø§Ø±Ù†Ø©';
-  if (code == 'ku') return 'Ø¨Û•Ø±Û•ÙˆØ±Ø¯Ù† Ù¾Ø§Ú© Ú©Ø±Ø§';
-  return 'Comparison cleared';
+  return AppLocalizations.of(context)!.comparisonCleared;
 }
 
 String _statusTitleGlobal(BuildContext context) {
-  final code = Localizations.localeOf(context).languageCode;
-  if (code == 'ar') return 'Ø§Ù„Ø­Ø§Ù„Ø©';
-  if (code == 'ku') return 'Ø¯Û†Ø®';
-  return 'Status';
+  return AppLocalizations.of(context)!.status;
 }
 
 String _quickSellTextGlobal(BuildContext context) {
-  final code = Localizations.localeOf(context).languageCode;
-  if (code == 'ar') return 'Ø¨ÙŠØ¹ Ø³Ø±ÙŠØ¹';
-  if (code == 'ku') return 'ÙØ±Û†Ø´ØªÙ†ÛŒ Ø®ÛŽØ±Ø§';
-  return 'Quick Sell';
+  return AppLocalizations.of(context)!.quickSell;
 }
 
 String _photosRequiredTitleGlobal(BuildContext context) {
-  final code = Localizations.localeOf(context).languageCode;
-  if (code == 'ar') return 'Ø§Ù„ØµÙˆØ± (Ø¥Ù„Ø²Ø§Ù…ÙŠØ©)';
-  if (code == 'ku') return 'ÙˆÛŽÙ†Û•Ú©Ø§Ù† (Ù¾ÛŽÙˆÛŒØ³ØªÛ•)';
-  return 'Photos (Required)';
+  return AppLocalizations.of(context)!.photosRequired;
 }
 
 String _videosOptionalTitleGlobal(BuildContext context) {
-  final code = Localizations.localeOf(context).languageCode;
-  if (code == 'ar') return 'Ø§Ù„ÙÙŠØ¯ÙŠÙˆÙ‡Ø§Øª (Ø§Ø®ØªÙŠØ§Ø±ÙŠ)';
-  if (code == 'ku') return 'Ú¤ÛŒØ¯ÛŒÛ†Ú©Ø§Ù† (Ù‡Û•Ù„Ø¨Ú˜Ø§Ø±Ø¯Û•)';
-  return 'Videos (Optional)';
+  return AppLocalizations.of(context)!.videosOptional;
 }
 
 String _pleaseSelectPhotoTextGlobal(BuildContext context) {
@@ -5365,7 +5338,7 @@ class _HomePageState extends State<HomePage> {
               );
             },
             icon: Icon(Icons.add, color: Colors.white),
-            label: Text('Sell', style: TextStyle(color: Colors.white)),
+            label: Text(AppLocalizations.of(context)!.sellButton, style: TextStyle(color: Colors.white)),
             style: OutlinedButton.styleFrom(
               side: BorderSide(color: Colors.white70),
               shape: RoundedRectangleBorder(
@@ -11843,7 +11816,7 @@ class _SellCarPageState extends State<SellCarPage> {
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
                 Text(
-                  'Step ${currentStep + 1} of 5',
+                  AppLocalizations.of(context)!.stepXOf5(currentStep + 1),
                   style: TextStyle(
                     fontSize: 14,
                     color: Colors.grey[600],
@@ -11851,7 +11824,7 @@ class _SellCarPageState extends State<SellCarPage> {
                   ),
                 ),
                 Text(
-                  _getStepTitle(currentStep),
+                  _getStepTitle(context, currentStep),
                   style: TextStyle(
                     fontSize: 16,
                     color: Color(0xFFFF6B00),
@@ -11886,18 +11859,19 @@ class _SellCarPageState extends State<SellCarPage> {
     );
   }
 
-  String _getStepTitle(int step) {
+  String _getStepTitle(BuildContext context, int step) {
+    final l = AppLocalizations.of(context)!;
     switch (step) {
       case 0:
-        return 'Basic Information';
+        return l.basicInformationTitle;
       case 1:
-        return 'Car Details';
+        return l.carDetailsTitle;
       case 2:
-        return 'Pricing & Contact';
+        return l.pricingContactTitle;
       case 3:
-        return 'Photos & Videos';
+        return l.photosVideosTitle;
       case 4:
-        return 'Review & Submit';
+        return l.reviewSubmitTitle;
       default:
         return '';
     }
@@ -12403,7 +12377,7 @@ class _SellStep1PageState extends State<SellStep1Page> {
                   ),
                   SizedBox(height: 12),
                   Text(
-                    'Basic Information',
+                    AppLocalizations.of(context)!.basicInformationTitle,
                     style: TextStyle(
                       fontSize: 24,
                       fontWeight: FontWeight.bold,
@@ -12412,7 +12386,7 @@ class _SellStep1PageState extends State<SellStep1Page> {
                   ),
                   SizedBox(height: 8),
                   Text(
-                    'Tell us about your car\'s basic details',
+                    AppLocalizations.of(context)!.basicInformationSubtitle,
                     style: TextStyle(fontSize: 16, color: Colors.grey[600]),
                     textAlign: TextAlign.center,
                   ),
@@ -12424,7 +12398,7 @@ class _SellStep1PageState extends State<SellStep1Page> {
             // Brand Selection (Modal)
             FormField<String>(
               validator: (_) =>
-                  selectedBrand == null ? 'Please select a brand' : null,
+                  selectedBrand == null ? AppLocalizations.of(context)!.pleaseSelectBrand : null,
               builder: (state) => GestureDetector(
                 onTap: () async {
                   _dismissKeyboard();
@@ -12439,7 +12413,7 @@ class _SellStep1PageState extends State<SellStep1Page> {
                 },
                 child: buildFancySelector(
                   context,
-                  label: 'Brand *',
+                  label: '${AppLocalizations.of(context)!.brandLabel} *',
                   value: selectedBrand,
                   isError:
                       errBrand &&
@@ -12475,13 +12449,13 @@ class _SellStep1PageState extends State<SellStep1Page> {
             // Model (Modal)
             FormField<String>(
               validator: (_) =>
-                  selectedModel == null ? 'Please select a model' : null,
+                  selectedModel == null ? AppLocalizations.of(context)!.pleaseSelectModel : null,
               builder: (state) => GestureDetector(
                 onTap: () async {
                   _dismissKeyboard();
                   if (selectedBrand == null) return;
                   final options = models[selectedBrand!] ?? [];
-                  final choice = await _pickFromList('Model', options);
+                  final choice = await _pickFromList(AppLocalizations.of(context)!.modelLabel, options);
                   if (choice != null) {
                     setState(() {
                       selectedModel = choice;
@@ -12492,10 +12466,10 @@ class _SellStep1PageState extends State<SellStep1Page> {
                 child: buildFancySelector(
                   context,
                   icon: Icons.directions_car,
-                  label: 'Model *',
+                  label: '${AppLocalizations.of(context)!.modelLabel} *',
                   value:
                       selectedModel ??
-                      (selectedBrand == null ? 'Select brand first' : ''),
+                      (selectedBrand == null ? AppLocalizations.of(context)!.selectBrandFirst : ''),
                   isError:
                       errModel &&
                       (selectedModel == null || selectedModel!.isEmpty),
@@ -12507,11 +12481,11 @@ class _SellStep1PageState extends State<SellStep1Page> {
             // Trim (Modal)
             FormField<String>(
               validator: (_) =>
-                  selectedTrim == null ? 'Please select a trim' : null,
+                  selectedTrim == null ? AppLocalizations.of(context)!.pleaseSelectTrim : null,
               builder: (state) => GestureDetector(
                 onTap: () async {
                   _dismissKeyboard();
-                  final choice = await _pickFromList('Trim', availableTrims);
+                  final choice = await _pickFromList(AppLocalizations.of(context)!.trimLabel, availableTrims);
                   if (choice != null) {
                     setState(() {
                       selectedTrim = choice;
@@ -12521,7 +12495,7 @@ class _SellStep1PageState extends State<SellStep1Page> {
                 child: buildFancySelector(
                   context,
                   icon: Icons.settings,
-                  label: 'Trim *',
+                  label: '${AppLocalizations.of(context)!.trimLabel} *',
                   value: selectedTrim,
                   isError:
                       errTrim &&
@@ -12540,8 +12514,8 @@ class _SellStep1PageState extends State<SellStep1Page> {
                           focusNode: _yearFocusNode,
                           controller: _yearController,
                           decoration: InputDecoration(
-                            labelText: 'Year *',
-                            hintText: 'Enter year (e.g. 2024)',
+                            labelText: '${AppLocalizations.of(context)!.yearLabel} *',
+                            hintText: AppLocalizations.of(context)!.enterYearHint,
                             filled: true,
                             fillColor: Colors.black.withOpacity(0.2),
                             labelStyle: TextStyle(color: Colors.white),
@@ -12562,25 +12536,26 @@ class _SellStep1PageState extends State<SellStep1Page> {
                             });
                           },
                           validator: (value) {
+                            final l = AppLocalizations.of(context)!;
                             if (value == null || value.isEmpty) {
-                              return 'Please enter year';
+                              return l.pleaseEnterYear;
                             }
                             final year = int.tryParse(value);
-                            if (year == null) return 'Invalid year';
+                            if (year == null) return l.yearInvalid;
                             if (year < 1900 || year > DateTime.now().year + 1) {
-                              return 'Year out of range';
+                              return l.yearOutOfRange;
                             }
                             return null;
                           },
                         )
                       : FormField<String>(
                           validator: (_) => selectedYear == null
-                              ? 'Please select a year'
+                              ? AppLocalizations.of(context)!.pleaseSelectYear
                               : null,
                           builder: (state) => GestureDetector(
                             onTap: () async {
                               final choice = await _pickFromList(
-                                'Year',
+                                AppLocalizations.of(context)!.yearLabel,
                                 availableYears,
                               );
                               if (choice != null) {
@@ -12592,7 +12567,7 @@ class _SellStep1PageState extends State<SellStep1Page> {
                             child: buildFancySelector(
                               context,
                               icon: Icons.calendar_today,
-                              label: 'Year *',
+                              label: '${AppLocalizations.of(context)!.yearLabel} *',
                               value: selectedYear != null
                                   ? _localizeDigitsGlobal(
                                       context,
@@ -12641,7 +12616,7 @@ class _SellStep1PageState extends State<SellStep1Page> {
                       borderRadius: BorderRadius.circular(8),
                     ),
                   ),
-                  tooltip: isYearManualInput ? 'Confirm year' : 'Type manually',
+                  tooltip: isYearManualInput ? AppLocalizations.of(context)!.confirmYear : AppLocalizations.of(context)!.typeManually,
                 ),
               ],
             ),
@@ -12715,7 +12690,7 @@ class _SellStep1PageState extends State<SellStep1Page> {
                   elevation: 2,
                 ),
                 child: Text(
-                  'Next Step',
+                  AppLocalizations.of(context)!.nextStep,
                   style: TextStyle(fontSize: 16, fontWeight: FontWeight.w600),
                 ),
               ),
@@ -13111,7 +13086,7 @@ class _SellStep2PageState extends State<SellStep2Page> {
                   Icon(Icons.settings, size: 48, color: Color(0xFFFF6B00)),
                   SizedBox(height: 12),
                   Text(
-                    'Car Details',
+                    AppLocalizations.of(context)!.carDetailsTitle,
                     style: TextStyle(
                       fontSize: 24,
                       fontWeight: FontWeight.bold,
@@ -13120,7 +13095,7 @@ class _SellStep2PageState extends State<SellStep2Page> {
                   ),
                   SizedBox(height: 8),
                   Text(
-                    'Provide detailed information about your car',
+                    AppLocalizations.of(context)!.carDetailsSubtitle,
                     style: TextStyle(fontSize: 16, color: Colors.grey[600]),
                     textAlign: TextAlign.center,
                   ),
@@ -13138,8 +13113,8 @@ class _SellStep2PageState extends State<SellStep2Page> {
                           focusNode: _mileageFocusNode,
                           controller: _mileageController,
                           decoration: InputDecoration(
-                            labelText: 'Mileage (km) *',
-                            hintText: 'Enter mileage',
+                            labelText: '${AppLocalizations.of(context)!.mileageKmLabel} *',
+                            hintText: AppLocalizations.of(context)!.enterMileage,
                             filled: true,
                             fillColor: Colors.black.withOpacity(0.2),
                             labelStyle: TextStyle(color: Colors.white),
@@ -13160,13 +13135,14 @@ class _SellStep2PageState extends State<SellStep2Page> {
                             });
                           },
                           validator: (value) {
+                            final l = AppLocalizations.of(context)!;
                             if (value == null || value.isEmpty) {
-                              return 'Please enter mileage';
+                              return l.pleaseEnterMileage;
                             }
                             final mileage = int.tryParse(value);
-                            if (mileage == null) return 'Invalid mileage';
+                            if (mileage == null) return l.invalidMileage;
                             if (mileage < 0) {
-                              return 'Mileage cannot be negative';
+                              return l.mileageNegative;
                             }
                             return null;
                           },
@@ -13175,7 +13151,7 @@ class _SellStep2PageState extends State<SellStep2Page> {
                           validator: (_) =>
                               (selectedMileage == null ||
                                   selectedMileage!.isEmpty)
-                              ? 'Please select mileage'
+                              ? AppLocalizations.of(context)!.pleaseSelectMileage
                               : null,
                           builder: (state) => GestureDetector(
                             onTap: () async {
@@ -13190,7 +13166,7 @@ class _SellStep2PageState extends State<SellStep2Page> {
                                 ],
                               ];
                               final choice = await _pickFromList(
-                                'Mileage (km)',
+                                AppLocalizations.of(context)!.mileageKmLabel,
                                 miles,
                               );
                               if (choice != null) {
@@ -13200,7 +13176,7 @@ class _SellStep2PageState extends State<SellStep2Page> {
                             child: buildFancySelector(
                               context,
                               icon: Icons.speed,
-                              label: 'Mileage (km) *',
+                              label: '${AppLocalizations.of(context)!.mileageKmLabel} *',
                               value: selectedMileage != null
                                   ? ('${_localizeDigitsGlobal(
                                           context,
@@ -13254,8 +13230,8 @@ class _SellStep2PageState extends State<SellStep2Page> {
                     ),
                   ),
                   tooltip: isMileageManualInput
-                      ? 'Confirm mileage'
-                      : 'Type manually',
+                      ? AppLocalizations.of(context)!.confirmMileage
+                      : AppLocalizations.of(context)!.typeManually,
                 ),
               ],
             ),
@@ -13264,12 +13240,12 @@ class _SellStep2PageState extends State<SellStep2Page> {
             // Condition (Modal)
             FormField<String>(
               validator: (_) =>
-                  selectedCondition == null ? 'Please select condition' : null,
+                  selectedCondition == null ? AppLocalizations.of(context)!.pleaseSelectCondition : null,
               builder: (state) => GestureDetector(
                 onTap: () async {
                   _dismissKeyboard();
                   final choice = await _pickFromList(
-                    'Condition',
+                    AppLocalizations.of(context)!.conditionLabel,
                     getAvailableConditions(),
                   );
                   if (choice != null) {
@@ -13279,7 +13255,7 @@ class _SellStep2PageState extends State<SellStep2Page> {
                 child: buildFancySelector(
                   context,
                   icon: Icons.check_circle,
-                  label: 'Condition *',
+                  label: '${AppLocalizations.of(context)!.conditionLabel} *',
                   value: selectedCondition,
                   isError:
                       errCondition &&
@@ -13292,12 +13268,12 @@ class _SellStep2PageState extends State<SellStep2Page> {
             // Transmission (Modal)
             FormField<String>(
               validator: (_) => selectedTransmission == null
-                  ? 'Please select transmission'
+                  ? AppLocalizations.of(context)!.pleaseSelectTransmission
                   : null,
               builder: (state) => GestureDetector(
                 onTap: () async {
                   final choice = await _pickFromList(
-                    'Transmission',
+                    AppLocalizations.of(context)!.transmissionLabel,
                     getAvailableTransmissions(),
                   );
                   if (choice != null) {
@@ -13307,7 +13283,7 @@ class _SellStep2PageState extends State<SellStep2Page> {
                 child: buildFancySelector(
                   context,
                   icon: Icons.settings,
-                  label: 'Transmission *',
+                  label: '${AppLocalizations.of(context)!.transmissionLabel} *',
                   value: selectedTransmission,
                   isError:
                       errTransmission &&
@@ -13321,11 +13297,11 @@ class _SellStep2PageState extends State<SellStep2Page> {
             // Fuel Type (Modal)
             FormField<String>(
               validator: (_) =>
-                  selectedFuelType == null ? 'Please select fuel type' : null,
+                  selectedFuelType == null ? AppLocalizations.of(context)!.pleaseSelectFuelType : null,
               builder: (state) => GestureDetector(
                 onTap: () async {
                   final choice = await _pickFromList(
-                    'Fuel Type',
+                    AppLocalizations.of(context)!.fuelTypeLabel,
                     getAvailableFuelTypes(),
                   );
                   if (choice != null) setState(() => selectedFuelType = choice);
@@ -13333,7 +13309,7 @@ class _SellStep2PageState extends State<SellStep2Page> {
                 child: buildFancySelector(
                   context,
                   icon: Icons.local_gas_station,
-                  label: 'Fuel Type *',
+                  label: '${AppLocalizations.of(context)!.fuelTypeLabel} *',
                   value: selectedFuelType,
                   isError:
                       errFuelType &&
@@ -13346,7 +13322,7 @@ class _SellStep2PageState extends State<SellStep2Page> {
             // Body Type (Modal - grid like search)
             FormField<String>(
               validator: (_) =>
-                  selectedBodyType == null ? 'Please select body type' : null,
+                  selectedBodyType == null ? AppLocalizations.of(context)!.pleaseSelectBodyType : null,
               builder: (state) => GestureDetector(
                 onTap: () async {
                   final choice = await showDialog<String>(
@@ -13369,9 +13345,7 @@ class _SellStep2PageState extends State<SellStep2Page> {
                                     MainAxisAlignment.spaceBetween,
                                 children: [
                                   Text(
-                                    AppLocalizations.of(
-                                      context,
-                                    )!.selectBodyType,
+                                    AppLocalizations.of(context)!.selectBodyType,
                                     style: GoogleFonts.orbitron(
                                       color: Color(0xFFFF6B00),
                                       fontWeight: FontWeight.bold,
@@ -13512,7 +13486,7 @@ class _SellStep2PageState extends State<SellStep2Page> {
                 child: buildFancySelector(
                   context,
                   icon: Icons.directions_car,
-                  label: 'Body Type *',
+                  label: '${AppLocalizations.of(context)!.bodyTypeLabel} *',
                   value: selectedBodyType ?? _tapToSelectTextGlobal(context),
                   isError:
                       errBodyType &&
@@ -13525,7 +13499,7 @@ class _SellStep2PageState extends State<SellStep2Page> {
             // Color (Modal - swatches like search)
             FormField<String>(
               validator: (_) => selectedColor == null
-                  ? AppLocalizations.of(context)!.selectColor
+                  ? AppLocalizations.of(context)!.pleaseSelectColor
                   : null,
               builder: (state) => GestureDetector(
                 onTap: () async {
@@ -13651,7 +13625,7 @@ class _SellStep2PageState extends State<SellStep2Page> {
                 child: buildFancySelector(
                   context,
                   icon: Icons.palette,
-                  label: 'Color *',
+                  label: '${AppLocalizations.of(context)!.colorLabel} *',
                   value: selectedColor ?? _tapToSelectTextGlobal(context),
                   isError:
                       errColor &&
@@ -13664,11 +13638,11 @@ class _SellStep2PageState extends State<SellStep2Page> {
             // Drive Type (Modal)
             FormField<String>(
               validator: (_) =>
-                  selectedDriveType == null ? 'Please select drive type' : null,
+                  selectedDriveType == null ? AppLocalizations.of(context)!.pleaseSelectDriveType : null,
               builder: (state) => GestureDetector(
                 onTap: () async {
                   final choice = await _pickFromList(
-                    'Drive Type',
+                    AppLocalizations.of(context)!.driveType,
                     getAvailableDriveTypes(),
                   );
                   if (choice != null) {
@@ -13678,7 +13652,7 @@ class _SellStep2PageState extends State<SellStep2Page> {
                 child: buildFancySelector(
                   context,
                   icon: Icons.directions,
-                  label: 'Drive Type *',
+                  label: '${AppLocalizations.of(context)!.driveType} *',
                   value: selectedDriveType,
                   isError:
                       errDrive &&
@@ -13691,11 +13665,11 @@ class _SellStep2PageState extends State<SellStep2Page> {
             // Seating (Modal)
             FormField<String>(
               validator: (_) =>
-                  selectedSeating == null ? 'Please select seating' : null,
+                  selectedSeating == null ? AppLocalizations.of(context)!.pleaseSelectSeating : null,
               builder: (state) => GestureDetector(
                 onTap: () async {
                   final choice = await _pickFromList(
-                    'Seating',
+                    AppLocalizations.of(context)!.seating,
                     getAvailableSeatings().where((s) => s != 'Any').toList(),
                   );
                   if (choice != null) setState(() => selectedSeating = choice);
@@ -13703,7 +13677,7 @@ class _SellStep2PageState extends State<SellStep2Page> {
                 child: buildFancySelector(
                   context,
                   icon: Icons.people,
-                  label: 'Seating *',
+                  label: '${AppLocalizations.of(context)!.seating} *',
                   value: selectedSeating == null
                       ? null
                       : ('${_localizeDigitsGlobal(context, selectedSeating!)} seats'),
@@ -13724,8 +13698,8 @@ class _SellStep2PageState extends State<SellStep2Page> {
                           focusNode: _engineSizeFocusNode,
                           controller: _engineSizeController,
                           decoration: InputDecoration(
-                            labelText: 'Engine Size (L)',
-                            hintText: 'Enter engine size',
+                            labelText: AppLocalizations.of(context)!.engineSizeL,
+                            hintText: AppLocalizations.of(context)!.pleaseSelectEngineSize,
                             filled: true,
                             fillColor: Colors.black.withOpacity(0.2),
                             labelStyle: const TextStyle(color: Colors.white),
@@ -13754,13 +13728,14 @@ class _SellStep2PageState extends State<SellStep2Page> {
                             });
                           },
                           validator: (value) {
+                            final l = AppLocalizations.of(context)!;
                             if (value == null || value.isEmpty) {
-                              return 'Please enter engine size';
+                              return l.pleaseSelectEngineSize;
                             }
                             final size = double.tryParse(value);
-                            if (size == null) return 'Invalid engine size';
+                            if (size == null) return l.pleaseSelectEngineSize;
                             if (size <= 0) {
-                              return 'Engine size must be positive';
+                              return l.pleaseSelectEngineSize;
                             }
                             return null;
                           },
@@ -13769,12 +13744,12 @@ class _SellStep2PageState extends State<SellStep2Page> {
                           validator: (_) =>
                               (selectedEngineSize == null ||
                                       selectedEngineSize!.isEmpty)
-                                  ? 'Please select engine size'
+                                  ? AppLocalizations.of(context)!.pleaseSelectEngineSize
                                   : null,
                           builder: (state) => GestureDetector(
                             onTap: () async {
                               final choice = await _pickFromList(
-                                'Engine Size (L)',
+                                AppLocalizations.of(context)!.engineSizeL,
                                 getAvailableEngineSizes()
                                     .where((e) => e != 'Any')
                                     .toList(),
@@ -13789,7 +13764,7 @@ class _SellStep2PageState extends State<SellStep2Page> {
                             child: buildFancySelector(
                               context,
                               icon: Icons.engineering,
-                              label: 'Engine Size (L)',
+                              label: AppLocalizations.of(context)!.engineSizeL,
                               value: selectedEngineSize == null
                                   ? null
                                   : ('${_localizeDigitsGlobal(context, selectedEngineSize!)} L'),
@@ -13832,8 +13807,8 @@ class _SellStep2PageState extends State<SellStep2Page> {
                     ),
                   ),
                   tooltip: isEngineSizeManualInput
-                      ? 'Confirm engine size'
-                      : 'Type manually',
+                      ? AppLocalizations.of(context)!.confirmYear
+                      : AppLocalizations.of(context)!.typeManually,
                 ),
               ],
             ),
@@ -13844,7 +13819,7 @@ class _SellStep2PageState extends State<SellStep2Page> {
               builder: (state) => GestureDetector(
                 onTap: () async {
                   final choice = await _pickFromList(
-                    'Cylinder Count',
+                    AppLocalizations.of(context)!.cylinderCount,
                     getAvailableCylinderCounts()
                         .where((c) => c != 'Any')
                         .toList(),
@@ -13861,7 +13836,7 @@ class _SellStep2PageState extends State<SellStep2Page> {
                 child: buildFancySelector(
                   context,
                   icon: Icons.settings_input_component,
-                  label: 'Cylinder Count',
+                  label: AppLocalizations.of(context)!.cylinderCount,
                   value: selectedCylinderCount == null
                       ? null
                       : ('${_localizeDigitsGlobal(
@@ -13955,7 +13930,7 @@ class _SellStep2PageState extends State<SellStep2Page> {
                         ),
                       ),
                       child: Text(
-                        'Previous',
+                        AppLocalizations.of(context)!.previousButton,
                         style: TextStyle(
                           fontSize: 16,
                           fontWeight: FontWeight.w600,
@@ -14112,7 +14087,7 @@ class _SellStep2PageState extends State<SellStep2Page> {
                         elevation: 2,
                       ),
                       child: Text(
-                        'Next Step',
+                        AppLocalizations.of(context)!.nextStep,
                         style: TextStyle(
                           fontSize: 16,
                           fontWeight: FontWeight.w600,
@@ -14592,8 +14567,8 @@ class _SellStep3PageState extends State<SellStep3Page> {
                         ),
                       ),
                       tooltip: isPriceManualInput
-                          ? 'Confirm price'
-                          : 'Type manually',
+                          ? AppLocalizations.of(context)!.confirmYear
+                          : AppLocalizations.of(context)!.typeManually,
                     ),
                   ],
                 ),
@@ -14725,7 +14700,7 @@ class _SellStep3PageState extends State<SellStep3Page> {
                         ),
                       ),
                       child: Text(
-                        'Previous',
+                        AppLocalizations.of(context)!.previousButton,
                         style: TextStyle(
                           fontSize: 16,
                           fontWeight: FontWeight.w600,
@@ -14784,7 +14759,7 @@ class _SellStep3PageState extends State<SellStep3Page> {
                         elevation: 2,
                       ),
                       child: Text(
-                        'Next Step',
+                        AppLocalizations.of(context)!.nextStep,
                         style: TextStyle(
                           fontSize: 16,
                           fontWeight: FontWeight.w600,
@@ -15548,7 +15523,7 @@ class _SellStep4PageState extends State<SellStep4Page> {
                       ),
                     ),
                     child: Text(
-                      'Previous',
+                      AppLocalizations.of(context)!.previousButton,
                       style: TextStyle(
                         fontSize: 16,
                         fontWeight: FontWeight.w600,
@@ -15595,7 +15570,7 @@ class _SellStep4PageState extends State<SellStep4Page> {
                       elevation: 2,
                     ),
                     child: Text(
-                      'Next Step',
+                      AppLocalizations.of(context)!.nextStep,
                       style: TextStyle(
                         fontSize: 16,
                         fontWeight: FontWeight.w600,
@@ -16167,7 +16142,7 @@ class _SellStep5PageState extends State<SellStep5Page> {
                           ),
                         ),
                         child: Text(
-                          'Previous',
+                          AppLocalizations.of(context)!.previousButton,
                           style: TextStyle(
                             fontSize: 16,
                             fontWeight: FontWeight.w600,

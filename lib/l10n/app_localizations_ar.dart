@@ -1178,4 +1178,141 @@ class AppLocalizationsAr extends AppLocalizations {
 
   @override
   String get emailOrPhoneRequired => 'البريد الإلكتروني أو رقم الهاتف مطلوب';
+
+  @override
+  String stepXOf5(Object step) {
+    return 'الخطوة $step من 5';
+  }
+
+  @override
+  String get basicInformationTitle => 'المعلومات الأساسية';
+
+  @override
+  String get basicInformationSubtitle => 'أخبرنا بالتفاصيل الأساسية لسيارتك';
+
+  @override
+  String get carDetailsTitle => 'تفاصيل السيارة';
+
+  @override
+  String get carDetailsSubtitle => 'أدخل معلومات تفصيلية عن سيارتك';
+
+  @override
+  String get pricingContactTitle => 'السعر والاتصال';
+
+  @override
+  String get photosVideosTitle => 'الصور والفيديوهات';
+
+  @override
+  String get reviewSubmitTitle => 'المراجعة والنشر';
+
+  @override
+  String get selectBrandFirst => 'اختر الماركة أولاً';
+
+  @override
+  String get nextStep => 'الخطوة التالية';
+
+  @override
+  String get previousButton => 'السابق';
+
+  @override
+  String get tapToSelect => 'انقر للاختيار';
+
+  @override
+  String get pleaseFillRequired => 'يرجى إكمال';
+
+  @override
+  String get pleaseSelectBrand => 'يرجى اختيار الماركة';
+
+  @override
+  String get pleaseSelectModel => 'يرجى اختيار الموديل';
+
+  @override
+  String get pleaseSelectTrim => 'يرجى اختيار الفئة';
+
+  @override
+  String get pleaseSelectYear => 'يرجى اختيار السنة';
+
+  @override
+  String get pleaseEnterYear => 'يرجى إدخال السنة';
+
+  @override
+  String get enterYearHint => 'أدخل السنة (مثال: 2024)';
+
+  @override
+  String get yearInvalid => 'سنة غير صالحة';
+
+  @override
+  String get yearOutOfRange => 'السنة خارج النطاق';
+
+  @override
+  String get confirmYear => 'تأكيد السنة';
+
+  @override
+  String get typeManually => 'كتابة يدوياً';
+
+  @override
+  String get mileageKmLabel => 'المسافة (كم)';
+
+  @override
+  String get enterMileage => 'أدخل المسافة';
+
+  @override
+  String get pleaseEnterMileage => 'يرجى إدخال المسافة';
+
+  @override
+  String get invalidMileage => 'مسافة غير صالحة';
+
+  @override
+  String get mileageNegative => 'المسافة لا يمكن أن تكون سالبة';
+
+  @override
+  String get pleaseSelectMileage => 'يرجى اختيار المسافة';
+
+  @override
+  String get confirmMileage => 'تأكيد المسافة';
+
+  @override
+  String get pleaseSelectCondition => 'يرجى اختيار الحالة';
+
+  @override
+  String get pleaseSelectTransmission => 'يرجى اختيار ناقل الحركة';
+
+  @override
+  String get pleaseSelectFuelType => 'يرجى اختيار نوع الوقود';
+
+  @override
+  String get pleaseSelectBodyType => 'يرجى اختيار نوع الهيكل';
+
+  @override
+  String get pleaseSelectColor => 'يرجى اختيار اللون';
+
+  @override
+  String get pleaseSelectDriveType => 'يرجى اختيار نوع الدفع';
+
+  @override
+  String get pleaseSelectSeating => 'يرجى اختيار عدد المقاعد';
+
+  @override
+  String get pleaseSelectEngineSize => 'يرجى اختيار حجم المحرك';
+
+  @override
+  String get pleaseSelectCylinderCount => 'يرجى اختيار عدد الأسطوانات';
+
+  @override
+  String get contactForPrice => 'اتصل للسعر';
+
+  @override
+  String get comparisonCleared => 'تم مسح المقارنة';
+
+  @override
+  String get photosRequired => 'الصور (مطلوبة)';
+
+  @override
+  String get videosOptional => 'الفيديوهات (اختياري)';
+
+  @override
+  String get status => 'الحالة';
+
+  @override
+  String get sellButton => 'بيع';
 }

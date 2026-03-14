@@ -1183,4 +1183,143 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get emailOrPhoneRequired => 'Email or phone number is required';
+
+  @override
+  String stepXOf5(Object step) {
+    return 'Step $step of 5';
+  }
+
+  @override
+  String get basicInformationTitle => 'Basic Information';
+
+  @override
+  String get basicInformationSubtitle =>
+      'Tell us about your car\'s basic details';
+
+  @override
+  String get carDetailsTitle => 'Car Details';
+
+  @override
+  String get carDetailsSubtitle =>
+      'Provide detailed information about your car';
+
+  @override
+  String get pricingContactTitle => 'Pricing & Contact';
+
+  @override
+  String get photosVideosTitle => 'Photos & Videos';
+
+  @override
+  String get reviewSubmitTitle => 'Review & Submit';
+
+  @override
+  String get selectBrandFirst => 'Select brand first';
+
+  @override
+  String get nextStep => 'Next Step';
+
+  @override
+  String get previousButton => 'Previous';
+
+  @override
+  String get tapToSelect => 'Tap to select';
+
+  @override
+  String get pleaseFillRequired => 'Please complete';
+
+  @override
+  String get pleaseSelectBrand => 'Please select a brand';
+
+  @override
+  String get pleaseSelectModel => 'Please select a model';
+
+  @override
+  String get pleaseSelectTrim => 'Please select a trim';
+
+  @override
+  String get pleaseSelectYear => 'Please select a year';
+
+  @override
+  String get pleaseEnterYear => 'Please enter year';
+
+  @override
+  String get enterYearHint => 'Enter year (e.g. 2024)';
+
+  @override
+  String get yearInvalid => 'Invalid year';
+
+  @override
+  String get yearOutOfRange => 'Year out of range';
+
+  @override
+  String get confirmYear => 'Confirm year';
+
+  @override
+  String get typeManually => 'Type manually';
+
+  @override
+  String get mileageKmLabel => 'Mileage (km)';
+
+  @override
+  String get enterMileage => 'Enter mileage';
+
+  @override
+  String get pleaseEnterMileage => 'Please enter mileage';
+
+  @override
+  String get invalidMileage => 'Invalid mileage';
+
+  @override
+  String get mileageNegative => 'Mileage cannot be negative';
+
+  @override
+  String get pleaseSelectMileage => 'Please select mileage';
+
+  @override
+  String get confirmMileage => 'Confirm mileage';
+
+  @override
+  String get pleaseSelectCondition => 'Please select condition';
+
+  @override
+  String get pleaseSelectTransmission => 'Please select transmission';
+
+  @override
+  String get pleaseSelectFuelType => 'Please select fuel type';
+
+  @override
+  String get pleaseSelectBodyType => 'Please select body type';
+
+  @override
+  String get pleaseSelectColor => 'Please select color';
+
+  @override
+  String get pleaseSelectDriveType => 'Please select drive type';
+
+  @override
+  String get pleaseSelectSeating => 'Please select seating';
+
+  @override
+  String get pleaseSelectEngineSize => 'Please select engine size';
+
+  @override
+  String get pleaseSelectCylinderCount => 'Please select cylinder count';
+
+  @override
+  String get contactForPrice => 'Contact for price';
+
+  @override
+  String get comparisonCleared => 'Comparison cleared';
+
+  @override
+  String get photosRequired => 'Photos (Required)';
+
+  @override
+  String get videosOptional => 'Videos (Optional)';
+
+  @override
+  String get status => 'Status';
+
+  @override
+  String get sellButton => 'Sell';
 }

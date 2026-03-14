@@ -2349,6 +2349,276 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Email or phone number is required'**
   String get emailOrPhoneRequired;
+
+  /// No description provided for @stepXOf5.
+  ///
+  /// In en, this message translates to:
+  /// **'Step {step} of 5'**
+  String stepXOf5(Object step);
+
+  /// No description provided for @basicInformationTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Basic Information'**
+  String get basicInformationTitle;
+
+  /// No description provided for @basicInformationSubtitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Tell us about your car\'s basic details'**
+  String get basicInformationSubtitle;
+
+  /// No description provided for @carDetailsTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Car Details'**
+  String get carDetailsTitle;
+
+  /// No description provided for @carDetailsSubtitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Provide detailed information about your car'**
+  String get carDetailsSubtitle;
+
+  /// No description provided for @pricingContactTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Pricing & Contact'**
+  String get pricingContactTitle;
+
+  /// No description provided for @photosVideosTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Photos & Videos'**
+  String get photosVideosTitle;
+
+  /// No description provided for @reviewSubmitTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Review & Submit'**
+  String get reviewSubmitTitle;
+
+  /// No description provided for @selectBrandFirst.
+  ///
+  /// In en, this message translates to:
+  /// **'Select brand first'**
+  String get selectBrandFirst;
+
+  /// No description provided for @nextStep.
+  ///
+  /// In en, this message translates to:
+  /// **'Next Step'**
+  String get nextStep;
+
+  /// No description provided for @previousButton.
+  ///
+  /// In en, this message translates to:
+  /// **'Previous'**
+  String get previousButton;
+
+  /// No description provided for @tapToSelect.
+  ///
+  /// In en, this message translates to:
+  /// **'Tap to select'**
+  String get tapToSelect;
+
+  /// No description provided for @pleaseFillRequired.
+  ///
+  /// In en, this message translates to:
+  /// **'Please complete'**
+  String get pleaseFillRequired;
+
+  /// No description provided for @pleaseSelectBrand.
+  ///
+  /// In en, this message translates to:
+  /// **'Please select a brand'**
+  String get pleaseSelectBrand;
+
+  /// No description provided for @pleaseSelectModel.
+  ///
+  /// In en, this message translates to:
+  /// **'Please select a model'**
+  String get pleaseSelectModel;
+
+  /// No description provided for @pleaseSelectTrim.
+  ///
+  /// In en, this message translates to:
+  /// **'Please select a trim'**
+  String get pleaseSelectTrim;
+
+  /// No description provided for @pleaseSelectYear.
+  ///
+  /// In en, this message translates to:
+  /// **'Please select a year'**
+  String get pleaseSelectYear;
+
+  /// No description provided for @pleaseEnterYear.
+  ///
+  /// In en, this message translates to:
+  /// **'Please enter year'**
+  String get pleaseEnterYear;
+
+  /// No description provided for @enterYearHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Enter year (e.g. 2024)'**
+  String get enterYearHint;
+
+  /// No description provided for @yearInvalid.
+  ///
+  /// In en, this message translates to:
+  /// **'Invalid year'**
+  String get yearInvalid;
+
+  /// No description provided for @yearOutOfRange.
+  ///
+  /// In en, this message translates to:
+  /// **'Year out of range'**
+  String get yearOutOfRange;
+
+  /// No description provided for @confirmYear.
+  ///
+  /// In en, this message translates to:
+  /// **'Confirm year'**
+  String get confirmYear;
+
+  /// No description provided for @typeManually.
+  ///
+  /// In en, this message translates to:
+  /// **'Type manually'**
+  String get typeManually;
+
+  /// No description provided for @mileageKmLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'Mileage (km)'**
+  String get mileageKmLabel;
+
+  /// No description provided for @enterMileage.
+  ///
+  /// In en, this message translates to:
+  /// **'Enter mileage'**
+  String get enterMileage;
+
+  /// No description provided for @pleaseEnterMileage.
+  ///
+  /// In en, this message translates to:
+  /// **'Please enter mileage'**
+  String get pleaseEnterMileage;
+
+  /// No description provided for @invalidMileage.
+  ///
+  /// In en, this message translates to:
+  /// **'Invalid mileage'**
+  String get invalidMileage;
+
+  /// No description provided for @mileageNegative.
+  ///
+  /// In en, this message translates to:
+  /// **'Mileage cannot be negative'**
+  String get mileageNegative;
+
+  /// No description provided for @pleaseSelectMileage.
+  ///
+  /// In en, this message translates to:
+  /// **'Please select mileage'**
+  String get pleaseSelectMileage;
+
+  /// No description provided for @confirmMileage.
+  ///
+  /// In en, this message translates to:
+  /// **'Confirm mileage'**
+  String get confirmMileage;
+
+  /// No description provided for @pleaseSelectCondition.
+  ///
+  /// In en, this message translates to:
+  /// **'Please select condition'**
+  String get pleaseSelectCondition;
+
+  /// No description provided for @pleaseSelectTransmission.
+  ///
+  /// In en, this message translates to:
+  /// **'Please select transmission'**
+  String get pleaseSelectTransmission;
+
+  /// No description provided for @pleaseSelectFuelType.
+  ///
+  /// In en, this message translates to:
+  /// **'Please select fuel type'**
+  String get pleaseSelectFuelType;
+
+  /// No description provided for @pleaseSelectBodyType.
+  ///
+  /// In en, this message translates to:
+  /// **'Please select body type'**
+  String get pleaseSelectBodyType;
+
+  /// No description provided for @pleaseSelectColor.
+  ///
+  /// In en, this message translates to:
+  /// **'Please select color'**
+  String get pleaseSelectColor;
+
+  /// No description provided for @pleaseSelectDriveType.
+  ///
+  /// In en, this message translates to:
+  /// **'Please select drive type'**
+  String get pleaseSelectDriveType;
+
+  /// No description provided for @pleaseSelectSeating.
+  ///
+  /// In en, this message translates to:
+  /// **'Please select seating'**
+  String get pleaseSelectSeating;
+
+  /// No description provided for @pleaseSelectEngineSize.
+  ///
+  /// In en, this message translates to:
+  /// **'Please select engine size'**
+  String get pleaseSelectEngineSize;
+
+  /// No description provided for @pleaseSelectCylinderCount.
+  ///
+  /// In en, this message translates to:
+  /// **'Please select cylinder count'**
+  String get pleaseSelectCylinderCount;
+
+  /// No description provided for @contactForPrice.
+  ///
+  /// In en, this message translates to:
+  /// **'Contact for price'**
+  String get contactForPrice;
+
+  /// No description provided for @comparisonCleared.
+  ///
+  /// In en, this message translates to:
+  /// **'Comparison cleared'**
+  String get comparisonCleared;
+
+  /// No description provided for @photosRequired.
+  ///
+  /// In en, this message translates to:
+  /// **'Photos (Required)'**
+  String get photosRequired;
+
+  /// No description provided for @videosOptional.
+  ///
+  /// In en, this message translates to:
+  /// **'Videos (Optional)'**
+  String get videosOptional;
+
+  /// No description provided for @status.
+  ///
+  /// In en, this message translates to:
+  /// **'Status'**
+  String get status;
+
+  /// No description provided for @sellButton.
+  ///
+  /// In en, this message translates to:
+  /// **'Sell'**
+  String get sellButton;
 }
 
 class _AppLocalizationsDelegate

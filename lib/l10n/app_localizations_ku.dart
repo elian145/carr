@@ -1185,4 +1185,143 @@ class AppLocalizationsKu extends AppLocalizations {
 
   @override
   String get emailOrPhoneRequired => 'ئیمەیل یان ژمارەی تەلەفۆن پێویستە';
+
+  @override
+  String stepXOf5(Object step) {
+    return 'هەنگاوە $step لە ٥';
+  }
+
+  @override
+  String get basicInformationTitle => 'زانیاری بنەڕەتی';
+
+  @override
+  String get basicInformationSubtitle =>
+      'پێمان بڵێ دەربارەی وردەکاری بنەڕەتی ئۆتۆمبێلەکەت';
+
+  @override
+  String get carDetailsTitle => 'وردەکاری ئۆتۆمبێل';
+
+  @override
+  String get carDetailsSubtitle =>
+      'زانیاری ورد بەدەستەوە بەدەربارەی ئۆتۆمبێلەکەت';
+
+  @override
+  String get pricingContactTitle => 'نرخ و پەیوەندی';
+
+  @override
+  String get photosVideosTitle => 'وێنە و ڤیدیۆکان';
+
+  @override
+  String get reviewSubmitTitle => 'پێداچوونەوە و ناردن';
+
+  @override
+  String get selectBrandFirst => 'یەکەم جار براند هەڵبژێرە';
+
+  @override
+  String get nextStep => 'هەنگاوی داهاتوو';
+
+  @override
+  String get previousButton => 'پێشوو';
+
+  @override
+  String get tapToSelect => 'تەنها بۆ هەڵبژاردن';
+
+  @override
+  String get pleaseFillRequired => 'تکایە تەواو بکە';
+
+  @override
+  String get pleaseSelectBrand => 'تکایە براندێک هەڵبژێرە';
+
+  @override
+  String get pleaseSelectModel => 'تکایە مۆدێلێک هەڵبژێرە';
+
+  @override
+  String get pleaseSelectTrim => 'تکایە تریمێک هەڵبژێرە';
+
+  @override
+  String get pleaseSelectYear => 'تکایە ساڵێک هەڵبژێرە';
+
+  @override
+  String get pleaseEnterYear => 'تکایە ساڵ بنووسە';
+
+  @override
+  String get enterYearHint => 'ساڵ بنووسە (وەک 2024)';
+
+  @override
+  String get yearInvalid => 'ساڵی نادروست';
+
+  @override
+  String get yearOutOfRange => 'ساڵ لە ناوچەکە دەرەوەیە';
+
+  @override
+  String get confirmYear => 'دڵنیاکردنەوەی ساڵ';
+
+  @override
+  String get typeManually => 'نووسینی دەستی';
+
+  @override
+  String get mileageKmLabel => 'مەودا (كم)';
+
+  @override
+  String get enterMileage => 'مەودا بنووسە';
+
+  @override
+  String get pleaseEnterMileage => 'تکایە مەودا بنووسە';
+
+  @override
+  String get invalidMileage => 'مەودای نادروست';
+
+  @override
+  String get mileageNegative => 'مەودا ناتوانێت نەرێنی بێت';
+
+  @override
+  String get pleaseSelectMileage => 'تکایە مەودا هەڵبژێرە';
+
+  @override
+  String get confirmMileage => 'دڵنیاکردنەوەی مەودا';
+
+  @override
+  String get pleaseSelectCondition => 'تکایە دۆخ هەڵبژێرە';
+
+  @override
+  String get pleaseSelectTransmission => 'تکایە گێربۆکس هەڵبژێرە';
+
+  @override
+  String get pleaseSelectFuelType => 'تکایە جۆری سووتەمەنی هەڵبژێرە';
+
+  @override
+  String get pleaseSelectBodyType => 'تکایە جۆری بار هەڵبژێرە';
+
+  @override
+  String get pleaseSelectColor => 'تکایە ڕەنگ هەڵبژێرە';
+
+  @override
+  String get pleaseSelectDriveType => 'تکایە جۆری درایڤ هەڵبژێرە';
+
+  @override
+  String get pleaseSelectSeating => 'تکایە ژمارەی کورسی هەڵبژێرە';
+
+  @override
+  String get pleaseSelectEngineSize => 'تکایە قەبارەی ئەنێرژێر هەڵبژێرە';
+
+  @override
+  String get pleaseSelectCylinderCount => 'تکایە ژمارەی سیلندەر هەڵبژێرە';
+
+  @override
+  String get contactForPrice => 'پەیوەندی بۆ نرخ';
+
+  @override
+  String get comparisonCleared => 'بەراورد پاککرایەوە';
+
+  @override
+  String get photosRequired => 'وێنەکان (پێویست)';
+
+  @override
+  String get videosOptional => 'ڤیدیۆکان (ئارەزوومەندانە)';
+
+  @override
+  String get status => 'دۆخ';
+
+  @override
+  String get sellButton => 'فرۆشتن';
 }
