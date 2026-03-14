@@ -4676,72 +4676,69 @@ class _HomePageState extends State<HomePage> {
     return colors;
   }
 
-  // Helper method to get a valid drive type value for dropdown
+  // Helper method to get a valid drive type value for dropdown (dropdown uses '' for Any)
   String? _getValidDriveTypeValue() {
-    if (selectedDriveType == null) return '';
+    if (selectedDriveType == null || selectedDriveType == 'Any' || selectedDriveType!.isEmpty) return '';
 
     final availableTypes = getAvailableDriveTypes();
 
-    // First try exact match
-    if (availableTypes.contains(selectedDriveType)) {
+    // First try exact match (excluding 'Any' which is represented as '' in dropdown items)
+    if (availableTypes.contains(selectedDriveType) && selectedDriveType != 'Any') {
       return selectedDriveType;
     }
 
     // Try case-insensitive match
     final lowerSelected = selectedDriveType!.toLowerCase();
     for (final type in availableTypes) {
-      if (type.toLowerCase() == lowerSelected) {
+      if (type != 'Any' && type.toLowerCase() == lowerSelected) {
         return type;
       }
     }
 
-    // If no match found, return empty string
     return '';
   }
 
-  // Helper method to get a valid transmission value for dropdown
+  // Helper method to get a valid transmission value for dropdown (dropdown uses '' for Any)
   String? _getValidTransmissionValue() {
-    if (selectedTransmission == null) return '';
+    if (selectedTransmission == null || selectedTransmission == 'Any' || selectedTransmission!.isEmpty) return '';
 
     final availableTypes = getAvailableTransmissions();
 
-    // First try exact match
-    if (availableTypes.contains(selectedTransmission)) {
+    // First try exact match (excluding 'Any' which is represented as '' in dropdown items)
+    if (availableTypes.contains(selectedTransmission) && selectedTransmission != 'Any') {
       return selectedTransmission;
     }
 
     // Try case-insensitive match
     final lowerSelected = selectedTransmission!.toLowerCase();
     for (final type in availableTypes) {
-      if (type.toLowerCase() == lowerSelected) {
+      if (type != 'Any' && type.toLowerCase() == lowerSelected) {
         return type;
       }
     }
 
-    // If no match found, return empty string
     return '';
   }
 
-  // Helper method to get a valid fuel type value for dropdown
+  // Helper method to get a valid fuel type value for dropdown (dropdown uses '' for Any)
   String? _getValidFuelTypeValue() {
-    if (selectedFuelType == null) return '';
+    if (selectedFuelType == null || selectedFuelType == 'Any' || selectedFuelType!.isEmpty) return '';
 
     final availableTypes = getAvailableFuelTypes();
 
-    // First try exact match
-    if (availableTypes.contains(selectedFuelType)) {
+    // First try exact match (excluding 'Any' which is represented as '' in dropdown items)
+    if (availableTypes.contains(selectedFuelType) && selectedFuelType != 'Any') {
       return selectedFuelType;
     }
 
     // Try case-insensitive match
     final lowerSelected = selectedFuelType!.toLowerCase();
     for (final type in availableTypes) {
-      if (type.toLowerCase() == lowerSelected) {
+      if (type != 'Any' && type.toLowerCase() == lowerSelected) {
         return type;
       }
     }
 
-    // If no match found, return empty string
     return '';
   }
 
@@ -7559,9 +7556,7 @@ class _HomePageState extends State<HomePage> {
                                                     DropdownButtonFormField<
                                                       String
                                                     >(
-                                                      initialValue:
-                                                          selectedCondition ??
-                                                          'Any',
+                                                      initialValue: conditions.contains(selectedCondition) ? (selectedCondition ?? 'Any') : conditions.first,
                                                       decoration: InputDecoration(
                                                         labelText:
                                                             AppLocalizations.of(
