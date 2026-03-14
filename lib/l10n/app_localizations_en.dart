@@ -1031,4 +1031,143 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get carLabel => 'Car';
+
+  @override
+  String get personalInformationTitle => 'Personal Information';
+
+  @override
+  String get firstNameLabel => 'First Name';
+
+  @override
+  String get lastNameLabel => 'Last Name';
+
+  @override
+  String get phoneNumberLabel => 'Phone Number';
+
+  @override
+  String get firstNameRequired => 'First name is required';
+
+  @override
+  String get lastNameRequired => 'Last name is required';
+
+  @override
+  String get usernameRequired => 'Username is required';
+
+  @override
+  String get usernameMin3 => 'Username must be at least 3 characters';
+
+  @override
+  String get emailRequired => 'Email is required';
+
+  @override
+  String get emailInvalid => 'Please enter a valid email address';
+
+  @override
+  String get phoneRequired => 'Phone number is required';
+
+  @override
+  String get phoneInvalid => 'Please enter a valid phone number';
+
+  @override
+  String get profilePictureTitle => 'Profile Picture';
+
+  @override
+  String get tapCameraToChangeProfile =>
+      'Tap the camera icon to change your profile picture';
+
+  @override
+  String get editProfileTitle => 'Edit Profile';
+
+  @override
+  String get saveChangesButton => 'Save Changes';
+
+  @override
+  String get savingLabel => 'Saving...';
+
+  @override
+  String get profileUpdatedSuccess => 'Profile updated successfully!';
+
+  @override
+  String get failedToLoadUserData => 'Failed to load user data';
+
+  @override
+  String get failedToUpdateProfile => 'Failed to update profile';
+
+  @override
+  String get failedToPickImage => 'Failed to pick image';
+
+  @override
+  String get emailOrPhoneLabel => 'Email or Phone Number';
+
+  @override
+  String get enterEmailOrPhoneHint =>
+      'Enter your email address or phone number';
+
+  @override
+  String get forgotPasswordLink => 'Forgot password?';
+
+  @override
+  String get accountActionsTitle => 'Account Actions';
+
+  @override
+  String get helpSupportTitle => 'Help & Support';
+
+  @override
+  String get helpSupportComingSoon => 'Help & Support feature coming soon!';
+
+  @override
+  String carComparisonCount(Object count) {
+    return 'Car Comparison ($count)';
+  }
+
+  @override
+  String get addNewButton => 'Add New +';
+
+  @override
+  String yourListingsCount(Object count) {
+    return 'Your Listings ($count)';
+  }
+
+  @override
+  String get verifyEmailAction => 'Verify email';
+
+  @override
+  String get sendVerificationLinkToEmail =>
+      'Send a verification link to your email';
+
+  @override
+  String get verifyPhoneAction => 'Verify phone';
+
+  @override
+  String get receiveCodeBySms => 'Receive a code by SMS';
+
+  @override
+  String get verificationEmailSent =>
+      'Verification email sent. Check your inbox and spam.';
+
+  @override
+  String get codeSentEnterAbove => 'Code sent. Enter it above and tap Verify.';
+
+  @override
+  String get verifyButton => 'Verify';
+
+  @override
+  String get pleaseEnter6DigitCode => 'Please enter the 6-digit code';
+
+  @override
+  String get phoneVerifiedSuccess => 'Phone verified successfully';
+
+  @override
+  String get verifyPhoneDialogTitle => 'Verify phone';
+
+  @override
+  String verifyPhoneDialogMessage(Object phone) {
+    return 'A 6-digit code will be sent to $phone.';
+  }
+
+  @override
+  String get sixDigitCodeLabel => '6-digit code';
+
+  @override
+  String get sendCodeButton => 'Send code';
 }

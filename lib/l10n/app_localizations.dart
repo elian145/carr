@@ -2067,6 +2067,264 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Car'**
   String get carLabel;
+
+  /// No description provided for @personalInformationTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Personal Information'**
+  String get personalInformationTitle;
+
+  /// No description provided for @firstNameLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'First Name'**
+  String get firstNameLabel;
+
+  /// No description provided for @lastNameLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'Last Name'**
+  String get lastNameLabel;
+
+  /// No description provided for @phoneNumberLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'Phone Number'**
+  String get phoneNumberLabel;
+
+  /// No description provided for @firstNameRequired.
+  ///
+  /// In en, this message translates to:
+  /// **'First name is required'**
+  String get firstNameRequired;
+
+  /// No description provided for @lastNameRequired.
+  ///
+  /// In en, this message translates to:
+  /// **'Last name is required'**
+  String get lastNameRequired;
+
+  /// No description provided for @usernameRequired.
+  ///
+  /// In en, this message translates to:
+  /// **'Username is required'**
+  String get usernameRequired;
+
+  /// No description provided for @usernameMin3.
+  ///
+  /// In en, this message translates to:
+  /// **'Username must be at least 3 characters'**
+  String get usernameMin3;
+
+  /// No description provided for @emailRequired.
+  ///
+  /// In en, this message translates to:
+  /// **'Email is required'**
+  String get emailRequired;
+
+  /// No description provided for @emailInvalid.
+  ///
+  /// In en, this message translates to:
+  /// **'Please enter a valid email address'**
+  String get emailInvalid;
+
+  /// No description provided for @phoneRequired.
+  ///
+  /// In en, this message translates to:
+  /// **'Phone number is required'**
+  String get phoneRequired;
+
+  /// No description provided for @phoneInvalid.
+  ///
+  /// In en, this message translates to:
+  /// **'Please enter a valid phone number'**
+  String get phoneInvalid;
+
+  /// No description provided for @profilePictureTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Profile Picture'**
+  String get profilePictureTitle;
+
+  /// No description provided for @tapCameraToChangeProfile.
+  ///
+  /// In en, this message translates to:
+  /// **'Tap the camera icon to change your profile picture'**
+  String get tapCameraToChangeProfile;
+
+  /// No description provided for @editProfileTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Edit Profile'**
+  String get editProfileTitle;
+
+  /// No description provided for @saveChangesButton.
+  ///
+  /// In en, this message translates to:
+  /// **'Save Changes'**
+  String get saveChangesButton;
+
+  /// No description provided for @savingLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'Saving...'**
+  String get savingLabel;
+
+  /// No description provided for @profileUpdatedSuccess.
+  ///
+  /// In en, this message translates to:
+  /// **'Profile updated successfully!'**
+  String get profileUpdatedSuccess;
+
+  /// No description provided for @failedToLoadUserData.
+  ///
+  /// In en, this message translates to:
+  /// **'Failed to load user data'**
+  String get failedToLoadUserData;
+
+  /// No description provided for @failedToUpdateProfile.
+  ///
+  /// In en, this message translates to:
+  /// **'Failed to update profile'**
+  String get failedToUpdateProfile;
+
+  /// No description provided for @failedToPickImage.
+  ///
+  /// In en, this message translates to:
+  /// **'Failed to pick image'**
+  String get failedToPickImage;
+
+  /// No description provided for @emailOrPhoneLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'Email or Phone Number'**
+  String get emailOrPhoneLabel;
+
+  /// No description provided for @enterEmailOrPhoneHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Enter your email address or phone number'**
+  String get enterEmailOrPhoneHint;
+
+  /// No description provided for @forgotPasswordLink.
+  ///
+  /// In en, this message translates to:
+  /// **'Forgot password?'**
+  String get forgotPasswordLink;
+
+  /// No description provided for @accountActionsTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Account Actions'**
+  String get accountActionsTitle;
+
+  /// No description provided for @helpSupportTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Help & Support'**
+  String get helpSupportTitle;
+
+  /// No description provided for @helpSupportComingSoon.
+  ///
+  /// In en, this message translates to:
+  /// **'Help & Support feature coming soon!'**
+  String get helpSupportComingSoon;
+
+  /// No description provided for @carComparisonCount.
+  ///
+  /// In en, this message translates to:
+  /// **'Car Comparison ({count})'**
+  String carComparisonCount(Object count);
+
+  /// No description provided for @addNewButton.
+  ///
+  /// In en, this message translates to:
+  /// **'Add New +'**
+  String get addNewButton;
+
+  /// No description provided for @yourListingsCount.
+  ///
+  /// In en, this message translates to:
+  /// **'Your Listings ({count})'**
+  String yourListingsCount(Object count);
+
+  /// No description provided for @verifyEmailAction.
+  ///
+  /// In en, this message translates to:
+  /// **'Verify email'**
+  String get verifyEmailAction;
+
+  /// No description provided for @sendVerificationLinkToEmail.
+  ///
+  /// In en, this message translates to:
+  /// **'Send a verification link to your email'**
+  String get sendVerificationLinkToEmail;
+
+  /// No description provided for @verifyPhoneAction.
+  ///
+  /// In en, this message translates to:
+  /// **'Verify phone'**
+  String get verifyPhoneAction;
+
+  /// No description provided for @receiveCodeBySms.
+  ///
+  /// In en, this message translates to:
+  /// **'Receive a code by SMS'**
+  String get receiveCodeBySms;
+
+  /// No description provided for @verificationEmailSent.
+  ///
+  /// In en, this message translates to:
+  /// **'Verification email sent. Check your inbox and spam.'**
+  String get verificationEmailSent;
+
+  /// No description provided for @codeSentEnterAbove.
+  ///
+  /// In en, this message translates to:
+  /// **'Code sent. Enter it above and tap Verify.'**
+  String get codeSentEnterAbove;
+
+  /// No description provided for @verifyButton.
+  ///
+  /// In en, this message translates to:
+  /// **'Verify'**
+  String get verifyButton;
+
+  /// No description provided for @pleaseEnter6DigitCode.
+  ///
+  /// In en, this message translates to:
+  /// **'Please enter the 6-digit code'**
+  String get pleaseEnter6DigitCode;
+
+  /// No description provided for @phoneVerifiedSuccess.
+  ///
+  /// In en, this message translates to:
+  /// **'Phone verified successfully'**
+  String get phoneVerifiedSuccess;
+
+  /// No description provided for @verifyPhoneDialogTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Verify phone'**
+  String get verifyPhoneDialogTitle;
+
+  /// No description provided for @verifyPhoneDialogMessage.
+  ///
+  /// In en, this message translates to:
+  /// **'A 6-digit code will be sent to {phone}.'**
+  String verifyPhoneDialogMessage(Object phone);
+
+  /// No description provided for @sixDigitCodeLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'6-digit code'**
+  String get sixDigitCodeLabel;
+
+  /// No description provided for @sendCodeButton.
+  ///
+  /// In en, this message translates to:
+  /// **'Send code'**
+  String get sendCodeButton;
 }
 
 class _AppLocalizationsDelegate

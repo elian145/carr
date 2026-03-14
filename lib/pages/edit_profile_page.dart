@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:image_picker/image_picker.dart';
 import 'dart:io';
+import '../l10n/app_localizations.dart';
 import '../services/auth_service.dart';
 import '../services/config.dart';
 import 'package:provider/provider.dart';
@@ -76,7 +77,7 @@ class _EditProfilePageState extends State<EditProfilePage> {
     } catch (e) {
       if (mounted) {
         setState(() {
-          _errorMessage = 'Failed to load user data: ${e.toString()}';
+          _errorMessage = '${AppLocalizations.of(context)!.failedToLoadUserData}: ${e.toString()}';
         });
       }
     } finally {
@@ -107,7 +108,7 @@ class _EditProfilePageState extends State<EditProfilePage> {
     } catch (e) {
       if (mounted) {
         setState(() {
-          _errorMessage = 'Failed to pick image: ${e.toString()}';
+          _errorMessage = '${AppLocalizations.of(context)!.failedToPickImage}: ${e.toString()}';
         });
       }
     }
@@ -155,7 +156,7 @@ class _EditProfilePageState extends State<EditProfilePage> {
 
       if (mounted) {
         setState(() {
-          _successMessage = 'Profile updated successfully!';
+          _successMessage = AppLocalizations.of(context)!.profileUpdatedSuccess;
         });
 
         // Show success message
@@ -176,7 +177,7 @@ class _EditProfilePageState extends State<EditProfilePage> {
     } catch (e) {
       if (mounted) {
         setState(() {
-          _errorMessage = 'Failed to update profile: ${e.toString()}';
+          _errorMessage = '${AppLocalizations.of(context)!.failedToUpdateProfile}: ${e.toString()}';
         });
       }
     } finally {
@@ -188,7 +189,8 @@ class _EditProfilePageState extends State<EditProfilePage> {
     }
   }
 
-  Widget _buildProfileImageSection() {
+  Widget _buildProfileImageSection(BuildContext context) {
+    final loc = AppLocalizations.of(context)!;
     return Container(
       width: double.infinity,
       padding: EdgeInsets.all(20),
@@ -206,7 +208,7 @@ class _EditProfilePageState extends State<EditProfilePage> {
       child: Column(
         children: [
           Text(
-            'Profile Picture',
+            loc.profilePictureTitle,
             style: TextStyle(
               fontSize: 18,
               fontWeight: FontWeight.bold,
@@ -253,7 +255,7 @@ class _EditProfilePageState extends State<EditProfilePage> {
           ),
           SizedBox(height: 16),
           Text(
-            'Tap the camera icon to change your profile picture',
+            loc.tapCameraToChangeProfile,
             style: TextStyle(fontSize: 14, color: Colors.grey[600]),
             textAlign: TextAlign.center,
           ),
@@ -336,9 +338,10 @@ class _EditProfilePageState extends State<EditProfilePage> {
 
   @override
   Widget build(BuildContext context) {
+    final loc = AppLocalizations.of(context)!;
     return Scaffold(
       appBar: AppBar(
-        title: Text('Edit Profile'),
+        title: Text(loc.editProfileTitle),
         backgroundColor: Color(0xFFFF6B00),
         foregroundColor: Colors.white,
         elevation: 0,
@@ -359,7 +362,7 @@ class _EditProfilePageState extends State<EditProfilePage> {
             TextButton(
               onPressed: _saveProfile,
               child: Text(
-                'Save',
+                loc.save,
                 style: TextStyle(
                   color: Colors.white,
                   fontWeight: FontWeight.bold,
@@ -389,7 +392,7 @@ class _EditProfilePageState extends State<EditProfilePage> {
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       // Profile Image Section
-                      _buildProfileImageSection(),
+                      _buildProfileImageSection(context),
                       SizedBox(height: 24),
 
                       // Error Message
@@ -464,7 +467,7 @@ class _EditProfilePageState extends State<EditProfilePage> {
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
                             Text(
-                              'Personal Information',
+                              loc.personalInformationTitle,
                               style: TextStyle(
                                 fontSize: 18,
                                 fontWeight: FontWeight.bold,
@@ -475,12 +478,12 @@ class _EditProfilePageState extends State<EditProfilePage> {
 
                             // First Name
                             _buildFormField(
-                              label: 'First Name',
+                              label: loc.firstNameLabel,
                               controller: _firstNameController,
                               icon: Icons.person_outline,
                               validator: (value) {
                                 if (value == null || value.trim().isEmpty) {
-                                  return 'First name is required';
+                                  return loc.firstNameRequired;
                                 }
                                 return null;
                               },
@@ -488,12 +491,12 @@ class _EditProfilePageState extends State<EditProfilePage> {
 
                             // Last Name
                             _buildFormField(
-                              label: 'Last Name',
+                              label: loc.lastNameLabel,
                               controller: _lastNameController,
                               icon: Icons.person_outline,
                               validator: (value) {
                                 if (value == null || value.trim().isEmpty) {
-                                  return 'Last name is required';
+                                  return loc.lastNameRequired;
                                 }
                                 return null;
                               },
@@ -501,15 +504,15 @@ class _EditProfilePageState extends State<EditProfilePage> {
 
                             // Username
                             _buildFormField(
-                              label: 'Username',
+                              label: loc.usernameLabel,
                               controller: _usernameController,
                               icon: Icons.alternate_email,
                               validator: (value) {
                                 if (value == null || value.trim().isEmpty) {
-                                  return 'Username is required';
+                                  return loc.usernameRequired;
                                 }
                                 if (value.trim().length < 3) {
-                                  return 'Username must be at least 3 characters';
+                                  return loc.usernameMin3;
                                 }
                                 return null;
                               },
@@ -517,18 +520,18 @@ class _EditProfilePageState extends State<EditProfilePage> {
 
                             // Email
                             _buildFormField(
-                              label: 'Email',
+                              label: loc.emailLabel,
                               controller: _emailController,
                               icon: Icons.email_outlined,
                               keyboardType: TextInputType.emailAddress,
                               validator: (value) {
                                 if (value == null || value.trim().isEmpty) {
-                                  return 'Email is required';
+                                  return loc.emailRequired;
                                 }
                                 if (!RegExp(
                                   r'^[\w-\.]+@([\w-]+\.)+[\w-]{2,4}$',
                                 ).hasMatch(value.trim())) {
-                                  return 'Please enter a valid email address';
+                                  return loc.emailInvalid;
                                 }
                                 return null;
                               },
@@ -536,7 +539,7 @@ class _EditProfilePageState extends State<EditProfilePage> {
 
                             // Phone Number
                             _buildFormField(
-                              label: 'Phone Number',
+                              label: loc.phoneNumberLabel,
                               controller: _phoneController,
                               icon: Icons.phone_outlined,
                               keyboardType: TextInputType.phone,
@@ -549,10 +552,10 @@ class _EditProfilePageState extends State<EditProfilePage> {
                               ],
                               validator: (value) {
                                 if (value == null || value.trim().isEmpty) {
-                                  return 'Phone number is required';
+                                  return loc.phoneRequired;
                                 }
                                 if (value.trim().length < 10) {
-                                  return 'Please enter a valid phone number';
+                                  return loc.phoneInvalid;
                                 }
                                 return null;
                               },
@@ -592,11 +595,11 @@ class _EditProfilePageState extends State<EditProfilePage> {
                                       ),
                                     ),
                                     SizedBox(width: 12),
-                                    Text('Saving...'),
+                                    Text(loc.savingLabel),
                                   ],
                                 )
                               : Text(
-                                  'Save Changes',
+                                  loc.saveChangesButton,
                                   style: TextStyle(
                                     fontSize: 16,
                                     fontWeight: FontWeight.bold,

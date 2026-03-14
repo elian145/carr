@@ -22,8 +22,8 @@ class _ProfilePageState extends State<ProfilePage> {
       await auth.sendEmailVerification();
       if (!context.mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('Verification email sent. Check your inbox and spam.'),
+        SnackBar(
+          content: Text(AppLocalizations.of(context)!.verificationEmailSent),
           backgroundColor: Colors.green,
         ),
       );
@@ -48,20 +48,21 @@ class _ProfilePageState extends State<ProfilePage> {
       builder: (ctx) {
         return StatefulBuilder(
           builder: (ctx2, setDialogState) {
+            final locDialog = AppLocalizations.of(ctx)!;
             return AlertDialog(
-              title: const Text('Verify phone'),
+              title: Text(locDialog.verifyPhoneDialogTitle),
               content: SingleChildScrollView(
                 child: Column(
                   mainAxisSize: MainAxisSize.min,
                   crossAxisAlignment: CrossAxisAlignment.stretch,
                   children: [
-                    Text('A 6-digit code will be sent to $phone.'),
+                    Text(locDialog.verifyPhoneDialogMessage(phone)),
                     const SizedBox(height: 16),
                     TextField(
                       controller: codeController,
-                      decoration: const InputDecoration(
-                        labelText: '6-digit code',
-                        border: OutlineInputBorder(),
+                      decoration: InputDecoration(
+                        labelText: locDialog.sixDigitCodeLabel,
+                        border: const OutlineInputBorder(),
                       ),
                       keyboardType: TextInputType.number,
                       maxLength: 6,
@@ -72,7 +73,7 @@ class _ProfilePageState extends State<ProfilePage> {
               actions: [
                 TextButton(
                   onPressed: () => Navigator.pop(ctx),
-                  child: const Text('Cancel'),
+                  child: Text(locDialog.cancelAction),
                 ),
                 if (!codeSent)
                   FilledButton(
@@ -82,7 +83,7 @@ class _ProfilePageState extends State<ProfilePage> {
                         if (!ctx2.mounted) return;
                         setDialogState(() => codeSent = true);
                         ScaffoldMessenger.of(ctx2).showSnackBar(
-                          const SnackBar(content: Text('Code sent. Enter it above and tap Verify.')),
+                          SnackBar(content: Text(AppLocalizations.of(ctx2)!.codeSentEnterAbove)),
                         );
                       } catch (e) {
                         if (!ctx2.mounted) return;
@@ -91,14 +92,14 @@ class _ProfilePageState extends State<ProfilePage> {
                         );
                       }
                     },
-                    child: const Text('Send code'),
+                    child: Text(locDialog.sendCodeButton),
                   ),
                 FilledButton(
                   onPressed: () async {
                     final code = codeController.text.trim();
                     if (code.length != 6) {
                       ScaffoldMessenger.of(ctx2).showSnackBar(
-                        const SnackBar(content: Text('Please enter the 6-digit code'), backgroundColor: Colors.orange),
+                        SnackBar(content: Text(AppLocalizations.of(ctx2)!.pleaseEnter6DigitCode), backgroundColor: Colors.orange),
                       );
                       return;
                     }
@@ -107,7 +108,7 @@ class _ProfilePageState extends State<ProfilePage> {
                       if (!ctx2.mounted) return;
                       Navigator.pop(ctx);
                       ScaffoldMessenger.of(ctx2).showSnackBar(
-                        const SnackBar(content: Text('Phone verified successfully'), backgroundColor: Colors.green),
+                        SnackBar(content: Text(AppLocalizations.of(ctx2)!.phoneVerifiedSuccess), backgroundColor: Colors.green),
                       );
                       _refresh();
                     } catch (e) {
@@ -117,7 +118,7 @@ class _ProfilePageState extends State<ProfilePage> {
                       );
                     }
                   },
-                  child: const Text('Verify'),
+                  child: Text(locDialog.verifyButton),
                 ),
               ],
             );
@@ -129,26 +130,26 @@ class _ProfilePageState extends State<ProfilePage> {
   }
 
   Future<void> _deleteAccountTapped() async {
+    final loc = AppLocalizations.of(context)!;
     final passwordResult = await showDialog<String?>(
       context: context,
       builder: (ctx) {
         final passwordController = TextEditingController();
+        final locD = AppLocalizations.of(ctx)!;
         return AlertDialog(
-          title: const Text('Delete account'),
+          title: Text(locD.deleteAccountTitle),
           content: SingleChildScrollView(
             child: Column(
               mainAxisSize: MainAxisSize.min,
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                const Text(
-                  'This will permanently delete your account and all your data (listings, messages, favorites). This cannot be undone.',
-                ),
+                Text(locD.deleteAccountBody),
                 const SizedBox(height: 16),
                 TextField(
                   controller: passwordController,
-                  decoration: const InputDecoration(
-                    labelText: 'Password (optional)',
-                    hintText: 'Confirm with password if you have one',
+                  decoration: InputDecoration(
+                    labelText: locD.passwordOptionalConfirm,
+                    hintText: locD.confirmWithPasswordHint,
                   ),
                   obscureText: true,
                   autocorrect: false,
@@ -159,7 +160,7 @@ class _ProfilePageState extends State<ProfilePage> {
           actions: [
             TextButton(
               onPressed: () => Navigator.pop(ctx),
-              child: const Text('Cancel'),
+              child: Text(locD.cancelAction),
             ),
             TextButton(
               onPressed: () {
@@ -167,7 +168,7 @@ class _ProfilePageState extends State<ProfilePage> {
                 Navigator.pop(ctx, p);
               },
               child: Text(
-                'Delete my account',
+                locD.deleteMyAccount,
                 style: TextStyle(color: Theme.of(context).colorScheme.error),
               ),
             ),
@@ -181,7 +182,7 @@ class _ProfilePageState extends State<ProfilePage> {
       if (!mounted) return;
       Navigator.pushNamedAndRemoveUntil(context, '/login', (route) => false);
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Your account has been deleted')),
+        SnackBar(content: Text(loc.accountDeletedSnackbar)),
       );
     } catch (e) {
       if (!mounted) return;
@@ -357,15 +358,15 @@ class _ProfilePageState extends State<ProfilePage> {
                           if (email.isNotEmpty && !email.endsWith('@phone.local'))
                             ListTile(
                               leading: const Icon(Icons.mark_email_unread_outlined),
-                              title: const Text('Verify email'),
-                              subtitle: const Text('Send a verification link to your email'),
+                              title: Text(loc?.verifyEmailAction ?? 'Verify email'),
+                              subtitle: Text(loc?.sendVerificationLinkToEmail ?? 'Send a verification link to your email'),
                               onTap: () => _sendEmailVerification(context, auth),
                             ),
                           if (phone.isNotEmpty)
                             ListTile(
                               leading: const Icon(Icons.phone_android_outlined),
-                              title: const Text('Verify phone'),
-                              subtitle: const Text('Receive a code by SMS'),
+                              title: Text(loc?.verifyPhoneAction ?? 'Verify phone'),
+                              subtitle: Text(loc?.receiveCodeBySms ?? 'Receive a code by SMS'),
                               onTap: () => _showPhoneVerifyDialog(context, phone, auth),
                             ),
                         ],
@@ -373,7 +374,7 @@ class _ProfilePageState extends State<ProfilePage> {
                         ListTile(
                           leading: Icon(Icons.delete_forever_outlined, color: Theme.of(context).colorScheme.error),
                           title: Text(
-                            'Delete account',
+                            loc?.deleteAccountTitle ?? 'Delete account',
                             style: TextStyle(
                               color: Theme.of(context).colorScheme.error,
                               fontWeight: FontWeight.w500,

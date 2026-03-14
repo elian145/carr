@@ -1032,4 +1032,144 @@ class AppLocalizationsKu extends AppLocalizations {
 
   @override
   String get carLabel => 'ئۆتۆمبێل';
+
+  @override
+  String get personalInformationTitle => 'زانیاری کەسی';
+
+  @override
+  String get firstNameLabel => 'ناوی یەکەم';
+
+  @override
+  String get lastNameLabel => 'ناوی دووەم';
+
+  @override
+  String get phoneNumberLabel => 'ژمارەی تەلەفۆن';
+
+  @override
+  String get firstNameRequired => 'ناوی یەکەم پێویستە';
+
+  @override
+  String get lastNameRequired => 'ناوی دووەم پێویستە';
+
+  @override
+  String get usernameRequired => 'ناوی بەکارهێنەر پێویستە';
+
+  @override
+  String get usernameMin3 => 'ناوی بەکارهێنەر پێویستە کەمەترین ٣ پیت بێت';
+
+  @override
+  String get emailRequired => 'ئیمەیل پێویستە';
+
+  @override
+  String get emailInvalid => 'تکایە ئیمەیلێکی دروست بنووسە';
+
+  @override
+  String get phoneRequired => 'ژمارەی تەلەفۆن پێویستە';
+
+  @override
+  String get phoneInvalid => 'تکایە ژمارەیەکی تەلەفۆنی دروست بنووسە';
+
+  @override
+  String get profilePictureTitle => 'وێنەی پرۆفایل';
+
+  @override
+  String get tapCameraToChangeProfile =>
+      'کرتە لە ئایکۆنی کامێرا بکە بۆ گۆڕینی وێنەی پرۆفایل';
+
+  @override
+  String get editProfileTitle => 'دەستکاری پرۆفایل';
+
+  @override
+  String get saveChangesButton => 'پاشەکەوتکردنی گۆڕانکارییەکان';
+
+  @override
+  String get savingLabel => 'پاشەکەوت دەکرێت...';
+
+  @override
+  String get profileUpdatedSuccess => 'پرۆفایل بە سەرکەوتوویی نوێ کرا!';
+
+  @override
+  String get failedToLoadUserData => 'بارکردنی زانیاری بەکارهێنەر شکستی هێنا';
+
+  @override
+  String get failedToUpdateProfile => 'نوێکردنەوەی پرۆفایل شکستی هێنا';
+
+  @override
+  String get failedToPickImage => 'هەڵبژاردنی وێنە شکستی هێنا';
+
+  @override
+  String get emailOrPhoneLabel => 'ئیمەیل یان ژمارەی تەلەفۆن';
+
+  @override
+  String get enterEmailOrPhoneHint => 'ئیمەیل یان ژمارەی تەلەفۆن بنووسە';
+
+  @override
+  String get forgotPasswordLink => 'وشەی نهێنیت لەبیرچووە؟';
+
+  @override
+  String get accountActionsTitle => 'کردارەکانی هەژمار';
+
+  @override
+  String get helpSupportTitle => 'یارمەتی و پشتگیری';
+
+  @override
+  String get helpSupportComingSoon =>
+      'تایبەتمەندی یارمەتی و پشتگیری بەم زووانە!';
+
+  @override
+  String carComparisonCount(Object count) {
+    return 'بەراوردی ئۆتۆمبێل ($count)';
+  }
+
+  @override
+  String get addNewButton => 'زیادکردنی نوێ +';
+
+  @override
+  String yourListingsCount(Object count) {
+    return 'ڕێکلامەکانت ($count)';
+  }
+
+  @override
+  String get verifyEmailAction => 'پشتڕاستکردنەوەی ئیمەیل';
+
+  @override
+  String get sendVerificationLinkToEmail =>
+      'لینکی پشتڕاستکردن بۆ ئیمەیلەکەت بنێرە';
+
+  @override
+  String get verifyPhoneAction => 'پشتڕاستکردنەوەی تەلەفۆن';
+
+  @override
+  String get receiveCodeBySms => 'وەرگرتنی کۆد بە SMS';
+
+  @override
+  String get verificationEmailSent =>
+      'ئیمەیلی پشتڕاستکردن نێردرا. صندوقی وەرگرتن و سپام بپشکنە.';
+
+  @override
+  String get codeSentEnterAbove =>
+      'کۆد نێردرا. لە سەرەوە بنووسە و کرتە لە پشتڕاستکردن بکە.';
+
+  @override
+  String get verifyButton => 'پشتڕاستکردن';
+
+  @override
+  String get pleaseEnter6DigitCode => 'تکایە کۆدی ٦ ژمارە بنووسە';
+
+  @override
+  String get phoneVerifiedSuccess => 'تەلەفۆن بە سەرکەوتوویی پشتڕاست کرا';
+
+  @override
+  String get verifyPhoneDialogTitle => 'پشتڕاستکردنەوەی تەلەفۆن';
+
+  @override
+  String verifyPhoneDialogMessage(Object phone) {
+    return 'کۆدێکی ٦ ژمارە دەنێردرێت بۆ $phone.';
+  }
+
+  @override
+  String get sixDigitCodeLabel => 'کۆدی ٦ ژمارە';
+
+  @override
+  String get sendCodeButton => 'ناردنی کۆد';
 }

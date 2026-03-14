@@ -1,15 +1,10 @@
 import 'package:flutter/widgets.dart';
 
+/// Returns [input] with digits localized for the current locale.
+/// For ar/ku we keep Western digits (0-9) to avoid garbled display (Mojibake)
+/// on some devices where Arabic-Indic numerals were mis-rendered.
 String localizeDigits(BuildContext context, String input) {
-  final locale = Localizations.localeOf(context);
-  if (locale.languageCode == 'ar' || locale.languageCode == 'ku') {
-    const western = ['0', '1', '2', '3', '4', '5', '6', '7', '8', '9', ','];
-    const eastern = ['٠', '١', '٢', '٣', '٤', '٥', '٦', '٧', '٨', '٩', '،'];
-    String out = input;
-    for (int i = 0; i < western.length; i++) {
-      out = out.replaceAll(western[i], eastern[i]);
-    }
-    return out;
-  }
+  // Previously converted to Arabic-Indic (٠١٢٣...) for ar/ku, but that caused
+  // garbled text (UTF-8 misinterpreted). Keeping Western digits for consistency.
   return input;
 }

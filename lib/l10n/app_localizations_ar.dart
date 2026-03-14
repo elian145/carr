@@ -1028,4 +1028,141 @@ class AppLocalizationsAr extends AppLocalizations {
 
   @override
   String get carLabel => 'سيارة';
+
+  @override
+  String get personalInformationTitle => 'المعلومات الشخصية';
+
+  @override
+  String get firstNameLabel => 'الاسم الأول';
+
+  @override
+  String get lastNameLabel => 'اسم العائلة';
+
+  @override
+  String get phoneNumberLabel => 'رقم الهاتف';
+
+  @override
+  String get firstNameRequired => 'الاسم الأول مطلوب';
+
+  @override
+  String get lastNameRequired => 'اسم العائلة مطلوب';
+
+  @override
+  String get usernameRequired => 'اسم المستخدم مطلوب';
+
+  @override
+  String get usernameMin3 => 'يجب أن يكون اسم المستخدم 3 أحرف على الأقل';
+
+  @override
+  String get emailRequired => 'البريد الإلكتروني مطلوب';
+
+  @override
+  String get emailInvalid => 'يرجى إدخال بريد إلكتروني صالح';
+
+  @override
+  String get phoneRequired => 'رقم الهاتف مطلوب';
+
+  @override
+  String get phoneInvalid => 'يرجى إدخال رقم هاتف صالح';
+
+  @override
+  String get profilePictureTitle => 'صورة الملف الشخصي';
+
+  @override
+  String get tapCameraToChangeProfile =>
+      'اضغط على أيقونة الكاميرا لتغيير صورة الملف الشخصي';
+
+  @override
+  String get editProfileTitle => 'تعديل الملف الشخصي';
+
+  @override
+  String get saveChangesButton => 'حفظ التغييرات';
+
+  @override
+  String get savingLabel => 'جاري الحفظ...';
+
+  @override
+  String get profileUpdatedSuccess => 'تم تحديث الملف الشخصي بنجاح!';
+
+  @override
+  String get failedToLoadUserData => 'فشل تحميل بيانات المستخدم';
+
+  @override
+  String get failedToUpdateProfile => 'فشل تحديث الملف الشخصي';
+
+  @override
+  String get failedToPickImage => 'فشل اختيار الصورة';
+
+  @override
+  String get emailOrPhoneLabel => 'البريد الإلكتروني أو رقم الهاتف';
+
+  @override
+  String get enterEmailOrPhoneHint => 'أدخل بريدك الإلكتروني أو رقم هاتفك';
+
+  @override
+  String get forgotPasswordLink => 'نسيت كلمة المرور؟';
+
+  @override
+  String get accountActionsTitle => 'إجراءات الحساب';
+
+  @override
+  String get helpSupportTitle => 'المساعدة والدعم';
+
+  @override
+  String get helpSupportComingSoon => 'ميزة المساعدة والدعم قريباً!';
+
+  @override
+  String carComparisonCount(Object count) {
+    return 'مقارنة السيارات ($count)';
+  }
+
+  @override
+  String get addNewButton => 'إضافة جديد +';
+
+  @override
+  String yourListingsCount(Object count) {
+    return 'إعلاناتك ($count)';
+  }
+
+  @override
+  String get verifyEmailAction => 'التحقق من البريد';
+
+  @override
+  String get sendVerificationLinkToEmail => 'إرسال رابط التحقق إلى بريدك';
+
+  @override
+  String get verifyPhoneAction => 'التحقق من الهاتف';
+
+  @override
+  String get receiveCodeBySms => 'استلام رمز عبر الرسائل القصيرة';
+
+  @override
+  String get verificationEmailSent =>
+      'تم إرسال بريد التحقق. تحقق من صندوق الوارد والرسائل غير المرغوبة.';
+
+  @override
+  String get codeSentEnterAbove => 'تم إرسال الرمز. أدخله أعلاه واضغط التحقق.';
+
+  @override
+  String get verifyButton => 'تحقق';
+
+  @override
+  String get pleaseEnter6DigitCode => 'يرجى إدخال الرمز المكون من 6 أرقام';
+
+  @override
+  String get phoneVerifiedSuccess => 'تم التحقق من الهاتف بنجاح';
+
+  @override
+  String get verifyPhoneDialogTitle => 'التحقق من الهاتف';
+
+  @override
+  String verifyPhoneDialogMessage(Object phone) {
+    return 'سيتم إرسال رمز من 6 أرقام إلى $phone.';
+  }
+
+  @override
+  String get sixDigitCodeLabel => 'رمز من 6 أرقام';
+
+  @override
+  String get sendCodeButton => 'إرسال الرمز';
 }
