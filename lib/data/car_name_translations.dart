@@ -8345,7 +8345,7 @@ class CarNameTranslations {
     final locModel = getLocalizedModel(context, brand.isEmpty ? null : brand, model.isEmpty ? null : model);
     final parts = <String>[locBrand, locModel];
     if (trim != null && trim.isNotEmpty) {
-      parts.add(getLocalizedTrim(context, trim));
+      parts.add(trim);
     }
     var title = parts.join(' ').trim();
     if (year != null && year.isNotEmpty) {

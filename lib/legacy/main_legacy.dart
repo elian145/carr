@@ -857,9 +857,7 @@ String _localizedCarTitleForCard(BuildContext context, Map car) {
   );
   final trim = car['trim']?.toString().trim();
   if (trim != null && trim.isNotEmpty) {
-    final t = CarNameTranslations.getLocalizedTrim(context, trim);
-    final t2 = (t != trim) ? t : (_translateValueGlobal(context, trim) ?? trim);
-    title = '$title $t2'.trim();
+    title = '$title $trim'.trim();
   }
   return title.isEmpty ? (car['title']?.toString() ?? '') : title;
 }
@@ -4929,9 +4927,7 @@ class _HomePageState extends State<HomePage> {
       chips.add(
         _buildFilterChip(
           AppLocalizations.of(context)!.trimLabel,
-          CarNameTranslations.getLocalizedTrim(context, selectedTrim).isNotEmpty
-              ? CarNameTranslations.getLocalizedTrim(context, selectedTrim)
-              : selectedTrim!,
+          selectedTrim!,
           'trim',
           Icons.settings,
           Color(0xFFFF6B00),
@@ -5857,9 +5853,7 @@ class _HomePageState extends State<HomePage> {
                                                 (t) => DropdownMenuItem(
                                                   value: t,
                                                   child: Text(
-                                                    CarNameTranslations.getLocalizedTrim(context, t).isNotEmpty
-                                                        ? CarNameTranslations.getLocalizedTrim(context, t)
-                                                        : t,
+                                                    t,
                                                     style: GoogleFonts.orbitron(
                                                       fontSize: 14,
                                                     ),
@@ -10169,8 +10163,7 @@ class _CarDetailsPageState extends State<CarDetailsPage> {
     if (locBrand.isNotEmpty) parts.add(locBrand);
     if (locModel.isNotEmpty) parts.add(locModel);
     if (trim.isNotEmpty && trim.toLowerCase() != 'base') {
-      final t = CarNameTranslations.getLocalizedTrim(context, trim);
-      parts.add((t != trim) ? t : (_translateValueGlobal(context, trim) ?? trim));
+      parts.add(trim);
     }
     if (year.isNotEmpty) parts.add(year);
     final title = parts.join(' ').trim();
@@ -12037,9 +12030,7 @@ class _SellStep1PageState extends State<SellStep1Page> {
                                 ? CarNameTranslations.getLocalizedModel(context, contextBrand, value)
                                 : value;
                           } else if (lowerTitle.contains('trim')) {
-                            displayText = CarNameTranslations.getLocalizedTrim(context, value).isNotEmpty
-                                ? CarNameTranslations.getLocalizedTrim(context, value)
-                                : value;
+                            displayText = value;
                           } else if (lowerTitle.contains('brand')) {
                             displayText = CarNameTranslations.getLocalizedBrand(context, value).isNotEmpty
                                 ? CarNameTranslations.getLocalizedBrand(context, value)
@@ -12391,11 +12382,7 @@ class _SellStep1PageState extends State<SellStep1Page> {
                   context,
                   icon: Icons.settings,
                   label: '${AppLocalizations.of(context)!.trimLabel} *',
-                  value: selectedTrim != null
-                      ? (CarNameTranslations.getLocalizedTrim(context, selectedTrim).isNotEmpty
-                          ? CarNameTranslations.getLocalizedTrim(context, selectedTrim)
-                          : selectedTrim)
-                      : selectedTrim,
+                  value: selectedTrim,
                   isError:
                       errTrim &&
                       (selectedTrim == null || selectedTrim!.isEmpty),
@@ -17704,11 +17691,7 @@ Widget build(BuildContext context) {
                       errorText: state.errorText,
                     ),
                     child: Text(
-                      selectedTrim != null
-                          ? (CarNameTranslations.getLocalizedTrim(context, selectedTrim).isNotEmpty
-                              ? CarNameTranslations.getLocalizedTrim(context, selectedTrim)
-                              : selectedTrim!)
-                          : AppLocalizations.of(context)!.anyOption,
+                      selectedTrim ?? AppLocalizations.of(context)!.anyOption,
                       style: TextStyle(color: selectedTrim == null ? Colors.grey : Colors.white),
                     ),
                   ),
