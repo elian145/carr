@@ -851,12 +851,15 @@ String? _translateValueGlobal(BuildContext context, String? raw) {
 
 /// Localized car title for cards: brand + model + trim (translated), no year.
 String _localizedCarTitleForCard(BuildContext context, Map car) {
-  var title = CarNameTranslations.getLocalizedCarTitleNoYear(context, car);
+  var title = CarNameTranslations.getLocalizedCarTitleNoYear(
+    context,
+    Map<String, dynamic>.from(car),
+  );
   final trim = car['trim']?.toString().trim();
   if (trim != null && trim.isNotEmpty) {
-    final t = _translateValueGlobal(context, trim);
-    if (t != null && t != trim) title = '$title $t'.trim();
-    else title = '$title $trim'.trim();
+    final t = CarNameTranslations.getLocalizedTrim(context, trim);
+    final t2 = (t != trim) ? t : (_translateValueGlobal(context, trim) ?? trim);
+    title = '$title $t2'.trim();
   }
   return title.isEmpty ? (car['title']?.toString() ?? '') : title;
 }
@@ -10152,7 +10155,8 @@ class _CarDetailsPageState extends State<CarDetailsPage> {
     if (locBrand.isNotEmpty) parts.add(locBrand);
     if (locModel.isNotEmpty) parts.add(locModel);
     if (trim.isNotEmpty && trim.toLowerCase() != 'base') {
-      parts.add(_translateValueGlobal(context, trim) ?? trim);
+      final t = CarNameTranslations.getLocalizedTrim(context, trim);
+      parts.add((t != trim) ? t : (_translateValueGlobal(context, trim) ?? trim));
     }
     if (year.isNotEmpty) parts.add(year);
     final title = parts.join(' ').trim();
