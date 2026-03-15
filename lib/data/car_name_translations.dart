@@ -8305,6 +8305,46 @@ class CarNameTranslations {
 
   static String _key(String? s) => (s ?? '').trim().toLowerCase();
 
+  /// True if token is a short alphanumeric code (e.g. X7, M5, X80, iX, 350, 4Runner) to keep in English.
+  static bool _isCodeLike(String token) {
+    final t = token.trim();
+    if (t.isEmpty) return true;
+    if (!RegExp(r'^[a-zA-Z0-9\-\.]+$').hasMatch(t)) return false;
+    if (t.length <= 3) return true;
+    if (RegExp(r'\d').hasMatch(t) && t.length <= 8) return true;
+    return false;
+  }
+
+  static const Map<String, String> _latinToAr = {
+    'a': 'ا', 'b': 'ب', 'c': 'ك', 'd': 'د', 'e': 'ي', 'f': 'ف', 'g': 'ج', 'h': 'ه',
+    'i': 'ي', 'j': 'ج', 'k': 'ك', 'l': 'ل', 'm': 'م', 'n': 'ن', 'o': 'و', 'p': 'ب',
+    'q': 'ك', 'r': 'ر', 's': 'س', 't': 'ت', 'u': 'و', 'v': 'ف', 'w': 'و', 'x': 'كس',
+    'y': 'ي', 'z': 'ز',
+  };
+  static const Map<String, String> _latinToKu = {
+    'a': 'ا', 'b': 'ب', 'c': 'ک', 'd': 'د', 'e': 'ێ', 'f': 'ف', 'g': 'گ', 'h': 'ه',
+    'i': 'ی', 'j': 'ژ', 'k': 'ک', 'l': 'ڵ', 'm': 'م', 'n': 'ن', 'o': 'ۆ', 'p': 'پ',
+    'q': 'ک', 'r': 'ڕ', 's': 'س', 't': 'ت', 'u': 'و', 'v': 'ڤ', 'w': 'و', 'x': 'کس',
+    'y': 'ی', 'z': 'ز',
+  };
+
+  static String _transliterateToken(String token, bool isAr) {
+    final map = isAr ? _latinToAr : _latinToKu;
+    final out = StringBuffer();
+    for (var i = 0; i < token.length; i++) {
+      final ch = token[i];
+      final c = ch.toLowerCase();
+      if (map.containsKey(c)) {
+        out.write(map[c]);
+      } else if (RegExp(r'[0-9\-.]').hasMatch(ch)) {
+        out.write(ch);
+      } else {
+        out.write(ch);
+      }
+    }
+    return out.toString();
+  }
+
   static String getLocalizedBrand(BuildContext context, String? brand) {
     if (brand == null || brand.isEmpty) return '';
     final k = _key(brand);
@@ -8316,11 +8356,27 @@ class CarNameTranslations {
 
   static String getLocalizedModel(BuildContext context, String? brand, String? model) {
     if (model == null || model.isEmpty) return '';
-    final key = '${_key(brand)}|${_key(model)}';
     final locale = Localizations.localeOf(context).languageCode;
-    if (locale == 'ar') return _modelAr[key] ?? model;
-    if (locale == 'ku') return _modelKu[key] ?? model;
-    return model;
+    if (locale != 'ar' && locale != 'ku') return model;
+
+    final key = '${_key(brand)}|${_key(model)}';
+    final isAr = locale == 'ar';
+    final existing = isAr ? _modelAr[key] : _modelKu[key];
+    if (existing != null && existing.isNotEmpty) return existing;
+
+    final tokens = model.split(RegExp(r'\s+'));
+    final parts = <String>[];
+    for (final token in tokens) {
+      if (token.isEmpty) continue;
+      if (_isCodeLike(token)) {
+        parts.add(token);
+      } else {
+        final singleKey = '${_key(brand)}|${_key(token)}';
+        final singleTr = isAr ? _modelAr[singleKey] : _modelKu[singleKey];
+        parts.add((singleTr != null && singleTr.isNotEmpty) ? singleTr : _transliterateToken(token, isAr));
+      }
+    }
+    return parts.join(' ').trim().isEmpty ? model : parts.join(' ').trim();
   }
 
   /// Returns localized trim name for current locale, or original if not found.
