@@ -42,6 +42,7 @@ import '../pages/reset_password_page.dart';
 import '../pages/verify_email_page.dart';
 import '../features/comparison/state/car_comparison_store.dart';
 import '../data/car_catalog.dart';
+import '../data/car_name_translations.dart';
 
 // Sideload build flag to disable services that require entitlements on iOS
 const bool kSideloadBuild = bool.fromEnvironment(
@@ -848,6 +849,18 @@ String? _translateValueGlobal(BuildContext context, String? raw) {
   return raw;
 }
 
+/// Localized car title for cards: brand + model + trim (translated), no year.
+String _localizedCarTitleForCard(BuildContext context, Map car) {
+  var title = CarNameTranslations.getLocalizedCarTitleNoYear(context, car);
+  final trim = car['trim']?.toString().trim();
+  if (trim != null && trim.isNotEmpty) {
+    final t = _translateValueGlobal(context, trim);
+    if (t != null && t != trim) title = '$title $t'.trim();
+    else title = '$title $trim'.trim();
+  }
+  return title.isEmpty ? (car['title']?.toString() ?? '') : title;
+}
+
 // Global car card building function to ensure consistency across all pages
 Widget buildGlobalCarCard(BuildContext context, Map car) {
   final brand = car['brand'] ?? '';
@@ -986,7 +999,7 @@ Widget buildGlobalCarCard(BuildContext context, Map car) {
                         SizedBox(width: 8),
                         Expanded(
                           child: Text(
-                            car['title'] ?? '',
+                            _localizedCarTitleForCard(context, car),
                             style: TextStyle(
                               fontWeight: FontWeight.bold,
                               color: Color(0xFFFF6B00),
@@ -10126,23 +10139,24 @@ class _CarDetailsPageState extends State<CarDetailsPage> {
   final PageController _imagePageController = PageController();
   int _currentImageIndex = 0;
 
-  String _displayCarTitle() {
+  String _displayCarTitle(BuildContext context) {
     if (car == null) return '';
-    final raw = (car!['title'] ?? '').toString().trim();
-    if (raw.isNotEmpty && raw.toLowerCase() != 'null') return raw;
-
     final brand = (car!['brand'] ?? '').toString().trim();
     final model = (car!['model'] ?? '').toString().trim();
     final year = (car!['year'] ?? '').toString().trim();
     final trim = (car!['trim'] ?? '').toString().trim();
 
-    // Prefer: Brand Model Year, falling back to whatever is available.
+    final locBrand = CarNameTranslations.getLocalizedBrand(context, brand.isEmpty ? null : brand);
+    final locModel = CarNameTranslations.getLocalizedModel(context, brand.isEmpty ? null : brand, model.isEmpty ? null : model);
     final parts = <String>[];
-    if (brand.isNotEmpty) parts.add(brand);
-    if (model.isNotEmpty) parts.add(model);
-    if (trim.isNotEmpty && trim.toLowerCase() != 'base') parts.add(trim);
+    if (locBrand.isNotEmpty) parts.add(locBrand);
+    if (locModel.isNotEmpty) parts.add(locModel);
+    if (trim.isNotEmpty && trim.toLowerCase() != 'base') {
+      parts.add(_translateValueGlobal(context, trim) ?? trim);
+    }
     if (year.isNotEmpty) parts.add(year);
-    return parts.join(' ').trim();
+    final title = parts.join(' ').trim();
+    return title.isNotEmpty ? title : ((car!['title'] ?? '').toString().trim());
   }
 
   Future<void> _loadFavoriteStatus() async {
@@ -10361,15 +10375,13 @@ class _CarDetailsPageState extends State<CarDetailsPage> {
     try {
       if (car == null) return;
 
-      final String title = _displayCarTitle().isNotEmpty
-          ? _displayCarTitle()
+      final String title = _displayCarTitle(context).isNotEmpty
+          ? _displayCarTitle(context)
           : 'Car Listing';
-      final String brand = car!['brand']?.toString() ?? '';
-      final String model = car!['model']?.toString() ?? '';
       final String year = car!['year']?.toString() ?? '';
       final String price = car!['price']?.toString() ?? '';
 
-      final String shareText = '$title - $brand $model ($year) - \$$price';
+      final String shareText = '$title ($year) - \$$price';
 
       await Share.share(shareText);
 
@@ -10679,7 +10691,7 @@ class _CarDetailsPageState extends State<CarDetailsPage> {
                           ),
                         // Title and price moved below the image header
                         Text(
-                          _displayCarTitle(),
+                          _displayCarTitle(context),
                           style: TextStyle(
                             fontSize: 22,
                             fontWeight: FontWeight.bold,
@@ -10726,7 +10738,7 @@ class _CarDetailsPageState extends State<CarDetailsPage> {
                                   '',
                                 );
                                 final String msg = Uri.encodeComponent(
-                                  'Hi, I am interested in your ${_displayCarTitle().isNotEmpty ? _displayCarTitle() : 'car'}',
+                                  'Hi, I am interested in your ${_displayCarTitle(context).isNotEmpty ? _displayCarTitle(context) : 'car'}',
                                 );
 
                                 final Uri waApp = Uri.parse(
@@ -16979,7 +16991,10 @@ class CarComparisonPage extends StatelessWidget {
                                                             headerTitleHeight,
                                                         child: Center(
                                                           child: Text(
-                                                            car['title'] ?? '',
+                                                            _localizedCarTitleForCard(
+                                                              context,
+                                                              car,
+                                                            ),
                                                             style: TextStyle(
                                                               fontWeight:
                                                                   FontWeight
@@ -18945,18 +18960,10 @@ class _FavoritesPageState extends State<FavoritesPage> {
                   final String carId = (car['public_id'] ?? car['id'] ?? '')
                       .toString();
 
-                  String title = (car['title']?.toString() ?? '').trim();
-                  if (title.isEmpty) {
-                    final brand = (car['brand'] ?? '').toString().trim();
-                    final model = (car['model'] ?? '').toString().trim();
-                    final year = (car['year'] ?? '').toString().trim();
-                    final pieces = [
-                      brand,
-                      model,
-                      year,
-                    ].where((s) => s.isNotEmpty).toList();
-                    title = pieces.join(' ');
-                  }
+                  String title = _localizedCarTitleForCard(context, car);
+                  final year = (car['year'] ?? '').toString().trim();
+                  if (year.isNotEmpty) title = '$title $year'.trim();
+                  if (title.isEmpty) title = (car['title']?.toString() ?? '').trim();
 
                   String imageUrl = (car['image_url']?.toString() ?? '').trim();
                   if (imageUrl.isEmpty && car['images'] is List) {
