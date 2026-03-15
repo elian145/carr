@@ -8305,13 +8305,14 @@ class CarNameTranslations {
 
   static String _key(String? s) => (s ?? '').trim().toLowerCase();
 
-  /// True if token is a short alphanumeric code (e.g. X7, M5, X80, iX, 350, 4Runner) to keep in English.
+  /// True if token is a short alphanumeric code to keep in English: has a digit (X7, M5, X80, 4Runner)
+  /// or is very short letters only (iX, RX, M). Words like Land, Santa, Bestune are false.
   static bool _isCodeLike(String token) {
     final t = token.trim();
     if (t.isEmpty) return true;
     if (!RegExp(r'^[a-zA-Z0-9\-\.]+$').hasMatch(t)) return false;
-    if (t.length <= 3) return true;
     if (RegExp(r'\d').hasMatch(t) && t.length <= 8) return true;
+    if (t.length <= 2 && RegExp(r'^[A-Za-z]+$').hasMatch(t)) return true;
     return false;
   }
 
@@ -8359,15 +8360,18 @@ class CarNameTranslations {
     final locale = Localizations.localeOf(context).languageCode;
     if (locale != 'ar' && locale != 'ku') return model;
 
+    final tokens = model.split(RegExp(r'\s+')).where((t) => t.isNotEmpty).toList();
+    if (tokens.isEmpty) return model;
+
+    if (tokens.every((t) => _isCodeLike(t))) return model;
+
     final key = '${_key(brand)}|${_key(model)}';
     final isAr = locale == 'ar';
     final existing = isAr ? _modelAr[key] : _modelKu[key];
     if (existing != null && existing.isNotEmpty) return existing;
 
-    final tokens = model.split(RegExp(r'\s+'));
     final parts = <String>[];
     for (final token in tokens) {
-      if (token.isEmpty) continue;
       if (_isCodeLike(token)) {
         parts.add(token);
       } else {
