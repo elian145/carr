@@ -1924,7 +1924,9 @@ class _SearchDialogState extends State<_SearchDialog> {
             ),
           ),
           title: Text(
-            brand,
+            CarNameTranslations.getLocalizedBrand(context, brand).isNotEmpty
+                ? CarNameTranslations.getLocalizedBrand(context, brand)
+                : brand,
             style: TextStyle(
               color: Colors.white,
               fontSize: 16,
@@ -1979,7 +1981,7 @@ class _SearchDialogState extends State<_SearchDialog> {
             ),
           ),
           title: Text(
-            '$brand $model',
+            '${CarNameTranslations.getLocalizedBrand(context, brand).isNotEmpty ? CarNameTranslations.getLocalizedBrand(context, brand) : brand} ${CarNameTranslations.getLocalizedModel(context, brand, model).isNotEmpty ? CarNameTranslations.getLocalizedModel(context, brand, model) : model}',
             style: TextStyle(
               color: Colors.white,
               fontSize: 16,
@@ -1987,7 +1989,9 @@ class _SearchDialogState extends State<_SearchDialog> {
             ),
           ),
           subtitle: Text(
-            brand,
+            CarNameTranslations.getLocalizedBrand(context, brand).isNotEmpty
+                ? CarNameTranslations.getLocalizedBrand(context, brand)
+                : brand,
             style: TextStyle(color: Colors.grey[400], fontSize: 14),
           ),
           onTap: () => widget.onModelSelected(brand, model),
@@ -4895,7 +4899,9 @@ class _HomePageState extends State<HomePage> {
       chips.add(
         _buildFilterChip(
           AppLocalizations.of(context)!.brandLabel,
-          _translateValueGlobal(context, selectedBrand) ?? selectedBrand!,
+          CarNameTranslations.getLocalizedBrand(context, selectedBrand).isNotEmpty
+              ? CarNameTranslations.getLocalizedBrand(context, selectedBrand)
+              : selectedBrand!,
           'brand',
           Icons.directions_car,
           Color(0xFFFF6B00),
@@ -4908,7 +4914,9 @@ class _HomePageState extends State<HomePage> {
       chips.add(
         _buildFilterChip(
           AppLocalizations.of(context)!.modelLabel,
-          _translateValueGlobal(context, selectedModel) ?? selectedModel!,
+          CarNameTranslations.getLocalizedModel(context, selectedBrand, selectedModel).isNotEmpty
+              ? CarNameTranslations.getLocalizedModel(context, selectedBrand, selectedModel)
+              : selectedModel!,
           'model',
           Icons.directions_car,
           Color(0xFFFF6B00),
@@ -4921,7 +4929,9 @@ class _HomePageState extends State<HomePage> {
       chips.add(
         _buildFilterChip(
           AppLocalizations.of(context)!.trimLabel,
-          _translateValueGlobal(context, selectedTrim) ?? selectedTrim!,
+          CarNameTranslations.getLocalizedTrim(context, selectedTrim).isNotEmpty
+              ? CarNameTranslations.getLocalizedTrim(context, selectedTrim)
+              : selectedTrim!,
           'trim',
           Icons.settings,
           Color(0xFFFF6B00),
@@ -5548,7 +5558,9 @@ class _HomePageState extends State<HomePage> {
                                                                     height: 4,
                                                                   ),
                                                                   Text(
-                                                                    brand,
+                                                                    CarNameTranslations.getLocalizedBrand(context, brand).isNotEmpty
+                                                                        ? CarNameTranslations.getLocalizedBrand(context, brand)
+                                                                        : brand,
                                                                     style: GoogleFonts.orbitron(
                                                                       fontSize:
                                                                           10,
@@ -5673,7 +5685,9 @@ class _HomePageState extends State<HomePage> {
                                                     ? AppLocalizations.of(
                                                         context,
                                                       )!.any
-                                                    : selectedBrand!,
+                                                    : (CarNameTranslations.getLocalizedBrand(context, selectedBrand).isNotEmpty
+                                                        ? CarNameTranslations.getLocalizedBrand(context, selectedBrand)
+                                                        : selectedBrand!),
                                                 style: GoogleFonts.orbitron(
                                                   fontSize: 14,
                                                   color: Colors.white,
@@ -5750,11 +5764,9 @@ class _HomePageState extends State<HomePage> {
                                                 (m) => DropdownMenuItem(
                                                   value: m,
                                                   child: Text(
-                                                    _translateValueGlobal(
-                                                          context,
-                                                          m,
-                                                        ) ??
-                                                        m,
+                                                    CarNameTranslations.getLocalizedModel(context, selectedBrand, m).isNotEmpty
+                                                        ? CarNameTranslations.getLocalizedModel(context, selectedBrand, m)
+                                                        : m,
                                                     style: GoogleFonts.orbitron(
                                                       fontSize: 14,
                                                     ),
@@ -5845,7 +5857,9 @@ class _HomePageState extends State<HomePage> {
                                                 (t) => DropdownMenuItem(
                                                   value: t,
                                                   child: Text(
-                                                    t,
+                                                    CarNameTranslations.getLocalizedTrim(context, t).isNotEmpty
+                                                        ? CarNameTranslations.getLocalizedTrim(context, t)
+                                                        : t,
                                                     style: GoogleFonts.orbitron(
                                                       fontSize: 14,
                                                     ),
@@ -11934,7 +11948,7 @@ class _SellStep1PageState extends State<SellStep1Page> {
     FocusScope.of(context).unfocus();
   }
 
-  Future<String?> _pickFromList(String title, List<String> options) async {
+  Future<String?> _pickFromList(String title, List<String> options, {String? contextBrand}) async {
     services.HapticFeedback.selectionClick();
     return await showGeneralDialog<String>(
       context: context,
@@ -12018,6 +12032,18 @@ class _SellStep1PageState extends State<SellStep1Page> {
                                 '${_localizeDigitsGlobal(context, value)} L';
                           } else if (value == 'Any') {
                             displayText = AppLocalizations.of(context)!.anyOption;
+                          } else if (lowerTitle.contains('model') && contextBrand != null) {
+                            displayText = CarNameTranslations.getLocalizedModel(context, contextBrand, value).isNotEmpty
+                                ? CarNameTranslations.getLocalizedModel(context, contextBrand, value)
+                                : value;
+                          } else if (lowerTitle.contains('trim')) {
+                            displayText = CarNameTranslations.getLocalizedTrim(context, value).isNotEmpty
+                                ? CarNameTranslations.getLocalizedTrim(context, value)
+                                : value;
+                          } else if (lowerTitle.contains('brand')) {
+                            displayText = CarNameTranslations.getLocalizedBrand(context, value).isNotEmpty
+                                ? CarNameTranslations.getLocalizedBrand(context, value)
+                                : value;
                           } else {
                             final translated = _translateValueGlobal(
                               context,
@@ -12169,7 +12195,9 @@ class _SellStep1PageState extends State<SellStep1Page> {
                               ),
                               SizedBox(height: 4),
                               Text(
-                                brand,
+                                CarNameTranslations.getLocalizedBrand(context, brand).isNotEmpty
+                                    ? CarNameTranslations.getLocalizedBrand(context, brand)
+                                    : brand,
                                 style: TextStyle(
                                   fontSize: 10,
                                   color: Colors.white,
@@ -12275,7 +12303,11 @@ class _SellStep1PageState extends State<SellStep1Page> {
                 child: buildFancySelector(
                   context,
                   label: '${AppLocalizations.of(context)!.brandLabel} *',
-                  value: selectedBrand,
+                  value: selectedBrand != null
+                      ? (CarNameTranslations.getLocalizedBrand(context, selectedBrand).isNotEmpty
+                          ? CarNameTranslations.getLocalizedBrand(context, selectedBrand)
+                          : selectedBrand)
+                      : selectedBrand,
                   isError:
                       errBrand &&
                       (selectedBrand == null || selectedBrand!.isEmpty),
@@ -12316,7 +12348,7 @@ class _SellStep1PageState extends State<SellStep1Page> {
                   _dismissKeyboard();
                   if (selectedBrand == null) return;
                   final options = models[selectedBrand!] ?? [];
-                  final choice = await _pickFromList(AppLocalizations.of(context)!.modelLabel, options);
+                  final choice = await _pickFromList(AppLocalizations.of(context)!.modelLabel, options, contextBrand: selectedBrand);
                   if (choice != null) {
                     setState(() {
                       selectedModel = choice;
@@ -12328,9 +12360,11 @@ class _SellStep1PageState extends State<SellStep1Page> {
                   context,
                   icon: Icons.directions_car,
                   label: '${AppLocalizations.of(context)!.modelLabel} *',
-                  value:
-                      selectedModel ??
-                      (selectedBrand == null ? AppLocalizations.of(context)!.selectBrandFirst : ''),
+                  value: selectedModel != null
+                      ? (CarNameTranslations.getLocalizedModel(context, selectedBrand, selectedModel).isNotEmpty
+                          ? CarNameTranslations.getLocalizedModel(context, selectedBrand, selectedModel)
+                          : selectedModel)
+                      : (selectedBrand == null ? AppLocalizations.of(context)!.selectBrandFirst : ''),
                   isError:
                       errModel &&
                       (selectedModel == null || selectedModel!.isEmpty),
@@ -12357,7 +12391,11 @@ class _SellStep1PageState extends State<SellStep1Page> {
                   context,
                   icon: Icons.settings,
                   label: '${AppLocalizations.of(context)!.trimLabel} *',
-                  value: selectedTrim,
+                  value: selectedTrim != null
+                      ? (CarNameTranslations.getLocalizedTrim(context, selectedTrim).isNotEmpty
+                          ? CarNameTranslations.getLocalizedTrim(context, selectedTrim)
+                          : selectedTrim)
+                      : selectedTrim,
                   isError:
                       errTrim &&
                       (selectedTrim == null || selectedTrim!.isEmpty),
@@ -17617,7 +17655,12 @@ Widget build(BuildContext context) {
                               ),
                             ),
                             SizedBox(width: 8),
-                            Text(selectedBrand!, style: TextStyle(fontWeight: FontWeight.bold)),
+                            Text(
+                              CarNameTranslations.getLocalizedBrand(context, selectedBrand).isNotEmpty
+                                  ? CarNameTranslations.getLocalizedBrand(context, selectedBrand)
+                                  : selectedBrand!,
+                              style: TextStyle(fontWeight: FontWeight.bold),
+                            ),
                           ],
                         )
                       else
@@ -17638,7 +17681,11 @@ Widget build(BuildContext context) {
                       errorText: state.errorText,
                     ),
                     child: Text(
-                      selectedModel ?? AppLocalizations.of(context)!.tapToSelectBrand,
+                      selectedModel != null
+                          ? (CarNameTranslations.getLocalizedModel(context, selectedBrand, selectedModel).isNotEmpty
+                              ? CarNameTranslations.getLocalizedModel(context, selectedBrand, selectedModel)
+                              : selectedModel!)
+                          : AppLocalizations.of(context)!.tapToSelectBrand,
                       style: TextStyle(color: selectedModel == null ? Colors.grey : Colors.white),
                     ),
                   ),
@@ -17657,7 +17704,11 @@ Widget build(BuildContext context) {
                       errorText: state.errorText,
                     ),
                     child: Text(
-                      selectedTrim ?? AppLocalizations.of(context)!.anyOption,
+                      selectedTrim != null
+                          ? (CarNameTranslations.getLocalizedTrim(context, selectedTrim).isNotEmpty
+                              ? CarNameTranslations.getLocalizedTrim(context, selectedTrim)
+                              : selectedTrim!)
+                          : AppLocalizations.of(context)!.anyOption,
                       style: TextStyle(color: selectedTrim == null ? Colors.grey : Colors.white),
                     ),
                   ),
