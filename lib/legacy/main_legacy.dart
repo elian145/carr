@@ -11995,6 +11995,10 @@ class _SellStep1PageState extends State<SellStep1Page> {
                         itemBuilder: (context, index) {
                           final value = options[index];
                           final lowerTitle = title.toLowerCase();
+                          final loc = AppLocalizations.of(context)!;
+                          final isModelTitle = title == loc.modelLabel;
+                          final isTrimTitle = title == loc.trimLabel;
+                          final isBrandTitle = title == loc.brandLabel;
                           String displayText = value;
                           final bool isNumeric = RegExp(
                             r'^[0-9]+(\.[0-9]+)?$',
@@ -12025,13 +12029,13 @@ class _SellStep1PageState extends State<SellStep1Page> {
                                 '${_localizeDigitsGlobal(context, value)} L';
                           } else if (value == 'Any') {
                             displayText = AppLocalizations.of(context)!.anyOption;
-                          } else if (lowerTitle.contains('model') && contextBrand != null) {
+                          } else if (isModelTitle && contextBrand != null) {
                             displayText = CarNameTranslations.getLocalizedModel(context, contextBrand, value).isNotEmpty
                                 ? CarNameTranslations.getLocalizedModel(context, contextBrand, value)
                                 : value;
-                          } else if (lowerTitle.contains('trim')) {
+                          } else if (isTrimTitle) {
                             displayText = value;
-                          } else if (lowerTitle.contains('brand')) {
+                          } else if (isBrandTitle) {
                             displayText = CarNameTranslations.getLocalizedBrand(context, value).isNotEmpty
                                 ? CarNameTranslations.getLocalizedBrand(context, value)
                                 : value;
