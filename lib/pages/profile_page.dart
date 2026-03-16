@@ -224,7 +224,9 @@ class _ProfilePageState extends State<ProfilePage> {
     final user = auth.currentUser;
     final username = (user?['username'] ?? '').toString();
     final email = (user?['email'] ?? '').toString();
-    final phone = (user?['phone_number'] ?? '').toString();
+    final phone = (user?['phone_number'] ?? user?['phone'] ?? '').toString();
+    final realEmail = email.isNotEmpty && !email.endsWith('@phone.local');
+    final primaryContact = realEmail ? email : (phone.isNotEmpty ? phone : email);
     final isVerified = user?['is_verified'] == true;
     final firstName = (user?['first_name'] ?? '').toString();
     final lastName = (user?['last_name'] ?? '').toString();
@@ -308,11 +310,11 @@ class _ProfilePageState extends State<ProfilePage> {
                                   const SizedBox(height: 2),
                                   Text('@$username'),
                                 ],
-                                if (email.isNotEmpty) ...[
+                                if (primaryContact.isNotEmpty) ...[
                                   const SizedBox(height: 2),
-                                  Text(email),
+                                  Text(primaryContact),
                                 ],
-                                if (phone.isNotEmpty) ...[
+                                if (realEmail && phone.isNotEmpty) ...[
                                   const SizedBox(height: 2),
                                   Text(phone),
                                 ],
@@ -353,7 +355,7 @@ class _ProfilePageState extends State<ProfilePage> {
                           title: Text(loc?.myListingsTitle ?? 'My listings'),
                           onTap: () => Navigator.pushNamed(context, '/my_listings'),
                         ),
-                        if (!isVerified && (email.isNotEmpty || phone.isNotEmpty)) ...[
+                        if (!isVerified && (realEmail || phone.isNotEmpty)) ...[
                           const Divider(height: 1),
                           if (email.isNotEmpty && !email.endsWith('@phone.local'))
                             ListTile(

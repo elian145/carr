@@ -20162,7 +20162,12 @@ class _ProfilePageState extends State<ProfilePage> {
                   ),
                   SizedBox(height: 8),
                   Text(
-                    me?['email']?.toString() ?? '',
+                    () {
+                      final e = me?['email']?.toString() ?? '';
+                      final p = me?['phone_number']?.toString() ?? me?['phone']?.toString() ?? '';
+                      final realEmail = e.isNotEmpty && !e.endsWith('@phone.local');
+                      return realEmail ? e : (p.isNotEmpty ? p : e);
+                    }(),
                     style: TextStyle(fontSize: 16, color: Colors.grey[600]),
                   ),
                 ],
@@ -20203,17 +20208,24 @@ class _ProfilePageState extends State<ProfilePage> {
                     me?['username']?.toString() ?? '',
                   ),
                   SizedBox(height: 16),
-                  _buildInfoRow(
-                    Icons.email_outlined,
-                    AppLocalizations.of(context)!.emailLabel,
-                    me?['email']?.toString() ?? '',
-                  ),
-                  if ((me?['phone']?.toString().isNotEmpty ?? false)) ...[
+                  if (() {
+                    final e = me?['email']?.toString() ?? '';
+                    return e.isNotEmpty && !e.endsWith('@phone.local');
+                  }())
+                    _buildInfoRow(
+                      Icons.email_outlined,
+                      AppLocalizations.of(context)!.emailLabel,
+                      me!['email'].toString(),
+                    ),
+                  if (() {
+                    final p = me?['phone_number']?.toString() ?? me?['phone']?.toString() ?? '';
+                    return p.isNotEmpty;
+                  }()) ...[
                     SizedBox(height: 16),
                     _buildInfoRow(
                       Icons.phone_outlined,
                       AppLocalizations.of(context)!.phoneLabel,
-                      me!['phone'].toString(),
+                      (me?['phone_number'] ?? me?['phone'] ?? '').toString(),
                     ),
                   ],
                   SizedBox(height: 16),
