@@ -26,11 +26,11 @@ String _relativeTime(BuildContext context, DateTime dateTime) {
   final loc = AppLocalizations.of(context)!;
   String formatNum(int n) => _digitsLocalized(context, n.toString());
   if (diff.inDays > 0) {
-    return loc.timeDaysAgo(formatNum(diff.inDays.toString()));
+    return loc.timeDaysAgo(formatNum(diff.inDays));
   } else if (diff.inHours > 0) {
-    return loc.timeHoursAgo(formatNum(diff.inHours.toString()));
+    return loc.timeHoursAgo(formatNum(diff.inHours));
   } else if (diff.inMinutes > 0) {
-    return loc.timeMinutesAgo(formatNum(diff.inMinutes.toString()));
+    return loc.timeMinutesAgo(formatNum(diff.inMinutes));
   }
   return loc.justNow;
 }
