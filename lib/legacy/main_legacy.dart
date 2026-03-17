@@ -20139,6 +20139,8 @@ class _ProfilePageState extends State<ProfilePage> {
   }
 
   Widget _buildLoggedInState(BuildContext context) {
+    final isLoggedIn = ApiService.accessToken != null &&
+        ApiService.accessToken!.isNotEmpty;
     return Container(
       decoration: BoxDecoration(
         gradient: LinearGradient(
@@ -20151,132 +20153,134 @@ class _ProfilePageState extends State<ProfilePage> {
         padding: EdgeInsets.all(20),
         child: Column(
           children: [
-            // Profile Header
-            Container(
-              width: double.infinity,
-              padding: EdgeInsets.all(24),
-              decoration: BoxDecoration(
-                color: Colors.white,
-                borderRadius: BorderRadius.circular(20),
-                boxShadow: [
-                  BoxShadow(
-                    color: Colors.black.withOpacity(0.1),
-                    blurRadius: 20,
-                    offset: Offset(0, 10),
-                  ),
-                ],
-              ),
-              child: Column(
-                children: [
-                  Container(
-                    padding: EdgeInsets.all(20),
-                    decoration: BoxDecoration(
-                      color: Color(0xFFFF6B00).withOpacity(0.1),
-                      shape: BoxShape.circle,
-                    ),
-                    child:
-                        (me?['profile_picture'] != null &&
-                            me!['profile_picture'].toString().isNotEmpty)
-                        ? CircleAvatar(
-                            radius: 24,
-                            backgroundImage: NetworkImage(
-                              '${getApiBase()}/static/${me!['profile_picture']}',
-                            ),
-                            backgroundColor: Colors.grey[200],
-                          )
-                        : Icon(
-                            Icons.person,
-                            size: 48,
-                            color: Color(0xFFFF6B00),
-                          ),
-                  ),
-                  SizedBox(height: 16),
-                  Text(
-                    me?['username']?.toString() ?? 'User',
-                    style: TextStyle(
-                      fontSize: 24,
-                      fontWeight: FontWeight.bold,
-                      color: Colors.grey[800],
-                    ),
-                  ),
-                  SizedBox(height: 8),
-                  Text(
-                    () {
-                      final e = me?['email']?.toString() ?? '';
-                      final p = me?['phone_number']?.toString() ?? me?['phone']?.toString() ?? '';
-                      final realEmail = e.isNotEmpty && !e.endsWith('@phone.local');
-                      return realEmail ? e : (p.isNotEmpty ? p : e);
-                    }(),
-                    style: TextStyle(fontSize: 16, color: Colors.grey[600]),
-                  ),
-                ],
-              ),
-            ),
-            SizedBox(height: 24),
-
-            // User Information Card
-            Container(
-              width: double.infinity,
-              padding: EdgeInsets.all(20),
-              decoration: BoxDecoration(
-                color: Colors.white,
-                borderRadius: BorderRadius.circular(16),
-                boxShadow: [
-                  BoxShadow(
-                    color: Colors.black.withOpacity(0.05),
-                    blurRadius: 10,
-                    offset: Offset(0, 5),
-                  ),
-                ],
-              ),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    'Account Information',
-                    style: TextStyle(
-                      fontSize: 18,
-                      fontWeight: FontWeight.bold,
-                      color: Colors.grey[800],
-                    ),
-                  ),
-                  SizedBox(height: 20),
-                  _buildInfoRow(
-                    Icons.person_outline,
-                    AppLocalizations.of(context)!.usernameLabel,
-                    me?['username']?.toString() ?? '',
-                  ),
-                  SizedBox(height: 16),
-                  if (() {
-                    final e = me?['email']?.toString() ?? '';
-                    return e.isNotEmpty && !e.endsWith('@phone.local');
-                  }())
-                    _buildInfoRow(
-                      Icons.email_outlined,
-                      AppLocalizations.of(context)!.emailLabel,
-                      me!['email'].toString(),
-                    ),
-                  if (() {
-                    final p = me?['phone_number']?.toString() ?? me?['phone']?.toString() ?? '';
-                    return p.isNotEmpty;
-                  }()) ...[
-                    SizedBox(height: 16),
-                    _buildInfoRow(
-                      Icons.phone_outlined,
-                      AppLocalizations.of(context)!.phoneLabel,
-                      (me?['phone_number'] ?? me?['phone'] ?? '').toString(),
+            if (isLoggedIn) ...[
+              // Profile Header
+              Container(
+                width: double.infinity,
+                padding: EdgeInsets.all(24),
+                decoration: BoxDecoration(
+                  color: Colors.white,
+                  borderRadius: BorderRadius.circular(20),
+                  boxShadow: [
+                    BoxShadow(
+                      color: Colors.black.withOpacity(0.1),
+                      blurRadius: 20,
+                      offset: Offset(0, 10),
                     ),
                   ],
-                  SizedBox(height: 16),
-                  _buildInfoRow(
-                    Icons.lock_outline,
-                    AppLocalizations.of(context)!.passwordLabel,
-                    '••••••••',
-                  ),
-                ],
+                ),
+                child: Column(
+                  children: [
+                    Container(
+                      padding: EdgeInsets.all(20),
+                      decoration: BoxDecoration(
+                        color: Color(0xFFFF6B00).withOpacity(0.1),
+                        shape: BoxShape.circle,
+                      ),
+                      child:
+                          (me?['profile_picture'] != null &&
+                              me!['profile_picture'].toString().isNotEmpty)
+                          ? CircleAvatar(
+                              radius: 24,
+                              backgroundImage: NetworkImage(
+                                '${getApiBase()}/static/${me!['profile_picture']}',
+                              ),
+                              backgroundColor: Colors.grey[200],
+                            )
+                          : Icon(
+                              Icons.person,
+                              size: 48,
+                              color: Color(0xFFFF6B00),
+                            ),
+                    ),
+                    SizedBox(height: 16),
+                    Text(
+                      me?['username']?.toString() ?? 'User',
+                      style: TextStyle(
+                        fontSize: 24,
+                        fontWeight: FontWeight.bold,
+                        color: Colors.grey[800],
+                      ),
+                    ),
+                    SizedBox(height: 8),
+                    Text(
+                      () {
+                        final e = me?['email']?.toString() ?? '';
+                        final p = me?['phone_number']?.toString() ?? me?['phone']?.toString() ?? '';
+                        final realEmail = e.isNotEmpty && !e.endsWith('@phone.local');
+                        return realEmail ? e : (p.isNotEmpty ? p : e);
+                      }(),
+                      style: TextStyle(fontSize: 16, color: Colors.grey[600]),
+                    ),
+                  ],
+                ),
               ),
-            ),
-            SizedBox(height: 24),
+              SizedBox(height: 24),
+
+              // User Information Card
+              Container(
+                width: double.infinity,
+                padding: EdgeInsets.all(20),
+                decoration: BoxDecoration(
+                  color: Colors.white,
+                  borderRadius: BorderRadius.circular(16),
+                  boxShadow: [
+                    BoxShadow(
+                      color: Colors.black.withOpacity(0.05),
+                      blurRadius: 10,
+                      offset: Offset(0, 5),
+                    ),
+                  ],
+                ),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      'Account Information',
+                      style: TextStyle(
+                        fontSize: 18,
+                        fontWeight: FontWeight.bold,
+                        color: Colors.grey[800],
+                      ),
+                    ),
+                    SizedBox(height: 20),
+                    _buildInfoRow(
+                      Icons.person_outline,
+                      AppLocalizations.of(context)!.usernameLabel,
+                      me?['username']?.toString() ?? '',
+                    ),
+                    SizedBox(height: 16),
+                    if (() {
+                      final e = me?['email']?.toString() ?? '';
+                      return e.isNotEmpty && !e.endsWith('@phone.local');
+                    }())
+                      _buildInfoRow(
+                        Icons.email_outlined,
+                        AppLocalizations.of(context)!.emailLabel,
+                        me!['email'].toString(),
+                      ),
+                    if (() {
+                      final p = me?['phone_number']?.toString() ?? me?['phone']?.toString() ?? '';
+                      return p.isNotEmpty;
+                    }()) ...[
+                      SizedBox(height: 16),
+                      _buildInfoRow(
+                        Icons.phone_outlined,
+                        AppLocalizations.of(context)!.phoneLabel,
+                        (me?['phone_number'] ?? me?['phone'] ?? '').toString(),
+                      ),
+                    ],
+                    SizedBox(height: 16),
+                    _buildInfoRow(
+                      Icons.lock_outline,
+                      AppLocalizations.of(context)!.passwordLabel,
+                      '••••••••',
+                    ),
+                  ],
+                ),
+              ),
+              SizedBox(height: 24),
+            ],
 
             // Action Buttons
             Container(

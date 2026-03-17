@@ -298,53 +298,55 @@ class _ProfilePageState extends State<ProfilePage> {
                     ),
                     const SizedBox(height: 12),
                   ],
-                  Card(
-                    child: Padding(
-                      padding: const EdgeInsets.all(16),
-                      child: Row(
-                        children: [
-                          CircleAvatar(
-                            radius: 32,
-                            backgroundColor: Colors.black12,
-                            backgroundImage: picUrl.isNotEmpty
-                                ? NetworkImage(picUrl)
-                                : null,
-                            child: picUrl.isEmpty
-                                ? const Icon(Icons.person, size: 32)
-                                : null,
-                          ),
-                          const SizedBox(width: 14),
-                          Expanded(
-                            child: Column(
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              children: [
-                                Text(
-                                  fullName.isEmpty ? username : fullName,
-                                  style: Theme.of(context)
-                                      .textTheme
-                                      .titleMedium
-                                      ?.copyWith(fontWeight: FontWeight.w700),
-                                ),
-                                if (username.isNotEmpty) ...[
-                                  const SizedBox(height: 2),
-                                  Text('@$username'),
-                                ],
-                                if (primaryContact.isNotEmpty) ...[
-                                  const SizedBox(height: 2),
-                                  Text(primaryContact),
-                                ],
-                                if (realEmail && phone.isNotEmpty) ...[
-                                  const SizedBox(height: 2),
-                                  Text(phone),
-                                ],
-                              ],
+                  if (isAuthenticated) ...[
+                    Card(
+                      child: Padding(
+                        padding: const EdgeInsets.all(16),
+                        child: Row(
+                          children: [
+                            CircleAvatar(
+                              radius: 32,
+                              backgroundColor: Colors.black12,
+                              backgroundImage: picUrl.isNotEmpty
+                                  ? NetworkImage(picUrl)
+                                  : null,
+                              child: picUrl.isEmpty
+                                  ? const Icon(Icons.person, size: 32)
+                                  : null,
                             ),
-                          ),
-                        ],
+                            const SizedBox(width: 14),
+                            Expanded(
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  Text(
+                                    fullName.isEmpty ? username : fullName,
+                                    style: Theme.of(context)
+                                        .textTheme
+                                        .titleMedium
+                                        ?.copyWith(fontWeight: FontWeight.w700),
+                                  ),
+                                  if (username.isNotEmpty) ...[
+                                    const SizedBox(height: 2),
+                                    Text('@$username'),
+                                  ],
+                                  if (primaryContact.isNotEmpty) ...[
+                                    const SizedBox(height: 2),
+                                    Text(primaryContact),
+                                  ],
+                                  if (realEmail && phone.isNotEmpty) ...[
+                                    const SizedBox(height: 2),
+                                    Text(phone),
+                                  ],
+                                ],
+                              ),
+                            ),
+                          ],
+                        ),
                       ),
                     ),
-                  ),
-                  const SizedBox(height: 12),
+                    const SizedBox(height: 12),
+                  ],
                   Card(
                     child: Column(
                       children: [
