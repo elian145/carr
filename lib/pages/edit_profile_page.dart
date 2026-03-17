@@ -525,12 +525,14 @@ class _EditProfilePageState extends State<EditProfilePage> {
                               icon: Icons.email_outlined,
                               keyboardType: TextInputType.emailAddress,
                               validator: (value) {
-                                if (value == null || value.trim().isEmpty) {
-                                  return loc.emailRequired;
+                                // Email is optional on edit profile. Only validate format if provided.
+                                final trimmed = value?.trim() ?? '';
+                                if (trimmed.isEmpty) {
+                                  return null;
                                 }
                                 if (!RegExp(
                                   r'^[\w-\.]+@([\w-]+\.)+[\w-]{2,4}$',
-                                ).hasMatch(value.trim())) {
+                                ).hasMatch(trimmed)) {
                                   return loc.emailInvalid;
                                 }
                                 return null;
