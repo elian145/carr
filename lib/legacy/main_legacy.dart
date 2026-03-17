@@ -2217,8 +2217,11 @@ class AuthGuard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final auth = Provider.of<AuthService>(context);
-    // Allow FavoritesPage for logged-out users so it can show a friendly prompt.
-    if (auth.isAuthenticated || child is FavoritesPage) return child;
+    // Allow FavoritesPage and ProfilePage for logged-out users so they can
+    // show their own friendly login/signup prompts and UI.
+    if (auth.isAuthenticated || child is FavoritesPage || child is ProfilePage) {
+      return child;
+    }
     WidgetsBinding.instance.addPostFrameCallback((_) {
       if (context.mounted) {
         Navigator.pushReplacementNamed(context, '/login');
