@@ -407,24 +407,25 @@ class _ProfilePageState extends State<ProfilePage> {
                               onTap: () => _showPhoneVerifyDialog(context, phone, auth),
                             ),
                         ],
-                        const Divider(height: 1),
-                        ListTile(
-                          leading: Icon(Icons.delete_forever_outlined, color: Theme.of(context).colorScheme.error),
-                          title: Text(
-                            loc?.deleteAccountTitle ?? 'Delete account',
-                            style: TextStyle(
+                        if (isAuthenticated) ...[
+                          const Divider(height: 1),
+                          ListTile(
+                            leading: Icon(
+                              Icons.delete_forever_outlined,
                               color: Theme.of(context).colorScheme.error,
-                              fontWeight: FontWeight.w500,
                             ),
+                            title: Text(
+                              loc?.deleteAccountTitle ?? 'Delete account',
+                              style: TextStyle(
+                                color: Theme.of(context).colorScheme.error,
+                                fontWeight: FontWeight.w500,
+                              ),
+                            ),
+                            onTap: () async {
+                              await _deleteAccountTapped();
+                            },
                           ),
-                          onTap: () async {
-                            if (!isAuthenticated) {
-                              await _showAuthRequiredDialog(context);
-                              return;
-                            }
-                            await _deleteAccountTapped();
-                          },
-                        ),
+                        ],
                       ],
                     ),
                   ),

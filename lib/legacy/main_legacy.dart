@@ -20376,20 +20376,18 @@ class _ProfilePageState extends State<ProfilePage> {
                       ),
                     );
                   }),
-                  SizedBox(height: 12),
-                  _buildActionButton(
-                    Icons.delete_forever_outlined,
-                    AppLocalizations.of(context)!.deleteAccountTitle,
-                    () {
-                      if (ApiService.accessToken == null ||
-                          ApiService.accessToken!.isEmpty) {
-                        _showAuthRequiredDialog(context);
-                        return;
-                      }
-                      _showDeleteAccountDialog(context);
-                    },
-                    color: Colors.red,
-                  ),
+                  if (ApiService.accessToken != null &&
+                      ApiService.accessToken!.isNotEmpty) ...[
+                    SizedBox(height: 12),
+                    _buildActionButton(
+                      Icons.delete_forever_outlined,
+                      AppLocalizations.of(context)!.deleteAccountTitle,
+                      () {
+                        _showDeleteAccountDialog(context);
+                      },
+                      color: Colors.red,
+                    ),
+                  ],
                 ],
               ),
             ),
