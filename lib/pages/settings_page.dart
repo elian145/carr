@@ -254,32 +254,32 @@ class _SettingsPageState extends State<SettingsPage> {
                     currentLocale == null
                         ? (loc?.settingsSystem ?? 'System')
                         : currentLocale == 'en'
-                            ? (loc?.english ?? 'English')
+                            ? 'English'
                             : currentLocale == 'ar'
-                                ? (loc?.arabic ?? 'Arabic')
+                                ? 'العربية'
                                 : currentLocale == 'ku'
-                                    ? (loc?.kurdish ?? 'Kurdish')
+                                    ? 'کوردی'
                                     : currentLocale,
                   ),
                   trailing: DropdownButton<String?>(
                     value: currentLocale,
                     onChanged: (v) => _setLocale(v),
-                    items: [
+                    items: const [
                       DropdownMenuItem<String?>(
                         value: null,
-                        child: Text(loc?.settingsSystem ?? 'System'),
+                        child: Text('System'),
                       ),
                       DropdownMenuItem<String?>(
                         value: 'en',
-                        child: Text(loc?.english ?? 'English'),
+                        child: Text('English'),
                       ),
                       DropdownMenuItem<String?>(
                         value: 'ar',
-                        child: Text(loc?.arabic ?? 'Arabic'),
+                        child: Text('العربية'),
                       ),
                       DropdownMenuItem<String?>(
                         value: 'ku',
-                        child: Text(loc?.kurdish ?? 'Kurdish'),
+                        child: Text('کوردی'),
                       ),
                     ],
                   ),
