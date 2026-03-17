@@ -17,6 +17,41 @@ class _ProfilePageState extends State<ProfilePage> {
   bool _loading = false;
   String? _error;
 
+  Future<void> _showAuthRequiredDialog(BuildContext context) async {
+    final loc = AppLocalizations.of(context);
+    await showDialog<void>(
+      context: context,
+      builder: (ctx) {
+        return AlertDialog(
+          title: Text(loc?.loginTitle ?? 'Login'),
+          content: Text(
+            loc?.notLoggedIn ?? 'You need to sign up or log in to continue.',
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(ctx),
+              child: Text(loc?.cancelAction ?? 'Cancel'),
+            ),
+            TextButton(
+              onPressed: () {
+                Navigator.pop(ctx);
+                Navigator.pushNamed(context, '/signup');
+              },
+              child: Text(loc?.signupTitle ?? 'Sign Up'),
+            ),
+            FilledButton(
+              onPressed: () {
+                Navigator.pop(ctx);
+                Navigator.pushNamed(context, '/login');
+              },
+              child: Text(loc?.loginAction ?? 'Log In'),
+            ),
+          ],
+        );
+      },
+    );
+  }
+
   Future<void> _sendEmailVerification(BuildContext context, AuthService auth) async {
     try {
       await auth.sendEmailVerification();
@@ -233,6 +268,7 @@ class _ProfilePageState extends State<ProfilePage> {
     final fullName = ('$firstName $lastName').trim();
     final pic = (user?['profile_picture'] ?? '').toString();
     final picUrl = buildMediaUrl(pic);
+    final isAuthenticated = auth.isAuthenticated;
 
     return Scaffold(
       appBar: AppBar(
@@ -245,24 +281,7 @@ class _ProfilePageState extends State<ProfilePage> {
           ),
         ],
       ),
-      body: !auth.isAuthenticated
-          ? Center(
-              child: Padding(
-                padding: const EdgeInsets.all(16),
-                child: Column(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    Text(loc?.loginRequired ?? 'Login required'),
-                    const SizedBox(height: 12),
-                    ElevatedButton(
-                      onPressed: () => Navigator.pushNamed(context, '/login'),
-                      child: Text(loc?.loginAction ?? 'Login'),
-                    ),
-                  ],
-                ),
-              ),
-            )
-          : RefreshIndicator(
+      body: RefreshIndicator(
               onRefresh: _refresh,
               child: ListView(
                 padding: const EdgeInsets.all(16),
@@ -333,6 +352,10 @@ class _ProfilePageState extends State<ProfilePage> {
                           leading: const Icon(Icons.edit_outlined),
                           title: Text(loc?.editProfileAction ?? 'Edit profile'),
                           onTap: () async {
+                            if (!isAuthenticated) {
+                              await _showAuthRequiredDialog(context);
+                              return;
+                            }
                             final result = await Navigator.pushNamed(
                               context,
                               '/edit-profile',
@@ -347,13 +370,25 @@ class _ProfilePageState extends State<ProfilePage> {
                         ListTile(
                           leading: const Icon(Icons.favorite_border),
                           title: Text(loc?.favoritesTitle ?? 'Favorites'),
-                          onTap: () => Navigator.pushNamed(context, '/favorites'),
+                          onTap: () async {
+                            if (!isAuthenticated) {
+                              await _showAuthRequiredDialog(context);
+                              return;
+                            }
+                            Navigator.pushNamed(context, '/favorites');
+                          },
                         ),
                         const Divider(height: 1),
                         ListTile(
                           leading: const Icon(Icons.list_alt_outlined),
                           title: Text(loc?.myListingsTitle ?? 'My listings'),
-                          onTap: () => Navigator.pushNamed(context, '/my_listings'),
+                          onTap: () async {
+                            if (!isAuthenticated) {
+                              await _showAuthRequiredDialog(context);
+                              return;
+                            }
+                            Navigator.pushNamed(context, '/my_listings');
+                          },
                         ),
                         if (!isVerified && (realEmail || phone.isNotEmpty)) ...[
                           const Divider(height: 1),
@@ -382,7 +417,13 @@ class _ProfilePageState extends State<ProfilePage> {
                               fontWeight: FontWeight.w500,
                             ),
                           ),
-                          onTap: _deleteAccountTapped,
+                          onTap: () async {
+                            if (!isAuthenticated) {
+                              await _showAuthRequiredDialog(context);
+                              return;
+                            }
+                            await _deleteAccountTapped();
+                          },
                         ),
                       ],
                     ),
@@ -392,6 +433,10 @@ class _ProfilePageState extends State<ProfilePage> {
                     onPressed: _loading
                         ? null
                         : () async {
+                            if (!isAuthenticated) {
+                              await _showAuthRequiredDialog(context);
+                              return;
+                            }
                             await AuthService().logout();
                             if (!context.mounted) return;
                             Navigator.pushReplacementNamed(context, '/login');
