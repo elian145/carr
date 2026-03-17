@@ -19991,6 +19991,40 @@ class _ProfilePageState extends State<ProfilePage> {
     _loadMe();
   }
 
+  Future<void> _showAuthRequiredDialog(BuildContext context) async {
+    await showDialog<void>(
+      context: context,
+      builder: (ctx) {
+        return AlertDialog(
+          title: Text(AppLocalizations.of(ctx)!.loginTitle),
+          content: Text(
+            AppLocalizations.of(ctx)!.notLoggedIn,
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(ctx),
+              child: Text(AppLocalizations.of(ctx)!.cancelAction),
+            ),
+            TextButton(
+              onPressed: () {
+                Navigator.pop(ctx);
+                Navigator.pushReplacementNamed(context, '/signup');
+              },
+              child: Text(AppLocalizations.of(ctx)!.signupTitle),
+            ),
+            FilledButton(
+              onPressed: () {
+                Navigator.pop(ctx);
+                Navigator.pushReplacementNamed(context, '/login');
+              },
+              child: Text(AppLocalizations.of(ctx)!.loginAction),
+            ),
+          ],
+        );
+      },
+    );
+  }
+
   Future<void> _logout() async {
     await AuthStore.saveToken(null);
     await ApiService.setAccessToken(null);
@@ -20275,15 +20309,30 @@ class _ProfilePageState extends State<ProfilePage> {
                     Icons.directions_car_outlined,
                     AppLocalizations.of(context)!.myListingsTitle,
                     () {
+                      if (ApiService.accessToken == null ||
+                          ApiService.accessToken!.isEmpty) {
+                        _showAuthRequiredDialog(context);
+                        return;
+                      }
                       Navigator.pushNamed(context, '/my_listings');
                     },
                   ),
                   SizedBox(height: 12),
                   _buildActionButton(Icons.analytics_outlined, AppLocalizations.of(context)!.analyticsTitle, () {
+                    if (ApiService.accessToken == null ||
+                        ApiService.accessToken!.isEmpty) {
+                      _showAuthRequiredDialog(context);
+                      return;
+                    }
                     Navigator.pushNamed(context, '/analytics');
                   }),
                   SizedBox(height: 12),
                   _buildActionButton(Icons.chat_outlined, AppLocalizations.of(context)!.chatTitle, () {
+                    if (ApiService.accessToken == null ||
+                        ApiService.accessToken!.isEmpty) {
+                      _showAuthRequiredDialog(context);
+                      return;
+                    }
                     Navigator.pushNamed(context, '/chat');
                   }),
                   SizedBox(height: 12),
@@ -20303,6 +20352,11 @@ class _ProfilePageState extends State<ProfilePage> {
                     Icons.edit_outlined,
                     AppLocalizations.of(context)!.editProfileAction,
                     () async {
+                      if (ApiService.accessToken == null ||
+                          ApiService.accessToken!.isEmpty) {
+                        _showAuthRequiredDialog(context);
+                        return;
+                      }
                       final result = await Navigator.pushNamed(
                         context,
                         '/edit-profile',
@@ -20326,7 +20380,14 @@ class _ProfilePageState extends State<ProfilePage> {
                   _buildActionButton(
                     Icons.delete_forever_outlined,
                     AppLocalizations.of(context)!.deleteAccountTitle,
-                    () => _showDeleteAccountDialog(context),
+                    () {
+                      if (ApiService.accessToken == null ||
+                          ApiService.accessToken!.isEmpty) {
+                        _showAuthRequiredDialog(context);
+                        return;
+                      }
+                      _showDeleteAccountDialog(context);
+                    },
                     color: Colors.red,
                   ),
                 ],
@@ -20339,7 +20400,14 @@ class _ProfilePageState extends State<ProfilePage> {
               width: double.infinity,
               height: 50,
               child: ElevatedButton(
-                onPressed: () => _showLogoutDialog(context),
+                onPressed: () {
+                  if (ApiService.accessToken == null ||
+                      ApiService.accessToken!.isEmpty) {
+                    _showAuthRequiredDialog(context);
+                    return;
+                  }
+                  _showLogoutDialog(context);
+                },
                 style: ElevatedButton.styleFrom(
                   backgroundColor: Colors.red[600],
                   foregroundColor: Colors.white,
@@ -20567,8 +20635,6 @@ class _ProfilePageState extends State<ProfilePage> {
       ),
       body: _loading
           ? Center(child: CircularProgressIndicator())
-          : (ApiService.accessToken == null || ApiService.accessToken!.isEmpty)
-          ? _buildNotLoggedInState(context)
           : _buildLoggedInState(context),
       bottomNavigationBar: BottomNavigationBar(
         type: BottomNavigationBarType.fixed,
