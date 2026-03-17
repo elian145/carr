@@ -621,6 +621,8 @@ String? _translateValueGlobal(BuildContext context, String? raw) {
   final l = raw.trim().toLowerCase();
   final loc = AppLocalizations.of(context)!;
   switch (l) {
+    case 'any':
+      return loc.anyOption;
     case 'new':
       return loc.value_condition_new;
     case 'used':
@@ -1216,18 +1218,18 @@ Widget buildLanguageMenu() {
     onSelected: (code) {
       LocaleController.setLocale(Locale(code));
     },
-    itemBuilder: (context) => [
+    itemBuilder: (context) => const [
       PopupMenuItem(
         value: 'en',
-        child: Text(AppLocalizations.of(context)!.english),
+        child: Text('English'),
       ),
       PopupMenuItem(
         value: 'ar',
-        child: Text(AppLocalizations.of(context)!.arabic),
+        child: Text('العربية'),
       ),
       PopupMenuItem(
         value: 'ku',
-        child: Text(AppLocalizations.of(context)!.kurdish),
+        child: Text('کوردی'),
       ),
     ],
   );
