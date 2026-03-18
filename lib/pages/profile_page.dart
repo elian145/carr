@@ -273,13 +273,6 @@ class _ProfilePageState extends State<ProfilePage> {
     return Scaffold(
       appBar: AppBar(
         title: Text(loc?.profileTitle ?? 'Profile'),
-        actions: [
-          IconButton(
-            tooltip: loc?.settingsTitle ?? 'Settings',
-            onPressed: () => Navigator.pushNamed(context, '/settings'),
-            icon: const Icon(Icons.settings_outlined),
-          ),
-        ],
       ),
       body: RefreshIndicator(
               onRefresh: _refresh,
@@ -397,6 +390,12 @@ class _ProfilePageState extends State<ProfilePage> {
                   Card(
                     child: Column(
                       children: [
+                        ListTile(
+                          leading: const Icon(Icons.settings_outlined),
+                          title: Text(loc?.settingsTitle ?? 'Settings'),
+                          onTap: () => Navigator.pushNamed(context, '/settings'),
+                        ),
+                        const Divider(height: 1),
                         ListTile(
                           leading: const Icon(Icons.edit_outlined),
                           title: Text(loc?.editProfileAction ?? 'Edit profile'),

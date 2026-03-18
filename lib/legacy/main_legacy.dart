@@ -20405,6 +20405,14 @@ class _ProfilePageState extends State<ProfilePage> {
                     },
                   ),
                   SizedBox(height: 12),
+                  _buildActionButton(
+                    Icons.settings_outlined,
+                    AppLocalizations.of(context)!.settingsTitle,
+                    () {
+                      Navigator.pushNamed(context, '/settings');
+                    },
+                  ),
+                  SizedBox(height: 12),
                   _buildActionButton(Icons.analytics_outlined, AppLocalizations.of(context)!.analyticsTitle, () {
                     if (ApiService.accessToken == null ||
                         ApiService.accessToken!.isEmpty) {
@@ -20712,13 +20720,6 @@ class _ProfilePageState extends State<ProfilePage> {
         backgroundColor: Color(0xFFFF6B00),
         foregroundColor: Colors.white,
         elevation: 0,
-        actions: [
-          IconButton(
-            tooltip: 'Settings',
-            onPressed: () => Navigator.pushNamed(context, '/settings'),
-            icon: Icon(Icons.settings_outlined),
-          ),
-        ],
       ),
       body: _loading
           ? Center(child: CircularProgressIndicator())
