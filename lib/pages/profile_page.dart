@@ -479,21 +479,18 @@ class _ProfilePageState extends State<ProfilePage> {
                     ),
                   ),
                   const SizedBox(height: 12),
-                  ElevatedButton.icon(
-                    onPressed: _loading
-                        ? null
-                        : () async {
-                            if (!isAuthenticated) {
-                              await _showAuthRequiredDialog(context);
-                              return;
-                            }
-                            await AuthService().logout();
-                            if (!context.mounted) return;
-                            Navigator.pushReplacementNamed(context, '/login');
-                          },
-                    icon: const Icon(Icons.logout),
-                    label: Text(loc?.logout ?? 'Logout'),
-                  ),
+                  if (isAuthenticated)
+                    ElevatedButton.icon(
+                      onPressed: _loading
+                          ? null
+                          : () async {
+                              await AuthService().logout();
+                              if (!context.mounted) return;
+                              Navigator.pushReplacementNamed(context, '/login');
+                            },
+                      icon: const Icon(Icons.logout),
+                      label: Text(loc?.logout ?? 'Logout'),
+                    ),
                 ],
               ),
             ),
