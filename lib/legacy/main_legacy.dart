@@ -20161,6 +20161,78 @@ class _ProfilePageState extends State<ProfilePage> {
                     padding: EdgeInsets.fromLTRB(20, 20, 20, 12),
                     child: Column(
                       children: [
+            if (!isLoggedIn) ...[
+              Container(
+                width: double.infinity,
+                padding: EdgeInsets.all(18),
+                decoration: BoxDecoration(
+                  color: Colors.white,
+                  borderRadius: BorderRadius.circular(16),
+                  boxShadow: [
+                    BoxShadow(
+                      color: Colors.black.withOpacity(0.05),
+                      blurRadius: 10,
+                      offset: Offset(0, 5),
+                    ),
+                  ],
+                ),
+                child: Row(
+                  children: [
+                    Container(
+                      padding: EdgeInsets.all(12),
+                      decoration: BoxDecoration(
+                        color: Color(0xFFFF6B00).withOpacity(0.1),
+                        shape: BoxShape.circle,
+                      ),
+                      child: Icon(
+                        Icons.person_outline,
+                        color: Color(0xFFFF6B00),
+                        size: 26,
+                      ),
+                    ),
+                    SizedBox(width: 12),
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            'Guest',
+                            style: TextStyle(
+                              fontSize: 18,
+                              fontWeight: FontWeight.w700,
+                              color: Colors.grey[800],
+                            ),
+                          ),
+                          SizedBox(height: 2),
+                          Text(
+                            'Sign in to access your profile features.',
+                            style: TextStyle(
+                              fontSize: 13,
+                              color: Colors.grey[600],
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                    SizedBox(width: 10),
+                    ElevatedButton(
+                      onPressed: () =>
+                          Navigator.pushReplacementNamed(context, '/login'),
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: Color(0xFFFF6B00),
+                        foregroundColor: Colors.white,
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(12),
+                        ),
+                        elevation: 1,
+                      ),
+                      child: Text(AppLocalizations.of(context)!.loginAction),
+                    ),
+                  ],
+                ),
+              ),
+              SizedBox(height: 16),
+            ],
             if (isLoggedIn) ...[
               // Profile Header
               Container(
