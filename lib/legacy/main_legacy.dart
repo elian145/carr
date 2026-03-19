@@ -14734,8 +14734,33 @@ class _SellStep4PageState extends State<SellStep4Page> {
   // Can contain either local XFile (original picks) or server-relative paths (after "Blur Plates").
   List<dynamic> _selectedImages = [];
   final List<XFile> _selectedVideos = [];
+  bool _videosHydratedFromParent = false;
   bool _isProcessingImages = false;
   bool _imagesProcessed = false;
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    if (_videosHydratedFromParent) return;
+    _videosHydratedFromParent = true;
+    final parentState = context.findAncestorStateOfType<_SellCarPageState>();
+    final dynamic saved = parentState?.carData['videos'];
+    if (saved is List && saved.isNotEmpty) {
+      for (final dynamic item in saved) {
+        if (item is XFile) {
+          _selectedVideos.add(item);
+        } else if (item is String && item.trim().isNotEmpty) {
+          _selectedVideos.add(XFile(item.trim()));
+        }
+      }
+    }
+  }
+
+  void _syncVideosToParent() {
+    final parentState = context.findAncestorStateOfType<_SellCarPageState>();
+    if (parentState == null) return;
+    parentState.carData['videos'] = List<XFile>.from(_selectedVideos);
+  }
 
   Future<void> _pickImages() async {
     try {
@@ -14871,8 +14896,14 @@ class _SellStep4PageState extends State<SellStep4Page> {
         setState(() {
           _selectedVideos.add(file);
         });
+        _syncVideosToParent();
       }
-    } catch (_) {}
+    } catch (e) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Video selection failed: $e')),
+      );
+    }
   }
 
   @override
@@ -15191,6 +15222,7 @@ class _SellStep4PageState extends State<SellStep4Page> {
                           setState(() {
                             _selectedVideos.removeAt(index);
                           });
+                          _syncVideosToParent();
                         },
                         child: Container(
                           decoration: BoxDecoration(
@@ -15287,7 +15319,9 @@ class _SellStep4PageState extends State<SellStep4Page> {
                           .findAncestorStateOfType<_SellCarPageState>();
                       if (parentState != null) {
                         parentState.carData['images'] = _selectedImages;
-                        parentState.carData['videos'] = _selectedVideos;
+                        parentState.carData['videos'] = List<XFile>.from(
+                          _selectedVideos,
+                        );
 
                         parentState._goToNextStep();
                       }
@@ -15630,7 +15664,10 @@ class _ListingPreviewWidgetState extends State<ListingPreviewWidget> {
   Widget build(BuildContext context) {
     final data = widget.carData;
     final images = widget.imageFilesOrUrls;
+    final dynamic rawVideos = data['videos'];
+    final List<dynamic> videos = rawVideos is List ? rawVideos : const [];
     final hasImages = images.isNotEmpty;
+    final hasVideos = videos.isNotEmpty;
 
     final String title = (data['title']?.toString() ?? '').trim().isNotEmpty
         ? data['title'].toString().trim()
@@ -15802,6 +15839,87 @@ class _ListingPreviewWidgetState extends State<ListingPreviewWidget> {
                 ),
                 SizedBox(height: 12),
                 _buildSpecsFromData(data),
+                if (hasVideos) ...[
+                  SizedBox(height: 16),
+                  Text(
+                    _videosOptionalTitleGlobal(context),
+                    style: TextStyle(
+                      fontSize: 16,
+                      fontWeight: FontWeight.bold,
+                      color: Color(0xFFFF6B00),
+                    ),
+                  ),
+                  SizedBox(height: 10),
+                  SizedBox(
+                    height: 92,
+                    child: ListView.separated(
+                      scrollDirection: Axis.horizontal,
+                      itemCount: videos.length,
+                      separatorBuilder: (_, __) => SizedBox(width: 10),
+                      itemBuilder: (context, index) {
+                        final dynamic item = videos[index];
+                        final String path = item is XFile
+                            ? item.path
+                            : item.toString().trim();
+                        final bool isLocalFile = path.isNotEmpty &&
+                            !path.startsWith('http://') &&
+                            !path.startsWith('https://');
+                        return Container(
+                          width: 132,
+                          decoration: BoxDecoration(
+                            color: Colors.white.withOpacity(0.06),
+                            borderRadius: BorderRadius.circular(12),
+                            border: Border.all(color: Colors.white12),
+                          ),
+                          clipBehavior: Clip.antiAlias,
+                          child: isLocalFile
+                              ? FutureBuilder<String?>(
+                                  future: generateVideoThumbnail(path),
+                                  builder: (context, snapshot) {
+                                    if (snapshot.hasData &&
+                                        snapshot.data != null) {
+                                      return Stack(
+                                        fit: StackFit.expand,
+                                        children: [
+                                          Image.file(
+                                            File(snapshot.data!),
+                                            fit: BoxFit.cover,
+                                          ),
+                                          Center(
+                                            child: Container(
+                                              padding: EdgeInsets.all(7),
+                                              decoration: BoxDecoration(
+                                                color: Colors.black54,
+                                                shape: BoxShape.circle,
+                                              ),
+                                              child: Icon(
+                                                Icons.play_arrow,
+                                                color: Colors.white,
+                                              ),
+                                            ),
+                                          ),
+                                        ],
+                                      );
+                                    }
+                                    return Center(
+                                      child: Icon(
+                                        Icons.videocam,
+                                        color: Colors.white70,
+                                      ),
+                                    );
+                                  },
+                                )
+                              : Center(
+                                  child: Icon(
+                                    Icons.videocam,
+                                    color: Colors.white70,
+                                  ),
+                                ),
+                        );
+                      },
+                    ),
+                  ),
+                ],
               ],
             ),
           ),
@@ -16189,8 +16307,13 @@ class _SellStep5PageState extends State<SellStep5Page> {
         try {
           final dynamic maybeImgs = carData['images'];
           final List<dynamic> imgs = (maybeImgs is List) ? maybeImgs : const [];
+          final dynamic maybeVideos = carData['videos'];
+          final List<dynamic> vids = (maybeVideos is List)
+              ? maybeVideos
+              : const [];
           final List<XFile> toUpload = <XFile>[];
           final List<String> toAttach = <String>[];
+          final List<XFile> videosToUpload = <XFile>[];
           for (final dynamic img in imgs) {
             if (img is XFile) {
               toUpload.add(img);
@@ -16212,11 +16335,39 @@ class _SellStep5PageState extends State<SellStep5Page> {
               }
             }
           }
+          for (final dynamic vid in vids) {
+            if (vid is XFile) {
+              videosToUpload.add(vid);
+            } else if (vid is String) {
+              final s = vid.trim();
+              if (s.isNotEmpty &&
+                  !s.startsWith('http://') &&
+                  !s.startsWith('https://')) {
+                try {
+                  videosToUpload.add(XFile(s));
+                } catch (_) {}
+              }
+            }
+          }
           if (toAttach.isNotEmpty) {
             await CarService().attachCarImages(carId, toAttach);
           } else if (toUpload.isNotEmpty) {
             // No blur on submit; backend is called with skip_blur=1
             await CarService().uploadCarImages(carId, toUpload);
+          }
+          if (videosToUpload.isNotEmpty) {
+            final url = Uri.parse('${getApiBase()}/api/cars/$carId/videos');
+            final req = http.MultipartRequest('POST', url);
+            req.headers['Authorization'] = 'Bearer $existingToken';
+            for (final v in videosToUpload) {
+              req.files.add(
+                await http.MultipartFile.fromPath('video', v.path),
+              );
+            }
+            final resp = await req.send();
+            if (resp.statusCode != 200 && resp.statusCode != 201) {
+              _debugLog('Video upload failed: ${resp.statusCode}');
+            }
           }
           // Refresh list so new listing has server-confirmed image_url/images before success/navigation
           try {
