@@ -5309,11 +5309,7 @@ class _HomePageState extends State<HomePage> {
           ),
           BottomNavigationBarItem(
             icon: Icon(Icons.person),
-            label:
-                (ApiService.accessToken == null ||
-                    ApiService.accessToken!.isEmpty)
-                ? AppLocalizations.of(context)!.navLogin
-                : AppLocalizations.of(context)!.navProfile,
+            label: AppLocalizations.of(context)!.navProfile,
           ),
         ],
       ),
@@ -18767,11 +18763,7 @@ Widget build(BuildContext context) {
         ),
         BottomNavigationBarItem(
           icon: Icon(Icons.person),
-          label:
-              (ApiService.accessToken == null ||
-                  ApiService.accessToken!.isEmpty)
-              ? AppLocalizations.of(context)!.navLogin
-              : AppLocalizations.of(context)!.navProfile,
+          label: AppLocalizations.of(context)!.navProfile,
         ),
       ],
     ),
@@ -19137,11 +19129,7 @@ class _FavoritesPageState extends State<FavoritesPage> {
           ),
           BottomNavigationBarItem(
             icon: Icon(Icons.person),
-            label:
-                (ApiService.accessToken == null ||
-                    ApiService.accessToken!.isEmpty)
-                ? AppLocalizations.of(context)!.navLogin
-                : AppLocalizations.of(context)!.navProfile,
+            label: AppLocalizations.of(context)!.navProfile,
           ),
         ],
       ),
@@ -19197,11 +19185,7 @@ class _ChatListPageState extends State<ChatListPage> {
           ),
           BottomNavigationBarItem(
             icon: Icon(Icons.person),
-            label:
-                (ApiService.accessToken == null ||
-                    ApiService.accessToken!.isEmpty)
-                ? AppLocalizations.of(context)!.navLogin
-                : AppLocalizations.of(context)!.navProfile,
+            label: AppLocalizations.of(context)!.navProfile,
           ),
         ],
       ),
@@ -19348,11 +19332,7 @@ class _LoginPageState extends State<LoginPage> {
           ),
           BottomNavigationBarItem(
             icon: Icon(Icons.person),
-            label:
-                (ApiService.accessToken == null ||
-                    ApiService.accessToken!.isEmpty)
-                ? AppLocalizations.of(context)!.navLogin
-                : AppLocalizations.of(context)!.navProfile,
+            label: AppLocalizations.of(context)!.navProfile,
           ),
         ],
       ),
@@ -19916,11 +19896,7 @@ class _SignupPageState extends State<SignupPage> {
           ),
           BottomNavigationBarItem(
             icon: Icon(Icons.person),
-            label:
-                (ApiService.accessToken == null ||
-                    ApiService.accessToken!.isEmpty)
-                ? AppLocalizations.of(context)!.navLogin
-                : AppLocalizations.of(context)!.navProfile,
+            label: AppLocalizations.of(context)!.navProfile,
           ),
         ],
       ),
@@ -20759,11 +20735,7 @@ class _ProfilePageState extends State<ProfilePage> {
           ),
           BottomNavigationBarItem(
             icon: Icon(Icons.person),
-            label:
-                (ApiService.accessToken == null ||
-                    ApiService.accessToken!.isEmpty)
-                ? AppLocalizations.of(context)!.navLogin
-                : AppLocalizations.of(context)!.navProfile,
+            label: AppLocalizations.of(context)!.navProfile,
           ),
         ],
       ),
@@ -20818,11 +20790,7 @@ class _PaymentHistoryPageState extends State<PaymentHistoryPage> {
           ),
           BottomNavigationBarItem(
             icon: Icon(Icons.person),
-            label:
-                (ApiService.accessToken == null ||
-                    ApiService.accessToken!.isEmpty)
-                ? AppLocalizations.of(context)!.navLogin
-                : AppLocalizations.of(context)!.navProfile,
+            label: AppLocalizations.of(context)!.navProfile,
           ),
         ],
       ),
@@ -21135,11 +21103,7 @@ class _MyListingsPageState extends State<MyListingsPage> {
           ),
           BottomNavigationBarItem(
             icon: Icon(Icons.person),
-            label:
-                (ApiService.accessToken == null ||
-                    ApiService.accessToken!.isEmpty)
-                ? AppLocalizations.of(context)!.navLogin
-                : AppLocalizations.of(context)!.navProfile,
+            label: AppLocalizations.of(context)!.navProfile,
           ),
         ],
       ),
