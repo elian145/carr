@@ -14734,8 +14734,6 @@ class _SellStep4PageState extends State<SellStep4Page> {
   // Can contain either local XFile (original picks) or server-relative paths (after "Blur Plates").
   List<dynamic> _selectedImages = [];
   final List<XFile> _selectedVideos = [];
-  Map<String, dynamic>? _aiAnalysisResult;
-  bool _isAnalyzing = false;
   bool _isProcessingImages = false;
   bool _imagesProcessed = false;
 
@@ -14746,123 +14744,11 @@ class _SellStep4PageState extends State<SellStep4Page> {
       if (files.isNotEmpty) {
         setState(() {
           _selectedImages = files;
-          _aiAnalysisResult =
-              null; // Reset analysis when new images are selected
           _imagesProcessed =
               false; // Reset processed flag when new images are selected
         });
-
-        // Automatically analyze the first image
-        if (files.isNotEmpty) {
-          _analyzeFirstImage(files.first);
-        }
       }
     } catch (_) {}
-  }
-
-  Future<void> _analyzeFirstImage(XFile imageFile) async {
-    if (!mounted) return;
-    setState(() {
-      _isAnalyzing = true;
-    });
-
-    try {
-      final result = await AiService.analyzeCarImage(imageFile);
-      if (result != null && result['success'] == true) {
-        if (!mounted) return;
-        setState(() {
-          _aiAnalysisResult = result['analysis'];
-        });
-
-        // Show analysis results to user
-        _showAnalysisResults(result['analysis']);
-      }
-    } catch (e) {
-      _debugLog('Error analyzing image: $e');
-    } finally {
-      if (!mounted) return;
-      setState(() {
-        _isAnalyzing = false;
-      });
-    }
-  }
-
-  void _showAnalysisResults(Map<String, dynamic> analysis) {
-    showDialog(
-      context: context,
-      builder: (context) => AlertDialog(
-        title: Text('AI Analysis Results'),
-        content: SingleChildScrollView(
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              if (analysis['car_info'] != null) ...[
-                Text(
-                  'Detected Information:',
-                  style: TextStyle(fontWeight: FontWeight.bold),
-                ),
-                SizedBox(height: 8),
-                if (analysis['car_info']['color'] != null)
-                  Text('Color: ${analysis['car_info']['color']}'),
-                if (analysis['car_info']['body_type'] != null)
-                  Text('Body Type: ${analysis['car_info']['body_type']}'),
-                if (analysis['car_info']['condition'] != null)
-                  Text('Condition: ${analysis['car_info']['condition']}'),
-                if (analysis['car_info']['doors'] != null)
-                  Text('Doors: ${analysis['car_info']['doors']}'),
-              ],
-              if (analysis['brand_model'] != null) ...[
-                SizedBox(height: 16),
-                Text(
-                  'Brand/Model Detection:',
-                  style: TextStyle(fontWeight: FontWeight.bold),
-                ),
-                SizedBox(height: 8),
-                if (analysis['brand_model']['brand'] != null)
-                  Text('Brand: ${analysis['brand_model']['brand']}'),
-                if (analysis['brand_model']['model'] != null)
-                  Text('Model: ${analysis['brand_model']['model']}'),
-                if (analysis['brand_model']['confidence'] != null)
-                  Text(
-                    'Confidence: ${(analysis['brand_model']['confidence'] * 100).toStringAsFixed(1)}%',
-                  ),
-              ],
-              SizedBox(height: 16),
-              Text(
-                'License plates have been automatically blurred for privacy.',
-              ),
-            ],
-          ),
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.of(context).pop(),
-            child: Text('OK'),
-          ),
-          ElevatedButton(
-            onPressed: () {
-              Navigator.of(context).pop();
-              _useAnalysisResults(analysis);
-            },
-            child: Text('Use These Values'),
-          ),
-        ],
-      ),
-    );
-  }
-
-  void _useAnalysisResults(Map<String, dynamic> analysis) {
-    // Navigate back to previous step with AI-detected values
-    // This would populate the form fields with detected values
-    final parentState = context.findAncestorStateOfType<_SellCarPageState>();
-    if (parentState != null) {
-      // Store AI analysis results in car data
-      parentState.carData['ai_analysis'] = analysis;
-
-      // Navigate back to step 2 to show detected values
-      parentState._goToPreviousStep();
-    }
   }
 
   Future<void> _processImages() async {
@@ -15031,56 +14917,6 @@ class _SellStep4PageState extends State<SellStep4Page> {
             ),
           ),
           SizedBox(height: 24),
-
-          // AI Analysis Status
-          if (_isAnalyzing)
-            Card(
-              child: Padding(
-                padding: EdgeInsets.all(16),
-                child: Row(
-                  children: [
-                    CircularProgressIndicator(),
-                    SizedBox(width: 16),
-                    Text('Analyzing car image with AI...'),
-                  ],
-                ),
-              ),
-            ),
-
-          // AI Analysis Results
-          if (_aiAnalysisResult != null)
-            Card(
-              color: Colors.green.shade50,
-              child: Padding(
-                padding: EdgeInsets.all(16),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Row(
-                      children: [
-                        Icon(Icons.auto_awesome, color: Colors.green),
-                        SizedBox(width: 8),
-                        Text(
-                          'AI Analysis Complete',
-                          style: TextStyle(
-                            fontWeight: FontWeight.bold,
-                            color: Colors.green,
-                          ),
-                        ),
-                      ],
-                    ),
-                    SizedBox(height: 8),
-                    Text('Tap "View Results" to see detected car information'),
-                    SizedBox(height: 8),
-                    ElevatedButton.icon(
-                      onPressed: () => _showAnalysisResults(_aiAnalysisResult!),
-                      icon: Icon(Icons.visibility),
-                      label: Text('View Results'),
-                    ),
-                  ],
-                ),
-              ),
-            ),
 
           // Image Processing Status
           if (_imagesProcessed)
