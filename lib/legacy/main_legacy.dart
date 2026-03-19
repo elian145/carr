@@ -20439,11 +20439,11 @@ class _ProfilePageState extends State<ProfilePage> {
                     },
                   ),
                   SizedBox(height: 12),
-                  _buildActionButton(Icons.help_outline, AppLocalizations.of(context)!.helpSupportTitle, () {
-                    // TODO: Implement help functionality
+                  _buildActionButton(Icons.contact_mail_outlined, 'Contact', () {
+                    // TODO: Add support contact email/action.
                     ScaffoldMessenger.of(context).showSnackBar(
                       SnackBar(
-                        content: Text(AppLocalizations.of(context)!.helpSupportComingSoon),
+                        content: Text('Contact support details coming soon.'),
                       ),
                     );
                   }),
