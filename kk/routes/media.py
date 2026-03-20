@@ -288,6 +288,23 @@ def upload_car_videos(car_id: str):
         for f in files:
             if not f or not f.filename:
                 continue
+            # Some mobile pickers provide filenames without extension.
+            # Infer a safe extension from MIME type so validation can pass.
+            if "." not in f.filename:
+                mt = (getattr(f, "mimetype", "") or "").lower()
+                inferred = ""
+                if "mp4" in mt:
+                    inferred = ".mp4"
+                elif "quicktime" in mt or "mov" in mt:
+                    inferred = ".mov"
+                elif "webm" in mt:
+                    inferred = ".webm"
+                elif "x-matroska" in mt or "mkv" in mt:
+                    inferred = ".mkv"
+                elif "avi" in mt:
+                    inferred = ".avi"
+                if inferred:
+                    f.filename = f"{f.filename}{inferred}"
             is_valid, msg = validate_file_upload(
                 f,
                 max_size_mb=100,
