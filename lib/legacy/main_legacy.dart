@@ -43,6 +43,7 @@ import '../pages/verify_email_page.dart';
 import '../features/comparison/state/car_comparison_store.dart';
 import '../data/car_catalog.dart';
 import '../data/car_name_translations.dart';
+import '../widgets/in_app_video_screen.dart';
 
 // Sideload build flag to disable services that require entitlements on iOS
 const bool kSideloadBuild = bool.fromEnvironment(
@@ -10896,20 +10897,15 @@ class _CarDetailsPageState extends State<CarDetailsPage> {
                               final videoUrl = _videoUrls[index];
                               return InkWell(
                                 borderRadius: BorderRadius.circular(12),
-                                onTap: () async {
-                                  final uri = Uri.tryParse(videoUrl);
-                                  if (uri == null) return;
-                                  final ok = await launchUrl(
-                                    uri,
-                                    mode: LaunchMode.externalApplication,
-                                  );
-                                  if (!ok && mounted) {
-                                    ScaffoldMessenger.of(context).showSnackBar(
-                                      SnackBar(
-                                        content: Text('Unable to open video'),
+                                onTap: () {
+                                  if (videoUrl.trim().isEmpty) return;
+                                  Navigator.of(context).push<void>(
+                                    MaterialPageRoute<void>(
+                                      builder: (ctx) => InAppVideoScreen(
+                                        videoUrl: videoUrl,
                                       ),
-                                    );
-                                  }
+                                    ),
+                                  );
                                 },
                                 child: Container(
                                   decoration: BoxDecoration(
