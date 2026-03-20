@@ -10264,10 +10264,23 @@ class _CarDetailsPageState extends State<CarDetailsPage> {
           ? (car!['videos'] as List)
           : const [];
       for (final dynamic it in videos) {
-        final s = it.toString();
-        if (s.isNotEmpty) {
+        String s = '';
+        if (it is String) {
+          s = it.trim();
+        } else if (it is Map) {
+          final map = it as Map;
+          s = (map['video_url'] ?? map['url'] ?? map['path'] ?? '')
+              .toString()
+              .trim();
+        } else {
+          s = it.toString().trim();
+        }
+        if (s.isNotEmpty &&
+            !s.startsWith('{') &&
+            s != 'null' &&
+            !s.contains('video_url:')) {
           final full = _buildFullImageUrl(s);
-          if (!urls.contains(full)) urls.add(full);
+          if (full.isNotEmpty && !urls.contains(full)) urls.add(full);
         }
       }
     }
@@ -16356,17 +16369,31 @@ class _SellStep5PageState extends State<SellStep5Page> {
             await CarService().uploadCarImages(carId, toUpload);
           }
           if (videosToUpload.isNotEmpty) {
+            // Backend (kk/routes/media.py) expects multipart field name "files", not "video".
             final url = Uri.parse('${getApiBase()}/api/cars/$carId/videos');
             final req = http.MultipartRequest('POST', url);
             req.headers['Authorization'] = 'Bearer $existingToken';
             for (final v in videosToUpload) {
               req.files.add(
-                await http.MultipartFile.fromPath('video', v.path),
+                await http.MultipartFile.fromPath('files', v.path),
               );
             }
             final resp = await req.send();
+            final respBody = await resp.stream.bytesToString();
             if (resp.statusCode != 200 && resp.statusCode != 201) {
-              _debugLog('Video upload failed: ${resp.statusCode}');
+              _debugLog(
+                'Video upload failed: ${resp.statusCode} $respBody',
+              );
+              if (mounted) {
+                ScaffoldMessenger.of(context).showSnackBar(
+                  SnackBar(
+                    content: Text(
+                      'Video upload failed (${resp.statusCode}). ${respBody.isNotEmpty ? respBody : ''}',
+                    ),
+                    backgroundColor: Colors.orange,
+                  ),
+                );
+              }
             }
           }
           // Refresh list so new listing has server-confirmed image_url/images before success/navigation
@@ -18646,10 +18673,13 @@ Widget build(BuildContext context) {
                         final tok = ApiService.accessToken;
                         if (tok != null) videoRequest.headers['Authorization'] = 'Bearer ' + tok;
                         for (final video in _selectedVideos) {
-                          videoRequest.files.add(await http.MultipartFile.fromPath('video', video.path));
+                          videoRequest.files.add(
+                            await http.MultipartFile.fromPath('files', video.path),
+                          );
                         }
                         final videoUploadResp = await videoRequest.send();
-                        if (videoUploadResp.statusCode != 201) {
+                        if (videoUploadResp.statusCode != 200 &&
+                            videoUploadResp.statusCode != 201) {
                           showDialog(
                             context: context,
                             builder: (context) => AlertDialog(

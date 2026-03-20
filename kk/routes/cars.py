@@ -143,6 +143,8 @@ def _with_media_compat(car: Car) -> dict:
         primary_rel = "uploads/car_photos/placeholder.jpg"
     d["image_url"] = primary_rel
     d["images"] = image_list
+    # Match list endpoints: expose plain relative paths so mobile clients can build /static/... URLs.
+    d["videos"] = [v.video_url for v in car.videos] if car.videos else []
     return d
 
 
