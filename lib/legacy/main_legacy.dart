@@ -16380,6 +16380,13 @@ class _SellStep5PageState extends State<SellStep5Page> {
             }
             final resp = await req.send();
             final respBody = await resp.stream.bytesToString();
+            Map<String, dynamic> payload = const {};
+            try {
+              final parsed = json.decode(respBody);
+              if (parsed is Map<String, dynamic>) payload = parsed;
+            } catch (_) {}
+            final uploaded = payload['videos'];
+            final uploadedCount = uploaded is List ? uploaded.length : 0;
             if (resp.statusCode != 200 && resp.statusCode != 201) {
               _debugLog(
                 'Video upload failed: ${resp.statusCode} $respBody',
@@ -16389,6 +16396,19 @@ class _SellStep5PageState extends State<SellStep5Page> {
                   SnackBar(
                     content: Text(
                       'Video upload failed (${resp.statusCode}). ${respBody.isNotEmpty ? respBody : ''}',
+                    ),
+                    backgroundColor: Colors.orange,
+                  ),
+                );
+              }
+            } else if (uploadedCount == 0) {
+              _debugLog('Video upload returned success but 0 videos: $respBody');
+              if (mounted) {
+                ScaffoldMessenger.of(context).showSnackBar(
+                  SnackBar(
+                    content: Text(
+                      (payload['message'] ?? 'No valid videos were uploaded.')
+                          .toString(),
                     ),
                     backgroundColor: Colors.orange,
                   ),

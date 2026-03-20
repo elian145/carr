@@ -283,16 +283,18 @@ def upload_car_videos(car_id: str):
 
         files = request.files.getlist("files")
         uploaded_videos = []
+        rejected = []
 
         for f in files:
             if not f or not f.filename:
                 continue
-            is_valid, _msg = validate_file_upload(
+            is_valid, msg = validate_file_upload(
                 f,
                 max_size_mb=100,
                 allowed_extensions=current_app.config["ALLOWED_VIDEO_EXTENSIONS"],
             )
             if not is_valid:
+                rejected.append({"filename": f.filename, "reason": msg})
                 continue
 
             filename = generate_secure_filename(f.filename)
@@ -304,10 +306,21 @@ def upload_car_videos(car_id: str):
             db.session.add(car_video)
             uploaded_videos.append(car_video.to_dict())
 
+        if not uploaded_videos:
+            db.session.rollback()
+            detail = rejected[0]["reason"] if rejected else "No valid videos uploaded"
+            return jsonify({"message": detail, "videos": [], "rejected": rejected}), 400
+
         db.session.commit()
         log_user_action(current_user, "upload_videos", "car", car.public_id)
 
-        return jsonify({"message": f"{len(uploaded_videos)} videos uploaded successfully", "videos": uploaded_videos}), 201
+        return jsonify(
+            {
+                "message": f"{len(uploaded_videos)} videos uploaded successfully",
+                "videos": uploaded_videos,
+                "rejected": rejected,
+            }
+        ), 201
     except Exception:
         db.session.rollback()
         return jsonify({"message": "Failed to upload videos"}), 500
