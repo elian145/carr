@@ -10259,32 +10259,43 @@ class _CarDetailsPageState extends State<CarDetailsPage> {
     return urls;
   }
 
+  /// Normalizes API `videos` (strings and/or `{video_url: ...}` maps) to relative paths.
+  static List<String> _normalizeVideoPaths(dynamic raw) {
+    if (raw == null) return [];
+    if (raw is! List) return [];
+    final List<String> out = [];
+    for (final dynamic it in raw) {
+      String s = '';
+      if (it is String) {
+        s = it.trim();
+      } else if (it is Map) {
+        final map = it as Map;
+        s = (map['video_url'] ?? map['url'] ?? map['path'] ?? '')
+            .toString()
+            .trim();
+      } else {
+        s = it.toString().trim();
+      }
+      if (s.isNotEmpty && !s.startsWith('{') && s != 'null') {
+        out.add(s);
+      }
+    }
+    return out;
+  }
+
+  Map<String, dynamic> _normalizeCarDetailMap(Map<String, dynamic> src) {
+    final m = Map<String, dynamic>.from(src);
+    m['videos'] = _normalizeVideoPaths(m['videos']);
+    return m;
+  }
+
   List<String> get _videoUrls {
     final List<String> urls = [];
-    if (car != null) {
-      final List<dynamic> videos = (car!['videos'] is List)
-          ? (car!['videos'] as List)
-          : const [];
-      for (final dynamic it in videos) {
-        String s = '';
-        if (it is String) {
-          s = it.trim();
-        } else if (it is Map) {
-          final map = it as Map;
-          s = (map['video_url'] ?? map['url'] ?? map['path'] ?? '')
-              .toString()
-              .trim();
-        } else {
-          s = it.toString().trim();
-        }
-        if (s.isNotEmpty &&
-            !s.startsWith('{') &&
-            s != 'null' &&
-            !s.contains('video_url:')) {
-          final full = _buildFullImageUrl(s);
-          if (full.isNotEmpty && !urls.contains(full)) urls.add(full);
-        }
-      }
+    if (car == null) return urls;
+    final paths = _normalizeVideoPaths(car!['videos']);
+    for (final String s in paths) {
+      final full = _buildFullImageUrl(s);
+      if (full.isNotEmpty && !urls.contains(full)) urls.add(full);
     }
     return urls;
   }
@@ -10365,74 +10376,113 @@ class _CarDetailsPageState extends State<CarDetailsPage> {
     });
   }
 
+  void _clampHeroMediaIndex() {
+    final n = _heroMediaCount;
+    if (n <= 0) {
+      if (_currentImageIndex != 0) {
+        if (mounted) setState(() => _currentImageIndex = 0);
+      }
+      return;
+    }
+    if (_currentImageIndex >= n) {
+      final newIndex = n - 1;
+      if (mounted) setState(() => _currentImageIndex = newIndex);
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (!mounted) return;
+        if (_imagePageController.hasClients) {
+          _imagePageController.jumpToPage(newIndex);
+        }
+      });
+    }
+  }
+
   Future<void> _loadCar() async {
     try {
       final sp = await SharedPreferences.getInstance();
       final cacheKey = 'cache_car_${widget.carId}';
+      final url = Uri.parse(
+        '${getApiBase()}/api/cars/${widget.carId}',
+      );
+
+      // Prefer network first so new uploads (images/videos) are not hidden behind stale cache.
+      bool appliedFromNetwork = false;
+      try {
+        final resp = await http.get(url).timeout(const Duration(seconds: 20));
+        if (resp.statusCode == 200) {
+          final data = json.decode(resp.body);
+          if (data is List && data.isNotEmpty) {
+            if (mounted) {
+              setState(() {
+                car = _normalizeCarDetailMap(
+                  Map<String, dynamic>.from(data.first),
+                );
+                loading = false;
+              });
+              _clampHeroMediaIndex();
+            }
+            appliedFromNetwork = true;
+          } else if (data is Map) {
+            final Map<String, dynamic> map = Map<String, dynamic>.from(data);
+            final dynamic inner = map['car'];
+            final Map<String, dynamic> normalized = inner is Map
+                ? Map<String, dynamic>.from(inner)
+                : map;
+            if (mounted) {
+              setState(() {
+                car = _normalizeCarDetailMap(normalized);
+                loading = false;
+              });
+              _clampHeroMediaIndex();
+            }
+            appliedFromNetwork = true;
+          }
+        }
+      } catch (_) {}
+
+      if (appliedFromNetwork && car != null) {
+        _precacheListingImages();
+        unawaited(_loadFavoriteStatus());
+        _loadSimilarAndRelated();
+        unawaited(sp.setString(cacheKey, json.encode(car)));
+        _trackView();
+        return;
+      }
+
+      // Offline / error: fall back to cached listing
       final cached = sp.getString(cacheKey);
       if (cached != null && cached.isNotEmpty) {
         try {
           final data = json.decode(cached);
           if (data is Map) {
-            if (mounted) setState(() {
-              car = Map<String, dynamic>.from(data);
-              loading = false;
-            });
+            if (mounted) {
+              setState(() {
+                car = _normalizeCarDetailMap(Map<String, dynamic>.from(data));
+                loading = false;
+              });
+              _clampHeroMediaIndex();
+            }
             _precacheListingImages();
             unawaited(_loadFavoriteStatus());
           } else if (data is List && data.isNotEmpty) {
-            if (mounted) setState(() {
-              car = Map<String, dynamic>.from(data.first);
-              loading = false;
-            });
+            if (mounted) {
+              setState(() {
+                car = _normalizeCarDetailMap(
+                  Map<String, dynamic>.from(data.first),
+                );
+                loading = false;
+              });
+              _clampHeroMediaIndex();
+            }
             _precacheListingImages();
             unawaited(_loadFavoriteStatus());
           }
         } catch (_) {}
       }
-      final url = Uri.parse(
-        '${getApiBase()}/api/cars/${widget.carId}',
-      );
-      final resp = await http.get(url).timeout(const Duration(seconds: 20));
-      if (resp.statusCode == 200) {
-        final data = json.decode(resp.body);
-        if (data is List && data.isNotEmpty) {
-          if (mounted) setState(() {
-            car = Map<String, dynamic>.from(data.first);
-            loading = false;
-          });
-          _precacheListingImages();
-          unawaited(_loadFavoriteStatus());
-          _loadSimilarAndRelated();
-          unawaited(sp.setString(cacheKey, json.encode(car)));
-          _trackView();
-        } else if (data is Map) {
-          final Map<String, dynamic> map = Map<String, dynamic>.from(data);
-          final dynamic inner = map['car'];
-          final Map<String, dynamic> normalized = inner is Map
-              ? Map<String, dynamic>.from(inner)
-              : map;
-          if (mounted) setState(() {
-            car = normalized;
-            loading = false;
-          });
-          _precacheListingImages();
-          unawaited(_loadFavoriteStatus());
-          _loadSimilarAndRelated();
-          unawaited(sp.setString(cacheKey, json.encode(car)));
-          _trackView();
-        } else {
-          if (mounted) setState(() {
-            loading = false;
-          });
-        }
-      } else {
-        if (cached == null && mounted) {
-          setState(() {
-            loading = false;
-          });
-        }
-      }
+
+      if (!mounted) return;
+      setState(() {
+        loading = false;
+      });
     } catch (_) {
       if (mounted) setState(() {
         loading = false;
