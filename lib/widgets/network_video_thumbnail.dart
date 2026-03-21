@@ -1,4 +1,5 @@
 import 'dart:typed_data';
+import 'dart:ui' as ui;
 
 import 'package:flutter/material.dart';
 import 'package:video_thumbnail/video_thumbnail.dart';
@@ -30,6 +31,8 @@ class _NetworkVideoThumbnailPreviewState
   Uint8List? _bytes;
   bool _loading = true;
   bool _failed = false;
+  /// From decoded JPEG dimensions (matches video frame shape). Null until loaded.
+  double? _aspectRatio;
 
   @override
   void initState() {
@@ -46,7 +49,27 @@ class _NetworkVideoThumbnailPreviewState
       _bytes = null;
       _loading = true;
       _failed = false;
+      _aspectRatio = null;
       _load();
+    }
+  }
+
+  static Future<double?> _aspectRatioFromImageBytes(Uint8List bytes) async {
+    ui.Codec? codec;
+    try {
+      codec = await ui.instantiateImageCodec(bytes);
+      final frame = await codec.getNextFrame();
+      final img = frame.image;
+      final w = img.width.toDouble();
+      final h = img.height.toDouble();
+      img.dispose();
+      if (w <= 0 || h <= 0) return null;
+      // Thumbnail matches video orientation; clamp so layout stays reasonable.
+      return (w / h).clamp(0.28, 2.6);
+    } catch (_) {
+      return null;
+    } finally {
+      codec?.dispose();
     }
   }
 
@@ -72,10 +95,16 @@ class _NetworkVideoThumbnailPreviewState
       );
       if (!mounted) return;
       final ok = data != null && data.isNotEmpty;
+      double? ratio;
+      if (ok && data != null) {
+        ratio = await _aspectRatioFromImageBytes(data);
+      }
+      if (!mounted) return;
       setState(() {
         _loading = false;
         _failed = !ok;
         _bytes = ok ? data : null;
+        _aspectRatio = ratio;
       });
     } catch (_) {
       if (!mounted) return;
@@ -83,12 +112,23 @@ class _NetworkVideoThumbnailPreviewState
         _loading = false;
         _failed = true;
         _bytes = null;
+        _aspectRatio = null;
       });
     }
   }
 
+  /// While loading or if dimensions unknown, default to landscape 16:9.
+  double get _layoutAspectRatio => _aspectRatio ?? (16 / 9);
+
   @override
   Widget build(BuildContext context) {
+    return AspectRatio(
+      aspectRatio: _layoutAspectRatio,
+      child: _buildThumbnailBody(),
+    );
+  }
+
+  Widget _buildThumbnailBody() {
     if (_loading) {
       return Container(
         color: Colors.grey[900],
