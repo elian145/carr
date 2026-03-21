@@ -1253,8 +1253,14 @@ class NoAnimationsPageTransitionsBuilder extends PageTransitionsBuilder {
 
 class FullScreenGalleryPage extends StatefulWidget {
   final List<String> imageUrls;
+  final List<String> videoUrls;
   final int initialIndex;
-  const FullScreenGalleryPage({super.key, required this.imageUrls, this.initialIndex = 0});
+  const FullScreenGalleryPage({
+    super.key,
+    required this.imageUrls,
+    this.videoUrls = const [],
+    this.initialIndex = 0,
+  });
   @override
   State<FullScreenGalleryPage> createState() => _FullScreenGalleryPageState();
 }
@@ -1262,11 +1268,15 @@ class FullScreenGalleryPage extends StatefulWidget {
 class _FullScreenGalleryPageState extends State<FullScreenGalleryPage> {
   late final PageController _controller;
   late int _index;
+  late final int _mediaCount;
+
+  bool _isVideoSlide(int index) => index >= widget.imageUrls.length;
 
   @override
   void initState() {
     super.initState();
-    _index = widget.initialIndex.clamp(0, widget.imageUrls.length - 1);
+    _mediaCount = widget.imageUrls.length + widget.videoUrls.length;
+    _index = widget.initialIndex.clamp(0, _mediaCount > 0 ? _mediaCount - 1 : 0);
     _controller = PageController(initialPage: _index);
   }
 
@@ -1284,14 +1294,79 @@ class _FullScreenGalleryPageState extends State<FullScreenGalleryPage> {
         backgroundColor: Colors.black,
         elevation: 0,
         iconTheme: IconThemeData(color: Colors.white),
+        title: _mediaCount > 0
+            ? Text(
+                '${_index + 1}/$_mediaCount',
+                style: TextStyle(color: Colors.white),
+              )
+            : null,
       ),
       body: Stack(
         children: [
           PageView.builder(
             controller: _controller,
             onPageChanged: (i) => setState(() => _index = i),
-            itemCount: widget.imageUrls.length,
+            itemCount: _mediaCount,
             itemBuilder: (context, i) {
+              if (_isVideoSlide(i)) {
+                final videoIndex = i - widget.imageUrls.length;
+                final videoUrl = widget.videoUrls[videoIndex];
+                return GestureDetector(
+                  onTap: () {
+                    if (videoUrl.trim().isEmpty) return;
+                    Navigator.of(context).push<void>(
+                      MaterialPageRoute<void>(
+                        builder: (_) => InAppVideoScreen(videoUrl: videoUrl),
+                      ),
+                    );
+                  },
+                  child: Stack(
+                    fit: StackFit.expand,
+                    children: [
+                      NetworkVideoThumbnailPreview(
+                        videoUrl: videoUrl,
+                        maxWidth: 1280,
+                        timeMs: 800,
+                        fillParent: true,
+                      ),
+                      Positioned(
+                        top: 14,
+                        right: 14,
+                        child: Container(
+                          padding: EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                          decoration: BoxDecoration(
+                            color: Colors.black54,
+                            borderRadius: BorderRadius.circular(4),
+                          ),
+                          child: Text(
+                            'VIDEO',
+                            style: TextStyle(
+                              color: Colors.white,
+                              fontSize: 11,
+                              fontWeight: FontWeight.bold,
+                            ),
+                          ),
+                        ),
+                      ),
+                      Center(
+                        child: Container(
+                          decoration: BoxDecoration(
+                            color: Colors.black54,
+                            shape: BoxShape.circle,
+                          ),
+                          padding: EdgeInsets.all(16),
+                          child: Icon(
+                            Icons.play_arrow,
+                            color: Colors.white,
+                            size: 40,
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                );
+              }
+
               final url = widget.imageUrls[i];
               return InteractiveViewer(
                 minScale: 0.8,
@@ -1308,7 +1383,7 @@ class _FullScreenGalleryPageState extends State<FullScreenGalleryPage> {
               );
             },
           ),
-          if (widget.imageUrls.length > 1)
+          if (_mediaCount > 1)
             Positioned(
               bottom: 24,
               left: 0,
@@ -1318,7 +1393,7 @@ class _FullScreenGalleryPageState extends State<FullScreenGalleryPage> {
                 physics: BouncingScrollPhysics(),
                 child: Row(
                   mainAxisAlignment: MainAxisAlignment.center,
-                  children: List.generate(widget.imageUrls.length, (i) {
+                  children: List.generate(_mediaCount, (i) {
                     final active = i == _index;
                     return AnimatedContainer(
                       duration: Duration(milliseconds: 200),
@@ -10700,6 +10775,7 @@ class _CarDetailsPageState extends State<CarDetailsPage> {
                                   MaterialPageRoute(
                                     builder: (_) => FullScreenGalleryPage(
                                       imageUrls: urls,
+                                      videoUrls: _videoUrls,
                                       initialIndex: idx,
                                     ),
                                   ),
