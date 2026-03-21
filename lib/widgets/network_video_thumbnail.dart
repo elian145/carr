@@ -13,6 +13,9 @@ class NetworkVideoThumbnailPreview extends StatefulWidget {
     this.maxWidth = 720,
     this.timeMs = 800,
     this.httpHeaders,
+    /// When true, fills tight parent constraints (e.g. hero carousel) with
+    /// [BoxFit.cover] instead of using an [AspectRatio] tile.
+    this.fillParent = false,
   });
 
   final String videoUrl;
@@ -20,6 +23,7 @@ class NetworkVideoThumbnailPreview extends StatefulWidget {
   /// Offset into the video to avoid an all-black first frame.
   final int timeMs;
   final Map<String, String>? httpHeaders;
+  final bool fillParent;
 
   @override
   State<NetworkVideoThumbnailPreview> createState() =>
@@ -45,7 +49,8 @@ class _NetworkVideoThumbnailPreviewState
     super.didUpdateWidget(oldWidget);
     if (oldWidget.videoUrl != widget.videoUrl ||
         oldWidget.maxWidth != widget.maxWidth ||
-        oldWidget.timeMs != widget.timeMs) {
+        oldWidget.timeMs != widget.timeMs ||
+        oldWidget.fillParent != widget.fillParent) {
       _bytes = null;
       _loading = true;
       _failed = false;
@@ -122,6 +127,9 @@ class _NetworkVideoThumbnailPreviewState
 
   @override
   Widget build(BuildContext context) {
+    if (widget.fillParent) {
+      return SizedBox.expand(child: _buildThumbnailBody());
+    }
     return AspectRatio(
       aspectRatio: _layoutAspectRatio,
       child: _buildThumbnailBody(),

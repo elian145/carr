@@ -10289,6 +10289,57 @@ class _CarDetailsPageState extends State<CarDetailsPage> {
     return urls;
   }
 
+  int get _heroMediaCount => _imageUrls.length + _videoUrls.length;
+
+  Widget _buildHeroVideoSlide(BuildContext context, int videoIndex) {
+    final videoUrl = _videoUrls[videoIndex];
+    return Stack(
+      fit: StackFit.expand,
+      clipBehavior: Clip.hardEdge,
+      children: [
+        NetworkVideoThumbnailPreview(
+          videoUrl: videoUrl,
+          maxWidth: 720,
+          timeMs: 800,
+          fillParent: true,
+        ),
+        Positioned(
+          top: 12,
+          right: 12,
+          child: Container(
+            padding: EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+            decoration: BoxDecoration(
+              color: Colors.black54,
+              borderRadius: BorderRadius.circular(4),
+            ),
+            child: Text(
+              'VIDEO',
+              style: TextStyle(
+                color: Colors.white,
+                fontSize: 11,
+                fontWeight: FontWeight.bold,
+              ),
+            ),
+          ),
+        ),
+        Center(
+          child: Container(
+            decoration: BoxDecoration(
+              color: Colors.black54,
+              shape: BoxShape.circle,
+            ),
+            padding: EdgeInsets.all(14),
+            child: Icon(
+              Icons.play_arrow,
+              color: Colors.white,
+              size: 36,
+            ),
+          ),
+        ),
+      ],
+    );
+  }
+
   @override
   void initState() {
     super.initState();
@@ -10590,30 +10641,55 @@ class _CarDetailsPageState extends State<CarDetailsPage> {
                           ),
                           child: GestureDetector(
                             onTap: () {
-                              final urls = _imageUrls;
-                              if (urls.isEmpty) return;
-                              Navigator.of(context).push(
-                                MaterialPageRoute(
-                                  builder: (_) => FullScreenGalleryPage(
-                                    imageUrls: urls,
-                                    initialIndex: _currentImageIndex,
+                              if (_heroMediaCount == 0) return;
+                              final idx = _currentImageIndex;
+                              if (idx < _imageUrls.length) {
+                                final urls = _imageUrls;
+                                if (urls.isEmpty) return;
+                                Navigator.of(context).push(
+                                  MaterialPageRoute(
+                                    builder: (_) => FullScreenGalleryPage(
+                                      imageUrls: urls,
+                                      initialIndex: idx,
+                                    ),
                                   ),
-                                ),
-                              );
+                                );
+                              } else {
+                                final vIdx = idx - _imageUrls.length;
+                                if (vIdx < 0 ||
+                                    vIdx >= _videoUrls.length) {
+                                  return;
+                                }
+                                final videoUrl = _videoUrls[vIdx];
+                                if (videoUrl.trim().isEmpty) return;
+                                Navigator.of(context).push<void>(
+                                  MaterialPageRoute<void>(
+                                    builder: (ctx) => InAppVideoScreen(
+                                      videoUrl: videoUrl,
+                                    ),
+                                  ),
+                                );
+                              }
                             },
-                            child: (_imageUrls.isNotEmpty)
+                            child: (_heroMediaCount > 0)
                                 ? PageView.builder(
                                     controller: _imagePageController,
                                     onPageChanged: (idx) => setState(
                                       () => _currentImageIndex = idx,
                                     ),
-                                    itemCount: _imageUrls.length,
+                                    itemCount: _heroMediaCount,
                                     itemBuilder: (context, index) {
-                                      final url = _imageUrls[index];
-                                      return _listingNetworkImage(
-                                        url,
-                                        fit: BoxFit.cover,
-                                        width: double.infinity,
+                                      if (index < _imageUrls.length) {
+                                        final url = _imageUrls[index];
+                                        return _listingNetworkImage(
+                                          url,
+                                          fit: BoxFit.cover,
+                                          width: double.infinity,
+                                        );
+                                      }
+                                      return _buildHeroVideoSlide(
+                                        context,
+                                        index - _imageUrls.length,
                                       );
                                     },
                                   )
@@ -10628,7 +10704,7 @@ class _CarDetailsPageState extends State<CarDetailsPage> {
                                   ),
                           ),
                         ),
-                        if (_imageUrls.length > 1)
+                        if (_heroMediaCount > 1)
                           Positioned(
                             bottom: 16,
                             left: 0,
@@ -10641,7 +10717,7 @@ class _CarDetailsPageState extends State<CarDetailsPage> {
                                   physics: BouncingScrollPhysics(),
                                   child: Row(
                                     mainAxisAlignment: MainAxisAlignment.center,
-                                    children: List.generate(_imageUrls.length, (
+                                    children: List.generate(_heroMediaCount, (
                                       i,
                                     ) {
                                       final bool active =
@@ -10872,142 +10948,6 @@ class _CarDetailsPageState extends State<CarDetailsPage> {
                         _buildSpecsGrid(),
                         SizedBox(height: 24),
 
-                        // Videos Section
-                        if (_videoUrls.isNotEmpty) ...[
-                          Text(
-                            AppLocalizations.of(context)!.vehicleVideos,
-                            style: TextStyle(
-                              fontSize: 16,
-                              fontWeight: FontWeight.bold,
-                              color: Color(0xFFFF6B00),
-                            ),
-                          ),
-                          SizedBox(height: 12),
-                          Column(
-                            crossAxisAlignment: CrossAxisAlignment.stretch,
-                            children: [
-                              for (var index = 0;
-                                  index < _videoUrls.length;
-                                  index++) ...[
-                                if (index != 0) SizedBox(height: 8),
-                                Builder(
-                                  builder: (context) {
-                                    final videoUrl = _videoUrls[index];
-                                    return InkWell(
-                                      borderRadius: BorderRadius.circular(12),
-                                      onTap: () {
-                                        if (videoUrl.trim().isEmpty) return;
-                                        Navigator.of(context).push<void>(
-                                          MaterialPageRoute<void>(
-                                            builder: (ctx) => InAppVideoScreen(
-                                              videoUrl: videoUrl,
-                                            ),
-                                          ),
-                                        );
-                                      },
-                                      child: Container(
-                                        width: double.infinity,
-                                        decoration: BoxDecoration(
-                                          borderRadius:
-                                              BorderRadius.circular(12),
-                                          color: Colors.grey[900],
-                                        ),
-                                        child: ClipRRect(
-                                          borderRadius:
-                                              BorderRadius.circular(12),
-                                          child: Stack(
-                                            alignment: Alignment.center,
-                                            clipBehavior: Clip.antiAlias,
-                                            children: [
-                                              NetworkVideoThumbnailPreview(
-                                                videoUrl: videoUrl,
-                                                maxWidth: 720,
-                                                timeMs: 800,
-                                              ),
-                                              Positioned(
-                                                top: 8,
-                                                right: 8,
-                                                child: Container(
-                                                  padding: EdgeInsets.symmetric(
-                                                    horizontal: 6,
-                                                    vertical: 2,
-                                                  ),
-                                                  decoration: BoxDecoration(
-                                                    color: Colors.black54,
-                                                    borderRadius:
-                                                        BorderRadius.circular(
-                                                      4,
-                                                    ),
-                                                  ),
-                                                  child: Text(
-                                                    'VIDEO',
-                                                    style: TextStyle(
-                                                      color: Colors.white,
-                                                      fontSize: 10,
-                                                      fontWeight:
-                                                          FontWeight.bold,
-                                                    ),
-                                                  ),
-                                                ),
-                                              ),
-                                              Positioned.fill(
-                                                child: Center(
-                                                  child: Container(
-                                                    decoration: BoxDecoration(
-                                                      color: Colors.black54,
-                                                      shape: BoxShape.circle,
-                                                    ),
-                                                    padding: EdgeInsets.all(12),
-                                                    child: Icon(
-                                                      Icons.play_arrow,
-                                                      color: Colors.white,
-                                                      size: 32,
-                                                    ),
-                                                  ),
-                                                ),
-                                              ),
-                                              Positioned(
-                                                bottom: 8,
-                                                left: 8,
-                                                child: Container(
-                                                  padding: EdgeInsets.symmetric(
-                                                    horizontal: 8,
-                                                    vertical: 4,
-                                                  ),
-                                                  decoration: BoxDecoration(
-                                                    color: Colors.black54,
-                                                    borderRadius:
-                                                        BorderRadius.circular(
-                                                      4,
-                                                    ),
-                                                  ),
-                                                  child: Text(
-                                                    AppLocalizations.of(
-                                                      context,
-                                                    )!.videoIndex(
-                                                      (index + 1).toString(),
-                                                    ),
-                                                    style: TextStyle(
-                                                      color: Colors.white,
-                                                      fontSize: 12,
-                                                      fontWeight:
-                                                          FontWeight.w500,
-                                                    ),
-                                                  ),
-                                                ),
-                                              ),
-                                            ],
-                                          ),
-                                        ),
-                                      ),
-                                    );
-                                  },
-                                ),
-                              ],
-                            ],
-                          ),
-                          SizedBox(height: 24),
-                        ],
                         Column(
                           mainAxisSize: MainAxisSize.min,
                           children: [
