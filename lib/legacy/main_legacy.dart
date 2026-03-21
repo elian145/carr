@@ -44,6 +44,7 @@ import '../features/comparison/state/car_comparison_store.dart';
 import '../data/car_catalog.dart';
 import '../data/car_name_translations.dart';
 import '../widgets/in_app_video_screen.dart';
+import '../widgets/network_video_thumbnail.dart';
 
 // Sideload build flag to disable services that require entitlements on iOS
 const bool kSideloadBuild = bool.fromEnvironment(
@@ -10916,47 +10917,36 @@ class _CarDetailsPageState extends State<CarDetailsPage> {
                                     borderRadius: BorderRadius.circular(12),
                                     child: Stack(
                                       alignment: Alignment.center,
+                                      fit: StackFit.expand,
                                       children: [
-                                        Container(
-                                          width: double.infinity,
-                                          height: double.infinity,
-                                          color: Colors.grey[800],
-                                          child: Stack(
-                                            children: [
-                                              Center(
-                                                child: Icon(
-                                                  Icons.videocam,
-                                                  size: 48,
-                                                  color: Colors.grey[400],
-                                                ),
+                                        Positioned.fill(
+                                          child: NetworkVideoThumbnailPreview(
+                                            videoUrl: videoUrl,
+                                            maxWidth: 720,
+                                            timeMs: 800,
+                                          ),
+                                        ),
+                                        Positioned(
+                                          top: 8,
+                                          right: 8,
+                                          child: Container(
+                                            padding: EdgeInsets.symmetric(
+                                              horizontal: 6,
+                                              vertical: 2,
+                                            ),
+                                            decoration: BoxDecoration(
+                                              color: Colors.black54,
+                                              borderRadius:
+                                                  BorderRadius.circular(4),
+                                            ),
+                                            child: Text(
+                                              'VIDEO',
+                                              style: TextStyle(
+                                                color: Colors.white,
+                                                fontSize: 10,
+                                                fontWeight: FontWeight.bold,
                                               ),
-                                              Positioned(
-                                                top: 8,
-                                                right: 8,
-                                                child: Container(
-                                                  padding: EdgeInsets.symmetric(
-                                                    horizontal: 6,
-                                                    vertical: 2,
-                                                  ),
-                                                  decoration: BoxDecoration(
-                                                    color: Colors.black54,
-                                                    borderRadius:
-                                                        BorderRadius.circular(
-                                                      4,
-                                                    ),
-                                                  ),
-                                                  child: Text(
-                                                    'VIDEO',
-                                                    style: TextStyle(
-                                                      color: Colors.white,
-                                                      fontSize: 10,
-                                                      fontWeight:
-                                                          FontWeight.bold,
-                                                    ),
-                                                  ),
-                                                ),
-                                              ),
-                                            ],
+                                            ),
                                           ),
                                         ),
                                         Container(
