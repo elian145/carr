@@ -5367,6 +5367,9 @@ class _HomePageState extends State<HomePage> {
               Navigator.pushReplacementNamed(context, '/favorites');
               break;
             case 2:
+              Navigator.pushReplacementNamed(context, '/sell');
+              break;
+            case 3:
               Navigator.pushReplacementNamed(context, '/profile');
               break;
           }
@@ -5379,6 +5382,10 @@ class _HomePageState extends State<HomePage> {
           BottomNavigationBarItem(
             icon: Icon(Icons.favorite),
             label: AppLocalizations.of(context)!.navSaved,
+          ),
+          BottomNavigationBarItem(
+            icon: Icon(Icons.sell),
+            label: AppLocalizations.of(context)!.sellTitle,
           ),
           BottomNavigationBarItem(
             icon: Icon(Icons.person),
@@ -18859,6 +18866,9 @@ Widget build(BuildContext context) {
             Navigator.pushReplacementNamed(context, '/favorites');
             break;
           case 2:
+            Navigator.pushReplacementNamed(context, '/sell');
+            break;
+          case 3:
             if (ApiService.accessToken == null ||
                 ApiService.accessToken!.isEmpty) {
               Navigator.pushReplacementNamed(context, '/login');
@@ -18876,6 +18886,10 @@ Widget build(BuildContext context) {
         BottomNavigationBarItem(
           icon: Icon(Icons.favorite),
           label: AppLocalizations.of(context)!.navSaved,
+        ),
+        BottomNavigationBarItem(
+          icon: Icon(Icons.sell),
+          label: AppLocalizations.of(context)!.sellTitle,
         ),
         BottomNavigationBarItem(
           icon: Icon(Icons.person),
@@ -19230,6 +19244,9 @@ class _FavoritesPageState extends State<FavoritesPage> {
               // Already on favorites
               break;
             case 2:
+              Navigator.pushReplacementNamed(context, '/sell');
+              break;
+            case 3:
               Navigator.pushReplacementNamed(context, '/profile');
               break;
           }
@@ -19242,6 +19259,10 @@ class _FavoritesPageState extends State<FavoritesPage> {
           BottomNavigationBarItem(
             icon: Icon(Icons.favorite),
             label: AppLocalizations.of(context)!.navSaved,
+          ),
+          BottomNavigationBarItem(
+            icon: Icon(Icons.sell),
+            label: AppLocalizations.of(context)!.sellTitle,
           ),
           BottomNavigationBarItem(
             icon: Icon(Icons.person),
@@ -19281,6 +19302,9 @@ class _ChatListPageState extends State<ChatListPage> {
               Navigator.pushReplacementNamed(context, '/favorites');
               break;
             case 2:
+              Navigator.pushReplacementNamed(context, '/sell');
+              break;
+            case 3:
               if (ApiService.accessToken == null ||
                   ApiService.accessToken!.isEmpty) {
                 Navigator.pushReplacementNamed(context, '/login');
@@ -19298,6 +19322,10 @@ class _ChatListPageState extends State<ChatListPage> {
           BottomNavigationBarItem(
             icon: Icon(Icons.favorite),
             label: AppLocalizations.of(context)!.navSaved,
+          ),
+          BottomNavigationBarItem(
+            icon: Icon(Icons.sell),
+            label: AppLocalizations.of(context)!.sellTitle,
           ),
           BottomNavigationBarItem(
             icon: Icon(Icons.person),
@@ -19423,7 +19451,7 @@ class _LoginPageState extends State<LoginPage> {
         backgroundColor: Colors.black87,
         selectedItemColor: Color(0xFFFF6B00),
         unselectedItemColor: Colors.white70,
-        currentIndex: 2,
+        currentIndex: 3,
         onTap: (idx) {
           switch (idx) {
             case 0:
@@ -19433,6 +19461,9 @@ class _LoginPageState extends State<LoginPage> {
               Navigator.pushReplacementNamed(context, '/favorites');
               break;
             case 2:
+              Navigator.pushReplacementNamed(context, '/sell');
+              break;
+            case 3:
               // Already on login
               break;
           }
@@ -19445,6 +19476,10 @@ class _LoginPageState extends State<LoginPage> {
           BottomNavigationBarItem(
             icon: Icon(Icons.favorite),
             label: AppLocalizations.of(context)!.navSaved,
+          ),
+          BottomNavigationBarItem(
+            icon: Icon(Icons.sell),
+            label: AppLocalizations.of(context)!.sellTitle,
           ),
           BottomNavigationBarItem(
             icon: Icon(Icons.person),
@@ -19982,7 +20017,7 @@ class _SignupPageState extends State<SignupPage> {
         backgroundColor: Colors.black87,
         selectedItemColor: Color(0xFFFF6B00),
         unselectedItemColor: Colors.white70,
-        currentIndex: 2,
+        currentIndex: 3,
         onTap: (idx) {
           switch (idx) {
             case 0:
@@ -19992,6 +20027,9 @@ class _SignupPageState extends State<SignupPage> {
               Navigator.pushReplacementNamed(context, '/favorites');
               break;
             case 2:
+              Navigator.pushReplacementNamed(context, '/sell');
+              break;
+            case 3:
               if (ApiService.accessToken == null ||
                   ApiService.accessToken!.isEmpty) {
                 Navigator.pushReplacementNamed(context, '/login');
@@ -20009,6 +20047,10 @@ class _SignupPageState extends State<SignupPage> {
           BottomNavigationBarItem(
             icon: Icon(Icons.favorite),
             label: AppLocalizations.of(context)!.navSaved,
+          ),
+          BottomNavigationBarItem(
+            icon: Icon(Icons.sell),
+            label: AppLocalizations.of(context)!.sellTitle,
           ),
           BottomNavigationBarItem(
             icon: Icon(Icons.person),
@@ -20811,7 +20853,7 @@ class _ProfilePageState extends State<ProfilePage> {
         backgroundColor: Colors.black87,
         selectedItemColor: Color(0xFFFF6B00),
         unselectedItemColor: Colors.white70,
-        currentIndex: 2,
+        currentIndex: 3,
         onTap: (idx) {
           switch (idx) {
             case 0:
@@ -20821,6 +20863,9 @@ class _ProfilePageState extends State<ProfilePage> {
               Navigator.pushReplacementNamed(context, '/favorites');
               break;
             case 2:
+              Navigator.pushReplacementNamed(context, '/sell');
+              break;
+            case 3:
               if (ApiService.accessToken == null ||
                   ApiService.accessToken!.isEmpty) {
                 Navigator.pushReplacementNamed(context, '/login');
@@ -20838,6 +20883,10 @@ class _ProfilePageState extends State<ProfilePage> {
           BottomNavigationBarItem(
             icon: Icon(Icons.favorite),
             label: AppLocalizations.of(context)!.navSaved,
+          ),
+          BottomNavigationBarItem(
+            icon: Icon(Icons.sell),
+            label: AppLocalizations.of(context)!.sellTitle,
           ),
           BottomNavigationBarItem(
             icon: Icon(Icons.person),
@@ -20881,6 +20930,9 @@ class _PaymentHistoryPageState extends State<PaymentHistoryPage> {
               Navigator.pushReplacementNamed(context, '/favorites');
               break;
             case 2:
+              Navigator.pushReplacementNamed(context, '/sell');
+              break;
+            case 3:
               Navigator.pushReplacementNamed(context, '/login');
               break;
           }
@@ -20893,6 +20945,10 @@ class _PaymentHistoryPageState extends State<PaymentHistoryPage> {
           BottomNavigationBarItem(
             icon: Icon(Icons.favorite),
             label: AppLocalizations.of(context)!.navSaved,
+          ),
+          BottomNavigationBarItem(
+            icon: Icon(Icons.sell),
+            label: AppLocalizations.of(context)!.sellTitle,
           ),
           BottomNavigationBarItem(
             icon: Icon(Icons.person),
@@ -21179,7 +21235,7 @@ class _MyListingsPageState extends State<MyListingsPage> {
         backgroundColor: Colors.black87,
         selectedItemColor: Color(0xFFFF6B00),
         unselectedItemColor: Colors.white70,
-        currentIndex: 2,
+        currentIndex: 3,
         onTap: (idx) {
           switch (idx) {
             case 0:
@@ -21189,6 +21245,9 @@ class _MyListingsPageState extends State<MyListingsPage> {
               Navigator.pushReplacementNamed(context, '/favorites');
               break;
             case 2:
+              Navigator.pushReplacementNamed(context, '/sell');
+              break;
+            case 3:
               if (ApiService.accessToken == null ||
                   ApiService.accessToken!.isEmpty) {
                 Navigator.pushReplacementNamed(context, '/login');
@@ -21206,6 +21265,10 @@ class _MyListingsPageState extends State<MyListingsPage> {
           BottomNavigationBarItem(
             icon: Icon(Icons.favorite),
             label: AppLocalizations.of(context)!.navSaved,
+          ),
+          BottomNavigationBarItem(
+            icon: Icon(Icons.sell),
+            label: AppLocalizations.of(context)!.sellTitle,
           ),
           BottomNavigationBarItem(
             icon: Icon(Icons.person),
