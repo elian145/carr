@@ -46,6 +46,63 @@ def _r2_client():
     )
 
 
+def _r2_public_base() -> str:
+    return (current_app.config.get("R2_PUBLIC_URL") or "").strip().rstrip("/")
+
+
+def _r2_ready_for_public_object_urls() -> bool:
+    """Upload objects to R2 and expose them via R2_PUBLIC_URL (custom domain or r2.dev)."""
+    return _r2_configured() and bool(_r2_public_base())
+
+
+def _video_content_type_for_ext(ext: str) -> str:
+    ext = (ext or "").lower()
+    if not ext.startswith("."):
+        ext = "." + ext
+    return {
+        ".mp4": "video/mp4",
+        ".mov": "video/quicktime",
+        ".webm": "video/webm",
+        ".mkv": "video/x-matroska",
+        ".avi": "video/x-msvideo",
+    }.get(ext, "application/octet-stream")
+
+
+def _upload_video_file_to_r2(file_storage) -> str:
+    """
+    Read validated multipart file, put to R2, return public HTTPS URL for DB storage.
+    Caller must ensure stream is at position 0 or call seek(0) after validation.
+    """
+    public_base = _r2_public_base()
+    if not public_base:
+        raise RuntimeError("R2_PUBLIC_URL is not set")
+
+    raw_name = (file_storage.filename or "video.mp4").strip()
+    ext = os.path.splitext(raw_name)[1].lower() or ".mp4"
+    if ext not in (".mp4", ".mov", ".avi", ".mkv", ".webm"):
+        ext = ".mp4"
+    key = f"car_videos/{secrets.token_hex(16)}{ext}"
+
+    try:
+        file_storage.seek(0)
+    except Exception:
+        pass
+    body = file_storage.read()
+    if not body:
+        raise RuntimeError("Empty file body")
+
+    client = _r2_client()
+    bucket = current_app.config["R2_BUCKET_NAME"]
+    ct = _video_content_type_for_ext(ext)
+    client.put_object(
+        Bucket=bucket,
+        Key=key,
+        Body=body,
+        ContentType=ct,
+    )
+    return f"{public_base}/{key}"
+
+
 def _get_car_by_any_id(car_id: str):
     car = Car.query.filter_by(public_id=car_id).first()
     if not car and str(car_id).isdigit():
@@ -60,8 +117,8 @@ def _get_car_by_any_id(car_id: str):
 @jwt_required()
 def r2_sign_upload():
     """
-    Return a presigned PUT URL for uploading one image to R2.
-    Body: { "filename": "photo.jpg", "content_type": "image/jpeg" } (optional).
+    Return a presigned PUT URL for uploading one file to R2 (image or video).
+    Body: { "filename": "photo.jpg", "content_type": "image/jpeg", "asset": "image" | "video" } (optional).
     Response: { "upload_url": "<presigned PUT URL>", "key": "<object key>", "public_url": "<optional public URL>" }.
     """
     if not _r2_configured():
@@ -73,17 +130,26 @@ def r2_sign_upload():
             return jsonify({"message": "User not found"}), 404
 
         data = request.get_json(silent=True) or {}
-        raw_name = (data.get("filename") or data.get("name") or "image.jpg").strip()
+        asset = (data.get("asset") or "image").strip().lower()
+        raw_name = (data.get("filename") or data.get("name") or "").strip()
         if not raw_name or "/" in raw_name or "\\" in raw_name:
-            raw_name = "image.jpg"
-        ext = os.path.splitext(raw_name)[1].lower() or ".jpg"
-        if ext not in {".jpg", ".jpeg", ".png", ".gif", ".webp", ".heic", ".heif"}:
-            ext = ".jpg"
-        key = f"car_photos/{secrets.token_hex(8)}{ext}"
+            raw_name = "image.jpg" if asset != "video" else "clip.mp4"
+        ext = os.path.splitext(raw_name)[1].lower()
+
+        if asset == "video":
+            if ext not in {".mp4", ".mov", ".avi", ".mkv", ".webm"}:
+                ext = ".mp4"
+            key = f"car_videos/{secrets.token_hex(8)}{ext}"
+            default_ct = _video_content_type_for_ext(ext)
+            content_type = (data.get("content_type") or default_ct).strip() or default_ct
+        else:
+            if ext not in {".jpg", ".jpeg", ".png", ".gif", ".webp", ".heic", ".heif"}:
+                ext = ".jpg"
+            key = f"car_photos/{secrets.token_hex(8)}{ext}"
+            content_type = (data.get("content_type") or "image/jpeg").strip() or "image/jpeg"
 
         client = _r2_client()
         bucket = current_app.config["R2_BUCKET_NAME"]
-        content_type = (data.get("content_type") or "image/jpeg").strip() or "image/jpeg"
 
         presigned_url = client.generate_presigned_url(
             "put_object",
@@ -92,7 +158,7 @@ def r2_sign_upload():
         )
 
         out = {"upload_url": presigned_url, "key": key}
-        public_base = current_app.config.get("R2_PUBLIC_URL")
+        public_base = (current_app.config.get("R2_PUBLIC_URL") or "").strip()
         if public_base:
             out["public_url"] = f"{public_base.rstrip('/')}/{key}"
         return jsonify(out), 200
@@ -314,12 +380,27 @@ def upload_car_videos(car_id: str):
                 rejected.append({"filename": f.filename, "reason": msg})
                 continue
 
-            filename = generate_secure_filename(f.filename)
-            file_path = os.path.join(current_app.config["UPLOAD_FOLDER"], "car_videos", filename)
-            os.makedirs(os.path.dirname(file_path), exist_ok=True)
-            f.save(file_path)
+            if _r2_ready_for_public_object_urls():
+                try:
+                    stored_url = _upload_video_file_to_r2(f)
+                except Exception as e:
+                    current_app.logger.exception("R2 video upload failed: %s", e)
+                    rejected.append(
+                        {"filename": f.filename, "reason": f"R2 upload failed: {e!s}"}
+                    )
+                    continue
+                car_video = CarVideo(car_id=car.id, video_url=stored_url)
+            else:
+                filename = generate_secure_filename(f.filename)
+                file_path = os.path.join(
+                    current_app.config["UPLOAD_FOLDER"], "car_videos", filename
+                )
+                os.makedirs(os.path.dirname(file_path), exist_ok=True)
+                f.save(file_path)
+                car_video = CarVideo(
+                    car_id=car.id, video_url=f"uploads/car_videos/{filename}"
+                )
 
-            car_video = CarVideo(car_id=car.id, video_url=f"uploads/car_videos/{filename}")
             db.session.add(car_video)
             uploaded_videos.append(car_video.to_dict())
 

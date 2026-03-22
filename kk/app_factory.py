@@ -316,8 +316,14 @@ def create_app():
     if use_compat:
         ensure_minimal_schema_compat(app, db)
 
-    # Create upload directories under kk/static/uploads/...
-    app.config["UPLOAD_FOLDER"] = os.path.join(app.root_path, "static", "uploads")
+    # User uploads (photos, videos, profiles). Default: kk/static/uploads/
+    # Set UPLOAD_FOLDER to an absolute path on a **persistent disk** (Docker volume,
+    # Render disk, etc.) or uploads are lost on every deploy/restart on ephemeral hosts.
+    _upload_env = (os.environ.get("UPLOAD_FOLDER") or "").strip()
+    if _upload_env:
+        app.config["UPLOAD_FOLDER"] = os.path.abspath(_upload_env)
+    else:
+        app.config["UPLOAD_FOLDER"] = os.path.join(app.root_path, "static", "uploads")
     os.makedirs(os.path.join(app.config["UPLOAD_FOLDER"], "car_photos"), exist_ok=True)
     os.makedirs(os.path.join(app.config["UPLOAD_FOLDER"], "car_videos"), exist_ok=True)
     os.makedirs(os.path.join(app.config["UPLOAD_FOLDER"], "profile_pictures"), exist_ok=True)

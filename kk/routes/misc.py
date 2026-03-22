@@ -17,9 +17,30 @@ def health():
 
 @bp.route("/static/<path:filename>")
 def static_files(filename: str):
-    """Serve static files from kk/static, then repo root static/ as fallback."""
+    """Serve static files from kk/static, then repo root static/ as fallback.
+
+    User-generated uploads (photos/videos) are stored under UPLOAD_FOLDER (see app_factory).
+    When UPLOAD_FOLDER points to a persistent volume, serve those files here so URLs like
+    /static/uploads/car_videos/... keep working after redeploys.
+    """
     if filename.startswith("uploads/uploads/"):
         filename = filename[len("uploads/") :]
+
+    # 1) Configured upload root (may be outside kk/static for persistent storage)
+    upload_root = (current_app.config.get("UPLOAD_FOLDER") or "").strip()
+    if upload_root and filename.startswith("uploads/"):
+        rel_under_uploads = filename[len("uploads/") :]
+        try:
+            safe_path = safe_join(upload_root, rel_under_uploads)
+            if safe_path and os.path.isfile(safe_path):
+                return send_from_directory(upload_root, rel_under_uploads)
+        except Exception as e:
+            logger.warning(
+                "static_files UPLOAD_FOLDER failed for %s: %s",
+                filename,
+                e,
+                exc_info=True,
+            )
 
     static_dir = os.path.join(current_app.root_path, "static")
     try:

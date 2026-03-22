@@ -302,8 +302,9 @@ class CarVideo(db.Model):
     
     id = db.Column(db.Integer, primary_key=True)
     car_id = db.Column(db.Integer, db.ForeignKey('car.id'), nullable=False)
-    video_url = db.Column(db.String(200), nullable=False)
-    thumbnail_url = db.Column(db.String(200), nullable=True)
+    # Full R2/CDN URLs can exceed 200 chars
+    video_url = db.Column(db.String(2048), nullable=False)
+    thumbnail_url = db.Column(db.String(2048), nullable=True)
     duration = db.Column(db.Integer, nullable=True)  # Duration in seconds
     order = db.Column(db.Integer, default=0)
     created_at = db.Column(db.DateTime, default=utcnow)
