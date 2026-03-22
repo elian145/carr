@@ -4,6 +4,13 @@ import 'package:video_player/video_player.dart';
 
 import 'network_video_thumbnail.dart';
 
+String _formatVideoTime(Duration d) {
+  if (d.inMilliseconds < 0) return '0:00';
+  final m = d.inMinutes;
+  final s = d.inSeconds % 60;
+  return '$m:${s.toString().padLeft(2, '0')}';
+}
+
 /// Inline video for [FullScreenGalleryPage] so users can swipe to other media
 /// while the video is playing (no pushed route on top).
 class GalleryEmbeddedVideoPlayer extends StatefulWidget {
@@ -25,6 +32,8 @@ class _GalleryEmbeddedVideoPlayerState extends State<GalleryEmbeddedVideoPlayer>
   VideoPlayerController? _controller;
   bool _loading = false;
   String? _error;
+  /// While dragging the seek slider, holds the thumb position in ms.
+  double? _seekDragMs;
 
   @override
   void initState() {
@@ -59,10 +68,12 @@ class _GalleryEmbeddedVideoPlayerState extends State<GalleryEmbeddedVideoPlayer>
   Future<void> _init() async {
     final url = widget.videoUrl.trim();
     if (url.isEmpty) {
-      if (mounted) setState(() {
-        _loading = false;
-        _error = 'Empty URL';
-      });
+      if (mounted) {
+        setState(() {
+          _loading = false;
+          _error = 'Empty URL';
+        });
+      }
       return;
     }
     setState(() {
@@ -101,6 +112,7 @@ class _GalleryEmbeddedVideoPlayerState extends State<GalleryEmbeddedVideoPlayer>
     _controller?.removeListener(_onTick);
     _controller?.dispose();
     _controller = null;
+    _seekDragMs = null;
   }
 
   @override
@@ -118,6 +130,107 @@ class _GalleryEmbeddedVideoPlayerState extends State<GalleryEmbeddedVideoPlayer>
       c.play();
     }
     setState(() {});
+  }
+
+  Widget _buildSeekBar(BuildContext context, VideoPlayerController c) {
+    final v = c.value;
+    if (!v.isInitialized) return const SizedBox.shrink();
+    final totalMs = v.duration.inMilliseconds;
+    if (totalMs <= 0) return const SizedBox.shrink();
+
+    final posMs = v.position.inMilliseconds.clamp(0, totalMs);
+    final maxD = totalMs.toDouble();
+    final thumbMs = (_seekDragMs ?? posMs.toDouble()).clamp(0.0, maxD);
+
+    final timeStyle = TextStyle(
+      color: Colors.white,
+      fontSize: 13,
+      fontWeight: FontWeight.w600,
+      fontFeatures: const [FontFeature.tabularFigures()],
+    );
+
+    return Material(
+      color: Colors.black.withValues(alpha: 0.82),
+      borderRadius: const BorderRadius.vertical(top: Radius.circular(14)),
+      elevation: 8,
+      child: Padding(
+        padding: const EdgeInsets.fromLTRB(10, 12, 10, 14),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            Row(
+              crossAxisAlignment: CrossAxisAlignment.center,
+              children: [
+                SizedBox(
+                  width: 48,
+                  child: Text(
+                    _formatVideoTime(
+                      Duration(milliseconds: thumbMs.round()),
+                    ),
+                    style: timeStyle,
+                  ),
+                ),
+                Expanded(
+                  child: SliderTheme(
+                    data: SliderTheme.of(context).copyWith(
+                      trackHeight: 10,
+                      thumbShape: const RoundSliderThumbShape(
+                        enabledThumbRadius: 13,
+                        elevation: 3,
+                        pressedElevation: 5,
+                      ),
+                      overlayShape: const RoundSliderOverlayShape(
+                        overlayRadius: 24,
+                      ),
+                      activeTrackColor: const Color(0xFFFF6B00),
+                      inactiveTrackColor: Colors.white24,
+                      thumbColor: Colors.white,
+                      overlayColor: const Color(0x66FF6B00),
+                    ),
+                    child: Slider(
+                      value: thumbMs,
+                      max: maxD,
+                      onChangeStart: (_) {
+                        setState(() => _seekDragMs = posMs.toDouble());
+                      },
+                      onChanged: (nv) {
+                        final t = nv.clamp(0.0, maxD);
+                        setState(() => _seekDragMs = t);
+                        c.seekTo(Duration(milliseconds: t.round()));
+                      },
+                      onChangeEnd: (_) {
+                        setState(() => _seekDragMs = null);
+                      },
+                    ),
+                  ),
+                ),
+                SizedBox(
+                  width: 48,
+                  child: Text(
+                    _formatVideoTime(v.duration),
+                    textAlign: TextAlign.right,
+                    style: timeStyle.copyWith(
+                      color: Colors.white70,
+                      fontWeight: FontWeight.w500,
+                    ),
+                  ),
+                ),
+              ],
+            ),
+            const SizedBox(height: 4),
+            Text(
+              'Drag the bar to jump in the video',
+              textAlign: TextAlign.center,
+              style: TextStyle(
+                color: Colors.white.withValues(alpha: 0.55),
+                fontSize: 11,
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
   }
 
   @override
@@ -207,15 +320,9 @@ class _GalleryEmbeddedVideoPlayerState extends State<GalleryEmbeddedVideoPlayer>
           left: 0,
           right: 0,
           bottom: 0,
-          child: VideoProgressIndicator(
-            c,
-            allowScrubbing: false,
-            padding: const EdgeInsets.symmetric(vertical: 8, horizontal: 12),
-            colors: const VideoProgressColors(
-              playedColor: Color(0xFFFF6B00),
-              bufferedColor: Colors.white24,
-              backgroundColor: Colors.white12,
-            ),
+          child: SafeArea(
+            top: false,
+            child: _buildSeekBar(context, c),
           ),
         ),
       ],
