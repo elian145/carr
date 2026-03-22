@@ -1363,59 +1363,9 @@ class _FullScreenGalleryPageState extends State<FullScreenGalleryPage> {
               if (_isVideoSlide(i)) {
                 final videoIndex = i - widget.imageUrls.length;
                 final videoUrl = widget.videoUrls[videoIndex];
-                return GestureDetector(
-                  onTap: () {
-                    if (videoUrl.trim().isEmpty) return;
-                    Navigator.of(context).push<void>(
-                      MaterialPageRoute<void>(
-                        builder: (_) => InAppVideoScreen(videoUrl: videoUrl),
-                      ),
-                    );
-                  },
-                  child: Stack(
-                    fit: StackFit.expand,
-                    children: [
-                      NetworkVideoThumbnailPreview(
-                        videoUrl: videoUrl,
-                        maxWidth: 1280,
-                        timeMs: 800,
-                        fillParent: true,
-                      ),
-                      Positioned(
-                        top: 14,
-                        right: 14,
-                        child: Container(
-                          padding: EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-                          decoration: BoxDecoration(
-                            color: Colors.black54,
-                            borderRadius: BorderRadius.circular(4),
-                          ),
-                          child: Text(
-                            'VIDEO',
-                            style: TextStyle(
-                              color: Colors.white,
-                              fontSize: 11,
-                              fontWeight: FontWeight.bold,
-                            ),
-                          ),
-                        ),
-                      ),
-                      Center(
-                        child: Container(
-                          decoration: BoxDecoration(
-                            color: Colors.black54,
-                            shape: BoxShape.circle,
-                          ),
-                          padding: EdgeInsets.all(16),
-                          child: Icon(
-                            Icons.play_arrow,
-                            color: Colors.white,
-                            size: 40,
-                          ),
-                        ),
-                      ),
-                    ],
-                  ),
+                return GalleryEmbeddedVideoPlayer(
+                  videoUrl: videoUrl,
+                  isActive: i == _index,
                 );
               }
 
