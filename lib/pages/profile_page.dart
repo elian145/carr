@@ -271,10 +271,15 @@ class _ProfilePageState extends State<ProfilePage> {
     final isAuthenticated = auth.isAuthenticated;
 
     return Scaffold(
+      backgroundColor: Colors.black,
       appBar: AppBar(
+        backgroundColor: Colors.black,
+        foregroundColor: Colors.white,
+        surfaceTintColor: Colors.transparent,
         title: Text(loc?.profileTitle ?? 'Profile'),
       ),
       body: RefreshIndicator(
+              color: Colors.white,
               onRefresh: _refresh,
               child: ListView(
                 padding: const EdgeInsets.all(16),
