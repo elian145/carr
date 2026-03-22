@@ -11,6 +11,7 @@ import 'package:url_launcher/url_launcher.dart';
 import 'package:flutter/services.dart' as services;
 import 'dart:ui' as ui;
 import 'dart:async';
+import 'dart:math' as math;
 import 'dart:typed_data';
 import 'package:image_picker/image_picker.dart';
 import 'package:video_thumbnail/video_thumbnail.dart';
@@ -1251,6 +1252,57 @@ class NoAnimationsPageTransitionsBuilder extends PageTransitionsBuilder {
   }
 }
 
+/// [InteractiveViewer] that only enables **pan** after pinch-zoom so horizontal
+/// swipes are handled by the parent [PageView] (e.g. to reach video slides).
+class _FullscreenZoomableSlide extends StatefulWidget {
+  const _FullscreenZoomableSlide({required this.child});
+
+  final Widget child;
+
+  @override
+  State<_FullscreenZoomableSlide> createState() =>
+      _FullscreenZoomableSlideState();
+}
+
+class _FullscreenZoomableSlideState extends State<_FullscreenZoomableSlide> {
+  final TransformationController _tc = TransformationController();
+
+  bool _zoomed = false;
+
+  @override
+  void initState() {
+    super.initState();
+    _tc.addListener(_syncZoom);
+  }
+
+  void _syncZoom() {
+    if (!mounted) return;
+    final s = _tc.value.storage;
+    final scale = math.sqrt(s[0] * s[0] + s[4] * s[4] + s[8] * s[8]);
+    final z = scale > 1.02;
+    if (z != _zoomed) setState(() => _zoomed = z);
+  }
+
+  @override
+  void dispose() {
+    _tc.removeListener(_syncZoom);
+    _tc.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return InteractiveViewer(
+      transformationController: _tc,
+      minScale: 0.8,
+      maxScale: 4.0,
+      panEnabled: _zoomed,
+      scaleEnabled: true,
+      child: Center(child: widget.child),
+    );
+  }
+}
+
 class FullScreenGalleryPage extends StatefulWidget {
   final List<String> imageUrls;
   final List<String> videoUrls;
@@ -1368,18 +1420,14 @@ class _FullScreenGalleryPageState extends State<FullScreenGalleryPage> {
               }
 
               final url = widget.imageUrls[i];
-              return InteractiveViewer(
-                minScale: 0.8,
-                maxScale: 4.0,
-                child: Center(
-                  child: url.isEmpty
-                      ? Icon(
-                          Icons.directions_car,
-                          size: 48,
-                          color: Colors.white38,
-                        )
-                      : _listingNetworkImage(url, fit: BoxFit.contain),
-                ),
+              return _FullscreenZoomableSlide(
+                child: url.isEmpty
+                    ? Icon(
+                        Icons.directions_car,
+                        size: 48,
+                        color: Colors.white38,
+                      )
+                    : _listingNetworkImage(url, fit: BoxFit.contain),
               );
             },
           ),
@@ -1489,10 +1537,8 @@ class _ListingPreviewGalleryPageState extends State<ListingPreviewGalleryPage> {
             onPageChanged: (i) => setState(() => _index = i),
             itemCount: items.length,
             itemBuilder: (context, i) {
-              return InteractiveViewer(
-                minScale: 0.8,
-                maxScale: 4.0,
-                child: Center(child: _buildImage(context, items[i])),
+              return _FullscreenZoomableSlide(
+                child: _buildImage(context, items[i]),
               );
             },
           ),
