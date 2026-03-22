@@ -133,6 +133,10 @@ class _GalleryEmbeddedVideoPlayerState extends State<GalleryEmbeddedVideoPlayer>
     setState(() {});
   }
 
+  void _toggleSeekBar() {
+    setState(() => _seekBarVisible = !_seekBarVisible);
+  }
+
   Widget _buildSeekBar(BuildContext context, VideoPlayerController c) {
     final v = c.value;
     if (!v.isInitialized) return const SizedBox.shrink();
@@ -217,51 +221,9 @@ class _GalleryEmbeddedVideoPlayerState extends State<GalleryEmbeddedVideoPlayer>
                     ),
                   ),
                 ),
-                IconButton(
-                  visualDensity: VisualDensity.compact,
-                  padding: EdgeInsets.zero,
-                  constraints: const BoxConstraints(minWidth: 36, minHeight: 36),
-                  tooltip: 'Hide seek bar',
-                  icon: Icon(
-                    Icons.keyboard_arrow_down_rounded,
-                    color: Colors.white.withValues(alpha: 0.85),
-                    size: 22,
-                  ),
-                  onPressed: () => setState(() => _seekBarVisible = false),
-                ),
               ],
             ),
           ],
-        ),
-      ),
-    );
-  }
-
-  /// Minimal control when the seek bar is hidden so the user can show it again.
-  Widget _buildSeekBarCollapsed() {
-    return Align(
-      alignment: Alignment.bottomCenter,
-      child: Padding(
-        padding: const EdgeInsets.only(bottom: 8),
-        child: Tooltip(
-          message: 'Show seek bar',
-          child: Material(
-            color: Colors.black.withValues(alpha: 0.75),
-            shape: const StadiumBorder(),
-            elevation: 4,
-            child: InkWell(
-              onTap: () => setState(() => _seekBarVisible = true),
-              customBorder: const StadiumBorder(),
-              child: Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
-                child: Icon(
-                  Icons.keyboard_arrow_up_rounded,
-                  color: Colors.white.withValues(alpha: 0.9),
-                  size: 22,
-                ),
-              ),
-            ),
-          ),
         ),
       ),
     );
@@ -316,7 +278,8 @@ class _GalleryEmbeddedVideoPlayerState extends State<GalleryEmbeddedVideoPlayer>
           child: AspectRatio(
             aspectRatio: ar,
             child: GestureDetector(
-              onTap: _togglePlay,
+              behavior: HitTestBehavior.opaque,
+              onTap: _toggleSeekBar,
               child: VideoPlayer(c),
             ),
           ),
@@ -324,43 +287,49 @@ class _GalleryEmbeddedVideoPlayerState extends State<GalleryEmbeddedVideoPlayer>
         Positioned(
           top: 14,
           right: 14,
-          child: Container(
-            padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-            decoration: BoxDecoration(
-              color: Colors.black54,
-              borderRadius: BorderRadius.circular(4),
-            ),
-            child: const Text(
-              'VIDEO',
-              style: TextStyle(
-                color: Colors.white,
-                fontSize: 11,
-                fontWeight: FontWeight.bold,
+          child: IgnorePointer(
+            child: Container(
+              padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+              decoration: BoxDecoration(
+                color: Colors.black54,
+                borderRadius: BorderRadius.circular(4),
+              ),
+              child: const Text(
+                'VIDEO',
+                style: TextStyle(
+                  color: Colors.white,
+                  fontSize: 11,
+                  fontWeight: FontWeight.bold,
+                ),
               ),
             ),
           ),
         ),
-        if (!c.value.isPlaying)
-          Center(
-            child: IgnorePointer(
+        Center(
+          child: GestureDetector(
+            onTap: _togglePlay,
+            child: Tooltip(
+              message: c.value.isPlaying ? 'Pause' : 'Play',
               child: Icon(
-                Icons.play_circle_filled,
+                c.value.isPlaying
+                    ? Icons.pause_circle_filled
+                    : Icons.play_circle_filled,
                 color: Colors.white54,
                 size: 64,
               ),
             ),
           ),
-        Positioned(
-          left: 0,
-          right: 0,
-          bottom: 0,
-          child: SafeArea(
-            top: false,
-            child: _seekBarVisible
-                ? _buildSeekBar(context, c)
-                : _buildSeekBarCollapsed(),
-          ),
         ),
+        if (_seekBarVisible)
+          Positioned(
+            left: 0,
+            right: 0,
+            bottom: 0,
+            child: SafeArea(
+              top: false,
+              child: _buildSeekBar(context, c),
+            ),
+          ),
       ],
     );
   }
