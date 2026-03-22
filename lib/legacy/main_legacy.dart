@@ -11734,7 +11734,13 @@ class _SellCarPageState extends State<SellCarPage> {
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
+    return PopScope(
+      canPop: false,
+      onPopInvokedWithResult: (bool didPop, dynamic result) {
+        if (didPop) return;
+        _goToPreviousStep();
+      },
+      child: Scaffold(
       appBar: AppBar(
         title: Text(AppLocalizations.of(context)!.addListingTitle),
         backgroundColor: Color(0xFFFF6B00),
@@ -11821,6 +11827,7 @@ class _SellCarPageState extends State<SellCarPage> {
             ),
           ),
         ],
+      ),
       ),
     );
   }
@@ -11926,8 +11933,12 @@ class _SellCarPageState extends State<SellCarPage> {
         duration: Duration(milliseconds: 300),
         curve: Curves.easeInOut,
       );
-    } else {
+    } else if (Navigator.canPop(context)) {
       Navigator.pop(context);
+    } else {
+      // Bottom nav uses pushReplacementNamed to open Sell, so there is no
+      // route below us — pop would show an empty/black screen.
+      Navigator.pushReplacementNamed(context, '/');
     }
   }
 
