@@ -227,6 +227,8 @@
   "city_salaheldeen": "Salaheldeen",
 
   "sellTitle": "Sell",
+  "sellRequiresAuthTitle": "Sign in to sell",
+  "sellRequiresAuthBody": "Log in or create an account to list your car for sale.",
   "createListingButton": "Create listing",
   "creatingListing": "Creating listing...",
   "uploadingPhotos": "Uploading photos...",

@@ -227,6 +227,8 @@
   "city_salaheldeen": "صلاح الدين",
 
   "sellTitle": "بيع",
+  "sellRequiresAuthTitle": "تسجيل الدخول للبيع",
+  "sellRequiresAuthBody": "يجب تسجيل الدخول أو إنشاء حساب لإضافة إعلان بيع.",
   "createListingButton": "إنشاء إعلان",
   "creatingListing": "جارٍ إنشاء الإعلان...",
   "uploadingPhotos": "جارٍ رفع الصور...",

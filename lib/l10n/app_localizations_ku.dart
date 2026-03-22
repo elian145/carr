@@ -672,6 +672,13 @@ class AppLocalizationsKu extends AppLocalizations {
   String get sellTitle => 'فرۆشتن';
 
   @override
+  String get sellRequiresAuthTitle => 'تۆمارکردن بۆ فرۆشتن';
+
+  @override
+  String get sellRequiresAuthBody =>
+      'پێویستە بچیتە ژوورەوە یان هەژمار دروست بکەیت بۆ زیادکردنی ڕێکلامی فرۆشتن.';
+
+  @override
   String get createListingButton => 'ڕێکلام دروست بکە';
 
   @override

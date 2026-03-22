@@ -671,6 +671,13 @@ class AppLocalizationsAr extends AppLocalizations {
   String get sellTitle => 'بيع';
 
   @override
+  String get sellRequiresAuthTitle => 'تسجيل الدخول للبيع';
+
+  @override
+  String get sellRequiresAuthBody =>
+      'يجب تسجيل الدخول أو إنشاء حساب لإضافة إعلان بيع.';
+
+  @override
   String get createListingButton => 'إنشاء إعلان';
 
   @override

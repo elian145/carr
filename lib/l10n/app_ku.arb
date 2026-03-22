@@ -227,6 +227,8 @@
   "city_salaheldeen": "سەلاحەدین",
 
   "sellTitle": "فرۆشتن",
+  "sellRequiresAuthTitle": "تۆمارکردن بۆ فرۆشتن",
+  "sellRequiresAuthBody": "پێویستە بچیتە ژوورەوە یان هەژمار دروست بکەیت بۆ زیادکردنی ڕێکلامی فرۆشتن.",
   "createListingButton": "ڕێکلام دروست بکە",
   "creatingListing": "ڕێکلام دروست دەکرێت...",
   "uploadingPhotos": "وێنەکان بار دەکرێن...",

@@ -1396,6 +1396,18 @@ abstract class AppLocalizations {
   /// **'Sell'**
   String get sellTitle;
 
+  /// No description provided for @sellRequiresAuthTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Sign in to sell'**
+  String get sellRequiresAuthTitle;
+
+  /// No description provided for @sellRequiresAuthBody.
+  ///
+  /// In en, this message translates to:
+  /// **'Log in or create an account to list your car for sale.'**
+  String get sellRequiresAuthBody;
+
   /// No description provided for @createListingButton.
   ///
   /// In en, this message translates to:

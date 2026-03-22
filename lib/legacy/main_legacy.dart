@@ -2280,9 +2280,79 @@ class ComparisonButton extends StatelessWidget {
   }
 }
 
+/// Shown when a logged-out user opens Sell; offers login / signup or cancel.
+class _SellAuthPrompt extends StatefulWidget {
+  const _SellAuthPrompt();
+
+  @override
+  State<_SellAuthPrompt> createState() => _SellAuthPromptState();
+}
+
+class _SellAuthPromptState extends State<_SellAuthPrompt> {
+  @override
+  void initState() {
+    super.initState();
+    WidgetsBinding.instance.addPostFrameCallback((_) => _showAuthDialog());
+  }
+
+  Future<void> _showAuthDialog() async {
+    if (!mounted) return;
+    final loc = AppLocalizations.of(context)!;
+    var handled = false;
+
+    await showDialog<void>(
+      context: context,
+      barrierDismissible: true,
+      builder: (ctx) => AlertDialog(
+        title: Text(loc.sellRequiresAuthTitle),
+        content: Text(loc.sellRequiresAuthBody),
+        actions: [
+          TextButton(
+            onPressed: () {
+              handled = true;
+              Navigator.pop(ctx);
+              Navigator.pushReplacementNamed(context, '/');
+            },
+            child: Text(loc.cancelAction),
+          ),
+          TextButton(
+            onPressed: () {
+              handled = true;
+              Navigator.pop(ctx);
+              Navigator.pushReplacementNamed(context, '/signup');
+            },
+            child: Text(loc.signupTitle),
+          ),
+          FilledButton(
+            onPressed: () {
+              handled = true;
+              Navigator.pop(ctx);
+              Navigator.pushReplacementNamed(context, '/login');
+            },
+            child: Text(loc.loginAction),
+          ),
+        ],
+      ),
+    );
+
+    if (!mounted) return;
+    if (!handled) {
+      Navigator.pushReplacementNamed(context, '/');
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return const Scaffold(
+      body: Center(child: CircularProgressIndicator()),
+    );
+  }
+}
+
 /// Redirects to /login if the user is not authenticated; otherwise shows [child].
 /// Special-case: the Favorites page is allowed to show even when logged out
 /// so it can display its own "login/signup required" message.
+/// Sell shows a login/signup dialog instead of an immediate redirect.
 class AuthGuard extends StatelessWidget {
   const AuthGuard({super.key, required this.child});
   final Widget child;
@@ -2294,6 +2364,9 @@ class AuthGuard extends StatelessWidget {
     // show their own friendly login/signup prompts and UI.
     if (auth.isAuthenticated || child is FavoritesPage || child is ProfilePage) {
       return child;
+    }
+    if (child is SellCarPage) {
+      return const _SellAuthPrompt();
     }
     WidgetsBinding.instance.addPostFrameCallback((_) {
       if (context.mounted) {
@@ -5334,7 +5407,9 @@ class _HomePageState extends State<HomePage> {
             onPressed: () {
               Navigator.push(
                 context,
-                MaterialPageRoute(builder: (context) => SellCarPage()),
+                MaterialPageRoute(
+                  builder: (context) => AuthGuard(child: SellCarPage()),
+                ),
               );
             },
             icon: Icon(Icons.add, color: Colors.white),

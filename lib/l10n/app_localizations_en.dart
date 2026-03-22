@@ -672,6 +672,13 @@ class AppLocalizationsEn extends AppLocalizations {
   String get sellTitle => 'Sell';
 
   @override
+  String get sellRequiresAuthTitle => 'Sign in to sell';
+
+  @override
+  String get sellRequiresAuthBody =>
+      'Log in or create an account to list your car for sale.';
+
+  @override
   String get createListingButton => 'Create listing';
 
   @override
