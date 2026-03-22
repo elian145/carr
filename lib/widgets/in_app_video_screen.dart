@@ -34,6 +34,7 @@ class _GalleryEmbeddedVideoPlayerState extends State<GalleryEmbeddedVideoPlayer>
   String? _error;
   /// While dragging the seek slider, holds the thumb position in ms.
   double? _seekDragMs;
+  bool _seekBarVisible = true;
 
   @override
   void initState() {
@@ -216,18 +217,51 @@ class _GalleryEmbeddedVideoPlayerState extends State<GalleryEmbeddedVideoPlayer>
                     ),
                   ),
                 ),
+                IconButton(
+                  visualDensity: VisualDensity.compact,
+                  padding: EdgeInsets.zero,
+                  constraints: const BoxConstraints(minWidth: 36, minHeight: 36),
+                  tooltip: 'Hide seek bar',
+                  icon: Icon(
+                    Icons.keyboard_arrow_down_rounded,
+                    color: Colors.white.withValues(alpha: 0.85),
+                    size: 22,
+                  ),
+                  onPressed: () => setState(() => _seekBarVisible = false),
+                ),
               ],
             ),
-            const SizedBox(height: 4),
-            Text(
-              'Drag the bar to jump in the video',
-              textAlign: TextAlign.center,
-              style: TextStyle(
-                color: Colors.white.withValues(alpha: 0.55),
-                fontSize: 11,
+          ],
+        ),
+      ),
+    );
+  }
+
+  /// Minimal control when the seek bar is hidden so the user can show it again.
+  Widget _buildSeekBarCollapsed() {
+    return Align(
+      alignment: Alignment.bottomCenter,
+      child: Padding(
+        padding: const EdgeInsets.only(bottom: 8),
+        child: Tooltip(
+          message: 'Show seek bar',
+          child: Material(
+            color: Colors.black.withValues(alpha: 0.75),
+            shape: const StadiumBorder(),
+            elevation: 4,
+            child: InkWell(
+              onTap: () => setState(() => _seekBarVisible = true),
+              customBorder: const StadiumBorder(),
+              child: Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
+                child: Icon(
+                  Icons.keyboard_arrow_up_rounded,
+                  color: Colors.white.withValues(alpha: 0.9),
+                  size: 22,
+                ),
               ),
             ),
-          ],
+          ),
         ),
       ),
     );
@@ -322,7 +356,9 @@ class _GalleryEmbeddedVideoPlayerState extends State<GalleryEmbeddedVideoPlayer>
           bottom: 0,
           child: SafeArea(
             top: false,
-            child: _buildSeekBar(context, c),
+            child: _seekBarVisible
+                ? _buildSeekBar(context, c)
+                : _buildSeekBarCollapsed(),
           ),
         ),
       ],
