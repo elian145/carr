@@ -20028,6 +20028,19 @@ class ProfilePage extends StatefulWidget {
 }
 
 class _ProfilePageState extends State<ProfilePage> {
+  /// Same gradient as [HomePage] body background.
+  static const BoxDecoration _homeLikeBackgroundDecoration = BoxDecoration(
+    gradient: LinearGradient(
+      colors: [
+        Color(0xFF0F1115),
+        Color(0xFF131722),
+        Color(0xFF0F1115),
+      ],
+      begin: Alignment.topLeft,
+      end: Alignment.bottomRight,
+    ),
+  );
+
   Map<String, dynamic>? me;
   bool _loading = true;
   late final AuthService _authService;
@@ -20126,15 +20139,10 @@ class _ProfilePageState extends State<ProfilePage> {
   }
 
   Widget _buildNotLoggedInState(BuildContext context) {
-    return Container(
-      decoration: BoxDecoration(
-        gradient: LinearGradient(
-          begin: Alignment.topCenter,
-          end: Alignment.bottomCenter,
-          colors: [Color(0xFFFF6B00).withOpacity(0.1), Colors.white],
-        ),
-      ),
-      child: Center(
+    return Stack(
+      children: [
+        Container(decoration: _homeLikeBackgroundDecoration),
+        Center(
         child: Padding(
           padding: const EdgeInsets.all(32.0),
           child: Column(
@@ -20227,21 +20235,17 @@ class _ProfilePageState extends State<ProfilePage> {
           ),
         ),
       ),
+      ],
     );
   }
 
   Widget _buildLoggedInState(BuildContext context) {
     final isLoggedIn = ApiService.accessToken != null &&
         ApiService.accessToken!.isNotEmpty;
-    return Container(
-      decoration: BoxDecoration(
-        gradient: LinearGradient(
-          begin: Alignment.topCenter,
-          end: Alignment.bottomCenter,
-          colors: [Color(0xFFFF6B00).withOpacity(0.1), Colors.grey[50]!],
-        ),
-      ),
-      child: SingleChildScrollView(
+    return Stack(
+      children: [
+        Container(decoration: _homeLikeBackgroundDecoration),
+        SingleChildScrollView(
         padding: EdgeInsets.fromLTRB(20, 20, 20, 20),
         child: Column(
           children: [
@@ -20567,7 +20571,8 @@ class _ProfilePageState extends State<ProfilePage> {
                 ],
               ),
             ),
-            if (isLoggedIn)
+            if (isLoggedIn) ...[
+              SizedBox(height: 16),
               SizedBox(
                 width: double.infinity,
                 height: 50,
@@ -20599,9 +20604,11 @@ class _ProfilePageState extends State<ProfilePage> {
                   ),
                 ),
               ),
+            ],
           ],
         ),
       ),
+      ],
     );
   }
 
@@ -20788,12 +20795,16 @@ class _ProfilePageState extends State<ProfilePage> {
     return Scaffold(
       appBar: AppBar(
         title: Text(AppLocalizations.of(context)!.profileTitle),
-        backgroundColor: Color(0xFFFF6B00),
-        foregroundColor: Colors.white,
-        elevation: 0,
       ),
       body: _loading
-          ? Center(child: CircularProgressIndicator())
+          ? Stack(
+              children: [
+                Container(decoration: _homeLikeBackgroundDecoration),
+                const Center(
+                  child: CircularProgressIndicator(),
+                ),
+              ],
+            )
           : _buildLoggedInState(context),
       bottomNavigationBar: BottomNavigationBar(
         type: BottomNavigationBarType.fixed,

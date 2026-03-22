@@ -271,14 +271,25 @@ class _ProfilePageState extends State<ProfilePage> {
     final isAuthenticated = auth.isAuthenticated;
 
     return Scaffold(
-      backgroundColor: Colors.black,
       appBar: AppBar(
-        backgroundColor: Colors.black,
-        foregroundColor: Colors.white,
-        surfaceTintColor: Colors.transparent,
         title: Text(loc?.profileTitle ?? 'Profile'),
       ),
-      body: RefreshIndicator(
+      body: Stack(
+        children: [
+          Container(
+            decoration: const BoxDecoration(
+              gradient: LinearGradient(
+                colors: [
+                  Color(0xFF0F1115),
+                  Color(0xFF131722),
+                  Color(0xFF0F1115),
+                ],
+                begin: Alignment.topLeft,
+                end: Alignment.bottomRight,
+              ),
+            ),
+          ),
+          RefreshIndicator(
               color: Colors.white,
               onRefresh: _refresh,
               child: ListView(
@@ -498,6 +509,8 @@ class _ProfilePageState extends State<ProfilePage> {
                 ],
               ),
             ),
+        ],
+      ),
     );
   }
 }
