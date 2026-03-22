@@ -305,21 +305,23 @@ class _GalleryEmbeddedVideoPlayerState extends State<GalleryEmbeddedVideoPlayer>
             ),
           ),
         ),
-        Center(
-          child: GestureDetector(
-            onTap: _togglePlay,
-            child: Tooltip(
-              message: c.value.isPlaying ? 'Pause' : 'Play',
-              child: Icon(
-                c.value.isPlaying
-                    ? Icons.pause_circle_filled
-                    : Icons.play_circle_filled,
-                color: Colors.white54,
-                size: 64,
+        // Center play/pause only when chrome (seek bar) is visible — option 2 UX.
+        if (_seekBarVisible)
+          Center(
+            child: GestureDetector(
+              onTap: _togglePlay,
+              child: Tooltip(
+                message: c.value.isPlaying ? 'Pause' : 'Play',
+                child: Icon(
+                  c.value.isPlaying
+                      ? Icons.pause_circle_filled
+                      : Icons.play_circle_filled,
+                  color: Colors.white54,
+                  size: 64,
+                ),
               ),
             ),
           ),
-        ),
         if (_seekBarVisible)
           Positioned(
             left: 0,
