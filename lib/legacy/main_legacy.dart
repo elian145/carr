@@ -11800,11 +11800,18 @@ class _SellCarPageState extends State<SellCarPage> {
     SellStep5Page(),
   ];
 
-  /// Key that changes when carData['images'] changes so Step 5 (summary) rebuilds with blurred images.
+  /// Key that changes when carData images/videos change so Step 5 (summary) rebuilds.
   String get _step5ImagesKey {
     final imgs = carData['images'];
-    if (imgs == null || imgs is! List || imgs.isEmpty) return '0';
-    return imgs.map((e) => e is XFile ? e.path : e.toString()).join('|');
+    final vids = carData['videos'];
+    final imgPart = (imgs == null || imgs is! List || imgs.isEmpty)
+        ? ''
+        : imgs.map((e) => e is XFile ? e.path : e.toString()).join('|');
+    final vidPart = (vids == null || vids is! List || vids.isEmpty)
+        ? ''
+        : vids.map((e) => e is XFile ? e.path : e.toString()).join('|');
+    if (imgPart.isEmpty && vidPart.isEmpty) return '0';
+    return '$imgPart::$vidPart';
   }
 
   @override
@@ -15537,6 +15544,13 @@ class _SellStep4PageState extends State<SellStep4Page> {
   }
 }
 
+/// One slot in the review-step media carousel (photo or video).
+class _PreviewMediaEntry {
+  const _PreviewMediaEntry({required this.isVideo, required this.item});
+  final bool isVideo;
+  final dynamic item;
+}
+
 // Preview of how the listing will look after submission (used in SellStep5).
 class ListingPreviewWidget extends StatefulWidget {
   final Map<String, dynamic> carData;
@@ -15558,12 +15572,117 @@ class ListingPreviewWidget extends StatefulWidget {
 
 class _ListingPreviewWidgetState extends State<ListingPreviewWidget> {
   final PageController _imagePageController = PageController();
-  int _currentImageIndex = 0;
+  int _currentMediaIndex = 0;
 
   @override
   void dispose() {
     _imagePageController.dispose();
     super.dispose();
+  }
+
+  void _openCarouselDetail(
+    BuildContext context,
+    List<_PreviewMediaEntry> media,
+    List<dynamic> images,
+  ) {
+    if (media.isEmpty) return;
+    final i = _currentMediaIndex.clamp(0, media.length - 1);
+    final entry = media[i];
+    if (!entry.isVideo) {
+      int imageIdx = 0;
+      for (int j = 0; j < i; j++) {
+        if (!media[j].isVideo) imageIdx++;
+      }
+      Navigator.of(context).push(
+        MaterialPageRoute(
+          builder: (_) => ListingPreviewGalleryPage(
+            imageFilesOrUrls: images,
+            initialIndex: imageIdx,
+          ),
+        ),
+      );
+      return;
+    }
+    final dynamic item = entry.item;
+    final String path = item is XFile ? item.path : item.toString().trim();
+    final bool isLocal = path.isNotEmpty &&
+        !path.startsWith('http://') &&
+        !path.startsWith('https://');
+    if (isLocal) {
+      Navigator.of(context).push(
+        MaterialPageRoute(
+          builder: (_) => _VideoPreviewPage(videoPath: path),
+        ),
+      );
+    } else {
+      final fullUrl = path.startsWith('http') ? path : _buildFullImageUrl(path);
+      if (fullUrl.isEmpty) return;
+      Navigator.of(context).push(
+        MaterialPageRoute(
+          builder: (_) => Scaffold(
+            backgroundColor: Colors.black,
+            appBar: AppBar(
+              backgroundColor: Colors.black,
+              iconTheme: IconThemeData(color: Colors.white),
+            ),
+            body: SafeArea(
+              child: GalleryEmbeddedVideoPlayer(
+                videoUrl: fullUrl,
+                isActive: true,
+              ),
+            ),
+          ),
+        ),
+      );
+    }
+  }
+
+  Widget _buildVideoCarouselSlide(dynamic item) {
+    final String path = item is XFile ? item.path : item.toString().trim();
+    final bool isLocalFile = path.isNotEmpty &&
+        !path.startsWith('http://') &&
+        !path.startsWith('https://');
+    return Stack(
+      fit: StackFit.expand,
+      children: [
+        if (isLocalFile)
+          FutureBuilder<String?>(
+            future: generateVideoThumbnail(path),
+            builder: (context, snapshot) {
+              if (snapshot.hasData && snapshot.data != null) {
+                return Image.file(
+                  File(snapshot.data!),
+                  fit: BoxFit.cover,
+                  width: double.infinity,
+                );
+              }
+              return Container(
+                color: Colors.grey[850],
+                child: Center(
+                  child: Icon(Icons.videocam, color: Colors.white70, size: 48),
+                ),
+              );
+            },
+          )
+        else
+          Container(
+            color: Colors.grey[850],
+            child: Center(
+              child: Icon(Icons.videocam, color: Colors.white70, size: 56),
+            ),
+          ),
+        Center(
+          child: Container(
+            padding: EdgeInsets.all(12),
+            decoration: BoxDecoration(
+              color: Colors.black54,
+              shape: BoxShape.circle,
+            ),
+            child: Icon(Icons.play_arrow, color: Colors.white, size: 40),
+          ),
+        ),
+      ],
+    );
   }
 
   static String? _getFirstNonEmpty(
@@ -15851,8 +15970,15 @@ class _ListingPreviewWidgetState extends State<ListingPreviewWidget> {
     final images = widget.imageFilesOrUrls;
     final dynamic rawVideos = data['videos'];
     final List<dynamic> videos = rawVideos is List ? rawVideos : const [];
-    final hasImages = images.isNotEmpty;
-    final hasVideos = videos.isNotEmpty;
+    final List<_PreviewMediaEntry> media = [
+      ...images.map(
+        (e) => _PreviewMediaEntry(isVideo: false, item: e),
+      ),
+      ...videos.map(
+        (e) => _PreviewMediaEntry(isVideo: true, item: e),
+      ),
+    ];
+    final hasMedia = media.isNotEmpty;
 
     final String title = (data['title']?.toString() ?? '').trim().isNotEmpty
         ? data['title'].toString().trim()
@@ -15875,32 +16001,28 @@ class _ListingPreviewWidgetState extends State<ListingPreviewWidget> {
         crossAxisAlignment: CrossAxisAlignment.start,
         mainAxisSize: MainAxisSize.min,
         children: [
-          // Image carousel (taller in full-page mode like real listing) — tap to open full-screen
+          // Photo + video carousel — tap: images open gallery, videos open preview/player
           SizedBox(
             height: fullPage ? 300 : 260,
             width: double.infinity,
             child: Stack(
               fit: StackFit.expand,
               children: [
-                if (hasImages)
+                if (hasMedia)
                   GestureDetector(
-                    onTap: () {
-                      Navigator.of(context).push(
-                        MaterialPageRoute(
-                          builder: (_) => ListingPreviewGalleryPage(
-                            imageFilesOrUrls: images,
-                            initialIndex: _currentImageIndex,
-                          ),
-                        ),
-                      );
-                    },
+                    onTap: () =>
+                        _openCarouselDetail(context, media, images),
                     child: PageView.builder(
                       controller: _imagePageController,
                       onPageChanged: (idx) =>
-                          setState(() => _currentImageIndex = idx),
-                      itemCount: images.length,
+                          setState(() => _currentMediaIndex = idx),
+                      itemCount: media.length,
                       itemBuilder: (context, index) {
-                        final item = images[index];
+                        final slot = media[index];
+                        if (slot.isVideo) {
+                          return _buildVideoCarouselSlide(slot.item);
+                        }
+                        final item = slot.item;
                         if (item is XFile) {
                           return Image.file(
                             File(item.path),
@@ -15929,7 +16051,7 @@ class _ListingPreviewWidgetState extends State<ListingPreviewWidget> {
                       color: Colors.grey[500],
                     ),
                   ),
-                if (hasImages && images.length > 1)
+                if (hasMedia && media.length > 1)
                   Positioned(
                     bottom: 12,
                     left: 0,
@@ -15937,8 +16059,8 @@ class _ListingPreviewWidgetState extends State<ListingPreviewWidget> {
                     child: Center(
                       child: Row(
                         mainAxisSize: MainAxisSize.min,
-                        children: List.generate(images.length, (i) {
-                          final active = i == _currentImageIndex;
+                        children: List.generate(media.length, (i) {
+                          final active = i == _currentMediaIndex;
                           return AnimatedContainer(
                             duration: Duration(milliseconds: 200),
                             margin: EdgeInsets.symmetric(horizontal: 4),
@@ -16024,87 +16146,6 @@ class _ListingPreviewWidgetState extends State<ListingPreviewWidget> {
                 ),
                 SizedBox(height: 12),
                 _buildSpecsFromData(data),
-                if (hasVideos) ...[
-                  SizedBox(height: 16),
-                  Text(
-                    _videosOptionalTitleGlobal(context),
-                    style: TextStyle(
-                      fontSize: 16,
-                      fontWeight: FontWeight.bold,
-                      color: Color(0xFFFF6B00),
-                    ),
-                  ),
-                  SizedBox(height: 10),
-                  SizedBox(
-                    height: 92,
-                    child: ListView.separated(
-                      scrollDirection: Axis.horizontal,
-                      itemCount: videos.length,
-                      separatorBuilder: (_, __) => SizedBox(width: 10),
-                      itemBuilder: (context, index) {
-                        final dynamic item = videos[index];
-                        final String path = item is XFile
-                            ? item.path
-                            : item.toString().trim();
-                        final bool isLocalFile = path.isNotEmpty &&
-                            !path.startsWith('http://') &&
-                            !path.startsWith('https://');
-                        return Container(
-                          width: 132,
-                          decoration: BoxDecoration(
-                            color: Colors.white.withOpacity(0.06),
-                            borderRadius: BorderRadius.circular(12),
-                            border: Border.all(color: Colors.white12),
-                          ),
-                          clipBehavior: Clip.antiAlias,
-                          child: isLocalFile
-                              ? FutureBuilder<String?>(
-                                  future: generateVideoThumbnail(path),
-                                  builder: (context, snapshot) {
-                                    if (snapshot.hasData &&
-                                        snapshot.data != null) {
-                                      return Stack(
-                                        fit: StackFit.expand,
-                                        children: [
-                                          Image.file(
-                                            File(snapshot.data!),
-                                            fit: BoxFit.cover,
-                                          ),
-                                          Center(
-                                            child: Container(
-                                              padding: EdgeInsets.all(7),
-                                              decoration: BoxDecoration(
-                                                color: Colors.black54,
-                                                shape: BoxShape.circle,
-                                              ),
-                                              child: Icon(
-                                                Icons.play_arrow,
-                                                color: Colors.white,
-                                              ),
-                                            ),
-                                          ),
-                                        ],
-                                      );
-                                    }
-                                    return Center(
-                                      child: Icon(
-                                        Icons.videocam,
-                                        color: Colors.white70,
-                                      ),
-                                    );
-                                  },
-                                )
-                              : Center(
-                                  child: Icon(
-                                    Icons.videocam,
-                                    color: Colors.white70,
-                                  ),
-                                ),
-                        );
-                      },
-                    ),
-                  ),
-                ],
               ],
             ),
           ),
