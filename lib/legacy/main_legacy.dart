@@ -14967,31 +14967,6 @@ class _SellStep3PageState extends State<SellStep3Page> {
   }
 }
 
-/// Full-screen video playback when tapping a video on sell step 4 (same player as listing gallery).
-class _VideoPreviewPage extends StatelessWidget {
-  final String videoPath;
-
-  const _VideoPreviewPage({required this.videoPath});
-
-  @override
-  Widget build(BuildContext context) {
-    return Scaffold(
-      backgroundColor: Colors.black,
-      appBar: AppBar(
-        backgroundColor: Colors.black,
-        elevation: 0,
-        iconTheme: IconThemeData(color: Colors.white),
-      ),
-      body: SafeArea(
-        child: GalleryEmbeddedVideoPlayer(
-          videoUrl: videoPath,
-          isActive: true,
-        ),
-      ),
-    );
-  }
-}
-
 // Step 4: Photos & Videos
 class SellStep4Page extends StatefulWidget {
   const SellStep4Page({super.key});
@@ -15400,7 +15375,7 @@ class _SellStep4PageState extends State<SellStep4Page> {
           ),
           SizedBox(height: 24),
 
-          // Videos Section — 2 per row, same card layout as photos, tap to play full-screen
+          // Videos Section — 2 per row like photos; tap opens full-screen PageView to swipe between videos
           Text(
             _videosOptionalTitleGlobal(context),
             style: TextStyle(fontWeight: FontWeight.bold, fontSize: 18),
@@ -15408,6 +15383,9 @@ class _SellStep4PageState extends State<SellStep4Page> {
           SizedBox(height: 12),
           if (_selectedVideos.isNotEmpty)
             GridView.builder(
+              key: ValueKey(
+                _selectedVideos.map((e) => e.path).join('|'),
+              ),
               shrinkWrap: true,
               physics: NeverScrollableScrollPhysics(),
               gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
@@ -15425,8 +15403,13 @@ class _SellStep4PageState extends State<SellStep4Page> {
                       onTap: () {
                         Navigator.of(context).push(
                           MaterialPageRoute(
-                            builder: (_) =>
-                                _VideoPreviewPage(videoPath: video.path),
+                            builder: (_) => ListingPreviewGalleryPage(
+                              imageFilesOrUrls: const [],
+                              videoFilesOrUrls: List<dynamic>.from(
+                                _selectedVideos,
+                              ),
+                              initialIndex: index,
+                            ),
                           ),
                         );
                       },
