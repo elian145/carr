@@ -1,6 +1,7 @@
 import 'package:chewie/chewie.dart';
 import 'package:flutter/material.dart';
 import 'package:video_player/video_player.dart';
+import 'dart:io';
 
 import 'network_video_thumbnail.dart';
 
@@ -82,8 +83,11 @@ class _GalleryEmbeddedVideoPlayerState extends State<GalleryEmbeddedVideoPlayer>
       _error = null;
     });
     try {
-      final uri = Uri.parse(url);
-      final c = VideoPlayerController.networkUrl(uri);
+      final bool isNetwork =
+          url.startsWith('http://') || url.startsWith('https://');
+      final VideoPlayerController c = isNetwork
+          ? VideoPlayerController.networkUrl(Uri.parse(url))
+          : VideoPlayerController.file(File(url));
       await c.initialize();
       if (!mounted) {
         await c.dispose();

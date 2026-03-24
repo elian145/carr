@@ -46,7 +46,6 @@ import '../data/car_catalog.dart';
 import '../data/car_name_translations.dart';
 import '../widgets/in_app_video_screen.dart';
 import '../widgets/network_video_thumbnail.dart';
-import 'package:video_player/video_player.dart';
 
 // Sideload build flag to disable services that require entitlements on iOS
 const bool kSideloadBuild = bool.fromEnvironment(
@@ -1469,12 +1468,10 @@ class _ListingPreviewGalleryPageState extends State<ListingPreviewGalleryPage> {
         child: Icon(Icons.videocam_off, color: Colors.white38, size: 48),
       );
     }
-    final bool isNetwork = raw.startsWith('http://') || raw.startsWith('https://');
-    if (isNetwork) {
-      final fullUrl = raw.startsWith('http') ? raw : _buildFullImageUrl(raw);
-      return GalleryEmbeddedVideoPlayer(videoUrl: fullUrl, isActive: isActive);
-    }
-    return _LocalEmbeddedVideoPlayer(filePath: raw, isActive: isActive);
+    final String source = (raw.startsWith('http://') || raw.startsWith('https://'))
+        ? (raw.startsWith('http') ? raw : _buildFullImageUrl(raw))
+        : raw;
+    return GalleryEmbeddedVideoPlayer(videoUrl: source, isActive: isActive);
   }
 
   @override
@@ -1542,158 +1539,6 @@ class _ListingPreviewGalleryPageState extends State<ListingPreviewGalleryPage> {
             ),
         ],
       ),
-    );
-  }
-}
-
-class _LocalEmbeddedVideoPlayer extends StatefulWidget {
-  const _LocalEmbeddedVideoPlayer({
-    required this.filePath,
-    required this.isActive,
-  });
-
-  final String filePath;
-  final bool isActive;
-
-  @override
-  State<_LocalEmbeddedVideoPlayer> createState() =>
-      _LocalEmbeddedVideoPlayerState();
-}
-
-class _LocalEmbeddedVideoPlayerState extends State<_LocalEmbeddedVideoPlayer> {
-  VideoPlayerController? _controller;
-  bool _loading = false;
-  String? _error;
-
-  @override
-  void initState() {
-    super.initState();
-    if (widget.isActive) _init();
-  }
-
-  @override
-  void didUpdateWidget(covariant _LocalEmbeddedVideoPlayer oldWidget) {
-    super.didUpdateWidget(oldWidget);
-    if (oldWidget.filePath != widget.filePath) {
-      _disposeController();
-      if (widget.isActive) _init();
-      return;
-    }
-    if (widget.isActive && !oldWidget.isActive) {
-      if (_controller == null) {
-        _init();
-      } else {
-        _controller!.play();
-      }
-    } else if (!widget.isActive && oldWidget.isActive) {
-      _controller?.pause();
-    }
-  }
-
-  Future<void> _init() async {
-    final path = widget.filePath.trim();
-    if (path.isEmpty) return;
-    setState(() {
-      _loading = true;
-      _error = null;
-    });
-    try {
-      final c = VideoPlayerController.file(File(path));
-      await c.initialize();
-      if (!mounted) {
-        await c.dispose();
-        return;
-      }
-      c.setLooping(false);
-      await c.play();
-      setState(() {
-        _controller = c;
-        _loading = false;
-      });
-    } catch (e) {
-      if (!mounted) return;
-      setState(() {
-        _loading = false;
-        _error = e.toString();
-      });
-    }
-  }
-
-  void _togglePlay() {
-    final c = _controller;
-    if (c == null || !c.value.isInitialized) return;
-    if (c.value.isPlaying) {
-      c.pause();
-    } else {
-      c.play();
-    }
-    setState(() {});
-  }
-
-  void _disposeController() {
-    _controller?.dispose();
-    _controller = null;
-  }
-
-  @override
-  void dispose() {
-    _disposeController();
-    super.dispose();
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    if (_error != null) {
-      return Center(
-        child: Text(
-          _error!,
-          style: const TextStyle(color: Colors.white70),
-          textAlign: TextAlign.center,
-        ),
-      );
-    }
-    if (_loading || _controller == null || !_controller!.value.isInitialized) {
-      return Stack(
-        fit: StackFit.expand,
-        children: [
-          Container(
-            color: Colors.black,
-            child: const Center(
-              child: Icon(Icons.videocam, color: Colors.white38, size: 48),
-            ),
-          ),
-          if (_loading)
-            const Center(
-              child: CircularProgressIndicator(color: Colors.white),
-            ),
-        ],
-      );
-    }
-
-    final c = _controller!;
-    final ar = c.value.aspectRatio == 0 ? 16 / 9 : c.value.aspectRatio;
-    return Stack(
-      fit: StackFit.expand,
-      children: [
-        Center(
-          child: AspectRatio(
-            aspectRatio: ar,
-            child: VideoPlayer(c),
-          ),
-        ),
-        Center(
-          child: GestureDetector(
-            onTap: _togglePlay,
-            child: Icon(
-              c.value.isPlaying
-                  ? Icons.pause_circle_filled
-                  : Icons.play_circle_filled,
-              color: Colors.white54,
-              size: 64,
-            ),
-          ),
-        ),
-      ],
     );
   }
 }
