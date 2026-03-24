@@ -38,6 +38,9 @@ import '../services/config.dart';
 import '../services/ai_service.dart';
 import '../services/car_service.dart';
 import '../services/deep_link_service.dart';
+import 'package:mime/mime.dart';
+import 'package:http_parser/http_parser.dart';
+import 'package:path/path.dart' as p;
 import '../pages/auth_pages.dart' as auth_pages;
 import '../pages/reset_password_page.dart';
 import '../pages/verify_email_page.dart';
@@ -68,6 +71,45 @@ void _debugLog(String message) {
   if (kDebugMode) {
     debugPrint(message);
   }
+}
+
+Future<http.MultipartFile> _buildVideoMultipartFile(XFile video) async {
+  final path = video.path.trim();
+  final file = File(path);
+  List<int> headerBytes = const [];
+  try {
+    final raf = await file.open(mode: FileMode.read);
+    headerBytes = await raf.read(64);
+    await raf.close();
+  } catch (_) {}
+
+  String mime = lookupMimeType(path, headerBytes: headerBytes) ?? 'video/mp4';
+  if (!mime.startsWith('video/')) {
+    mime = 'video/mp4';
+  }
+
+  final srcName = video.name.trim().isNotEmpty
+      ? video.name.trim()
+      : p.basename(path);
+  final base = p.basenameWithoutExtension(srcName).trim();
+  final fallbackBase = base.isNotEmpty ? base : 'video_${DateTime.now().millisecondsSinceEpoch}';
+  final ext = extensionFromMime(mime) ?? p.extension(srcName).replaceFirst('.', '');
+  final normalizedExt = ext.isNotEmpty ? ext : 'mp4';
+  final filename = '$fallbackBase.$normalizedExt';
+
+  MediaType contentType;
+  try {
+    contentType = MediaType.parse(mime);
+  } catch (_) {
+    contentType = MediaType('video', 'mp4');
+  }
+
+  return http.MultipartFile.fromPath(
+    'files',
+    path,
+    filename: filename,
+    contentType: contentType,
+  );
 }
 
 // Fallback delegates to provide Material/Cupertino/Widgets localizations for 'ku'
@@ -16570,9 +16612,7 @@ class _SellStep5PageState extends State<SellStep5Page> {
             final req = http.MultipartRequest('POST', url);
             req.headers['Authorization'] = 'Bearer $existingToken';
             for (final v in videosToUpload) {
-              req.files.add(
-                await http.MultipartFile.fromPath('files', v.path),
-              );
+              req.files.add(await _buildVideoMultipartFile(v));
             }
             final resp = await req.send();
             final respBody = await resp.stream.bytesToString();
@@ -18889,9 +18929,7 @@ Widget build(BuildContext context) {
                         final tok = ApiService.accessToken;
                         if (tok != null) videoRequest.headers['Authorization'] = 'Bearer ' + tok;
                         for (final video in _selectedVideos) {
-                          videoRequest.files.add(
-                            await http.MultipartFile.fromPath('files', video.path),
-                          );
+                          videoRequest.files.add(await _buildVideoMultipartFile(video));
                         }
                         final videoUploadResp = await videoRequest.send();
                         if (videoUploadResp.statusCode != 200 &&

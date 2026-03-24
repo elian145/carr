@@ -59,6 +59,8 @@ dependencies:
   google_fonts: ^6.2.1
   socket_io_client: ^3.1.4
   app_links: ^6.3.2
+  mime: ^2.0.0
+  http_parser: ^4.1.2
 
 dev_dependencies:
   flutter_test:
