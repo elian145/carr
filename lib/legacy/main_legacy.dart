@@ -46,6 +46,7 @@ import '../data/car_catalog.dart';
 import '../data/car_name_translations.dart';
 import '../widgets/in_app_video_screen.dart';
 import '../widgets/network_video_thumbnail.dart';
+import 'package:video_player/video_player.dart';
 
 // Sideload build flag to disable services that require entitlements on iOS
 const bool kSideloadBuild = bool.fromEnvironment(
@@ -1416,11 +1417,13 @@ class _FullScreenGalleryPageState extends State<FullScreenGalleryPage> {
 /// Full-screen gallery for listing preview: supports both local XFile and URL strings.
 class ListingPreviewGalleryPage extends StatefulWidget {
   final List<dynamic> imageFilesOrUrls;
+  final List<dynamic> videoFilesOrUrls;
   final int initialIndex;
 
   const ListingPreviewGalleryPage({
     super.key,
     required this.imageFilesOrUrls,
+    this.videoFilesOrUrls = const [],
     this.initialIndex = 0,
   });
 
@@ -1432,14 +1435,15 @@ class ListingPreviewGalleryPage extends StatefulWidget {
 class _ListingPreviewGalleryPageState extends State<ListingPreviewGalleryPage> {
   late final PageController _controller;
   late int _index;
+  late final int _mediaCount;
+
+  bool _isVideoSlide(int index) => index >= widget.imageFilesOrUrls.length;
 
   @override
   void initState() {
     super.initState();
-    _index = widget.initialIndex.clamp(
-      0,
-      (widget.imageFilesOrUrls.length - 1).clamp(0, 1 << 62),
-    );
+    _mediaCount = widget.imageFilesOrUrls.length + widget.videoFilesOrUrls.length;
+    _index = widget.initialIndex.clamp(0, _mediaCount > 0 ? _mediaCount - 1 : 0);
     _controller = PageController(initialPage: _index);
   }
 
@@ -1458,10 +1462,24 @@ class _ListingPreviewGalleryPageState extends State<ListingPreviewGalleryPage> {
     return _listingNetworkImage(fullUrl, fit: BoxFit.contain);
   }
 
+  Widget _buildVideo(BuildContext context, dynamic item, bool isActive) {
+    final String raw = item is XFile ? item.path : item.toString().trim();
+    if (raw.isEmpty) {
+      return const Center(
+        child: Icon(Icons.videocam_off, color: Colors.white38, size: 48),
+      );
+    }
+    final bool isNetwork = raw.startsWith('http://') || raw.startsWith('https://');
+    if (isNetwork) {
+      final fullUrl = raw.startsWith('http') ? raw : _buildFullImageUrl(raw);
+      return GalleryEmbeddedVideoPlayer(videoUrl: fullUrl, isActive: isActive);
+    }
+    return _LocalEmbeddedVideoPlayer(filePath: raw, isActive: isActive);
+  }
+
   @override
   Widget build(BuildContext context) {
-    final items = widget.imageFilesOrUrls;
-    if (items.isEmpty) {
+    if (_mediaCount == 0) {
       return Scaffold(
         backgroundColor: Colors.black,
         appBar: AppBar(
@@ -1479,20 +1497,26 @@ class _ListingPreviewGalleryPageState extends State<ListingPreviewGalleryPage> {
         backgroundColor: Colors.black,
         elevation: 0,
         iconTheme: IconThemeData(color: Colors.white),
+        title: Text('${_index + 1}/$_mediaCount'),
       ),
       body: Stack(
         children: [
           PageView.builder(
             controller: _controller,
             onPageChanged: (i) => setState(() => _index = i),
-            itemCount: items.length,
+            itemCount: _mediaCount,
             itemBuilder: (context, i) {
+              if (_isVideoSlide(i)) {
+                final videoIndex = i - widget.imageFilesOrUrls.length;
+                final videoItem = widget.videoFilesOrUrls[videoIndex];
+                return _buildVideo(context, videoItem, i == _index);
+              }
               return _FullscreenZoomableSlide(
-                child: _buildImage(context, items[i]),
+                child: _buildImage(context, widget.imageFilesOrUrls[i]),
               );
             },
           ),
-          if (items.length > 1)
+          if (_mediaCount > 1)
             Positioned(
               bottom: 24,
               left: 0,
@@ -1500,7 +1524,7 @@ class _ListingPreviewGalleryPageState extends State<ListingPreviewGalleryPage> {
               child: Center(
                 child: Row(
                   mainAxisSize: MainAxisSize.min,
-                  children: List.generate(items.length, (i) {
+                  children: List.generate(_mediaCount, (i) {
                     final active = i == _index;
                     return AnimatedContainer(
                       duration: Duration(milliseconds: 200),
@@ -1518,6 +1542,158 @@ class _ListingPreviewGalleryPageState extends State<ListingPreviewGalleryPage> {
             ),
         ],
       ),
+    );
+  }
+}
+
+class _LocalEmbeddedVideoPlayer extends StatefulWidget {
+  const _LocalEmbeddedVideoPlayer({
+    required this.filePath,
+    required this.isActive,
+  });
+
+  final String filePath;
+  final bool isActive;
+
+  @override
+  State<_LocalEmbeddedVideoPlayer> createState() =>
+      _LocalEmbeddedVideoPlayerState();
+}
+
+class _LocalEmbeddedVideoPlayerState extends State<_LocalEmbeddedVideoPlayer> {
+  VideoPlayerController? _controller;
+  bool _loading = false;
+  String? _error;
+
+  @override
+  void initState() {
+    super.initState();
+    if (widget.isActive) _init();
+  }
+
+  @override
+  void didUpdateWidget(covariant _LocalEmbeddedVideoPlayer oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (oldWidget.filePath != widget.filePath) {
+      _disposeController();
+      if (widget.isActive) _init();
+      return;
+    }
+    if (widget.isActive && !oldWidget.isActive) {
+      if (_controller == null) {
+        _init();
+      } else {
+        _controller!.play();
+      }
+    } else if (!widget.isActive && oldWidget.isActive) {
+      _controller?.pause();
+    }
+  }
+
+  Future<void> _init() async {
+    final path = widget.filePath.trim();
+    if (path.isEmpty) return;
+    setState(() {
+      _loading = true;
+      _error = null;
+    });
+    try {
+      final c = VideoPlayerController.file(File(path));
+      await c.initialize();
+      if (!mounted) {
+        await c.dispose();
+        return;
+      }
+      c.setLooping(false);
+      await c.play();
+      setState(() {
+        _controller = c;
+        _loading = false;
+      });
+    } catch (e) {
+      if (!mounted) return;
+      setState(() {
+        _loading = false;
+        _error = e.toString();
+      });
+    }
+  }
+
+  void _togglePlay() {
+    final c = _controller;
+    if (c == null || !c.value.isInitialized) return;
+    if (c.value.isPlaying) {
+      c.pause();
+    } else {
+      c.play();
+    }
+    setState(() {});
+  }
+
+  void _disposeController() {
+    _controller?.dispose();
+    _controller = null;
+  }
+
+  @override
+  void dispose() {
+    _disposeController();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    if (_error != null) {
+      return Center(
+        child: Text(
+          _error!,
+          style: const TextStyle(color: Colors.white70),
+          textAlign: TextAlign.center,
+        ),
+      );
+    }
+    if (_loading || _controller == null || !_controller!.value.isInitialized) {
+      return Stack(
+        fit: StackFit.expand,
+        children: [
+          Container(
+            color: Colors.black,
+            child: const Center(
+              child: Icon(Icons.videocam, color: Colors.white38, size: 48),
+            ),
+          ),
+          if (_loading)
+            const Center(
+              child: CircularProgressIndicator(color: Colors.white),
+            ),
+        ],
+      );
+    }
+
+    final c = _controller!;
+    final ar = c.value.aspectRatio == 0 ? 16 / 9 : c.value.aspectRatio;
+    return Stack(
+      fit: StackFit.expand,
+      children: [
+        Center(
+          child: AspectRatio(
+            aspectRatio: ar,
+            child: VideoPlayer(c),
+          ),
+        ),
+        Center(
+          child: GestureDetector(
+            onTap: _togglePlay,
+            child: Icon(
+              c.value.isPlaying
+                  ? Icons.pause_circle_filled
+                  : Icons.play_circle_filled,
+              color: Colors.white54,
+              size: 64,
+            ),
+          ),
+        ),
+      ],
     );
   }
 }
@@ -15587,54 +15763,16 @@ class _ListingPreviewWidgetState extends State<ListingPreviewWidget> {
   ) {
     if (media.isEmpty) return;
     final i = _currentMediaIndex.clamp(0, media.length - 1);
-    final entry = media[i];
-    if (!entry.isVideo) {
-      int imageIdx = 0;
-      for (int j = 0; j < i; j++) {
-        if (!media[j].isVideo) imageIdx++;
-      }
-      Navigator.of(context).push(
-        MaterialPageRoute(
-          builder: (_) => ListingPreviewGalleryPage(
-            imageFilesOrUrls: images,
-            initialIndex: imageIdx,
-          ),
+    final videos = media.where((m) => m.isVideo).map((m) => m.item).toList();
+    Navigator.of(context).push(
+      MaterialPageRoute(
+        builder: (_) => ListingPreviewGalleryPage(
+          imageFilesOrUrls: images,
+          videoFilesOrUrls: videos,
+          initialIndex: i,
         ),
-      );
-      return;
-    }
-    final dynamic item = entry.item;
-    final String path = item is XFile ? item.path : item.toString().trim();
-    final bool isLocal = path.isNotEmpty &&
-        !path.startsWith('http://') &&
-        !path.startsWith('https://');
-    if (isLocal) {
-      Navigator.of(context).push(
-        MaterialPageRoute(
-          builder: (_) => _VideoPreviewPage(videoPath: path),
-        ),
-      );
-    } else {
-      final fullUrl = path.startsWith('http') ? path : _buildFullImageUrl(path);
-      if (fullUrl.isEmpty) return;
-      Navigator.of(context).push(
-        MaterialPageRoute(
-          builder: (_) => Scaffold(
-            backgroundColor: Colors.black,
-            appBar: AppBar(
-              backgroundColor: Colors.black,
-              iconTheme: IconThemeData(color: Colors.white),
-            ),
-            body: SafeArea(
-              child: GalleryEmbeddedVideoPlayer(
-                videoUrl: fullUrl,
-                isActive: true,
-              ),
-            ),
-          ),
-        ),
-      );
-    }
+      ),
+    );
   }
 
   Widget _buildVideoCarouselSlide(dynamic item) {
