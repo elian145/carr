@@ -15008,17 +15008,22 @@ class _SellStep4PageState extends State<SellStep4Page> {
     parentState.carData['videos'] = List<XFile>.from(_selectedVideos);
   }
 
+  String _imagePathKey(dynamic item) =>
+      item is XFile ? item.path : item.toString().trim();
+
   Future<void> _pickImages() async {
     try {
       // Upload full-resolution images to improve YOLO/OCR accuracy
       final files = await _imagePicker.pickMultiImage();
-      if (files.isNotEmpty) {
-        setState(() {
-          _selectedImages = files;
-          _imagesProcessed =
-              false; // Reset processed flag when new images are selected
-        });
-      }
+      if (files.isEmpty || !mounted) return;
+      final existing = _selectedImages.map(_imagePathKey).toSet();
+      final additions =
+          files.where((f) => !existing.contains(f.path)).toList();
+      if (additions.isEmpty) return;
+      setState(() {
+        _selectedImages = [..._selectedImages, ...additions];
+        _imagesProcessed = false;
+      });
     } catch (_) {}
   }
 
@@ -15133,17 +15138,30 @@ class _SellStep4PageState extends State<SellStep4Page> {
   }
 
   Future<void> _pickVideos() async {
+    const maxDur = Duration(minutes: 5);
     try {
-      final file = await _imagePicker.pickVideo(
-        source: ImageSource.gallery,
-        maxDuration: Duration(minutes: 5),
-      );
-      if (file != null) {
-        setState(() {
-          _selectedVideos.add(file);
-        });
-        _syncVideosToParent();
+      List<XFile> picked;
+      try {
+        picked = await _imagePicker.pickMultiVideo(maxDuration: maxDur);
+      } catch (_) {
+        // Some platforms/plugins may not support multi-video selection.
+        final single = await _imagePicker.pickVideo(
+          source: ImageSource.gallery,
+          maxDuration: maxDur,
+        );
+        picked = single != null ? <XFile>[single] : <XFile>[];
       }
+      if (picked.isEmpty || !mounted) return;
+      setState(() {
+        final existing = _selectedVideos.map((e) => e.path).toSet();
+        for (final v in picked) {
+          if (!existing.contains(v.path)) {
+            _selectedVideos.add(v);
+            existing.add(v.path);
+          }
+        }
+      });
+      _syncVideosToParent();
     } catch (e) {
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
