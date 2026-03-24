@@ -14967,7 +14967,7 @@ class _SellStep3PageState extends State<SellStep3Page> {
   }
 }
 
-/// Full-screen video preview (thumbnail + play icon) when tapping a video on the sell step.
+/// Full-screen video playback when tapping a video on sell step 4 (same player as listing gallery).
 class _VideoPreviewPage extends StatelessWidget {
   final String videoPath;
 
@@ -14982,35 +14982,11 @@ class _VideoPreviewPage extends StatelessWidget {
         elevation: 0,
         iconTheme: IconThemeData(color: Colors.white),
       ),
-      body: FutureBuilder<String?>(
-        future: generateVideoThumbnail(videoPath),
-        builder: (context, snapshot) {
-          if (snapshot.hasData && snapshot.data != null) {
-            return Stack(
-              fit: StackFit.expand,
-              children: [
-                Image.file(File(snapshot.data!), fit: BoxFit.contain),
-                Center(
-                  child: Container(
-                    decoration: BoxDecoration(
-                      color: Colors.black54,
-                      shape: BoxShape.circle,
-                    ),
-                    padding: EdgeInsets.all(24),
-                    child: Icon(
-                      Icons.play_arrow,
-                      color: Colors.white,
-                      size: 64,
-                    ),
-                  ),
-                ),
-              ],
-            );
-          }
-          return Center(
-            child: Icon(Icons.videocam, color: Colors.white54, size: 80),
-          );
-        },
+      body: SafeArea(
+        child: GalleryEmbeddedVideoPlayer(
+          videoUrl: videoPath,
+          isActive: true,
+        ),
       ),
     );
   }
@@ -15424,7 +15400,7 @@ class _SellStep4PageState extends State<SellStep4Page> {
           ),
           SizedBox(height: 24),
 
-          // Videos Section — 2 per row, same card layout as photos, tap to open full-screen thumbnail
+          // Videos Section — 2 per row, same card layout as photos, tap to play full-screen
           Text(
             _videosOptionalTitleGlobal(context),
             style: TextStyle(fontWeight: FontWeight.bold, fontSize: 18),
