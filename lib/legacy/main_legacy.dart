@@ -83,7 +83,41 @@ Future<http.MultipartFile> _buildVideoMultipartFile(XFile video) async {
     await raf.close();
   } catch (_) {}
 
-  String mime = lookupMimeType(path, headerBytes: headerBytes) ?? 'video/mp4';
+  String? sniffFromHeader() {
+    if (headerBytes.length >= 12) {
+      // MP4/MOV/3GP family: [size][ftyp][brand...]
+      final box = String.fromCharCodes(headerBytes.sublist(4, 8));
+      if (box == 'ftyp') {
+        final brand = String.fromCharCodes(headerBytes.sublist(8, 12)).toLowerCase();
+        if (brand.startsWith('qt')) return 'video/quicktime';
+        if (brand.startsWith('3g')) return 'video/3gpp';
+        return 'video/mp4';
+      }
+    }
+    if (headerBytes.length >= 4) {
+      // EBML (webm/mkv)
+      if (headerBytes[0] == 0x1A &&
+          headerBytes[1] == 0x45 &&
+          headerBytes[2] == 0xDF &&
+          headerBytes[3] == 0xA3) {
+        final lower = String.fromCharCodes(headerBytes).toLowerCase();
+        if (lower.contains('webm')) return 'video/webm';
+        return 'video/x-matroska';
+      }
+      // AVI
+      if (headerBytes.length >= 12 &&
+          String.fromCharCodes(headerBytes.sublist(0, 4)) == 'RIFF' &&
+          String.fromCharCodes(headerBytes.sublist(8, 12)) == 'AVI ') {
+        return 'video/x-msvideo';
+      }
+    }
+    return null;
+  }
+
+  String mime =
+      sniffFromHeader() ??
+      lookupMimeType(path, headerBytes: headerBytes) ??
+      'video/mp4';
   if (!mime.startsWith('video/')) {
     mime = 'video/mp4';
   }
@@ -93,7 +127,13 @@ Future<http.MultipartFile> _buildVideoMultipartFile(XFile video) async {
       : p.basename(path);
   final base = p.basenameWithoutExtension(srcName).trim();
   final fallbackBase = base.isNotEmpty ? base : 'video_${DateTime.now().millisecondsSinceEpoch}';
-  final ext = extensionFromMime(mime) ?? p.extension(srcName).replaceFirst('.', '');
+  String ext = extensionFromMime(mime) ?? '';
+  // Normalize edge cases to extensions backend validators commonly accept.
+  if (mime == 'video/quicktime') ext = 'mov';
+  if (mime == 'video/x-matroska') ext = 'mkv';
+  if (ext.isEmpty) {
+    ext = p.extension(srcName).replaceFirst('.', '');
+  }
   final normalizedExt = ext.isNotEmpty ? ext : 'mp4';
   final filename = '$fallbackBase.$normalizedExt';
 
