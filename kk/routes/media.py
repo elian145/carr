@@ -192,17 +192,11 @@ def upload_car_images(car_id: str):
 
         uploaded_images = []
 
-        # Privacy by default: blur plates unless explicitly skipped in dev/admin flows.
-        # - Production: ignore skip_blur unless admin.
-        # - Development/testing: allow skip_blur for faster iteration.
-        from ..config import get_app_env
-
-        env_name = get_app_env()
+        # Listing owners already passed auth above. Honor skip_blur=1 from the app for normal
+        # uploads (no automatic plate blur). Explicit blur uses /process-car-images or /blur-image.
         skip_param = (request.args.get("skip_blur") or "").strip().lower()
         requested_skip = skip_param in ("1", "true", "yes", "y", "on")
-        skip_blur = False
-        if requested_skip and (env_name in ("development", "testing") or getattr(current_user, "is_admin", False)):
-            skip_blur = True
+        skip_blur = bool(requested_skip)
 
         for fs in incoming_files:
             if not fs or not fs.filename:
