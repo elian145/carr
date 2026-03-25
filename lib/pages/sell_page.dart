@@ -522,7 +522,8 @@ class _SellPageState extends State<SellPage> {
               ),
               const SizedBox(height: 10),
               Text(
-                loc?.plateBlurNote ?? 'Note: Plate blurring is enabled by default for privacy.',
+                loc?.plateBlurNote ??
+                    'Note: Plates are blurred only if you explicitly choose Blur Plates.',
                 style: const TextStyle(fontSize: 12),
               ),
             ],

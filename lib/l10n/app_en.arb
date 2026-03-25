@@ -273,7 +273,7 @@
 
   "noFavoritesYet": "No favorites yet",
   "descriptionOptionalLabel": "Description (optional)",
-  "plateBlurNote": "Note: Plate blurring is enabled by default for privacy.",
+  "plateBlurNote": "Note: Plates are blurred only when you press Blur Plates.",
   "invalidField": "Invalid",
   "currencyLabel": "Currency",
   "engineTypeLabel": "Engine type",

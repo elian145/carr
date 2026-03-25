@@ -643,12 +643,13 @@ class ApiService {
 
   static Future<Map<String, dynamic>> uploadCarImages(
     String carId,
-    List<XFile> imageFiles,
-  ) async {
-    // IMPORTANT:
-    // Backend is privacy-default (blurring enabled by default).
-    // Only skip blurring when explicitly requested via `FORCE_SKIP_BLUR=true` (dev/testing).
-    final String query = forceSkipBlur() ? '?skip_blur=1' : '';
+    List<XFile> imageFiles, {
+    bool blurPlates = false,
+  }) async {
+    // App-default behavior: do NOT blur unless user explicitly requests it.
+    // FORCE_SKIP_BLUR remains a hard override for dev/testing builds.
+    final bool skipBlur = forceSkipBlur() || !blurPlates;
+    final String query = skipBlur ? '?skip_blur=1' : '';
     final request = http.MultipartRequest(
       'POST',
       Uri.parse('$baseUrl/cars/$carId/images$query'),

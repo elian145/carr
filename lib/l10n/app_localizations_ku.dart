@@ -803,7 +803,7 @@ class AppLocalizationsKu extends AppLocalizations {
 
   @override
   String get plateBlurNote =>
-      'تێبینی: شاردنەوەی ژمارەی پڵێت بە بنەڕەت چالاکە بۆ پاراستنی تایبەتمەندی.';
+      'تێبینی: تەنها کاتێک پڵێتەکان شار دەکرێن کە دوگمەی Blur Plates دابگرن.';
 
   @override
   String get invalidField => 'نەگونجاوە';

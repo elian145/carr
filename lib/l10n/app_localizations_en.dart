@@ -801,7 +801,7 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get plateBlurNote =>
-      'Note: Plate blurring is enabled by default for privacy.';
+      'Note: Plates are blurred only when you press Blur Plates.';
 
   @override
   String get invalidField => 'Invalid';

@@ -799,7 +799,8 @@ class AppLocalizationsAr extends AppLocalizations {
   String get descriptionOptionalLabel => 'الوصف (اختياري)';
 
   @override
-  String get plateBlurNote => 'ملاحظة: طمس اللوحة مفعل افتراضياً للخصوصية.';
+  String get plateBlurNote =>
+      'ملاحظة: يتم طمس اللوحات فقط عند الضغط على زر طمس اللوحات.';
 
   @override
   String get invalidField => 'غير صالح';
