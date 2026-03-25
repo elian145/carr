@@ -1645,7 +1645,7 @@ abstract class AppLocalizations {
   /// No description provided for @plateBlurNote.
   ///
   /// In en, this message translates to:
-  /// **'Note: Plate blurring is enabled by default for privacy.'**
+  /// **'Note: Plates are blurred only when you press Blur Plates.'**
   String get plateBlurNote;
 
   /// No description provided for @invalidField.
