@@ -11480,9 +11480,23 @@ class _CarDetailsPageState extends State<CarDetailsPage> {
     final String transmissionVal =
         _orDash(_translateValueGlobal(context, transRaw) ?? transRaw);
 
-    final String? cityRaw = _getFirstNonEmpty(car!, ['city', 'location']);
-    final String cityVal =
-        _orDash(_translateValueGlobal(context, cityRaw) ?? cityRaw);
+    final String? engineSizePrimary = _getFirstNonEmpty(car!, [
+      'engine_size',
+      'engineSize',
+      'engine',
+    ]);
+    final String engineCardVal = engineSizePrimary != null
+        ? '${_localizeDigitsGlobal(context, engineSizePrimary.toString())}${AppLocalizations.of(context)!.unit_liter_suffix}'
+        : '—';
+
+    final String? cylRawPrimary = _getFirstNonEmpty(car!, [
+      'cylinder_count',
+      'cylinders',
+      'cylinderCount',
+    ]);
+    final String cylinderVal = cylRawPrimary != null
+        ? _localizeDigitsGlobal(context, cylRawPrimary)
+        : '—';
 
     final String titleStatusVal = _orDash(
       car!['title_status'] != null
@@ -11510,14 +11524,14 @@ class _CarDetailsPageState extends State<CarDetailsPage> {
         value: mileageVal,
       ),
       _SpecItem(
-        icon: Icons.settings,
-        label: AppLocalizations.of(context)!.transmissionLabel,
-        value: transmissionVal,
+        icon: Icons.straighten,
+        label: AppLocalizations.of(context)!.detail_engine,
+        value: engineCardVal,
       ),
       _SpecItem(
-        icon: Icons.location_city,
-        label: AppLocalizations.of(context)!.cityLabel,
-        value: cityVal,
+        icon: Icons.settings_input_component,
+        label: AppLocalizations.of(context)!.detail_cylinders,
+        value: cylinderVal,
       ),
       _SpecItem(
         icon: Icons.assignment_turned_in,
@@ -11532,14 +11546,6 @@ class _CarDetailsPageState extends State<CarDetailsPage> {
     ];
 
     // Vertical list: all specs except the top 6; show "—" when value is missing
-    final String? engineSize = _getFirstNonEmpty(car!, [
-      'engine_size',
-      'engineSize',
-      'engine',
-    ]);
-    final String engineSizeDisplay = engineSize != null
-        ? '${_localizeDigitsGlobal(context, engineSize.toString())}${AppLocalizations.of(context)!.unit_liter_suffix}'
-        : '';
     final List<Widget> details = [
       _detailRow(
         icon: Icons.check_circle,
@@ -11579,22 +11585,18 @@ class _CarDetailsPageState extends State<CarDetailsPage> {
         )),
       ),
       _detailRow(
-        icon: Icons.settings_input_component,
-        label: AppLocalizations.of(context)!.detail_cylinders,
-        value: _orDash(_localizeDigitsGlobal(
-          context,
-          _getFirstNonEmpty(car!, [
-                'cylinder_count',
-                'cylinders',
-                'cylinderCount',
-              ]) ??
-              '',
-        )),
+        icon: Icons.location_city,
+        label: AppLocalizations.of(context)!.cityLabel,
+        value: _orDash(_translateValueGlobal(
+              context,
+              _getFirstNonEmpty(car!, ['city', 'location']),
+            ) ??
+            _getFirstNonEmpty(car!, ['city', 'location'])),
       ),
       _detailRow(
-        icon: Icons.straighten,
-        label: AppLocalizations.of(context)!.detail_engine,
-        value: _orDash(engineSizeDisplay),
+        icon: Icons.settings,
+        label: AppLocalizations.of(context)!.transmissionLabel,
+        value: transmissionVal,
       ),
       _detailRow(
         icon: Icons.airline_seat_recline_normal,
@@ -11681,16 +11683,21 @@ class _CarDetailsPageState extends State<CarDetailsPage> {
               ),
             ],
           ),
-          SizedBox(height: 6),
-          Text(
-            item.value!,
-            maxLines: 2,
-            overflow: TextOverflow.ellipsis,
-            style: TextStyle(
-              fontSize: 15,
-              height: 1.15,
-              color: Colors.black,
-              fontWeight: FontWeight.w700,
+          SizedBox(height: 4),
+          Expanded(
+            child: Align(
+              alignment: Alignment.topLeft,
+              child: Text(
+                item.value!,
+                maxLines: 2,
+                overflow: TextOverflow.ellipsis,
+                style: TextStyle(
+                  fontSize: 15,
+                  height: 1.1,
+                  color: Colors.black,
+                  fontWeight: FontWeight.w700,
+                ),
+              ),
             ),
           ),
           // Inline overlay only for HomePage (removed from here)
@@ -15856,6 +15863,11 @@ class _ListingPreviewWidgetState extends State<ListingPreviewWidget> {
 
   Widget _buildSpecsFromData(Map<String, dynamic> data) {
     final loc = AppLocalizations.of(context)!;
+    final String? engineSize = _getFirstNonEmpty(data, [
+      'engine_size',
+      'engineSize',
+      'engine',
+    ]);
     final List<_SpecItem> primary = [
       _SpecItem(
         icon: Icons.calendar_month,
@@ -15872,20 +15884,24 @@ class _ListingPreviewWidgetState extends State<ListingPreviewWidget> {
             : null,
       ),
       _SpecItem(
-        icon: Icons.settings,
-        label: loc.transmissionLabel,
-        value: _translateValueGlobal(
-          context,
-          _getFirstNonEmpty(data, ['transmission']),
-        ),
+        icon: Icons.straighten,
+        label: loc.detail_engine,
+        value: engineSize != null
+            ? '${_localizeDigitsGlobal(context, engineSize.toString())}${loc.unit_liter_suffix}'
+            : null,
       ),
       _SpecItem(
-        icon: Icons.location_city,
-        label: loc.cityLabel,
-        value: data['city'] != null
-            ? (_translateValueGlobal(context, data['city'].toString()) ??
-                  data['city'].toString())
-            : null,
+        icon: Icons.settings_input_component,
+        label: loc.detail_cylinders,
+        value: () {
+          final raw = _getFirstNonEmpty(data, [
+            'cylinder_count',
+            'cylinders',
+            'cylinderCount',
+          ]);
+          if (raw == null) return null;
+          return _localizeDigitsGlobal(context, raw);
+        }(),
       ),
       _SpecItem(
         icon: Icons.assignment_turned_in,
@@ -15908,11 +15924,6 @@ class _ListingPreviewWidgetState extends State<ListingPreviewWidget> {
         ),
       ),
     ];
-    final String? engineSize = _getFirstNonEmpty(data, [
-      'engine_size',
-      'engineSize',
-      'engine',
-    ]);
     final List<Widget> details = [
       _detailRow(
         icon: Icons.check_circle,
@@ -15952,24 +15963,21 @@ class _ListingPreviewWidgetState extends State<ListingPreviewWidget> {
         ),
       ),
       _detailRow(
-        icon: Icons.settings_input_component,
-        label: loc.detail_cylinders,
-        value: _localizeDigitsGlobal(
-          context,
-          _getFirstNonEmpty(data, [
-                'cylinder_count',
-                'cylinders',
-                'cylinderCount',
-              ]) ??
-              '',
-        ),
+        icon: Icons.location_city,
+        label: loc.cityLabel,
+        value: _translateValueGlobal(
+              context,
+              _getFirstNonEmpty(data, ['city', 'location']),
+            ) ??
+            _getFirstNonEmpty(data, ['city', 'location']),
       ),
       _detailRow(
-        icon: Icons.straighten,
-        label: loc.detail_engine,
-        value: engineSize != null
-            ? '${_localizeDigitsGlobal(context, engineSize.toString())}${loc.unit_liter_suffix}'
-            : null,
+        icon: Icons.settings,
+        label: loc.transmissionLabel,
+        value: _translateValueGlobal(
+          context,
+          _getFirstNonEmpty(data, ['transmission']),
+        ),
       ),
       _detailRow(
         icon: Icons.airline_seat_recline_normal,
