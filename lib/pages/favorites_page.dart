@@ -2,9 +2,10 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
 import '../l10n/app_localizations.dart';
+import '../legacy/main_legacy.dart'
+    show buildGlobalCarCard, mapListingToGlobalCarCardData;
 import '../services/api_service.dart';
 import '../services/auth_service.dart';
-import '../shared/media/media_url.dart';
 
 class FavoritesPage extends StatefulWidget {
   const FavoritesPage({super.key});
@@ -51,40 +52,20 @@ class _FavoritesPageState extends State<FavoritesPage> {
     }
   }
 
-  Widget _carImage(Map<String, dynamic> car) {
-    final primary = (car['image_url'] ?? '').toString();
-    final url = buildMediaUrl(primary);
-    if (url.isEmpty) {
-      return Container(
-        color: Colors.black12,
-        child: const Center(child: Icon(Icons.directions_car)),
-      );
-    }
-
-    return Image.network(
-      url,
-      fit: BoxFit.cover,
-      filterQuality: FilterQuality.low,
-      errorBuilder: (context, error, stackTrace) {
-        return Container(
-          color: Colors.black12,
-          child: const Center(child: Icon(Icons.broken_image)),
-        );
-      },
-      loadingBuilder: (context, child, progress) {
-        if (progress == null) return child;
-        return Container(
-          color: Colors.black12,
-          child: const Center(
-            child: SizedBox(
-              width: 20,
-              height: 20,
-              child: CircularProgressIndicator(strokeWidth: 2),
-            ),
-          ),
-        );
-      },
-    );
+  Future<void> _toggleFavorite(String carId) async {
+    try {
+      final res = await ApiService.toggleFavorite(carId);
+      final bool favorited =
+          (res['is_favorited'] == true) || (res['favorited'] == true);
+      if (!favorited && mounted) {
+        setState(() {
+          _cars.removeWhere((c) {
+            final cid = (c['public_id'] ?? c['id'] ?? '').toString();
+            return cid == carId;
+          });
+        });
+      }
+    } catch (_) {}
   }
 
   @override
@@ -150,83 +131,54 @@ class _FavoritesPageState extends State<FavoritesPage> {
                               ],
                             )
                           : GridView.builder(
-                              padding: const EdgeInsets.all(12),
+                              physics: const AlwaysScrollableScrollPhysics(),
+                              padding: const EdgeInsets.all(8),
                               gridDelegate:
                                   const SliverGridDelegateWithFixedCrossAxisCount(
                                 crossAxisCount: 2,
-                                childAspectRatio: 0.72,
-                                crossAxisSpacing: 12,
-                                mainAxisSpacing: 12,
+                                childAspectRatio: 0.62,
+                                crossAxisSpacing: 8,
+                                mainAxisSpacing: 8,
                               ),
                               itemCount: _cars.length,
                               itemBuilder: (context, index) {
-                                final car = _cars[index];
-                                final carId = (car['id'] ?? car['public_id'] ?? '')
+                                final carMap =
+                                    Map<String, dynamic>.from(_cars[index]);
+                                final card = buildGlobalCarCard(
+                                  context,
+                                  mapListingToGlobalCarCardData(
+                                      context, carMap),
+                                );
+                                final carId = (carMap['public_id'] ??
+                                        carMap['id'] ??
+                                        '')
                                     .toString();
-                                final carTitle =
-                                    (car['title'] ?? '${car['brand'] ?? ''} ${car['model'] ?? ''}')
-                                        .toString()
-                                        .trim();
-                                final price = (car['price'] ?? '').toString();
-                                final location = (car['location'] ?? '').toString();
-                                final year = (car['year'] ?? '').toString();
-
-                                return InkWell(
-                                  onTap: () {
-                                    if (carId.isEmpty) return;
-                                    Navigator.pushNamed(
-                                      context,
-                                      '/car_detail',
-                                      arguments: {'carId': carId},
-                                    );
-                                  },
-                                  child: Card(
-                                    clipBehavior: Clip.antiAlias,
-                                    child: Column(
-                                      crossAxisAlignment:
-                                          CrossAxisAlignment.start,
-                                      children: [
-                                        AspectRatio(
-                                          aspectRatio: 16 / 10,
-                                          child: _carImage(car),
-                                        ),
-                                        Padding(
-                                          padding: const EdgeInsets.all(10),
-                                          child: Column(
-                                            crossAxisAlignment:
-                                                CrossAxisAlignment.start,
-                                            children: [
-                                              Text(
-                                                carTitle.isEmpty ? 'Car' : carTitle,
-                                                maxLines: 2,
-                                                overflow: TextOverflow.ellipsis,
-                                                style: const TextStyle(
-                                                  fontWeight: FontWeight.w600,
-                                                ),
-                                              ),
-                                              const SizedBox(height: 6),
-                                              Text(
-                                                price,
-                                                maxLines: 1,
-                                                overflow: TextOverflow.ellipsis,
-                                              ),
-                                              const SizedBox(height: 4),
-                                              Text(
-                                                [year, location]
-                                                    .where((s) => s.isNotEmpty)
-                                                    .join(' • '),
-                                                maxLines: 1,
-                                                overflow: TextOverflow.ellipsis,
-                                                style: Theme.of(context)
-                                                    .textTheme
-                                                    .bodySmall,
-                                              ),
-                                            ],
+                                if (carId.isEmpty) return card;
+                                return Stack(
+                                  clipBehavior: Clip.none,
+                                  children: [
+                                    card,
+                                    Positioned(
+                                      top: 6,
+                                      right: 6,
+                                      child: Material(
+                                        color: Colors.black54,
+                                        shape: const CircleBorder(),
+                                        child: InkWell(
+                                          customBorder: const CircleBorder(),
+                                          onTap: () => _toggleFavorite(carId),
+                                          child: const Padding(
+                                            padding: EdgeInsets.all(6),
+                                            child: Icon(
+                                              Icons.favorite,
+                                              color: Color(0xFFFF6B00),
+                                              size: 22,
+                                            ),
                                           ),
                                         ),
-                                      ],
+                                      ),
                                     ),
-                                  ),
+                                  ],
                                 );
                               },
                             ),

@@ -936,17 +936,77 @@ String? _translateValueGlobal(BuildContext context, String? raw) {
   return raw;
 }
 
-/// Localized car title for cards: brand + model + trim (translated), no year.
+/// Localized car title for cards: brand + model (translated), no trim, no year.
 String _localizedCarTitleForCard(BuildContext context, Map car) {
-  var title = CarNameTranslations.getLocalizedCarTitleNoYear(
+  final title = CarNameTranslations.getLocalizedCarTitleNoYear(
     context,
     Map<String, dynamic>.from(car),
   );
-  final trim = car['trim']?.toString().trim();
-  if (trim != null && trim.isNotEmpty) {
-    title = '$title $trim'.trim();
-  }
   return title.isEmpty ? (car['title']?.toString() ?? '') : title;
+}
+
+/// Trim line for listing cards (under brand+model, above price). Empty if none / base.
+String _localizedTrimForCard(BuildContext context, Map car) {
+  final trim = car['trim']?.toString().trim();
+  if (trim == null || trim.isEmpty) return '';
+  if (trim.toLowerCase() == 'base') return '';
+  return _translateValueGlobal(context, trim) ?? trim;
+}
+
+/// Normalizes API listing / favorite payloads into the shape expected by [buildGlobalCarCard].
+Map<String, dynamic> mapListingToGlobalCarCardData(
+  BuildContext context,
+  Map<String, dynamic> listing,
+) {
+  final String brand = (listing['brand'] ?? '').toString().trim();
+  final String model = (listing['model'] ?? '').toString().trim();
+  final String yearStr = (listing['year']?.toString() ?? '').trim();
+  final String apiTitle = (listing['title'] ?? '').toString().trim();
+  String displayTitle;
+  if (apiTitle.isNotEmpty) {
+    displayTitle = apiTitle;
+  } else {
+    final String base = [
+      if (brand.isNotEmpty) brand.toLowerCase(),
+      if (model.isNotEmpty) model,
+    ].join(' ');
+    displayTitle = yearStr.isNotEmpty ? ('$base ($yearStr)') : base;
+  }
+
+  final num? mileageNum = () {
+    final v = listing['mileage'];
+    if (v == null) return null;
+    if (v is num) return v;
+    final s = v.toString().replaceAll(RegExp(r'[^0-9.-]'), '');
+    return num.tryParse(s);
+  }();
+  final String mileageFormatted = mileageNum == null
+      ? (listing['mileage']?.toString() ?? '')
+      : _decimalFormatterGlobal(context).format(mileageNum);
+
+  final String carId = (listing['public_id'] ??
+          listing['id'] ??
+          listing['car_id'] ??
+          '')
+      .toString();
+
+  return {
+    'id': carId,
+    'brand': brand,
+    'model': model,
+    'trim': listing['trim'],
+    'title': displayTitle,
+    'price': listing['price'],
+    'year': listing['year'],
+    'mileage': mileageFormatted,
+    'city': listing['city'] ??
+        listing['location'] ??
+        listing['city_name'],
+    'image_url': listing['image_url'],
+    'images': listing['images'],
+    'videos': listing['videos'],
+    'is_quick_sell': listing['is_quick_sell'] ?? false,
+  };
 }
 
 // Global car card building function to ensure consistency across all pages
@@ -960,9 +1020,35 @@ Widget buildGlobalCarCard(BuildContext context, Map car) {
           .replaceAll(' ', '-')
           .replaceAll('Ã©', 'e')
           .replaceAll('Ã¶', 'o');
+  final trimLine = _localizedTrimForCard(context, car);
+  final bool quickSell =
+      car['is_quick_sell'] == true || car['is_quick_sell'] == 'true';
+  final String yearRaw = (car['year'] ?? '').toString().trim();
+  final String mileageRaw = (car['mileage'] ?? '').toString().trim();
+  final bool hasYearOrMileage = yearRaw.isNotEmpty || mileageRaw.isNotEmpty;
+  String? cityRaw;
+  for (final key in const ['city', 'location', 'city_name']) {
+    final v = car[key];
+    if (v == null) continue;
+    final s = v.toString().trim();
+    if (s.isNotEmpty) {
+      cityRaw = s;
+      break;
+    }
+  }
+  final String cityLine = cityRaw == null || cityRaw.isEmpty
+      ? ''
+      : (_translateValueGlobal(context, cityRaw) ?? cityRaw).trim();
+  final locCard = AppLocalizations.of(context)!;
+  final String yearMileageDisplay = !hasYearOrMileage
+      ? ''
+      : (yearRaw.isNotEmpty && mileageRaw.isNotEmpty)
+          ? '${_localizeDigitsGlobal(context, yearRaw)} • ${_localizeDigitsGlobal(context, mileageRaw)} ${locCard.unit_km}'
+          : yearRaw.isNotEmpty
+              ? _localizeDigitsGlobal(context, yearRaw)
+              : '${_localizeDigitsGlobal(context, mileageRaw)} ${locCard.unit_km}';
 
   return Container(
-    height: 205, // Standard height for all car cards
     decoration: BoxDecoration(
       color: Colors.white.withOpacity(0.10),
       borderRadius: BorderRadius.circular(20),
@@ -975,6 +1061,7 @@ Widget buildGlobalCarCard(BuildContext context, Map car) {
       ],
     ),
     child: Stack(
+      clipBehavior: Clip.hardEdge,
       children: [
         InkWell(
           borderRadius: BorderRadius.circular(20),
@@ -987,6 +1074,7 @@ Widget buildGlobalCarCard(BuildContext context, Map car) {
           },
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
+            mainAxisSize: MainAxisSize.min,
             children: [
               // Quick Sell Banner (conditional height)
               if (car['is_quick_sell'] == true ||
@@ -1024,11 +1112,7 @@ Widget buildGlobalCarCard(BuildContext context, Map car) {
                 ),
               // Image section
               SizedBox(
-                height:
-                    (car['is_quick_sell'] == true ||
-                        car['is_quick_sell'] == 'true')
-                    ? 120
-                    : 170,
+                height: quickSell ? 120 : 170,
                 child: ClipRRect(
                   borderRadius: BorderRadius.vertical(
                     top:
@@ -1041,16 +1125,15 @@ Widget buildGlobalCarCard(BuildContext context, Map car) {
                   child: _buildGlobalCardImageCarousel(context, car),
                 ),
               ),
-              // Content section
-              Container(
-                height: 85, // Standard height for content
-                padding: EdgeInsets.fromLTRB(12, 8, 12, 0),
+              // Content section (year/mileage + city below price — in flow, no overlap)
+              Padding(
+                padding: EdgeInsets.fromLTRB(12, 8, 12, 10),
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
-                  mainAxisSize: MainAxisSize.max,
-                  mainAxisAlignment: MainAxisAlignment.start,
+                  mainAxisSize: MainAxisSize.min,
                   children: [
                     Row(
+                      crossAxisAlignment: CrossAxisAlignment.center,
                       children: [
                         if (car['brand'] != null &&
                             car['brand'].toString().isNotEmpty)
@@ -1086,21 +1169,46 @@ Widget buildGlobalCarCard(BuildContext context, Map car) {
                           ),
                         SizedBox(width: 8),
                         Expanded(
-                          child: Text(
-                            _localizedCarTitleForCard(context, car),
-                            style: TextStyle(
-                              fontWeight: FontWeight.bold,
-                              color: Color(0xFFFF6B00),
-                              fontSize: 15,
-                              height: 1.1,
+                          child: Align(
+                            alignment: Alignment.centerLeft,
+                            child: Text(
+                              _localizedCarTitleForCard(context, car),
+                              style: TextStyle(
+                                fontWeight: FontWeight.bold,
+                                color: Color(0xFFFF6B00),
+                                fontSize: 15,
+                                height: 1.1,
+                              ),
+                              maxLines: 2,
+                              overflow: TextOverflow.ellipsis,
                             ),
-                            maxLines: 2,
-                            overflow: TextOverflow.ellipsis,
                           ),
                         ),
                       ],
                     ),
-                    SizedBox(height: 6),
+                    if (trimLine.isNotEmpty) ...[
+                      SizedBox(height: 10),
+                      Text(
+                        trimLine,
+                        style: TextStyle(
+                          fontWeight: FontWeight.bold,
+                          color: Color(0xFFFF6B00),
+                          fontSize: 15,
+                          height: 1.1,
+                        ),
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                      ),
+                      SizedBox(height: 6),
+                      Divider(
+                        height: 1,
+                        thickness: 1,
+                        color: Colors.white24,
+                      ),
+                      SizedBox(height: 6),
+                    ] else ...[
+                      SizedBox(height: 6),
+                    ],
                     Text(
                       _formatCurrencyGlobal(context, car['price']),
                       style: TextStyle(
@@ -1109,30 +1217,60 @@ Widget buildGlobalCarCard(BuildContext context, Map car) {
                         fontSize: 15,
                       ),
                     ),
-                    SizedBox(height: 16),
+                    if (hasYearOrMileage || cityLine.isNotEmpty) ...[
+                      SizedBox(height: 10),
+                      Row(
+                        crossAxisAlignment: CrossAxisAlignment.end,
+                        children: [
+                          Expanded(
+                            child: hasYearOrMileage
+                                ? Text(
+                                    yearMileageDisplay,
+                                    style: TextStyle(
+                                      color: Colors.white70,
+                                      fontSize: 13,
+                                    ),
+                                    maxLines: 1,
+                                    overflow: TextOverflow.ellipsis,
+                                  )
+                                : const SizedBox.shrink(),
+                          ),
+                          if (cityLine.isNotEmpty)
+                            Padding(
+                              padding: const EdgeInsets.only(left: 8),
+                              child: Row(
+                                mainAxisSize: MainAxisSize.min,
+                                children: [
+                                  Icon(
+                                    Icons.location_city,
+                                    size: 14,
+                                    color: Colors.white70,
+                                  ),
+                                  const SizedBox(width: 4),
+                                  ConstrainedBox(
+                                    constraints: const BoxConstraints(
+                                      maxWidth: 96,
+                                    ),
+                                    child: Text(
+                                      cityLine,
+                                      style: TextStyle(
+                                        color: Colors.white70,
+                                        fontSize: 13,
+                                      ),
+                                      maxLines: 1,
+                                      overflow: TextOverflow.ellipsis,
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            ),
+                        ],
+                      ),
+                    ],
                   ],
                 ),
               ),
             ],
-          ),
-        ),
-        // Bottom info positioned relative to entire card
-        Positioned(
-          bottom: 35,
-          left: 12,
-          right: 12,
-          child: Text(
-            '${_localizeDigitsGlobal(context, (car['year'] ?? '').toString())} • ${_localizeDigitsGlobal(context, (car['mileage'] ?? '').toString())} ${AppLocalizations.of(context)!.unit_km}',
-            style: TextStyle(color: Colors.white70, fontSize: 13),
-          ),
-        ),
-        // City name at bottom
-        Positioned(
-          bottom: 15,
-          left: 12,
-          child: Text(
-            '${_translateValueGlobal(context, car['city']?.toString()) ?? (car['city'] ?? '')}',
-            style: TextStyle(color: Colors.white70, fontSize: 13),
           ),
         ),
         // Video indicator in top-right corner
@@ -9330,7 +9468,8 @@ class _HomePageState extends State<HomePage> {
                       sliver: SliverGrid(
                         gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
                           crossAxisCount: listingColumns,
-                          childAspectRatio: listingColumns == 2 ? 0.65 : 1.32,
+                          // Slightly taller cells than 0.65 so listing cards (image + content) don’t overflow
+                          childAspectRatio: listingColumns == 2 ? 0.62 : 1.32,
                           crossAxisSpacing: 8,
                           mainAxisSpacing: 8,
                         ),
@@ -10429,6 +10568,30 @@ class _CarDetailsPageState extends State<CarDetailsPage> {
     return title.isNotEmpty ? title : ((car!['title'] ?? '').toString().trim());
   }
 
+  String _displayBrandName(BuildContext context) {
+    if (car == null) return '';
+    final brand = (car!['brand'] ?? '').toString().trim();
+    final locBrand = CarNameTranslations.getLocalizedBrand(
+      context,
+      brand.isEmpty ? null : brand,
+    );
+    if (locBrand.isNotEmpty) return locBrand;
+    return (car!['title'] ?? '').toString().trim();
+  }
+
+  String _displayModelName(BuildContext context) {
+    if (car == null) return '';
+    final brand = (car!['brand'] ?? '').toString().trim();
+    final model = (car!['model'] ?? '').toString().trim();
+
+    final locModel = CarNameTranslations.getLocalizedModel(
+      context,
+      brand.isEmpty ? null : brand,
+      model.isEmpty ? null : model,
+    );
+    return locModel;
+  }
+
   Future<void> _loadFavoriteStatus() async {
     try {
       final tok = ApiService.accessToken;
@@ -10752,6 +10915,53 @@ class _CarDetailsPageState extends State<CarDetailsPage> {
     } catch (e) {
       // Silently fail - don't interrupt user experience
       _debugLog('Failed to track view: $e');
+    }
+  }
+
+  Future<void> _openWhatsAppToSeller() async {
+    if (car == null) return;
+    final dynamic phoneRaw = car!['contact_phone'];
+    if (phoneRaw == null || phoneRaw.toString().trim().isEmpty) return;
+    final String raw = phoneRaw.toString();
+    final String digits = raw.replaceAll(RegExp(r'[^0-9]'), '');
+    if (digits.isEmpty) return;
+    final String msg = Uri.encodeComponent(
+      'Hi, I am interested in your ${_displayCarTitle(context).isNotEmpty ? _displayCarTitle(context) : 'car'}',
+    );
+    final Uri waApp = Uri.parse(
+      'whatsapp://send?phone=$digits&text=$msg',
+    );
+    final Uri waWeb = Uri.parse(
+      'https://wa.me/$digits?text=$msg',
+    );
+    bool launched = await launchUrl(
+      waApp,
+      mode: LaunchMode.externalNonBrowserApplication,
+    ).catchError((_) => false);
+    if (!launched) {
+      launched = await launchUrl(
+        waWeb,
+        mode: LaunchMode.externalApplication,
+      ).catchError((_) => false);
+    }
+    if (!launched) {
+      launched = await launchUrl(
+        waWeb,
+        mode: LaunchMode.platformDefault,
+      ).catchError((_) => false);
+    }
+    if (!launched && mounted) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(
+            AppLocalizations.of(context)!.unableToOpenWhatsApp,
+          ),
+        ),
+      );
+    } else if (launched) {
+      await AnalyticsService.trackMessage(
+        widget.carId.toString(),
+      );
     }
   }
 
@@ -11099,27 +11309,103 @@ class _CarDetailsPageState extends State<CarDetailsPage> {
                               ],
                             ),
                           ),
-                        // Title and price moved below the image header
-                        Text(
-                          _displayCarTitle(context),
-                          style: TextStyle(
-                            fontSize: 22,
-                            fontWeight: FontWeight.bold,
-                            color: Colors.white,
+                        // City label above title
+                        if ((_getFirstNonEmpty(car!, ['city', 'location']) ?? '')
+                            .trim()
+                            .isNotEmpty) ...[
+                          Row(
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              Icon(
+                                Icons.location_city,
+                                size: 14,
+                                color: Colors.white70,
+                              ),
+                              SizedBox(width: 6),
+                              Text(
+                                '${AppLocalizations.of(context)!.cityLabel}: '
+                                '${_translateValueGlobal(context, _getFirstNonEmpty(car!, ['city', 'location'])) ?? _getFirstNonEmpty(car!, ['city', 'location'])}',
+                                style: TextStyle(
+                                  fontSize: 13,
+                                  fontWeight: FontWeight.w700,
+                                  color: Colors.white70,
+                                ),
+                                maxLines: 1,
+                                overflow: TextOverflow.ellipsis,
+                              ),
+                            ],
                           ),
-                          maxLines: 2,
-                          overflow: TextOverflow.ellipsis,
-                        ),
-                        SizedBox(height: 8),
-                        if (car!['price'] != null)
-                          Text(
-                            _formatCurrencyGlobal(context, car!['price']),
-                            style: TextStyle(
-                              fontSize: 18,
-                              fontWeight: FontWeight.w700,
-                              color: Color(0xFFFF6B00),
+                          SizedBox(height: 8),
+                        ],
+                        // Brand full width; price aligns with model line (same row as model)
+                        Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Row(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Expanded(
+                                  child: Text(
+                                    _displayBrandName(context),
+                                    style: TextStyle(
+                                      fontSize: 19,
+                                      fontWeight: FontWeight.bold,
+                                      color: Colors.white,
+                                    ),
+                                    maxLines: 1,
+                                    overflow: TextOverflow.ellipsis,
+                                  ),
+                                ),
+                                if (car!['price'] != null &&
+                                    _displayModelName(context).isEmpty) ...[
+                                  SizedBox(width: 12),
+                                  Text(
+                                    _formatCurrencyGlobal(context, car!['price']),
+                                    style: TextStyle(
+                                      fontSize: 18,
+                                      fontWeight: FontWeight.w700,
+                                      color: Color(0xFFFF6B00),
+                                    ),
+                                  ),
+                                ],
+                              ],
                             ),
-                          ),
+                            if (_displayModelName(context).isNotEmpty) ...[
+                              SizedBox(height: 4),
+                              Row(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  Expanded(
+                                    child: Text(
+                                      _displayModelName(context),
+                                      style: TextStyle(
+                                        fontSize: 22,
+                                        fontWeight: FontWeight.w800,
+                                        color: Colors.white70,
+                                      ),
+                                      maxLines: 1,
+                                      overflow: TextOverflow.ellipsis,
+                                    ),
+                                  ),
+                                  if (car!['price'] != null) ...[
+                                    SizedBox(width: 12),
+                                    Text(
+                                      _formatCurrencyGlobal(
+                                        context,
+                                        car!['price'],
+                                      ),
+                                      style: TextStyle(
+                                        fontSize: 18,
+                                        fontWeight: FontWeight.w700,
+                                        color: Color(0xFFFF6B00),
+                                      ),
+                                    ),
+                                  ],
+                                ],
+                              ),
+                            ],
+                          ],
+                        ),
                         SizedBox(height: 16),
                         // Actions
                         SizedBox(height: 8),
@@ -11140,58 +11426,7 @@ class _CarDetailsPageState extends State<CarDetailsPage> {
                               label: Text(
                                 AppLocalizations.of(context)!.chatOnWhatsApp,
                               ),
-                              onPressed: () async {
-                                final String raw = car!['contact_phone']
-                                    .toString();
-                                final String digits = raw.replaceAll(
-                                  RegExp(r'[^0-9]'),
-                                  '',
-                                );
-                                final String msg = Uri.encodeComponent(
-                                  'Hi, I am interested in your ${_displayCarTitle(context).isNotEmpty ? _displayCarTitle(context) : 'car'}',
-                                );
-
-                                final Uri waApp = Uri.parse(
-                                  'whatsapp://send?phone=$digits&text=$msg',
-                                );
-                                final Uri waWeb = Uri.parse(
-                                  'https://wa.me/$digits?text=$msg',
-                                );
-
-                                bool launched = await launchUrl(
-                                  waApp,
-                                  mode:
-                                      LaunchMode.externalNonBrowserApplication,
-                                ).catchError((_) => false);
-                                if (!launched) {
-                                  launched = await launchUrl(
-                                    waWeb,
-                                    mode: LaunchMode.externalApplication,
-                                  ).catchError((_) => false);
-                                }
-                                if (!launched) {
-                                  launched = await launchUrl(
-                                    waWeb,
-                                    mode: LaunchMode.platformDefault,
-                                  ).catchError((_) => false);
-                                }
-                                if (!launched && mounted) {
-                                  ScaffoldMessenger.of(context).showSnackBar(
-                                    SnackBar(
-                                      content: Text(
-                                        AppLocalizations.of(
-                                          context,
-                                        )!.unableToOpenWhatsApp,
-                                      ),
-                                    ),
-                                  );
-                                } else if (launched) {
-                                  // Track message for analytics
-                                  await AnalyticsService.trackMessage(
-                                    widget.carId.toString(),
-                                  );
-                                }
-                              },
+                              onPressed: _openWhatsAppToSeller,
                             ),
                           ),
                         if (car!['contact_phone'] != null &&
@@ -11243,10 +11478,16 @@ class _CarDetailsPageState extends State<CarDetailsPage> {
                           SizedBox(height: 12),
                         ],
 
+                        Divider(
+                          height: 1,
+                          thickness: 1,
+                          color: Colors.white24,
+                        ),
+                        SizedBox(height: 16),
                         Text(
                           AppLocalizations.of(context)!.specificationsLabel,
                           style: TextStyle(
-                            fontSize: 16,
+                            fontSize: 22,
                             fontWeight: FontWeight.bold,
                             color: Color(0xFFFF6B00),
                           ),
@@ -11301,20 +11542,34 @@ class _CarDetailsPageState extends State<CarDetailsPage> {
                                     child: ComparisonButton(car: car!),
                                   ),
                                 ),
-                                SizedBox(width: 8),
-                                Expanded(
-                                  child: SizedBox(
-                                    height: 48,
-                                    child: OutlinedButton.icon(
-                                      onPressed: () =>
-                                          Navigator.of(context).maybePop(),
-                                      icon: Icon(Icons.list_alt, size: 20),
-                                      label: Text(
-                                        AppLocalizations.of(context)!.backToList,
+                                if (car!['contact_phone'] != null &&
+                                    car!['contact_phone']
+                                        .toString()
+                                        .isNotEmpty) ...[
+                                  SizedBox(width: 8),
+                                  Expanded(
+                                    child: SizedBox(
+                                      height: 48,
+                                      child: OutlinedButton.icon(
+                                        style: OutlinedButton.styleFrom(
+                                          foregroundColor: const Color(
+                                            0xFF25D366,
+                                          ),
+                                          side: const BorderSide(
+                                            color: Color(0xFF25D366),
+                                          ),
+                                        ),
+                                        onPressed: _openWhatsAppToSeller,
+                                        icon: const Icon(Icons.chat, size: 20),
+                                        label: Text(
+                                          AppLocalizations.of(
+                                            context,
+                                          )!.chatOnWhatsApp,
+                                        ),
                                       ),
                                     ),
                                   ),
-                                ),
+                                ],
                               ],
                             ),
                           ],
@@ -11469,9 +11724,6 @@ class _CarDetailsPageState extends State<CarDetailsPage> {
     }
 
     // Primary fields
-    final String yearVal = car!['year'] != null
-        ? _localizeDigitsGlobal(context, car!['year'].toString())
-        : '—';
     final String mileageVal = car!['mileage'] != null
         ? '${_localizeDigitsGlobal(context, _formatPrice(car!['mileage'].toString()))} ${AppLocalizations.of(context)!.unit_km}'
         : '—';
@@ -11514,19 +11766,9 @@ class _CarDetailsPageState extends State<CarDetailsPage> {
 
     final List<_SpecItem> primary = [
       _SpecItem(
-        icon: Icons.calendar_month,
-        label: AppLocalizations.of(context)!.yearLabel,
-        value: yearVal,
-      ),
-      _SpecItem(
         icon: Icons.speed,
         label: AppLocalizations.of(context)!.mileageLabel,
         value: mileageVal,
-      ),
-      _SpecItem(
-        icon: Icons.straighten,
-        label: AppLocalizations.of(context)!.detail_engine,
-        value: engineCardVal,
       ),
       _SpecItem(
         icon: Icons.settings_input_component,
@@ -11534,9 +11776,23 @@ class _CarDetailsPageState extends State<CarDetailsPage> {
         value: cylinderVal,
       ),
       _SpecItem(
-        icon: Icons.assignment_turned_in,
-        label: AppLocalizations.of(context)!.titleStatus,
-        value: titleStatusVal,
+        icon: Icons.straighten,
+        label: AppLocalizations.of(context)!.detail_engine,
+        value: engineCardVal,
+      ),
+      _SpecItem(
+        icon: Icons.layers,
+        label: AppLocalizations.of(context)!.trimLabel,
+        value: _orDash(_translateValueGlobal(
+              context,
+              _getFirstNonEmpty(car!, ['trim']),
+            ) ??
+            _getFirstNonEmpty(car!, ['trim'])),
+      ),
+      _SpecItem(
+        icon: Icons.settings,
+        label: AppLocalizations.of(context)!.transmissionLabel,
+        value: transmissionVal,
       ),
       _SpecItem(
         icon: Icons.local_gas_station,
@@ -11564,6 +11820,11 @@ class _CarDetailsPageState extends State<CarDetailsPage> {
         )),
       ),
       _detailRow(
+        icon: Icons.assignment_turned_in,
+        label: AppLocalizations.of(context)!.titleStatus,
+        value: titleStatusVal,
+      ),
+      _detailRow(
         icon: Icons.color_lens,
         label: AppLocalizations.of(context)!.detail_color,
         value: _orDash(_translateValueGlobal(
@@ -11583,20 +11844,6 @@ class _CarDetailsPageState extends State<CarDetailsPage> {
             'drive',
           ]),
         )),
-      ),
-      _detailRow(
-        icon: Icons.location_city,
-        label: AppLocalizations.of(context)!.cityLabel,
-        value: _orDash(_translateValueGlobal(
-              context,
-              _getFirstNonEmpty(car!, ['city', 'location']),
-            ) ??
-            _getFirstNonEmpty(car!, ['city', 'location'])),
-      ),
-      _detailRow(
-        icon: Icons.settings,
-        label: AppLocalizations.of(context)!.transmissionLabel,
-        value: transmissionVal,
       ),
       _detailRow(
         icon: Icons.airline_seat_recline_normal,
@@ -11653,55 +11900,83 @@ class _CarDetailsPageState extends State<CarDetailsPage> {
 
   Widget _buildSpecCard(_SpecItem item) {
     return Container(
-      padding: EdgeInsets.symmetric(horizontal: 12, vertical: 12),
+      padding: EdgeInsets.symmetric(horizontal: 12, vertical: 10),
       constraints: BoxConstraints(minHeight: 84),
       decoration: BoxDecoration(
         color: Color(0xFFFF6B00),
         borderRadius: BorderRadius.circular(12),
       ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        mainAxisAlignment: MainAxisAlignment.center,
-        children: [
-          Row(
+      child: LayoutBuilder(
+        builder: (context, constraints) {
+          final labelStyle = TextStyle(
+            fontSize: constraints.maxWidth * 0.13,
+            color: Colors.black87,
+            fontWeight: FontWeight.w700,
+            letterSpacing: 0.3,
+            height: 1.05,
+          );
+          final valueStyle = TextStyle(
+            fontSize: constraints.maxWidth * 0.18,
+            height: 1.0,
+            color: Colors.black,
+            fontWeight: FontWeight.w800,
+          );
+
+          return Column(
+            crossAxisAlignment: CrossAxisAlignment.center,
             children: [
-              Icon(item.icon, size: 16, color: Colors.black87),
-              SizedBox(width: 6),
               Expanded(
-                child: Text(
-                  item.label,
-                  maxLines: 2,
-                  overflow: TextOverflow.ellipsis,
-                  style: TextStyle(
-                    fontSize: 11,
-                    color: Colors.black,
-                    fontWeight: FontWeight.w800,
-                    letterSpacing: 0.2,
-                    height: 1.1,
+                flex: 5,
+                child: Row(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  crossAxisAlignment: CrossAxisAlignment.center,
+                  children: [
+                    Icon(item.icon, size: constraints.maxWidth * 0.14, color: Colors.black87),
+                    SizedBox(width: constraints.maxWidth * 0.04),
+                    Flexible(
+                      child: FittedBox(
+                        alignment: Alignment.center,
+                        fit: BoxFit.scaleDown,
+                        child: Text(
+                          item.label,
+                          maxLines: 1,
+                          textAlign: TextAlign.center,
+                          style: labelStyle,
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              Padding(
+                padding: EdgeInsets.symmetric(
+                  vertical: math.max(4.0, constraints.maxHeight * 0.03),
+                  horizontal: 6,
+                ),
+                child: Divider(
+                  height: 1,
+                  thickness: 1,
+                  color: Colors.black.withOpacity(0.22),
+                ),
+              ),
+              Expanded(
+                flex: 6,
+                child: Center(
+                  child: FittedBox(
+                    alignment: Alignment.center,
+                    fit: BoxFit.scaleDown,
+                    child: Text(
+                      item.value!,
+                      maxLines: 1,
+                      textAlign: TextAlign.center,
+                      style: valueStyle,
+                    ),
                   ),
                 ),
               ),
             ],
-          ),
-          SizedBox(height: 4),
-          Expanded(
-            child: Align(
-              alignment: Alignment.topLeft,
-              child: Text(
-                item.value!,
-                maxLines: 2,
-                overflow: TextOverflow.ellipsis,
-                style: TextStyle(
-                  fontSize: 15,
-                  height: 1.1,
-                  color: Colors.black,
-                  fontWeight: FontWeight.w700,
-                ),
-              ),
-            ),
-          ),
-          // Inline overlay only for HomePage (removed from here)
-        ],
+          );
+        },
       ),
     );
   }
@@ -11714,18 +11989,20 @@ class _CarDetailsPageState extends State<CarDetailsPage> {
         borderRadius: BorderRadius.circular(10),
       ),
       child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
+        crossAxisAlignment: CrossAxisAlignment.stretch,
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
           Row(
+            mainAxisAlignment: MainAxisAlignment.center,
             children: [
               Icon(item.icon, size: 14, color: Colors.black87),
               SizedBox(width: 6),
-              Expanded(
+              Flexible(
                 child: Text(
                   item.label,
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,
+                  textAlign: TextAlign.center,
                   style: TextStyle(
                     fontSize: 11,
                     color: Colors.black,
@@ -11735,11 +12012,19 @@ class _CarDetailsPageState extends State<CarDetailsPage> {
               ),
             ],
           ),
-          SizedBox(height: 4),
+          Padding(
+            padding: const EdgeInsets.symmetric(vertical: 4, horizontal: 4),
+            child: Divider(
+              height: 1,
+              thickness: 1,
+              color: Colors.black.withOpacity(0.22),
+            ),
+          ),
           Text(
             item.value!,
             maxLines: 1,
             overflow: TextOverflow.ellipsis,
+            textAlign: TextAlign.center,
             style: TextStyle(
               fontSize: 13,
               color: Colors.black,
@@ -15767,18 +16052,21 @@ class _ListingPreviewWidgetState extends State<ListingPreviewWidget> {
         borderRadius: BorderRadius.circular(12),
       ),
       child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
+        crossAxisAlignment: CrossAxisAlignment.stretch,
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
           Row(
+            mainAxisAlignment: MainAxisAlignment.center,
+            crossAxisAlignment: CrossAxisAlignment.center,
             children: [
               Icon(item.icon, size: 16, color: Colors.black87),
               SizedBox(width: 6),
-              Expanded(
+              Flexible(
                 child: Text(
                   item.label,
                   maxLines: 2,
                   overflow: TextOverflow.ellipsis,
+                  textAlign: TextAlign.center,
                   style: TextStyle(
                     fontSize: 11,
                     color: Colors.black,
@@ -15790,11 +16078,19 @@ class _ListingPreviewWidgetState extends State<ListingPreviewWidget> {
               ),
             ],
           ),
-          SizedBox(height: 6),
+          Padding(
+            padding: const EdgeInsets.symmetric(vertical: 5, horizontal: 6),
+            child: Divider(
+              height: 1,
+              thickness: 1,
+              color: Colors.black.withOpacity(0.22),
+            ),
+          ),
           Text(
             item.value!,
             maxLines: 2,
             overflow: TextOverflow.ellipsis,
+            textAlign: TextAlign.center,
             style: TextStyle(
               fontSize: 15,
               height: 1.15,
@@ -15870,24 +16166,10 @@ class _ListingPreviewWidgetState extends State<ListingPreviewWidget> {
     ]);
     final List<_SpecItem> primary = [
       _SpecItem(
-        icon: Icons.calendar_month,
-        label: loc.yearLabel,
-        value: data['year'] != null
-            ? _localizeDigitsGlobal(context, data['year'].toString())
-            : null,
-      ),
-      _SpecItem(
         icon: Icons.speed,
         label: loc.mileageLabel,
         value: data['mileage'] != null
             ? '${_localizeDigitsGlobal(context, _formatPrice(context, data['mileage'].toString()))} ${loc.unit_km}'
-            : null,
-      ),
-      _SpecItem(
-        icon: Icons.straighten,
-        label: loc.detail_engine,
-        value: engineSize != null
-            ? '${_localizeDigitsGlobal(context, engineSize.toString())}${loc.unit_liter_suffix}'
             : null,
       ),
       _SpecItem(
@@ -15904,16 +16186,28 @@ class _ListingPreviewWidgetState extends State<ListingPreviewWidget> {
         }(),
       ),
       _SpecItem(
-        icon: Icons.assignment_turned_in,
-        label: loc.titleStatus,
-        value: data['title_status'] != null
-            ? (data['title_status'].toString().toLowerCase() == 'damaged'
-                  ? (loc.value_title_damaged +
-                        (data['damaged_parts'] != null
-                            ? ' (${_localizeDigitsGlobal(context, data['damaged_parts'].toString())} ${loc.damagedParts})'
-                            : ''))
-                  : loc.value_title_clean)
+        icon: Icons.straighten,
+        label: loc.detail_engine,
+        value: engineSize != null
+            ? '${_localizeDigitsGlobal(context, engineSize.toString())}${loc.unit_liter_suffix}'
             : null,
+      ),
+      _SpecItem(
+        icon: Icons.layers,
+        label: loc.trimLabel,
+        value: _translateValueGlobal(
+              context,
+              _getFirstNonEmpty(data, ['trim']),
+            ) ??
+            _getFirstNonEmpty(data, ['trim']),
+      ),
+      _SpecItem(
+        icon: Icons.settings,
+        label: loc.transmissionLabel,
+        value: _translateValueGlobal(
+          context,
+          _getFirstNonEmpty(data, ['transmission']),
+        ),
       ),
       _SpecItem(
         icon: Icons.local_gas_station,
@@ -15942,6 +16236,18 @@ class _ListingPreviewWidgetState extends State<ListingPreviewWidget> {
         ),
       ),
       _detailRow(
+        icon: Icons.assignment_turned_in,
+        label: loc.titleStatus,
+        value: data['title_status'] != null
+            ? (data['title_status'].toString().toLowerCase() == 'damaged'
+                  ? (loc.value_title_damaged +
+                        (data['damaged_parts'] != null
+                            ? ' (${_localizeDigitsGlobal(context, data['damaged_parts'].toString())} ${loc.damagedParts})'
+                            : ''))
+                  : loc.value_title_clean)
+            : null,
+      ),
+      _detailRow(
         icon: Icons.color_lens,
         label: loc.detail_color,
         value: _translateValueGlobal(
@@ -15960,23 +16266,6 @@ class _ListingPreviewWidgetState extends State<ListingPreviewWidget> {
             'drivetrain',
             'drive',
           ]),
-        ),
-      ),
-      _detailRow(
-        icon: Icons.location_city,
-        label: loc.cityLabel,
-        value: _translateValueGlobal(
-              context,
-              _getFirstNonEmpty(data, ['city', 'location']),
-            ) ??
-            _getFirstNonEmpty(data, ['city', 'location']),
-      ),
-      _detailRow(
-        icon: Icons.settings,
-        label: loc.transmissionLabel,
-        value: _translateValueGlobal(
-          context,
-          _getFirstNonEmpty(data, ['transmission']),
         ),
       ),
       _detailRow(
@@ -16186,10 +16475,16 @@ class _ListingPreviewWidgetState extends State<ListingPreviewWidget> {
                     ),
                   ),
                 SizedBox(height: 16),
+                Divider(
+                  height: 1,
+                  thickness: 1,
+                  color: Colors.white24,
+                ),
+                SizedBox(height: 16),
                 Text(
                   AppLocalizations.of(context)!.specificationsLabel,
                   style: TextStyle(
-                    fontSize: 16,
+                    fontSize: 22,
                     fontWeight: FontWeight.bold,
                     color: Color(0xFFFF6B00),
                   ),
@@ -17320,10 +17615,21 @@ class CarComparisonPage extends StatelessWidget {
                                                             headerTitleHeight,
                                                         child: Center(
                                                           child: Text(
-                                                            _localizedCarTitleForCard(
-                                                              context,
-                                                              car,
-                                                            ),
+                                                            [
+                                                              _localizedCarTitleForCard(
+                                                                context,
+                                                                car,
+                                                              ),
+                                                              _localizedTrimForCard(
+                                                                context,
+                                                                car,
+                                                              ),
+                                                            ]
+                                                                .where(
+                                                                  (s) =>
+                                                                      s.isNotEmpty,
+                                                                )
+                                                                .join(' '),
                                                             style: TextStyle(
                                                               fontWeight:
                                                                   FontWeight
@@ -19250,18 +19556,6 @@ class _FavoritesPageState extends State<FavoritesPage> {
     } catch (_) {}
   }
 
-  String _formatPrice(String raw) {
-    try {
-      final num? value = num.tryParse(raw.replaceAll(RegExp(r'[^0-9.]'), ''));
-      if (value == null) return raw;
-      final locale = Localizations.localeOf(context).toLanguageTag();
-      final formatter = _decimalFormatterGlobal(context);
-      return _localizeDigitsGlobal(context, formatter.format(value));
-    } catch (_) {
-      return raw;
-    }
-  }
-
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -19294,112 +19588,54 @@ class _FavoritesPageState extends State<FavoritesPage> {
           ? Center(child: Text(AppLocalizations.of(context)!.noFavoritesYet))
           : RefreshIndicator(
               onRefresh: _loadFavorites,
-              child: ListView.separated(
+              child: GridView.builder(
                 physics: const AlwaysScrollableScrollPhysics(),
-                padding: const EdgeInsets.all(12),
+                padding: const EdgeInsets.all(8),
+                gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+                  crossAxisCount: 2,
+                  crossAxisSpacing: 8,
+                  mainAxisSpacing: 8,
+                  childAspectRatio: 0.62,
+                ),
+                itemCount: _favorites.length,
                 itemBuilder: (context, index) {
-                  final car = _favorites[index];
-                  final String carId = (car['public_id'] ?? car['id'] ?? '')
+                  final carMap = Map<String, dynamic>.from(_favorites[index]);
+                  final card = buildGlobalCarCard(
+                    context,
+                    mapListingToGlobalCarCardData(context, carMap),
+                  );
+                  final String carId = (carMap['public_id'] ??
+                          carMap['id'] ??
+                          '')
                       .toString();
-
-                  String title = _localizedCarTitleForCard(context, car);
-                  final year = (car['year'] ?? '').toString().trim();
-                  if (year.isNotEmpty) title = '$title $year'.trim();
-                  if (title.isEmpty) title = (car['title']?.toString() ?? '').trim();
-
-                  String imageUrl = (car['image_url']?.toString() ?? '').trim();
-                  if (imageUrl.isEmpty && car['images'] is List) {
-                    final List imgs = car['images'] as List;
-                    if (imgs.isNotEmpty) {
-                      final first = imgs.first;
-                      if (first is Map) {
-                        imageUrl =
-                            (first['image_url'] ??
-                                    first['url'] ??
-                                    first['path'] ??
-                                    '')
-                                .toString()
-                                .trim();
-                      } else {
-                        imageUrl = first.toString().trim();
-                      }
-                    }
-                  }
-
-                  final String? rel = imageUrl.isEmpty ? null : imageUrl;
-                  final String fullImg = rel == null
-                      ? ''
-                      : _buildFullImageUrl(rel);
-                  return InkWell(
-                    onTap: () {
-                      if (carId.isNotEmpty) {
-                        Navigator.pushNamed(
-                          context,
-                          '/car_detail',
-                          arguments: {'carId': carId},
-                        );
-                      }
-                    },
-                    child: Row(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        ClipRRect(
-                          borderRadius: BorderRadius.circular(10),
-                          child: (fullImg.isNotEmpty)
-                              ? _listingNetworkImage(
-                                  fullImg,
-                                  width: 110,
-                                  height: 78,
-                                  fit: BoxFit.cover,
-                                )
-                              : Container(
-                                  width: 110,
-                                  height: 78,
-                                  color: Colors.grey[900],
-                                  child: Icon(
-                                    Icons.directions_car,
-                                    color: Colors.grey[500],
-                                  ),
-                                ),
-                        ),
-                        SizedBox(width: 12),
-                        Expanded(
-                          child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              Text(
-                                title.isEmpty ? '—' : title,
-                                maxLines: 2,
-                                overflow: TextOverflow.ellipsis,
-                                style: TextStyle(
-                                  fontSize: 16,
-                                  fontWeight: FontWeight.w600,
-                                ),
+                  if (carId.isEmpty) return card;
+                  return Stack(
+                    clipBehavior: Clip.none,
+                    children: [
+                      card,
+                      Positioned(
+                        top: 6,
+                        right: 6,
+                        child: Material(
+                          color: Colors.black54,
+                          shape: const CircleBorder(),
+                          child: InkWell(
+                            customBorder: const CircleBorder(),
+                            onTap: () => _toggleFavorite(carId),
+                            child: const Padding(
+                              padding: EdgeInsets.all(6),
+                              child: Icon(
+                                Icons.favorite,
+                                color: Color(0xFFFF6B00),
+                                size: 22,
                               ),
-                              SizedBox(height: 6),
-                              if (car['price'] != null)
-                                Text(
-                                  _formatCurrencyGlobal(context, car['price']),
-                                  style: TextStyle(
-                                    color: Color(0xFFFF6B00),
-                                    fontWeight: FontWeight.w700,
-                                  ),
-                                ),
-                            ],
+                            ),
                           ),
                         ),
-                        IconButton(
-                          icon: Icon(Icons.favorite, color: Color(0xFFFF6B00)),
-                          onPressed: () {
-                            if (carId.isNotEmpty) _toggleFavorite(carId);
-                          },
-                        ),
-                      ],
-                    ),
+                      ),
+                    ],
                   );
                 },
-                separatorBuilder: (_, __) => SizedBox(height: 12),
-                itemCount: _favorites.length,
               ),
             ),
       bottomNavigationBar: BottomNavigationBar(
@@ -21601,7 +21837,7 @@ class _MyListingsPageState extends State<MyListingsPage> {
               crossAxisCount: 2,
               crossAxisSpacing: 8,
               mainAxisSpacing: 8,
-              childAspectRatio: 0.65,
+              childAspectRatio: 0.62,
             ),
             itemCount: myListings.length,
             itemBuilder: (context, index) {
@@ -21615,48 +21851,9 @@ class _MyListingsPageState extends State<MyListingsPage> {
   }
 
   Widget _buildListingCard(Map<String, dynamic> listing) {
-    // Convert listing data to match home page car format
-    final String brand = (listing['brand'] ?? '').toString().trim();
-    final String model = (listing['model'] ?? '').toString().trim();
-    final String yearStr = (listing['year']?.toString() ?? '').trim();
-    final String apiTitle = (listing['title'] ?? '').toString().trim();
-    String displayTitle;
-    if (apiTitle.isNotEmpty) {
-      // Use server-provided title when available to match Home exactly
-      displayTitle = apiTitle;
-    } else {
-      final String base = [
-        if (brand.isNotEmpty) brand.toLowerCase(),
-        if (model.isNotEmpty) model,
-      ].join(' ');
-      displayTitle = yearStr.isNotEmpty ? ('$base ($yearStr)') : base;
-    }
-
-    final num? mileageNum = () {
-      final v = listing['mileage'];
-      if (v == null) return null;
-      if (v is num) return v;
-      final s = v.toString().replaceAll(RegExp(r'[^0-9.-]'), '');
-      return num.tryParse(s);
-    }();
-    final String mileageFormatted = mileageNum == null
-        ? (listing['mileage']?.toString() ?? '')
-        : _decimalFormatterGlobal(context).format(mileageNum);
-
-    final car = {
-      'id': listing['id'],
-      'brand': brand,
-      'title': displayTitle,
-      'price': listing['price'],
-      'year': listing['year'],
-      'mileage': mileageFormatted,
-      'city': listing['city'],
-      'image_url': listing['image_url'],
-      'images': listing['images'],
-      'is_quick_sell': listing['is_quick_sell'] ?? false,
-    };
-
-    // Use the same global car card as home page for consistency
-    return buildGlobalCarCard(context, car);
+    return buildGlobalCarCard(
+      context,
+      mapListingToGlobalCarCardData(context, listing),
+    );
   }
 }

@@ -523,7 +523,7 @@ class _AnalyticsPageState extends State<AnalyticsPage> {
       physics: NeverScrollableScrollPhysics(),
       gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
         crossAxisCount: 2,
-        childAspectRatio: 0.65, // Same aspect ratio as home page
+        childAspectRatio: 0.62, // Match home listing grid (tall enough for card content)
         crossAxisSpacing: 8, // Same spacing as home page
         mainAxisSpacing: 8, // Same spacing as home page
       ),
