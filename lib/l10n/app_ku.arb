@@ -154,6 +154,8 @@
   "noCarsFound": "هیچ ئۆتۆمبێلێک نەدۆزرایەوە",
   "carNotFound": "ئۆتۆمبێل نەدۆزرایەوە",
   "chatOnWhatsApp": "وتووێژ لە واتساپ",
+  "chatOnCarzo": "چات لەسەر Carzo",
+  "chatCarzoOwnListing": "ناتوانیت پەیام بنێریت بە خۆت لەسەر ڕێکلامی خۆت.",
   "unableToOpenWhatsApp": "ناتوانرێت واتساپ بکرێتەوە",
   "backToList": "گەڕانەوە بۆ لیست"
   ,

@@ -153,6 +153,8 @@
   "noCarsFound": "No cars found",
   "carNotFound": "Car not found",
   "chatOnWhatsApp": "Chat on WhatsApp",
+  "chatOnCarzo": "Chat on Carzo",
+  "chatCarzoOwnListing": "You can't message yourself on your own listing.",
   "unableToOpenWhatsApp": "Unable to open WhatsApp",
   "backToList": "Back to list"
   ,

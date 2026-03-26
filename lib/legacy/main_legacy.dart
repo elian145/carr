@@ -42,6 +42,7 @@ import 'package:mime/mime.dart';
 import 'package:http_parser/http_parser.dart';
 import 'package:path/path.dart' as p;
 import '../pages/auth_pages.dart' as auth_pages;
+import '../pages/chat_pages.dart' as carzo_chat;
 import '../pages/reset_password_page.dart';
 import '../pages/verify_email_page.dart';
 import '../features/comparison/state/car_comparison_store.dart';
@@ -2432,7 +2433,7 @@ class ComparisonButton extends StatelessWidget {
         return Container(
           decoration: BoxDecoration(
             color: isInComparison ? Colors.green : Colors.orange,
-            borderRadius: BorderRadius.circular(isCompact ? 16 : 20),
+            borderRadius: BorderRadius.circular(isCompact ? 14 : 17),
             boxShadow: [
               BoxShadow(
                 color: Colors.black.withOpacity(0.2),
@@ -2444,7 +2445,7 @@ class ComparisonButton extends StatelessWidget {
           child: Material(
             color: Colors.transparent,
             child: InkWell(
-              borderRadius: BorderRadius.circular(isCompact ? 16 : 20),
+              borderRadius: BorderRadius.circular(isCompact ? 14 : 17),
               onTap: () {
                 if (isInComparison) {
                   comparisonStore.removeCarFromComparison(carId);
@@ -2485,7 +2486,7 @@ class ComparisonButton extends StatelessWidget {
               child: Center(
                 child: Padding(
                   padding: EdgeInsets.symmetric(
-                    horizontal: isCompact ? 8 : 12,
+                    horizontal: isCompact ? 7 : 10,
                     vertical: isCompact ? 6 : 8,
                   ),
                   child: Row(
@@ -2494,7 +2495,7 @@ class ComparisonButton extends StatelessWidget {
                       Icon(
                         isInComparison ? Icons.check : Icons.compare_arrows,
                         color: Colors.white,
-                        size: isCompact ? 16 : 18,
+                        size: isCompact ? 16 : 19,
                       ),
                       if (!isCompact) ...[
                         SizedBox(width: 4),
@@ -2504,7 +2505,7 @@ class ComparisonButton extends StatelessWidget {
                               : _compareLabelGlobal(context),
                           style: TextStyle(
                             color: Colors.white,
-                            fontSize: 12,
+                            fontSize: 13,
                             fontWeight: FontWeight.w600,
                           ),
                         ),
@@ -10918,13 +10919,62 @@ class _CarDetailsPageState extends State<CarDetailsPage> {
     }
   }
 
+  /// Listing phone for WhatsApp/call: `contact_phone` or nested `seller.*` (API shape varies).
+  String? _sellerPhoneRawForContact() {
+    if (car == null) return null;
+    final direct = car!['contact_phone']?.toString().trim();
+    if (direct != null && direct.isNotEmpty) return direct;
+    final seller = car!['seller'];
+    if (seller is Map) {
+      final m = Map<String, dynamic>.from(seller as Map);
+      for (final key in [
+        'phone_number',
+        'phone',
+        'whatsapp',
+        'mobile',
+        'contact_phone',
+      ]) {
+        final v = m[key]?.toString().trim();
+        if (v != null && v.isNotEmpty) return v;
+      }
+    }
+    return null;
+  }
+
+  bool get _hasDialableSellerPhone {
+    final raw = _sellerPhoneRawForContact();
+    if (raw == null || raw.isEmpty) return false;
+    return raw.replaceAll(RegExp(r'[^0-9]'), '').isNotEmpty;
+  }
+
   Future<void> _openWhatsAppToSeller() async {
     if (car == null) return;
-    final dynamic phoneRaw = car!['contact_phone'];
-    if (phoneRaw == null || phoneRaw.toString().trim().isEmpty) return;
-    final String raw = phoneRaw.toString();
+    final String? raw = _sellerPhoneRawForContact();
+    if (raw == null || raw.isEmpty) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(
+              AppLocalizations.of(context)!.sellerPhoneNotAvailable,
+            ),
+          ),
+        );
+      }
+      return;
+    }
     final String digits = raw.replaceAll(RegExp(r'[^0-9]'), '');
-    if (digits.isEmpty) return;
+    if (digits.isEmpty) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(
+              AppLocalizations.of(context)!.sellerPhoneNotAvailable,
+            ),
+          ),
+        );
+      }
+      return;
+    }
     final String msg = Uri.encodeComponent(
       'Hi, I am interested in your ${_displayCarTitle(context).isNotEmpty ? _displayCarTitle(context) : 'car'}',
     );
@@ -10963,6 +11013,57 @@ class _CarDetailsPageState extends State<CarDetailsPage> {
         widget.carId.toString(),
       );
     }
+  }
+
+  void _openCarzoChat() {
+    if (car == null || !mounted) return;
+    final loc = AppLocalizations.of(context)!;
+    final auth = Provider.of<AuthService>(context, listen: false);
+    if (!auth.isAuthenticated) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text(loc.loginRequired)),
+      );
+      return;
+    }
+
+    final String carIdForChat = (car!['public_id'] ?? car!['id'] ?? widget.carId)
+        .toString()
+        .trim();
+    if (carIdForChat.isEmpty) return;
+
+    String? receiverId;
+    final seller = car!['seller'];
+    if (seller is Map) {
+      final m = Map<String, dynamic>.from(seller as Map);
+      final rid = m['id'];
+      if (rid != null) {
+        final s = rid.toString().trim();
+        if (s.isNotEmpty) receiverId = s;
+      }
+    }
+
+    final myId = auth.userId?.toString().trim();
+    if (receiverId != null &&
+        myId != null &&
+        myId.isNotEmpty &&
+        receiverId == myId) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text(loc.chatCarzoOwnListing)),
+      );
+      return;
+    }
+
+    Navigator.push<void>(
+      context,
+      MaterialPageRoute<void>(
+        builder: (ctx) => AuthGuard(
+          child: carzo_chat.ChatConversationPage(
+            carId: carIdForChat,
+            receiverId: receiverId,
+          ),
+        ),
+      ),
+    );
   }
 
   Future<void> _shareCar() async {
@@ -11407,76 +11508,6 @@ class _CarDetailsPageState extends State<CarDetailsPage> {
                           ],
                         ),
                         SizedBox(height: 16),
-                        // Actions
-                        SizedBox(height: 8),
-                        if (car!['contact_phone'] != null &&
-                            car!['contact_phone'].toString().isNotEmpty)
-                          SizedBox(
-                            width: double.infinity,
-                            child: ElevatedButton.icon(
-                              style: ElevatedButton.styleFrom(
-                                backgroundColor: Color(0xFF25D366),
-                                foregroundColor: Colors.white,
-                                padding: EdgeInsets.symmetric(vertical: 14),
-                                shape: RoundedRectangleBorder(
-                                  borderRadius: BorderRadius.circular(12),
-                                ),
-                              ),
-                              icon: Icon(Icons.chat),
-                              label: Text(
-                                AppLocalizations.of(context)!.chatOnWhatsApp,
-                              ),
-                              onPressed: _openWhatsAppToSeller,
-                            ),
-                          ),
-                        if (car!['contact_phone'] != null &&
-                            car!['contact_phone'].toString().isNotEmpty) ...[
-                          SizedBox(height: 12),
-                          SizedBox(
-                            width: double.infinity,
-                            child: ElevatedButton.icon(
-                              style: ElevatedButton.styleFrom(
-                                backgroundColor: Color(0xFF007AFF),
-                                foregroundColor: Colors.white,
-                                padding: EdgeInsets.symmetric(vertical: 14),
-                                shape: RoundedRectangleBorder(
-                                  borderRadius: BorderRadius.circular(12),
-                                ),
-                              ),
-                              icon: Icon(Icons.phone),
-                              label: Text('Call Seller'),
-                              onPressed: () async {
-                                final String raw = car!['contact_phone']
-                                    .toString();
-                                final String digits = raw.replaceAll(
-                                  RegExp(r'[^0-9]'),
-                                  '',
-                                );
-
-                                final Uri callUri = Uri.parse('tel:$digits');
-
-                                bool launched = await launchUrl(
-                                  callUri,
-                                  mode: LaunchMode.externalApplication,
-                                ).catchError((_) => false);
-
-                                if (launched) {
-                                  // Track call for analytics
-                                  await AnalyticsService.trackCall(
-                                    widget.carId.toString(),
-                                  );
-                                } else if (mounted) {
-                                  ScaffoldMessenger.of(context).showSnackBar(
-                                    SnackBar(
-                                      content: Text('Unable to make call'),
-                                    ),
-                                  );
-                                }
-                              },
-                            ),
-                          ),
-                          SizedBox(height: 12),
-                        ],
 
                         Divider(
                           height: 1,
@@ -11499,78 +11530,209 @@ class _CarDetailsPageState extends State<CarDetailsPage> {
                         Column(
                           mainAxisSize: MainAxisSize.min,
                           children: [
+                            if (_hasDialableSellerPhone) ...[
+                              Row(
+                                children: [
+                                  Expanded(
+                                    child: SizedBox(
+                                      height: 46,
+                                      child: ElevatedButton.icon(
+                                        style: ElevatedButton.styleFrom(
+                                          backgroundColor: Color(0xFF25D366),
+                                          foregroundColor: Colors.white,
+                                          elevation: 2,
+                                          shadowColor: Colors.black26,
+                                          padding: EdgeInsets.symmetric(
+                                            horizontal: 10,
+                                            vertical: 8,
+                                          ),
+                                          minimumSize: Size(0, 46),
+                                          tapTargetSize:
+                                              MaterialTapTargetSize.shrinkWrap,
+                                          shape: RoundedRectangleBorder(
+                                            borderRadius: BorderRadius.circular(
+                                              17,
+                                            ),
+                                          ),
+                                        ),
+                                        icon: Icon(Icons.chat, size: 19),
+                                        label: Text(
+                                          AppLocalizations.of(
+                                            context,
+                                          )!.chatOnWhatsApp,
+                                          style: TextStyle(
+                                            fontSize: 13,
+                                            fontWeight: FontWeight.w600,
+                                          ),
+                                          maxLines: 1,
+                                          overflow: TextOverflow.ellipsis,
+                                        ),
+                                        onPressed: _openWhatsAppToSeller,
+                                      ),
+                                    ),
+                                  ),
+                                  SizedBox(width: 6),
+                                  Expanded(
+                                    child: SizedBox(
+                                      height: 46,
+                                      child: ElevatedButton.icon(
+                                        style: ElevatedButton.styleFrom(
+                                          backgroundColor: Color(0xFF007AFF),
+                                          foregroundColor: Colors.white,
+                                          elevation: 2,
+                                          shadowColor: Colors.black26,
+                                          padding: EdgeInsets.symmetric(
+                                            horizontal: 10,
+                                            vertical: 8,
+                                          ),
+                                          minimumSize: Size(0, 46),
+                                          tapTargetSize:
+                                              MaterialTapTargetSize.shrinkWrap,
+                                          shape: RoundedRectangleBorder(
+                                            borderRadius: BorderRadius.circular(
+                                              17,
+                                            ),
+                                          ),
+                                        ),
+                                        icon: Icon(Icons.phone, size: 19),
+                                        label: Text(
+                                          'Call Seller',
+                                          style: TextStyle(
+                                            fontSize: 13,
+                                            fontWeight: FontWeight.w600,
+                                          ),
+                                          maxLines: 1,
+                                          overflow: TextOverflow.ellipsis,
+                                        ),
+                                        onPressed: () async {
+                                          final String raw =
+                                              _sellerPhoneRawForContact() ??
+                                              '';
+                                          final String digits = raw.replaceAll(
+                                            RegExp(r'[^0-9]'),
+                                            '',
+                                          );
+                                          if (digits.isEmpty) {
+                                            if (mounted) {
+                                              ScaffoldMessenger.of(
+                                                context,
+                                              ).showSnackBar(
+                                                SnackBar(
+                                                  content: Text(
+                                                    AppLocalizations.of(
+                                                      context,
+                                                    )!.sellerPhoneNotAvailable,
+                                                  ),
+                                                ),
+                                              );
+                                            }
+                                            return;
+                                          }
+
+                                          final Uri callUri =
+                                              Uri.parse('tel:$digits');
+
+                                          bool launched = await launchUrl(
+                                            callUri,
+                                            mode: LaunchMode
+                                                .externalApplication,
+                                          ).catchError((_) => false);
+
+                                          if (launched) {
+                                            await AnalyticsService.trackCall(
+                                              widget.carId.toString(),
+                                            );
+                                          } else if (mounted) {
+                                            ScaffoldMessenger.of(
+                                              context,
+                                            ).showSnackBar(
+                                              SnackBar(
+                                                content: Text(
+                                                  'Unable to make call',
+                                                ),
+                                              ),
+                                            );
+                                          }
+                                        },
+                                      ),
+                                    ),
+                                  ),
+                                ],
+                              ),
+                              SizedBox(height: 6),
+                            ],
                             Row(
                               children: [
                                 Expanded(
                                   child: SizedBox(
-                                    height: 48,
-                                    child: FilledButton.icon(
-                                      onPressed: _toggleFavoriteOnServer,
-                                      icon: Icon(
-                                        isFavorite
-                                            ? Icons.favorite
-                                            : Icons.favorite_border,
-                                        size: 20,
-                                      ),
-                                      label: Text(
-                                        isFavorite
-                                            ? AppLocalizations.of(context)!.saved
-                                            : AppLocalizations.of(context)!.save,
-                                      ),
-                                    ),
+                                    height: 46,
+                                    child: ComparisonButton(car: car!),
                                   ),
                                 ),
-                                SizedBox(width: 8),
+                                SizedBox(width: 6),
                                 Expanded(
                                   child: SizedBox(
-                                    height: 48,
+                                    height: 46,
                                     child: OutlinedButton.icon(
+                                      style: OutlinedButton.styleFrom(
+                                        padding: EdgeInsets.symmetric(
+                                          horizontal: 10,
+                                          vertical: 8,
+                                        ),
+                                        minimumSize: Size(0, 46),
+                                        tapTargetSize:
+                                            MaterialTapTargetSize.shrinkWrap,
+                                        shape: RoundedRectangleBorder(
+                                          borderRadius: BorderRadius.circular(
+                                            17,
+                                          ),
+                                        ),
+                                      ),
                                       onPressed: _shareCar,
-                                      icon: Icon(Icons.share, size: 20),
-                                      label: Text(AppLocalizations.of(context)!.shareAction),
+                                      icon: Icon(Icons.share, size: 19),
+                                      label: Text(
+                                        AppLocalizations.of(
+                                          context,
+                                        )!.shareAction,
+                                        style: TextStyle(
+                                          fontSize: 13,
+                                          fontWeight: FontWeight.w600,
+                                        ),
+                                      ),
                                     ),
                                   ),
                                 ),
                               ],
                             ),
-                            SizedBox(height: 8),
-                            Row(
-                              children: [
-                                Expanded(
-                                  child: SizedBox(
-                                    height: 48,
-                                    child: ComparisonButton(car: car!),
+                            SizedBox(height: 6),
+                            SizedBox(
+                              width: double.infinity,
+                              height: 46,
+                              child: OutlinedButton.icon(
+                                style: OutlinedButton.styleFrom(
+                                  foregroundColor: Color(0xFFFF6B00),
+                                  side: BorderSide(color: Color(0xFFFF6B00)),
+                                  padding: EdgeInsets.symmetric(
+                                    horizontal: 10,
+                                    vertical: 8,
+                                  ),
+                                  minimumSize: Size(0, 46),
+                                  tapTargetSize:
+                                      MaterialTapTargetSize.shrinkWrap,
+                                  shape: RoundedRectangleBorder(
+                                    borderRadius: BorderRadius.circular(17),
                                   ),
                                 ),
-                                if (car!['contact_phone'] != null &&
-                                    car!['contact_phone']
-                                        .toString()
-                                        .isNotEmpty) ...[
-                                  SizedBox(width: 8),
-                                  Expanded(
-                                    child: SizedBox(
-                                      height: 48,
-                                      child: OutlinedButton.icon(
-                                        style: OutlinedButton.styleFrom(
-                                          foregroundColor: const Color(
-                                            0xFF25D366,
-                                          ),
-                                          side: const BorderSide(
-                                            color: Color(0xFF25D366),
-                                          ),
-                                        ),
-                                        onPressed: _openWhatsAppToSeller,
-                                        icon: const Icon(Icons.chat, size: 20),
-                                        label: Text(
-                                          AppLocalizations.of(
-                                            context,
-                                          )!.chatOnWhatsApp,
-                                        ),
-                                      ),
-                                    ),
+                                onPressed: _openCarzoChat,
+                                icon: Icon(Icons.forum_outlined, size: 19),
+                                label: Text(
+                                  AppLocalizations.of(context)!.chatOnCarzo,
+                                  style: TextStyle(
+                                    fontSize: 13,
+                                    fontWeight: FontWeight.w600,
                                   ),
-                                ],
-                              ],
+                                ),
+                              ),
                             ),
                           ],
                         ),

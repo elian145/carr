@@ -450,6 +450,13 @@ class AppLocalizationsEn extends AppLocalizations {
   String get chatOnWhatsApp => 'Chat on WhatsApp';
 
   @override
+  String get chatOnCarzo => 'Chat on Carzo';
+
+  @override
+  String get chatCarzoOwnListing =>
+      'You can\'t message yourself on your own listing.';
+
+  @override
   String get unableToOpenWhatsApp => 'Unable to open WhatsApp';
 
   @override

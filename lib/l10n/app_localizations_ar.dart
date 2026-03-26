@@ -450,6 +450,12 @@ class AppLocalizationsAr extends AppLocalizations {
   String get chatOnWhatsApp => 'محادثة على واتساب';
 
   @override
+  String get chatOnCarzo => 'محادثة على Carzo';
+
+  @override
+  String get chatCarzoOwnListing => 'لا يمكنك مراسلة نفسك على إعلانك.';
+
+  @override
   String get unableToOpenWhatsApp => 'تعذر فتح واتساب';
 
   @override

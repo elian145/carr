@@ -982,6 +982,18 @@ abstract class AppLocalizations {
   /// **'Chat on WhatsApp'**
   String get chatOnWhatsApp;
 
+  /// No description provided for @chatOnCarzo.
+  ///
+  /// In en, this message translates to:
+  /// **'Chat on Carzo'**
+  String get chatOnCarzo;
+
+  /// No description provided for @chatCarzoOwnListing.
+  ///
+  /// In en, this message translates to:
+  /// **'You can\'t message yourself on your own listing.'**
+  String get chatCarzoOwnListing;
+
   /// No description provided for @unableToOpenWhatsApp.
   ///
   /// In en, this message translates to:

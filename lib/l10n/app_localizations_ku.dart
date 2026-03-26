@@ -450,6 +450,13 @@ class AppLocalizationsKu extends AppLocalizations {
   String get chatOnWhatsApp => 'وتووێژ لە واتساپ';
 
   @override
+  String get chatOnCarzo => 'چات لەسەر Carzo';
+
+  @override
+  String get chatCarzoOwnListing =>
+      'ناتوانیت پەیام بنێریت بە خۆت لەسەر ڕێکلامی خۆت.';
+
+  @override
   String get unableToOpenWhatsApp => 'ناتوانرێت واتساپ بکرێتەوە';
 
   @override
