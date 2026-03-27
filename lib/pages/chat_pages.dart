@@ -4,6 +4,7 @@ import 'package:provider/provider.dart';
 import '../l10n/app_localizations.dart';
 import '../services/websocket_service.dart';
 import '../services/auth_service.dart';
+import '../services/api_service.dart';
 import '../theme_provider.dart';
 
 String _digitsLocalized(BuildContext context, String input) {
@@ -371,16 +372,43 @@ class _ChatConversationPageState extends State<ChatConversationPage> {
     }
   }
 
-  void _sendMessage() {
-    if (_messageController.text.trim().isEmpty) return;
+  Future<void> _sendMessage() async {
+    final content = _messageController.text.trim();
+    if (content.isEmpty) return;
 
-    WebSocketService.sendChatMessage(
-      widget.carId,
-      _messageController.text.trim(),
-      receiverId: widget.receiverId,
-    );
+    if (WebSocketService.isConnected) {
+      WebSocketService.sendChatMessage(
+        widget.carId,
+        content,
+        receiverId: widget.receiverId,
+      );
+      _messageController.clear();
+      return;
+    }
 
-    _messageController.clear();
+    try {
+      final response = await ApiService.sendChatMessageByConversation(
+        conversationId: widget.carId,
+        content: content,
+        receiverId: widget.receiverId,
+      );
+      final msg = response['message'];
+      if (msg is Map<String, dynamic> && mounted) {
+        setState(() {
+          _messages.add(ChatMessage.fromJson(msg));
+        });
+        _scrollToBottom();
+      }
+      _messageController.clear();
+    } catch (e) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(e.toString()),
+          backgroundColor: Colors.red,
+        ),
+      );
+    }
   }
 
   @override

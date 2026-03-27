@@ -815,4 +815,21 @@ class ApiService {
 
   // Get current access token
   static String? get accessToken => _accessToken;
+
+  // Chat fallback endpoint (works without Socket.IO connectivity).
+  static Future<Map<String, dynamic>> sendChatMessageByConversation({
+    required String conversationId,
+    required String content,
+    String? receiverId,
+  }) async {
+    final payload = <String, dynamic>{'content': content};
+    if (receiverId != null && receiverId.trim().isNotEmpty) {
+      payload['receiver_id'] = receiverId.trim();
+    }
+    return await _makeAuthenticatedRequest(
+      'POST',
+      '/chat/$conversationId/send',
+      body: payload,
+    );
+  }
 }
