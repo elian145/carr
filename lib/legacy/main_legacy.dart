@@ -11051,6 +11051,13 @@ class _CarDetailsPageState extends State<CarDetailsPage> {
         .trim();
     if (carIdForChat.isEmpty) return;
 
+    final String title = _displayCarTitle(context).isNotEmpty
+        ? _displayCarTitle(context)
+        : '${car!['brand'] ?? ''} ${car!['model'] ?? ''} ${car!['year'] ?? ''}'
+            .trim();
+    final String starterMessage =
+        'Hi, I am interested in "$title". What is the price for this listing?';
+
     String? receiverId;
     final seller = car!['seller'];
     if (seller is Map) {
@@ -11080,6 +11087,19 @@ class _CarDetailsPageState extends State<CarDetailsPage> {
           child: carzo_chat.ChatConversationPage(
             carId: carIdForChat,
             receiverId: receiverId,
+            initialDraft: starterMessage,
+            initialListingPreview: {
+              'id': carIdForChat,
+              'title': title,
+              'price': car!['price'],
+              'currency': car!['currency'],
+              'location': car!['location'] ?? car!['city'],
+              'image_url': car!['image_url'],
+              'images': car!['images'],
+              'brand': car!['brand'],
+              'model': car!['model'],
+              'year': car!['year'],
+            },
           ),
         ),
       ),

@@ -1159,104 +1159,110 @@ class _ChatConversationPageState extends State<ChatConversationPage>
     final location =
         (car['location'] ?? car['city'] ?? '').toString().trim();
 
-    return Padding(
-      padding: const EdgeInsets.fromLTRB(16, 12, 16, 0),
-      child: InkWell(
-        borderRadius: BorderRadius.circular(14),
-        onTap: () {
-          Navigator.pushNamed(
-            context,
-            '/car_detail',
-            arguments: {'carId': widget.carId},
-          );
-        },
-        child: Container(
-          padding: const EdgeInsets.all(12),
-          decoration: BoxDecoration(
-            color: Theme.of(context).cardColor,
-            borderRadius: BorderRadius.circular(14),
-            border: Border.all(color: Theme.of(context).dividerColor),
-          ),
-          child: Row(
-            children: [
-              ClipRRect(
-                borderRadius: BorderRadius.circular(10),
-                child: imageUrl.isEmpty
-                    ? Container(
+    return InkWell(
+      borderRadius: BorderRadius.circular(14),
+      onTap: () {
+        Navigator.pushNamed(
+          context,
+          '/car_detail',
+          arguments: {'carId': widget.carId},
+        );
+      },
+      child: Container(
+        padding: const EdgeInsets.all(12),
+        decoration: BoxDecoration(
+          color: Theme.of(context).cardColor,
+          borderRadius: BorderRadius.circular(14),
+          border: Border.all(color: Theme.of(context).dividerColor),
+        ),
+        child: Row(
+          children: [
+            ClipRRect(
+              borderRadius: BorderRadius.circular(10),
+              child: imageUrl.isEmpty
+                  ? Container(
+                      width: 72,
+                      height: 72,
+                      color: Colors.black12,
+                      child: const Icon(Icons.directions_car),
+                    )
+                  : Image.network(
+                      imageUrl,
+                      width: 72,
+                      height: 72,
+                      fit: BoxFit.cover,
+                      errorBuilder: (_, __, ___) => Container(
                         width: 72,
                         height: 72,
                         color: Colors.black12,
                         child: const Icon(Icons.directions_car),
-                      )
-                    : Image.network(
-                        imageUrl,
-                        width: 72,
-                        height: 72,
-                        fit: BoxFit.cover,
-                        errorBuilder: (_, __, ___) => Container(
-                          width: 72,
-                          height: 72,
-                          color: Colors.black12,
-                          child: const Icon(Icons.directions_car),
-                        ),
                       ),
-              ),
-              const SizedBox(width: 12),
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      title.isEmpty
-                          ? (AppLocalizations.of(context)?.listingTitle ??
-                              'Listing')
-                          : title,
-                      maxLines: 2,
-                      overflow: TextOverflow.ellipsis,
-                      style: const TextStyle(fontWeight: FontWeight.w700),
                     ),
-                    if (price.isNotEmpty) ...[
-                      const SizedBox(height: 4),
-                      Text(
-                        price,
-                        style: TextStyle(
-                          color: Theme.of(context).primaryColor,
-                          fontWeight: FontWeight.w600,
-                        ),
-                      ),
-                    ],
-                    if (location.isNotEmpty) ...[
-                      const SizedBox(height: 4),
-                      Text(
-                        location,
-                        maxLines: 1,
-                        overflow: TextOverflow.ellipsis,
-                        style: Theme.of(context).textTheme.bodySmall,
-                      ),
-                    ],
-                  ],
-                ),
-              ),
-              const SizedBox(width: 8),
-              Column(
-                mainAxisSize: MainAxisSize.min,
+            ),
+            const SizedBox(width: 12),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Icon(
-                    Icons.open_in_new,
-                    size: 18,
-                    color: Theme.of(context).primaryColor,
-                  ),
-                  const SizedBox(height: 4),
                   Text(
-                    'Open',
-                    style: Theme.of(context).textTheme.bodySmall,
+                    title.isEmpty
+                        ? (AppLocalizations.of(context)?.listingTitle ??
+                            'Listing')
+                        : title,
+                    maxLines: 2,
+                    overflow: TextOverflow.ellipsis,
+                    style: const TextStyle(fontWeight: FontWeight.w700),
                   ),
+                  if (price.isNotEmpty) ...[
+                    const SizedBox(height: 4),
+                    Text(
+                      price,
+                      style: TextStyle(
+                        color: Theme.of(context).primaryColor,
+                        fontWeight: FontWeight.w600,
+                      ),
+                    ),
+                  ],
+                  if (location.isNotEmpty) ...[
+                    const SizedBox(height: 4),
+                    Text(
+                      location,
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                      style: Theme.of(context).textTheme.bodySmall,
+                    ),
+                  ],
                 ],
               ),
-            ],
-          ),
+            ),
+            const SizedBox(width: 8),
+            Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Icon(
+                  Icons.open_in_new,
+                  size: 18,
+                  color: Theme.of(context).primaryColor,
+                ),
+                const SizedBox(height: 4),
+                Text(
+                  'Open',
+                  style: Theme.of(context).textTheme.bodySmall,
+                ),
+              ],
+            ),
+          ],
         ),
       ),
+    );
+  }
+
+  Widget _buildComposerListingCard(BuildContext context) {
+    final car = _listingPreview;
+    if (car == null) return const SizedBox.shrink();
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 10),
+      child: _buildListingCard(context),
     );
   }
 
@@ -1282,7 +1288,6 @@ class _ChatConversationPageState extends State<ChatConversationPage>
       ),
       body: Column(
         children: [
-          _buildListingCard(context),
           // Chat messages
           Expanded(
             child: _loadingHistory && _messages.isEmpty
@@ -1468,37 +1473,46 @@ class _ChatConversationPageState extends State<ChatConversationPage>
                 top: BorderSide(color: Theme.of(context).dividerColor),
               ),
             ),
-            child: Row(
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
               children: [
-                IconButton(
-                  onPressed: _isSending ? null : _showAttachmentPicker,
-                  icon: const Icon(Icons.attach_file),
-                  tooltip: 'Send attachment',
-                ),
-                Expanded(
-                  child: TextField(
-                    controller: _messageController,
-                    decoration: InputDecoration(
-                      hintText: AppLocalizations.of(context)!.typeMessage,
-                      border: OutlineInputBorder(),
-                      contentPadding: EdgeInsets.symmetric(
-                        horizontal: 16,
-                        vertical: 12,
+                if (_listingPreview != null) _buildComposerListingCard(context),
+                Row(
+                  children: [
+                    IconButton(
+                      onPressed: _isSending ? null : _showAttachmentPicker,
+                      icon: const Icon(Icons.attach_file),
+                      tooltip: 'Send attachment',
+                    ),
+                    Expanded(
+                      child: TextField(
+                        controller: _messageController,
+                        decoration: InputDecoration(
+                          hintText: AppLocalizations.of(context)!.typeMessage,
+                          border: OutlineInputBorder(),
+                          contentPadding: EdgeInsets.symmetric(
+                            horizontal: 16,
+                            vertical: 12,
+                          ),
+                        ),
+                        maxLines: null,
+                        onChanged: (value) {
+                          _onTextChanged(value);
+                          setState(() {});
+                        },
+                        onSubmitted: (_) => _sendMessage(),
                       ),
                     ),
-                    maxLines: null,
-                    onChanged: _onTextChanged,
-                    onSubmitted: (_) => _sendMessage(),
-                  ),
-                ),
-                const SizedBox(width: 8),
-                IconButton(
-                  onPressed: _isSending ? null : _sendMessage,
-                  icon: const Icon(Icons.send),
-                  style: IconButton.styleFrom(
-                    backgroundColor: Theme.of(context).primaryColor,
-                    foregroundColor: Colors.white,
-                  ),
+                    const SizedBox(width: 8),
+                    IconButton(
+                      onPressed: _isSending ? null : _sendMessage,
+                      icon: const Icon(Icons.send),
+                      style: IconButton.styleFrom(
+                        backgroundColor: Theme.of(context).primaryColor,
+                        foregroundColor: Colors.white,
+                      ),
+                    ),
+                  ],
                 ),
               ],
             ),
