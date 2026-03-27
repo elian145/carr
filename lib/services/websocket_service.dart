@@ -111,7 +111,9 @@ class WebSocketService {
       }
 
       final opts = <String, dynamic>{
-        'transports': ['websocket', 'polling'],
+        // Render/Gunicorn setups often fail websocket transport unless using a
+        // dedicated async worker. Polling is broadly compatible and reliable.
+        'transports': ['polling'],
         'path': '/socket.io/',
         'autoConnect': false,
         'reconnection': true,
