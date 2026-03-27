@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'dart:async';
 import 'package:image_picker/image_picker.dart';
+import 'package:mime/mime.dart';
 import 'package:provider/provider.dart';
 import 'package:video_player/video_player.dart';
 import '../l10n/app_localizations.dart';
@@ -769,6 +770,100 @@ class _ChatConversationPageState extends State<ChatConversationPage>
     }
   }
 
+  bool _isImageFile(XFile file) {
+    final mime = lookupMimeType(file.path) ?? '';
+    if (mime.startsWith('image/')) return true;
+    final path = file.path.toLowerCase();
+    return path.endsWith('.jpg') ||
+        path.endsWith('.jpeg') ||
+        path.endsWith('.png') ||
+        path.endsWith('.gif') ||
+        path.endsWith('.webp');
+  }
+
+  bool _isVideoFile(XFile file) {
+    final mime = lookupMimeType(file.path) ?? '';
+    if (mime.startsWith('video/')) return true;
+    final path = file.path.toLowerCase();
+    return path.endsWith('.mp4') ||
+        path.endsWith('.mov') ||
+        path.endsWith('.avi') ||
+        path.endsWith('.mkv') ||
+        path.endsWith('.webm');
+  }
+
+  Future<void> _pickAndSendMultipleMedia() async {
+    if (_isSending) return;
+    try {
+      final picker = ImagePicker();
+      final picked = await picker.pickMultipleMedia(
+        maxWidth: 1200,
+        maxHeight: 1200,
+        imageQuality: 80,
+        limit: 10,
+      );
+      if (picked.isEmpty || !mounted) return;
+
+      setState(() => _isSending = true);
+      final sentMessages = <ChatMessage>[];
+      var failedCount = 0;
+
+      for (final file in picked) {
+        try {
+          Map<String, dynamic> response;
+          if (_isVideoFile(file)) {
+            response = await ApiService.sendChatVideo(
+              conversationId: widget.carId,
+              videoFile: file,
+              receiverId: widget.receiverId,
+            );
+          } else if (_isImageFile(file)) {
+            response = await ApiService.sendChatImage(
+              conversationId: widget.carId,
+              imageFile: file,
+              receiverId: widget.receiverId,
+            );
+          } else {
+            failedCount++;
+            continue;
+          }
+
+          final msg = response['message'];
+          if (msg is Map<String, dynamic>) {
+            sentMessages.add(ChatMessage.fromJson(msg));
+          }
+        } catch (_) {
+          failedCount++;
+        }
+      }
+
+      if (!mounted) return;
+      if (sentMessages.isNotEmpty) {
+        setState(() {
+          for (final message in sentMessages) {
+            _addMessageIfMissing(message);
+          }
+        });
+        _scrollToBottom();
+      }
+      if (failedCount > 0) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Failed to send $failedCount attachment(s).'),
+            backgroundColor: Colors.orange,
+          ),
+        );
+      }
+    } catch (e) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text(e.toString()), backgroundColor: Colors.red),
+      );
+    } finally {
+      if (mounted) setState(() => _isSending = false);
+    }
+  }
+
   Future<void> _pickAndSendVideo() async {
     if (_isSending) return;
     try {
@@ -808,6 +903,15 @@ class _ChatConversationPageState extends State<ChatConversationPage>
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
+            ListTile(
+              leading: const Icon(Icons.photo_library_outlined),
+              title: const Text('Send photos/videos'),
+              subtitle: const Text('Select multiple images and videos'),
+              onTap: () {
+                Navigator.pop(context);
+                _pickAndSendMultipleMedia();
+              },
+            ),
             ListTile(
               leading: const Icon(Icons.image),
               title: const Text('Send image'),

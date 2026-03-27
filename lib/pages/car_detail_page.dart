@@ -570,7 +570,7 @@ class _CarDetailPageState extends State<CarDetailPage> {
     final currency = (car['currency'] ?? '').toString();
     final location = (car['location'] ?? car['city'] ?? '').toString();
     final starterMessage =
-        'Hi, I am interested in "$title". Is it still available?';
+        'Hi, I am interested in "$title". What is the price for this listing?';
 
     final seller = (car['seller'] is Map) ? (car['seller'] as Map) : null;
     final receiverId = seller == null
