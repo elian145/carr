@@ -7,6 +7,7 @@ import '../l10n/app_localizations.dart';
 import '../services/websocket_service.dart';
 import '../services/auth_service.dart';
 import '../services/api_service.dart';
+import '../shared/media/media_url.dart';
 import '../theme_provider.dart';
 
 String _digitsLocalized(BuildContext context, String input) {
@@ -441,8 +442,16 @@ class _ChatListPageState extends State<ChatListPage> with WidgetsBindingObserver
 class ChatConversationPage extends StatefulWidget {
   final String carId;
   final String? receiverId;
+  final String? initialDraft;
+  final Map<String, dynamic>? initialListingPreview;
 
-  const ChatConversationPage({super.key, required this.carId, this.receiverId});
+  const ChatConversationPage({
+    super.key,
+    required this.carId,
+    this.receiverId,
+    this.initialDraft,
+    this.initialListingPreview,
+  });
 
   @override
   State<ChatConversationPage> createState() => _ChatConversationPageState();
@@ -467,17 +476,50 @@ class _ChatConversationPageState extends State<ChatConversationPage>
   Timer? _scrollRetryTimer;
   bool _isTyping = false;
   String? _otherUserTypingName;
+  Map<String, dynamic>? _listingPreview;
+  bool _loadingListingPreview = false;
 
   @override
   void initState() {
     super.initState();
+    _listingPreview = widget.initialListingPreview == null
+        ? null
+        : Map<String, dynamic>.from(widget.initialListingPreview!);
+    final initialDraft = widget.initialDraft?.trim() ?? '';
+    if (initialDraft.isNotEmpty) {
+      _messageController.text = initialDraft;
+      _messageController.selection = TextSelection.fromPosition(
+        TextPosition(offset: _messageController.text.length),
+      );
+    }
     WidgetsBinding.instance.addObserver(this);
     _scrollController.addListener(_onScroll);
     _setupWebSocketListeners();
     _setupTypingListener();
+    _loadListingPreview();
     _loadHistory();
     _joinChat();
     _startPolling();
+  }
+
+  Future<void> _loadListingPreview() async {
+    if (_loadingListingPreview) return;
+    setState(() => _loadingListingPreview = true);
+    try {
+      final car = await ApiService.getCar(widget.carId);
+      if (!mounted) return;
+      setState(() {
+        _listingPreview = car;
+      });
+    } catch (_) {
+      // Keep chat usable even if listing metadata cannot be loaded.
+    } finally {
+      if (mounted) {
+        setState(() => _loadingListingPreview = false);
+      } else {
+        _loadingListingPreview = false;
+      }
+    }
   }
 
   void _setupTypingListener() {
@@ -970,6 +1012,150 @@ class _ChatConversationPageState extends State<ChatConversationPage>
     );
   }
 
+  String _listingTitle(Map<String, dynamic> car) {
+    final title = (car['title'] ?? '').toString().trim();
+    if (title.isNotEmpty) return title;
+    return '${car['brand'] ?? ''} ${car['model'] ?? ''} ${car['year'] ?? ''}'
+        .trim();
+  }
+
+  String _listingPrice(Map<String, dynamic> car) {
+    final price = (car['price'] ?? '').toString().trim();
+    final currency = (car['currency'] ?? '').toString().trim();
+    if (price.isEmpty) return '';
+    return currency.isEmpty ? price : '$price $currency';
+  }
+
+  String _listingImageUrl(Map<String, dynamic> car) {
+    final primary = (car['image_url'] ?? '').toString().trim();
+    if (primary.isNotEmpty) return buildMediaUrl(primary);
+    final images = car['images'];
+    if (images is List && images.isNotEmpty) {
+      final first = images.first?.toString() ?? '';
+      return buildMediaUrl(first);
+    }
+    return '';
+  }
+
+  Widget _buildListingCard(BuildContext context) {
+    final car = _listingPreview;
+    if (car == null) {
+      if (_loadingListingPreview) {
+        return const Padding(
+          padding: EdgeInsets.fromLTRB(16, 12, 16, 0),
+          child: LinearProgressIndicator(minHeight: 2),
+        );
+      }
+      return const SizedBox.shrink();
+    }
+
+    final imageUrl = _listingImageUrl(car);
+    final title = _listingTitle(car);
+    final price = _listingPrice(car);
+    final location =
+        (car['location'] ?? car['city'] ?? '').toString().trim();
+
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(16, 12, 16, 0),
+      child: InkWell(
+        borderRadius: BorderRadius.circular(14),
+        onTap: () {
+          Navigator.pushNamed(
+            context,
+            '/car_detail',
+            arguments: {'carId': widget.carId},
+          );
+        },
+        child: Container(
+          padding: const EdgeInsets.all(12),
+          decoration: BoxDecoration(
+            color: Theme.of(context).cardColor,
+            borderRadius: BorderRadius.circular(14),
+            border: Border.all(color: Theme.of(context).dividerColor),
+          ),
+          child: Row(
+            children: [
+              ClipRRect(
+                borderRadius: BorderRadius.circular(10),
+                child: imageUrl.isEmpty
+                    ? Container(
+                        width: 72,
+                        height: 72,
+                        color: Colors.black12,
+                        child: const Icon(Icons.directions_car),
+                      )
+                    : Image.network(
+                        imageUrl,
+                        width: 72,
+                        height: 72,
+                        fit: BoxFit.cover,
+                        errorBuilder: (_, __, ___) => Container(
+                          width: 72,
+                          height: 72,
+                          color: Colors.black12,
+                          child: const Icon(Icons.directions_car),
+                        ),
+                      ),
+              ),
+              const SizedBox(width: 12),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      title.isEmpty
+                          ? (AppLocalizations.of(context)?.listingTitle ??
+                              'Listing')
+                          : title,
+                      maxLines: 2,
+                      overflow: TextOverflow.ellipsis,
+                      style: const TextStyle(fontWeight: FontWeight.w700),
+                    ),
+                    if (price.isNotEmpty) ...[
+                      const SizedBox(height: 4),
+                      Text(
+                        price,
+                        style: TextStyle(
+                          color: Theme.of(context).primaryColor,
+                          fontWeight: FontWeight.w600,
+                        ),
+                      ),
+                    ],
+                    if (location.isNotEmpty) ...[
+                      const SizedBox(height: 4),
+                      Text(
+                        location,
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                        style: Theme.of(context).textTheme.bodySmall,
+                      ),
+                    ],
+                  ],
+                ),
+              ),
+              const SizedBox(width: 8),
+              Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Icon(
+                    Icons.open_in_new,
+                    size: 18,
+                    color: Theme.of(context).primaryColor,
+                  ),
+                  const SizedBox(height: 4),
+                  Text(
+                    'Open',
+                    style: Theme.of(context).textTheme.bodySmall,
+                  ),
+                ],
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -992,6 +1178,7 @@ class _ChatConversationPageState extends State<ChatConversationPage>
       ),
       body: Column(
         children: [
+          _buildListingCard(context),
           // Chat messages
           Expanded(
             child: _loadingHistory && _messages.isEmpty

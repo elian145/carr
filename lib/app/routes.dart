@@ -74,6 +74,12 @@ Map<String, WidgetBuilder> buildAppRoutes() {
       return chat.ChatConversationPage(
         carId: raw,
         receiverId: args['receiverId']?.toString(),
+        initialDraft: args['initialDraft']?.toString(),
+        initialListingPreview: args['listingPreview'] is Map
+            ? Map<String, dynamic>.from(
+                (args['listingPreview'] as Map).cast<String, dynamic>(),
+              )
+            : null,
       );
     },
     '/my_listings': (context) => const mine.MyListingsPage(),

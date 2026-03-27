@@ -833,6 +833,11 @@ class ApiService {
     );
   }
 
+  static Future<int> getUnreadChatCount() async {
+    final result = await _makeAuthenticatedRequest('GET', '/chat/unread_count');
+    return (result['unread_count'] as num?)?.toInt() ?? 0;
+  }
+
   /// Load chat history for a listing conversation (car public_id or numeric id).
   ///
   /// Returns a map with keys: `messages` (list), `page`, `per_page`, `total`, `has_more`.

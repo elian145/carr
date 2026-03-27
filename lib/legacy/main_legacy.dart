@@ -38,6 +38,7 @@ import '../services/config.dart';
 import '../services/ai_service.dart';
 import '../services/car_service.dart';
 import '../services/deep_link_service.dart';
+import '../services/websocket_service.dart';
 import 'package:mime/mime.dart';
 import 'package:http_parser/http_parser.dart';
 import 'package:path/path.dart' as p;
@@ -2724,6 +2725,13 @@ class MyApp extends StatelessWidget {
                   child: carzo_chat.ChatConversationPage(
                     carId: rawId,
                     receiverId: args['receiverId']?.toString(),
+                    initialDraft: args['initialDraft']?.toString(),
+                    initialListingPreview: args['listingPreview'] is Map
+                        ? Map<String, dynamic>.from(
+                            (args['listingPreview'] as Map)
+                                .cast<String, dynamic>(),
+                          )
+                        : null,
                   ),
                 );
               },
@@ -20620,6 +20628,8 @@ class _ProfilePageState extends State<ProfilePage> {
   Map<String, dynamic>? me;
   bool _loading = true;
   late final AuthService _authService;
+  int _unreadChatCount = 0;
+  StreamSubscription<Map<String, dynamic>>? _chatNotificationSub;
 
   @override
   void initState() {
@@ -20628,12 +20638,20 @@ class _ProfilePageState extends State<ProfilePage> {
     // Listen to auth service changes
     _authService = Provider.of<AuthService>(context, listen: false);
     _authService.addListener(_onAuthChange);
+    _chatNotificationSub = WebSocketService.notifications.listen((notification) {
+      if (!mounted) return;
+      final type = (notification['notification_type'] ?? '').toString();
+      if (type == 'message') {
+        _loadUnreadChatCount();
+      }
+    });
   }
 
   @override
   void dispose() {
     // Do not use context in dispose; the element is being deactivated.
     _authService.removeListener(_onAuthChange);
+    _chatNotificationSub?.cancel();
     super.dispose();
   }
 
@@ -20649,6 +20667,7 @@ class _ProfilePageState extends State<ProfilePage> {
       if (tok == null || tok.isEmpty) {
         setState(() {
           _loading = false;
+          _unreadChatCount = 0;
         });
         return;
       }
@@ -20661,11 +20680,32 @@ class _ProfilePageState extends State<ProfilePage> {
         me = json.decode(resp.body) as Map<String, dynamic>;
       }
     } catch (_) {}
+    await _loadUnreadChatCount();
     if (mounted) {
       setState(() {
         _loading = false;
       });
     }
+  }
+
+  Future<void> _loadUnreadChatCount() async {
+    final tok = ApiService.accessToken;
+    if (tok == null || tok.isEmpty) {
+      if (mounted) {
+        setState(() => _unreadChatCount = 0);
+      } else {
+        _unreadChatCount = 0;
+      }
+      return;
+    }
+    try {
+      final count = await ApiService.getUnreadChatCount();
+      if (mounted) {
+        setState(() => _unreadChatCount = count);
+      } else {
+        _unreadChatCount = count;
+      }
+    } catch (_) {}
   }
 
   void refreshProfile() {
@@ -21083,14 +21123,21 @@ class _ProfilePageState extends State<ProfilePage> {
                     Navigator.pushNamed(context, '/analytics');
                   }),
                   SizedBox(height: 12),
-                  _buildActionButton(Icons.chat_outlined, AppLocalizations.of(context)!.chatTitle, () {
-                    if (ApiService.accessToken == null ||
-                        ApiService.accessToken!.isEmpty) {
-                      _showAuthRequiredDialog(context);
-                      return;
-                    }
-                    Navigator.pushNamed(context, '/chat');
-                  }),
+                  _buildActionButton(
+                    Icons.chat_outlined,
+                    AppLocalizations.of(context)!.chatTitle,
+                    () async {
+                      if (ApiService.accessToken == null ||
+                          ApiService.accessToken!.isEmpty) {
+                        _showAuthRequiredDialog(context);
+                        return;
+                      }
+                      await Navigator.pushNamed(context, '/chat');
+                      if (!mounted) return;
+                      _loadUnreadChatCount();
+                    },
+                    badgeCount: _unreadChatCount,
+                  ),
                   SizedBox(height: 12),
                   Consumer<CarComparisonStore>(
                     builder: (context, comparisonStore, child) {
@@ -21228,7 +21275,13 @@ class _ProfilePageState extends State<ProfilePage> {
     );
   }
 
-  Widget _buildActionButton(IconData icon, String title, VoidCallback onTap, {Color? color}) {
+  Widget _buildActionButton(
+    IconData icon,
+    String title,
+    VoidCallback onTap, {
+    Color? color,
+    int badgeCount = 0,
+  }) {
     final accent = color ?? Color(0xFFFF6B00);
     return InkWell(
       onTap: onTap,
@@ -21260,6 +21313,27 @@ class _ProfilePageState extends State<ProfilePage> {
               ),
             ),
             Spacer(),
+            if (badgeCount > 0) ...[
+              Container(
+                constraints: const BoxConstraints(minWidth: 22, minHeight: 22),
+                padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                decoration: const BoxDecoration(
+                  color: Colors.red,
+                  shape: BoxShape.circle,
+                ),
+                alignment: Alignment.center,
+                child: Text(
+                  badgeCount > 99 ? '99' : badgeCount.toString(),
+                  style: const TextStyle(
+                    color: Colors.white,
+                    fontSize: 10,
+                    fontWeight: FontWeight.w700,
+                  ),
+                  textAlign: TextAlign.center,
+                ),
+              ),
+              SizedBox(width: 10),
+            ],
             Icon(Icons.arrow_forward_ios, size: 16, color: Colors.grey[400]),
           ],
         ),

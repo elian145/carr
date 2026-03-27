@@ -569,6 +569,8 @@ class _CarDetailPageState extends State<CarDetailPage> {
     final price = (car['price'] ?? '').toString();
     final currency = (car['currency'] ?? '').toString();
     final location = (car['location'] ?? car['city'] ?? '').toString();
+    final starterMessage =
+        'Hi, I am interested in "$title". Is it still available?';
 
     final seller = (car['seller'] is Map) ? (car['seller'] as Map) : null;
     final receiverId = seller == null
@@ -669,6 +671,19 @@ class _CarDetailPageState extends State<CarDetailPage> {
                                 'carId': (car['id'] ?? car['public_id'] ?? widget.carId).toString(),
                                 if (receiverId != null && receiverId.isNotEmpty)
                                   'receiverId': receiverId,
+                                'initialDraft': starterMessage,
+                                'listingPreview': {
+                                  'id': (car['id'] ?? car['public_id'] ?? widget.carId).toString(),
+                                  'title': title,
+                                  'price': car['price'],
+                                  'currency': currency,
+                                  'location': location,
+                                  'image_url': car['image_url'],
+                                  'images': car['images'],
+                                  'brand': car['brand'],
+                                  'model': car['model'],
+                                  'year': car['year'],
+                                },
                               },
                             );
                           },
