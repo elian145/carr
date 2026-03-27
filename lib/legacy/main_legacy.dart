@@ -2709,9 +2709,21 @@ class MyApp extends StatelessWidget {
                 final args =
                     ModalRoute.of(context)!.settings.arguments
                         as Map<String, dynamic>;
+                final rawId = (args['carId'] ?? args['conversationId'] ?? '')
+                    .toString()
+                    .trim();
+                if (rawId.isEmpty) {
+                  return Scaffold(
+                    appBar: AppBar(title: const Text('Navigation error')),
+                    body: const Center(
+                      child: Text('Missing chat conversation id'),
+                    ),
+                  );
+                }
                 return AuthGuard(
-                  child: ChatConversationPage(
-                    conversationId: args['conversationId'],
+                  child: carzo_chat.ChatConversationPage(
+                    carId: rawId,
+                    receiverId: args['receiverId']?.toString(),
                   ),
                 );
               },
@@ -19855,56 +19867,7 @@ class ChatListPage extends StatefulWidget {
 class _ChatListPageState extends State<ChatListPage> {
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(title: Text(AppLocalizations.of(context)!.chatTitle)),
-      body: Center(child: Text(AppLocalizations.of(context)!.chatTitle)),
-      bottomNavigationBar: BottomNavigationBar(
-        type: BottomNavigationBarType.fixed,
-        backgroundColor: Colors.black87,
-        selectedItemColor: Color(0xFFFF6B00),
-        unselectedItemColor: Colors.white70,
-        currentIndex: 0,
-        onTap: (idx) {
-          switch (idx) {
-            case 0:
-              Navigator.pushReplacementNamed(context, '/');
-              break;
-            case 1:
-              Navigator.pushReplacementNamed(context, '/favorites');
-              break;
-            case 2:
-              Navigator.pushReplacementNamed(context, '/sell');
-              break;
-            case 3:
-              if (ApiService.accessToken == null ||
-                  ApiService.accessToken!.isEmpty) {
-                Navigator.pushReplacementNamed(context, '/login');
-              } else {
-                Navigator.pushReplacementNamed(context, '/profile');
-              }
-              break;
-          }
-        },
-        items: [
-          BottomNavigationBarItem(
-            icon: Icon(Icons.home),
-            label: AppLocalizations.of(context)!.navHome,
-          ),
-          BottomNavigationBarItem(
-            icon: Icon(Icons.favorite),
-            label: AppLocalizations.of(context)!.navSaved,
-          ),
-          BottomNavigationBarItem(
-            icon: Icon(Icons.sell),
-            label: AppLocalizations.of(context)!.sellTitle,
-          ),
-          BottomNavigationBarItem(
-            icon: Icon(Icons.person),
-            label: AppLocalizations.of(context)!.navProfile,
-          ),
-        ],
-      ),
-    );
+    return const carzo_chat.ChatListPage();
   }
 }
 
