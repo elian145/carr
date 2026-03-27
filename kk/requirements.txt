@@ -27,6 +27,7 @@ cryptography==45.0.7
 requests==2.31.0
 boto3>=1.28.0
 sentry-sdk
+firebase-admin>=6.0.0
 # License plate detection + blurring
 opencv-python-headless
 numpy
