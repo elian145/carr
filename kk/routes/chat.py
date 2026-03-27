@@ -95,19 +95,22 @@ def list_chats():
         return jsonify({"message": "Failed to load chats"}), 500
 
 
-@bp.route("/api/chat/<int:conversation_id>/messages", methods=["GET"])
+@bp.route("/api/chat/<conversation_id>/messages", methods=["GET"])
 @jwt_required()
-def get_messages(conversation_id: int):
-    """Fetch messages for a conversation (conversation_id == numeric car.id)."""
+def get_messages(conversation_id: str):
+    """Fetch messages for a conversation (conversation_id == car public_id or numeric id)."""
     try:
         me = get_current_user()
         if not me:
             return jsonify({"message": "Unauthorized"}), 401
 
-        car_id = int(conversation_id)
+        car = _get_car_by_any_id(str(conversation_id))
+        if not car:
+            return jsonify({"message": "Listing not found"}), 404
+
         msgs = (
             Message.query.filter(
-                Message.car_id == car_id,
+                Message.car_id == car.id,
                 or_(Message.sender_id == me.id, Message.receiver_id == me.id),
             )
             .order_by(Message.created_at.asc())
@@ -117,7 +120,7 @@ def get_messages(conversation_id: int):
         # Mark messages to me as read (best-effort).
         try:
             Message.query.filter(
-                Message.car_id == car_id,
+                Message.car_id == car.id,
                 Message.receiver_id == me.id,
                 Message.is_read == False,  # noqa: E712
             ).update({"is_read": True})
@@ -130,11 +133,11 @@ def get_messages(conversation_id: int):
         return jsonify({"message": "Failed to load messages"}), 500
 
 
-@bp.route("/api/chat/<int:conversation_id>/send", methods=["POST"])
+@bp.route("/api/chat/<conversation_id>/send", methods=["POST"])
 @jwt_required()
 @rate_limit(max_requests=120, window_minutes=10, per_ip=False)
-def send_message(conversation_id: int):
-    """Send a message in a conversation (conversation_id == numeric car.id)."""
+def send_message(conversation_id: str):
+    """Send a message in a conversation (conversation_id == car public_id or numeric id)."""
     try:
         me = get_current_user()
         if not me:
@@ -147,8 +150,7 @@ def send_message(conversation_id: int):
         if len(content) > 4000:
             return jsonify({"message": "content too long"}), 400
 
-        car_id = int(conversation_id)
-        car = db.session.get(Car, car_id)
+        car = _get_car_by_any_id(str(conversation_id))
         if not car:
             return jsonify({"message": "Listing not found"}), 404
 
@@ -165,7 +167,7 @@ def send_message(conversation_id: int):
                 # Seller sending message: infer receiver from latest message in this car thread.
                 last = (
                     Message.query.filter(
-                        Message.car_id == car_id,
+                        Message.car_id == car.id,
                         or_(Message.sender_id == me.id, Message.receiver_id == me.id),
                     )
                     .order_by(Message.created_at.desc())
@@ -183,7 +185,7 @@ def send_message(conversation_id: int):
         msg = Message(
             sender_id=me.id,
             receiver_id=receiver.id,
-            car_id=car_id,
+            car_id=car.id,
             content=content,
             message_type="text",
             is_read=False,
