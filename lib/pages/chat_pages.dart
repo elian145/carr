@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'dart:async';
+import 'package:image_picker/image_picker.dart';
 import 'package:provider/provider.dart';
 import '../l10n/app_localizations.dart';
 import '../services/websocket_service.dart';
@@ -40,6 +41,36 @@ String _noMessagesText(BuildContext context) {
   return AppLocalizations.of(context)!.noMessagesYet;
 }
 
+void _showFullImage(BuildContext context, String url) {
+  showDialog(
+    context: context,
+    builder: (_) => Dialog(
+      backgroundColor: Colors.transparent,
+      insetPadding: const EdgeInsets.all(12),
+      child: Stack(
+        alignment: Alignment.topRight,
+        children: [
+          InteractiveViewer(
+            child: Image.network(
+              url,
+              fit: BoxFit.contain,
+              errorBuilder: (_, __, ___) => const Icon(
+                Icons.broken_image,
+                color: Colors.white,
+                size: 64,
+              ),
+            ),
+          ),
+          IconButton(
+            icon: const Icon(Icons.close, color: Colors.white, size: 30),
+            onPressed: () => Navigator.of(context).pop(),
+          ),
+        ],
+      ),
+    ),
+  );
+}
+
 bool _isIgnorableSocketError(String err) {
   final text = err.toLowerCase();
   return text.contains('was not upgraded to websocket') ||
@@ -78,7 +109,7 @@ class ChatListPage extends StatefulWidget {
   State<ChatListPage> createState() => _ChatListPageState();
 }
 
-class _ChatListPageState extends State<ChatListPage> {
+class _ChatListPageState extends State<ChatListPage> with WidgetsBindingObserver {
   final List<Map<String, dynamic>> _chats = [];
   bool _loading = true;
   StreamSubscription<Map<String, dynamic>>? _notificationSub;
@@ -87,8 +118,16 @@ class _ChatListPageState extends State<ChatListPage> {
   @override
   void initState() {
     super.initState();
+    WidgetsBinding.instance.addObserver(this);
     _loadChats();
     _setupWebSocketListeners();
+  }
+
+  @override
+  void didChangeAppLifecycleState(AppLifecycleState state) {
+    if (state == AppLifecycleState.resumed) {
+      _loadChats();
+    }
   }
 
   void _setupWebSocketListeners() {
@@ -156,6 +195,7 @@ class _ChatListPageState extends State<ChatListPage> {
 
   @override
   void dispose() {
+    WidgetsBinding.instance.removeObserver(this);
     _notificationSub?.cancel();
     _errorSub?.cancel();
     super.dispose();
@@ -203,6 +243,7 @@ class _ChatListPageState extends State<ChatListPage> {
                       .toString();
                   final receiverId = (other['id'] ?? '').toString();
                   final name = (other['name'] ?? '').toString().trim();
+                  final carTitle = (c['car_title'] ?? '').toString().trim();
                   final preview = (last['content'] ?? '').toString().trim();
                   final ts = (last['created_at'] ?? '').toString().trim();
                   DateTime? dt;
@@ -215,15 +256,39 @@ class _ChatListPageState extends State<ChatListPage> {
                   return Card(
                     margin: const EdgeInsets.only(bottom: 8),
                     child: ListTile(
+                      leading: CircleAvatar(
+                        backgroundColor: Theme.of(context).primaryColor.withAlpha(30),
+                        child: Icon(
+                          Icons.directions_car,
+                          color: Theme.of(context).primaryColor,
+                          size: 20,
+                        ),
+                      ),
                       title: Text(
                         name.isEmpty
                             ? AppLocalizations.of(context)!.unknownSender
                             : name,
                       ),
-                      subtitle: Text(
-                        preview.isEmpty ? '...' : preview,
-                        maxLines: 1,
-                        overflow: TextOverflow.ellipsis,
+                      subtitle: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          if (carTitle.isNotEmpty)
+                            Text(
+                              carTitle,
+                              maxLines: 1,
+                              overflow: TextOverflow.ellipsis,
+                              style: TextStyle(
+                                fontSize: 12,
+                                color: Theme.of(context).primaryColor,
+                                fontWeight: FontWeight.w500,
+                              ),
+                            ),
+                          Text(
+                            preview.isEmpty ? '...' : preview,
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                          ),
+                        ],
                       ),
                       trailing: unread > 0
                           ? CircleAvatar(
@@ -245,8 +310,8 @@ class _ChatListPageState extends State<ChatListPage> {
                                 )),
                       onTap: carId.isEmpty
                           ? null
-                          : () {
-                              Navigator.pushNamed(
+                          : () async {
+                              await Navigator.pushNamed(
                                 context,
                                 '/chat/conversation',
                                 arguments: {
@@ -255,6 +320,7 @@ class _ChatListPageState extends State<ChatListPage> {
                                     'receiverId': receiverId,
                                 },
                               );
+                              if (mounted) _loadChats();
                             },
                     ),
                   );
@@ -275,21 +341,148 @@ class ChatConversationPage extends StatefulWidget {
   State<ChatConversationPage> createState() => _ChatConversationPageState();
 }
 
-class _ChatConversationPageState extends State<ChatConversationPage> {
+class _ChatConversationPageState extends State<ChatConversationPage>
+    with WidgetsBindingObserver {
   final List<ChatMessage> _messages = [];
   final TextEditingController _messageController = TextEditingController();
   final ScrollController _scrollController = ScrollController();
   StreamSubscription<Map<String, dynamic>>? _messageSub;
   StreamSubscription<String>? _errorSub;
+  StreamSubscription<Map<String, dynamic>>? _typingSub;
   bool _isSending = false;
   bool _loadingHistory = false;
+  bool _loadingOlderMessages = false;
+  bool _hasMoreMessages = false;
+  int _currentPage = 1;
+  static const int _perPage = 50;
+  Timer? _pollTimer;
+  Timer? _typingDebounce;
+  bool _isTyping = false;
+  String? _otherUserTypingName;
 
   @override
   void initState() {
     super.initState();
+    WidgetsBinding.instance.addObserver(this);
+    _scrollController.addListener(_onScroll);
     _setupWebSocketListeners();
+    _setupTypingListener();
     _loadHistory();
     _joinChat();
+    _startPolling();
+  }
+
+  void _setupTypingListener() {
+    _typingSub?.cancel();
+    _typingSub = WebSocketService.typingEvents.listen((data) {
+      if (!mounted) return;
+      final isTyping = data['typing'] == true;
+      final userName = (data['user_name'] ?? '').toString().trim();
+      setState(() => _otherUserTypingName = isTyping ? userName : null);
+    });
+  }
+
+  void _onTextChanged(String _) {
+    if (!_isTyping) {
+      _isTyping = true;
+      WebSocketService.sendTypingStart(widget.carId);
+    }
+    _typingDebounce?.cancel();
+    _typingDebounce = Timer(const Duration(seconds: 2), () {
+      _isTyping = false;
+      WebSocketService.sendTypingStop(widget.carId);
+    });
+  }
+
+  void _onScroll() {
+    if (_scrollController.hasClients &&
+        _scrollController.position.pixels <=
+            _scrollController.position.minScrollExtent + 80 &&
+        _hasMoreMessages &&
+        !_loadingOlderMessages) {
+      _loadOlderMessages();
+    }
+  }
+
+  Future<void> _loadOlderMessages() async {
+    if (_loadingOlderMessages || !_hasMoreMessages) return;
+    setState(() => _loadingOlderMessages = true);
+    try {
+      final nextPage = _currentPage + 1;
+      final result = await ApiService.getChatMessagesByConversation(
+        widget.carId,
+        page: nextPage,
+        perPage: _perPage,
+      );
+      if (!mounted) return;
+      final rows = (result['messages'] as List<Map<String, dynamic>>?) ?? [];
+      final loaded = rows.map(ChatMessage.fromJson).toList();
+      loaded.sort((a, b) => a.createdAt.compareTo(b.createdAt));
+
+      final prevOffset = _scrollController.hasClients
+          ? _scrollController.position.maxScrollExtent
+          : 0.0;
+
+      setState(() {
+        for (final m in loaded) {
+          _addMessageIfMissing(m);
+        }
+        _messages.sort((a, b) => a.createdAt.compareTo(b.createdAt));
+        _currentPage = nextPage;
+        _hasMoreMessages = result['has_more'] == true;
+      });
+
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (!mounted || !_scrollController.hasClients) return;
+        final newOffset = _scrollController.position.maxScrollExtent;
+        final diff = newOffset - prevOffset;
+        if (diff > 0) {
+          _scrollController.jumpTo(_scrollController.offset + diff);
+        }
+      });
+    } catch (_) {
+    } finally {
+      if (mounted) setState(() => _loadingOlderMessages = false);
+    }
+  }
+
+  void _startPolling() {
+    _pollTimer?.cancel();
+    _pollTimer = Timer.periodic(const Duration(seconds: 7), (_) {
+      if (mounted) _pollNewMessages();
+    });
+  }
+
+  Future<void> _pollNewMessages() async {
+    try {
+      final result = await ApiService.getChatMessagesByConversation(
+        widget.carId,
+        page: 1,
+        perPage: _perPage,
+      );
+      if (!mounted) return;
+      final rows = (result['messages'] as List<Map<String, dynamic>>?) ?? [];
+      final loaded = rows.map(ChatMessage.fromJson).toList();
+      loaded.sort((a, b) => a.createdAt.compareTo(b.createdAt));
+      final hadMessages = _messages.length;
+      setState(() {
+        for (final m in loaded) {
+          _addMessageIfMissing(m);
+        }
+      });
+      if (_messages.length > hadMessages) {
+        WidgetsBinding.instance.addPostFrameCallback((_) {
+          if (mounted) _scrollToBottom();
+        });
+      }
+    } catch (_) {}
+  }
+
+  @override
+  void didChangeAppLifecycleState(AppLifecycleState state) {
+    if (state == AppLifecycleState.resumed && mounted) {
+      _pollNewMessages();
+    }
   }
 
   void _addMessageIfMissing(ChatMessage message) {
@@ -336,14 +529,21 @@ class _ChatConversationPageState extends State<ChatConversationPage> {
     if (_loadingHistory) return;
     setState(() => _loadingHistory = true);
     try {
-      final rows = await ApiService.getChatMessagesByConversation(widget.carId);
+      final result = await ApiService.getChatMessagesByConversation(
+        widget.carId,
+        page: 1,
+        perPage: _perPage,
+      );
       if (!mounted) return;
+      final rows = (result['messages'] as List<Map<String, dynamic>>?) ?? [];
       final loaded = rows.map(ChatMessage.fromJson).toList();
       loaded.sort((a, b) => a.createdAt.compareTo(b.createdAt));
       setState(() {
         _messages
           ..clear()
           ..addAll(loaded);
+        _currentPage = 1;
+        _hasMoreMessages = result['has_more'] == true;
       });
       WidgetsBinding.instance.addPostFrameCallback((_) {
         if (!mounted) return;
@@ -367,6 +567,39 @@ class _ChatConversationPageState extends State<ChatConversationPage> {
         duration: const Duration(milliseconds: 300),
         curve: Curves.easeOut,
       );
+    }
+  }
+
+  Future<void> _pickAndSendImage() async {
+    if (_isSending) return;
+    try {
+      final picker = ImagePicker();
+      final picked = await picker.pickImage(
+        source: ImageSource.gallery,
+        maxWidth: 1200,
+        imageQuality: 80,
+      );
+      if (picked == null || !mounted) return;
+      setState(() => _isSending = true);
+      final response = await ApiService.sendChatImage(
+        conversationId: widget.carId,
+        imageFile: picked,
+        receiverId: widget.receiverId,
+      );
+      final msg = response['message'];
+      if (msg is Map<String, dynamic> && mounted) {
+        setState(() {
+          _addMessageIfMissing(ChatMessage.fromJson(msg));
+        });
+        _scrollToBottom();
+      }
+    } catch (e) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text(e.toString()), backgroundColor: Colors.red),
+      );
+    } finally {
+      if (mounted) setState(() => _isSending = false);
     }
   }
 
@@ -422,12 +655,133 @@ class _ChatConversationPageState extends State<ChatConversationPage> {
 
   @override
   void dispose() {
+    WidgetsBinding.instance.removeObserver(this);
+    _pollTimer?.cancel();
+    _typingDebounce?.cancel();
+    if (_isTyping) {
+      WebSocketService.sendTypingStop(widget.carId);
+    }
     _messageSub?.cancel();
     _errorSub?.cancel();
+    _typingSub?.cancel();
     _messageController.dispose();
     _scrollController.dispose();
     WebSocketService.leaveChat();
     super.dispose();
+  }
+
+  void _showBlockDialog() {
+    final receiverId = widget.receiverId;
+    if (receiverId == null || receiverId.isEmpty) return;
+    showDialog(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        title: const Text('Block User'),
+        content: const Text(
+          'Blocked users cannot send you messages and their conversations will be hidden. You can unblock them later.',
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(ctx),
+            child: const Text('Cancel'),
+          ),
+          TextButton(
+            onPressed: () async {
+              Navigator.pop(ctx);
+              try {
+                await ApiService.blockUser(receiverId);
+                if (!mounted) return;
+                ScaffoldMessenger.of(context).showSnackBar(
+                  const SnackBar(content: Text('User blocked')),
+                );
+                Navigator.pop(context);
+              } catch (e) {
+                if (!mounted) return;
+                ScaffoldMessenger.of(context).showSnackBar(
+                  SnackBar(content: Text(e.toString()), backgroundColor: Colors.red),
+                );
+              }
+            },
+            child: const Text('Block', style: TextStyle(color: Colors.red)),
+          ),
+        ],
+      ),
+    );
+  }
+
+  void _showReportDialog() {
+    final receiverId = widget.receiverId;
+    if (receiverId == null || receiverId.isEmpty) return;
+    final reasonController = TextEditingController();
+    final detailsController = TextEditingController();
+    showDialog(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        title: const Text('Report User'),
+        content: SingleChildScrollView(
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              TextField(
+                controller: reasonController,
+                decoration: const InputDecoration(
+                  labelText: 'Reason',
+                  hintText: 'e.g. spam, harassment, scam',
+                  border: OutlineInputBorder(),
+                ),
+                maxLength: 200,
+              ),
+              const SizedBox(height: 12),
+              TextField(
+                controller: detailsController,
+                decoration: const InputDecoration(
+                  labelText: 'Details (optional)',
+                  hintText: 'Provide additional details...',
+                  border: OutlineInputBorder(),
+                ),
+                maxLines: 3,
+                maxLength: 2000,
+              ),
+            ],
+          ),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(ctx),
+            child: const Text('Cancel'),
+          ),
+          TextButton(
+            onPressed: () async {
+              final reason = reasonController.text.trim();
+              if (reason.isEmpty) {
+                ScaffoldMessenger.of(context).showSnackBar(
+                  const SnackBar(content: Text('Please provide a reason'), backgroundColor: Colors.orange),
+                );
+                return;
+              }
+              Navigator.pop(ctx);
+              try {
+                await ApiService.reportUser(
+                  receiverId,
+                  reason: reason,
+                  details: detailsController.text.trim(),
+                );
+                if (!mounted) return;
+                ScaffoldMessenger.of(context).showSnackBar(
+                  const SnackBar(content: Text('Report submitted. Thank you.')),
+                );
+              } catch (e) {
+                if (!mounted) return;
+                ScaffoldMessenger.of(context).showSnackBar(
+                  SnackBar(content: Text(e.toString()), backgroundColor: Colors.red),
+                );
+              }
+            },
+            child: const Text('Submit Report', style: TextStyle(color: Colors.red)),
+          ),
+        ],
+      ),
+    );
   }
 
   @override
@@ -435,7 +789,20 @@ class _ChatConversationPageState extends State<ChatConversationPage> {
     return Scaffold(
       appBar: AppBar(
         title: Text(AppLocalizations.of(context)!.chatTitle),
-        actions: [const _ThemeToggleAction()],
+        actions: [
+          if (widget.receiverId != null && widget.receiverId!.isNotEmpty)
+            PopupMenuButton<String>(
+              onSelected: (value) {
+                if (value == 'block') _showBlockDialog();
+                if (value == 'report') _showReportDialog();
+              },
+              itemBuilder: (context) => [
+                const PopupMenuItem(value: 'block', child: Text('Block User')),
+                const PopupMenuItem(value: 'report', child: Text('Report User')),
+              ],
+            ),
+          const _ThemeToggleAction(),
+        ],
       ),
       body: Column(
         children: [
@@ -448,9 +815,24 @@ class _ChatConversationPageState extends State<ChatConversationPage> {
                 : ListView.builder(
                     controller: _scrollController,
                     padding: const EdgeInsets.all(16),
-                    itemCount: _messages.length,
+                    itemCount: _messages.length + (_hasMoreMessages ? 1 : 0),
                     itemBuilder: (context, index) {
-                      final message = _messages[index];
+                      if (_hasMoreMessages && index == 0) {
+                        return _loadingOlderMessages
+                            ? const Padding(
+                                padding: EdgeInsets.all(12),
+                                child: Center(
+                                  child: SizedBox(
+                                    width: 20,
+                                    height: 20,
+                                    child: CircularProgressIndicator(strokeWidth: 2),
+                                  ),
+                                ),
+                              )
+                            : const SizedBox.shrink();
+                      }
+                      final msgIndex = _hasMoreMessages ? index - 1 : index;
+                      final message = _messages[msgIndex];
                       final authService = Provider.of<AuthService>(
                         context,
                         listen: false,
@@ -481,12 +863,49 @@ class _ChatConversationPageState extends State<ChatConversationPage> {
                                   message.senderName ?? AppLocalizations.of(context)!.unknownSender,
                                   style: Theme.of(context).textTheme.bodySmall,
                                 ),
-                              Text(
-                                message.content,
-                                style: TextStyle(
-                                  color: isMe ? Colors.white : null,
+                              if (message.messageType == 'image' && message.attachmentUrl != null && message.attachmentUrl!.isNotEmpty) ...[
+                                GestureDetector(
+                                  onTap: () => _showFullImage(context, message.attachmentUrl!),
+                                  child: ClipRRect(
+                                    borderRadius: BorderRadius.circular(12),
+                                    child: ConstrainedBox(
+                                      constraints: const BoxConstraints(maxWidth: 220, maxHeight: 220),
+                                      child: Image.network(
+                                        message.attachmentUrl!,
+                                        fit: BoxFit.cover,
+                                        loadingBuilder: (context, child, progress) {
+                                          if (progress == null) return child;
+                                          return SizedBox(
+                                            width: 150,
+                                            height: 150,
+                                            child: Center(
+                                              child: CircularProgressIndicator(
+                                                value: progress.expectedTotalBytes != null
+                                                    ? progress.cumulativeBytesLoaded / progress.expectedTotalBytes!
+                                                    : null,
+                                                strokeWidth: 2,
+                                              ),
+                                            ),
+                                          );
+                                        },
+                                        errorBuilder: (_, __, ___) => const Icon(Icons.broken_image, size: 48),
+                                      ),
+                                    ),
+                                  ),
                                 ),
-                              ),
+                                if (message.content.isNotEmpty && message.content != '[Image]')
+                                  Padding(
+                                    padding: const EdgeInsets.only(top: 6),
+                                    child: Text(
+                                      message.content,
+                                      style: TextStyle(color: isMe ? Colors.white : null),
+                                    ),
+                                  ),
+                              ] else
+                                Text(
+                                  message.content,
+                                  style: TextStyle(color: isMe ? Colors.white : null),
+                                ),
                               const SizedBox(height: 4),
                               Text(
                                 _relativeTime(context, message.createdAt),
@@ -502,7 +921,19 @@ class _ChatConversationPageState extends State<ChatConversationPage> {
                     },
                   ),
           ),
-          // Message input
+          if (_otherUserTypingName != null && _otherUserTypingName!.isNotEmpty)
+            Container(
+              padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 4),
+              alignment: Alignment.centerLeft,
+              child: Text(
+                '${_otherUserTypingName!} is typing...',
+                style: TextStyle(
+                  fontStyle: FontStyle.italic,
+                  fontSize: 12,
+                  color: Colors.grey[600],
+                ),
+              ),
+            ),
           Container(
             padding: const EdgeInsets.all(16),
             decoration: BoxDecoration(
@@ -513,6 +944,11 @@ class _ChatConversationPageState extends State<ChatConversationPage> {
             ),
             child: Row(
               children: [
+                IconButton(
+                  onPressed: _isSending ? null : _pickAndSendImage,
+                  icon: const Icon(Icons.image),
+                  tooltip: 'Send image',
+                ),
                 Expanded(
                   child: TextField(
                     controller: _messageController,
@@ -525,6 +961,7 @@ class _ChatConversationPageState extends State<ChatConversationPage> {
                       ),
                     ),
                     maxLines: null,
+                    onChanged: _onTextChanged,
                     onSubmitted: (_) => _sendMessage(),
                   ),
                 ),

@@ -7,6 +7,7 @@ from flask_jwt_extended import decode_token, get_jwt_identity, verify_jwt_in_req
 from flask_socketio import emit, join_room, leave_room
 
 from .models import Car, Message, Notification, User, db
+from .push import send_push
 from .security import validate_input_sanitization
 from .time_utils import utcnow
 
@@ -117,6 +118,66 @@ def register_socketio_handlers(socketio) -> None:
             leave_room(room)
         emit("left_chat", {"room": room})
 
+    @socketio.on("typing_start")
+    def _typing_start(payload):  # type: ignore[no-redef]
+        me = _socket_current_user(optional=False)
+        if not me:
+            return
+        data = validate_input_sanitization(payload or {})
+        car_id_raw = str(data.get("car_id") or "").strip()
+        if not car_id_raw:
+            return
+        car = Car.query.filter_by(public_id=car_id_raw).first()
+        if not car and car_id_raw.isdigit():
+            try:
+                car = Car.query.filter_by(id=int(car_id_raw)).first()
+            except Exception:
+                car = None
+        if not car:
+            return
+        room = _room_for_car_public_id(car.public_id)
+        emit(
+            "typing",
+            {
+                "user_id": me.public_id,
+                "user_name": f"{me.first_name} {me.last_name}".strip(),
+                "car_id": car.public_id,
+                "typing": True,
+            },
+            room=room,
+            include_self=False,
+        )
+
+    @socketio.on("typing_stop")
+    def _typing_stop(payload):  # type: ignore[no-redef]
+        me = _socket_current_user(optional=False)
+        if not me:
+            return
+        data = validate_input_sanitization(payload or {})
+        car_id_raw = str(data.get("car_id") or "").strip()
+        if not car_id_raw:
+            return
+        car = Car.query.filter_by(public_id=car_id_raw).first()
+        if not car and car_id_raw.isdigit():
+            try:
+                car = Car.query.filter_by(id=int(car_id_raw)).first()
+            except Exception:
+                car = None
+        if not car:
+            return
+        room = _room_for_car_public_id(car.public_id)
+        emit(
+            "typing",
+            {
+                "user_id": me.public_id,
+                "user_name": f"{me.first_name} {me.last_name}".strip(),
+                "car_id": car.public_id,
+                "typing": False,
+            },
+            room=room,
+            include_self=False,
+        )
+
     @socketio.on("send_message")
     def _send_message(payload):  # type: ignore[no-redef]
         me = _socket_current_user(optional=False)
@@ -200,15 +261,26 @@ def register_socketio_handlers(socketio) -> None:
         payload_out = msg.to_dict()
         room = _room_for_car_public_id(car.public_id)
 
-        # Broadcast to everyone in the chat room.
         emit("new_message", payload_out, room=room)
 
-        # Also push to per-user rooms (for notifications outside the active chat).
         try:
             emit("new_notification", notif.to_dict(), room=f"user:{receiver.public_id}")
         except Exception:
             pass
 
-        # Ack to sender.
+        # FCM push notification (best-effort).
+        try:
+            fcm_token = getattr(receiver, "firebase_token", None)
+            if fcm_token:
+                sender_name = f"{me.first_name} {me.last_name}".strip() or "Someone"
+                send_push(
+                    fcm_token,
+                    title=f"New message from {sender_name}",
+                    body=content[:200],
+                    data={"car_id": car.public_id, "sender_id": me.public_id, "type": "chat_message"},
+                )
+        except Exception:
+            pass
+
         emit("message_sent", {"success": True, "message": payload_out})
 

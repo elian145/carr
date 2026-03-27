@@ -21,12 +21,15 @@ class WebSocketService {
       StreamController<bool>.broadcast();
   static final StreamController<String> _errorController =
       StreamController<String>.broadcast();
+  static final StreamController<Map<String, dynamic>> _typingController =
+      StreamController<Map<String, dynamic>>.broadcast();
 
   static Stream<Map<String, dynamic>> get messages => _messagesController.stream;
   static Stream<Map<String, dynamic>> get notifications =>
       _notificationsController.stream;
   static Stream<bool> get connectionState => _connectionController.stream;
   static Stream<String> get errors => _errorController.stream;
+  static Stream<Map<String, dynamic>> get typingEvents => _typingController.stream;
 
   static String get baseHttpUrl => effectiveSocketIoBase();
 
@@ -111,19 +114,22 @@ class WebSocketService {
       }
 
       final opts = <String, dynamic>{
-        // Render/Gunicorn setups often fail websocket transport unless using a
-        // dedicated async worker. Polling is broadly compatible and reliable.
-        'transports': ['polling'],
-        // Keep Engine.IO on long-polling and never attempt websocket upgrade.
-        'upgrade': false,
+        // Start with polling (universally compatible with any WSGI server),
+        // then allow Engine.IO to probe for a websocket upgrade.  If the
+        // server's async worker supports it (eventlet/gevent), future
+        // messages will flow over a persistent websocket.  If the server
+        // does NOT support it (gthread/sync), the upgrade probe silently
+        // fails and the connection stays on polling — no crash, no error.
+        'transports': ['polling', 'websocket'],
+        'upgrade': true,
+        'rememberUpgrade': true,
         'path': '/socket.io/',
         'autoConnect': false,
         'reconnection': true,
         'reconnectionAttempts': 10,
         'reconnectionDelay': 500,
         'reconnectionDelayMax': 3000,
-        'timeout': 8000,
-        // Attach auth header (works for both websocket + polling on mobile/desktop).
+        'timeout': 10000,
         'extraHeaders': {HttpHeaders.authorizationHeader: 'Bearer $accessToken'},
       };
 
@@ -172,6 +178,13 @@ class WebSocketService {
           final n = Map<String, dynamic>.from(payload as Map);
           _notificationsController.add(n);
           onNotification?.call(n);
+        }
+      });
+
+      _socket!.on('typing', (payload) {
+        if (payload is Map) {
+          final t = Map<String, dynamic>.from(payload as Map);
+          _typingController.add(t);
         }
       });
 
@@ -252,7 +265,14 @@ class WebSocketService {
     sendMessage('send_message', messageData);
   }
 
-  // Check connection status
+  static void sendTypingStart(String carId) {
+    sendMessage('typing_start', {'car_id': carId});
+  }
+
+  static void sendTypingStop(String carId) {
+    sendMessage('typing_stop', {'car_id': carId});
+  }
+
   static bool get isConnected => _isConnected;
 
   // Get current room
@@ -267,6 +287,7 @@ class ChatMessage {
   final String? carId;
   final String content;
   final String messageType;
+  final String? attachmentUrl;
   final bool isRead;
   final DateTime createdAt;
   final String? senderName;
@@ -278,22 +299,30 @@ class ChatMessage {
     this.carId,
     required this.content,
     required this.messageType,
+    this.attachmentUrl,
     required this.isRead,
     required this.createdAt,
     this.senderName,
   });
 
   factory ChatMessage.fromJson(Map<String, dynamic> json) {
+    DateTime parsedDate;
+    try {
+      parsedDate = DateTime.parse(json['created_at']?.toString() ?? '');
+    } catch (_) {
+      parsedDate = DateTime.now();
+    }
     return ChatMessage(
-      id: json['id'],
-      senderId: json['sender_id'],
-      receiverId: json['receiver_id'],
-      carId: json['car_id'],
-      content: json['content'],
-      messageType: json['message_type'],
-      isRead: json['is_read'],
-      createdAt: DateTime.parse(json['created_at']),
-      senderName: json['sender_name'],
+      id: (json['id'] ?? json['public_id'] ?? '').toString(),
+      senderId: (json['sender_id'] ?? '').toString(),
+      receiverId: (json['receiver_id'] ?? '').toString(),
+      carId: json['car_id']?.toString(),
+      content: (json['content'] ?? '').toString(),
+      messageType: (json['message_type'] ?? 'text').toString(),
+      attachmentUrl: json['attachment_url']?.toString(),
+      isRead: json['is_read'] == true,
+      createdAt: parsedDate,
+      senderName: json['sender_name']?.toString(),
     );
   }
 
@@ -305,6 +334,7 @@ class ChatMessage {
       'car_id': carId,
       'content': content,
       'message_type': messageType,
+      'attachment_url': attachmentUrl,
       'is_read': isRead,
       'created_at': createdAt.toIso8601String(),
       'sender_name': senderName,
@@ -333,14 +363,20 @@ class AppNotification {
   });
 
   factory AppNotification.fromJson(Map<String, dynamic> json) {
+    DateTime parsedDate;
+    try {
+      parsedDate = DateTime.parse(json['created_at']?.toString() ?? '');
+    } catch (_) {
+      parsedDate = DateTime.now();
+    }
     return AppNotification(
-      id: json['id'],
-      title: json['title'],
-      message: json['message'],
-      notificationType: json['notification_type'],
-      isRead: json['is_read'],
-      data: json['data'],
-      createdAt: DateTime.parse(json['created_at']),
+      id: (json['id'] ?? '').toString(),
+      title: (json['title'] ?? '').toString(),
+      message: (json['message'] ?? '').toString(),
+      notificationType: (json['notification_type'] ?? 'message').toString(),
+      isRead: json['is_read'] == true,
+      data: json['data'] is Map<String, dynamic> ? json['data'] : null,
+      createdAt: parsedDate,
     );
   }
 

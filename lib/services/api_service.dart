@@ -833,11 +833,15 @@ class ApiService {
     );
   }
 
-  // Load chat history for a listing conversation (car public_id or numeric id).
-  static Future<List<Map<String, dynamic>>> getChatMessagesByConversation(
-    String conversationId,
-  ) async {
-    final endpoint = '/chat/$conversationId/messages';
+  /// Load chat history for a listing conversation (car public_id or numeric id).
+  ///
+  /// Returns a map with keys: `messages` (list), `page`, `per_page`, `total`, `has_more`.
+  static Future<Map<String, dynamic>> getChatMessagesByConversation(
+    String conversationId, {
+    int page = 1,
+    int perPage = 50,
+  }) async {
+    final endpoint = '/chat/$conversationId/messages?page=$page&per_page=$perPage';
     final url = Uri.parse('$baseUrl$endpoint');
     Map<String, String> headers = _getHeaders();
 
@@ -858,26 +862,122 @@ class ApiService {
     }
 
     if (response.statusCode < 200 || response.statusCode >= 300) {
-      _handleResponse(response); // Throws a useful ApiException.
+      _handleResponse(response);
     }
 
-    if (response.body.trim().isEmpty) return <Map<String, dynamic>>[];
+    if (response.body.trim().isEmpty) {
+      return {'messages': <Map<String, dynamic>>[], 'has_more': false, 'total': 0, 'page': page};
+    }
     final decoded = json.decode(response.body);
-    if (decoded is List) {
-      return decoded
+
+    List<Map<String, dynamic>> messages = [];
+    bool hasMore = false;
+    int total = 0;
+
+    if (decoded is Map) {
+      if (decoded['messages'] is List) {
+        messages = (decoded['messages'] as List)
+            .whereType<Map>()
+            .map((m) => Map<String, dynamic>.from(m.cast<String, dynamic>()))
+            .toList();
+      }
+      hasMore = decoded['has_more'] == true;
+      total = (decoded['total'] as num?)?.toInt() ?? messages.length;
+    } else if (decoded is List) {
+      messages = decoded
           .whereType<Map>()
           .map((m) => Map<String, dynamic>.from(m.cast<String, dynamic>()))
           .toList();
     }
-    if (decoded is Map &&
-        decoded['messages'] is List) {
-      final raw = decoded['messages'] as List;
-      return raw
-          .whereType<Map>()
-          .map((m) => Map<String, dynamic>.from(m.cast<String, dynamic>()))
-          .toList();
+
+    return {
+      'messages': messages,
+      'has_more': hasMore,
+      'total': total,
+      'page': page,
+    };
+  }
+
+  /// Upload an image and send it as a chat message.
+  static Future<Map<String, dynamic>> sendChatImage({
+    required String conversationId,
+    required XFile imageFile,
+    String? receiverId,
+    String? caption,
+  }) async {
+    final url = Uri.parse('$baseUrl/chat/$conversationId/send_image');
+    final req = http.MultipartRequest('POST', url);
+    req.headers.addAll(_getHeaders());
+    req.files.add(await http.MultipartFile.fromPath('image', imageFile.path));
+    if (receiverId != null && receiverId.trim().isNotEmpty) {
+      req.fields['receiver_id'] = receiverId.trim();
     }
-    return <Map<String, dynamic>>[];
+    if (caption != null && caption.trim().isNotEmpty) {
+      req.fields['content'] = caption.trim();
+    }
+    final streamedResponse = await req.send().timeout(_uploadTimeout);
+    final response = await http.Response.fromStream(streamedResponse);
+
+    if (response.statusCode == 401) {
+      final refreshed = await _refreshAccessToken();
+      if (!refreshed) {
+        await clearTokens();
+        throw Exception('Authentication failed');
+      }
+      final retryReq = http.MultipartRequest('POST', url);
+      retryReq.headers.addAll(_getHeaders());
+      retryReq.files.add(await http.MultipartFile.fromPath('image', imageFile.path));
+      if (receiverId != null && receiverId.trim().isNotEmpty) {
+        retryReq.fields['receiver_id'] = receiverId.trim();
+      }
+      if (caption != null && caption.trim().isNotEmpty) {
+        retryReq.fields['content'] = caption.trim();
+      }
+      final retryStreamedResponse = await retryReq.send().timeout(_uploadTimeout);
+      final retryResponse = await http.Response.fromStream(retryStreamedResponse);
+      if (retryResponse.statusCode < 200 || retryResponse.statusCode >= 300) {
+        _handleResponse(retryResponse);
+      }
+      return json.decode(retryResponse.body) as Map<String, dynamic>;
+    }
+
+    if (response.statusCode < 200 || response.statusCode >= 300) {
+      _handleResponse(response);
+    }
+    return json.decode(response.body) as Map<String, dynamic>;
+  }
+
+  /// Register FCM push notification token with the backend.
+  static Future<void> registerPushToken(String token) async {
+    await _makeAuthenticatedRequest('POST', '/users/push_token', body: {'token': token});
+  }
+
+  /// Block a user.
+  static Future<void> blockUser(String userId) async {
+    await _makeAuthenticatedRequest('POST', '/users/$userId/block');
+  }
+
+  /// Unblock a user.
+  static Future<void> unblockUser(String userId) async {
+    await _makeAuthenticatedRequest('POST', '/users/$userId/unblock');
+  }
+
+  /// Report a user.
+  static Future<void> reportUser(String userId, {required String reason, String? details}) async {
+    await _makeAuthenticatedRequest('POST', '/users/$userId/report', body: {
+      'reason': reason,
+      if (details != null && details.trim().isNotEmpty) 'details': details.trim(),
+    });
+  }
+
+  /// Get list of blocked user IDs.
+  static Future<List<String>> getBlockedUsers() async {
+    final result = await _makeAuthenticatedRequest('GET', '/users/blocked');
+    final raw = result['blocked_users'];
+    if (raw is List) {
+      return raw.map((e) => e.toString()).toList();
+    }
+    return [];
   }
 
   // Load recent chat conversations for the current user.

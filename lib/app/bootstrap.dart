@@ -98,7 +98,31 @@ Future<void> _initPushToken() async {
       final token = await messaging.getToken();
       if (token != null && token.isNotEmpty) {
         await sp.setString('push_token', token);
+        // Register token with backend for push notifications.
+        if (ApiService.isAuthenticated) {
+          try {
+            await ApiService.registerPushToken(token);
+          } catch (_) {}
+        }
       }
+
+      // Re-register on token refresh.
+      messaging.onTokenRefresh.listen((newToken) async {
+        if (newToken.isNotEmpty && ApiService.isAuthenticated) {
+          try {
+            await sp.setString('push_token', newToken);
+            await ApiService.registerPushToken(newToken);
+          } catch (_) {}
+        }
+      });
     }
+
+    // Handle foreground messages.
+    FirebaseMessaging.onMessage.listen((RemoteMessage message) {
+      if (kDebugMode) {
+        // ignore: avoid_print
+        print('FCM foreground: ${message.notification?.title}');
+      }
+    });
   } catch (_) {}
 }

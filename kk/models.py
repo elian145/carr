@@ -401,6 +401,7 @@ class Message(db.Model):
     car_id = db.Column(db.Integer, db.ForeignKey('car.id'), nullable=True, index=True)
     content = db.Column(db.Text, nullable=False)
     message_type = db.Column(db.String(20), default='text')  # text, image, file
+    attachment_url = db.Column(db.Text, nullable=True)
     is_read = db.Column(db.Boolean, default=False, index=True)
     created_at = db.Column(db.DateTime, default=utcnow, index=True)
 
@@ -418,6 +419,7 @@ class Message(db.Model):
             'car_id': self.car.public_id if self.car else None,
             'content': self.content,
             'message_type': self.message_type,
+            'attachment_url': self.attachment_url,
             'is_read': self.is_read,
             'created_at': self.created_at.isoformat() if self.created_at else None,
             'sender_name': f"{self.sender.first_name} {self.sender.last_name}" if self.sender else None
@@ -508,6 +510,37 @@ class EmailVerification(db.Model):
     
     def __repr__(self):
         return f'<EmailVerification {self.token}>'
+
+class BlockedUser(db.Model):
+    __tablename__ = 'blocked_user'
+
+    id = db.Column(db.Integer, primary_key=True)
+    blocker_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False, index=True)
+    blocked_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False, index=True)
+    created_at = db.Column(db.DateTime, default=utcnow)
+
+    __table_args__ = (
+        db.UniqueConstraint('blocker_id', 'blocked_id', name='uq_blocked_user'),
+    )
+
+    def __repr__(self):
+        return f'<BlockedUser blocker={self.blocker_id} blocked={self.blocked_id}>'
+
+
+class UserReport(db.Model):
+    __tablename__ = 'user_report'
+
+    id = db.Column(db.Integer, primary_key=True)
+    reporter_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False, index=True)
+    reported_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False, index=True)
+    reason = db.Column(db.String(200), nullable=False)
+    details = db.Column(db.Text, nullable=True)
+    status = db.Column(db.String(20), default='pending')  # pending, reviewed, resolved
+    created_at = db.Column(db.DateTime, default=utcnow)
+
+    def __repr__(self):
+        return f'<UserReport reporter={self.reporter_id} reported={self.reported_id}>'
+
 
 class TokenBlacklist(db.Model):
     __tablename__ = 'token_blacklist'

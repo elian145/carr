@@ -4,10 +4,11 @@ from datetime import datetime
 
 from flask import Blueprint, jsonify, request
 from flask_jwt_extended import jwt_required
-from sqlalchemy import and_, func, or_
+from sqlalchemy import func, or_
 
 from ..auth import get_current_user
-from ..models import Car, Message, User, db
+from ..models import BlockedUser, Car, Message, User, UserReport, db
+from ..push import send_push
 from ..security import rate_limit, validate_input_sanitization
 
 bp = Blueprint("chat", __name__)
@@ -41,7 +42,11 @@ def list_chats():
         if not me:
             return jsonify({"message": "Unauthorized"}), 401
 
-        # Pull recent messages for this user and de-dupe by (car_id, other_user_id).
+        blocked_ids = {
+            b.blocked_id
+            for b in BlockedUser.query.filter_by(blocker_id=me.id).all()
+        }
+
         q = (
             Message.query.filter(or_(Message.sender_id == me.id, Message.receiver_id == me.id))
             .order_by(Message.created_at.desc())
@@ -52,6 +57,8 @@ def list_chats():
         chats = []
         for m in q:
             other_id = m.receiver_id if m.sender_id == me.id else m.sender_id
+            if other_id in blocked_ids:
+                continue
             key = (m.car_id or 0, int(other_id))
             if key in seen:
                 continue
@@ -71,11 +78,17 @@ def list_chats():
                 else 0
             )
 
+            car_title = None
+            if car:
+                car_title = getattr(car, "title", None) or ""
+                if not car_title.strip():
+                    car_title = f"{car.brand} {car.model} {car.year}".strip()
+
             chats.append(
                 {
-                    # No Conversation model exists; use numeric car_id as a stable conversation_id.
                     "conversation_id": int(m.car_id or 0),
                     "car_id": car.public_id if car else None,
+                    "car_title": car_title,
                     "other_user": {
                         "id": other.public_id if other else None,
                         "name": (f"{other.first_name} {other.last_name}".strip() if other else None),
@@ -98,7 +111,13 @@ def list_chats():
 @bp.route("/api/chat/<conversation_id>/messages", methods=["GET"])
 @jwt_required()
 def get_messages(conversation_id: str):
-    """Fetch messages for a conversation (conversation_id == car public_id or numeric id)."""
+    """Fetch messages for a conversation with optional pagination.
+
+    Query params:
+        page (int, default 1): Page number (1-indexed).
+        per_page (int, default 50): Messages per page (max 200).
+        before (str, optional): ISO timestamp – fetch only messages created before this.
+    """
     try:
         me = get_current_user()
         if not me:
@@ -108,12 +127,34 @@ def get_messages(conversation_id: str):
         if not car:
             return jsonify({"message": "Listing not found"}), 404
 
+        page = max(int(request.args.get("page", 1)), 1)
+        per_page = min(max(int(request.args.get("per_page", 50)), 1), 200)
+
+        blocked_ids = [
+            b.blocked_id
+            for b in BlockedUser.query.filter_by(blocker_id=me.id).all()
+        ]
+
+        base_q = Message.query.filter(
+            Message.car_id == car.id,
+            or_(Message.sender_id == me.id, Message.receiver_id == me.id),
+        )
+        if blocked_ids:
+            base_q = base_q.filter(~Message.sender_id.in_(blocked_ids))
+
+        before_raw = (request.args.get("before") or "").strip()
+        if before_raw:
+            try:
+                before_dt = datetime.fromisoformat(before_raw.replace("Z", "+00:00"))
+                base_q = base_q.filter(Message.created_at < before_dt)
+            except Exception:
+                pass
+
+        total = base_q.count()
         msgs = (
-            Message.query.filter(
-                Message.car_id == car.id,
-                or_(Message.sender_id == me.id, Message.receiver_id == me.id),
-            )
-            .order_by(Message.created_at.asc())
+            base_q.order_by(Message.created_at.asc())
+            .offset((page - 1) * per_page)
+            .limit(per_page)
             .all()
         )
 
@@ -128,7 +169,13 @@ def get_messages(conversation_id: str):
         except Exception:
             db.session.rollback()
 
-        return jsonify([m.to_dict() for m in msgs]), 200
+        return jsonify({
+            "messages": [m.to_dict() for m in msgs],
+            "page": page,
+            "per_page": per_page,
+            "total": total,
+            "has_more": (page * per_page) < total,
+        }), 200
     except Exception:
         return jsonify({"message": "Failed to load messages"}), 500
 
@@ -192,10 +239,144 @@ def send_message(conversation_id: str):
         )
         db.session.add(msg)
         db.session.commit()
+
+        # Best-effort FCM push to receiver's device.
+        try:
+            fcm_token = getattr(receiver, "firebase_token", None)
+            if fcm_token:
+                sender_name = f"{me.first_name} {me.last_name}".strip() or "Someone"
+                send_push(
+                    fcm_token,
+                    title=f"New message from {sender_name}",
+                    body=content[:200],
+                    data={"car_id": car.public_id, "sender_id": me.public_id, "type": "chat_message"},
+                )
+        except Exception:
+            pass
+
         return jsonify({"success": True, "message": msg.to_dict()}), 201
     except Exception:
         db.session.rollback()
         return jsonify({"message": "Failed to send message"}), 500
+
+
+@bp.route("/api/chat/<conversation_id>/send_image", methods=["POST"])
+@jwt_required()
+@rate_limit(max_requests=30, window_minutes=10, per_ip=False)
+def send_image_message(conversation_id: str):
+    """Send an image message. The image file is uploaded to R2 (or stored locally)."""
+    try:
+        from flask import current_app
+        import secrets as _secrets
+        import os as _os
+
+        me = get_current_user()
+        if not me:
+            return jsonify({"message": "Unauthorized"}), 401
+
+        car = _get_car_by_any_id(str(conversation_id))
+        if not car:
+            return jsonify({"message": "Listing not found"}), 404
+
+        file = None
+        for key in ("file", "image", "attachment"):
+            if key in request.files:
+                file = request.files[key]
+                break
+        if not file or not file.filename:
+            return jsonify({"message": "No image file provided"}), 400
+
+        ext = _os.path.splitext(file.filename)[1].lower()
+        if ext not in (".jpg", ".jpeg", ".png", ".gif", ".webp"):
+            return jsonify({"message": "Unsupported image format"}), 400
+
+        receiver_public = (
+            request.form.get("receiver_id") or request.form.get("receiverId") or ""
+        ).strip()
+        receiver = None
+        if receiver_public:
+            receiver = User.query.filter_by(public_id=receiver_public).first()
+        if receiver is None:
+            if car.seller_id != me.id:
+                receiver = db.session.get(User, car.seller_id)
+            else:
+                last = (
+                    Message.query.filter(
+                        Message.car_id == car.id,
+                        or_(Message.sender_id == me.id, Message.receiver_id == me.id),
+                    )
+                    .order_by(Message.created_at.desc())
+                    .first()
+                )
+                if last:
+                    other_id = last.receiver_id if last.sender_id == me.id else last.sender_id
+                    receiver = db.session.get(User, other_id)
+        if receiver is None:
+            return jsonify({"message": "receiver_id required"}), 400
+        if receiver.id == me.id:
+            return jsonify({"message": "Invalid receiver"}), 400
+
+        attachment_url = None
+
+        # Try R2 upload first.
+        r2_bucket = current_app.config.get("R2_BUCKET_NAME")
+        r2_account = current_app.config.get("R2_ACCOUNT_ID")
+        r2_key = current_app.config.get("R2_ACCESS_KEY_ID")
+        r2_secret = current_app.config.get("R2_SECRET_ACCESS_KEY")
+        r2_public = (current_app.config.get("R2_PUBLIC_URL") or "").strip().rstrip("/")
+
+        if r2_bucket and r2_account and r2_key and r2_secret and r2_public:
+            import boto3
+            from botocore.config import Config as BotoConfig
+            region = (_os.environ.get("R2_REGION") or "auto").strip() or "auto"
+            endpoint = f"https://{r2_account}.r2.cloudflarestorage.com"
+            s3 = boto3.client(
+                "s3",
+                region_name=region,
+                endpoint_url=endpoint,
+                aws_access_key_id=r2_key,
+                aws_secret_access_key=r2_secret,
+                config=BotoConfig(signature_version="s3v4"),
+            )
+            obj_key = f"chat_attachments/{_secrets.token_hex(16)}{ext}"
+            ct = {
+                ".jpg": "image/jpeg",
+                ".jpeg": "image/jpeg",
+                ".png": "image/png",
+                ".gif": "image/gif",
+                ".webp": "image/webp",
+            }.get(ext, "application/octet-stream")
+            file.seek(0)
+            body = file.read()
+            s3.put_object(Bucket=r2_bucket, Key=obj_key, Body=body, ContentType=ct)
+            attachment_url = f"{r2_public}/{obj_key}"
+        else:
+            # Fallback: store locally.
+            upload_dir = _os.path.join(current_app.root_path, "static", "chat_uploads")
+            _os.makedirs(upload_dir, exist_ok=True)
+            safe_name = f"{_secrets.token_hex(16)}{ext}"
+            path = _os.path.join(upload_dir, safe_name)
+            file.seek(0)
+            file.save(path)
+            attachment_url = f"/static/chat_uploads/{safe_name}"
+
+        content = (request.form.get("content") or "").strip() or "[Image]"
+
+        msg = Message(
+            sender_id=me.id,
+            receiver_id=receiver.id,
+            car_id=car.id,
+            content=content,
+            message_type="image",
+            attachment_url=attachment_url,
+            is_read=False,
+        )
+        db.session.add(msg)
+        db.session.commit()
+        return jsonify({"success": True, "message": msg.to_dict()}), 201
+    except Exception:
+        db.session.rollback()
+        return jsonify({"message": "Failed to send image message"}), 500
 
 
 @bp.route("/api/chat/unread_count", methods=["GET"])
@@ -214,4 +395,137 @@ def unread_count():
         return jsonify({"unread_count": int(n or 0)}), 200
     except Exception:
         return jsonify({"message": "Failed to load unread count"}), 500
+
+
+# ---------- Block / Unblock / Report ----------
+
+@bp.route("/api/users/<user_id>/block", methods=["POST"])
+@jwt_required()
+def block_user(user_id: str):
+    """Block another user. Messages from them will be hidden."""
+    try:
+        me = get_current_user()
+        if not me:
+            return jsonify({"message": "Unauthorized"}), 401
+
+        target = User.query.filter_by(public_id=user_id).first()
+        if not target:
+            return jsonify({"message": "User not found"}), 404
+        if target.id == me.id:
+            return jsonify({"message": "Cannot block yourself"}), 400
+
+        existing = BlockedUser.query.filter_by(blocker_id=me.id, blocked_id=target.id).first()
+        if existing:
+            return jsonify({"message": "User already blocked"}), 200
+
+        db.session.add(BlockedUser(blocker_id=me.id, blocked_id=target.id))
+        db.session.commit()
+        return jsonify({"message": "User blocked"}), 201
+    except Exception:
+        db.session.rollback()
+        return jsonify({"message": "Failed to block user"}), 500
+
+
+@bp.route("/api/users/<user_id>/unblock", methods=["POST"])
+@jwt_required()
+def unblock_user(user_id: str):
+    """Unblock a previously blocked user."""
+    try:
+        me = get_current_user()
+        if not me:
+            return jsonify({"message": "Unauthorized"}), 401
+
+        target = User.query.filter_by(public_id=user_id).first()
+        if not target:
+            return jsonify({"message": "User not found"}), 404
+
+        b = BlockedUser.query.filter_by(blocker_id=me.id, blocked_id=target.id).first()
+        if not b:
+            return jsonify({"message": "User is not blocked"}), 200
+
+        db.session.delete(b)
+        db.session.commit()
+        return jsonify({"message": "User unblocked"}), 200
+    except Exception:
+        db.session.rollback()
+        return jsonify({"message": "Failed to unblock user"}), 500
+
+
+@bp.route("/api/users/<user_id>/report", methods=["POST"])
+@jwt_required()
+@rate_limit(max_requests=10, window_minutes=60, per_ip=False)
+def report_user(user_id: str):
+    """Report a user for inappropriate behavior."""
+    try:
+        me = get_current_user()
+        if not me:
+            return jsonify({"message": "Unauthorized"}), 401
+
+        target = User.query.filter_by(public_id=user_id).first()
+        if not target:
+            return jsonify({"message": "User not found"}), 404
+        if target.id == me.id:
+            return jsonify({"message": "Cannot report yourself"}), 400
+
+        data = request.get_json(silent=True) or {}
+        reason = str(data.get("reason") or "").strip()
+        if not reason:
+            return jsonify({"message": "reason is required"}), 400
+        if len(reason) > 200:
+            reason = reason[:200]
+        details = str(data.get("details") or "").strip()[:2000] or None
+
+        db.session.add(UserReport(
+            reporter_id=me.id,
+            reported_id=target.id,
+            reason=reason,
+            details=details,
+        ))
+        db.session.commit()
+        return jsonify({"message": "Report submitted. Thank you."}), 201
+    except Exception:
+        db.session.rollback()
+        return jsonify({"message": "Failed to submit report"}), 500
+
+
+@bp.route("/api/users/push_token", methods=["POST"])
+@jwt_required()
+def register_push_token():
+    """Register or update the user's FCM push notification token."""
+    try:
+        me = get_current_user()
+        if not me:
+            return jsonify({"message": "Unauthorized"}), 401
+
+        data = request.get_json(silent=True) or {}
+        token = str(data.get("token") or "").strip()
+        if not token:
+            return jsonify({"message": "token is required"}), 400
+
+        me.firebase_token = token
+        db.session.commit()
+        return jsonify({"message": "Token registered"}), 200
+    except Exception:
+        db.session.rollback()
+        return jsonify({"message": "Failed to register token"}), 500
+
+
+@bp.route("/api/users/blocked", methods=["GET"])
+@jwt_required()
+def list_blocked_users():
+    """Return a list of blocked user IDs for the current user."""
+    try:
+        me = get_current_user()
+        if not me:
+            return jsonify({"message": "Unauthorized"}), 401
+
+        blocks = BlockedUser.query.filter_by(blocker_id=me.id).all()
+        blocked_ids = []
+        for b in blocks:
+            u = db.session.get(User, b.blocked_id)
+            if u:
+                blocked_ids.append(u.public_id)
+        return jsonify({"blocked_users": blocked_ids}), 200
+    except Exception:
+        return jsonify({"message": "Failed to load blocked users"}), 500
 
