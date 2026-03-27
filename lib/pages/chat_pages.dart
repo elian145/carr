@@ -329,12 +329,20 @@ class _ChatConversationPageState extends State<ChatConversationPage> {
   StreamSubscription<Map<String, dynamic>>? _messageSub;
   StreamSubscription<String>? _errorSub;
   bool _isSending = false;
+  bool _loadingHistory = false;
 
   @override
   void initState() {
     super.initState();
     _setupWebSocketListeners();
+    _loadHistory();
     _joinChat();
+  }
+
+  void _addMessageIfMissing(ChatMessage message) {
+    final exists = _messages.any((m) => m.id == message.id);
+    if (exists) return;
+    _messages.add(message);
   }
 
   void _setupWebSocketListeners() {
@@ -350,7 +358,7 @@ class _ChatConversationPageState extends State<ChatConversationPage> {
       }
       if (!mounted) return;
       setState(() {
-        _messages.add(ChatMessage.fromJson(message));
+        _addMessageIfMissing(ChatMessage.fromJson(message));
       });
       _scrollToBottom();
     });
@@ -369,6 +377,34 @@ class _ChatConversationPageState extends State<ChatConversationPage> {
 
   void _joinChat() {
     WebSocketService.joinChat(widget.carId);
+  }
+
+  Future<void> _loadHistory() async {
+    if (_loadingHistory) return;
+    setState(() => _loadingHistory = true);
+    try {
+      final rows = await ApiService.getChatMessagesByConversation(widget.carId);
+      if (!mounted) return;
+      final loaded = rows.map(ChatMessage.fromJson).toList();
+      loaded.sort((a, b) => a.createdAt.compareTo(b.createdAt));
+      setState(() {
+        _messages
+          ..clear()
+          ..addAll(loaded);
+      });
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (!mounted) return;
+        _scrollToBottom();
+      });
+    } catch (_) {
+      // Keep the page usable even if history fetch fails.
+    } finally {
+      if (mounted) {
+        setState(() => _loadingHistory = false);
+      } else {
+        _loadingHistory = false;
+      }
+    }
   }
 
   void _scrollToBottom() {
@@ -406,7 +442,7 @@ class _ChatConversationPageState extends State<ChatConversationPage> {
       final msg = response['message'];
       if (msg is Map<String, dynamic> && mounted) {
         setState(() {
-          _messages.add(ChatMessage.fromJson(msg));
+          _addMessageIfMissing(ChatMessage.fromJson(msg));
         });
         _scrollToBottom();
       }
@@ -452,7 +488,9 @@ class _ChatConversationPageState extends State<ChatConversationPage> {
         children: [
           // Chat messages
           Expanded(
-            child: _messages.isEmpty
+            child: _loadingHistory && _messages.isEmpty
+                ? const Center(child: CircularProgressIndicator())
+                : _messages.isEmpty
                 ? Center(child: Text(_noMessagesText(context)))
                 : ListView.builder(
                     controller: _scrollController,

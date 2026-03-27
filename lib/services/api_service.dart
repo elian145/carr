@@ -832,4 +832,51 @@ class ApiService {
       body: payload,
     );
   }
+
+  // Load chat history for a listing conversation (car public_id or numeric id).
+  static Future<List<Map<String, dynamic>>> getChatMessagesByConversation(
+    String conversationId,
+  ) async {
+    final endpoint = '/chat/$conversationId/messages';
+    final url = Uri.parse('$baseUrl$endpoint');
+    Map<String, String> headers = _getHeaders();
+
+    http.Response response = await http
+        .get(url, headers: headers)
+        .timeout(_defaultTimeout);
+
+    if (response.statusCode == 401) {
+      final refreshed = await _refreshAccessToken();
+      if (!refreshed) {
+        await clearTokens();
+        throw Exception('Authentication failed');
+      }
+      headers = _getHeaders();
+      response = await http
+          .get(url, headers: headers)
+          .timeout(_defaultTimeout);
+    }
+
+    if (response.statusCode < 200 || response.statusCode >= 300) {
+      _handleResponse(response); // Throws a useful ApiException.
+    }
+
+    if (response.body.trim().isEmpty) return <Map<String, dynamic>>[];
+    final decoded = json.decode(response.body);
+    if (decoded is List) {
+      return decoded
+          .whereType<Map>()
+          .map((m) => Map<String, dynamic>.from(m.cast<String, dynamic>()))
+          .toList();
+    }
+    if (decoded is Map &&
+        decoded['messages'] is List) {
+      final raw = decoded['messages'] as List;
+      return raw
+          .whereType<Map>()
+          .map((m) => Map<String, dynamic>.from(m.cast<String, dynamic>()))
+          .toList();
+    }
+    return <Map<String, dynamic>>[];
+  }
 }
