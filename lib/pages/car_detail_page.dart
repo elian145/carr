@@ -581,6 +581,18 @@ class _CarDetailPageState extends State<CarDetailPage> {
                   seller['owner_id'] ??
                   '')
               .toString();
+    String? receiverName;
+    if (seller != null) {
+      final fullName =
+          '${seller['first_name'] ?? ''} ${seller['last_name'] ?? ''}'.trim();
+      receiverName = (seller['name'] ?? seller['username'] ?? '').toString().trim();
+      if (receiverName.isEmpty && fullName.isNotEmpty) {
+        receiverName = fullName;
+      }
+      if (receiverName.isEmpty) {
+        receiverName = null;
+      }
+    }
 
     return Scaffold(
       appBar: AppBar(
@@ -671,6 +683,8 @@ class _CarDetailPageState extends State<CarDetailPage> {
                                 'carId': (car['id'] ?? car['public_id'] ?? widget.carId).toString(),
                                 if (receiverId != null && receiverId.isNotEmpty)
                                   'receiverId': receiverId,
+                                if (receiverName != null && receiverName.isNotEmpty)
+                                  'receiverName': receiverName,
                                 'initialDraft': starterMessage,
                                 'listingPreview': {
                                   'id': (car['id'] ?? car['public_id'] ?? widget.carId).toString(),

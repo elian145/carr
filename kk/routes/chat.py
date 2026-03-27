@@ -17,6 +17,7 @@ bp = Blueprint("chat", __name__)
 
 _CHAT_IMAGE_EXTENSIONS = {".jpg", ".jpeg", ".png", ".gif", ".webp"}
 _CHAT_VIDEO_EXTENSIONS = {".mp4", ".mov", ".avi", ".mkv", ".webm"}
+_CHAT_ATTACHMENT_EXTENSIONS = _CHAT_IMAGE_EXTENSIONS | _CHAT_VIDEO_EXTENSIONS
 
 
 def _resolve_chat_receiver(me: User, car: Car, receiver_public: str | None) -> User | None:
@@ -102,6 +103,47 @@ def _get_car_by_any_id(car_id: str):
         except Exception:
             return None
     return None
+
+
+def _upload_chat_media_item(file_storage) -> dict[str, str]:
+    ext = os.path.splitext(file_storage.filename or "")[1].lower()
+    if ext in _CHAT_IMAGE_EXTENSIONS:
+        return {
+            "type": "image",
+            "url": _upload_chat_attachment(
+                file_storage,
+                allowed_extensions=_CHAT_IMAGE_EXTENSIONS,
+                subdir="chat_uploads",
+                content_types={
+                    ".jpg": "image/jpeg",
+                    ".jpeg": "image/jpeg",
+                    ".png": "image/png",
+                    ".gif": "image/gif",
+                    ".webp": "image/webp",
+                },
+            ),
+        }
+    if ext in _CHAT_VIDEO_EXTENSIONS:
+        return {
+            "type": "video",
+            "url": _upload_chat_attachment(
+                file_storage,
+                allowed_extensions=_CHAT_VIDEO_EXTENSIONS,
+                subdir="chat_videos",
+                content_types={
+                    ".mp4": "video/mp4",
+                    ".mov": "video/quicktime",
+                    ".avi": "video/x-msvideo",
+                    ".mkv": "video/x-matroska",
+                    ".webm": "video/webm",
+                },
+            ),
+        }
+    raise ValueError("Unsupported attachment format")
+
+
+def _default_media_group_content(count: int) -> str:
+    return f"[{max(count, 1)} attachments]"
 
 
 @bp.route("/api/chats", methods=["GET"])
@@ -463,6 +505,79 @@ def send_video_message(conversation_id: str):
     except Exception:
         db.session.rollback()
         return jsonify({"message": "Failed to send video message"}), 500
+
+
+@bp.route("/api/chat/<conversation_id>/send_media_group", methods=["POST"])
+@jwt_required()
+@rate_limit(max_requests=20, window_minutes=10, per_ip=False)
+def send_media_group_message(conversation_id: str):
+    """Send multiple images/videos as one grouped chat message."""
+    try:
+        me = get_current_user()
+        if not me:
+            return jsonify({"message": "Unauthorized"}), 401
+
+        car = _get_car_by_any_id(str(conversation_id))
+        if not car:
+            return jsonify({"message": "Listing not found"}), 404
+
+        files = request.files.getlist("attachments")
+        if not files:
+            for key in ("files", "media", "attachment", "file", "image", "video"):
+                if key in request.files:
+                    files.extend(request.files.getlist(key))
+        files = [file for file in files if file and file.filename]
+        if not files:
+            return jsonify({"message": "No attachments provided"}), 400
+        if len(files) > 10:
+            return jsonify({"message": "You can send up to 10 attachments at once"}), 400
+
+        receiver_public = (
+            request.form.get("receiver_id") or request.form.get("receiverId") or ""
+        ).strip()
+        receiver = _resolve_chat_receiver(me, car, receiver_public)
+        if receiver is None:
+            return jsonify({"message": "receiver_id required"}), 400
+
+        attachments = []
+        for file in files:
+            try:
+                attachments.append(_upload_chat_media_item(file))
+            except ValueError:
+                return jsonify({"message": "Unsupported attachment format"}), 400
+
+        content = (request.form.get("content") or "").strip() or _default_media_group_content(len(attachments))
+
+        msg = Message(
+            sender_id=me.id,
+            receiver_id=receiver.id,
+            car_id=car.id,
+            content=content,
+            message_type="media_group",
+            attachment_url=attachments[0]["url"] if attachments else None,
+            attachments=attachments,
+            is_read=False,
+        )
+        db.session.add(msg)
+        db.session.commit()
+
+        try:
+            fcm_token = getattr(receiver, "firebase_token", None)
+            if fcm_token:
+                sender_name = f"{me.first_name} {me.last_name}".strip() or "Someone"
+                send_push(
+                    fcm_token,
+                    title=f"New message from {sender_name}",
+                    body=content[:200],
+                    data={"car_id": car.public_id, "sender_id": me.public_id, "type": "chat_message"},
+                )
+        except Exception:
+            pass
+
+        return jsonify({"success": True, "message": msg.to_dict()}), 201
+    except Exception:
+        db.session.rollback()
+        return jsonify({"message": "Failed to send media group"}), 500
 
 
 @bp.route("/api/chat/unread_count", methods=["GET"])

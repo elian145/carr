@@ -940,6 +940,49 @@ class ApiService {
     );
   }
 
+  static Future<Map<String, dynamic>> sendChatMediaGroup({
+    required String conversationId,
+    required List<XFile> files,
+    String? receiverId,
+    String? caption,
+  }) async {
+    if (files.isEmpty) {
+      throw Exception('No attachments selected');
+    }
+    final url = Uri.parse('$baseUrl/chat/$conversationId/send_media_group');
+
+    Future<http.Response> makeRequest() async {
+      final req = http.MultipartRequest('POST', url);
+      req.headers.addAll(_getHeaders());
+      for (final file in files) {
+        req.files.add(await http.MultipartFile.fromPath('attachments', file.path));
+      }
+      if (receiverId != null && receiverId.trim().isNotEmpty) {
+        req.fields['receiver_id'] = receiverId.trim();
+      }
+      if (caption != null && caption.trim().isNotEmpty) {
+        req.fields['content'] = caption.trim();
+      }
+      final streamedResponse = await req.send().timeout(_uploadTimeout);
+      return http.Response.fromStream(streamedResponse);
+    }
+
+    var response = await makeRequest();
+    if (response.statusCode == 401) {
+      final refreshed = await _refreshAccessToken();
+      if (!refreshed) {
+        await clearTokens();
+        throw Exception('Authentication failed');
+      }
+      response = await makeRequest();
+    }
+
+    if (response.statusCode < 200 || response.statusCode >= 300) {
+      _handleResponse(response);
+    }
+    return json.decode(response.body) as Map<String, dynamic>;
+  }
+
   static Future<Map<String, dynamic>> _sendChatAttachment({
     required String conversationId,
     required String endpointSuffix,

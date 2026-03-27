@@ -310,6 +310,34 @@ class WebSocketService {
 }
 
 // Chat message model
+class ChatAttachment {
+  final String type;
+  final String url;
+  final bool isLocal;
+
+  const ChatAttachment({
+    required this.type,
+    required this.url,
+    this.isLocal = false,
+  });
+
+  factory ChatAttachment.fromJson(Map<String, dynamic> json) {
+    return ChatAttachment(
+      type: (json['type'] ?? 'image').toString(),
+      url: (json['url'] ?? '').toString(),
+      isLocal: json['is_local'] == true,
+    );
+  }
+
+  Map<String, dynamic> toJson() {
+    return {
+      'type': type,
+      'url': url,
+      'is_local': isLocal,
+    };
+  }
+}
+
 class ChatMessage {
   final String id;
   final String senderId;
@@ -318,10 +346,12 @@ class ChatMessage {
   final String content;
   final String messageType;
   final String? attachmentUrl;
+  final List<ChatAttachment> attachments;
   final Map<String, dynamic>? listingPreview;
   final bool isRead;
   final DateTime createdAt;
   final String? senderName;
+  final bool isPending;
 
   ChatMessage({
     required this.id,
@@ -331,21 +361,41 @@ class ChatMessage {
     required this.content,
     required this.messageType,
     this.attachmentUrl,
+    this.attachments = const [],
     this.listingPreview,
     required this.isRead,
     required this.createdAt,
     this.senderName,
+    this.isPending = false,
   });
 
   factory ChatMessage.fromJson(Map<String, dynamic> json) {
+    final messageType = (json['message_type'] ?? 'text').toString();
+    final attachmentUrl = json['attachment_url']?.toString();
+    final attachments = json['attachments'] is List
+        ? (json['attachments'] as List)
+            .whereType<Map>()
+            .map((item) => ChatAttachment.fromJson(
+                  Map<String, dynamic>.from(item.cast<String, dynamic>()),
+                ))
+            .where((item) => item.url.isNotEmpty)
+            .toList()
+        : <ChatAttachment>[];
+    if (attachments.isEmpty &&
+        attachmentUrl != null &&
+        attachmentUrl.isNotEmpty &&
+        (messageType == 'image' || messageType == 'video')) {
+      attachments.add(ChatAttachment(type: messageType, url: attachmentUrl));
+    }
     return ChatMessage(
       id: (json['id'] ?? json['public_id'] ?? '').toString(),
       senderId: (json['sender_id'] ?? '').toString(),
       receiverId: (json['receiver_id'] ?? '').toString(),
       carId: json['car_id']?.toString(),
       content: (json['content'] ?? '').toString(),
-      messageType: (json['message_type'] ?? 'text').toString(),
-      attachmentUrl: json['attachment_url']?.toString(),
+      messageType: messageType,
+      attachmentUrl: attachmentUrl,
+      attachments: attachments,
       listingPreview: json['listing_preview'] is Map
           ? Map<String, dynamic>.from(
               (json['listing_preview'] as Map).cast<String, dynamic>(),
@@ -354,6 +404,7 @@ class ChatMessage {
       isRead: json['is_read'] == true,
       createdAt: parseApiDateTime(json['created_at']),
       senderName: json['sender_name']?.toString(),
+      isPending: json['is_pending'] == true,
     );
   }
 
@@ -366,10 +417,12 @@ class ChatMessage {
       'content': content,
       'message_type': messageType,
       'attachment_url': attachmentUrl,
+      'attachments': attachments.map((item) => item.toJson()).toList(),
       'listing_preview': listingPreview,
       'is_read': isRead,
       'created_at': createdAt.toIso8601String(),
       'sender_name': senderName,
+      'is_pending': isPending,
     };
   }
 }

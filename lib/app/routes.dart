@@ -74,6 +74,7 @@ Map<String, WidgetBuilder> buildAppRoutes() {
       return chat.ChatConversationPage(
         carId: raw,
         receiverId: args['receiverId']?.toString(),
+        receiverName: args['receiverName']?.toString(),
         initialDraft: args['initialDraft']?.toString(),
         initialListingPreview: args['listingPreview'] is Map
             ? Map<String, dynamic>.from(

@@ -11059,6 +11059,7 @@ class _CarDetailsPageState extends State<CarDetailsPage> {
         'Hi, I am interested in "$title". What is the price for this listing?';
 
     String? receiverId;
+    String? receiverName;
     final seller = car!['seller'];
     if (seller is Map) {
       final m = Map<String, dynamic>.from(seller as Map);
@@ -11066,6 +11067,14 @@ class _CarDetailsPageState extends State<CarDetailsPage> {
       if (rid != null) {
         final s = rid.toString().trim();
         if (s.isNotEmpty) receiverId = s;
+      }
+      final fullName = '${m['first_name'] ?? ''} ${m['last_name'] ?? ''}'.trim();
+      receiverName = (m['name'] ?? m['username'] ?? '').toString().trim();
+      if (receiverName.isEmpty && fullName.isNotEmpty) {
+        receiverName = fullName;
+      }
+      if (receiverName.isEmpty) {
+        receiverName = null;
       }
     }
 
@@ -11087,6 +11096,7 @@ class _CarDetailsPageState extends State<CarDetailsPage> {
           child: carzo_chat.ChatConversationPage(
             carId: carIdForChat,
             receiverId: receiverId,
+            receiverName: receiverName,
             initialDraft: starterMessage,
             initialListingPreview: {
               'id': carIdForChat,
