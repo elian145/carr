@@ -114,6 +114,8 @@ class WebSocketService {
         // Render/Gunicorn setups often fail websocket transport unless using a
         // dedicated async worker. Polling is broadly compatible and reliable.
         'transports': ['polling'],
+        // Keep Engine.IO on long-polling and never attempt websocket upgrade.
+        'upgrade': false,
         'path': '/socket.io/',
         'autoConnect': false,
         'reconnection': true,

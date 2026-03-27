@@ -40,6 +40,12 @@ String _noMessagesText(BuildContext context) {
   return AppLocalizations.of(context)!.noMessagesYet;
 }
 
+bool _isIgnorableSocketError(String err) {
+  final text = err.toLowerCase();
+  return text.contains('was not upgraded to websocket') ||
+      text.contains('transport=websocket');
+}
+
 class _ThemeToggleAction extends StatelessWidget {
   const _ThemeToggleAction({super.key});
 
@@ -116,6 +122,7 @@ class _ChatListPageState extends State<ChatListPage> {
     _errorSub = WebSocketService.errors.listen((err) {
       if (!mounted) return;
       if (err.trim().isEmpty) return;
+      if (_isIgnorableSocketError(err)) return;
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
           content: Text(err),
@@ -350,6 +357,7 @@ class _ChatConversationPageState extends State<ChatConversationPage> {
     _errorSub = WebSocketService.errors.listen((err) {
       if (!mounted) return;
       if (err.trim().isEmpty) return;
+      if (_isIgnorableSocketError(err)) return;
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
           content: Text(err),
