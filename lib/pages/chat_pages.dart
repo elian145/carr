@@ -1115,14 +1115,6 @@ class _ChatConversationPageState extends State<ChatConversationPage>
         .trim();
   }
 
-  String _listingSpecs(Map<String, dynamic> car) {
-    return [
-      (car['brand'] ?? '').toString().trim(),
-      (car['model'] ?? '').toString().trim(),
-      (car['trim'] ?? '').toString().trim(),
-    ].where((value) => value.isNotEmpty).join(' ');
-  }
-
   String _listingPrice(Map<String, dynamic> car) {
     final price = (car['price'] ?? '').toString().trim();
     final currency = (car['currency'] ?? '').toString().trim();
@@ -1144,7 +1136,6 @@ class _ChatConversationPageState extends State<ChatConversationPage>
   Widget _buildListingCard(BuildContext context, Map<String, dynamic> car) {
     final imageUrl = _listingImageUrl(car);
     final title = _listingTitle(car);
-    final specs = _listingSpecs(car);
     final price = _listingPrice(car);
     final location =
         (car['location'] ?? car['city'] ?? '').toString().trim();
@@ -1203,15 +1194,6 @@ class _ChatConversationPageState extends State<ChatConversationPage>
                     overflow: TextOverflow.ellipsis,
                     style: const TextStyle(fontWeight: FontWeight.w700),
                   ),
-                  if (specs.isNotEmpty && specs != title) ...[
-                    const SizedBox(height: 4),
-                    Text(
-                      specs,
-                      maxLines: 1,
-                      overflow: TextOverflow.ellipsis,
-                      style: Theme.of(context).textTheme.bodySmall,
-                    ),
-                  ],
                   if (price.isNotEmpty) ...[
                     const SizedBox(height: 4),
                     Text(
@@ -1376,16 +1358,6 @@ class _ChatConversationPageState extends State<ChatConversationPage>
                                     ),
                                   ),
                               ] else if (message.listingPreview != null) ...[
-                                if (message.content.isNotEmpty)
-                                  Padding(
-                                    padding: const EdgeInsets.only(bottom: 8),
-                                    child: Text(
-                                      message.content,
-                                      style: TextStyle(
-                                        color: isMe ? Colors.white : null,
-                                      ),
-                                    ),
-                                  ),
                                 ConstrainedBox(
                                   constraints: const BoxConstraints(maxWidth: 280),
                                   child: _buildListingCard(
@@ -1393,6 +1365,16 @@ class _ChatConversationPageState extends State<ChatConversationPage>
                                     message.listingPreview!,
                                   ),
                                 ),
+                                if (message.content.isNotEmpty)
+                                  Padding(
+                                    padding: const EdgeInsets.only(top: 8),
+                                    child: Text(
+                                      message.content,
+                                      style: TextStyle(
+                                        color: isMe ? Colors.white : null,
+                                      ),
+                                    ),
+                                  ),
                               ] else if (message.messageType == 'video' &&
                                   message.attachmentUrl != null &&
                                   message.attachmentUrl!.isNotEmpty) ...[
