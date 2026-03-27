@@ -879,4 +879,48 @@ class ApiService {
     }
     return <Map<String, dynamic>>[];
   }
+
+  // Load recent chat conversations for the current user.
+  static Future<List<Map<String, dynamic>>> getChats() async {
+    final endpoint = '/chats';
+    final url = Uri.parse('$baseUrl$endpoint');
+    Map<String, String> headers = _getHeaders();
+
+    http.Response response = await http
+        .get(url, headers: headers)
+        .timeout(_defaultTimeout);
+
+    if (response.statusCode == 401) {
+      final refreshed = await _refreshAccessToken();
+      if (!refreshed) {
+        await clearTokens();
+        throw Exception('Authentication failed');
+      }
+      headers = _getHeaders();
+      response = await http
+          .get(url, headers: headers)
+          .timeout(_defaultTimeout);
+    }
+
+    if (response.statusCode < 200 || response.statusCode >= 300) {
+      _handleResponse(response); // Throws ApiException.
+    }
+
+    if (response.body.trim().isEmpty) return <Map<String, dynamic>>[];
+    final decoded = json.decode(response.body);
+    if (decoded is List) {
+      return decoded
+          .whereType<Map>()
+          .map((m) => Map<String, dynamic>.from(m.cast<String, dynamic>()))
+          .toList();
+    }
+    if (decoded is Map && decoded['chats'] is List) {
+      final raw = decoded['chats'] as List;
+      return raw
+          .whereType<Map>()
+          .map((m) => Map<String, dynamic>.from(m.cast<String, dynamic>()))
+          .toList();
+    }
+    return <Map<String, dynamic>>[];
+  }
 }

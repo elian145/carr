@@ -79,44 +79,28 @@ class ChatListPage extends StatefulWidget {
 }
 
 class _ChatListPageState extends State<ChatListPage> {
-  final List<ChatMessage> _messages = [];
-  final TextEditingController _carIdController = TextEditingController();
-  final TextEditingController _messageController = TextEditingController();
-  final ScrollController _scrollController = ScrollController();
-  String? _currentCarId;
-  StreamSubscription<Map<String, dynamic>>? _messageSub;
+  final List<Map<String, dynamic>> _chats = [];
+  bool _loading = true;
   StreamSubscription<Map<String, dynamic>>? _notificationSub;
   StreamSubscription<String>? _errorSub;
 
   @override
   void initState() {
     super.initState();
+    _loadChats();
     _setupWebSocketListeners();
   }
 
   void _setupWebSocketListeners() {
-    _messageSub?.cancel();
     _notificationSub?.cancel();
     _errorSub?.cancel();
 
-    _messageSub = WebSocketService.messages.listen((message) {
-      if (!mounted) return;
-      setState(() {
-        _messages.add(ChatMessage.fromJson(message));
-      });
-      _scrollToBottom();
-    });
-
     _notificationSub = WebSocketService.notifications.listen((notification) {
       if (!mounted) return;
-      final msg = (notification['message'] ?? '').toString();
-      if (msg.isEmpty) return;
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text(msg),
-          backgroundColor: Colors.blue,
-        ),
-      );
+      final type = (notification['notification_type'] ?? '').toString();
+      if (type == 'message') {
+        _loadChats();
+      }
     });
 
     _errorSub = WebSocketService.errors.listen((err) {
@@ -132,36 +116,48 @@ class _ChatListPageState extends State<ChatListPage> {
     });
   }
 
-  void _scrollToBottom() {
-    if (_scrollController.hasClients) {
-      _scrollController.animateTo(
-        _scrollController.position.maxScrollExtent,
-        duration: const Duration(milliseconds: 300),
-        curve: Curves.easeOut,
+  Future<void> _loadChats() async {
+    setState(() => _loading = true);
+    try {
+      final data = await ApiService.getChats();
+      data.sort((a, b) {
+        final aTime =
+            (a['last_message'] is Map ? a['last_message']['created_at'] : null)
+                ?.toString() ??
+            '';
+        final bTime =
+            (b['last_message'] is Map ? b['last_message']['created_at'] : null)
+                ?.toString() ??
+            '';
+        return bTime.compareTo(aTime);
+      });
+      if (!mounted) return;
+      setState(() {
+        _chats
+          ..clear()
+          ..addAll(data);
+      });
+    } catch (_) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: const Text('Failed to load chats'),
+          backgroundColor: Colors.red,
+        ),
       );
+    } finally {
+      if (mounted) {
+        setState(() => _loading = false);
+      } else {
+        _loading = false;
+      }
     }
-  }
-
-  void _sendMessage() {
-    if (_messageController.text.trim().isEmpty || _currentCarId == null) return;
-
-    WebSocketService.sendChatMessage(
-      _currentCarId!,
-      _messageController.text.trim(),
-    );
-
-    _messageController.clear();
-    // Tracking disabled or not available in this build
   }
 
   @override
   void dispose() {
-    _messageSub?.cancel();
     _notificationSub?.cancel();
     _errorSub?.cancel();
-    _carIdController.dispose();
-    _messageController.dispose();
-    _scrollController.dispose();
     super.dispose();
   }
 
@@ -172,141 +168,98 @@ class _ChatListPageState extends State<ChatListPage> {
         title: Text(AppLocalizations.of(context)!.chatTitle),
         actions: [const _ThemeToggleAction()],
       ),
-      body: Column(
-        children: [
-          Padding(
-            padding: const EdgeInsets.fromLTRB(16, 16, 16, 8),
-            child: Row(
-              children: [
-                Expanded(
-                  child: TextField(
-                    controller: _carIdController,
-                    decoration: InputDecoration(
-                      labelText: AppLocalizations.of(context)!.carIdChatRoom,
-                      border: const OutlineInputBorder(),
-                    ),
-                    onSubmitted: (_) {
-                      final id = _carIdController.text.trim();
-                      if (id.isEmpty) return;
-                      setState(() => _currentCarId = id);
-                      WebSocketService.joinChat(id);
-                    },
+      body: RefreshIndicator(
+        onRefresh: _loadChats,
+        child: _loading && _chats.isEmpty
+            ? const Center(child: CircularProgressIndicator())
+            : _chats.isEmpty
+            ? ListView(
+                children: [
+                  SizedBox(
+                    height: MediaQuery.of(context).size.height * 0.6,
+                    child: Center(child: Text(_noMessagesText(context))),
                   ),
-                ),
-                const SizedBox(width: 8),
-                IconButton(
-                  onPressed: () {
-                    final id = _carIdController.text.trim();
-                    if (id.isEmpty) return;
-                    setState(() => _currentCarId = id);
-                    WebSocketService.joinChat(id);
-                  },
-                  icon: const Icon(Icons.login),
-                  tooltip: AppLocalizations.of(context)!.joinLabel,
-                ),
-              ],
-            ),
-          ),
-          // Chat messages
-          Expanded(
-            child: _messages.isEmpty
-                ? Center(child: Text(_noMessagesText(context)))
-                : ListView.builder(
-                    controller: _scrollController,
-                    padding: const EdgeInsets.all(16),
-                    itemCount: _messages.length,
-                    itemBuilder: (context, index) {
-                      final message = _messages[index];
-                      final authService = Provider.of<AuthService>(
-                        context,
-                        listen: false,
-                      );
-                      final isMe = message.senderId == authService.userId;
-
-                      return Align(
-                        alignment: isMe
-                            ? Alignment.centerRight
-                            : Alignment.centerLeft,
-                        child: Container(
-                          margin: const EdgeInsets.symmetric(vertical: 4),
-                          padding: const EdgeInsets.symmetric(
-                            horizontal: 16,
-                            vertical: 12,
-                          ),
-                          decoration: BoxDecoration(
-                            color: isMe
-                                ? Theme.of(context).primaryColor
-                                : Theme.of(context).cardColor,
-                            borderRadius: BorderRadius.circular(20),
-                          ),
-                          child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              if (!isMe)
-                                Text(
-                                  message.senderName ?? AppLocalizations.of(context)!.unknownSender,
-                                  style: Theme.of(context).textTheme.bodySmall,
-                                ),
-                              Text(
-                                message.content,
-                                style: TextStyle(
-                                  color: isMe ? Colors.white : null,
-                                ),
-                              ),
-                              const SizedBox(height: 4),
-                              Text(
-                                _relativeTime(context, message.createdAt),
-                                style: TextStyle(
-                                  color: isMe ? Colors.white70 : Colors.grey,
-                                  fontSize: 12,
-                                ),
-                              ),
-                            ],
-                          ),
-                        ),
-                      );
-                    },
-                  ),
-          ),
-          // Message input
-          Container(
-            padding: const EdgeInsets.all(16),
-            decoration: BoxDecoration(
-              color: Theme.of(context).cardColor,
-              border: Border(
-                top: BorderSide(color: Theme.of(context).dividerColor),
-              ),
-            ),
-            child: Row(
-              children: [
-                Expanded(
-                  child: TextField(
-                    controller: _messageController,
-                    decoration: InputDecoration(
-                      hintText: AppLocalizations.of(context)!.typeMessage,
-                      border: OutlineInputBorder(),
-                      contentPadding: EdgeInsets.symmetric(
-                        horizontal: 16,
-                        vertical: 12,
+                ],
+              )
+            : ListView.builder(
+                padding: const EdgeInsets.all(12),
+                itemCount: _chats.length,
+                itemBuilder: (context, index) {
+                  final c = _chats[index];
+                  final other = c['other_user'] is Map
+                      ? Map<String, dynamic>.from(
+                          (c['other_user'] as Map).cast<String, dynamic>(),
+                        )
+                      : <String, dynamic>{};
+                  final last = c['last_message'] is Map
+                      ? Map<String, dynamic>.from(
+                          (c['last_message'] as Map).cast<String, dynamic>(),
+                        )
+                      : <String, dynamic>{};
+                  final carId = (c['car_id'] ??
+                          c['conversation_id'] ??
+                          last['car_id'] ??
+                          '')
+                      .toString();
+                  final receiverId = (other['id'] ?? '').toString();
+                  final name = (other['name'] ?? '').toString().trim();
+                  final preview = (last['content'] ?? '').toString().trim();
+                  final ts = (last['created_at'] ?? '').toString().trim();
+                  DateTime? dt;
+                  try {
+                    if (ts.isNotEmpty) dt = DateTime.parse(ts);
+                  } catch (_) {}
+                  final unread = (c['unread_count'] is num)
+                      ? (c['unread_count'] as num).toInt()
+                      : 0;
+                  return Card(
+                    margin: const EdgeInsets.only(bottom: 8),
+                    child: ListTile(
+                      title: Text(
+                        name.isEmpty
+                            ? AppLocalizations.of(context)!.unknownSender
+                            : name,
                       ),
+                      subtitle: Text(
+                        preview.isEmpty ? '...' : preview,
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                      ),
+                      trailing: unread > 0
+                          ? CircleAvatar(
+                              radius: 11,
+                              backgroundColor: Theme.of(context).primaryColor,
+                              child: Text(
+                                unread.toString(),
+                                style: const TextStyle(
+                                  color: Colors.white,
+                                  fontSize: 11,
+                                ),
+                              ),
+                            )
+                          : (dt == null
+                              ? null
+                              : Text(
+                                  _relativeTime(context, dt),
+                                  style: Theme.of(context).textTheme.bodySmall,
+                                )),
+                      onTap: carId.isEmpty
+                          ? null
+                          : () {
+                              Navigator.pushNamed(
+                                context,
+                                '/chat/conversation',
+                                arguments: {
+                                  'carId': carId,
+                                  if (receiverId.isNotEmpty)
+                                    'receiverId': receiverId,
+                                },
+                              );
+                            },
                     ),
-                    maxLines: null,
-                    onSubmitted: (_) => _sendMessage(),
-                  ),
-                ),
-                const SizedBox(width: 8),
-                IconButton(
-                  onPressed: _sendMessage,
-                  icon: const Icon(Icons.send),
-                  style: IconButton.styleFrom(
-                    backgroundColor: Theme.of(context).primaryColor,
-                    foregroundColor: Colors.white,
-                  ),
-                ),
-              ],
-            ),
-          ),
-        ],
+                  );
+                },
+              ),
       ),
     );
   }
