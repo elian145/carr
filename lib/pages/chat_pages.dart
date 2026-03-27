@@ -321,6 +321,7 @@ class _ChatConversationPageState extends State<ChatConversationPage> {
   final ScrollController _scrollController = ScrollController();
   StreamSubscription<Map<String, dynamic>>? _messageSub;
   StreamSubscription<String>? _errorSub;
+  bool _isSending = false;
 
   @override
   void initState() {
@@ -373,20 +374,22 @@ class _ChatConversationPageState extends State<ChatConversationPage> {
   }
 
   Future<void> _sendMessage() async {
+    if (_isSending) return;
     final content = _messageController.text.trim();
     if (content.isEmpty) return;
-
-    if (WebSocketService.isConnected) {
-      WebSocketService.sendChatMessage(
-        widget.carId,
-        content,
-        receiverId: widget.receiverId,
-      );
-      _messageController.clear();
-      return;
-    }
+    setState(() => _isSending = true);
+    _messageController.clear();
 
     try {
+      if (WebSocketService.isConnected) {
+        WebSocketService.sendChatMessage(
+          widget.carId,
+          content,
+          receiverId: widget.receiverId,
+        );
+        return;
+      }
+
       final response = await ApiService.sendChatMessageByConversation(
         conversationId: widget.carId,
         content: content,
@@ -399,15 +402,24 @@ class _ChatConversationPageState extends State<ChatConversationPage> {
         });
         _scrollToBottom();
       }
-      _messageController.clear();
     } catch (e) {
       if (!mounted) return;
+      _messageController.text = content;
+      _messageController.selection = TextSelection.fromPosition(
+        TextPosition(offset: _messageController.text.length),
+      );
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
           content: Text(e.toString()),
           backgroundColor: Colors.red,
         ),
       );
+    } finally {
+      if (mounted) {
+        setState(() => _isSending = false);
+      } else {
+        _isSending = false;
+      }
     }
   }
 
@@ -519,7 +531,7 @@ class _ChatConversationPageState extends State<ChatConversationPage> {
                 ),
                 const SizedBox(width: 8),
                 IconButton(
-                  onPressed: _sendMessage,
+                  onPressed: _isSending ? null : _sendMessage,
                   icon: const Icon(Icons.send),
                   style: IconButton.styleFrom(
                     backgroundColor: Theme.of(context).primaryColor,
