@@ -34,6 +34,8 @@ class WebSocketService {
   static bool _isConnected = false;
   static bool _isConnecting = false;
   static String? _currentRoom;
+  static final List<Map<String, dynamic>> _pendingEmits =
+      <Map<String, dynamic>>[];
 
   // Callbacks
   static Function(Map<String, dynamic>)? onMessage;
@@ -65,6 +67,21 @@ class WebSocketService {
       _socket?.dispose();
     } catch (_) {}
     _socket = null;
+  }
+
+  static void _flushPendingEmits() {
+    if (_socket == null || !_isConnected) return;
+    if (_pendingEmits.isEmpty) return;
+    final pending = List<Map<String, dynamic>>.from(_pendingEmits);
+    _pendingEmits.clear();
+    for (final item in pending) {
+      try {
+        final event = (item['event'] ?? '').toString();
+        final data = item['data'];
+        if (event.isEmpty || data is! Map<String, dynamic>) continue;
+        _socket!.emit(event, data);
+      } catch (_) {}
+    }
   }
 
   // Connect to Socket.IO (with polling fallback)
@@ -112,6 +129,7 @@ class WebSocketService {
         _isConnected = true;
         _isConnecting = false;
         _emitConnected(true);
+        _flushPendingEmits();
         // Re-join room if we had one.
         final roomCar = _currentRoom;
         if (roomCar != null && roomCar.isNotEmpty) {
@@ -162,7 +180,6 @@ class WebSocketService {
       });
 
       _socket!.connect();
-      _isConnecting = false;
     } catch (e) {
       _isConnected = false;
       _isConnecting = false;
@@ -181,19 +198,18 @@ class WebSocketService {
     _isConnected = false;
     _isConnecting = false;
     _currentRoom = null;
+    _pendingEmits.clear();
     _emitConnected(false);
   }
 
   static void sendMessage(String event, Map<String, dynamic> data) {
     try {
       if (_socket == null || !_isConnected) {
-        unawaited(connect());
-        // Best-effort: emit after connect by slight delay.
-        Future.delayed(const Duration(milliseconds: 400), () {
-          try {
-            _socket?.emit(event, data);
-          } catch (_) {}
+        _pendingEmits.add(<String, dynamic>{
+          'event': event,
+          'data': Map<String, dynamic>.from(data),
         });
+        unawaited(connect());
         return;
       }
       _socket!.emit(event, data);

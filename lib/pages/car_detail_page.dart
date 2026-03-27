@@ -571,7 +571,14 @@ class _CarDetailPageState extends State<CarDetailPage> {
     final location = (car['location'] ?? car['city'] ?? '').toString();
 
     final seller = (car['seller'] is Map) ? (car['seller'] as Map) : null;
-    final receiverId = seller == null ? null : (seller['id'] ?? '').toString();
+    final receiverId = seller == null
+        ? null
+        : (seller['id'] ??
+                  seller['user_id'] ??
+                  seller['seller_id'] ??
+                  seller['owner_id'] ??
+                  '')
+              .toString();
 
     return Scaffold(
       appBar: AppBar(

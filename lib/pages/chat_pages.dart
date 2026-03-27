@@ -319,6 +319,7 @@ class _ChatConversationPageState extends State<ChatConversationPage> {
   final TextEditingController _messageController = TextEditingController();
   final ScrollController _scrollController = ScrollController();
   StreamSubscription<Map<String, dynamic>>? _messageSub;
+  StreamSubscription<String>? _errorSub;
 
   @override
   void initState() {
@@ -329,6 +330,7 @@ class _ChatConversationPageState extends State<ChatConversationPage> {
 
   void _setupWebSocketListeners() {
     _messageSub?.cancel();
+    _errorSub?.cancel();
     _messageSub = WebSocketService.messages.listen((message) {
       // Optional: filter by carId when payload includes it
       final payloadCarId = message['car_id']?.toString();
@@ -342,6 +344,16 @@ class _ChatConversationPageState extends State<ChatConversationPage> {
         _messages.add(ChatMessage.fromJson(message));
       });
       _scrollToBottom();
+    });
+    _errorSub = WebSocketService.errors.listen((err) {
+      if (!mounted) return;
+      if (err.trim().isEmpty) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(err),
+          backgroundColor: Colors.red,
+        ),
+      );
     });
   }
 
@@ -374,6 +386,7 @@ class _ChatConversationPageState extends State<ChatConversationPage> {
   @override
   void dispose() {
     _messageSub?.cancel();
+    _errorSub?.cancel();
     _messageController.dispose();
     _scrollController.dispose();
     WebSocketService.leaveChat();
