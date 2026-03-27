@@ -12,6 +12,32 @@ const bool kSideloadBuild = bool.fromEnvironment(
   defaultValue: false,
 );
 
+DateTime parseApiDateTime(dynamic raw) {
+  final text = raw?.toString().trim() ?? '';
+  if (text.isEmpty) return DateTime.now();
+  try {
+    final parsed = DateTime.parse(text);
+    final hasTimezone =
+        text.endsWith('Z') || RegExp(r'[+-]\d{2}:\d{2}$').hasMatch(text);
+    if (hasTimezone) {
+      return parsed.toLocal();
+    }
+    // Backend stores naive UTC timestamps; interpret them as UTC.
+    return DateTime.utc(
+      parsed.year,
+      parsed.month,
+      parsed.day,
+      parsed.hour,
+      parsed.minute,
+      parsed.second,
+      parsed.millisecond,
+      parsed.microsecond,
+    ).toLocal();
+  } catch (_) {
+    return DateTime.now();
+  }
+}
+
 class WebSocketService {
   static final StreamController<Map<String, dynamic>> _messagesController =
       StreamController<Map<String, dynamic>>.broadcast();
@@ -306,12 +332,6 @@ class ChatMessage {
   });
 
   factory ChatMessage.fromJson(Map<String, dynamic> json) {
-    DateTime parsedDate;
-    try {
-      parsedDate = DateTime.parse(json['created_at']?.toString() ?? '');
-    } catch (_) {
-      parsedDate = DateTime.now();
-    }
     return ChatMessage(
       id: (json['id'] ?? json['public_id'] ?? '').toString(),
       senderId: (json['sender_id'] ?? '').toString(),
@@ -321,7 +341,7 @@ class ChatMessage {
       messageType: (json['message_type'] ?? 'text').toString(),
       attachmentUrl: json['attachment_url']?.toString(),
       isRead: json['is_read'] == true,
-      createdAt: parsedDate,
+      createdAt: parseApiDateTime(json['created_at']),
       senderName: json['sender_name']?.toString(),
     );
   }
@@ -363,12 +383,6 @@ class AppNotification {
   });
 
   factory AppNotification.fromJson(Map<String, dynamic> json) {
-    DateTime parsedDate;
-    try {
-      parsedDate = DateTime.parse(json['created_at']?.toString() ?? '');
-    } catch (_) {
-      parsedDate = DateTime.now();
-    }
     return AppNotification(
       id: (json['id'] ?? '').toString(),
       title: (json['title'] ?? '').toString(),
@@ -376,7 +390,7 @@ class AppNotification {
       notificationType: (json['notification_type'] ?? 'message').toString(),
       isRead: json['is_read'] == true,
       data: json['data'] is Map<String, dynamic> ? json['data'] : null,
-      createdAt: parsedDate,
+      createdAt: parseApiDateTime(json['created_at']),
     );
   }
 

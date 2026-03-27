@@ -24,9 +24,12 @@ String _digitsLocalized(BuildContext context, String input) {
 
 String _relativeTime(BuildContext context, DateTime dateTime) {
   final now = DateTime.now();
-  final diff = now.difference(dateTime);
+  final diff = now.difference(dateTime.toLocal());
   final loc = AppLocalizations.of(context)!;
   String formatNum(int n) => _digitsLocalized(context, n.toString());
+  if (diff.isNegative) {
+    return loc.justNow;
+  }
   if (diff.inDays > 0) {
     return loc.timeDaysAgo(formatNum(diff.inDays));
   } else if (diff.inHours > 0) {
@@ -248,7 +251,7 @@ class _ChatListPageState extends State<ChatListPage> with WidgetsBindingObserver
                   final ts = (last['created_at'] ?? '').toString().trim();
                   DateTime? dt;
                   try {
-                    if (ts.isNotEmpty) dt = DateTime.parse(ts);
+                    if (ts.isNotEmpty) dt = parseApiDateTime(ts);
                   } catch (_) {}
                   final unread = (c['unread_count'] is num)
                       ? (c['unread_count'] as num).toInt()
