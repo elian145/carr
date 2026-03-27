@@ -1,16 +1,19 @@
 """
-Push notification utilities (FCM via firebase-admin or HTTP v1 API).
+Push notification utilities (FCM via firebase-admin).
 
-Requires:
-    - GOOGLE_APPLICATION_CREDENTIALS env var pointing to a service account JSON, OR
-    - The firebase-admin SDK initialised elsewhere.
+Supports two ways to provide the service account credentials:
+    1. GOOGLE_APPLICATION_CREDENTIALS env var pointing to a JSON file path.
+    2. FIREBASE_SERVICE_ACCOUNT env var containing the raw JSON string
+       (useful on PaaS like Render where the filesystem is ephemeral).
 
 Falls back to a no-op when firebase-admin is not installed or credentials are absent.
 """
 from __future__ import annotations
 
+import json
 import logging
 import os
+import tempfile
 
 logger = logging.getLogger(__name__)
 
@@ -26,15 +29,21 @@ def _ensure_firebase():
     _init_attempted = True
 
     creds_path = (os.environ.get("GOOGLE_APPLICATION_CREDENTIALS") or "").strip()
-    if not creds_path:
-        logger.info("FCM disabled: GOOGLE_APPLICATION_CREDENTIALS not set.")
+    creds_json = (os.environ.get("FIREBASE_SERVICE_ACCOUNT") or "").strip()
+
+    if not creds_path and not creds_json:
+        logger.info("FCM disabled: neither GOOGLE_APPLICATION_CREDENTIALS nor FIREBASE_SERVICE_ACCOUNT is set.")
         return None
 
     try:
         import firebase_admin  # type: ignore
         from firebase_admin import credentials  # type: ignore
 
-        cred = credentials.Certificate(creds_path)
+        if creds_json:
+            cred = credentials.Certificate(json.loads(creds_json))
+        else:
+            cred = credentials.Certificate(creds_path)
+
         _firebase_app = firebase_admin.initialize_app(cred)
         logger.info("Firebase Admin SDK initialised for push notifications.")
         return _firebase_app
