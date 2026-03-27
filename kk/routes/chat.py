@@ -267,6 +267,7 @@ def send_message(conversation_id: str):
 
         data = validate_input_sanitization(request.get_json(silent=True) or {})
         content = str(data.get("content") or "").strip()
+        listing_preview = data.get("listing_preview")
         if not content:
             return jsonify({"message": "content required"}), 400
         if len(content) > 4000:
@@ -310,6 +311,7 @@ def send_message(conversation_id: str):
             car_id=car.id,
             content=content,
             message_type="text",
+            listing_preview=listing_preview if isinstance(listing_preview, dict) else None,
             is_read=False,
         )
         db.session.add(msg)

@@ -189,6 +189,7 @@ def register_socketio_handlers(socketio) -> None:
         car_id_raw = str(data.get("car_id") or "").strip()
         content = str(data.get("content") or "").strip()
         receiver_public = str(data.get("receiver_id") or "").strip()
+        listing_preview = data.get("listing_preview")
 
         if not car_id_raw:
             emit("error", {"message": "car_id required"})
@@ -232,6 +233,7 @@ def register_socketio_handlers(socketio) -> None:
             car_id=car.id,
             content=content,
             message_type="text",
+            listing_preview=listing_preview if isinstance(listing_preview, dict) else None,
             is_read=False,
             created_at=utcnow(),
         )

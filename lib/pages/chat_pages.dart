@@ -478,7 +478,7 @@ class _ChatConversationPageState extends State<ChatConversationPage>
   bool _isTyping = false;
   String? _otherUserTypingName;
   Map<String, dynamic>? _listingPreview;
-  bool _loadingListingPreview = false;
+  bool _pendingInitialListingContext = false;
 
   @override
   void initState() {
@@ -486,6 +486,7 @@ class _ChatConversationPageState extends State<ChatConversationPage>
     _listingPreview = widget.initialListingPreview == null
         ? null
         : Map<String, dynamic>.from(widget.initialListingPreview!);
+    _pendingInitialListingContext = _listingPreview != null;
     final initialDraft = widget.initialDraft?.trim() ?? '';
     if (initialDraft.isNotEmpty) {
       _messageController.text = initialDraft;
@@ -497,30 +498,9 @@ class _ChatConversationPageState extends State<ChatConversationPage>
     _scrollController.addListener(_onScroll);
     _setupWebSocketListeners();
     _setupTypingListener();
-    _loadListingPreview();
     _loadHistory();
     _joinChat();
     _startPolling();
-  }
-
-  Future<void> _loadListingPreview() async {
-    if (_loadingListingPreview) return;
-    setState(() => _loadingListingPreview = true);
-    try {
-      final car = await ApiService.getCar(widget.carId);
-      if (!mounted) return;
-      setState(() {
-        _listingPreview = car;
-      });
-    } catch (_) {
-      // Keep chat usable even if listing metadata cannot be loaded.
-    } finally {
-      if (mounted) {
-        setState(() => _loadingListingPreview = false);
-      } else {
-        _loadingListingPreview = false;
-      }
-    }
   }
 
   void _setupTypingListener() {
@@ -942,12 +922,16 @@ class _ChatConversationPageState extends State<ChatConversationPage>
     _messageController.clear();
 
     try {
+      final listingPreviewForMessage =
+          _pendingInitialListingContext ? _listingPreview : null;
       if (WebSocketService.isConnected) {
         WebSocketService.sendChatMessage(
           widget.carId,
           content,
           receiverId: widget.receiverId,
+          listingPreview: listingPreviewForMessage,
         );
+        _pendingInitialListingContext = false;
         return;
       }
 
@@ -955,11 +939,13 @@ class _ChatConversationPageState extends State<ChatConversationPage>
         conversationId: widget.carId,
         content: content,
         receiverId: widget.receiverId,
+        listingPreview: listingPreviewForMessage,
       );
       final msg = response['message'];
       if (msg is Map<String, dynamic> && mounted) {
         setState(() {
           _addMessageIfMissing(ChatMessage.fromJson(msg));
+          _pendingInitialListingContext = false;
         });
         _scrollToBottom();
       }
@@ -1119,8 +1105,22 @@ class _ChatConversationPageState extends State<ChatConversationPage>
   String _listingTitle(Map<String, dynamic> car) {
     final title = (car['title'] ?? '').toString().trim();
     if (title.isNotEmpty) return title;
+    final details = [
+      (car['brand'] ?? '').toString().trim(),
+      (car['model'] ?? '').toString().trim(),
+      (car['trim'] ?? '').toString().trim(),
+    ].where((value) => value.isNotEmpty).join(' ');
+    if (details.isNotEmpty) return details;
     return '${car['brand'] ?? ''} ${car['model'] ?? ''} ${car['year'] ?? ''}'
         .trim();
+  }
+
+  String _listingSpecs(Map<String, dynamic> car) {
+    return [
+      (car['brand'] ?? '').toString().trim(),
+      (car['model'] ?? '').toString().trim(),
+      (car['trim'] ?? '').toString().trim(),
+    ].where((value) => value.isNotEmpty).join(' ');
   }
 
   String _listingPrice(Map<String, dynamic> car) {
@@ -1131,30 +1131,20 @@ class _ChatConversationPageState extends State<ChatConversationPage>
   }
 
   String _listingImageUrl(Map<String, dynamic> car) {
-    final primary = (car['image_url'] ?? '').toString().trim();
-    if (primary.isNotEmpty) return buildMediaUrl(primary);
     final images = car['images'];
     if (images is List && images.isNotEmpty) {
       final first = images.first?.toString() ?? '';
-      return buildMediaUrl(first);
+      if (first.trim().isNotEmpty) return buildMediaUrl(first);
     }
+    final primary = (car['image_url'] ?? '').toString().trim();
+    if (primary.isNotEmpty) return buildMediaUrl(primary);
     return '';
   }
 
-  Widget _buildListingCard(BuildContext context) {
-    final car = _listingPreview;
-    if (car == null) {
-      if (_loadingListingPreview) {
-        return const Padding(
-          padding: EdgeInsets.fromLTRB(16, 12, 16, 0),
-          child: LinearProgressIndicator(minHeight: 2),
-        );
-      }
-      return const SizedBox.shrink();
-    }
-
+  Widget _buildListingCard(BuildContext context, Map<String, dynamic> car) {
     final imageUrl = _listingImageUrl(car);
     final title = _listingTitle(car);
+    final specs = _listingSpecs(car);
     final price = _listingPrice(car);
     final location =
         (car['location'] ?? car['city'] ?? '').toString().trim();
@@ -1165,7 +1155,7 @@ class _ChatConversationPageState extends State<ChatConversationPage>
         Navigator.pushNamed(
           context,
           '/car_detail',
-          arguments: {'carId': widget.carId},
+          arguments: {'carId': (car['id'] ?? widget.carId).toString()},
         );
       },
       child: Container(
@@ -1191,7 +1181,7 @@ class _ChatConversationPageState extends State<ChatConversationPage>
                       width: 72,
                       height: 72,
                       fit: BoxFit.cover,
-                      errorBuilder: (_, __, ___) => Container(
+                      errorBuilder: (context, error, stackTrace) => Container(
                         width: 72,
                         height: 72,
                         color: Colors.black12,
@@ -1213,6 +1203,15 @@ class _ChatConversationPageState extends State<ChatConversationPage>
                     overflow: TextOverflow.ellipsis,
                     style: const TextStyle(fontWeight: FontWeight.w700),
                   ),
+                  if (specs.isNotEmpty && specs != title) ...[
+                    const SizedBox(height: 4),
+                    Text(
+                      specs,
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                      style: Theme.of(context).textTheme.bodySmall,
+                    ),
+                  ],
                   if (price.isNotEmpty) ...[
                     const SizedBox(height: 4),
                     Text(
@@ -1254,15 +1253,6 @@ class _ChatConversationPageState extends State<ChatConversationPage>
           ],
         ),
       ),
-    );
-  }
-
-  Widget _buildComposerListingCard(BuildContext context) {
-    final car = _listingPreview;
-    if (car == null) return const SizedBox.shrink();
-    return Padding(
-      padding: const EdgeInsets.only(bottom: 10),
-      child: _buildListingCard(context),
     );
   }
 
@@ -1385,6 +1375,24 @@ class _ChatConversationPageState extends State<ChatConversationPage>
                                       style: TextStyle(color: isMe ? Colors.white : null),
                                     ),
                                   ),
+                              ] else if (message.listingPreview != null) ...[
+                                if (message.content.isNotEmpty)
+                                  Padding(
+                                    padding: const EdgeInsets.only(bottom: 8),
+                                    child: Text(
+                                      message.content,
+                                      style: TextStyle(
+                                        color: isMe ? Colors.white : null,
+                                      ),
+                                    ),
+                                  ),
+                                ConstrainedBox(
+                                  constraints: const BoxConstraints(maxWidth: 280),
+                                  child: _buildListingCard(
+                                    context,
+                                    message.listingPreview!,
+                                  ),
+                                ),
                               ] else if (message.messageType == 'video' &&
                                   message.attachmentUrl != null &&
                                   message.attachmentUrl!.isNotEmpty) ...[
@@ -1476,7 +1484,6 @@ class _ChatConversationPageState extends State<ChatConversationPage>
             child: Column(
               mainAxisSize: MainAxisSize.min,
               children: [
-                if (_listingPreview != null) _buildComposerListingCard(context),
                 Row(
                   children: [
                     IconButton(
@@ -1496,10 +1503,7 @@ class _ChatConversationPageState extends State<ChatConversationPage>
                           ),
                         ),
                         maxLines: null,
-                        onChanged: (value) {
-                          _onTextChanged(value);
-                          setState(() {});
-                        },
+                        onChanged: _onTextChanged,
                         onSubmitted: (_) => _sendMessage(),
                       ),
                     ),

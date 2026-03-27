@@ -402,6 +402,7 @@ class Message(db.Model):
     content = db.Column(db.Text, nullable=False)
     message_type = db.Column(db.String(20), default='text')  # text, image, file
     attachment_url = db.Column(db.Text, nullable=True)
+    listing_preview = db.Column(db.JSON, nullable=True)
     is_read = db.Column(db.Boolean, default=False, index=True)
     created_at = db.Column(db.DateTime, default=utcnow, index=True)
 
@@ -420,6 +421,7 @@ class Message(db.Model):
             'content': self.content,
             'message_type': self.message_type,
             'attachment_url': self.attachment_url,
+            'listing_preview': self.listing_preview,
             'is_read': self.is_read,
             'created_at': self.created_at.isoformat() if self.created_at else None,
             'sender_name': f"{self.sender.first_name} {self.sender.last_name}" if self.sender else None

@@ -682,6 +682,7 @@ class _CarDetailPageState extends State<CarDetailPage> {
                                   'images': car['images'],
                                   'brand': car['brand'],
                                   'model': car['model'],
+                                  'trim': car['trim'],
                                   'year': car['year'],
                                 },
                               },

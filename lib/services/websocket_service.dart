@@ -281,11 +281,15 @@ class WebSocketService {
     String carId,
     String content, {
     String? receiverId,
+    Map<String, dynamic>? listingPreview,
   }) {
-    final messageData = {'car_id': carId, 'content': content};
+    final messageData = <String, dynamic>{'car_id': carId, 'content': content};
 
     if (receiverId != null) {
       messageData['receiver_id'] = receiverId;
+    }
+    if (listingPreview != null && listingPreview.isNotEmpty) {
+      messageData['listing_preview'] = listingPreview;
     }
 
     sendMessage('send_message', messageData);
@@ -314,6 +318,7 @@ class ChatMessage {
   final String content;
   final String messageType;
   final String? attachmentUrl;
+  final Map<String, dynamic>? listingPreview;
   final bool isRead;
   final DateTime createdAt;
   final String? senderName;
@@ -326,6 +331,7 @@ class ChatMessage {
     required this.content,
     required this.messageType,
     this.attachmentUrl,
+    this.listingPreview,
     required this.isRead,
     required this.createdAt,
     this.senderName,
@@ -340,6 +346,11 @@ class ChatMessage {
       content: (json['content'] ?? '').toString(),
       messageType: (json['message_type'] ?? 'text').toString(),
       attachmentUrl: json['attachment_url']?.toString(),
+      listingPreview: json['listing_preview'] is Map
+          ? Map<String, dynamic>.from(
+              (json['listing_preview'] as Map).cast<String, dynamic>(),
+            )
+          : null,
       isRead: json['is_read'] == true,
       createdAt: parseApiDateTime(json['created_at']),
       senderName: json['sender_name']?.toString(),
@@ -355,6 +366,7 @@ class ChatMessage {
       'content': content,
       'message_type': messageType,
       'attachment_url': attachmentUrl,
+      'listing_preview': listingPreview,
       'is_read': isRead,
       'created_at': createdAt.toIso8601String(),
       'sender_name': senderName,

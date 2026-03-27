@@ -821,10 +821,14 @@ class ApiService {
     required String conversationId,
     required String content,
     String? receiverId,
+    Map<String, dynamic>? listingPreview,
   }) async {
     final payload = <String, dynamic>{'content': content};
     if (receiverId != null && receiverId.trim().isNotEmpty) {
       payload['receiver_id'] = receiverId.trim();
+    }
+    if (listingPreview != null && listingPreview.isNotEmpty) {
+      payload['listing_preview'] = listingPreview;
     }
     return await _makeAuthenticatedRequest(
       'POST',

@@ -11098,6 +11098,7 @@ class _CarDetailsPageState extends State<CarDetailsPage> {
               'images': car!['images'],
               'brand': car!['brand'],
               'model': car!['model'],
+              'trim': car!['trim'],
               'year': car!['year'],
             },
           ),
