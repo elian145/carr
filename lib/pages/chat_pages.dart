@@ -1156,82 +1156,59 @@ class _ChatConversationPageState extends State<ChatConversationPage>
           borderRadius: BorderRadius.circular(14),
           border: Border.all(color: Theme.of(context).dividerColor),
         ),
-        child: Row(
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             ClipRRect(
               borderRadius: BorderRadius.circular(10),
               child: imageUrl.isEmpty
                   ? Container(
-                      width: 72,
-                      height: 72,
+                      width: double.infinity,
+                      height: 140,
                       color: Colors.black12,
                       child: const Icon(Icons.directions_car),
                     )
                   : Image.network(
                       imageUrl,
-                      width: 72,
-                      height: 72,
+                      width: double.infinity,
+                      height: 140,
                       fit: BoxFit.cover,
                       errorBuilder: (context, error, stackTrace) => Container(
-                        width: 72,
-                        height: 72,
+                        width: double.infinity,
+                        height: 140,
                         color: Colors.black12,
                         child: const Icon(Icons.directions_car),
                       ),
                     ),
             ),
-            const SizedBox(width: 12),
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    title.isEmpty
-                        ? (AppLocalizations.of(context)?.listingTitle ??
-                            'Listing')
-                        : title,
-                    maxLines: 2,
-                    overflow: TextOverflow.ellipsis,
-                    style: const TextStyle(fontWeight: FontWeight.w700),
-                  ),
-                  if (price.isNotEmpty) ...[
-                    const SizedBox(height: 4),
-                    Text(
-                      price,
-                      style: TextStyle(
-                        color: Theme.of(context).primaryColor,
-                        fontWeight: FontWeight.w600,
-                      ),
-                    ),
-                  ],
-                  if (location.isNotEmpty) ...[
-                    const SizedBox(height: 4),
-                    Text(
-                      location,
-                      maxLines: 1,
-                      overflow: TextOverflow.ellipsis,
-                      style: Theme.of(context).textTheme.bodySmall,
-                    ),
-                  ],
-                ],
-              ),
+            const SizedBox(height: 12),
+            Text(
+              title.isEmpty
+                  ? (AppLocalizations.of(context)?.listingTitle ?? 'Listing')
+                  : title,
+              maxLines: 2,
+              overflow: TextOverflow.ellipsis,
+              style: const TextStyle(fontWeight: FontWeight.w700),
             ),
-            const SizedBox(width: 8),
-            Column(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                Icon(
-                  Icons.open_in_new,
-                  size: 18,
+            if (price.isNotEmpty) ...[
+              const SizedBox(height: 4),
+              Text(
+                price,
+                style: TextStyle(
                   color: Theme.of(context).primaryColor,
+                  fontWeight: FontWeight.w600,
                 ),
-                const SizedBox(height: 4),
-                Text(
-                  'Open',
-                  style: Theme.of(context).textTheme.bodySmall,
-                ),
-              ],
-            ),
+              ),
+            ],
+            if (location.isNotEmpty) ...[
+              const SizedBox(height: 4),
+              Text(
+                location,
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+                style: Theme.of(context).textTheme.bodySmall,
+              ),
+            ],
           ],
         ),
       ),
