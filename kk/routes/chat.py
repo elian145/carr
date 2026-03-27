@@ -1,8 +1,10 @@
 from __future__ import annotations
 
 from datetime import datetime
+import os
+import secrets
 
-from flask import Blueprint, jsonify, request
+from flask import Blueprint, current_app, jsonify, request
 from flask_jwt_extended import jwt_required
 from sqlalchemy import func, or_
 
@@ -12,6 +14,79 @@ from ..push import send_push
 from ..security import rate_limit, validate_input_sanitization
 
 bp = Blueprint("chat", __name__)
+
+_CHAT_IMAGE_EXTENSIONS = {".jpg", ".jpeg", ".png", ".gif", ".webp"}
+_CHAT_VIDEO_EXTENSIONS = {".mp4", ".mov", ".avi", ".mkv", ".webm"}
+
+
+def _resolve_chat_receiver(me: User, car: Car, receiver_public: str | None) -> User | None:
+    receiver = None
+    raw = (receiver_public or "").strip()
+    if raw:
+        receiver = User.query.filter_by(public_id=raw).first()
+    if receiver is None:
+        if car.seller_id != me.id:
+            receiver = db.session.get(User, car.seller_id)
+        else:
+            last = (
+                Message.query.filter(
+                    Message.car_id == car.id,
+                    or_(Message.sender_id == me.id, Message.receiver_id == me.id),
+                )
+                .order_by(Message.created_at.desc())
+                .first()
+            )
+            if last:
+                other_id = last.receiver_id if last.sender_id == me.id else last.sender_id
+                receiver = db.session.get(User, other_id)
+    if receiver is None or receiver.id == me.id:
+        return None
+    return receiver
+
+
+def _upload_chat_attachment(file_storage, *, allowed_extensions: set[str], subdir: str, content_types: dict[str, str]) -> str:
+    ext = os.path.splitext(file_storage.filename or "")[1].lower()
+    if ext not in allowed_extensions:
+        raise ValueError("Unsupported attachment format")
+
+    r2_bucket = current_app.config.get("R2_BUCKET_NAME")
+    r2_account = current_app.config.get("R2_ACCOUNT_ID")
+    r2_key = current_app.config.get("R2_ACCESS_KEY_ID")
+    r2_secret = current_app.config.get("R2_SECRET_ACCESS_KEY")
+    r2_public = (current_app.config.get("R2_PUBLIC_URL") or "").strip().rstrip("/")
+
+    if r2_bucket and r2_account and r2_key and r2_secret and r2_public:
+        import boto3
+        from botocore.config import Config as BotoConfig
+
+        region = (os.environ.get("R2_REGION") or "auto").strip() or "auto"
+        endpoint = f"https://{r2_account}.r2.cloudflarestorage.com"
+        s3 = boto3.client(
+            "s3",
+            region_name=region,
+            endpoint_url=endpoint,
+            aws_access_key_id=r2_key,
+            aws_secret_access_key=r2_secret,
+            config=BotoConfig(signature_version="s3v4"),
+        )
+        obj_key = f"{subdir}/{secrets.token_hex(16)}{ext}"
+        file_storage.seek(0)
+        body = file_storage.read()
+        s3.put_object(
+            Bucket=r2_bucket,
+            Key=obj_key,
+            Body=body,
+            ContentType=content_types.get(ext, "application/octet-stream"),
+        )
+        return f"{r2_public}/{obj_key}"
+
+    upload_dir = os.path.join(current_app.root_path, "static", subdir)
+    os.makedirs(upload_dir, exist_ok=True)
+    safe_name = f"{secrets.token_hex(16)}{ext}"
+    path = os.path.join(upload_dir, safe_name)
+    file_storage.seek(0)
+    file_storage.save(path)
+    return f"/static/{subdir}/{safe_name}"
 
 
 def _get_car_by_any_id(car_id: str):
@@ -266,10 +341,6 @@ def send_message(conversation_id: str):
 def send_image_message(conversation_id: str):
     """Send an image message. The image file is uploaded to R2 (or stored locally)."""
     try:
-        from flask import current_app
-        import secrets as _secrets
-        import os as _os
-
         me = get_current_user()
         if not me:
             return jsonify({"message": "Unauthorized"}), 401
@@ -286,79 +357,28 @@ def send_image_message(conversation_id: str):
         if not file or not file.filename:
             return jsonify({"message": "No image file provided"}), 400
 
-        ext = _os.path.splitext(file.filename)[1].lower()
-        if ext not in (".jpg", ".jpeg", ".png", ".gif", ".webp"):
-            return jsonify({"message": "Unsupported image format"}), 400
-
         receiver_public = (
             request.form.get("receiver_id") or request.form.get("receiverId") or ""
         ).strip()
-        receiver = None
-        if receiver_public:
-            receiver = User.query.filter_by(public_id=receiver_public).first()
-        if receiver is None:
-            if car.seller_id != me.id:
-                receiver = db.session.get(User, car.seller_id)
-            else:
-                last = (
-                    Message.query.filter(
-                        Message.car_id == car.id,
-                        or_(Message.sender_id == me.id, Message.receiver_id == me.id),
-                    )
-                    .order_by(Message.created_at.desc())
-                    .first()
-                )
-                if last:
-                    other_id = last.receiver_id if last.sender_id == me.id else last.sender_id
-                    receiver = db.session.get(User, other_id)
+        receiver = _resolve_chat_receiver(me, car, receiver_public)
         if receiver is None:
             return jsonify({"message": "receiver_id required"}), 400
-        if receiver.id == me.id:
-            return jsonify({"message": "Invalid receiver"}), 400
 
-        attachment_url = None
-
-        # Try R2 upload first.
-        r2_bucket = current_app.config.get("R2_BUCKET_NAME")
-        r2_account = current_app.config.get("R2_ACCOUNT_ID")
-        r2_key = current_app.config.get("R2_ACCESS_KEY_ID")
-        r2_secret = current_app.config.get("R2_SECRET_ACCESS_KEY")
-        r2_public = (current_app.config.get("R2_PUBLIC_URL") or "").strip().rstrip("/")
-
-        if r2_bucket and r2_account and r2_key and r2_secret and r2_public:
-            import boto3
-            from botocore.config import Config as BotoConfig
-            region = (_os.environ.get("R2_REGION") or "auto").strip() or "auto"
-            endpoint = f"https://{r2_account}.r2.cloudflarestorage.com"
-            s3 = boto3.client(
-                "s3",
-                region_name=region,
-                endpoint_url=endpoint,
-                aws_access_key_id=r2_key,
-                aws_secret_access_key=r2_secret,
-                config=BotoConfig(signature_version="s3v4"),
+        try:
+            attachment_url = _upload_chat_attachment(
+                file,
+                allowed_extensions=_CHAT_IMAGE_EXTENSIONS,
+                subdir="chat_uploads",
+                content_types={
+                    ".jpg": "image/jpeg",
+                    ".jpeg": "image/jpeg",
+                    ".png": "image/png",
+                    ".gif": "image/gif",
+                    ".webp": "image/webp",
+                },
             )
-            obj_key = f"chat_attachments/{_secrets.token_hex(16)}{ext}"
-            ct = {
-                ".jpg": "image/jpeg",
-                ".jpeg": "image/jpeg",
-                ".png": "image/png",
-                ".gif": "image/gif",
-                ".webp": "image/webp",
-            }.get(ext, "application/octet-stream")
-            file.seek(0)
-            body = file.read()
-            s3.put_object(Bucket=r2_bucket, Key=obj_key, Body=body, ContentType=ct)
-            attachment_url = f"{r2_public}/{obj_key}"
-        else:
-            # Fallback: store locally.
-            upload_dir = _os.path.join(current_app.root_path, "static", "chat_uploads")
-            _os.makedirs(upload_dir, exist_ok=True)
-            safe_name = f"{_secrets.token_hex(16)}{ext}"
-            path = _os.path.join(upload_dir, safe_name)
-            file.seek(0)
-            file.save(path)
-            attachment_url = f"/static/chat_uploads/{safe_name}"
+        except ValueError:
+            return jsonify({"message": "Unsupported image format"}), 400
 
         content = (request.form.get("content") or "").strip() or "[Image]"
 
@@ -377,6 +397,70 @@ def send_image_message(conversation_id: str):
     except Exception:
         db.session.rollback()
         return jsonify({"message": "Failed to send image message"}), 500
+
+
+@bp.route("/api/chat/<conversation_id>/send_video", methods=["POST"])
+@jwt_required()
+@rate_limit(max_requests=20, window_minutes=10, per_ip=False)
+def send_video_message(conversation_id: str):
+    """Send a video message. The video file is uploaded to R2 (or stored locally)."""
+    try:
+        me = get_current_user()
+        if not me:
+            return jsonify({"message": "Unauthorized"}), 401
+
+        car = _get_car_by_any_id(str(conversation_id))
+        if not car:
+            return jsonify({"message": "Listing not found"}), 404
+
+        file = None
+        for key in ("file", "video", "attachment"):
+            if key in request.files:
+                file = request.files[key]
+                break
+        if not file or not file.filename:
+            return jsonify({"message": "No video file provided"}), 400
+
+        receiver_public = (
+            request.form.get("receiver_id") or request.form.get("receiverId") or ""
+        ).strip()
+        receiver = _resolve_chat_receiver(me, car, receiver_public)
+        if receiver is None:
+            return jsonify({"message": "receiver_id required"}), 400
+
+        try:
+            attachment_url = _upload_chat_attachment(
+                file,
+                allowed_extensions=_CHAT_VIDEO_EXTENSIONS,
+                subdir="chat_videos",
+                content_types={
+                    ".mp4": "video/mp4",
+                    ".mov": "video/quicktime",
+                    ".avi": "video/x-msvideo",
+                    ".mkv": "video/x-matroska",
+                    ".webm": "video/webm",
+                },
+            )
+        except ValueError:
+            return jsonify({"message": "Unsupported video format"}), 400
+
+        content = (request.form.get("content") or "").strip() or "[Video]"
+
+        msg = Message(
+            sender_id=me.id,
+            receiver_id=receiver.id,
+            car_id=car.id,
+            content=content,
+            message_type="video",
+            attachment_url=attachment_url,
+            is_read=False,
+        )
+        db.session.add(msg)
+        db.session.commit()
+        return jsonify({"success": True, "message": msg.to_dict()}), 201
+    except Exception:
+        db.session.rollback()
+        return jsonify({"message": "Failed to send video message"}), 500
 
 
 @bp.route("/api/chat/unread_count", methods=["GET"])

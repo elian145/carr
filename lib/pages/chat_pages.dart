@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'dart:async';
 import 'package:image_picker/image_picker.dart';
 import 'package:provider/provider.dart';
+import 'package:video_player/video_player.dart';
 import '../l10n/app_localizations.dart';
 import '../services/websocket_service.dart';
 import '../services/auth_service.dart';
@@ -74,6 +75,16 @@ void _showFullImage(BuildContext context, String url) {
   );
 }
 
+void _showVideoPlayerDialog(BuildContext context, String url) {
+  showDialog(
+    context: context,
+    builder: (_) => Dialog(
+      insetPadding: const EdgeInsets.all(12),
+      child: _ChatVideoPlayer(url: url, autoplay: true),
+    ),
+  );
+}
+
 bool _isIgnorableSocketError(String err) {
   final text = err.toLowerCase();
   return text.contains('was not upgraded to websocket') ||
@@ -99,6 +110,99 @@ class _ThemeToggleAction extends StatelessWidget {
           tooltip: themeProvider.isDarkMode
               ? loc.switchToLightMode
               : loc.switchToDarkMode,
+        );
+      },
+    );
+  }
+}
+
+class _ChatVideoPlayer extends StatefulWidget {
+  final String url;
+  final bool autoplay;
+
+  const _ChatVideoPlayer({required this.url, this.autoplay = false});
+
+  @override
+  State<_ChatVideoPlayer> createState() => _ChatVideoPlayerState();
+}
+
+class _ChatVideoPlayerState extends State<_ChatVideoPlayer> {
+  VideoPlayerController? _controller;
+  Future<void>? _initFuture;
+
+  @override
+  void initState() {
+    super.initState();
+    final controller = VideoPlayerController.networkUrl(Uri.parse(widget.url));
+    _controller = controller;
+    _initFuture = controller.initialize().then((_) {
+      controller.setLooping(false);
+      if (widget.autoplay) {
+        controller.play();
+      }
+      if (mounted) setState(() {});
+    });
+  }
+
+  @override
+  void dispose() {
+    _controller?.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final controller = _controller;
+    if (controller == null) {
+      return const SizedBox(height: 180, child: Center(child: CircularProgressIndicator()));
+    }
+    return FutureBuilder<void>(
+      future: _initFuture,
+      builder: (context, snapshot) {
+        if (snapshot.connectionState != ConnectionState.done) {
+          return const SizedBox(height: 180, child: Center(child: CircularProgressIndicator()));
+        }
+        if (!controller.value.isInitialized) {
+          return const SizedBox(height: 180, child: Center(child: Icon(Icons.broken_image)));
+        }
+        return Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            AspectRatio(
+              aspectRatio: controller.value.aspectRatio == 0
+                  ? 16 / 9
+                  : controller.value.aspectRatio,
+              child: Stack(
+                alignment: Alignment.center,
+                children: [
+                  VideoPlayer(controller),
+                  IconButton(
+                    onPressed: () {
+                      setState(() {
+                        if (controller.value.isPlaying) {
+                          controller.pause();
+                        } else {
+                          controller.play();
+                        }
+                      });
+                    },
+                    icon: Icon(
+                      controller.value.isPlaying
+                          ? Icons.pause_circle_filled
+                          : Icons.play_circle_fill,
+                      size: 54,
+                      color: Colors.white,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+            VideoProgressIndicator(
+              controller,
+              allowScrubbing: true,
+              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+            ),
+          ],
         );
       },
     );
@@ -360,6 +464,7 @@ class _ChatConversationPageState extends State<ChatConversationPage>
   static const int _perPage = 50;
   Timer? _pollTimer;
   Timer? _typingDebounce;
+  Timer? _scrollRetryTimer;
   bool _isTyping = false;
   String? _otherUserTypingName;
 
@@ -474,9 +579,7 @@ class _ChatConversationPageState extends State<ChatConversationPage>
         }
       });
       if (_messages.length > hadMessages) {
-        WidgetsBinding.instance.addPostFrameCallback((_) {
-          if (mounted) _scrollToBottom();
-        });
+        _scrollToBottom();
       }
     } catch (_) {}
   }
@@ -548,10 +651,7 @@ class _ChatConversationPageState extends State<ChatConversationPage>
         _currentPage = 1;
         _hasMoreMessages = result['has_more'] == true;
       });
-      WidgetsBinding.instance.addPostFrameCallback((_) {
-        if (!mounted) return;
-        _scrollToBottom();
-      });
+      _scrollToBottom(jump: true);
     } catch (_) {
       // Keep the page usable even if history fetch fails.
     } finally {
@@ -563,14 +663,35 @@ class _ChatConversationPageState extends State<ChatConversationPage>
     }
   }
 
-  void _scrollToBottom() {
-    if (_scrollController.hasClients) {
-      _scrollController.animateTo(
-        _scrollController.position.maxScrollExtent,
-        duration: const Duration(milliseconds: 300),
-        curve: Curves.easeOut,
-      );
-    }
+  void _scrollToBottom({bool jump = false}) {
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (!mounted || !_scrollController.hasClients) return;
+      final target = _scrollController.position.maxScrollExtent;
+      if (jump) {
+        _scrollController.jumpTo(target);
+      } else {
+        _scrollController.animateTo(
+          target,
+          duration: const Duration(milliseconds: 300),
+          curve: Curves.easeOut,
+        );
+      }
+      // Retry once shortly after layout updates (useful for long messages/images).
+      _scrollRetryTimer?.cancel();
+      _scrollRetryTimer = Timer(const Duration(milliseconds: 120), () {
+        if (!mounted || !_scrollController.hasClients) return;
+        final retryTarget = _scrollController.position.maxScrollExtent;
+        if (jump) {
+          _scrollController.jumpTo(retryTarget);
+        } else {
+          _scrollController.animateTo(
+            retryTarget,
+            duration: const Duration(milliseconds: 180),
+            curve: Curves.easeOut,
+          );
+        }
+      });
+    });
   }
 
   Future<void> _pickAndSendImage() async {
@@ -604,6 +725,67 @@ class _ChatConversationPageState extends State<ChatConversationPage>
     } finally {
       if (mounted) setState(() => _isSending = false);
     }
+  }
+
+  Future<void> _pickAndSendVideo() async {
+    if (_isSending) return;
+    try {
+      final picker = ImagePicker();
+      final picked = await picker.pickVideo(
+        source: ImageSource.gallery,
+        maxDuration: const Duration(minutes: 3),
+      );
+      if (picked == null || !mounted) return;
+      setState(() => _isSending = true);
+      final response = await ApiService.sendChatVideo(
+        conversationId: widget.carId,
+        videoFile: picked,
+        receiverId: widget.receiverId,
+      );
+      final msg = response['message'];
+      if (msg is Map<String, dynamic> && mounted) {
+        setState(() {
+          _addMessageIfMissing(ChatMessage.fromJson(msg));
+        });
+        _scrollToBottom();
+      }
+    } catch (e) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text(e.toString()), backgroundColor: Colors.red),
+      );
+    } finally {
+      if (mounted) setState(() => _isSending = false);
+    }
+  }
+
+  Future<void> _showAttachmentPicker() async {
+    await showModalBottomSheet<void>(
+      context: context,
+      builder: (context) => SafeArea(
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            ListTile(
+              leading: const Icon(Icons.image),
+              title: const Text('Send image'),
+              onTap: () {
+                Navigator.pop(context);
+                _pickAndSendImage();
+              },
+            ),
+            ListTile(
+              leading: const Icon(Icons.videocam),
+              title: const Text('Send video'),
+              onTap: () {
+                Navigator.pop(context);
+                _pickAndSendVideo();
+              },
+            ),
+          ],
+        ),
+      ),
+    );
   }
 
   Future<void> _sendMessage() async {
@@ -661,6 +843,7 @@ class _ChatConversationPageState extends State<ChatConversationPage>
     WidgetsBinding.instance.removeObserver(this);
     _pollTimer?.cancel();
     _typingDebounce?.cancel();
+    _scrollRetryTimer?.cancel();
     if (_isTyping) {
       WebSocketService.sendTypingStop(widget.carId);
     }
@@ -866,7 +1049,9 @@ class _ChatConversationPageState extends State<ChatConversationPage>
                                   message.senderName ?? AppLocalizations.of(context)!.unknownSender,
                                   style: Theme.of(context).textTheme.bodySmall,
                                 ),
-                              if (message.messageType == 'image' && message.attachmentUrl != null && message.attachmentUrl!.isNotEmpty) ...[
+                              if (message.messageType == 'image' &&
+                                  message.attachmentUrl != null &&
+                                  message.attachmentUrl!.isNotEmpty) ...[
                                 GestureDetector(
                                   onTap: () => _showFullImage(context, message.attachmentUrl!),
                                   child: ClipRRect(
@@ -897,6 +1082,53 @@ class _ChatConversationPageState extends State<ChatConversationPage>
                                   ),
                                 ),
                                 if (message.content.isNotEmpty && message.content != '[Image]')
+                                  Padding(
+                                    padding: const EdgeInsets.only(top: 6),
+                                    child: Text(
+                                      message.content,
+                                      style: TextStyle(color: isMe ? Colors.white : null),
+                                    ),
+                                  ),
+                              ] else if (message.messageType == 'video' &&
+                                  message.attachmentUrl != null &&
+                                  message.attachmentUrl!.isNotEmpty) ...[
+                                GestureDetector(
+                                  onTap: () => _showVideoPlayerDialog(
+                                    context,
+                                    message.attachmentUrl!,
+                                  ),
+                                  child: Container(
+                                    width: 220,
+                                    height: 150,
+                                    decoration: BoxDecoration(
+                                      color: Colors.black87,
+                                      borderRadius: BorderRadius.circular(12),
+                                    ),
+                                    child: Stack(
+                                      alignment: Alignment.center,
+                                      children: [
+                                        const Icon(
+                                          Icons.videocam,
+                                          size: 46,
+                                          color: Colors.white54,
+                                        ),
+                                        Container(
+                                          decoration: const BoxDecoration(
+                                            shape: BoxShape.circle,
+                                            color: Colors.black45,
+                                          ),
+                                          padding: const EdgeInsets.all(8),
+                                          child: const Icon(
+                                            Icons.play_arrow,
+                                            color: Colors.white,
+                                            size: 30,
+                                          ),
+                                        ),
+                                      ],
+                                    ),
+                                  ),
+                                ),
+                                if (message.content.isNotEmpty && message.content != '[Video]')
                                   Padding(
                                     padding: const EdgeInsets.only(top: 6),
                                     child: Text(
@@ -948,9 +1180,9 @@ class _ChatConversationPageState extends State<ChatConversationPage>
             child: Row(
               children: [
                 IconButton(
-                  onPressed: _isSending ? null : _pickAndSendImage,
-                  icon: const Icon(Icons.image),
-                  tooltip: 'Send image',
+                  onPressed: _isSending ? null : _showAttachmentPicker,
+                  icon: const Icon(Icons.attach_file),
+                  tooltip: 'Send attachment',
                 ),
                 Expanded(
                   child: TextField(

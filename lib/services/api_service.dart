@@ -905,40 +905,64 @@ class ApiService {
     String? receiverId,
     String? caption,
   }) async {
-    final url = Uri.parse('$baseUrl/chat/$conversationId/send_image');
-    final req = http.MultipartRequest('POST', url);
-    req.headers.addAll(_getHeaders());
-    req.files.add(await http.MultipartFile.fromPath('image', imageFile.path));
-    if (receiverId != null && receiverId.trim().isNotEmpty) {
-      req.fields['receiver_id'] = receiverId.trim();
-    }
-    if (caption != null && caption.trim().isNotEmpty) {
-      req.fields['content'] = caption.trim();
-    }
-    final streamedResponse = await req.send().timeout(_uploadTimeout);
-    final response = await http.Response.fromStream(streamedResponse);
+    return _sendChatAttachment(
+      conversationId: conversationId,
+      endpointSuffix: 'send_image',
+      fieldName: 'image',
+      file: imageFile,
+      receiverId: receiverId,
+      caption: caption,
+    );
+  }
 
+  static Future<Map<String, dynamic>> sendChatVideo({
+    required String conversationId,
+    required XFile videoFile,
+    String? receiverId,
+    String? caption,
+  }) async {
+    return _sendChatAttachment(
+      conversationId: conversationId,
+      endpointSuffix: 'send_video',
+      fieldName: 'video',
+      file: videoFile,
+      receiverId: receiverId,
+      caption: caption,
+    );
+  }
+
+  static Future<Map<String, dynamic>> _sendChatAttachment({
+    required String conversationId,
+    required String endpointSuffix,
+    required String fieldName,
+    required XFile file,
+    String? receiverId,
+    String? caption,
+  }) async {
+    final url = Uri.parse('$baseUrl/chat/$conversationId/$endpointSuffix');
+
+    Future<http.Response> makeRequest() async {
+      final req = http.MultipartRequest('POST', url);
+      req.headers.addAll(_getHeaders());
+      req.files.add(await http.MultipartFile.fromPath(fieldName, file.path));
+      if (receiverId != null && receiverId.trim().isNotEmpty) {
+        req.fields['receiver_id'] = receiverId.trim();
+      }
+      if (caption != null && caption.trim().isNotEmpty) {
+        req.fields['content'] = caption.trim();
+      }
+      final streamedResponse = await req.send().timeout(_uploadTimeout);
+      return http.Response.fromStream(streamedResponse);
+    }
+
+    var response = await makeRequest();
     if (response.statusCode == 401) {
       final refreshed = await _refreshAccessToken();
       if (!refreshed) {
         await clearTokens();
         throw Exception('Authentication failed');
       }
-      final retryReq = http.MultipartRequest('POST', url);
-      retryReq.headers.addAll(_getHeaders());
-      retryReq.files.add(await http.MultipartFile.fromPath('image', imageFile.path));
-      if (receiverId != null && receiverId.trim().isNotEmpty) {
-        retryReq.fields['receiver_id'] = receiverId.trim();
-      }
-      if (caption != null && caption.trim().isNotEmpty) {
-        retryReq.fields['content'] = caption.trim();
-      }
-      final retryStreamedResponse = await retryReq.send().timeout(_uploadTimeout);
-      final retryResponse = await http.Response.fromStream(retryStreamedResponse);
-      if (retryResponse.statusCode < 200 || retryResponse.statusCode >= 300) {
-        _handleResponse(retryResponse);
-      }
-      return json.decode(retryResponse.body) as Map<String, dynamic>;
+      response = await makeRequest();
     }
 
     if (response.statusCode < 200 || response.statusCode >= 300) {
