@@ -21085,12 +21085,6 @@ class _ProfilePageState extends State<ProfilePage> {
                         (me?['phone_number'] ?? me?['phone'] ?? '').toString(),
                       ),
                     ],
-                    SizedBox(height: 16),
-                    _buildInfoRow(
-                      Icons.lock_outline,
-                      AppLocalizations.of(context)!.passwordLabel,
-                      '••••••••',
-                    ),
                   ],
                 ),
               ),

@@ -47,6 +47,38 @@ String _relativeTime(BuildContext context, DateTime dateTime) {
   return loc.justNow;
 }
 
+/// Best-effort timestamp string from API (snake_case / camelCase / conversation fallbacks).
+String _rawChatListTimestamp(Map<String, dynamic> last, Map<String, dynamic> conversation) {
+  String pick(Map<String, dynamic> m, List<String> keys) {
+    for (final k in keys) {
+      final v = m[k];
+      if (v == null) continue;
+      final s = v.toString().trim();
+      if (s.isNotEmpty && s != 'null') return s;
+    }
+    return '';
+  }
+
+  var s = pick(last, [
+    'created_at',
+    'createdAt',
+    'updated_at',
+    'updatedAt',
+    'timestamp',
+    'time',
+    'sent_at',
+    'sentAt',
+  ]);
+  if (s.isNotEmpty) return s;
+  s = pick(conversation, [
+    'updated_at',
+    'updatedAt',
+    'last_activity_at',
+    'lastActivityAt',
+  ]);
+  return s;
+}
+
 String _noMessagesText(BuildContext context) {
   return AppLocalizations.of(context)!.noMessagesYet;
 }
@@ -549,7 +581,7 @@ class _ChatListPageState extends State<ChatListPage> with WidgetsBindingObserver
                   final name = (other['name'] ?? '').toString().trim();
                   final carTitle = (c['car_title'] ?? '').toString().trim();
                   final preview = (last['content'] ?? '').toString().trim();
-                  final ts = (last['created_at'] ?? '').toString().trim();
+                  final ts = _rawChatListTimestamp(last, c);
                   DateTime? dt;
                   try {
                     if (ts.isNotEmpty) dt = parseApiDateTime(ts);
@@ -557,61 +589,49 @@ class _ChatListPageState extends State<ChatListPage> with WidgetsBindingObserver
                   final unread = (c['unread_count'] is num)
                       ? (c['unread_count'] as num).toInt()
                       : 0;
+                  final theme = Theme.of(context);
+                  final cs = theme.colorScheme;
+                  final nameStyle = TextStyle(
+                    fontSize: 16,
+                    fontWeight: FontWeight.w600,
+                    color: cs.onSurface,
+                  );
+                  final previewStyle = TextStyle(
+                    fontSize: 14,
+                    height: 1.3,
+                    color: cs.onSurfaceVariant,
+                  );
+                  final timeStyle = TextStyle(
+                    fontSize: 12,
+                    height: 1.2,
+                    color: cs.onSurfaceVariant,
+                  );
+                  final trailingTime = dt == null
+                      ? null
+                      : Text(
+                          _relativeTime(context, dt),
+                          textAlign: TextAlign.right,
+                          maxLines: 2,
+                          overflow: TextOverflow.ellipsis,
+                          style: timeStyle,
+                        );
+                  final trailingBadge = unread > 0
+                      ? CircleAvatar(
+                          radius: 11,
+                          backgroundColor: cs.primary,
+                          child: Text(
+                            unread.toString(),
+                            style: const TextStyle(
+                              color: Colors.white,
+                              fontSize: 11,
+                            ),
+                          ),
+                        )
+                      : null;
+                  final hasTrailing = trailingTime != null || trailingBadge != null;
                   return Card(
                     margin: const EdgeInsets.only(bottom: 8),
-                    child: ListTile(
-                      leading: CircleAvatar(
-                        backgroundColor: Theme.of(context).primaryColor.withAlpha(30),
-                        child: Icon(
-                          Icons.directions_car,
-                          color: Theme.of(context).primaryColor,
-                          size: 20,
-                        ),
-                      ),
-                      title: Text(
-                        name.isEmpty
-                            ? AppLocalizations.of(context)!.unknownSender
-                            : name,
-                      ),
-                      subtitle: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          if (carTitle.isNotEmpty)
-                            Text(
-                              carTitle,
-                              maxLines: 1,
-                              overflow: TextOverflow.ellipsis,
-                              style: TextStyle(
-                                fontSize: 12,
-                                color: Theme.of(context).primaryColor,
-                                fontWeight: FontWeight.w500,
-                              ),
-                            ),
-                          Text(
-                            preview.isEmpty ? '...' : preview,
-                            maxLines: 1,
-                            overflow: TextOverflow.ellipsis,
-                          ),
-                        ],
-                      ),
-                      trailing: unread > 0
-                          ? CircleAvatar(
-                              radius: 11,
-                              backgroundColor: Theme.of(context).primaryColor,
-                              child: Text(
-                                unread.toString(),
-                                style: const TextStyle(
-                                  color: Colors.white,
-                                  fontSize: 11,
-                                ),
-                              ),
-                            )
-                          : (dt == null
-                              ? null
-                              : Text(
-                                  _relativeTime(context, dt),
-                                  style: Theme.of(context).textTheme.bodySmall,
-                                )),
+                    child: InkWell(
                       onTap: carId.isEmpty
                           ? null
                           : () async {
@@ -627,6 +647,72 @@ class _ChatListPageState extends State<ChatListPage> with WidgetsBindingObserver
                               );
                               if (mounted) _loadChats();
                             },
+                      child: Padding(
+                        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+                        child: Row(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            CircleAvatar(
+                              backgroundColor: cs.primary.withAlpha(30),
+                              child: Icon(
+                                Icons.directions_car,
+                                color: cs.primary,
+                                size: 20,
+                              ),
+                            ),
+                            const SizedBox(width: 12),
+                            Expanded(
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  Text(
+                                    name.isEmpty
+                                        ? AppLocalizations.of(context)!.unknownSender
+                                        : name,
+                                    style: nameStyle,
+                                  ),
+                                  if (carTitle.isNotEmpty) ...[
+                                    const SizedBox(height: 2),
+                                    Text(
+                                      carTitle,
+                                      maxLines: 1,
+                                      overflow: TextOverflow.ellipsis,
+                                      style: TextStyle(
+                                        fontSize: 12,
+                                        color: cs.primary,
+                                        fontWeight: FontWeight.w500,
+                                      ),
+                                    ),
+                                  ],
+                                  const SizedBox(height: 2),
+                                  Text(
+                                    preview.isEmpty ? '...' : preview,
+                                    maxLines: 1,
+                                    overflow: TextOverflow.ellipsis,
+                                    style: previewStyle,
+                                  ),
+                                ],
+                              ),
+                            ),
+                            if (hasTrailing) ...[
+                              const SizedBox(width: 8),
+                              SizedBox(
+                                width: 78,
+                                child: Column(
+                                  crossAxisAlignment: CrossAxisAlignment.end,
+                                  mainAxisSize: MainAxisSize.min,
+                                  children: [
+                                    if (trailingBadge != null) trailingBadge,
+                                    if (trailingBadge != null && trailingTime != null)
+                                      const SizedBox(height: 6),
+                                    if (trailingTime != null) trailingTime,
+                                  ],
+                                ),
+                              ),
+                            ],
+                          ],
+                        ),
+                      ),
                     ),
                   );
                 },
