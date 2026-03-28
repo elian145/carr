@@ -1,4 +1,5 @@
 import 'dart:io';
+import 'dart:math' as math;
 import 'package:flutter/material.dart';
 import 'dart:async';
 import 'package:image_picker/image_picker.dart';
@@ -1702,6 +1703,61 @@ class _ChatConversationPageState extends State<ChatConversationPage>
     );
   }
 
+  double _measureSingleLineTextWidth(
+    BuildContext context,
+    String text,
+    TextStyle? style,
+  ) {
+    final normalized = text.trim();
+    if (normalized.isEmpty) return 0;
+    final painter = TextPainter(
+      text: TextSpan(text: normalized, style: style),
+      maxLines: 1,
+      textDirection: Directionality.of(context),
+    )..layout();
+    return painter.width;
+  }
+
+  double _estimateTextBubbleWidth(
+    BuildContext context,
+    ChatMessage message, {
+    required bool isMe,
+  }) {
+    final maxBubbleWidth = math.min(
+      MediaQuery.of(context).size.width * 0.58,
+      280.0,
+    );
+    final bodyStyle = DefaultTextStyle.of(context).style.copyWith(
+      color: isMe ? Colors.white : null,
+    );
+    final timeStyle = TextStyle(
+      color: isMe ? Colors.white70 : Colors.grey,
+      fontSize: 12,
+    );
+    final senderStyle = Theme.of(context).textTheme.bodySmall;
+
+    final bodyWidth = message.content
+        .split('\n')
+        .map((line) => _measureSingleLineTextWidth(context, line, bodyStyle))
+        .fold<double>(0, math.max);
+    final timeWidth = _measureSingleLineTextWidth(
+      context,
+      _relativeTime(context, message.createdAt),
+      timeStyle,
+    );
+    final senderWidth = !isMe
+        ? _measureSingleLineTextWidth(
+            context,
+            message.senderName ?? AppLocalizations.of(context)!.unknownSender,
+            senderStyle,
+          )
+        : 0.0;
+
+    final footerWidth = timeWidth + (isMe ? 24 : 0);
+    final contentWidth = math.max(bodyWidth, math.max(senderWidth, footerWidth));
+    return math.min(maxBubbleWidth, contentWidth + 32);
+  }
+
   @override
   Widget build(BuildContext context) {
     final conversationTitle = (_receiverName ?? '').trim().isNotEmpty
@@ -1759,12 +1815,34 @@ class _ChatConversationPageState extends State<ChatConversationPage>
                         listen: false,
                       );
                       final isMe = message.senderId == authService.userId;
+                      final isTextOnlyMessage =
+                          message.attachments.isEmpty &&
+                          message.listingPreview == null;
+                      final bubbleMaxWidth = message.attachments.isNotEmpty
+                          ? 240.0
+                          : message.listingPreview != null
+                          ? 280.0
+                          : math.min(
+                              MediaQuery.of(context).size.width * 0.58,
+                              280.0,
+                            );
+                      final textBubbleWidth = isTextOnlyMessage
+                          ? _estimateTextBubbleWidth(
+                              context,
+                              message,
+                              isMe: isMe,
+                            )
+                          : null;
 
                       return Align(
                         alignment: isMe
                             ? Alignment.centerRight
                             : Alignment.centerLeft,
                         child: Container(
+                          constraints: BoxConstraints(
+                            minWidth: textBubbleWidth ?? 0,
+                            maxWidth: textBubbleWidth ?? bubbleMaxWidth,
+                          ),
                           margin: const EdgeInsets.symmetric(vertical: 4),
                           padding: const EdgeInsets.symmetric(
                             horizontal: 16,
@@ -1777,6 +1855,7 @@ class _ChatConversationPageState extends State<ChatConversationPage>
                             borderRadius: BorderRadius.circular(20),
                           ),
                           child: Column(
+                            mainAxisSize: MainAxisSize.min,
                             crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
                               if (!isMe)
@@ -1820,24 +1899,21 @@ class _ChatConversationPageState extends State<ChatConversationPage>
                                   style: TextStyle(color: isMe ? Colors.white : null),
                                 ),
                               const SizedBox(height: 4),
-                              Align(
-                                alignment: Alignment.centerRight,
-                                child: Row(
-                                  mainAxisSize: MainAxisSize.min,
-                                  children: [
-                                    Text(
-                                      _relativeTime(context, message.createdAt),
-                                      style: TextStyle(
-                                        color: isMe ? Colors.white70 : Colors.grey,
-                                        fontSize: 12,
-                                      ),
+                              Row(
+                                mainAxisSize: MainAxisSize.max,
+                                children: [
+                                  Text(
+                                    _relativeTime(context, message.createdAt),
+                                    style: TextStyle(
+                                      color: isMe ? Colors.white70 : Colors.grey,
+                                      fontSize: 12,
                                     ),
-                                    if (isMe) ...[
-                                      const SizedBox(width: 4),
-                                      _buildMessageStatusIndicator(context, message),
-                                    ],
+                                  ),
+                                  if (isMe) ...[
+                                    const Spacer(),
+                                    _buildMessageStatusIndicator(context, message),
                                   ],
-                                ),
+                                ],
                               ),
                             ],
                           ),
