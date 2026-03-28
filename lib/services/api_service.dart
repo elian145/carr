@@ -186,6 +186,15 @@ class ApiService {
             )
             .timeout(_defaultTimeout);
         break;
+      case 'PATCH':
+        response = await http
+            .patch(
+              url,
+              headers: requestHeaders,
+              body: body != null ? json.encode(body) : null,
+            )
+            .timeout(_defaultTimeout);
+        break;
       case 'DELETE':
         response = await http
             .delete(url, headers: requestHeaders)
@@ -219,6 +228,15 @@ class ApiService {
           case 'PUT':
             response = await http
                 .put(
+                  url,
+                  headers: requestHeaders,
+                  body: body != null ? json.encode(body) : null,
+                )
+                .timeout(_defaultTimeout);
+            break;
+          case 'PATCH':
+            response = await http
+                .patch(
                   url,
                   headers: requestHeaders,
                   body: body != null ? json.encode(body) : null,

@@ -13,6 +13,8 @@ import '../services/api_service.dart';
 import '../shared/media/media_url.dart';
 import '../theme_provider.dart';
 
+const Color _kComposerOutlineOrange = Color(0xFFFF7A00);
+
 String _digitsLocalized(BuildContext context, String input) {
   final code = Localizations.localeOf(context).languageCode;
   if (code == 'ar' || code == 'ku') {
@@ -661,6 +663,7 @@ class _ChatConversationPageState extends State<ChatConversationPage>
   final FocusNode _messageFocusNode = FocusNode();
   final ScrollController _scrollController = ScrollController();
   final ScrollController _composerScrollController = ScrollController();
+  final Map<String, GlobalKey> _messageKeys = <String, GlobalKey>{};
   StreamSubscription<Map<String, dynamic>>? _messageSub;
   StreamSubscription<Map<String, dynamic>>? _messageUpdateSub;
   StreamSubscription<Map<String, dynamic>>? _messageDeleteSub;
@@ -682,6 +685,8 @@ class _ChatConversationPageState extends State<ChatConversationPage>
   bool _pendingInitialListingContext = false;
   ChatMessage? _replyingToMessage;
   String? _editingMessageId;
+  String? _highlightMessageId;
+  Timer? _highlightTimer;
 
   @override
   void initState() {
@@ -1398,6 +1403,7 @@ class _ChatConversationPageState extends State<ChatConversationPage>
     ChatReplyPreview reply, {
     required bool isMe,
     bool dense = false,
+    VoidCallback? onTap,
   }) {
     final theme = Theme.of(context);
     final baseColor = isMe
@@ -1406,7 +1412,7 @@ class _ChatConversationPageState extends State<ChatConversationPage>
     final borderColor = isMe
         ? Colors.white.withOpacity(0.5)
         : theme.primaryColor.withOpacity(0.7);
-    return Container(
+    final inner = Container(
       width: double.infinity,
       margin: EdgeInsets.only(bottom: dense ? 6 : 8),
       padding: EdgeInsets.symmetric(
@@ -1443,6 +1449,17 @@ class _ChatConversationPageState extends State<ChatConversationPage>
             ),
           ),
         ],
+      ),
+    );
+
+    if (onTap == null) return inner;
+
+    return Material(
+      type: MaterialType.transparency,
+      child: InkWell(
+        borderRadius: BorderRadius.circular(12),
+        onTap: onTap,
+        child: inner,
       ),
     );
   }
@@ -1634,6 +1651,7 @@ class _ChatConversationPageState extends State<ChatConversationPage>
     _pollTimer?.cancel();
     _typingDebounce?.cancel();
     _scrollRetryTimer?.cancel();
+    _highlightTimer?.cancel();
     if (_isTyping) {
       WebSocketService.sendTypingStop(widget.carId);
     }
@@ -1648,6 +1666,86 @@ class _ChatConversationPageState extends State<ChatConversationPage>
     _composerScrollController.dispose();
     WebSocketService.leaveChat();
     super.dispose();
+  }
+
+  GlobalKey _keyForMessageId(String id) {
+    return _messageKeys.putIfAbsent(id, () => GlobalKey());
+  }
+
+  void _flashHighlight(String messageId) {
+    _highlightTimer?.cancel();
+    if (!mounted) return;
+    setState(() => _highlightMessageId = messageId);
+    _highlightTimer = Timer(const Duration(milliseconds: 1400), () {
+      if (!mounted) return;
+      setState(() => _highlightMessageId = null);
+    });
+  }
+
+  Future<void> _jumpToMessageId(String messageId) async {
+    final targetId = messageId.trim();
+    if (targetId.isEmpty) return;
+
+    // If the message is older than what we’ve loaded, keep paginating up until we find it.
+    var attempts = 0;
+    while (_messages.indexWhere((m) => m.id == targetId) == -1 &&
+        _hasMoreMessages &&
+        !_loadingOlderMessages &&
+        attempts < 8) {
+      attempts += 1;
+      await _loadOlderMessages();
+    }
+
+    final index = _messages.indexWhere((m) => m.id == targetId);
+    if (index == -1) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Original message is not loaded.'),
+          backgroundColor: Colors.orange,
+        ),
+      );
+      return;
+    }
+
+    if (!mounted || !_scrollController.hasClients) return;
+
+    // Try to scroll precisely if the target is currently built.
+    Future<bool> ensureVisibleIfBuilt() async {
+      final key = _messageKeys[targetId];
+      final ctx = key?.currentContext;
+      if (ctx == null) return false;
+      await Scrollable.ensureVisible(
+        ctx,
+        duration: const Duration(milliseconds: 260),
+        curve: Curves.easeOut,
+        alignment: 0.25,
+      );
+      _flashHighlight(targetId);
+      return true;
+    }
+
+    if (await ensureVisibleIfBuilt()) return;
+
+    // Otherwise, scroll close to the item using an estimate, then retry ensureVisible a few times.
+    final maxScroll = _scrollController.position.maxScrollExtent;
+    final denom = math.max(1, _messages.length - 1);
+    final fraction = index / denom;
+    final estimatedOffset = (maxScroll * fraction).clamp(0.0, maxScroll);
+    await _scrollController.animateTo(
+      estimatedOffset,
+      duration: const Duration(milliseconds: 320),
+      curve: Curves.easeOut,
+    );
+
+    for (var i = 0; i < 10; i += 1) {
+      await Future<void>.delayed(const Duration(milliseconds: 90));
+      if (!mounted || !_scrollController.hasClients) return;
+      if (await ensureVisibleIfBuilt()) return;
+    }
+
+    // Fallback: at least show a highlight state when the user scrolls manually.
+    _flashHighlight(targetId);
   }
 
   void _showBlockDialog() {
@@ -2076,6 +2174,7 @@ class _ChatConversationPageState extends State<ChatConversationPage>
       fontSize: 12,
     );
     final senderStyle = Theme.of(context).textTheme.bodySmall;
+    final reply = message.replyToMessage;
 
     final bodyWidth = message.content
         .split('\n')
@@ -2094,8 +2193,41 @@ class _ChatConversationPageState extends State<ChatConversationPage>
           )
         : 0.0;
 
-    final footerWidth = timeWidth + (isMe ? 24 : 0);
-    final contentWidth = math.max(bodyWidth, math.max(senderWidth, footerWidth));
+    double replyBlockWidth = 0.0;
+    if (reply != null) {
+      final replyNameStyle = (Theme.of(context).textTheme.bodySmall ?? const TextStyle())
+          .copyWith(fontWeight: FontWeight.w600, color: isMe ? Colors.white : null);
+      final replyBodyStyle = (Theme.of(context).textTheme.bodySmall ?? const TextStyle())
+          .copyWith(color: isMe ? Colors.white70 : null);
+
+      final replySenderText = (reply.senderName ?? 'Message').trim().isNotEmpty
+          ? reply.senderName!.trim()
+          : 'Message';
+      final replyContentText =
+          reply.content.trim().isEmpty ? 'Message' : reply.content.trim();
+
+      final replySenderWidth =
+          _measureSingleLineTextWidth(context, replySenderText, replyNameStyle);
+      final replyContentWidth =
+          _measureSingleLineTextWidth(context, replyContentText, replyBodyStyle);
+
+      // Reply preview card adds padding + a left border inside the bubble.
+      // (This is in addition to the bubble's own padding, which we add below.)
+      const replyInnerPadding = 20.0; // horizontal 10 * 2
+      const replyLeftBorder = 3.0;
+      replyBlockWidth =
+          math.max(replySenderWidth, replyContentWidth) + replyInnerPadding + replyLeftBorder;
+    }
+
+    final editedLabelWidth =
+        (message.editedAt != null && !message.isDeleted)
+            ? _measureSingleLineTextWidth(context, 'Edited', timeStyle) + 6
+            : 0.0;
+    final footerWidth = editedLabelWidth + timeWidth + (isMe ? 24 : 0);
+    final contentWidth = math.max(
+      math.max(bodyWidth, math.max(senderWidth, footerWidth)),
+      replyBlockWidth,
+    );
     return math.min(maxBubbleWidth, contentWidth + 32);
   }
 
@@ -2175,6 +2307,8 @@ class _ChatConversationPageState extends State<ChatConversationPage>
                             )
                           : null;
 
+                      // Ensure each message has a stable key so we can jump to it from reply previews.
+                      _keyForMessageId(message.id);
                       return Align(
                         alignment: isMe
                             ? Alignment.centerRight
@@ -2184,6 +2318,7 @@ class _ChatConversationPageState extends State<ChatConversationPage>
                               ? null
                               : () => _showMessageActions(message, isMe),
                           child: Container(
+                          key: _messageKeys[message.id],
                           constraints: BoxConstraints(
                             minWidth: textBubbleWidth ?? 0,
                             maxWidth: textBubbleWidth ?? bubbleMaxWidth,
@@ -2198,6 +2333,12 @@ class _ChatConversationPageState extends State<ChatConversationPage>
                                 ? Theme.of(context).primaryColor
                                 : Theme.of(context).cardColor,
                             borderRadius: BorderRadius.circular(20),
+                            border: message.id == _highlightMessageId
+                                ? Border.all(
+                                    color: Colors.amberAccent,
+                                    width: 2,
+                                  )
+                                : null,
                           ),
                           child: Column(
                             mainAxisSize: MainAxisSize.min,
@@ -2213,6 +2354,9 @@ class _ChatConversationPageState extends State<ChatConversationPage>
                                   context,
                                   message.replyToMessage!,
                                   isMe: isMe,
+                                  onTap: () => _jumpToMessageId(
+                                    message.replyToMessage!.id,
+                                  ),
                                 ),
                               if (message.attachments.isNotEmpty) ...[
                                 _buildMediaGroupBubble(context, message),
@@ -2349,9 +2493,39 @@ class _ChatConversationPageState extends State<ChatConversationPage>
                                       TextField(
                                         controller: _messageController,
                                         focusNode: _messageFocusNode,
-                                        decoration: InputDecoration.collapsed(
+                                        decoration: InputDecoration(
                                           hintText: AppLocalizations.of(context)!
                                               .typeMessage,
+                                          isDense: true,
+                                          contentPadding:
+                                              const EdgeInsets.symmetric(
+                                            horizontal: 12,
+                                            vertical: 12,
+                                          ),
+                                          border: OutlineInputBorder(
+                                            borderRadius:
+                                                BorderRadius.circular(12),
+                                            borderSide: const BorderSide(
+                                              color: _kComposerOutlineOrange,
+                                              width: 2,
+                                            ),
+                                          ),
+                                          enabledBorder: OutlineInputBorder(
+                                            borderRadius:
+                                                BorderRadius.circular(12),
+                                            borderSide: const BorderSide(
+                                              color: _kComposerOutlineOrange,
+                                              width: 2,
+                                            ),
+                                          ),
+                                          focusedBorder: OutlineInputBorder(
+                                            borderRadius:
+                                                BorderRadius.circular(12),
+                                            borderSide: const BorderSide(
+                                              color: _kComposerOutlineOrange,
+                                              width: 2,
+                                            ),
+                                          ),
                                         ),
                                         keyboardType: TextInputType.multiline,
                                         textInputAction:
@@ -2364,35 +2538,43 @@ class _ChatConversationPageState extends State<ChatConversationPage>
                                 ),
                               ),
                             )
-                          : Container(
-                              decoration: BoxDecoration(
-                                border: Border.all(
-                                  color: Theme.of(context).dividerColor,
+                          : TextField(
+                              controller: _messageController,
+                              focusNode: _messageFocusNode,
+                              decoration: InputDecoration(
+                                hintText:
+                                    AppLocalizations.of(context)!.typeMessage,
+                                isDense: true,
+                                contentPadding: const EdgeInsets.symmetric(
+                                  horizontal: 12,
+                                  vertical: 12,
                                 ),
-                                borderRadius: BorderRadius.circular(12),
-                                color: Theme.of(context).scaffoldBackgroundColor,
-                              ),
-                              padding: const EdgeInsets.symmetric(
-                                horizontal: 12,
-                                vertical: 4,
-                              ),
-                              child: TextField(
-                                controller: _messageController,
-                                focusNode: _messageFocusNode,
-                                decoration: InputDecoration(
-                                  hintText:
-                                      AppLocalizations.of(context)!.typeMessage,
-                                  border: InputBorder.none,
-                                  isDense: true,
-                                  contentPadding: const EdgeInsets.symmetric(
-                                    vertical: 12,
+                                border: OutlineInputBorder(
+                                  borderRadius: BorderRadius.circular(12),
+                                  borderSide: const BorderSide(
+                                    color: _kComposerOutlineOrange,
+                                    width: 2,
                                   ),
                                 ),
-                                keyboardType: TextInputType.multiline,
-                                textInputAction: TextInputAction.newline,
-                                maxLines: null,
-                                onChanged: _onTextChanged,
+                                enabledBorder: OutlineInputBorder(
+                                  borderRadius: BorderRadius.circular(12),
+                                  borderSide: const BorderSide(
+                                    color: _kComposerOutlineOrange,
+                                    width: 2,
+                                  ),
+                                ),
+                                focusedBorder: OutlineInputBorder(
+                                  borderRadius: BorderRadius.circular(12),
+                                  borderSide: const BorderSide(
+                                    color: _kComposerOutlineOrange,
+                                    width: 2,
+                                  ),
+                                ),
                               ),
+                              keyboardType: TextInputType.multiline,
+                              textInputAction: TextInputAction.newline,
+                              maxLines: null,
+                              onChanged: _onTextChanged,
                             ),
                       ),
                     const SizedBox(width: 8),
