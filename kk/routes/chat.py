@@ -7,6 +7,7 @@ import secrets
 from flask import Blueprint, current_app, jsonify, request
 from flask_jwt_extended import jwt_required
 from sqlalchemy import func, or_
+from werkzeug.exceptions import RequestEntityTooLarge
 
 from ..auth import get_current_user
 from ..models import BlockedUser, Car, Message, User, UserReport, db
@@ -144,6 +145,13 @@ def _upload_chat_media_item(file_storage) -> dict[str, str]:
 
 def _default_media_group_content(count: int) -> str:
     return f"[{max(count, 1)} attachments]"
+
+
+def _max_upload_mb() -> int:
+    raw = int(current_app.config.get("MAX_CONTENT_LENGTH") or 0)
+    if raw <= 0:
+        return 0
+    return max(1, raw // (1024 * 1024))
 
 
 @bp.route("/api/chats", methods=["GET"])
@@ -575,6 +583,16 @@ def send_media_group_message(conversation_id: str):
             pass
 
         return jsonify({"success": True, "message": msg.to_dict()}), 201
+    except RequestEntityTooLarge:
+        db.session.rollback()
+        max_mb = _max_upload_mb()
+        if max_mb > 0:
+            return jsonify(
+                {
+                    "message": f"Selected files are too large. Maximum total upload size is {max_mb}MB.",
+                }
+            ), 413
+        return jsonify({"message": "Selected files are too large."}), 413
     except Exception:
         db.session.rollback()
         return jsonify({"message": "Failed to send media group"}), 500

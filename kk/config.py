@@ -71,7 +71,9 @@ class Config:
     
     # File Upload Configuration
     UPLOAD_FOLDER = 'static/uploads'
-    MAX_CONTENT_LENGTH = 100 * 1024 * 1024  # 100MB
+    MAX_CONTENT_LENGTH = int(
+        os.environ.get('MAX_CONTENT_LENGTH') or 250 * 1024 * 1024
+    )  # 250MB default, overridable via env
     ALLOWED_EXTENSIONS = {'png', 'jpg', 'jpeg', 'gif', 'webp', 'heic', 'heif'}
     ALLOWED_VIDEO_EXTENSIONS = {'mp4', 'mov', 'avi', 'mkv', 'webm'}
     

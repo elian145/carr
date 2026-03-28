@@ -823,8 +823,11 @@ class _ChatConversationPageState extends State<ChatConversationPage>
   }
 
   void _addMessageIfMissing(ChatMessage message) {
-    final exists = _messages.any((m) => m.id == message.id);
-    if (exists) return;
+    final index = _messages.indexWhere((m) => m.id == message.id);
+    if (index != -1) {
+      _messages[index] = message;
+      return;
+    }
     _messages.add(message);
   }
 
@@ -1683,6 +1686,22 @@ class _ChatConversationPageState extends State<ChatConversationPage>
     );
   }
 
+  Widget _buildMessageStatusIndicator(BuildContext context, ChatMessage message) {
+    final color = message.isRead ? Colors.lightBlueAccent : Colors.white70;
+    if (message.isPending) {
+      return const Icon(
+        Icons.schedule,
+        size: 14,
+        color: Colors.white70,
+      );
+    }
+    return Icon(
+      message.isRead ? Icons.done_all : Icons.check,
+      size: 16,
+      color: color,
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     final conversationTitle = (_receiverName ?? '').trim().isNotEmpty
@@ -1801,11 +1820,23 @@ class _ChatConversationPageState extends State<ChatConversationPage>
                                   style: TextStyle(color: isMe ? Colors.white : null),
                                 ),
                               const SizedBox(height: 4),
-                              Text(
-                                _relativeTime(context, message.createdAt),
-                                style: TextStyle(
-                                  color: isMe ? Colors.white70 : Colors.grey,
-                                  fontSize: 12,
+                              Align(
+                                alignment: Alignment.centerRight,
+                                child: Row(
+                                  mainAxisSize: MainAxisSize.min,
+                                  children: [
+                                    Text(
+                                      _relativeTime(context, message.createdAt),
+                                      style: TextStyle(
+                                        color: isMe ? Colors.white70 : Colors.grey,
+                                        fontSize: 12,
+                                      ),
+                                    ),
+                                    if (isMe) ...[
+                                      const SizedBox(width: 4),
+                                      _buildMessageStatusIndicator(context, message),
+                                    ],
+                                  ],
                                 ),
                               ),
                             ],
