@@ -49,41 +49,64 @@ String _noMessagesText(BuildContext context) {
 }
 
 void _showFullImage(BuildContext context, String url) {
-  showDialog(
-    context: context,
-    builder: (_) => Dialog(
-      backgroundColor: Colors.transparent,
-      insetPadding: const EdgeInsets.all(12),
-      child: Stack(
-        alignment: Alignment.topRight,
-        children: [
-          InteractiveViewer(
-            child: Image.network(
-              url,
-              fit: BoxFit.contain,
-              errorBuilder: (_, __, ___) => const Icon(
-                Icons.broken_image,
-                color: Colors.white,
-                size: 64,
+  Navigator.of(context).push(
+    MaterialPageRoute<void>(
+      builder: (_) => Scaffold(
+        backgroundColor: Colors.black,
+        body: SafeArea(
+          child: Stack(
+            alignment: Alignment.topRight,
+            children: [
+              Center(
+                child: InteractiveViewer(
+                  child: Image.network(
+                    url,
+                    fit: BoxFit.contain,
+                    errorBuilder: (context, error, stackTrace) => const Icon(
+                      Icons.broken_image,
+                      color: Colors.white,
+                      size: 64,
+                    ),
+                  ),
+                ),
               ),
-            ),
+              IconButton(
+                icon: const Icon(Icons.close, color: Colors.white, size: 30),
+                onPressed: () => Navigator.of(context).pop(),
+              ),
+            ],
           ),
-          IconButton(
-            icon: const Icon(Icons.close, color: Colors.white, size: 30),
-            onPressed: () => Navigator.of(context).pop(),
-          ),
-        ],
+        ),
       ),
     ),
   );
 }
 
 void _showVideoPlayerDialog(BuildContext context, String url) {
-  showDialog(
-    context: context,
-    builder: (_) => Dialog(
-      insetPadding: const EdgeInsets.all(12),
-      child: _ChatVideoPlayer(source: url, autoplay: true),
+  Navigator.of(context).push(
+    MaterialPageRoute<void>(
+      builder: (_) => Scaffold(
+        backgroundColor: Colors.black,
+        body: SafeArea(
+          child: Stack(
+            children: [
+              Positioned.fill(
+                child: Center(
+                  child: _ChatVideoPlayer(source: url, autoplay: true),
+                ),
+              ),
+              Positioned(
+                top: 8,
+                right: 8,
+                child: IconButton(
+                  icon: const Icon(Icons.close, color: Colors.white, size: 30),
+                  onPressed: () => Navigator.of(context).pop(),
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
     ),
   );
 }
@@ -239,12 +262,9 @@ void _showChatMediaDialog(
   List<_ChatMediaEntry> entries, {
   int initialIndex = 0,
 }) {
-  showDialog(
-    context: context,
-    builder: (_) => Dialog(
-      backgroundColor: Colors.black,
-      insetPadding: const EdgeInsets.all(12),
-      child: _ChatMediaGroupViewer(
+  Navigator.of(context).push(
+    MaterialPageRoute<void>(
+      builder: (_) => _ChatMediaGroupViewer(
         entries: entries,
         initialIndex: initialIndex,
       ),
@@ -284,97 +304,100 @@ class _ChatMediaGroupViewerState extends State<_ChatMediaGroupViewer> {
 
   @override
   Widget build(BuildContext context) {
-    return SizedBox(
-      width: double.maxFinite,
-      height: 520,
-      child: Stack(
-        children: [
-          PageView.builder(
-            controller: _pageController,
-            itemCount: widget.entries.length,
-            onPageChanged: (index) => setState(() => _currentIndex = index),
-            itemBuilder: (context, index) {
-              final entry = widget.entries[index];
-              final attachment = entry.attachment;
-              if (attachment.type == 'video') {
-                return Center(
-                  child: _ChatVideoPlayer(
-                    source: _resolveAttachmentUrl(attachment),
-                    isLocal: attachment.isLocal,
-                    autoplay: true,
-                  ),
-                );
-              }
-              return Center(
-                child: InteractiveViewer(
-                  child: attachment.isLocal
-                      ? Image.file(
-                          File(attachment.url),
-                          fit: BoxFit.contain,
-                        )
-                      : Image.network(
-                          _resolveAttachmentUrl(attachment),
-                          fit: BoxFit.contain,
-                          errorBuilder: (context, error, stackTrace) =>
-                              const Icon(
-                            Icons.broken_image,
-                            color: Colors.white,
-                            size: 64,
-                          ),
-                        ),
-                ),
-              );
-            },
-          ),
-          Positioned(
-            top: 12,
-            left: 16,
-            child: DecoratedBox(
-              decoration: BoxDecoration(
-                color: Colors.black54,
-                borderRadius: BorderRadius.circular(20),
-              ),
-              child: Padding(
-                padding:
-                    const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-                child: Text(
-                  '${_currentIndex + 1}/${widget.entries.length}',
-                  style: const TextStyle(color: Colors.white),
-                ),
+    return Scaffold(
+      backgroundColor: Colors.black,
+      body: SafeArea(
+        child: Stack(
+          children: [
+            Positioned.fill(
+              child: PageView.builder(
+                controller: _pageController,
+                itemCount: widget.entries.length,
+                onPageChanged: (index) => setState(() => _currentIndex = index),
+                itemBuilder: (context, index) {
+                  final entry = widget.entries[index];
+                  final attachment = entry.attachment;
+                  if (attachment.type == 'video') {
+                    return Center(
+                      child: _ChatVideoPlayer(
+                        source: _resolveAttachmentUrl(attachment),
+                        isLocal: attachment.isLocal,
+                        autoplay: true,
+                      ),
+                    );
+                  }
+                  return Center(
+                    child: InteractiveViewer(
+                      child: attachment.isLocal
+                          ? Image.file(
+                              File(attachment.url),
+                              fit: BoxFit.contain,
+                            )
+                          : Image.network(
+                              _resolveAttachmentUrl(attachment),
+                              fit: BoxFit.contain,
+                              errorBuilder: (context, error, stackTrace) =>
+                                  const Icon(
+                                Icons.broken_image,
+                                color: Colors.white,
+                                size: 64,
+                              ),
+                            ),
+                    ),
+                  );
+                },
               ),
             ),
-          ),
-          Positioned(
-            left: 16,
-            right: 16,
-            bottom: 16,
-            child: DecoratedBox(
-              decoration: BoxDecoration(
-                color: Colors.black54,
-                borderRadius: BorderRadius.circular(16),
-              ),
-              child: Padding(
-                padding:
-                    const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-                child: Text(
-                  widget.entries[_currentIndex].senderName,
-                  style: const TextStyle(
-                    color: Colors.white,
-                    fontWeight: FontWeight.w600,
+            Positioned(
+              top: 12,
+              left: 16,
+              child: DecoratedBox(
+                decoration: BoxDecoration(
+                  color: Colors.black54,
+                  borderRadius: BorderRadius.circular(20),
+                ),
+                child: Padding(
+                  padding:
+                      const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                  child: Text(
+                    '${_currentIndex + 1}/${widget.entries.length}',
+                    style: const TextStyle(color: Colors.white),
                   ),
                 ),
               ),
             ),
-          ),
-          Positioned(
-            top: 8,
-            right: 8,
-            child: IconButton(
-              icon: const Icon(Icons.close, color: Colors.white, size: 30),
-              onPressed: () => Navigator.of(context).pop(),
+            Positioned(
+              left: 16,
+              right: 16,
+              bottom: 16,
+              child: DecoratedBox(
+                decoration: BoxDecoration(
+                  color: Colors.black54,
+                  borderRadius: BorderRadius.circular(16),
+                ),
+                child: Padding(
+                  padding:
+                      const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                  child: Text(
+                    widget.entries[_currentIndex].senderName,
+                    style: const TextStyle(
+                      color: Colors.white,
+                      fontWeight: FontWeight.w600,
+                    ),
+                  ),
+                ),
+              ),
             ),
-          ),
-        ],
+            Positioned(
+              top: 8,
+              right: 8,
+              child: IconButton(
+                icon: const Icon(Icons.close, color: Colors.white, size: 30),
+                onPressed: () => Navigator.of(context).pop(),
+              ),
+            ),
+          ],
+        ),
       ),
     );
   }
