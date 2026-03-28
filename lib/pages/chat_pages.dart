@@ -1305,7 +1305,7 @@ class _ChatConversationPageState extends State<ChatConversationPage>
     final validFiles = files
         .where((file) => _isImageFile(file) || _isVideoFile(file))
         .toList();
-    if (validFiles.isEmpty || _isSending) return false;
+    if (validFiles.isEmpty) return false;
 
     final pendingMessage = _buildPendingMediaGroupMessage(validFiles);
     setState(() {
