@@ -972,6 +972,7 @@ class ApiService {
     String? receiverId,
     String? caption,
     String? replyToMessageId,
+    Map<String, dynamic>? listingPreview,
   }) async {
     if (files.isEmpty) {
       throw Exception('No attachments selected');
@@ -992,6 +993,9 @@ class ApiService {
       }
       if (replyToMessageId != null && replyToMessageId.trim().isNotEmpty) {
         req.fields['reply_to_message_id'] = replyToMessageId.trim();
+      }
+      if (listingPreview != null && listingPreview.isNotEmpty) {
+        req.fields['listing_preview'] = json.encode(listingPreview);
       }
       final streamedResponse = await req.send().timeout(_uploadTimeout);
       return http.Response.fromStream(streamedResponse);

@@ -683,6 +683,7 @@ class _ChatConversationPageState extends State<ChatConversationPage>
   String? _receiverName;
   Map<String, dynamic>? _listingPreview;
   bool _pendingInitialListingContext = false;
+  final List<XFile> _draftAttachments = <XFile>[];
   ChatMessage? _replyingToMessage;
   String? _editingMessageId;
   String? _highlightMessageId;
@@ -853,6 +854,52 @@ class _ChatConversationPageState extends State<ChatConversationPage>
 
   void _removeMessage(String id) {
     _messages.removeWhere((m) => m.id == id);
+  }
+
+  bool get _hasDraftAttachments => _draftAttachments.isNotEmpty;
+
+  void _addDraftAttachments(List<XFile> files) {
+    final valid = files.where((f) => _isImageFile(f) || _isVideoFile(f)).toList();
+    if (valid.isEmpty) return;
+    const maxCount = 10;
+    final remaining = maxCount - _draftAttachments.length;
+    if (remaining <= 0) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('You can attach up to 10 files.'),
+          backgroundColor: Colors.orange,
+        ),
+      );
+      return;
+    }
+    final toAdd = valid.take(remaining).toList();
+    setState(() {
+      _draftAttachments.addAll(toAdd);
+      _pendingInitialListingContext = _pendingInitialListingContext;
+    });
+    if (valid.length > toAdd.length) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Only the first 10 attachments were added.'),
+          backgroundColor: Colors.orange,
+        ),
+      );
+    }
+    _focusComposer();
+  }
+
+  void _removeDraftAttachmentAt(int index) {
+    if (index < 0 || index >= _draftAttachments.length) return;
+    setState(() {
+      _draftAttachments.removeAt(index);
+    });
+  }
+
+  void _clearDraftAttachments() {
+    if (_draftAttachments.isEmpty) return;
+    setState(() {
+      _draftAttachments.clear();
+    });
   }
 
   ChatMessage? _messageById(String id) {
@@ -1160,7 +1207,7 @@ class _ChatConversationPageState extends State<ChatConversationPage>
   }
 
   Future<void> _pickAndSendImages() async {
-    if (_isSending) return;
+    if (_isSending || _editingMessageId != null) return;
     try {
       final picker = ImagePicker();
       final picked = await picker.pickMultiImage(
@@ -1169,7 +1216,7 @@ class _ChatConversationPageState extends State<ChatConversationPage>
         imageQuality: 80,
       );
       if (picked.isEmpty || !mounted) return;
-      await _sendMediaGroup(picked);
+      _addDraftAttachments(picked);
     } catch (e) {
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
@@ -1201,7 +1248,7 @@ class _ChatConversationPageState extends State<ChatConversationPage>
   }
 
   Future<void> _pickAndSendMultipleMedia() async {
-    if (_isSending) return;
+    if (_isSending || _editingMessageId != null) return;
     try {
       final picker = ImagePicker();
       final picked = await picker.pickMultipleMedia(
@@ -1211,9 +1258,7 @@ class _ChatConversationPageState extends State<ChatConversationPage>
         limit: 10,
       );
       if (picked.isEmpty || !mounted) return;
-      await _sendMediaGroup(
-        picked.where((file) => _isImageFile(file) || _isVideoFile(file)).toList(),
-      );
+      _addDraftAttachments(picked);
     } catch (e) {
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
@@ -1223,7 +1268,7 @@ class _ChatConversationPageState extends State<ChatConversationPage>
   }
 
   Future<void> _pickAndSendVideos() async {
-    if (_isSending) return;
+    if (_isSending || _editingMessageId != null) return;
     try {
       final picker = ImagePicker();
       final picked = await picker.pickMultipleMedia(
@@ -1247,7 +1292,7 @@ class _ChatConversationPageState extends State<ChatConversationPage>
           ),
         );
       }
-      await _sendMediaGroup(videos);
+      _addDraftAttachments(videos);
     } catch (e) {
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
@@ -1256,11 +1301,11 @@ class _ChatConversationPageState extends State<ChatConversationPage>
     }
   }
 
-  Future<void> _sendMediaGroup(List<XFile> files) async {
+  Future<bool> _sendMediaGroup(List<XFile> files, {String? caption}) async {
     final validFiles = files
         .where((file) => _isImageFile(file) || _isVideoFile(file))
         .toList();
-    if (validFiles.isEmpty || _isSending) return;
+    if (validFiles.isEmpty || _isSending) return false;
 
     final pendingMessage = _buildPendingMediaGroupMessage(validFiles);
     setState(() {
@@ -1271,28 +1316,33 @@ class _ChatConversationPageState extends State<ChatConversationPage>
 
     try {
       final replyToMessageId = _replyingToMessage?.id;
+      final listingPreviewForMessage =
+          _pendingInitialListingContext ? _listingPreview : null;
       final response = await ApiService.sendChatMediaGroup(
         conversationId: widget.carId,
         files: validFiles,
         receiverId: widget.receiverId,
         replyToMessageId: replyToMessageId,
+        caption: caption,
+        listingPreview: listingPreviewForMessage,
       );
       final msg = response['message'];
       if (msg is Map<String, dynamic> && mounted) {
         setState(() {
           _replaceMessage(pendingMessage.id, ChatMessage.fromJson(msg));
-          _replyingToMessage = null;
         });
         _scrollToBottom();
       }
+      return true;
     } catch (e) {
-      if (!mounted) return;
+      if (!mounted) return false;
       setState(() {
         _removeMessage(pendingMessage.id);
       });
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(content: Text(e.toString()), backgroundColor: Colors.red),
       );
+      return false;
     } finally {
       if (mounted) {
         setState(() => _isSending = false);
@@ -1518,6 +1568,69 @@ class _ChatConversationPageState extends State<ChatConversationPage>
     );
   }
 
+  Widget _buildDraftAttachmentsPreview(BuildContext context) {
+    if (_draftAttachments.isEmpty) return const SizedBox.shrink();
+
+    Widget tileFor(XFile file, int index) {
+      final isVideo = _isVideoFile(file);
+      final path = file.path;
+      return Stack(
+        children: [
+          ClipRRect(
+            borderRadius: BorderRadius.circular(10),
+            child: Container(
+              width: 72,
+              height: 72,
+              color: Theme.of(context).cardColor,
+              child: isVideo
+                  ? const Center(
+                      child: Icon(Icons.videocam, size: 28),
+                    )
+                  : Image.file(
+                      File(path),
+                      width: 72,
+                      height: 72,
+                      fit: BoxFit.cover,
+                      errorBuilder: (context, error, stackTrace) => const Center(
+                        child: Icon(Icons.broken_image_outlined),
+                      ),
+                    ),
+            ),
+          ),
+          Positioned(
+            top: 4,
+            right: 4,
+            child: InkWell(
+              onTap: () => _removeDraftAttachmentAt(index),
+              child: Container(
+                decoration: BoxDecoration(
+                  color: Colors.black54,
+                  borderRadius: BorderRadius.circular(10),
+                ),
+                padding: const EdgeInsets.all(4),
+                child: const Icon(Icons.close, size: 14, color: Colors.white),
+              ),
+            ),
+          ),
+        ],
+      );
+    }
+
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 10),
+      child: SizedBox(
+        height: 78,
+        child: ListView.separated(
+          scrollDirection: Axis.horizontal,
+          itemCount: _draftAttachments.length,
+          separatorBuilder: (context, index) => const SizedBox(width: 10),
+          itemBuilder: (context, index) =>
+              tileFor(_draftAttachments[index], index),
+        ),
+      ),
+    );
+  }
+
   Future<void> _showAttachmentPicker() async {
     await showModalBottomSheet<void>(
       context: context,
@@ -1561,9 +1674,11 @@ class _ChatConversationPageState extends State<ChatConversationPage>
   Future<void> _sendMessage() async {
     if (_isSending) return;
     final content = _messageController.text.trim();
-    if (content.isEmpty) return;
     final editingMessageId = _editingMessageId;
     final replyingToMessageId = _replyingToMessage?.id;
+    if (editingMessageId == null && content.isEmpty && !_hasDraftAttachments) {
+      return;
+    }
     setState(() => _isSending = true);
     _messageController.clear();
 
@@ -1578,6 +1693,42 @@ class _ChatConversationPageState extends State<ChatConversationPage>
           setState(() {
             _addMessageIfMissing(ChatMessage.fromJson(msg));
             _editingMessageId = null;
+          });
+        }
+        return;
+      }
+
+      if (_hasDraftAttachments) {
+        final files = List<XFile>.from(_draftAttachments);
+        final caption = content.isEmpty ? null : content;
+        setState(() {
+          _draftAttachments.clear();
+        });
+        final ok = await _sendMediaGroup(files, caption: caption);
+        if (ok) {
+          if (mounted) {
+            setState(() {
+              _replyingToMessage = null;
+              _pendingInitialListingContext = false;
+            });
+          } else {
+            _replyingToMessage = null;
+            _pendingInitialListingContext = false;
+          }
+          return;
+        }
+
+        if (!mounted) return;
+        setState(() {
+          _draftAttachments.addAll(files);
+        });
+        if (caption != null && caption.isNotEmpty) {
+          _messageController.text = caption;
+          _messageController.selection = TextSelection.fromPosition(
+            TextPosition(offset: _messageController.text.length),
+          );
+          WidgetsBinding.instance.addPostFrameCallback((_) {
+            _scrollComposerToTop();
           });
         }
         return;
@@ -2459,6 +2610,8 @@ class _ChatConversationPageState extends State<ChatConversationPage>
               mainAxisSize: MainAxisSize.min,
               children: [
                 _buildComposerActionBanner(context),
+                if (!_pendingInitialListingContext && _draftAttachments.isNotEmpty)
+                  _buildDraftAttachmentsPreview(context),
                 Row(
                   children: [
                     IconButton(
@@ -2489,6 +2642,10 @@ class _ChatConversationPageState extends State<ChatConversationPage>
                                     crossAxisAlignment: CrossAxisAlignment.start,
                                     children: [
                                       _buildListingCard(context, _listingPreview!),
+                                      if (_draftAttachments.isNotEmpty) ...[
+                                        const SizedBox(height: 10),
+                                        _buildDraftAttachmentsPreview(context),
+                                      ],
                                       const SizedBox(height: 10),
                                       TextField(
                                         controller: _messageController,

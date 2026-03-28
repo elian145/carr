@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 from datetime import datetime
+import json
 import os
 import secrets
 
@@ -624,6 +625,16 @@ def send_media_group_message(conversation_id: str):
         if reply_to_public and reply_to is None:
             return jsonify({"message": "Reply target not found"}), 404
 
+        listing_preview = None
+        listing_preview_raw = (request.form.get("listing_preview") or "").strip()
+        if listing_preview_raw:
+            try:
+                parsed = json.loads(listing_preview_raw)
+                if isinstance(parsed, dict):
+                    listing_preview = parsed
+            except Exception:
+                listing_preview = None
+
         attachments = []
         for file in files:
             try:
@@ -643,6 +654,7 @@ def send_media_group_message(conversation_id: str):
             message_type="media_group",
             attachment_url=attachments[0]["url"] if attachments else None,
             attachments=attachments,
+            listing_preview=listing_preview,
             is_read=False,
         )
         db.session.add(msg)
