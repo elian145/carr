@@ -399,13 +399,23 @@ class Message(db.Model):
     sender_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False, index=True)
     receiver_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False, index=True)
     car_id = db.Column(db.Integer, db.ForeignKey('car.id'), nullable=True, index=True)
+    reply_to_id = db.Column(db.Integer, db.ForeignKey('message.id'), nullable=True, index=True)
     content = db.Column(db.Text, nullable=False)
     message_type = db.Column(db.String(20), default='text')  # text, image, file
     attachment_url = db.Column(db.Text, nullable=True)
     attachments = db.Column(db.JSON, nullable=True)
     listing_preview = db.Column(db.JSON, nullable=True)
     is_read = db.Column(db.Boolean, default=False, index=True)
+    is_deleted = db.Column(db.Boolean, default=False, index=True)
+    edited_at = db.Column(db.DateTime, nullable=True)
     created_at = db.Column(db.DateTime, default=utcnow, index=True)
+
+    reply_to = db.relationship(
+        "Message",
+        remote_side=[id],
+        foreign_keys=[reply_to_id],
+        lazy="joined",
+    )
 
     __table_args__ = (
         db.Index("ix_message_receiver_is_read_created_at", "receiver_id", "is_read", "created_at"),
@@ -413,18 +423,52 @@ class Message(db.Model):
         db.Index("ix_message_sender_created_at", "sender_id", "created_at"),
     )
     
+    def _reply_preview(self):
+        parent = self.reply_to
+        if parent is None and self.reply_to_id:
+            parent = db.session.get(Message, self.reply_to_id)
+        if not parent:
+            return None
+        if parent.is_deleted:
+            content = "This message was deleted"
+        elif parent.content:
+            content = parent.content
+        elif parent.listing_preview:
+            content = "[Listing]"
+        elif parent.attachments:
+            content = f"[{len(parent.attachments)} attachments]"
+        elif parent.attachment_url:
+            content = "[Attachment]"
+        else:
+            content = ""
+        return {
+            'id': parent.public_id,
+            'sender_id': parent.sender.public_id if parent.sender else None,
+            'sender_name': f"{parent.sender.first_name} {parent.sender.last_name}" if parent.sender else None,
+            'content': content,
+            'message_type': parent.message_type,
+            'is_deleted': parent.is_deleted,
+        }
+
     def to_dict(self):
+        reply_parent = self.reply_to
+        if reply_parent is None and self.reply_to_id:
+            reply_parent = db.session.get(Message, self.reply_to_id)
         return {
             'id': self.public_id,
             'sender_id': self.sender.public_id if self.sender else None,
             'receiver_id': self.receiver.public_id if self.receiver else None,
             'car_id': self.car.public_id if self.car else None,
-            'content': self.content,
+            'reply_to_message_id': reply_parent.public_id if reply_parent else None,
+            'reply_to_message': self._reply_preview(),
+            'content': "This message was deleted" if self.is_deleted else self.content,
             'message_type': self.message_type,
-            'attachment_url': self.attachment_url,
-            'attachments': self.attachments,
-            'listing_preview': self.listing_preview,
+            'attachment_url': None if self.is_deleted else self.attachment_url,
+            'attachments': [] if self.is_deleted else self.attachments,
+            'listing_preview': None if self.is_deleted else self.listing_preview,
             'is_read': self.is_read,
+            'is_deleted': self.is_deleted,
+            'edited_at': self.edited_at.isoformat() if self.edited_at else None,
             'created_at': self.created_at.isoformat() if self.created_at else None,
             'sender_name': f"{self.sender.first_name} {self.sender.last_name}" if self.sender else None
         }

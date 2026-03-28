@@ -49,6 +49,10 @@ class WebSocketService {
       StreamController<String>.broadcast();
   static final StreamController<Map<String, dynamic>> _typingController =
       StreamController<Map<String, dynamic>>.broadcast();
+  static final StreamController<Map<String, dynamic>> _messageUpdatesController =
+      StreamController<Map<String, dynamic>>.broadcast();
+  static final StreamController<Map<String, dynamic>> _messageDeletesController =
+      StreamController<Map<String, dynamic>>.broadcast();
 
   static Stream<Map<String, dynamic>> get messages => _messagesController.stream;
   static Stream<Map<String, dynamic>> get notifications =>
@@ -56,6 +60,10 @@ class WebSocketService {
   static Stream<bool> get connectionState => _connectionController.stream;
   static Stream<String> get errors => _errorController.stream;
   static Stream<Map<String, dynamic>> get typingEvents => _typingController.stream;
+  static Stream<Map<String, dynamic>> get messageUpdates =>
+      _messageUpdatesController.stream;
+  static Stream<Map<String, dynamic>> get messageDeletes =>
+      _messageDeletesController.stream;
 
   static String get baseHttpUrl => effectiveSocketIoBase();
 
@@ -199,6 +207,18 @@ class WebSocketService {
         }
       });
 
+      _socket!.on('message_updated', (payload) {
+        if (payload is Map) {
+          _messageUpdatesController.add(Map<String, dynamic>.from(payload as Map));
+        }
+      });
+
+      _socket!.on('message_deleted', (payload) {
+        if (payload is Map) {
+          _messageDeletesController.add(Map<String, dynamic>.from(payload as Map));
+        }
+      });
+
       _socket!.on('new_notification', (payload) {
         if (payload is Map) {
           final n = Map<String, dynamic>.from(payload as Map);
@@ -282,6 +302,7 @@ class WebSocketService {
     String content, {
     String? receiverId,
     Map<String, dynamic>? listingPreview,
+    String? replyToMessageId,
   }) {
     final messageData = <String, dynamic>{'car_id': carId, 'content': content};
 
@@ -290,6 +311,9 @@ class WebSocketService {
     }
     if (listingPreview != null && listingPreview.isNotEmpty) {
       messageData['listing_preview'] = listingPreview;
+    }
+    if (replyToMessageId != null && replyToMessageId.trim().isNotEmpty) {
+      messageData['reply_to_message_id'] = replyToMessageId.trim();
     }
 
     sendMessage('send_message', messageData);
@@ -343,13 +367,17 @@ class ChatMessage {
   final String senderId;
   final String receiverId;
   final String? carId;
+  final String? replyToMessageId;
+  final ChatReplyPreview? replyToMessage;
   final String content;
   final String messageType;
   final String? attachmentUrl;
   final List<ChatAttachment> attachments;
   final Map<String, dynamic>? listingPreview;
   final bool isRead;
+  final bool isDeleted;
   final DateTime createdAt;
+  final DateTime? editedAt;
   final String? senderName;
   final bool isPending;
 
@@ -358,13 +386,17 @@ class ChatMessage {
     required this.senderId,
     required this.receiverId,
     this.carId,
+    this.replyToMessageId,
+    this.replyToMessage,
     required this.content,
     required this.messageType,
     this.attachmentUrl,
     this.attachments = const [],
     this.listingPreview,
     required this.isRead,
+    this.isDeleted = false,
     required this.createdAt,
+    this.editedAt,
     this.senderName,
     this.isPending = false,
   });
@@ -392,6 +424,14 @@ class ChatMessage {
       senderId: (json['sender_id'] ?? '').toString(),
       receiverId: (json['receiver_id'] ?? '').toString(),
       carId: json['car_id']?.toString(),
+      replyToMessageId: json['reply_to_message_id']?.toString(),
+      replyToMessage: json['reply_to_message'] is Map
+          ? ChatReplyPreview.fromJson(
+              Map<String, dynamic>.from(
+                (json['reply_to_message'] as Map).cast<String, dynamic>(),
+              ),
+            )
+          : null,
       content: (json['content'] ?? '').toString(),
       messageType: messageType,
       attachmentUrl: attachmentUrl,
@@ -402,7 +442,11 @@ class ChatMessage {
             )
           : null,
       isRead: json['is_read'] == true,
+      isDeleted: json['is_deleted'] == true,
       createdAt: parseApiDateTime(json['created_at']),
+      editedAt: json['edited_at'] == null
+          ? null
+          : parseApiDateTime(json['edited_at']),
       senderName: json['sender_name']?.toString(),
       isPending: json['is_pending'] == true,
     );
@@ -414,15 +458,108 @@ class ChatMessage {
       'sender_id': senderId,
       'receiver_id': receiverId,
       'car_id': carId,
+      'reply_to_message_id': replyToMessageId,
+      'reply_to_message': replyToMessage?.toJson(),
       'content': content,
       'message_type': messageType,
       'attachment_url': attachmentUrl,
       'attachments': attachments.map((item) => item.toJson()).toList(),
       'listing_preview': listingPreview,
       'is_read': isRead,
+      'is_deleted': isDeleted,
       'created_at': createdAt.toIso8601String(),
+      'edited_at': editedAt?.toIso8601String(),
       'sender_name': senderName,
       'is_pending': isPending,
+    };
+  }
+
+  ChatMessage copyWith({
+    String? id,
+    String? senderId,
+    String? receiverId,
+    String? carId,
+    String? replyToMessageId,
+    ChatReplyPreview? replyToMessage,
+    bool clearReplyToMessage = false,
+    String? content,
+    String? messageType,
+    String? attachmentUrl,
+    List<ChatAttachment>? attachments,
+    Map<String, dynamic>? listingPreview,
+    bool clearListingPreview = false,
+    bool? isRead,
+    bool? isDeleted,
+    DateTime? createdAt,
+    DateTime? editedAt,
+    bool clearEditedAt = false,
+    String? senderName,
+    bool? isPending,
+  }) {
+    return ChatMessage(
+      id: id ?? this.id,
+      senderId: senderId ?? this.senderId,
+      receiverId: receiverId ?? this.receiverId,
+      carId: carId ?? this.carId,
+      replyToMessageId: clearReplyToMessage
+          ? null
+          : replyToMessageId ?? this.replyToMessageId,
+      replyToMessage: clearReplyToMessage
+          ? null
+          : replyToMessage ?? this.replyToMessage,
+      content: content ?? this.content,
+      messageType: messageType ?? this.messageType,
+      attachmentUrl: attachmentUrl ?? this.attachmentUrl,
+      attachments: attachments ?? this.attachments,
+      listingPreview: clearListingPreview
+          ? null
+          : listingPreview ?? this.listingPreview,
+      isRead: isRead ?? this.isRead,
+      isDeleted: isDeleted ?? this.isDeleted,
+      createdAt: createdAt ?? this.createdAt,
+      editedAt: clearEditedAt ? null : editedAt ?? this.editedAt,
+      senderName: senderName ?? this.senderName,
+      isPending: isPending ?? this.isPending,
+    );
+  }
+}
+
+class ChatReplyPreview {
+  final String id;
+  final String? senderId;
+  final String? senderName;
+  final String content;
+  final String messageType;
+  final bool isDeleted;
+
+  ChatReplyPreview({
+    required this.id,
+    this.senderId,
+    this.senderName,
+    required this.content,
+    required this.messageType,
+    this.isDeleted = false,
+  });
+
+  factory ChatReplyPreview.fromJson(Map<String, dynamic> json) {
+    return ChatReplyPreview(
+      id: (json['id'] ?? '').toString(),
+      senderId: json['sender_id']?.toString(),
+      senderName: json['sender_name']?.toString(),
+      content: (json['content'] ?? '').toString(),
+      messageType: (json['message_type'] ?? 'text').toString(),
+      isDeleted: json['is_deleted'] == true,
+    );
+  }
+
+  Map<String, dynamic> toJson() {
+    return {
+      'id': id,
+      'sender_id': senderId,
+      'sender_name': senderName,
+      'content': content,
+      'message_type': messageType,
+      'is_deleted': isDeleted,
     };
   }
 }

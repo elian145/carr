@@ -658,9 +658,12 @@ class _ChatConversationPageState extends State<ChatConversationPage>
     with WidgetsBindingObserver {
   final List<ChatMessage> _messages = [];
   final TextEditingController _messageController = TextEditingController();
+  final FocusNode _messageFocusNode = FocusNode();
   final ScrollController _scrollController = ScrollController();
   final ScrollController _composerScrollController = ScrollController();
   StreamSubscription<Map<String, dynamic>>? _messageSub;
+  StreamSubscription<Map<String, dynamic>>? _messageUpdateSub;
+  StreamSubscription<Map<String, dynamic>>? _messageDeleteSub;
   StreamSubscription<String>? _errorSub;
   StreamSubscription<Map<String, dynamic>>? _typingSub;
   bool _isSending = false;
@@ -677,6 +680,8 @@ class _ChatConversationPageState extends State<ChatConversationPage>
   String? _receiverName;
   Map<String, dynamic>? _listingPreview;
   bool _pendingInitialListingContext = false;
+  ChatMessage? _replyingToMessage;
+  String? _editingMessageId;
 
   @override
   void initState() {
@@ -845,6 +850,62 @@ class _ChatConversationPageState extends State<ChatConversationPage>
     _messages.removeWhere((m) => m.id == id);
   }
 
+  ChatMessage? _messageById(String id) {
+    for (final message in _messages) {
+      if (message.id == id) return message;
+    }
+    return null;
+  }
+
+  void _startReplyToMessage(ChatMessage message) {
+    setState(() {
+      _replyingToMessage = message;
+      _editingMessageId = null;
+    });
+    _focusComposer();
+  }
+
+  void _startEditingMessage(ChatMessage message) {
+    setState(() {
+      _editingMessageId = message.id;
+      _replyingToMessage = null;
+      _messageController.text = message.content;
+      _pendingInitialListingContext = false;
+    });
+    _messageController.selection = TextSelection.fromPosition(
+      TextPosition(offset: _messageController.text.length),
+    );
+    _focusComposer();
+  }
+
+  void _cancelComposerAction() {
+    if (_replyingToMessage == null && _editingMessageId == null) return;
+    setState(() {
+      _replyingToMessage = null;
+      _editingMessageId = null;
+    });
+  }
+
+  void _focusComposer() {
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (!mounted) return;
+      _messageFocusNode.requestFocus();
+    });
+  }
+
+  String _replyPreviewLabel(ChatMessage message) {
+    if (message.isDeleted) return 'This message was deleted';
+    if (message.listingPreview != null) return 'Listing';
+    if (message.attachments.isNotEmpty) {
+      final hasVideo = message.attachments.any((item) => item.type == 'video');
+      if (message.attachments.length > 1) {
+        return hasVideo ? 'Media group' : 'Photos';
+      }
+      return hasVideo ? 'Video' : 'Photo';
+    }
+    return message.content.trim().isEmpty ? 'Message' : message.content.trim();
+  }
+
   String _temporaryMessageId() {
     return 'temp-${DateTime.now().microsecondsSinceEpoch}';
   }
@@ -875,11 +936,23 @@ class _ChatConversationPageState extends State<ChatConversationPage>
 
   ChatMessage _buildPendingMediaGroupMessage(List<XFile> files) {
     final authService = Provider.of<AuthService>(context, listen: false);
+    final replyTo = _replyingToMessage;
     return ChatMessage(
       id: _temporaryMessageId(),
       senderId: authService.userId ?? '',
       receiverId: widget.receiverId ?? '',
       carId: widget.carId,
+      replyToMessageId: replyTo?.id,
+      replyToMessage: replyTo == null
+          ? null
+          : ChatReplyPreview(
+              id: replyTo.id,
+              senderId: replyTo.senderId,
+              senderName: replyTo.senderName,
+              content: _replyPreviewLabel(replyTo),
+              messageType: replyTo.messageType,
+              isDeleted: replyTo.isDeleted,
+            ),
       content: _mediaGroupPlaceholder(files.length),
       messageType: 'media_group',
       attachments: files
@@ -950,6 +1023,8 @@ class _ChatConversationPageState extends State<ChatConversationPage>
 
   void _setupWebSocketListeners() {
     _messageSub?.cancel();
+    _messageUpdateSub?.cancel();
+    _messageDeleteSub?.cancel();
     _errorSub?.cancel();
     _messageSub = WebSocketService.messages.listen((message) {
       // Optional: filter by carId when payload includes it
@@ -965,6 +1040,38 @@ class _ChatConversationPageState extends State<ChatConversationPage>
         _refreshReceiverNameFromMessages();
       });
       _scrollToBottom();
+    });
+    _messageUpdateSub = WebSocketService.messageUpdates.listen((message) {
+      final payloadCarId = message['car_id']?.toString();
+      if (payloadCarId != null &&
+          payloadCarId.isNotEmpty &&
+          payloadCarId != widget.carId) {
+        return;
+      }
+      if (!mounted) return;
+      final updated = ChatMessage.fromJson(message);
+      setState(() {
+        _addMessageIfMissing(updated);
+        if (_replyingToMessage?.id == updated.id) {
+          _replyingToMessage = updated;
+        }
+      });
+    });
+    _messageDeleteSub = WebSocketService.messageDeletes.listen((message) {
+      final payloadCarId = message['car_id']?.toString();
+      if (payloadCarId != null &&
+          payloadCarId.isNotEmpty &&
+          payloadCarId != widget.carId) {
+        return;
+      }
+      if (!mounted) return;
+      final updated = ChatMessage.fromJson(message);
+      setState(() {
+        _addMessageIfMissing(updated);
+        if (_replyingToMessage?.id == updated.id) {
+          _replyingToMessage = updated;
+        }
+      });
     });
     _errorSub = WebSocketService.errors.listen((err) {
       if (!mounted) return;
@@ -1158,15 +1265,18 @@ class _ChatConversationPageState extends State<ChatConversationPage>
     _scrollToBottom();
 
     try {
+      final replyToMessageId = _replyingToMessage?.id;
       final response = await ApiService.sendChatMediaGroup(
         conversationId: widget.carId,
         files: validFiles,
         receiverId: widget.receiverId,
+        replyToMessageId: replyToMessageId,
       );
       final msg = response['message'];
       if (msg is Map<String, dynamic> && mounted) {
         setState(() {
           _replaceMessage(pendingMessage.id, ChatMessage.fromJson(msg));
+          _replyingToMessage = null;
         });
         _scrollToBottom();
       }
@@ -1185,6 +1295,210 @@ class _ChatConversationPageState extends State<ChatConversationPage>
         _isSending = false;
       }
     }
+  }
+
+  bool _canEditMessage(ChatMessage message, bool isMe) {
+    return isMe &&
+        !message.isDeleted &&
+        message.messageType == 'text' &&
+        message.attachments.isEmpty &&
+        message.listingPreview == null;
+  }
+
+  bool _canDeleteMessage(ChatMessage message, bool isMe) {
+    return isMe && !message.isDeleted;
+  }
+
+  Future<void> _deleteMessage(ChatMessage message) async {
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('Delete message?'),
+        content: const Text('This message will be removed from the conversation.'),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context, false),
+            child: const Text('Cancel'),
+          ),
+          TextButton(
+            onPressed: () => Navigator.pop(context, true),
+            child: const Text('Delete'),
+          ),
+        ],
+      ),
+    );
+    if (confirmed != true || !mounted) return;
+
+    try {
+      final response = await ApiService.deleteChatMessage(messageId: message.id);
+      final msg = response['message'];
+      if (msg is Map<String, dynamic>) {
+        setState(() {
+          final deleted = ChatMessage.fromJson(msg);
+          _addMessageIfMissing(deleted);
+          if (_replyingToMessage?.id == deleted.id) {
+            _replyingToMessage = deleted;
+          }
+          if (_editingMessageId == deleted.id) {
+            _editingMessageId = null;
+            _messageController.clear();
+          }
+        });
+      }
+    } catch (e) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text(e.toString()), backgroundColor: Colors.red),
+      );
+    }
+  }
+
+  Future<void> _showMessageActions(ChatMessage message, bool isMe) async {
+    final action = await showModalBottomSheet<String>(
+      context: context,
+      builder: (context) => SafeArea(
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            if (!message.isDeleted)
+              ListTile(
+                leading: const Icon(Icons.reply),
+                title: const Text('Reply'),
+                onTap: () => Navigator.pop(context, 'reply'),
+              ),
+            if (_canEditMessage(message, isMe))
+              ListTile(
+                leading: const Icon(Icons.edit_outlined),
+                title: const Text('Edit'),
+                onTap: () => Navigator.pop(context, 'edit'),
+              ),
+            if (_canDeleteMessage(message, isMe))
+              ListTile(
+                leading: const Icon(Icons.delete_outline),
+                title: const Text('Delete'),
+                onTap: () => Navigator.pop(context, 'delete'),
+              ),
+          ],
+        ),
+      ),
+    );
+
+    if (!mounted || action == null) return;
+    if (action == 'reply') {
+      _startReplyToMessage(message);
+    } else if (action == 'edit') {
+      _startEditingMessage(message);
+    } else if (action == 'delete') {
+      await _deleteMessage(message);
+    }
+  }
+
+  Widget _buildReplyPreviewCard(
+    BuildContext context,
+    ChatReplyPreview reply, {
+    required bool isMe,
+    bool dense = false,
+  }) {
+    final theme = Theme.of(context);
+    final baseColor = isMe
+        ? Colors.white.withOpacity(0.14)
+        : theme.dividerColor.withOpacity(0.25);
+    final borderColor = isMe
+        ? Colors.white.withOpacity(0.5)
+        : theme.primaryColor.withOpacity(0.7);
+    return Container(
+      width: double.infinity,
+      margin: EdgeInsets.only(bottom: dense ? 6 : 8),
+      padding: EdgeInsets.symmetric(
+        horizontal: dense ? 8 : 10,
+        vertical: dense ? 6 : 8,
+      ),
+      decoration: BoxDecoration(
+        color: baseColor,
+        borderRadius: BorderRadius.circular(12),
+        border: Border(left: BorderSide(color: borderColor, width: 3)),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Text(
+            (reply.senderName ?? 'Message').trim().isNotEmpty
+                ? reply.senderName!.trim()
+                : 'Message',
+            maxLines: 1,
+            overflow: TextOverflow.ellipsis,
+            style: theme.textTheme.bodySmall?.copyWith(
+              fontWeight: FontWeight.w600,
+              color: isMe ? Colors.white : null,
+            ),
+          ),
+          const SizedBox(height: 2),
+          Text(
+            reply.content.trim().isEmpty ? 'Message' : reply.content.trim(),
+            maxLines: dense ? 1 : 2,
+            overflow: TextOverflow.ellipsis,
+            style: theme.textTheme.bodySmall?.copyWith(
+              color: isMe ? Colors.white70 : theme.textTheme.bodySmall?.color,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildComposerActionBanner(BuildContext context) {
+    final editingMessage = _editingMessageId == null
+        ? null
+        : _messageById(_editingMessageId!);
+    if (_replyingToMessage == null && editingMessage == null) {
+      return const SizedBox.shrink();
+    }
+
+    final isEditMode = editingMessage != null;
+    final previewMessage = editingMessage ?? _replyingToMessage!;
+    final replyPreview = ChatReplyPreview(
+      id: previewMessage.id,
+      senderId: previewMessage.senderId,
+      senderName: previewMessage.senderName,
+      content: _replyPreviewLabel(previewMessage),
+      messageType: previewMessage.messageType,
+      isDeleted: previewMessage.isDeleted,
+    );
+
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 8),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  isEditMode ? 'Editing message' : 'Replying to message',
+                  style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                    fontWeight: FontWeight.w600,
+                  ),
+                ),
+                const SizedBox(height: 6),
+                _buildReplyPreviewCard(
+                  context,
+                  replyPreview,
+                  isMe: false,
+                  dense: true,
+                ),
+              ],
+            ),
+          ),
+          IconButton(
+            onPressed: _cancelComposerAction,
+            icon: const Icon(Icons.close),
+            tooltip: 'Cancel',
+          ),
+        ],
+      ),
+    );
   }
 
   Future<void> _showAttachmentPicker() async {
@@ -1231,10 +1545,27 @@ class _ChatConversationPageState extends State<ChatConversationPage>
     if (_isSending) return;
     final content = _messageController.text.trim();
     if (content.isEmpty) return;
+    final editingMessageId = _editingMessageId;
+    final replyingToMessageId = _replyingToMessage?.id;
     setState(() => _isSending = true);
     _messageController.clear();
 
     try {
+      if (editingMessageId != null) {
+        final response = await ApiService.editChatMessage(
+          messageId: editingMessageId,
+          content: content,
+        );
+        final msg = response['message'];
+        if (msg is Map<String, dynamic> && mounted) {
+          setState(() {
+            _addMessageIfMissing(ChatMessage.fromJson(msg));
+            _editingMessageId = null;
+          });
+        }
+        return;
+      }
+
       final listingPreviewForMessage =
           _pendingInitialListingContext ? _listingPreview : null;
       if (WebSocketService.isConnected) {
@@ -1243,11 +1574,16 @@ class _ChatConversationPageState extends State<ChatConversationPage>
           content,
           receiverId: widget.receiverId,
           listingPreview: listingPreviewForMessage,
+          replyToMessageId: replyingToMessageId,
         );
         if (mounted) {
-          setState(() => _pendingInitialListingContext = false);
+          setState(() {
+            _pendingInitialListingContext = false;
+            _replyingToMessage = null;
+          });
         } else {
           _pendingInitialListingContext = false;
+          _replyingToMessage = null;
         }
         return;
       }
@@ -1257,12 +1593,14 @@ class _ChatConversationPageState extends State<ChatConversationPage>
         content: content,
         receiverId: widget.receiverId,
         listingPreview: listingPreviewForMessage,
+        replyToMessageId: replyingToMessageId,
       );
       final msg = response['message'];
       if (msg is Map<String, dynamic> && mounted) {
         setState(() {
           _addMessageIfMissing(ChatMessage.fromJson(msg));
           _pendingInitialListingContext = false;
+          _replyingToMessage = null;
         });
         _scrollToBottom();
       }
@@ -1300,9 +1638,12 @@ class _ChatConversationPageState extends State<ChatConversationPage>
       WebSocketService.sendTypingStop(widget.carId);
     }
     _messageSub?.cancel();
+    _messageUpdateSub?.cancel();
+    _messageDeleteSub?.cancel();
     _errorSub?.cancel();
     _typingSub?.cancel();
     _messageController.dispose();
+    _messageFocusNode.dispose();
     _scrollController.dispose();
     _composerScrollController.dispose();
     WebSocketService.leaveChat();
@@ -1838,7 +2179,11 @@ class _ChatConversationPageState extends State<ChatConversationPage>
                         alignment: isMe
                             ? Alignment.centerRight
                             : Alignment.centerLeft,
-                        child: Container(
+                        child: GestureDetector(
+                          onLongPress: message.isPending
+                              ? null
+                              : () => _showMessageActions(message, isMe),
+                          child: Container(
                           constraints: BoxConstraints(
                             minWidth: textBubbleWidth ?? 0,
                             maxWidth: textBubbleWidth ?? bubbleMaxWidth,
@@ -1862,6 +2207,12 @@ class _ChatConversationPageState extends State<ChatConversationPage>
                                 Text(
                                   message.senderName ?? AppLocalizations.of(context)!.unknownSender,
                                   style: Theme.of(context).textTheme.bodySmall,
+                                ),
+                              if (message.replyToMessage != null)
+                                _buildReplyPreviewCard(
+                                  context,
+                                  message.replyToMessage!,
+                                  isMe: isMe,
                                 ),
                               if (message.attachments.isNotEmpty) ...[
                                 _buildMediaGroupBubble(context, message),
@@ -1896,12 +2247,28 @@ class _ChatConversationPageState extends State<ChatConversationPage>
                               ] else
                                 Text(
                                   message.content,
-                                  style: TextStyle(color: isMe ? Colors.white : null),
+                                  style: TextStyle(
+                                    color: isMe ? Colors.white : null,
+                                    fontStyle: message.isDeleted
+                                        ? FontStyle.italic
+                                        : FontStyle.normal,
+                                  ),
                                 ),
                               const SizedBox(height: 4),
                               Row(
                                 mainAxisSize: MainAxisSize.max,
                                 children: [
+                                  if (message.editedAt != null && !message.isDeleted)
+                                    Padding(
+                                      padding: const EdgeInsets.only(right: 6),
+                                      child: Text(
+                                        'Edited',
+                                        style: TextStyle(
+                                          color: isMe ? Colors.white70 : Colors.grey,
+                                          fontSize: 12,
+                                        ),
+                                      ),
+                                    ),
                                   Text(
                                     _relativeTime(context, message.createdAt),
                                     style: TextStyle(
@@ -1917,6 +2284,7 @@ class _ChatConversationPageState extends State<ChatConversationPage>
                               ),
                             ],
                           ),
+                        ),
                         ),
                       );
                     },
@@ -1946,53 +2314,87 @@ class _ChatConversationPageState extends State<ChatConversationPage>
             child: Column(
               mainAxisSize: MainAxisSize.min,
               children: [
+                _buildComposerActionBanner(context),
                 Row(
                   children: [
                     IconButton(
-                      onPressed: _isSending ? null : _showAttachmentPicker,
+                      onPressed: (_isSending || _editingMessageId != null)
+                          ? null
+                          : _showAttachmentPicker,
                       icon: const Icon(Icons.attach_file),
                       tooltip: 'Send attachment',
                     ),
                     Expanded(
-                      child: Container(
-                        constraints: const BoxConstraints(maxHeight: 240),
-                        decoration: BoxDecoration(
-                          border: Border.all(
-                            color: Theme.of(context).dividerColor,
-                          ),
-                          borderRadius: BorderRadius.circular(12),
-                          color: Theme.of(context).scaffoldBackgroundColor,
-                        ),
-                        child: Scrollbar(
-                          controller: _composerScrollController,
-                          child: SingleChildScrollView(
-                            controller: _composerScrollController,
-                            padding: const EdgeInsets.all(12),
-                            child: Column(
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              children: [
-                                if (_pendingInitialListingContext &&
-                                    _listingPreview != null) ...[
-                                  _buildListingCard(context, _listingPreview!),
-                                  const SizedBox(height: 10),
-                                ],
-                                TextField(
-                                  controller: _messageController,
-                                  decoration: InputDecoration.collapsed(
-                                    hintText:
-                                        AppLocalizations.of(context)!.typeMessage,
-                                  ),
-                                  keyboardType: TextInputType.multiline,
-                                  textInputAction: TextInputAction.newline,
-                                  maxLines: null,
-                                  onChanged: _onTextChanged,
+                      child: _pendingInitialListingContext &&
+                              _listingPreview != null
+                          ? Container(
+                              constraints: const BoxConstraints(maxHeight: 240),
+                              decoration: BoxDecoration(
+                                border: Border.all(
+                                  color: Theme.of(context).dividerColor,
                                 ),
-                              ],
+                                borderRadius: BorderRadius.circular(12),
+                                color: Theme.of(context).scaffoldBackgroundColor,
+                              ),
+                              child: Scrollbar(
+                                controller: _composerScrollController,
+                                child: SingleChildScrollView(
+                                  controller: _composerScrollController,
+                                  padding: const EdgeInsets.all(12),
+                                  child: Column(
+                                    crossAxisAlignment: CrossAxisAlignment.start,
+                                    children: [
+                                      _buildListingCard(context, _listingPreview!),
+                                      const SizedBox(height: 10),
+                                      TextField(
+                                        controller: _messageController,
+                                        focusNode: _messageFocusNode,
+                                        decoration: InputDecoration.collapsed(
+                                          hintText: AppLocalizations.of(context)!
+                                              .typeMessage,
+                                        ),
+                                        keyboardType: TextInputType.multiline,
+                                        textInputAction:
+                                            TextInputAction.newline,
+                                        maxLines: null,
+                                        onChanged: _onTextChanged,
+                                      ),
+                                    ],
+                                  ),
+                                ),
+                              ),
+                            )
+                          : Container(
+                              decoration: BoxDecoration(
+                                border: Border.all(
+                                  color: Theme.of(context).dividerColor,
+                                ),
+                                borderRadius: BorderRadius.circular(12),
+                                color: Theme.of(context).scaffoldBackgroundColor,
+                              ),
+                              padding: const EdgeInsets.symmetric(
+                                horizontal: 12,
+                                vertical: 4,
+                              ),
+                              child: TextField(
+                                controller: _messageController,
+                                focusNode: _messageFocusNode,
+                                decoration: InputDecoration(
+                                  hintText:
+                                      AppLocalizations.of(context)!.typeMessage,
+                                  border: InputBorder.none,
+                                  isDense: true,
+                                  contentPadding: const EdgeInsets.symmetric(
+                                    vertical: 12,
+                                  ),
+                                ),
+                                keyboardType: TextInputType.multiline,
+                                textInputAction: TextInputAction.newline,
+                                maxLines: null,
+                                onChanged: _onTextChanged,
+                              ),
                             ),
-                          ),
-                        ),
                       ),
-                    ),
                     const SizedBox(width: 8),
                     IconButton(
                       onPressed: _isSending ? null : _sendMessage,

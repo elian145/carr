@@ -822,6 +822,7 @@ class ApiService {
     required String content,
     String? receiverId,
     Map<String, dynamic>? listingPreview,
+    String? replyToMessageId,
   }) async {
     final payload = <String, dynamic>{'content': content};
     if (receiverId != null && receiverId.trim().isNotEmpty) {
@@ -829,6 +830,9 @@ class ApiService {
     }
     if (listingPreview != null && listingPreview.isNotEmpty) {
       payload['listing_preview'] = listingPreview;
+    }
+    if (replyToMessageId != null && replyToMessageId.trim().isNotEmpty) {
+      payload['reply_to_message_id'] = replyToMessageId.trim();
     }
     return await _makeAuthenticatedRequest(
       'POST',
@@ -913,6 +917,7 @@ class ApiService {
     required XFile imageFile,
     String? receiverId,
     String? caption,
+    String? replyToMessageId,
   }) async {
     return _sendChatAttachment(
       conversationId: conversationId,
@@ -921,6 +926,7 @@ class ApiService {
       file: imageFile,
       receiverId: receiverId,
       caption: caption,
+      replyToMessageId: replyToMessageId,
     );
   }
 
@@ -929,6 +935,7 @@ class ApiService {
     required XFile videoFile,
     String? receiverId,
     String? caption,
+    String? replyToMessageId,
   }) async {
     return _sendChatAttachment(
       conversationId: conversationId,
@@ -937,6 +944,7 @@ class ApiService {
       file: videoFile,
       receiverId: receiverId,
       caption: caption,
+      replyToMessageId: replyToMessageId,
     );
   }
 
@@ -945,6 +953,7 @@ class ApiService {
     required List<XFile> files,
     String? receiverId,
     String? caption,
+    String? replyToMessageId,
   }) async {
     if (files.isEmpty) {
       throw Exception('No attachments selected');
@@ -962,6 +971,9 @@ class ApiService {
       }
       if (caption != null && caption.trim().isNotEmpty) {
         req.fields['content'] = caption.trim();
+      }
+      if (replyToMessageId != null && replyToMessageId.trim().isNotEmpty) {
+        req.fields['reply_to_message_id'] = replyToMessageId.trim();
       }
       final streamedResponse = await req.send().timeout(_uploadTimeout);
       return http.Response.fromStream(streamedResponse);
@@ -990,6 +1002,7 @@ class ApiService {
     required XFile file,
     String? receiverId,
     String? caption,
+    String? replyToMessageId,
   }) async {
     final url = Uri.parse('$baseUrl/chat/$conversationId/$endpointSuffix');
 
@@ -1002,6 +1015,9 @@ class ApiService {
       }
       if (caption != null && caption.trim().isNotEmpty) {
         req.fields['content'] = caption.trim();
+      }
+      if (replyToMessageId != null && replyToMessageId.trim().isNotEmpty) {
+        req.fields['reply_to_message_id'] = replyToMessageId.trim();
       }
       final streamedResponse = await req.send().timeout(_uploadTimeout);
       return http.Response.fromStream(streamedResponse);
@@ -1021,6 +1037,26 @@ class ApiService {
       _handleResponse(response);
     }
     return json.decode(response.body) as Map<String, dynamic>;
+  }
+
+  static Future<Map<String, dynamic>> editChatMessage({
+    required String messageId,
+    required String content,
+  }) async {
+    return await _makeAuthenticatedRequest(
+      'PATCH',
+      '/chat/messages/$messageId',
+      body: {'content': content},
+    );
+  }
+
+  static Future<Map<String, dynamic>> deleteChatMessage({
+    required String messageId,
+  }) async {
+    return await _makeAuthenticatedRequest(
+      'DELETE',
+      '/chat/messages/$messageId',
+    );
   }
 
   /// Register FCM push notification token with the backend.

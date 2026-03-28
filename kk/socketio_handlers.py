@@ -190,6 +190,7 @@ def register_socketio_handlers(socketio) -> None:
         content = str(data.get("content") or "").strip()
         receiver_public = str(data.get("receiver_id") or "").strip()
         listing_preview = data.get("listing_preview")
+        reply_to_public = str(data.get("reply_to_message_id") or "").strip()
 
         if not car_id_raw:
             emit("error", {"message": "car_id required"})
@@ -227,10 +228,19 @@ def register_socketio_handlers(socketio) -> None:
             emit("error", {"message": "Invalid receiver"})
             return
 
+        reply_to = None
+        if reply_to_public:
+            reply_to = Message.query.filter_by(public_id=reply_to_public, car_id=car.id).first()
+            if reply_to is None or me.id not in (reply_to.sender_id, reply_to.receiver_id):
+                emit("error", {"message": "Reply target not found"})
+                return
+
         msg = Message(
             sender_id=me.id,
             receiver_id=receiver.id,
             car_id=car.id,
+            reply_to_id=reply_to.id if reply_to else None,
+            reply_to=reply_to,
             content=content,
             message_type="text",
             listing_preview=listing_preview if isinstance(listing_preview, dict) else None,
@@ -255,6 +265,7 @@ def register_socketio_handlers(socketio) -> None:
 
         try:
             db.session.commit()
+            db.session.refresh(msg)
         except Exception:
             db.session.rollback()
             emit("error", {"message": "Failed to send message"})

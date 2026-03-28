@@ -10,6 +10,7 @@ from sqlalchemy import func, or_
 from werkzeug.exceptions import RequestEntityTooLarge
 
 from ..auth import get_current_user
+from ..extensions import socketio
 from ..models import BlockedUser, Car, Message, User, UserReport, db
 from ..push import send_push
 from ..security import rate_limit, validate_input_sanitization
@@ -152,6 +153,41 @@ def _max_upload_mb() -> int:
     if raw <= 0:
         return 0
     return max(1, raw // (1024 * 1024))
+
+
+def _room_for_car_public_id(car_public_id: str) -> str:
+    return f"chat:{car_public_id}"
+
+
+def _resolve_reply_target(me: User, car: Car, reply_public_id: str | None) -> Message | None:
+    raw = (reply_public_id or "").strip()
+    if not raw:
+        return None
+    msg = Message.query.filter_by(public_id=raw, car_id=car.id).first()
+    if not msg:
+        return None
+    if me.id not in (msg.sender_id, msg.receiver_id):
+        return None
+    return msg
+
+
+def _message_for_user(message_public_id: str, me: User) -> Message | None:
+    raw = (message_public_id or "").strip()
+    if not raw:
+        return None
+    msg = Message.query.filter_by(public_id=raw).first()
+    if not msg:
+        return None
+    if me.id not in (msg.sender_id, msg.receiver_id):
+        return None
+    return msg
+
+
+def _emit_message_update(car: Car, event_name: str, payload: dict) -> None:
+    try:
+        socketio.emit(event_name, payload, room=_room_for_car_public_id(car.public_id))
+    except Exception:
+        pass
 
 
 @bp.route("/api/chats", methods=["GET"])
@@ -318,6 +354,7 @@ def send_message(conversation_id: str):
         data = validate_input_sanitization(request.get_json(silent=True) or {})
         content = str(data.get("content") or "").strip()
         listing_preview = data.get("listing_preview")
+        reply_to_public = str(data.get("reply_to_message_id") or "").strip()
         if not content:
             return jsonify({"message": "content required"}), 400
         if len(content) > 4000:
@@ -355,10 +392,16 @@ def send_message(conversation_id: str):
         if receiver.id == me.id:
             return jsonify({"message": "Invalid receiver"}), 400
 
+        reply_to = _resolve_reply_target(me, car, reply_to_public)
+        if reply_to_public and reply_to is None:
+            return jsonify({"message": "Reply target not found"}), 404
+
         msg = Message(
             sender_id=me.id,
             receiver_id=receiver.id,
             car_id=car.id,
+            reply_to_id=reply_to.id if reply_to else None,
+            reply_to=reply_to,
             content=content,
             message_type="text",
             listing_preview=listing_preview if isinstance(listing_preview, dict) else None,
@@ -366,6 +409,7 @@ def send_message(conversation_id: str):
         )
         db.session.add(msg)
         db.session.commit()
+        db.session.refresh(msg)
 
         # Best-effort FCM push to receiver's device.
         try:
@@ -412,9 +456,18 @@ def send_image_message(conversation_id: str):
         receiver_public = (
             request.form.get("receiver_id") or request.form.get("receiverId") or ""
         ).strip()
+        reply_to_public = (
+            request.form.get("reply_to_message_id")
+            or request.form.get("replyToMessageId")
+            or ""
+        ).strip()
         receiver = _resolve_chat_receiver(me, car, receiver_public)
         if receiver is None:
             return jsonify({"message": "receiver_id required"}), 400
+
+        reply_to = _resolve_reply_target(me, car, reply_to_public)
+        if reply_to_public and reply_to is None:
+            return jsonify({"message": "Reply target not found"}), 404
 
         try:
             attachment_url = _upload_chat_attachment(
@@ -438,6 +491,8 @@ def send_image_message(conversation_id: str):
             sender_id=me.id,
             receiver_id=receiver.id,
             car_id=car.id,
+            reply_to_id=reply_to.id if reply_to else None,
+            reply_to=reply_to,
             content=content,
             message_type="image",
             attachment_url=attachment_url,
@@ -445,6 +500,7 @@ def send_image_message(conversation_id: str):
         )
         db.session.add(msg)
         db.session.commit()
+        db.session.refresh(msg)
         return jsonify({"success": True, "message": msg.to_dict()}), 201
     except Exception:
         db.session.rollback()
@@ -476,9 +532,18 @@ def send_video_message(conversation_id: str):
         receiver_public = (
             request.form.get("receiver_id") or request.form.get("receiverId") or ""
         ).strip()
+        reply_to_public = (
+            request.form.get("reply_to_message_id")
+            or request.form.get("replyToMessageId")
+            or ""
+        ).strip()
         receiver = _resolve_chat_receiver(me, car, receiver_public)
         if receiver is None:
             return jsonify({"message": "receiver_id required"}), 400
+
+        reply_to = _resolve_reply_target(me, car, reply_to_public)
+        if reply_to_public and reply_to is None:
+            return jsonify({"message": "Reply target not found"}), 404
 
         try:
             attachment_url = _upload_chat_attachment(
@@ -502,6 +567,8 @@ def send_video_message(conversation_id: str):
             sender_id=me.id,
             receiver_id=receiver.id,
             car_id=car.id,
+            reply_to_id=reply_to.id if reply_to else None,
+            reply_to=reply_to,
             content=content,
             message_type="video",
             attachment_url=attachment_url,
@@ -509,6 +576,7 @@ def send_video_message(conversation_id: str):
         )
         db.session.add(msg)
         db.session.commit()
+        db.session.refresh(msg)
         return jsonify({"success": True, "message": msg.to_dict()}), 201
     except Exception:
         db.session.rollback()
@@ -543,9 +611,18 @@ def send_media_group_message(conversation_id: str):
         receiver_public = (
             request.form.get("receiver_id") or request.form.get("receiverId") or ""
         ).strip()
+        reply_to_public = (
+            request.form.get("reply_to_message_id")
+            or request.form.get("replyToMessageId")
+            or ""
+        ).strip()
         receiver = _resolve_chat_receiver(me, car, receiver_public)
         if receiver is None:
             return jsonify({"message": "receiver_id required"}), 400
+
+        reply_to = _resolve_reply_target(me, car, reply_to_public)
+        if reply_to_public and reply_to is None:
+            return jsonify({"message": "Reply target not found"}), 404
 
         attachments = []
         for file in files:
@@ -560,6 +637,8 @@ def send_media_group_message(conversation_id: str):
             sender_id=me.id,
             receiver_id=receiver.id,
             car_id=car.id,
+            reply_to_id=reply_to.id if reply_to else None,
+            reply_to=reply_to,
             content=content,
             message_type="media_group",
             attachment_url=attachments[0]["url"] if attachments else None,
@@ -568,6 +647,7 @@ def send_media_group_message(conversation_id: str):
         )
         db.session.add(msg)
         db.session.commit()
+        db.session.refresh(msg)
 
         try:
             fcm_token = getattr(receiver, "firebase_token", None)
@@ -596,6 +676,79 @@ def send_media_group_message(conversation_id: str):
     except Exception:
         db.session.rollback()
         return jsonify({"message": "Failed to send media group"}), 500
+
+
+@bp.route("/api/chat/messages/<message_id>", methods=["PATCH"])
+@jwt_required()
+def edit_chat_message(message_id: str):
+    try:
+        me = get_current_user()
+        if not me:
+            return jsonify({"message": "Unauthorized"}), 401
+
+        msg = _message_for_user(message_id, me)
+        if msg is None:
+            return jsonify({"message": "Message not found"}), 404
+        if msg.sender_id != me.id:
+            return jsonify({"message": "You can only edit your own messages"}), 403
+        if msg.is_deleted:
+            return jsonify({"message": "Deleted messages cannot be edited"}), 400
+        if msg.attachments or msg.attachment_url or msg.listing_preview or msg.message_type != "text":
+            return jsonify({"message": "Only text messages can be edited"}), 400
+
+        data = validate_input_sanitization(request.get_json(silent=True) or {})
+        content = str(data.get("content") or "").strip()
+        if not content:
+            return jsonify({"message": "content required"}), 400
+        if len(content) > 4000:
+            return jsonify({"message": "content too long"}), 400
+
+        msg.content = content
+        msg.edited_at = datetime.utcnow()
+        db.session.commit()
+
+        car = db.session.get(Car, msg.car_id) if msg.car_id else None
+        payload = msg.to_dict()
+        if car:
+            _emit_message_update(car, "message_updated", payload)
+        return jsonify({"success": True, "message": payload}), 200
+    except Exception:
+        db.session.rollback()
+        return jsonify({"message": "Failed to edit message"}), 500
+
+
+@bp.route("/api/chat/messages/<message_id>", methods=["DELETE"])
+@jwt_required()
+def delete_chat_message(message_id: str):
+    try:
+        me = get_current_user()
+        if not me:
+            return jsonify({"message": "Unauthorized"}), 401
+
+        msg = _message_for_user(message_id, me)
+        if msg is None:
+            return jsonify({"message": "Message not found"}), 404
+        if msg.sender_id != me.id:
+            return jsonify({"message": "You can only delete your own messages"}), 403
+        if msg.is_deleted:
+            return jsonify({"success": True, "message": msg.to_dict()}), 200
+
+        msg.content = ""
+        msg.attachment_url = None
+        msg.attachments = []
+        msg.listing_preview = None
+        msg.is_deleted = True
+        msg.edited_at = datetime.utcnow()
+        db.session.commit()
+
+        car = db.session.get(Car, msg.car_id) if msg.car_id else None
+        payload = msg.to_dict()
+        if car:
+            _emit_message_update(car, "message_deleted", payload)
+        return jsonify({"success": True, "message": payload}), 200
+    except Exception:
+        db.session.rollback()
+        return jsonify({"message": "Failed to delete message"}), 500
 
 
 @bp.route("/api/chat/unread_count", methods=["GET"])
