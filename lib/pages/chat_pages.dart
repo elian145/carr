@@ -684,6 +684,7 @@ class _ChatConversationPageState extends State<ChatConversationPage>
   Map<String, dynamic>? _listingPreview;
   bool _pendingInitialListingContext = false;
   final List<XFile> _draftAttachments = <XFile>[];
+  final List<ChatAttachment> _editingKeepAttachments = <ChatAttachment>[];
   ChatMessage? _replyingToMessage;
   String? _editingMessageId;
   String? _highlightMessageId;
@@ -918,10 +919,15 @@ class _ChatConversationPageState extends State<ChatConversationPage>
   }
 
   void _startEditingMessage(ChatMessage message) {
+    final isPlaceholder = _isAttachmentPlaceholder(message.content);
+    _editingKeepAttachments
+      ..clear()
+      ..addAll(_attachmentsForEdit(message));
+    _clearDraftAttachments();
     setState(() {
       _editingMessageId = message.id;
       _replyingToMessage = null;
-      _messageController.text = message.content;
+      _messageController.text = isPlaceholder ? '' : message.content;
       _pendingInitialListingContext = false;
     });
     _messageController.selection = TextSelection.fromPosition(
@@ -936,6 +942,17 @@ class _ChatConversationPageState extends State<ChatConversationPage>
       _replyingToMessage = null;
       _editingMessageId = null;
     });
+    _editingKeepAttachments.clear();
+  }
+
+  List<ChatAttachment> _attachmentsForEdit(ChatMessage message) {
+    if (message.attachments.isNotEmpty) return message.attachments;
+    final url = (message.attachmentUrl ?? '').trim();
+    final typ = message.messageType.trim().toLowerCase();
+    if (url.isNotEmpty && (typ == 'image' || typ == 'video')) {
+      return [ChatAttachment(type: typ, url: url)];
+    }
+    return const <ChatAttachment>[];
   }
 
   void _focusComposer() {
@@ -1353,11 +1370,7 @@ class _ChatConversationPageState extends State<ChatConversationPage>
   }
 
   bool _canEditMessage(ChatMessage message, bool isMe) {
-    return isMe &&
-        !message.isDeleted &&
-        message.messageType == 'text' &&
-        message.attachments.isEmpty &&
-        message.listingPreview == null;
+    return isMe && !message.isDeleted && !message.isPending;
   }
 
   bool _canDeleteMessage(ChatMessage message, bool isMe) {
@@ -1631,6 +1644,75 @@ class _ChatConversationPageState extends State<ChatConversationPage>
     );
   }
 
+  Widget _buildEditingAttachmentsPreview(BuildContext context) {
+    if (_editingMessageId == null || _editingKeepAttachments.isEmpty) {
+      return const SizedBox.shrink();
+    }
+
+    Widget tileFor(ChatAttachment attachment, int index) {
+      final isVideo = attachment.type.toLowerCase() == 'video';
+      final resolved = buildMediaUrl(attachment.url);
+      return Stack(
+        children: [
+          ClipRRect(
+            borderRadius: BorderRadius.circular(10),
+            child: Container(
+              width: 72,
+              height: 72,
+              color: Theme.of(context).cardColor,
+              child: isVideo
+                  ? const Center(child: Icon(Icons.videocam, size: 28))
+                  : Image.network(
+                      resolved,
+                      width: 72,
+                      height: 72,
+                      fit: BoxFit.cover,
+                      errorBuilder: (context, error, stackTrace) => const Center(
+                        child: Icon(Icons.broken_image_outlined),
+                      ),
+                    ),
+            ),
+          ),
+          Positioned(
+            top: 4,
+            right: 4,
+            child: InkWell(
+              onTap: () {
+                setState(() {
+                  if (index >= 0 && index < _editingKeepAttachments.length) {
+                    _editingKeepAttachments.removeAt(index);
+                  }
+                });
+              },
+              child: Container(
+                decoration: BoxDecoration(
+                  color: Colors.black54,
+                  borderRadius: BorderRadius.circular(10),
+                ),
+                padding: const EdgeInsets.all(4),
+                child: const Icon(Icons.close, size: 14, color: Colors.white),
+              ),
+            ),
+          ),
+        ],
+      );
+    }
+
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 10),
+      child: SizedBox(
+        height: 78,
+        child: ListView.separated(
+          scrollDirection: Axis.horizontal,
+          itemCount: _editingKeepAttachments.length,
+          separatorBuilder: (context, index) => const SizedBox(width: 10),
+          itemBuilder: (context, index) =>
+              tileFor(_editingKeepAttachments[index], index),
+        ),
+      ),
+    );
+  }
+
   Future<void> _showAttachmentPicker() async {
     await showModalBottomSheet<void>(
       context: context,
@@ -1684,15 +1766,31 @@ class _ChatConversationPageState extends State<ChatConversationPage>
 
     try {
       if (editingMessageId != null) {
+        if (content.isEmpty && _editingKeepAttachments.isEmpty) {
+          if (!mounted) return;
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(
+              content: Text('Message cannot be empty.'),
+              backgroundColor: Colors.orange,
+            ),
+          );
+          setState(() => _isSending = false);
+          _messageController.text = content;
+          return;
+        }
         final response = await ApiService.editChatMessage(
           messageId: editingMessageId,
           content: content,
+          attachments: _editingKeepAttachments
+              .map((a) => <String, dynamic>{'type': a.type, 'url': a.url})
+              .toList(),
         );
         final msg = response['message'];
         if (msg is Map<String, dynamic> && mounted) {
           setState(() {
             _addMessageIfMissing(ChatMessage.fromJson(msg));
             _editingMessageId = null;
+            _editingKeepAttachments.clear();
           });
         }
         return;
@@ -2610,7 +2708,11 @@ class _ChatConversationPageState extends State<ChatConversationPage>
               mainAxisSize: MainAxisSize.min,
               children: [
                 _buildComposerActionBanner(context),
-                if (!_pendingInitialListingContext && _draftAttachments.isNotEmpty)
+                if (_editingMessageId != null &&
+                    _editingKeepAttachments.isNotEmpty)
+                  _buildEditingAttachmentsPreview(context)
+                else if (!_pendingInitialListingContext &&
+                    _draftAttachments.isNotEmpty)
                   _buildDraftAttachmentsPreview(context),
                 Row(
                   children: [

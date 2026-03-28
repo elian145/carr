@@ -705,17 +705,63 @@ def edit_chat_message(message_id: str):
             return jsonify({"message": "You can only edit your own messages"}), 403
         if msg.is_deleted:
             return jsonify({"message": "Deleted messages cannot be edited"}), 400
-        if msg.attachments or msg.attachment_url or msg.listing_preview or msg.message_type != "text":
-            return jsonify({"message": "Only text messages can be edited"}), 400
 
         data = validate_input_sanitization(request.get_json(silent=True) or {})
         content = str(data.get("content") or "").strip()
-        if not content:
-            return jsonify({"message": "content required"}), 400
         if len(content) > 4000:
             return jsonify({"message": "content too long"}), 400
 
+        # Current attachments that may be edited (removals only).
+        existing_items: list[dict] = []
+        if isinstance(msg.attachments, list):
+            existing_items.extend([x for x in msg.attachments if isinstance(x, dict)])
+        if not existing_items and msg.attachment_url and msg.message_type in ("image", "video"):
+            existing_items.append({"type": msg.message_type, "url": msg.attachment_url})
+
+        existing_url_to_type: dict[str, str] = {}
+        for item in existing_items:
+            url = str(item.get("url") or "").strip()
+            typ = str(item.get("type") or "").strip().lower()
+            if url:
+                existing_url_to_type[url] = typ if typ in ("image", "video") else "image"
+
+        keep_raw = data.get("attachments", None)
+        keep_items: list[dict] | None = None
+        if keep_raw is not None:
+            if not isinstance(keep_raw, list):
+                return jsonify({"message": "attachments must be a list"}), 400
+            if len(keep_raw) > 10:
+                return jsonify({"message": "You can keep up to 10 attachments"}), 400
+            keep_items = []
+            for raw in keep_raw:
+                if not isinstance(raw, dict):
+                    return jsonify({"message": "Invalid attachment entry"}), 400
+                url = str(raw.get("url") or "").strip()
+                if not url or url not in existing_url_to_type:
+                    return jsonify({"message": "Invalid attachment url"}), 400
+                typ = str(raw.get("type") or "").strip().lower()
+                if typ not in ("image", "video"):
+                    typ = existing_url_to_type.get(url) or "image"
+                keep_items.append({"type": typ, "url": url})
+
         msg.content = content
+        if keep_items is not None:
+            msg.attachments = keep_items
+            msg.attachment_url = keep_items[0]["url"] if keep_items else None
+            if not keep_items:
+                if content:
+                    msg.message_type = "text"
+                else:
+                    return jsonify({"message": "Message cannot be empty"}), 400
+            elif len(keep_items) == 1:
+                msg.message_type = keep_items[0].get("type") or msg.message_type
+            else:
+                msg.message_type = "media_group"
+        else:
+            # Backwards-compatible behavior: plain text messages still require content.
+            if not content and not existing_url_to_type:
+                return jsonify({"message": "content required"}), 400
+
         msg.edited_at = datetime.utcnow()
         db.session.commit()
 

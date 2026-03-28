@@ -1064,11 +1064,16 @@ class ApiService {
   static Future<Map<String, dynamic>> editChatMessage({
     required String messageId,
     required String content,
+    List<Map<String, dynamic>>? attachments,
   }) async {
+    final body = <String, dynamic>{'content': content};
+    if (attachments != null) {
+      body['attachments'] = attachments;
+    }
     return await _makeAuthenticatedRequest(
       'PATCH',
       '/chat/messages/$messageId',
-      body: {'content': content},
+      body: body,
     );
   }
 
