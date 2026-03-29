@@ -16,6 +16,10 @@ import '../theme_provider.dart';
 
 const Color _kComposerOutlineOrange = Color(0xFFFF7A00);
 
+/// Brand orange (matches home [buildGlobalCarCard]); explicit color avoids
+/// [Theme.primaryColor] matching surfaces inside chat bubbles in dark mode.
+const Color _kChatListingCardAccentOrange = Color(0xFFFF6B00);
+
 /// Home listing grid gradient mid-stop (`main_legacy` home `body` gradient).
 const Color _kHomeListingBackdropMid = Color(0xFF131722);
 
@@ -2463,8 +2467,14 @@ class _ChatConversationPageState extends State<ChatConversationPage>
   }
 
   String _listingPrice(Map<String, dynamic> car) {
-    final price = (car['price'] ?? '').toString().trim();
-    final currency = (car['currency'] ?? '').toString().trim();
+    dynamic raw = car['price'];
+    if (raw == null || raw.toString().trim().isEmpty) {
+      raw = car['selling_price'] ?? car['amount'] ?? car['formatted_price'];
+    }
+    final price = (raw ?? '').toString().trim();
+    final currency = (car['currency'] ?? car['currency_code'] ?? '')
+        .toString()
+        .trim();
     if (price.isEmpty) return '';
     return currency.isEmpty ? price : '$price $currency';
   }
@@ -2481,6 +2491,7 @@ class _ChatConversationPageState extends State<ChatConversationPage>
   }
 
   Widget _buildListingCard(BuildContext context, Map<String, dynamic> car) {
+    final scheme = Theme.of(context).colorScheme;
     final imageUrl = _listingImageUrl(car);
     final title = _listingTitle(car);
     final price = _listingPrice(car);
@@ -2535,14 +2546,17 @@ class _ChatConversationPageState extends State<ChatConversationPage>
                   : title,
               maxLines: 2,
               overflow: TextOverflow.ellipsis,
-              style: const TextStyle(fontWeight: FontWeight.w700),
+              style: TextStyle(
+                fontWeight: FontWeight.w700,
+                color: scheme.onSurface,
+              ),
             ),
             if (price.isNotEmpty) ...[
               const SizedBox(height: 4),
               Text(
                 price,
-                style: TextStyle(
-                  color: Theme.of(context).primaryColor,
+                style: const TextStyle(
+                  color: _kChatListingCardAccentOrange,
                   fontWeight: FontWeight.w600,
                 ),
               ),
@@ -2553,7 +2567,9 @@ class _ChatConversationPageState extends State<ChatConversationPage>
                 location,
                 maxLines: 1,
                 overflow: TextOverflow.ellipsis,
-                style: Theme.of(context).textTheme.bodySmall,
+                style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                  color: scheme.onSurfaceVariant,
+                ),
               ),
             ],
           ],

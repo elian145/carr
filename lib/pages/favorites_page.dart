@@ -19,6 +19,13 @@ class _FavoritesPageState extends State<FavoritesPage> {
   String? _error;
   List<Map<String, dynamic>> _cars = <Map<String, dynamic>>[];
 
+  /// Same gradient as [HomePage] body so [buildGlobalCarCard] fills match home.
+  static const List<Color> _kHomeBodyGradientColors = [
+    Color(0xFF0F1115),
+    Color(0xFF131722),
+    Color(0xFF0F1115),
+  ];
+
   @override
   void initState() {
     super.initState();
@@ -77,8 +84,20 @@ class _FavoritesPageState extends State<FavoritesPage> {
       appBar: AppBar(
         title: Text(loc?.favoritesTitle ?? 'Favorites'),
       ),
-      body: !auth.isAuthenticated
-          ? Center(
+      body: Stack(
+        fit: StackFit.expand,
+        children: [
+          Container(
+            decoration: const BoxDecoration(
+              gradient: LinearGradient(
+                colors: _kHomeBodyGradientColors,
+                begin: Alignment.topLeft,
+                end: Alignment.bottomRight,
+              ),
+            ),
+          ),
+          if (!auth.isAuthenticated)
+            Center(
               child: Padding(
                 padding: const EdgeInsets.all(16),
                 child: Column(
@@ -88,6 +107,7 @@ class _FavoritesPageState extends State<FavoritesPage> {
                       loc?.notLoggedIn ??
                           'You have to log in or sign up first.',
                       textAlign: TextAlign.center,
+                      style: const TextStyle(color: Colors.white70),
                     ),
                     const SizedBox(height: 12),
                     ElevatedButton(
@@ -98,10 +118,17 @@ class _FavoritesPageState extends State<FavoritesPage> {
                 ),
               ),
             )
-          : RefreshIndicator(
+          else
+            RefreshIndicator(
               onRefresh: _fetch,
+              color: Colors.white,
               child: _loading
-                  ? const Center(child: CircularProgressIndicator())
+                  ? const Center(
+                      child: CircularProgressIndicator(
+                        valueColor:
+                            AlwaysStoppedAnimation<Color>(Color(0xFFFF6B00)),
+                      ),
+                    )
                   : (_error != null)
                       ? ListView(
                           children: [
@@ -110,6 +137,7 @@ class _FavoritesPageState extends State<FavoritesPage> {
                               child: Text(
                                 _error!,
                                 textAlign: TextAlign.center,
+                                style: const TextStyle(color: Colors.white70),
                               ),
                             ),
                             const SizedBox(height: 12),
@@ -126,7 +154,10 @@ class _FavoritesPageState extends State<FavoritesPage> {
                               children: [
                                 const SizedBox(height: 40),
                                 Center(
-                                  child: Text(loc?.noFavoritesYet ?? 'No favorites yet'),
+                                  child: Text(
+                                    loc?.noFavoritesYet ?? 'No favorites yet',
+                                    style: const TextStyle(color: Colors.white70),
+                                  ),
                                 ),
                               ],
                             )
@@ -147,7 +178,9 @@ class _FavoritesPageState extends State<FavoritesPage> {
                                 final card = buildGlobalCarCard(
                                   context,
                                   mapListingToGlobalCarCardData(
-                                      context, carMap),
+                                    context,
+                                    carMap,
+                                  ),
                                 );
                                 final carId = (carMap['public_id'] ??
                                         carMap['id'] ??
@@ -183,6 +216,8 @@ class _FavoritesPageState extends State<FavoritesPage> {
                               },
                             ),
             ),
+        ],
+      ),
     );
   }
 }

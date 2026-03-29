@@ -19913,10 +19913,30 @@ class _FavoritesPageState extends State<FavoritesPage> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(title: Text(AppLocalizations.of(context)!.favoritesTitle)),
-      body: _loading
-          ? Center(child: CircularProgressIndicator())
-          : _loginRequired
-          ? Center(
+      body: Stack(
+        fit: StackFit.expand,
+        children: [
+          Container(
+            decoration: BoxDecoration(
+              gradient: LinearGradient(
+                colors: [
+                  Color(0xFF0F1115),
+                  Color(0xFF131722),
+                  Color(0xFF0F1115),
+                ],
+                begin: Alignment.topLeft,
+                end: Alignment.bottomRight,
+              ),
+            ),
+          ),
+          if (_loading)
+            Center(
+              child: CircularProgressIndicator(
+                valueColor: AlwaysStoppedAnimation<Color>(Color(0xFFFF6B00)),
+              ),
+            )
+          else if (_loginRequired)
+            Center(
               child: Padding(
                 padding: const EdgeInsets.all(16),
                 child: Column(
@@ -19925,6 +19945,7 @@ class _FavoritesPageState extends State<FavoritesPage> {
                     Text(
                       AppLocalizations.of(context)!.notLoggedIn,
                       textAlign: TextAlign.center,
+                      style: const TextStyle(color: Colors.white70),
                     ),
                     const SizedBox(height: 12),
                     ElevatedButton(
@@ -19935,11 +19956,24 @@ class _FavoritesPageState extends State<FavoritesPage> {
                 ),
               ),
             )
-          : (_error != null)
-          ? Center(child: Text(_error!))
-          : (_favorites.isEmpty)
-          ? Center(child: Text(AppLocalizations.of(context)!.noFavoritesYet))
-          : RefreshIndicator(
+          else if (_error != null)
+            Center(
+              child: Text(
+                _error!,
+                textAlign: TextAlign.center,
+                style: const TextStyle(color: Colors.white70),
+              ),
+            )
+          else if (_favorites.isEmpty)
+            Center(
+              child: Text(
+                AppLocalizations.of(context)!.noFavoritesYet,
+                style: const TextStyle(color: Colors.white70),
+              ),
+            )
+          else
+            RefreshIndicator(
+              color: Colors.white,
               onRefresh: _loadFavorites,
               child: GridView.builder(
                 physics: const AlwaysScrollableScrollPhysics(),
@@ -19991,6 +20025,8 @@ class _FavoritesPageState extends State<FavoritesPage> {
                 },
               ),
             ),
+        ],
+      ),
       bottomNavigationBar: BottomNavigationBar(
         type: BottomNavigationBarType.fixed,
         backgroundColor: Colors.black87,
@@ -21454,9 +21490,9 @@ class _ProfilePageState extends State<ProfilePage> {
       child: Container(
         padding: EdgeInsets.symmetric(vertical: 12, horizontal: 16),
         decoration: BoxDecoration(
-          color: Colors.grey[50],
+          color: Colors.grey[100],
           borderRadius: BorderRadius.circular(12),
-          border: Border.all(color: Colors.grey[200]!),
+          border: Border.all(color: Colors.grey[300]!),
         ),
         child: Row(
           children: [
@@ -21831,7 +21867,6 @@ class SettingsPage extends StatefulWidget {
 
 class _SettingsPageState extends State<SettingsPage> {
   bool _pushEnabled = true;
-  final int _cacheEntries = 0;
 
   @override
   void initState() {
@@ -21866,24 +21901,6 @@ class _SettingsPageState extends State<SettingsPage> {
     }
   }
 
-  Future<void> _clearCaches() async {
-    final sp = await SharedPreferences.getInstance();
-    // Clear known cache keys
-    for (final k in sp.getKeys().toList()) {
-      if (k.startsWith('cache_home_') ||
-          k.startsWith('cache_car_') ||
-          k.startsWith('cache_similar_') ||
-          k.startsWith('cache_related_') ||
-          k == 'cache_favorites') {
-        await sp.remove(k);
-      }
-    }
-    if (!mounted) return;
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(content: Text(AppLocalizations.of(context)!.settingsCleared)),
-    );
-  }
-
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -21894,14 +21911,6 @@ class _SettingsPageState extends State<SettingsPage> {
             title: Text(AppLocalizations.of(context)!.settingsEnablePush),
             value: _pushEnabled,
             onChanged: _togglePush,
-          ),
-          ListTile(
-            title: Text(AppLocalizations.of(context)!.settingsClearCaches),
-            subtitle: Text(
-              AppLocalizations.of(context)!.settingsCachesSubtitle,
-            ),
-            trailing: Icon(Icons.delete_outline),
-            onTap: _clearCaches,
           ),
         ],
       ),
