@@ -10,6 +10,7 @@ import '../l10n/app_localizations.dart';
 import '../services/websocket_service.dart';
 import '../services/auth_service.dart';
 import '../services/api_service.dart';
+import '../services/outgoing_chat_send_service.dart';
 import '../shared/media/media_url.dart';
 import '../theme_provider.dart';
 
@@ -82,6 +83,22 @@ String _rawChatListTimestamp(Map<String, dynamic> last, Map<String, dynamic> con
 String _noMessagesText(BuildContext context) {
   return AppLocalizations.of(context)!.noMessagesYet;
 }
+
+/// Chat list row text follows [ThemeProvider.themeMode] and system brightness.
+/// Uses explicit light/dark inks so rows match the chosen mode even if [ColorScheme] looks wrong.
+bool _chatListUseLightInk(BuildContext context) {
+  final mode = context.watch<ThemeProvider>().themeMode;
+  return switch (mode) {
+    ThemeMode.light => true,
+    ThemeMode.dark => false,
+    ThemeMode.system =>
+      MediaQuery.platformBrightnessOf(context) == Brightness.light,
+  };
+}
+
+const Color _kChatListRowInkLight = Color(0xFF000000);
+const Color _kChatListRowInkDarkPrimary = Color(0xFFF5F5F5);
+const Color _kChatListRowInkDarkMuted = Color(0xFFCFCFCF);
 
 void _showFullImage(BuildContext context, String url) {
   Navigator.of(context).push(
@@ -539,6 +556,7 @@ class _ChatListPageState extends State<ChatListPage> with WidgetsBindingObserver
 
   @override
   Widget build(BuildContext context) {
+    final useLightInk = _chatListUseLightInk(context);
     return Scaffold(
       appBar: AppBar(
         title: Text(AppLocalizations.of(context)!.chatTitle),
@@ -594,17 +612,17 @@ class _ChatListPageState extends State<ChatListPage> with WidgetsBindingObserver
                   final nameStyle = TextStyle(
                     fontSize: 16,
                     fontWeight: FontWeight.w600,
-                    color: cs.onSurface,
+                    color: useLightInk ? _kChatListRowInkLight : _kChatListRowInkDarkPrimary,
                   );
                   final previewStyle = TextStyle(
                     fontSize: 14,
                     height: 1.3,
-                    color: cs.onSurfaceVariant,
+                    color: useLightInk ? _kChatListRowInkLight : _kChatListRowInkDarkMuted,
                   );
                   final timeStyle = TextStyle(
                     fontSize: 12,
                     height: 1.2,
-                    color: cs.onSurfaceVariant,
+                    color: useLightInk ? _kChatListRowInkLight : _kChatListRowInkDarkMuted,
                   );
                   final trailingTime = dt == null
                       ? null
@@ -755,6 +773,7 @@ class _ChatConversationPageState extends State<ChatConversationPage>
   StreamSubscription<Map<String, dynamic>>? _messageDeleteSub;
   StreamSubscription<String>? _errorSub;
   StreamSubscription<Map<String, dynamic>>? _typingSub;
+  StreamSubscription<OutgoingChatSendEvent>? _outgoingSendSub;
   bool _isSending = false;
   bool _loadingHistory = false;
   bool _loadingOlderMessages = false;
@@ -769,6 +788,8 @@ class _ChatConversationPageState extends State<ChatConversationPage>
   String? _receiverName;
   Map<String, dynamic>? _listingPreview;
   bool _pendingInitialListingContext = false;
+  /// Temp ids of outgoing messages the user removed or recalled before the send finished.
+  final Set<String> _discardedOutgoingIds = <String>{};
   final List<XFile> _draftAttachments = <XFile>[];
   final List<ChatAttachment> _editingKeepAttachments = <ChatAttachment>[];
   ChatMessage? _replyingToMessage;
@@ -795,6 +816,8 @@ class _ChatConversationPageState extends State<ChatConversationPage>
     _scrollController.addListener(_onScroll);
     _setupWebSocketListeners();
     _setupTypingListener();
+    _outgoingSendSub =
+        OutgoingChatSendService.instance.events.listen(_onOutgoingChatSendEvent);
     _loadHistory();
     _joinChat();
     _startPolling();
@@ -828,6 +851,89 @@ class _ChatConversationPageState extends State<ChatConversationPage>
   void _scrollComposerToTop() {
     if (!_composerScrollController.hasClients) return;
     _composerScrollController.jumpTo(0);
+  }
+
+  void _onOutgoingChatSendEvent(OutgoingChatSendEvent e) {
+    if (e.conversationId != widget.carId || !mounted) return;
+
+    void finishSending() {
+      setState(() => _isSending = false);
+    }
+
+    switch (e.kind) {
+      case OutgoingChatSendKind.mediaGroup:
+        if (e.success &&
+            e.tempMessageId != null &&
+            e.messageJson != null) {
+          setState(() {
+            if (_discardedOutgoingIds.remove(e.tempMessageId!)) {
+              // User removed or recalled before the upload finished.
+            } else {
+              _replaceMessage(
+                e.tempMessageId!,
+                ChatMessage.fromJson(e.messageJson!),
+              );
+            }
+            _replyingToMessage = null;
+            _pendingInitialListingContext = false;
+          });
+          _scrollToBottom();
+        } else if (!e.success && e.tempMessageId != null) {
+          setState(() {
+            _removeMessage(e.tempMessageId!);
+            final files = e.restoreFiles;
+            if (files != null && files.isNotEmpty) {
+              _draftAttachments.addAll(files);
+            }
+          });
+          final cap = e.restoreCaption;
+          if (cap != null && cap.isNotEmpty) {
+            _messageController.text = cap;
+            _messageController.selection = TextSelection.fromPosition(
+              TextPosition(offset: _messageController.text.length),
+            );
+            WidgetsBinding.instance.addPostFrameCallback((_) {
+              _scrollComposerToTop();
+            });
+          }
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text(e.error ?? 'Send failed'),
+              backgroundColor: Colors.red,
+            ),
+          );
+        }
+        finishSending();
+        break;
+      case OutgoingChatSendKind.textMessage:
+        if (e.success && e.messageJson != null) {
+          setState(() {
+            _addMessageIfMissing(ChatMessage.fromJson(e.messageJson!));
+            _pendingInitialListingContext = false;
+            _replyingToMessage = null;
+          });
+          _scrollToBottom();
+        } else {
+          final t = e.restoredPlainText ?? '';
+          if (t.isNotEmpty) {
+            _messageController.text = t;
+            _messageController.selection = TextSelection.fromPosition(
+              TextPosition(offset: _messageController.text.length),
+            );
+            WidgetsBinding.instance.addPostFrameCallback((_) {
+              _scrollComposerToTop();
+            });
+          }
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text(e.error ?? 'Send failed'),
+              backgroundColor: Colors.red,
+            ),
+          );
+        }
+        finishSending();
+        break;
+    }
   }
 
   void _onScroll() {
@@ -1089,7 +1195,10 @@ class _ChatConversationPageState extends State<ChatConversationPage>
     }
   }
 
-  ChatMessage _buildPendingMediaGroupMessage(List<XFile> files) {
+  ChatMessage _buildPendingMediaGroupMessage(
+    List<XFile> files, {
+    Map<String, dynamic>? listingPreview,
+  }) {
     final authService = Provider.of<AuthService>(context, listen: false);
     final replyTo = _replyingToMessage;
     return ChatMessage(
@@ -1119,6 +1228,7 @@ class _ChatConversationPageState extends State<ChatConversationPage>
             ),
           )
           .toList(),
+      listingPreview: listingPreview,
       isRead: true,
       createdAt: DateTime.now(),
       isPending: true,
@@ -1410,60 +1520,120 @@ class _ChatConversationPageState extends State<ChatConversationPage>
         .toList();
     if (validFiles.isEmpty) return false;
 
-    final pendingMessage = _buildPendingMediaGroupMessage(validFiles);
+    final listingPreviewForMessage =
+        _pendingInitialListingContext ? _listingPreview : null;
+    final pendingMessage = _buildPendingMediaGroupMessage(
+      validFiles,
+      listingPreview: listingPreviewForMessage,
+    );
+    final restoreFiles = List<XFile>.from(validFiles);
     setState(() {
-      _isSending = true;
       _messages.add(pendingMessage);
     });
     _scrollToBottom();
 
-    try {
-      final replyToMessageId = _replyingToMessage?.id;
-      final listingPreviewForMessage =
-          _pendingInitialListingContext ? _listingPreview : null;
-      final response = await ApiService.sendChatMediaGroup(
-        conversationId: widget.carId,
-        files: validFiles,
-        receiverId: widget.receiverId,
-        replyToMessageId: replyToMessageId,
-        caption: caption,
-        listingPreview: listingPreviewForMessage,
-      );
-      final msg = response['message'];
-      if (msg is Map<String, dynamic> && mounted) {
-        setState(() {
-          _replaceMessage(pendingMessage.id, ChatMessage.fromJson(msg));
-        });
-        _scrollToBottom();
-      }
-      return true;
-    } catch (e) {
-      if (!mounted) return false;
-      setState(() {
-        _removeMessage(pendingMessage.id);
-      });
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text(e.toString()), backgroundColor: Colors.red),
-      );
-      return false;
-    } finally {
-      if (mounted) {
-        setState(() => _isSending = false);
-      } else {
-        _isSending = false;
-      }
-    }
+    final replyToMessageId = _replyingToMessage?.id;
+    OutgoingChatSendService.instance.startMediaGroupSend(
+      conversationId: widget.carId,
+      files: validFiles,
+      tempMessageId: pendingMessage.id,
+      receiverId: widget.receiverId,
+      caption: caption,
+      replyToMessageId: replyToMessageId,
+      listingPreview: listingPreviewForMessage,
+      restoreFiles: restoreFiles,
+      restoreCaption: caption,
+    );
+    return true;
   }
 
   bool _canEditMessage(ChatMessage message, bool isMe) {
-    return isMe && !message.isDeleted && !message.isPending;
+    return isMe && !message.isDeleted;
   }
 
   bool _canDeleteMessage(ChatMessage message, bool isMe) {
     return isMe && !message.isDeleted;
   }
 
+  void _recallPendingMessageToComposer(ChatMessage message) {
+    if (!message.isPending || !mounted) return;
+    _discardedOutgoingIds.add(message.id);
+    final caption =
+        _isAttachmentPlaceholder(message.content) ? '' : message.content.trim();
+    final files = <XFile>[];
+    const maxCount = 10;
+    for (final a in message.attachments) {
+      if (!a.isLocal || a.url.isEmpty || files.length >= maxCount) continue;
+      files.add(XFile(a.url));
+    }
+    ChatMessage? replyTarget;
+    final replyId = message.replyToMessageId;
+    if (replyId != null && replyId.isNotEmpty) {
+      replyTarget = _messageById(replyId);
+    }
+    setState(() {
+      _removeMessage(message.id);
+      _editingMessageId = null;
+      _editingKeepAttachments.clear();
+      _replyingToMessage = replyTarget;
+      if (message.listingPreview != null && message.listingPreview!.isNotEmpty) {
+        _listingPreview = Map<String, dynamic>.from(message.listingPreview!);
+        _pendingInitialListingContext = true;
+      } else {
+        _pendingInitialListingContext = false;
+      }
+      _draftAttachments
+        ..clear()
+        ..addAll(files);
+      _isSending = false;
+    });
+    _messageController.text = caption;
+    _messageController.selection = TextSelection.fromPosition(
+      TextPosition(offset: _messageController.text.length),
+    );
+    _focusComposer();
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (mounted) _scrollComposerToTop();
+    });
+  }
+
   Future<void> _deleteMessage(ChatMessage message) async {
+    if (message.isPending) {
+      final confirmed = await showDialog<bool>(
+        context: context,
+        builder: (context) => AlertDialog(
+          title: const Text('Discard message?'),
+          content: const Text(
+            'This message has not finished sending yet. Remove it from the chat?',
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(context, false),
+              child: const Text('Cancel'),
+            ),
+            TextButton(
+              onPressed: () => Navigator.pop(context, true),
+              child: const Text('Remove'),
+            ),
+          ],
+        ),
+      );
+      if (confirmed != true || !mounted) return;
+      setState(() {
+        _discardedOutgoingIds.add(message.id);
+        _removeMessage(message.id);
+        if (_editingMessageId == message.id) {
+          _editingMessageId = null;
+          _editingKeepAttachments.clear();
+        }
+        if (_replyingToMessage?.id == message.id) {
+          _replyingToMessage = null;
+        }
+        _isSending = false;
+      });
+      return;
+    }
+
     final confirmed = await showDialog<bool>(
       context: context,
       builder: (context) => AlertDialog(
@@ -1541,7 +1711,11 @@ class _ChatConversationPageState extends State<ChatConversationPage>
     if (action == 'reply') {
       _startReplyToMessage(message);
     } else if (action == 'edit') {
-      _startEditingMessage(message);
+      if (message.isPending) {
+        _recallPendingMessageToComposer(message);
+      } else {
+        _startEditingMessage(message);
+      }
     } else if (action == 'delete') {
       await _deleteMessage(message);
     }
@@ -1850,6 +2024,7 @@ class _ChatConversationPageState extends State<ChatConversationPage>
     setState(() => _isSending = true);
     _messageController.clear();
 
+    var deferIsSendingReset = false;
     try {
       if (editingMessageId != null) {
         if (content.isEmpty && _editingKeepAttachments.isEmpty) {
@@ -1889,32 +2064,23 @@ class _ChatConversationPageState extends State<ChatConversationPage>
           _draftAttachments.clear();
         });
         final ok = await _sendMediaGroup(files, caption: caption);
-        if (ok) {
-          if (mounted) {
-            setState(() {
-              _replyingToMessage = null;
-              _pendingInitialListingContext = false;
+        if (!ok) {
+          if (!mounted) return;
+          setState(() {
+            _draftAttachments.addAll(files);
+          });
+          if (caption != null && caption.isNotEmpty) {
+            _messageController.text = caption;
+            _messageController.selection = TextSelection.fromPosition(
+              TextPosition(offset: _messageController.text.length),
+            );
+            WidgetsBinding.instance.addPostFrameCallback((_) {
+              _scrollComposerToTop();
             });
-          } else {
-            _replyingToMessage = null;
-            _pendingInitialListingContext = false;
           }
           return;
         }
-
-        if (!mounted) return;
-        setState(() {
-          _draftAttachments.addAll(files);
-        });
-        if (caption != null && caption.isNotEmpty) {
-          _messageController.text = caption;
-          _messageController.selection = TextSelection.fromPosition(
-            TextPosition(offset: _messageController.text.length),
-          );
-          WidgetsBinding.instance.addPostFrameCallback((_) {
-            _scrollComposerToTop();
-          });
-        }
+        deferIsSendingReset = true;
         return;
       }
 
@@ -1940,22 +2106,15 @@ class _ChatConversationPageState extends State<ChatConversationPage>
         return;
       }
 
-      final response = await ApiService.sendChatMessageByConversation(
+      OutgoingChatSendService.instance.startTextMessageSend(
         conversationId: widget.carId,
         content: content,
         receiverId: widget.receiverId,
         listingPreview: listingPreviewForMessage,
         replyToMessageId: replyingToMessageId,
       );
-      final msg = response['message'];
-      if (msg is Map<String, dynamic> && mounted) {
-        setState(() {
-          _addMessageIfMissing(ChatMessage.fromJson(msg));
-          _pendingInitialListingContext = false;
-          _replyingToMessage = null;
-        });
-        _scrollToBottom();
-      }
+      deferIsSendingReset = true;
+      return;
     } catch (e) {
       if (!mounted) return;
       _messageController.text = content;
@@ -1972,10 +2131,12 @@ class _ChatConversationPageState extends State<ChatConversationPage>
         ),
       );
     } finally {
-      if (mounted) {
-        setState(() => _isSending = false);
-      } else {
-        _isSending = false;
+      if (!deferIsSendingReset) {
+        if (mounted) {
+          setState(() => _isSending = false);
+        } else {
+          _isSending = false;
+        }
       }
     }
   }
@@ -1995,6 +2156,7 @@ class _ChatConversationPageState extends State<ChatConversationPage>
     _messageDeleteSub?.cancel();
     _errorSub?.cancel();
     _typingSub?.cancel();
+    _outgoingSendSub?.cancel();
     _messageController.dispose();
     _messageFocusNode.dispose();
     _scrollController.dispose();
@@ -2501,14 +2663,17 @@ class _ChatConversationPageState extends State<ChatConversationPage>
       MediaQuery.of(context).size.width * 0.58,
       280.0,
     );
+    // Message bubbles use brand orange in both themes; measure as white on orange.
     final bodyStyle = DefaultTextStyle.of(context).style.copyWith(
-      color: isMe ? Colors.white : null,
+      color: Colors.white,
     );
     final timeStyle = TextStyle(
-      color: isMe ? Colors.white70 : Colors.grey,
+      color: Colors.white70,
       fontSize: 12,
     );
-    final senderStyle = Theme.of(context).textTheme.bodySmall;
+    final senderStyle =
+        Theme.of(context).textTheme.bodySmall?.copyWith(color: Colors.white) ??
+        const TextStyle(color: Colors.white, fontSize: 12);
     final reply = message.replyToMessage;
 
     final bodyWidth = message.content
@@ -2531,9 +2696,9 @@ class _ChatConversationPageState extends State<ChatConversationPage>
     double replyBlockWidth = 0.0;
     if (reply != null) {
       final replyNameStyle = (Theme.of(context).textTheme.bodySmall ?? const TextStyle())
-          .copyWith(fontWeight: FontWeight.w600, color: isMe ? Colors.white : null);
+          .copyWith(fontWeight: FontWeight.w600, color: Colors.white);
       final replyBodyStyle = (Theme.of(context).textTheme.bodySmall ?? const TextStyle())
-          .copyWith(color: isMe ? Colors.white70 : null);
+          .copyWith(color: Colors.white70);
 
       final replySenderText = (reply.senderName ?? 'Message').trim().isNotEmpty
           ? reply.senderName!.trim()
@@ -2649,7 +2814,7 @@ class _ChatConversationPageState extends State<ChatConversationPage>
                             ? Alignment.centerRight
                             : Alignment.centerLeft,
                         child: GestureDetector(
-                          onLongPress: message.isPending
+                          onLongPress: message.isDeleted
                               ? null
                               : () => _showMessageActions(message, isMe),
                           child: Container(
@@ -2664,9 +2829,7 @@ class _ChatConversationPageState extends State<ChatConversationPage>
                             vertical: 12,
                           ),
                           decoration: BoxDecoration(
-                            color: isMe
-                                ? Theme.of(context).primaryColor
-                                : Theme.of(context).cardColor,
+                            color: Theme.of(context).colorScheme.primary,
                             borderRadius: BorderRadius.circular(20),
                             border: message.id == _highlightMessageId
                                 ? Border.all(
@@ -2682,13 +2845,16 @@ class _ChatConversationPageState extends State<ChatConversationPage>
                               if (!isMe)
                                 Text(
                                   message.senderName ?? AppLocalizations.of(context)!.unknownSender,
-                                  style: Theme.of(context).textTheme.bodySmall,
+                                  style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                                    color: Colors.white,
+                                    fontWeight: FontWeight.w600,
+                                  ),
                                 ),
                               if (message.replyToMessage != null)
                                 _buildReplyPreviewCard(
                                   context,
                                   message.replyToMessage!,
-                                  isMe: isMe,
+                                  isMe: true,
                                   onTap: () => _jumpToMessageId(
                                     message.replyToMessage!.id,
                                   ),
@@ -2700,8 +2866,8 @@ class _ChatConversationPageState extends State<ChatConversationPage>
                                     padding: const EdgeInsets.only(top: 6),
                                     child: Text(
                                       message.content,
-                                      style: TextStyle(
-                                        color: isMe ? Colors.white : null,
+                                      style: const TextStyle(
+                                        color: Colors.white,
                                       ),
                                     ),
                                   ),
@@ -2718,8 +2884,8 @@ class _ChatConversationPageState extends State<ChatConversationPage>
                                     padding: const EdgeInsets.only(top: 8),
                                     child: Text(
                                       message.content,
-                                      style: TextStyle(
-                                        color: isMe ? Colors.white : null,
+                                      style: const TextStyle(
+                                        color: Colors.white,
                                       ),
                                     ),
                                   ),
@@ -2727,7 +2893,7 @@ class _ChatConversationPageState extends State<ChatConversationPage>
                                 Text(
                                   message.content,
                                   style: TextStyle(
-                                    color: isMe ? Colors.white : null,
+                                    color: Colors.white,
                                     fontStyle: message.isDeleted
                                         ? FontStyle.italic
                                         : FontStyle.normal,
@@ -2743,7 +2909,7 @@ class _ChatConversationPageState extends State<ChatConversationPage>
                                       child: Text(
                                         'Edited',
                                         style: TextStyle(
-                                          color: isMe ? Colors.white70 : Colors.grey,
+                                          color: Colors.white.withOpacity(0.85),
                                           fontSize: 12,
                                         ),
                                       ),
@@ -2751,7 +2917,7 @@ class _ChatConversationPageState extends State<ChatConversationPage>
                                   Text(
                                     _relativeTime(context, message.createdAt),
                                     style: TextStyle(
-                                      color: isMe ? Colors.white70 : Colors.grey,
+                                      color: Colors.white.withOpacity(0.85),
                                       fontSize: 12,
                                     ),
                                   ),
