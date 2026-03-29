@@ -1012,6 +1012,12 @@ class _ChatConversationPageState extends State<ChatConversationPage>
         for (final m in loaded) {
           _addMessageIfMissing(m);
         }
+        _mergeInFlightMediaPending();
+        if (OutgoingChatSendService.instance
+            .inFlightMediaForConversation(widget.carId)
+            .isNotEmpty) {
+          _isSending = true;
+        }
         _refreshReceiverNameFromMessages();
       });
       if (_messages.length > hadMessages) {
@@ -1198,25 +1204,35 @@ class _ChatConversationPageState extends State<ChatConversationPage>
   ChatMessage _buildPendingMediaGroupMessage(
     List<XFile> files, {
     Map<String, dynamic>? listingPreview,
+    String? tempId,
+    DateTime? createdAt,
+    ChatReplyPreview? replyPreview,
+    String? replyToMessageId,
+    String? receiverIdOverride,
+    String? carIdOverride,
   }) {
     final authService = Provider.of<AuthService>(context, listen: false);
     final replyTo = _replyingToMessage;
+    final effectiveReplyId = replyToMessageId ?? replyTo?.id;
+    final effectiveReply = replyPreview ??
+        (replyTo == null
+            ? null
+            : ChatReplyPreview(
+                id: replyTo.id,
+                senderId: replyTo.senderId,
+                senderName: replyTo.senderName,
+                content: _replyPreviewLabel(replyTo),
+                messageType: replyTo.messageType,
+                isDeleted: replyTo.isDeleted,
+              ));
+    final at = createdAt ?? DateTime.now();
     return ChatMessage(
-      id: _temporaryMessageId(),
+      id: tempId ?? _temporaryMessageId(),
       senderId: authService.userId ?? '',
-      receiverId: widget.receiverId ?? '',
-      carId: widget.carId,
-      replyToMessageId: replyTo?.id,
-      replyToMessage: replyTo == null
-          ? null
-          : ChatReplyPreview(
-              id: replyTo.id,
-              senderId: replyTo.senderId,
-              senderName: replyTo.senderName,
-              content: _replyPreviewLabel(replyTo),
-              messageType: replyTo.messageType,
-              isDeleted: replyTo.isDeleted,
-            ),
+      receiverId: receiverIdOverride ?? widget.receiverId ?? '',
+      carId: carIdOverride ?? widget.carId,
+      replyToMessageId: effectiveReplyId,
+      replyToMessage: effectiveReply,
       content: _mediaGroupPlaceholder(files.length),
       messageType: 'media_group',
       attachments: files
@@ -1230,9 +1246,54 @@ class _ChatConversationPageState extends State<ChatConversationPage>
           .toList(),
       listingPreview: listingPreview,
       isRead: true,
-      createdAt: DateTime.now(),
+      createdAt: at,
       isPending: true,
     );
+  }
+
+  Map<String, dynamic>? _replyToPreviewJson(ChatMessage? message) {
+    if (message == null) return null;
+    return ChatReplyPreview(
+      id: message.id,
+      senderId: message.senderId,
+      senderName: message.senderName,
+      content: _replyPreviewLabel(message),
+      messageType: message.messageType,
+      isDeleted: message.isDeleted,
+    ).toJson();
+  }
+
+  ChatMessage _pendingMessageFromInFlight(InFlightMediaSend r) {
+    ChatReplyPreview? replyToMessage;
+    final json = r.replyToPreviewJson;
+    if (json != null && json.isNotEmpty) {
+      replyToMessage = ChatReplyPreview.fromJson(json);
+    }
+    return _buildPendingMediaGroupMessage(
+      r.files,
+      listingPreview: r.listingPreview,
+      tempId: r.tempMessageId,
+      createdAt: r.startedAt,
+      replyPreview: replyToMessage,
+      replyToMessageId: r.replyToMessageId,
+      receiverIdOverride: r.receiverId,
+      carIdOverride: r.carId,
+    );
+  }
+
+  void _mergeInFlightMediaPending() {
+    final inFlight = OutgoingChatSendService.instance
+        .inFlightMediaForConversation(widget.carId);
+    if (inFlight.isEmpty) return;
+    var added = false;
+    for (final r in inFlight) {
+      if (_messages.any((m) => m.id == r.tempMessageId)) continue;
+      _messages.add(_pendingMessageFromInFlight(r));
+      added = true;
+    }
+    if (added) {
+      _messages.sort((a, b) => a.createdAt.compareTo(b.createdAt));
+    }
   }
 
   List<_ChatMediaEntry> _chatMediaEntries() {
@@ -1372,6 +1433,13 @@ class _ChatConversationPageState extends State<ChatConversationPage>
         _messages
           ..clear()
           ..addAll(loaded);
+        _mergeInFlightMediaPending();
+        final stillSending = OutgoingChatSendService.instance
+            .inFlightMediaForConversation(widget.carId)
+            .isNotEmpty;
+        if (stillSending) {
+          _isSending = true;
+        }
         _currentPage = 1;
         _hasMoreMessages = result['has_more'] == true;
         _refreshReceiverNameFromMessages();
@@ -1522,9 +1590,13 @@ class _ChatConversationPageState extends State<ChatConversationPage>
 
     final listingPreviewForMessage =
         _pendingInitialListingContext ? _listingPreview : null;
+    final startedAt = DateTime.now();
+    final replyToMessageId = _replyingToMessage?.id;
+    final replyJson = _replyToPreviewJson(_replyingToMessage);
     final pendingMessage = _buildPendingMediaGroupMessage(
       validFiles,
       listingPreview: listingPreviewForMessage,
+      createdAt: startedAt,
     );
     final restoreFiles = List<XFile>.from(validFiles);
     setState(() {
@@ -1532,14 +1604,16 @@ class _ChatConversationPageState extends State<ChatConversationPage>
     });
     _scrollToBottom();
 
-    final replyToMessageId = _replyingToMessage?.id;
     OutgoingChatSendService.instance.startMediaGroupSend(
       conversationId: widget.carId,
       files: validFiles,
       tempMessageId: pendingMessage.id,
+      startedAt: startedAt,
       receiverId: widget.receiverId,
+      carId: widget.carId,
       caption: caption,
       replyToMessageId: replyToMessageId,
+      replyToPreviewJson: replyJson,
       listingPreview: listingPreviewForMessage,
       restoreFiles: restoreFiles,
       restoreCaption: caption,
@@ -1557,6 +1631,7 @@ class _ChatConversationPageState extends State<ChatConversationPage>
 
   void _recallPendingMessageToComposer(ChatMessage message) {
     if (!message.isPending || !mounted) return;
+    OutgoingChatSendService.instance.discardInFlightMedia(message.id);
     _discardedOutgoingIds.add(message.id);
     final caption =
         _isAttachmentPlaceholder(message.content) ? '' : message.content.trim();
@@ -1619,6 +1694,7 @@ class _ChatConversationPageState extends State<ChatConversationPage>
         ),
       );
       if (confirmed != true || !mounted) return;
+      OutgoingChatSendService.instance.discardInFlightMedia(message.id);
       setState(() {
         _discardedOutgoingIds.add(message.id);
         _removeMessage(message.id);

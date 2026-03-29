@@ -6,6 +6,31 @@ import 'api_service.dart';
 
 enum OutgoingChatSendKind { mediaGroup, textMessage }
 
+/// Snapshot of a media upload still in progress (survives leaving the chat screen).
+class InFlightMediaSend {
+  InFlightMediaSend({
+    required this.conversationId,
+    required this.tempMessageId,
+    required this.files,
+    required this.startedAt,
+    this.receiverId,
+    this.carId,
+    this.replyToMessageId,
+    this.replyToPreviewJson,
+    this.listingPreview,
+  });
+
+  final String conversationId;
+  final String tempMessageId;
+  final List<XFile> files;
+  final DateTime startedAt;
+  final String? receiverId;
+  final String? carId;
+  final String? replyToMessageId;
+  final Map<String, dynamic>? replyToPreviewJson;
+  final Map<String, dynamic>? listingPreview;
+}
+
 class OutgoingChatSendEvent {
   OutgoingChatSendEvent({
     required this.kind,
@@ -41,6 +66,20 @@ class OutgoingChatSendService {
 
   Stream<OutgoingChatSendEvent> get events => _controller.stream;
 
+  final Map<String, InFlightMediaSend> _inFlightMediaByTempId = {};
+
+  /// Active media uploads keyed by temp message id.
+  List<InFlightMediaSend> inFlightMediaForConversation(String conversationId) {
+    return _inFlightMediaByTempId.values
+        .where((e) => e.conversationId == conversationId)
+        .toList(growable: false);
+  }
+
+  /// Stop tracking an upload (user discarded / recalled); the HTTP call may still finish.
+  void discardInFlightMedia(String tempMessageId) {
+    _inFlightMediaByTempId.remove(tempMessageId);
+  }
+
   void _emit(OutgoingChatSendEvent e) {
     if (!_controller.isClosed) {
       _controller.add(e);
@@ -51,13 +90,27 @@ class OutgoingChatSendService {
     required String conversationId,
     required List<XFile> files,
     required String tempMessageId,
+    required DateTime startedAt,
     String? receiverId,
+    String? carId,
     String? caption,
     String? replyToMessageId,
+    Map<String, dynamic>? replyToPreviewJson,
     Map<String, dynamic>? listingPreview,
     required List<XFile> restoreFiles,
     String? restoreCaption,
   }) {
+    _inFlightMediaByTempId[tempMessageId] = InFlightMediaSend(
+      conversationId: conversationId,
+      tempMessageId: tempMessageId,
+      files: List<XFile>.from(files),
+      startedAt: startedAt,
+      receiverId: receiverId,
+      carId: carId,
+      replyToMessageId: replyToMessageId,
+      replyToPreviewJson: replyToPreviewJson,
+      listingPreview: listingPreview,
+    );
     unawaited(_runMediaGroupSend(
       conversationId: conversationId,
       files: files,
@@ -121,6 +174,8 @@ class OutgoingChatSendService {
         restoreFiles: restoreFiles,
         restoreCaption: restoreCaption,
       ));
+    } finally {
+      _inFlightMediaByTempId.remove(tempMessageId);
     }
   }
 
