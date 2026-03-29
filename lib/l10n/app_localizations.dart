@@ -178,6 +178,12 @@ abstract class AppLocalizations {
   /// **'Profile'**
   String get profileTitle;
 
+  /// No description provided for @homeSearchHeading.
+  ///
+  /// In en, this message translates to:
+  /// **'Search'**
+  String get homeSearchHeading;
+
   /// No description provided for @paymentHistoryTitle.
   ///
   /// In en, this message translates to:

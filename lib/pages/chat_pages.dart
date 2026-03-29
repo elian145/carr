@@ -13,6 +13,7 @@ import '../services/api_service.dart';
 import '../services/outgoing_chat_send_service.dart';
 import '../shared/media/media_url.dart';
 import '../chat_ui_theme_controller.dart';
+import '../theme_provider.dart';
 import '../widgets/theme_toggle_widget.dart';
 
 const Color _kComposerOutlineOrange = Color(0xFFFF7A00);
@@ -21,12 +22,12 @@ const Color _kComposerOutlineOrange = Color(0xFFFF7A00);
 /// [Theme.primaryColor] matching surfaces inside chat bubbles in dark mode.
 const Color _kChatListingCardAccentOrange = Color(0xFFFF6B00);
 
-/// Same as home listing chrome: frosted on dark; theme surface on light (matches shell).
+/// Peer bubble / preview fill: same look as dark mode (frosted on dark shell; solid blend on light shell).
 Color _homeListingCardBackgroundFill(BuildContext context) {
   if (Theme.of(context).brightness == Brightness.dark) {
     return Colors.white.withValues(alpha: 0.10);
   }
-  return Theme.of(context).colorScheme.surface;
+  return AppThemes.listingCardFillGridOnLightShell();
 }
 
 String _digitsLocalized(BuildContext context, String input) {
@@ -1849,10 +1850,10 @@ class _ChatConversationPageState extends State<ChatConversationPage>
     final theme = Theme.of(context);
     final baseColor = isMe
         ? Colors.white.withOpacity(0.14)
-        : theme.dividerColor.withOpacity(0.25);
+        : _homeListingCardBackgroundFill(context);
     final borderColor = isMe
         ? Colors.white.withOpacity(0.5)
-        : theme.primaryColor.withOpacity(0.7);
+        : Colors.white.withValues(alpha: 0.12);
     final inner = Container(
       width: double.infinity,
       margin: EdgeInsets.only(bottom: dense ? 6 : 8),
@@ -1877,7 +1878,7 @@ class _ChatConversationPageState extends State<ChatConversationPage>
             overflow: TextOverflow.ellipsis,
             style: theme.textTheme.bodySmall?.copyWith(
               fontWeight: FontWeight.w600,
-              color: isMe ? Colors.white : null,
+              color: Colors.white,
             ),
           ),
           const SizedBox(height: 2),
@@ -1886,7 +1887,7 @@ class _ChatConversationPageState extends State<ChatConversationPage>
             maxLines: dense ? 1 : 2,
             overflow: TextOverflow.ellipsis,
             style: theme.textTheme.bodySmall?.copyWith(
-              color: isMe ? Colors.white70 : theme.textTheme.bodySmall?.color,
+              color: Colors.white70,
             ),
           ),
         ],

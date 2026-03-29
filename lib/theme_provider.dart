@@ -62,6 +62,18 @@ class AppThemes {
   /// Mid tone of [darkShellGradientColors] — dark home “base” (accent text on bright listing body).
   static const Color darkHomeShellBackground = Color(0xFF131722);
 
+  /// Same *appearance* as a frosted listing card on the dark home shell, for use on a white shell.
+  /// (Translucent white on white reads as pale grey; this matches the blended color on [darkHomeShellBackground].)
+  static Color listingCardFillGridOnLightShell() => Color.alphaBlend(
+        Colors.white.withOpacity(0.10),
+        darkHomeShellBackground,
+      );
+
+  static Color listingCardFillCompactOnLightShell() => Color.alphaBlend(
+        Colors.white.withOpacity(0.08),
+        darkHomeShellBackground,
+      );
+
   /// Page background: dark gradient or light white shell.
   static BoxDecoration shellBackgroundDecoration(Brightness brightness) {
     if (brightness == Brightness.dark) {

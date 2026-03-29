@@ -48,6 +48,9 @@ class AppLocalizationsEn extends AppLocalizations {
   String get profileTitle => 'Profile';
 
   @override
+  String get homeSearchHeading => 'Search';
+
+  @override
   String get paymentHistoryTitle => 'Payment History';
 
   @override

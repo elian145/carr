@@ -460,6 +460,29 @@ Widget buildCurrencyIcon(String currency) {
   }
 }
 
+/// Sell flow: light shell field fill (matches former fancy-selector gradient end).
+const Color kSellLightShellFieldFill = Color(0xFFFFF1E6);
+
+Color _sellFlowManualFieldFill(BuildContext context) =>
+    Theme.of(context).brightness == Brightness.dark
+        ? Colors.black.withOpacity(0.2)
+        : kSellLightShellFieldFill;
+
+TextStyle _sellFlowManualFieldLabelStyle(BuildContext context) =>
+    Theme.of(context).brightness == Brightness.dark
+        ? const TextStyle(color: Colors.white)
+        : TextStyle(color: Colors.grey[800]!);
+
+TextStyle _sellFlowManualFieldHintStyle(BuildContext context) =>
+    Theme.of(context).brightness == Brightness.dark
+        ? const TextStyle(color: Colors.white54)
+        : TextStyle(color: Colors.grey[600]!);
+
+TextStyle _sellFlowManualFieldTextStyle(BuildContext context) =>
+    Theme.of(context).brightness == Brightness.dark
+        ? const TextStyle(color: Colors.white)
+        : TextStyle(color: Colors.grey[900]!);
+
 // Fancy selector tile used in Sell page pickers
 Widget buildFancySelector(
   BuildContext context, {
@@ -474,7 +497,7 @@ Widget buildFancySelector(
   final Color accent = const Color(0xFFFF6B00);
   final List<Color> bg = isDark
       ? [Colors.white.withOpacity(0.06), Colors.white.withOpacity(0.03)]
-      : [Colors.white, const Color(0xFFFFF1E6)];
+      : [kSellLightShellFieldFill, kSellLightShellFieldFill];
   final Color borderColor = isError
       ? Colors.redAccent
       : (isDark ? Colors.white12 : accent.withOpacity(0.25));
@@ -1057,12 +1080,13 @@ Widget buildGlobalCarCard(BuildContext context, Map car) {
               ? _localizeDigitsGlobal(context, yearRaw)
               : '${_localizeDigitsGlobal(context, mileageRaw)} ${locCard.unit_km}';
 
-  final isDark = Theme.of(context).brightness == Brightness.dark;
-  final cs = Theme.of(context).colorScheme;
-  // Same frosted card surface as dark mode on every theme (reads on light shell too).
-  final cardFill = Colors.white.withOpacity(0.10);
-  final metaTextColor = isDark ? Colors.white70 : cs.onSurfaceVariant;
-  final dividerLineColor = isDark ? Colors.white24 : cs.outlineVariant;
+  final isLight = Theme.of(context).brightness == Brightness.light;
+  // On dark shell: true frosted overlay. On light shell: solid blend so color matches dark mode.
+  final cardFill = isLight
+      ? AppThemes.listingCardFillGridOnLightShell()
+      : Colors.white.withOpacity(0.10);
+  final metaTextColor = Colors.white70;
+  final dividerLineColor = Colors.white24;
 
   return Container(
     decoration: BoxDecoration(
@@ -2071,45 +2095,62 @@ class _SearchDialogState extends State<_SearchDialog> {
     super.dispose();
   }
 
-  void _onSearchChanged() {
-    final query = _searchController.text.toLowerCase();
-    setState(() {
-      if (_isSearchingBrands) {
-        _filteredBrands = widget.brands
-            .where((brand) => brand.toLowerCase().contains(query))
-            .toList();
-      } else {
-        _filteredModels = [];
-        for (final brand in widget.brands) {
-          if (brand.toLowerCase().contains(query)) {
-            final brandModels = widget.models[brand] ?? [];
-            for (final model in brandModels) {
-              _filteredModels.add({'brand': brand, 'model': model});
-            }
-          }
-          // Also search within models
-          final brandModels = widget.models[brand] ?? [];
-          for (final model in brandModels) {
-            if (model.toLowerCase().contains(query)) {
-              _filteredModels.add({'brand': brand, 'model': model});
-            }
+  /// Rebuilds result lists from the current field text. In model mode, an empty
+  /// query shows no rows (typing filters by model name, or by brand to narrow).
+  void _rebuildFilteredLists() {
+    final raw = _searchController.text.toLowerCase().trim();
+    if (_isSearchingBrands) {
+      _filteredBrands = widget.brands
+          .where((brand) => brand.toLowerCase().contains(raw))
+          .toList();
+      return;
+    }
+    if (raw.isEmpty) {
+      _filteredModels = [];
+      return;
+    }
+    final seen = <String>{};
+    _filteredModels = [];
+    for (final brand in widget.brands) {
+      final brandModels = widget.models[brand] ?? [];
+      if (brand.toLowerCase().contains(raw)) {
+        for (final model in brandModels) {
+          final key = '$brand|$model';
+          if (seen.add(key)) {
+            _filteredModels.add({'brand': brand, 'model': model});
           }
         }
       }
+      for (final model in brandModels) {
+        if (model.toLowerCase().contains(raw)) {
+          final key = '$brand|$model';
+          if (seen.add(key)) {
+            _filteredModels.add({'brand': brand, 'model': model});
+          }
+        }
+      }
+    }
+    _filteredModels.sort((a, b) {
+      final ma = a['model']!.toLowerCase();
+      final mb = b['model']!.toLowerCase();
+      final c = ma.compareTo(mb);
+      if (c != 0) return c;
+      return a['brand']!.toLowerCase().compareTo(b['brand']!.toLowerCase());
     });
   }
 
+  void _onSearchChanged() {
+    setState(_rebuildFilteredLists);
+  }
+
   void _toggleSearchMode() {
+    _searchController.removeListener(_onSearchChanged);
     setState(() {
       _isSearchingBrands = !_isSearchingBrands;
       _searchController.clear();
-      if (_isSearchingBrands) {
-        _filteredBrands = List.from(widget.brands);
-        _filteredModels.clear();
-      } else {
-        _filteredModels.clear();
-      }
+      _rebuildFilteredLists();
     });
+    _searchController.addListener(_onSearchChanged);
   }
 
   @override
@@ -2272,6 +2313,21 @@ class _SearchDialogState extends State<_SearchDialog> {
   }
 
   Widget _buildModelsList() {
+    if (_filteredModels.isEmpty) {
+      final emptyHint = _searchController.text.trim().isEmpty
+          ? 'Type a model name to search. You can also type a brand to see all its models.'
+          : 'No models match your search.';
+      return Center(
+        child: Padding(
+          padding: const EdgeInsets.all(24),
+          child: Text(
+            emptyHint,
+            textAlign: TextAlign.center,
+            style: TextStyle(color: Colors.grey[400], fontSize: 15),
+          ),
+        ),
+      );
+    }
     return ListView.builder(
       itemCount: _filteredModels.length,
       itemBuilder: (context, index) {
@@ -2313,7 +2369,9 @@ class _SearchDialogState extends State<_SearchDialog> {
             ),
           ),
           title: Text(
-            '${CarNameTranslations.getLocalizedBrand(context, brand).isNotEmpty ? CarNameTranslations.getLocalizedBrand(context, brand) : brand} ${CarNameTranslations.getLocalizedModel(context, brand, model).isNotEmpty ? CarNameTranslations.getLocalizedModel(context, brand, model) : model}',
+            CarNameTranslations.getLocalizedModel(context, brand, model).isNotEmpty
+                ? CarNameTranslations.getLocalizedModel(context, brand, model)
+                : model,
             style: TextStyle(
               color: Colors.white,
               fontSize: 16,
@@ -3041,28 +3099,22 @@ class HomePage extends StatefulWidget {
   _HomePageState createState() => _HomePageState();
 }
 
-/// Empty state with sort dropdown. When a sort is already selected, triggers
-/// a one-time auto-fetch so listings appear without clicking "Apply Filters".
-class _EmptyStateWithSort extends StatefulWidget {
+/// Empty listings: shows only the message. When a non-default sort is already
+/// selected, still runs a one-time auto-fetch (no extra controls on this screen).
+class _HomeEmptyListMessage extends StatefulWidget {
   final String? selectedSortBy;
-  final List<String> sortOptions;
-  final ValueChanged<String> onSortChanged;
-  final VoidCallback onApplyFilters;
   final VoidCallback onAutoFetch;
 
-  const _EmptyStateWithSort({
+  const _HomeEmptyListMessage({
     required this.selectedSortBy,
-    required this.sortOptions,
-    required this.onSortChanged,
-    required this.onApplyFilters,
     required this.onAutoFetch,
   });
 
   @override
-  State<_EmptyStateWithSort> createState() => _EmptyStateWithSortState();
+  State<_HomeEmptyListMessage> createState() => _HomeEmptyListMessageState();
 }
 
-class _EmptyStateWithSortState extends State<_EmptyStateWithSort> {
+class _HomeEmptyListMessageState extends State<_HomeEmptyListMessage> {
   bool _didAutoFetch = false;
 
   @override
@@ -3079,7 +3131,7 @@ class _EmptyStateWithSortState extends State<_EmptyStateWithSort> {
   }
 
   @override
-  void didUpdateWidget(_EmptyStateWithSort oldWidget) {
+  void didUpdateWidget(_HomeEmptyListMessage oldWidget) {
     super.didUpdateWidget(oldWidget);
     if (widget.selectedSortBy != null &&
         widget.selectedSortBy != oldWidget.selectedSortBy &&
@@ -3095,59 +3147,10 @@ class _EmptyStateWithSortState extends State<_EmptyStateWithSort> {
 
   @override
   Widget build(BuildContext context) {
-    final sortOptions = widget.sortOptions;
-    final defaultSort = sortOptions.isNotEmpty ? sortOptions.first : '';
-    final value = widget.selectedSortBy ?? defaultSort;
-
-    final effectiveValue =
-        value.isNotEmpty && sortOptions.contains(value) ? value : defaultSort;
-
     return Center(
-      child: Column(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          Text(
-            AppLocalizations.of(context)!.noCarsFound,
-            style: TextStyle(color: Colors.white70),
-          ),
-          SizedBox(height: 16),
-          Padding(
-            padding: EdgeInsets.symmetric(horizontal: 24),
-            child: DropdownButtonFormField<String>(
-              value: effectiveValue,
-              decoration: InputDecoration(
-                labelText: AppLocalizations.of(context)!.sortBy,
-                filled: true,
-                fillColor: Colors.black.withOpacity(0.2),
-                labelStyle: TextStyle(color: Colors.white70),
-                border: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(12),
-                ),
-              ),
-              dropdownColor: Colors.grey[900],
-              style: TextStyle(color: Colors.white),
-              items: sortOptions
-                  .map(
-                    (s) => DropdownMenuItem(
-                      value: s,
-                      child: Text(s),
-                    ),
-                  )
-                  .toList(),
-              onChanged: (v) {
-                if (v == null) return;
-                widget.onSortChanged(v);
-              },
-            ),
-          ),
-          SizedBox(height: 16),
-          OutlinedButton(
-            onPressed: widget.onApplyFilters,
-            child: Text(
-              AppLocalizations.of(context)!.applyFilters,
-            ),
-          ),
-        ],
+      child: Text(
+        AppLocalizations.of(context)!.noCarsFound,
+        style: TextStyle(color: Colors.white70),
       ),
     );
   }
@@ -3204,8 +3207,8 @@ class _HomePageState extends State<HomePage> {
   // Bottom bar tab selection for inline pages (payments, chat, saved, etc.)
   int? _selectedBottomTabIndex;
 
-  /// When we show "No cars found" with a sort selected, we auto-fetch once so
-  /// listings appear without the user clicking "Apply Filters".
+  /// When the list is empty but a non-default sort is set, auto-fetch once
+  /// (no sort/apply UI on the empty state).
   bool _autoFetchedForEmptyWithSort = false;
 
   // Toggle state for inline engine size picker on the sell page.
@@ -4611,7 +4614,7 @@ class _HomePageState extends State<HomePage> {
 
     // Clear any previous error messages but do NOT set isLoading = true so we
     // keep showing the current list until the sorted result arrives (avoids
-    // flashing "No cars found" + "Apply Filters" when only sort changed).
+    // flashing empty state when only sort changed).
     if (mounted) {
       setState(() {
         loadErrorMessage = null;
@@ -5847,7 +5850,7 @@ class _HomePageState extends State<HomePage> {
                                   GestureDetector(
                                     onTap: () => _showSearchDialog(context),
                                     child: Text(
-                                      AppLocalizations.of(context)!.appTitle,
+                                      AppLocalizations.of(context)!.homeSearchHeading,
                                       style: GoogleFonts.orbitron(
                                         color: Color(0xFFFF6B00),
                                         fontWeight: FontWeight.bold,
@@ -6567,6 +6570,8 @@ class _HomePageState extends State<HomePage> {
                                       builder: (context) {
                                         return StatefulBuilder(
                                           builder: (context, setStateDialog) {
+                                            const moreFiltersAnyColor =
+                                                Colors.white70;
                                             return AlertDialog(
                                               backgroundColor: Colors.grey[900]
                                                   ?.withOpacity(0.98),
@@ -6647,7 +6652,7 @@ class _HomePageState extends State<HomePage> {
                                                                                         context,
                                                                                       )!.any,
                                                                                       style: TextStyle(
-                                                                                        color: Colors.grey,
+                                                                                        color: moreFiltersAnyColor,
                                                                                       ),
                                                                                     ),
                                                                                   ),
@@ -6774,7 +6779,7 @@ class _HomePageState extends State<HomePage> {
                                                                                         context,
                                                                                       )!.any,
                                                                                       style: TextStyle(
-                                                                                        color: Colors.grey,
+                                                                                        color: moreFiltersAnyColor,
                                                                                       ),
                                                                                     ),
                                                                                   ),
@@ -7094,7 +7099,7 @@ class _HomePageState extends State<HomePage> {
                                                                                         context,
                                                                                       )!.any,
                                                                                       style: TextStyle(
-                                                                                        color: Colors.grey,
+                                                                                        color: moreFiltersAnyColor,
                                                                                       ),
                                                                                     ),
                                                                                   ),
@@ -7221,7 +7226,7 @@ class _HomePageState extends State<HomePage> {
                                                                                         context,
                                                                                       )!.any,
                                                                                       style: TextStyle(
-                                                                                        color: Colors.grey,
+                                                                                        color: moreFiltersAnyColor,
                                                                                       ),
                                                                                     ),
                                                                                   ),
@@ -7532,7 +7537,7 @@ class _HomePageState extends State<HomePage> {
                                                                                         context,
                                                                                       )!.any,
                                                                                       style: TextStyle(
-                                                                                        color: Colors.grey,
+                                                                                        color: moreFiltersAnyColor,
                                                                                       ),
                                                                                     ),
                                                                                   ),
@@ -7669,7 +7674,7 @@ class _HomePageState extends State<HomePage> {
                                                                                         context,
                                                                                       )!.any,
                                                                                       style: TextStyle(
-                                                                                        color: Colors.grey,
+                                                                                        color: moreFiltersAnyColor,
                                                                                       ),
                                                                                     ),
                                                                                   ),
@@ -7965,7 +7970,7 @@ class _HomePageState extends State<HomePage> {
                                                             )!.any,
                                                             style: TextStyle(
                                                               color:
-                                                                  Colors.grey,
+                                                                  moreFiltersAnyColor,
                                                             ),
                                                           ),
                                                         ),
@@ -8038,7 +8043,7 @@ class _HomePageState extends State<HomePage> {
                                                               )!.any,
                                                               style: TextStyle(
                                                                 color:
-                                                                    Colors.grey,
+                                                                    moreFiltersAnyColor,
                                                               ),
                                                             ),
                                                           ),
@@ -8106,8 +8111,7 @@ class _HomePageState extends State<HomePage> {
                                                                 style: TextStyle(
                                                                   color:
                                                                       c == 'Any'
-                                                                      ? Colors
-                                                                            .grey
+                                                                      ? moreFiltersAnyColor
                                                                       : null,
                                                                 ),
                                                               ),
@@ -8157,7 +8161,7 @@ class _HomePageState extends State<HomePage> {
                                                             )!.any,
                                                             style: TextStyle(
                                                               color:
-                                                                  Colors.grey,
+                                                                  moreFiltersAnyColor,
                                                             ),
                                                           ),
                                                         ),
@@ -8223,7 +8227,7 @@ class _HomePageState extends State<HomePage> {
                                                             )!.any,
                                                             style: TextStyle(
                                                               color:
-                                                                  Colors.grey,
+                                                                  moreFiltersAnyColor,
                                                             ),
                                                           ),
                                                         ),
@@ -8262,6 +8266,14 @@ class _HomePageState extends State<HomePage> {
                                                         'bodyType_${selectedBodyType ?? 'any'}',
                                                       ),
                                                       readOnly: true,
+                                                      style: TextStyle(
+                                                        color: (selectedBodyType !=
+                                                                    null &&
+                                                                selectedBodyType!
+                                                                    .isNotEmpty)
+                                                            ? Colors.white
+                                                            : moreFiltersAnyColor,
+                                                      ),
                                                       initialValue:
                                                           (selectedBodyType ??
                                                               AppLocalizations.of(
@@ -8577,6 +8589,14 @@ class _HomePageState extends State<HomePage> {
                                                         'color_${selectedColor ?? 'any'}',
                                                       ),
                                                       readOnly: true,
+                                                      style: TextStyle(
+                                                        color: (selectedColor !=
+                                                                    null &&
+                                                                selectedColor!
+                                                                    .isNotEmpty)
+                                                            ? Colors.white
+                                                            : moreFiltersAnyColor,
+                                                      ),
                                                       initialValue:
                                                           (_translateValueGlobal(
                                                                 context,
@@ -8886,7 +8906,7 @@ class _HomePageState extends State<HomePage> {
                                                             )!.any,
                                                             style: TextStyle(
                                                               color:
-                                                                  Colors.grey,
+                                                                  moreFiltersAnyColor,
                                                             ),
                                                           ),
                                                         ),
@@ -8956,7 +8976,7 @@ class _HomePageState extends State<HomePage> {
                                                             )!.any,
                                                             style: TextStyle(
                                                               color:
-                                                                  Colors.grey,
+                                                                  moreFiltersAnyColor,
                                                             ),
                                                           ),
                                                         ),
@@ -9024,7 +9044,7 @@ class _HomePageState extends State<HomePage> {
                                                             )!.any,
                                                             style: TextStyle(
                                                               color:
-                                                                  Colors.grey,
+                                                                  moreFiltersAnyColor,
                                                             ),
                                                           ),
                                                         ),
@@ -9107,8 +9127,7 @@ class _HomePageState extends State<HomePage> {
                                                                             .any,
                                                                         style:
                                                                             TextStyle(
-                                                                          color: Colors
-                                                                              .grey,
+                                                                          color: moreFiltersAnyColor,
                                                                         ),
                                                                       ),
                                                                     ),
@@ -9278,7 +9297,7 @@ class _HomePageState extends State<HomePage> {
                                                             )!.any,
                                                             style: TextStyle(
                                                               color:
-                                                                  Colors.grey,
+                                                                  moreFiltersAnyColor,
                                                             ),
                                                           ),
                                                         ),
@@ -9436,19 +9455,8 @@ class _HomePageState extends State<HomePage> {
                   else if (cars.isEmpty)
                     SliverFillRemaining(
                       hasScrollBody: false,
-                      child: _EmptyStateWithSort(
+                      child: _HomeEmptyListMessage(
                         selectedSortBy: selectedSortBy,
-                        sortOptions: getLocalizedSortOptions(context),
-                        onSortChanged: (value) {
-                          setState(() {
-                            selectedSortBy = value == getLocalizedSortOptions(context).first
-                                ? null
-                                : value;
-                          });
-                          _persistFilters();
-                          onFilterChanged();
-                        },
-                        onApplyFilters: onFilterChanged,
                         onAutoFetch: () {
                           if (!_autoFetchedForEmptyWithSort &&
                               selectedSortBy != null &&
@@ -11650,7 +11658,9 @@ class _CarDetailsPageState extends State<CarDetailsPage> {
                                         fontSize: 22,
                                         fontWeight: FontWeight.w800,
                                         color: isLightShell
-                                            ? AppThemes.darkHomeShellBackground
+                                            ? Theme.of(context)
+                                                .colorScheme
+                                                .onSurfaceVariant
                                             : Colors.white70,
                                       ),
                                       maxLines: 1,
@@ -12418,7 +12428,9 @@ class _CarDetailsPageState extends State<CarDetailsPage> {
       child: Container(
         width: 160,
         decoration: BoxDecoration(
-          color: Colors.white.withOpacity(0.08),
+          color: isLight
+              ? AppThemes.listingCardFillCompactOnLightShell()
+              : Colors.white.withOpacity(0.08),
           borderRadius: BorderRadius.circular(12),
           border: Border.all(color: Colors.white12),
         ),
@@ -12466,10 +12478,8 @@ class _CarDetailsPageState extends State<CarDetailsPage> {
                     data['title']?.toString() ?? '',
                     maxLines: 1,
                     overflow: TextOverflow.ellipsis,
-                    style: TextStyle(
-                      color: isLight
-                          ? AppThemes.darkHomeShellBackground
-                          : Colors.white,
+                    style: const TextStyle(
+                      color: Colors.white,
                       fontWeight: FontWeight.bold,
                     ),
                   ),
@@ -13351,9 +13361,9 @@ class _SellStep1PageState extends State<SellStep1Page> {
                             labelText: '${AppLocalizations.of(context)!.yearLabel} *',
                             hintText: AppLocalizations.of(context)!.enterYearHint,
                             filled: true,
-                            fillColor: Colors.black.withOpacity(0.2),
-                            labelStyle: TextStyle(color: Colors.white),
-                            hintStyle: TextStyle(color: Colors.white54),
+                            fillColor: _sellFlowManualFieldFill(context),
+                            labelStyle: _sellFlowManualFieldLabelStyle(context),
+                            hintStyle: _sellFlowManualFieldHintStyle(context),
                             border: OutlineInputBorder(
                               borderRadius: BorderRadius.circular(12),
                             ),
@@ -13362,7 +13372,7 @@ class _SellStep1PageState extends State<SellStep1Page> {
                               borderSide: BorderSide(color: Colors.red),
                             ),
                           ),
-                          style: TextStyle(color: Colors.white),
+                          style: _sellFlowManualFieldTextStyle(context),
                           keyboardType: TextInputType.number,
                           onChanged: (value) {
                             setState(() {
@@ -13952,9 +13962,9 @@ class _SellStep2PageState extends State<SellStep2Page> {
                             labelText: '${AppLocalizations.of(context)!.mileageKmLabel} *',
                             hintText: AppLocalizations.of(context)!.enterMileage,
                             filled: true,
-                            fillColor: Colors.black.withOpacity(0.2),
-                            labelStyle: TextStyle(color: Colors.white),
-                            hintStyle: TextStyle(color: Colors.white54),
+                            fillColor: _sellFlowManualFieldFill(context),
+                            labelStyle: _sellFlowManualFieldLabelStyle(context),
+                            hintStyle: _sellFlowManualFieldHintStyle(context),
                             border: OutlineInputBorder(
                               borderRadius: BorderRadius.circular(12),
                             ),
@@ -13963,7 +13973,7 @@ class _SellStep2PageState extends State<SellStep2Page> {
                               borderSide: BorderSide(color: Colors.red),
                             ),
                           ),
-                          style: TextStyle(color: Colors.white),
+                          style: _sellFlowManualFieldTextStyle(context),
                           keyboardType: TextInputType.number,
                           onChanged: (value) {
                             setState(() {
@@ -14540,9 +14550,9 @@ class _SellStep2PageState extends State<SellStep2Page> {
                                 '${AppLocalizations.of(context)!.engineSizeL} *',
                             hintText: AppLocalizations.of(context)!.pleaseSelectEngineSize,
                             filled: true,
-                            fillColor: Colors.black.withOpacity(0.2),
-                            labelStyle: const TextStyle(color: Colors.white),
-                            hintStyle: const TextStyle(color: Colors.white54),
+                            fillColor: _sellFlowManualFieldFill(context),
+                            labelStyle: _sellFlowManualFieldLabelStyle(context),
+                            hintStyle: _sellFlowManualFieldHintStyle(context),
                             border: OutlineInputBorder(
                               borderRadius: BorderRadius.circular(12),
                             ),
@@ -14562,7 +14572,7 @@ class _SellStep2PageState extends State<SellStep2Page> {
                               return null;
                             }(),
                           ),
-                          style: const TextStyle(color: Colors.white),
+                          style: _sellFlowManualFieldTextStyle(context),
                           keyboardType: const TextInputType.numberWithOptions(
                             decimal: true,
                           ),
@@ -15288,9 +15298,9 @@ class _SellStep3PageState extends State<SellStep3Page> {
                                   fontSize: 16,
                                 ),
                                 filled: true,
-                                fillColor: Colors.black.withOpacity(0.2),
-                                labelStyle: TextStyle(color: Colors.white),
-                                hintStyle: TextStyle(color: Colors.white54),
+                                fillColor: _sellFlowManualFieldFill(context),
+                                labelStyle: _sellFlowManualFieldLabelStyle(context),
+                                hintStyle: _sellFlowManualFieldHintStyle(context),
                                 border: OutlineInputBorder(
                                   borderRadius: BorderRadius.circular(12),
                                 ),
@@ -15299,7 +15309,7 @@ class _SellStep3PageState extends State<SellStep3Page> {
                                   borderSide: BorderSide(color: Colors.red),
                                 ),
                               ),
-                              style: TextStyle(color: Colors.white),
+                              style: _sellFlowManualFieldTextStyle(context),
                               keyboardType: TextInputType.number,
                               onChanged: (value) {
                                 setState(() {
@@ -15499,6 +15509,10 @@ class _SellStep3PageState extends State<SellStep3Page> {
               decoration: InputDecoration(
                 labelText: 'WhatsApp/Phone Number *',
                 hintText: '7XX XXX XXXX',
+                filled: true,
+                fillColor: _sellFlowManualFieldFill(context),
+                labelStyle: _sellFlowManualFieldLabelStyle(context),
+                hintStyle: _sellFlowManualFieldHintStyle(context),
                 prefixText: '+964 ',
                 prefixStyle: TextStyle(
                   color: Color(0xFFFF6B00),
@@ -15510,6 +15524,7 @@ class _SellStep3PageState extends State<SellStep3Page> {
                 ),
                 prefixIcon: Icon(Icons.phone, color: Color(0xFFFF6B00)),
               ),
+              style: _sellFlowManualFieldTextStyle(context),
               keyboardType: TextInputType.phone,
               inputFormatters: [
                 services.FilteringTextInputFormatter.allow(RegExp(r'[0-9]')),
@@ -21035,6 +21050,7 @@ class _ProfilePageState extends State<ProfilePage> {
   }
 
   Widget _buildNotLoggedInState(BuildContext context) {
+    final isLightShell = Theme.of(context).brightness == Brightness.light;
     return Stack(
       children: [
         Container(decoration: _shellDecoration(context)),
@@ -21049,6 +21065,9 @@ class _ProfilePageState extends State<ProfilePage> {
                 decoration: BoxDecoration(
                   color: Colors.white,
                   borderRadius: BorderRadius.circular(20),
+                  border: isLightShell
+                      ? Border.all(color: const Color(0xFFE0E0E0), width: 1)
+                      : null,
                   boxShadow: [
                     BoxShadow(
                       color: Colors.black.withOpacity(0.1),
@@ -21138,6 +21157,11 @@ class _ProfilePageState extends State<ProfilePage> {
   Widget _buildLoggedInState(BuildContext context) {
     final isLoggedIn = ApiService.accessToken != null &&
         ApiService.accessToken!.isNotEmpty;
+    final isLightShell = Theme.of(context).brightness == Brightness.light;
+    final profileOutline = Border.all(
+      color: const Color(0xFFE0E0E0),
+      width: 1,
+    );
     return Stack(
       children: [
         Container(decoration: _shellDecoration(context)),
@@ -21152,6 +21176,7 @@ class _ProfilePageState extends State<ProfilePage> {
                 decoration: BoxDecoration(
                   color: Colors.white,
                   borderRadius: BorderRadius.circular(16),
+                  border: isLightShell ? profileOutline : null,
                   boxShadow: [
                     BoxShadow(
                       color: Colors.black.withOpacity(0.05),
@@ -21225,6 +21250,7 @@ class _ProfilePageState extends State<ProfilePage> {
                 decoration: BoxDecoration(
                   color: Colors.white,
                   borderRadius: BorderRadius.circular(20),
+                  border: isLightShell ? profileOutline : null,
                   boxShadow: [
                     BoxShadow(
                       color: Colors.black.withOpacity(0.1),
@@ -21288,6 +21314,7 @@ class _ProfilePageState extends State<ProfilePage> {
                 decoration: BoxDecoration(
                   color: Colors.white,
                   borderRadius: BorderRadius.circular(16),
+                  border: isLightShell ? profileOutline : null,
                   boxShadow: [
                     BoxShadow(
                       color: Colors.black.withOpacity(0.05),
@@ -21348,6 +21375,7 @@ class _ProfilePageState extends State<ProfilePage> {
               decoration: BoxDecoration(
                 color: Colors.white,
                 borderRadius: BorderRadius.circular(16),
+                border: isLightShell ? profileOutline : null,
                 boxShadow: [
                   BoxShadow(
                     color: Colors.black.withOpacity(0.05),

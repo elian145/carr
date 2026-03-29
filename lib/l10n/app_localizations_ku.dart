@@ -48,6 +48,9 @@ class AppLocalizationsKu extends AppLocalizations {
   String get profileTitle => 'پرۆفایل';
 
   @override
+  String get homeSearchHeading => 'گەڕان';
+
+  @override
   String get paymentHistoryTitle => 'مێژووی پارەدان';
 
   @override

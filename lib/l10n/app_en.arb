@@ -12,6 +12,7 @@
   "loginTitle": "Login",
   "signupTitle": "Sign Up",
   "profileTitle": "Profile",
+  "homeSearchHeading": "Search",
   "paymentHistoryTitle": "Payment History",
   "paymentInitiateTitle": "Payment Initiate",
   "chatConversationTitle": "Chat Conversation",

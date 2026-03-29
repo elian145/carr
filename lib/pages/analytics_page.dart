@@ -597,10 +597,11 @@ class _AnalyticsPageState extends State<AnalyticsPage> {
             .replaceAll('é', 'e')
             .replaceAll('ö', 'o');
 
-    final isDark = Theme.of(context).brightness == Brightness.dark;
-    final cs = Theme.of(context).colorScheme;
-    final cardFill = Colors.white.withValues(alpha: 0.10);
-    final metaColor = isDark ? Colors.white70 : cs.onSurfaceVariant;
+    final isLight = Theme.of(context).brightness == Brightness.light;
+    final cardFill = isLight
+        ? AppThemes.listingCardFillGridOnLightShell()
+        : Colors.white.withValues(alpha: 0.10);
+    const metaColor = Colors.white70;
 
     return Container(
       height: 205, // Standard height for all car cards

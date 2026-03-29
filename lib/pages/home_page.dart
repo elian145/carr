@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 
 import '../l10n/app_localizations.dart';
+import '../theme_provider.dart';
 import '../services/api_service.dart';
 import '../shared/media/media_url.dart';
 
@@ -218,6 +219,8 @@ class _HomePageState extends State<HomePage> {
                       final location = (car['location'] ?? '').toString();
                       final year = (car['year'] ?? '').toString();
 
+                      final isLight =
+                          Theme.of(context).brightness == Brightness.light;
                       return InkWell(
                         onTap: () {
                           if (carId.isEmpty) return;
@@ -227,21 +230,21 @@ class _HomePageState extends State<HomePage> {
                             arguments: {'carId': carId},
                           );
                         },
-                        child: Card(
-                          clipBehavior: Clip.antiAlias,
-                          shape: RoundedRectangleBorder(
+                        child: Container(
+                          decoration: BoxDecoration(
+                            color: isLight
+                                ? AppThemes.listingCardFillGridOnLightShell()
+                                : Colors.white.withOpacity(0.10),
                             borderRadius: BorderRadius.circular(12),
-                            side: Theme.of(context).brightness ==
-                                    Brightness.light
-                                ? BorderSide(
-                                    color: Theme.of(context)
-                                        .colorScheme
-                                        .outline
-                                        .withValues(alpha: 0.55),
-                                    width: 1,
-                                  )
-                                : BorderSide.none,
+                            boxShadow: [
+                              BoxShadow(
+                                color: Colors.black.withOpacity(0.2),
+                                blurRadius: 8,
+                                offset: const Offset(0, 4),
+                              ),
+                            ],
                           ),
+                          clipBehavior: Clip.antiAlias,
                           child: Column(
                             crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
@@ -258,20 +261,38 @@ class _HomePageState extends State<HomePage> {
                                       carTitle.isEmpty ? (loc?.carLabel ?? 'Car') : carTitle,
                                       maxLines: 2,
                                       overflow: TextOverflow.ellipsis,
-                                      style: const TextStyle(fontWeight: FontWeight.w600),
+                                      style: TextStyle(
+                                        fontWeight: FontWeight.w600,
+                                        color: isLight
+                                            ? const Color(0xFFFF6B00)
+                                            : Theme.of(context).colorScheme.onSurface,
+                                      ),
                                     ),
                                     const SizedBox(height: 6),
                                     Text(
                                       price.isEmpty ? '' : price,
                                       maxLines: 1,
                                       overflow: TextOverflow.ellipsis,
+                                      style: TextStyle(
+                                        fontWeight: FontWeight.w600,
+                                        color: isLight
+                                            ? const Color(0xFFFF6B00)
+                                            : Theme.of(context).colorScheme.onSurface,
+                                      ),
                                     ),
                                     const SizedBox(height: 4),
                                     Text(
                                       [year, location].where((s) => s.isNotEmpty).join(' • '),
                                       maxLines: 1,
                                       overflow: TextOverflow.ellipsis,
-                                      style: Theme.of(context).textTheme.bodySmall,
+                                      style: Theme.of(context)
+                                          .textTheme
+                                          .bodySmall
+                                          ?.copyWith(
+                                            color: isLight
+                                                ? Colors.white70
+                                                : null,
+                                          ),
                                     ),
                                   ],
                                 ),

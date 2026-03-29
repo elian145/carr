@@ -506,7 +506,9 @@ class _CarDetailPageState extends State<CarDetailPage> {
                 color: Colors.transparent,
                 child: Container(
                   decoration: BoxDecoration(
-                    color: Colors.white.withOpacity(0.08),
+                    color: listOnLight
+                        ? AppThemes.listingCardFillCompactOnLightShell()
+                        : Colors.white.withOpacity(0.08),
                     borderRadius: BorderRadius.circular(12),
                     border: Border.all(color: Colors.white12),
                   ),
@@ -531,12 +533,10 @@ class _CarDetailPageState extends State<CarDetailPage> {
                           title,
                           maxLines: 2,
                           overflow: TextOverflow.ellipsis,
-                          style: listOnLight
-                              ? const TextStyle(
-                                  color: AppThemes.darkHomeShellBackground,
-                                  fontWeight: FontWeight.bold,
-                                )
-                              : null,
+                          style: TextStyle(
+                            fontWeight: FontWeight.bold,
+                            color: listOnLight ? Colors.white : null,
+                          ),
                         ),
                       ),
                     ],
@@ -668,7 +668,9 @@ class _CarDetailPageState extends State<CarDetailPage> {
                                           .titleLarge
                                           ?.copyWith(
                                             fontWeight: FontWeight.w800,
-                                            color: AppThemes.darkHomeShellBackground,
+                                            color: Theme.of(context)
+                                                .colorScheme
+                                                .onSurfaceVariant,
                                           ),
                                     ),
                                   ],

@@ -48,6 +48,9 @@ class AppLocalizationsAr extends AppLocalizations {
   String get profileTitle => 'الملف الشخصي';
 
   @override
+  String get homeSearchHeading => 'بحث';
+
+  @override
   String get paymentHistoryTitle => 'سجل الدفعات';
 
   @override

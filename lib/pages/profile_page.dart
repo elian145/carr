@@ -270,6 +270,18 @@ class _ProfilePageState extends State<ProfilePage> {
     final pic = (user?['profile_picture'] ?? '').toString();
     final picUrl = buildMediaUrl(pic);
     final isAuthenticated = auth.isAuthenticated;
+    final isLightShell = Theme.of(context).brightness == Brightness.light;
+    final profileCardShape = RoundedRectangleBorder(
+      borderRadius: BorderRadius.circular(12),
+      side: isLightShell
+          ? BorderSide(
+              color: Theme.of(context)
+                  .colorScheme
+                  .outline
+                  .withValues(alpha: 0.55),
+            )
+          : BorderSide.none,
+    );
 
     return Scaffold(
       appBar: AppBar(
@@ -302,6 +314,8 @@ class _ProfilePageState extends State<ProfilePage> {
                   ],
                   if (!isAuthenticated) ...[
                     Card(
+                      shape: profileCardShape,
+                      clipBehavior: Clip.antiAlias,
                       child: Padding(
                         padding: const EdgeInsets.all(16),
                         child: Row(
@@ -349,6 +363,8 @@ class _ProfilePageState extends State<ProfilePage> {
                   ],
                   if (isAuthenticated) ...[
                     Card(
+                      shape: profileCardShape,
+                      clipBehavior: Clip.antiAlias,
                       child: Padding(
                         padding: const EdgeInsets.all(16),
                         child: Row(
@@ -395,14 +411,97 @@ class _ProfilePageState extends State<ProfilePage> {
                       ),
                     ),
                     const SizedBox(height: 12),
+                    Card(
+                      shape: profileCardShape,
+                      clipBehavior: Clip.antiAlias,
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Padding(
+                            padding: const EdgeInsets.fromLTRB(16, 16, 16, 0),
+                            child: Text(
+                              loc?.personalInformationTitle ??
+                                  'Personal Information',
+                              style: Theme.of(context)
+                                  .textTheme
+                                  .titleMedium
+                                  ?.copyWith(fontWeight: FontWeight.w700),
+                            ),
+                          ),
+                          if (username.isNotEmpty)
+                            ListTile(
+                              leading: const Icon(Icons.person_outline),
+                              title: Text(loc?.usernameLabel ?? 'Username'),
+                              subtitle: Text('@$username'),
+                            ),
+                          if (realEmail)
+                            ListTile(
+                              leading: const Icon(Icons.email_outlined),
+                              title: Text(loc?.emailLabel ?? 'Email'),
+                              subtitle: Text(email),
+                            ),
+                          if (phone.isNotEmpty)
+                            ListTile(
+                              leading: const Icon(Icons.phone_outlined),
+                              title: Text(loc?.phoneLabel ?? 'Phone'),
+                              subtitle: Text(phone),
+                            ),
+                          if (!isVerified &&
+                              (realEmail || phone.isNotEmpty)) ...[
+                            if (email.isNotEmpty &&
+                                !email.endsWith('@phone.local'))
+                              ListTile(
+                                leading: const Icon(
+                                    Icons.mark_email_unread_outlined),
+                                title: Text(
+                                    loc?.verifyEmailAction ?? 'Verify email'),
+                                subtitle: Text(
+                                  loc?.sendVerificationLinkToEmail ??
+                                      'Send a verification link to your email',
+                                ),
+                                onTap: () =>
+                                    _sendEmailVerification(context, auth),
+                              ),
+                            if (phone.isNotEmpty)
+                              ListTile(
+                                leading:
+                                    const Icon(Icons.phone_android_outlined),
+                                title: Text(
+                                    loc?.verifyPhoneAction ?? 'Verify phone'),
+                                subtitle: Text(
+                                  loc?.receiveCodeBySms ??
+                                      'Receive a code by SMS',
+                                ),
+                                onTap: () => _showPhoneVerifyDialog(
+                                    context, phone, auth),
+                              ),
+                          ],
+                        ],
+                      ),
+                    ),
+                    const SizedBox(height: 12),
                   ],
                   Card(
+                    shape: profileCardShape,
+                    clipBehavior: Clip.antiAlias,
                     child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
+                        Padding(
+                          padding: const EdgeInsets.fromLTRB(16, 16, 16, 0),
+                          child: Text(
+                            loc?.accountActionsTitle ?? 'Account Actions',
+                            style: Theme.of(context)
+                                .textTheme
+                                .titleMedium
+                                ?.copyWith(fontWeight: FontWeight.w700),
+                          ),
+                        ),
                         ListTile(
                           leading: const Icon(Icons.settings_outlined),
                           title: Text(loc?.settingsTitle ?? 'Settings'),
-                          onTap: () => Navigator.pushNamed(context, '/settings'),
+                          onTap: () =>
+                              Navigator.pushNamed(context, '/settings'),
                         ),
                         const Divider(height: 1),
                         ListTile(
@@ -447,23 +546,6 @@ class _ProfilePageState extends State<ProfilePage> {
                             Navigator.pushNamed(context, '/my_listings');
                           },
                         ),
-                        if (!isVerified && (realEmail || phone.isNotEmpty)) ...[
-                          const Divider(height: 1),
-                          if (email.isNotEmpty && !email.endsWith('@phone.local'))
-                            ListTile(
-                              leading: const Icon(Icons.mark_email_unread_outlined),
-                              title: Text(loc?.verifyEmailAction ?? 'Verify email'),
-                              subtitle: Text(loc?.sendVerificationLinkToEmail ?? 'Send a verification link to your email'),
-                              onTap: () => _sendEmailVerification(context, auth),
-                            ),
-                          if (phone.isNotEmpty)
-                            ListTile(
-                              leading: const Icon(Icons.phone_android_outlined),
-                              title: Text(loc?.verifyPhoneAction ?? 'Verify phone'),
-                              subtitle: Text(loc?.receiveCodeBySms ?? 'Receive a code by SMS'),
-                              onTap: () => _showPhoneVerifyDialog(context, phone, auth),
-                            ),
-                        ],
                         if (isAuthenticated) ...[
                           const Divider(height: 1),
                           ListTile(
