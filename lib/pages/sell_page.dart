@@ -373,7 +373,6 @@ class _SellPageState extends State<SellPage> {
                 items: const [
                   DropdownMenuItem(value: 'automatic', child: Text('Automatic')),
                   DropdownMenuItem(value: 'manual', child: Text('Manual')),
-                  DropdownMenuItem(value: 'cvt', child: Text('CVT')),
                 ],
                 onChanged: (v) => setState(() => _transmission = v ?? _transmission),
               ),
@@ -396,7 +395,6 @@ class _SellPageState extends State<SellPage> {
                 items: const [
                   DropdownMenuItem(value: 'new', child: Text('New')),
                   DropdownMenuItem(value: 'used', child: Text('Used')),
-                  DropdownMenuItem(value: 'certified', child: Text('Certified')),
                 ],
                 onChanged: (v) => setState(() => _condition = v ?? _condition),
               ),

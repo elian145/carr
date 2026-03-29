@@ -703,6 +703,12 @@ String? _convertSortToApiValue(BuildContext context, String? sortOption) {
   return sortOption;
 }
 
+/// Options removed from filter UI; still used to drop spec-driven list entries.
+bool _isExcludedTransmissionFilter(String value) {
+  final compact = value.trim().toLowerCase().replaceAll(RegExp(r'[\s_-]+'), '');
+  return compact == 'semiautomatic' || compact == 'semiauto';
+}
+
 String? _translateValueGlobal(BuildContext context, String? raw) {
   if (raw == null) return null;
   final l = raw.trim().toLowerCase();
@@ -3194,6 +3200,10 @@ class _HomePageState extends State<HomePage> {
   // Toggle state for inline engine size picker on the sell page.
   bool isInlineEngineSizeDropdown = true;
 
+  /// Bumped when More Filters form fields are reset so dropdowns remount
+  /// (`initialValue` is otherwise ignored after the first build).
+  int _moreFiltersDialogFieldGeneration = 0;
+
   void _resetAllFiltersInMemory() {
     selectedBrand = null;
     selectedModel = null;
@@ -3243,6 +3253,7 @@ class _HomePageState extends State<HomePage> {
       selectedCity = null;
       selectedTitleStatus = null;
       selectedDamagedParts = null;
+      _moreFiltersDialogFieldGeneration++;
       isPriceDropdown = true;
       isYearDropdown = true;
       isMileageDropdown = true;
@@ -3583,7 +3594,6 @@ class _HomePageState extends State<HomePage> {
     'Automatic',
     'Manual',
     'CVT',
-    'Semi-Automatic',
   ];
   final List<String> fuelTypes = [
     'Any',
@@ -5058,18 +5068,27 @@ class _HomePageState extends State<HomePage> {
   }
 
   List<String> getAvailableTransmissions() {
+    final List<String> base;
     if (selectedBrand == null ||
         selectedModel == null ||
         selectedTrim == null) {
-      return transmissions;
+      base = transmissions;
+    } else {
+      final specs =
+          globalVehicleSpecs[selectedBrand]?[selectedModel]?[selectedTrim];
+      if (specs != null && specs['transmissions'] != null) {
+        final fromSpecs = (specs['transmissions'] as List<dynamic>)
+            .map((e) => e.toString())
+            .where((t) => !_isExcludedTransmissionFilter(t))
+            .toList();
+        base = ['Any', ...fromSpecs];
+      } else {
+        base = transmissions;
+      }
     }
-
-    final specs =
-        globalVehicleSpecs[selectedBrand]?[selectedModel]?[selectedTrim];
-    if (specs != null && specs['transmissions'] != null) {
-      return ['Any', ...specs['transmissions']];
-    }
-    return transmissions;
+    return base
+        .where((t) => t == 'Any' || !_isExcludedTransmissionFilter(t))
+        .toList();
   }
 
   List<String> getAvailableFuelTypes() {
@@ -6554,27 +6573,31 @@ class _HomePageState extends State<HomePage> {
                                                 ),
                                               ),
                                               content: SingleChildScrollView(
-                                                child: Column(
-                                                  mainAxisSize:
-                                                      MainAxisSize.min,
-                                                  children: [
-                                                    // Price Filter
-                                                    Text(
-                                                      AppLocalizations.of(
-                                                        context,
-                                                      )!.priceRange,
-                                                      style: TextStyle(
-                                                        color: Colors.white,
-                                                        fontWeight:
-                                                            FontWeight.bold,
-                                                        fontSize: 16,
+                                                child: KeyedSubtree(
+                                                  key: ValueKey<int>(
+                                                    _moreFiltersDialogFieldGeneration,
+                                                  ),
+                                                  child: Column(
+                                                    mainAxisSize:
+                                                        MainAxisSize.min,
+                                                    children: [
+                                                      // Price Filter
+                                                      Text(
+                                                        AppLocalizations.of(
+                                                          context,
+                                                        )!.priceRange,
+                                                        style: TextStyle(
+                                                          color: Colors.white,
+                                                          fontWeight:
+                                                              FontWeight.bold,
+                                                          fontSize: 16,
+                                                        ),
                                                       ),
-                                                    ),
-                                                    SizedBox(height: 8),
-                                                    Row(
-                                                      children: [
-                                                        Expanded(
-                                                          child: isPriceDropdown
+                                                      SizedBox(height: 8),
+                                                      Row(
+                                                        children: [
+                                                          Expanded(
+                                                            child: isPriceDropdown
                                                               ? Column(
                                                                   children: [
                                                                     Row(
@@ -9275,7 +9298,8 @@ class _HomePageState extends State<HomePage> {
                                                         _persistFilters();
                                                       },
                                                     ),
-                                                  ],
+                                                    ],
+                                                  ),
                                                 ),
                                               ),
                                               actions: [
@@ -13480,6 +13504,8 @@ class _SellStep2PageState extends State<SellStep2Page> {
   bool errColor = false;
   bool errDrive = false;
   bool errSeating = false;
+  bool errEngineSize = false;
+  bool errCylinderCount = false;
   bool errTitle = false;
   bool errDamagedParts = false;
   bool isMileageManualInput = false;
@@ -13531,12 +13557,10 @@ class _SellStep2PageState extends State<SellStep2Page> {
     FocusScope.of(context).unfocus();
   }
 
-  final List<String> conditions = ['New', 'Used', 'Certified'];
+  final List<String> conditions = ['New', 'Used'];
   final List<String> transmissions = [
     'Automatic',
     'Manual',
-    'CVT',
-    'Semi-Automatic',
   ];
   final List<String> fuelTypes = [
     'Gasoline',
@@ -14450,7 +14474,8 @@ class _SellStep2PageState extends State<SellStep2Page> {
                           focusNode: _engineSizeFocusNode,
                           controller: _engineSizeController,
                           decoration: InputDecoration(
-                            labelText: AppLocalizations.of(context)!.engineSizeL,
+                            labelText:
+                                '${AppLocalizations.of(context)!.engineSizeL} *',
                             hintText: AppLocalizations.of(context)!.pleaseSelectEngineSize,
                             filled: true,
                             fillColor: Colors.black.withOpacity(0.2),
@@ -14463,6 +14488,17 @@ class _SellStep2PageState extends State<SellStep2Page> {
                               borderRadius: BorderRadius.circular(12),
                               borderSide: const BorderSide(color: Colors.red),
                             ),
+                            errorText: () {
+                              if (!errEngineSize) return null;
+                              final raw = _engineSizeController.text.trim();
+                              final l = AppLocalizations.of(context)!;
+                              if (raw.isEmpty) return l.pleaseSelectEngineSize;
+                              final size = double.tryParse(raw);
+                              if (size == null || size <= 0) {
+                                return l.pleaseSelectEngineSize;
+                              }
+                              return null;
+                            }(),
                           ),
                           style: const TextStyle(color: Colors.white),
                           keyboardType: const TextInputType.numberWithOptions(
@@ -14477,6 +14513,7 @@ class _SellStep2PageState extends State<SellStep2Page> {
                             setState(() {
                               selectedEngineSize =
                                   value.isEmpty ? null : value.trim();
+                              if (errEngineSize) errEngineSize = false;
                             });
                           },
                           validator: (value) {
@@ -14508,19 +14545,25 @@ class _SellStep2PageState extends State<SellStep2Page> {
                               );
                               if (choice != null) {
                                 setState(
-                                  () => selectedEngineSize =
-                                      choice.replaceAll(' L', ''),
+                                  () {
+                                    selectedEngineSize =
+                                        choice.replaceAll(' L', '');
+                                    if (errEngineSize) errEngineSize = false;
+                                  },
                                 );
                               }
                             },
                             child: buildFancySelector(
                               context,
                               icon: Icons.engineering,
-                              label: AppLocalizations.of(context)!.engineSizeL,
+                              label:
+                                  '${AppLocalizations.of(context)!.engineSizeL} *',
                               value: selectedEngineSize == null
                                   ? null
                                   : ('${_localizeDigitsGlobal(context, selectedEngineSize!)} L'),
-                              isError: state.hasError,
+                              isError: errEngineSize &&
+                                  (selectedEngineSize == null ||
+                                      selectedEngineSize!.trim().isEmpty),
                             ),
                           ),
                         ),
@@ -14568,6 +14611,11 @@ class _SellStep2PageState extends State<SellStep2Page> {
 
             // Cylinder Count (Modal)
             FormField<String>(
+              validator: (_) =>
+                  (selectedCylinderCount == null ||
+                      selectedCylinderCount!.trim().isEmpty)
+                  ? AppLocalizations.of(context)!.pleaseSelectCylinderCount
+                  : null,
               builder: (state) => GestureDetector(
                 onTap: () async {
                   final choice = await _pickFromList(
@@ -14578,23 +14626,30 @@ class _SellStep2PageState extends State<SellStep2Page> {
                   );
                   if (choice != null) {
                     setState(
-                      () => selectedCylinderCount = choice.replaceAll(
-                        ' cylinders',
-                        '',
-                      ),
+                      () {
+                        selectedCylinderCount = choice.replaceAll(
+                          ' cylinders',
+                          '',
+                        );
+                        if (errCylinderCount) errCylinderCount = false;
+                      },
                     );
                   }
                 },
                 child: buildFancySelector(
                   context,
                   icon: Icons.settings_input_component,
-                  label: AppLocalizations.of(context)!.cylinderCount,
+                  label:
+                      '${AppLocalizations.of(context)!.cylinderCount} *',
                   value: selectedCylinderCount == null
                       ? null
                       : ('${_localizeDigitsGlobal(
                               context,
                               selectedCylinderCount!,
                             )} cylinders'),
+                  isError: errCylinderCount &&
+                      (selectedCylinderCount == null ||
+                          selectedCylinderCount!.trim().isEmpty),
                 ),
               ),
             ),
@@ -14743,6 +14798,25 @@ class _SellStep2PageState extends State<SellStep2Page> {
                             (selectedSeating ?? '').isEmpty) {
                           missing.add(AppLocalizations.of(context)!.seating);
                         }
+                        final String engineForStep = isEngineSizeManualInput
+                            ? _engineSizeController.text.trim()
+                            : (selectedEngineSize ?? '').trim();
+                        final double? engineLiters =
+                            double.tryParse(engineForStep);
+                        final bool engineOk = engineForStep.isNotEmpty &&
+                            engineLiters != null &&
+                            engineLiters > 0;
+                        if (!engineOk) {
+                          missing.add(
+                            AppLocalizations.of(context)!.engineSizeL,
+                          );
+                        }
+                        if (selectedCylinderCount == null ||
+                            selectedCylinderCount!.trim().isEmpty) {
+                          missing.add(
+                            AppLocalizations.of(context)!.cylinderCount,
+                          );
+                        }
                         if (selectedTitleStatus == null ||
                             (selectedTitleStatus ?? '').isEmpty) {
                           missing.add(
@@ -14782,6 +14856,10 @@ class _SellStep2PageState extends State<SellStep2Page> {
                             errSeating =
                                 selectedSeating == null ||
                                 (selectedSeating ?? '').isEmpty;
+                            errEngineSize = !engineOk;
+                            errCylinderCount =
+                                selectedCylinderCount == null ||
+                                selectedCylinderCount!.trim().isEmpty;
                             errTitle =
                                 selectedTitleStatus == null ||
                                 (selectedTitleStatus ?? '').isEmpty;
@@ -14804,6 +14882,10 @@ class _SellStep2PageState extends State<SellStep2Page> {
                         final parentState = context
                             .findAncestorStateOfType<_SellCarPageState>();
                         if (parentState != null) {
+                          if (isEngineSizeManualInput) {
+                            final te = _engineSizeController.text.trim();
+                            if (te.isNotEmpty) selectedEngineSize = te;
+                          }
                           parentState.carData['mileage'] = selectedMileage;
                           parentState.carData['condition'] = selectedCondition;
                           parentState.carData['transmission'] =
@@ -14824,7 +14906,8 @@ class _SellStep2PageState extends State<SellStep2Page> {
                           setState(() {
                             errMileage = errCondition = errTransmission =
                                 errFuelType = errBodyType = errColor =
-                                    errDrive = errSeating = errTitle =
+                                    errDrive = errSeating = errEngineSize =
+                                    errCylinderCount = errTitle =
                                         errDamagedParts = false;
                           });
                           parentState._goToNextStep();
