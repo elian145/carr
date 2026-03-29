@@ -16,6 +16,20 @@ import '../theme_provider.dart';
 
 const Color _kComposerOutlineOrange = Color(0xFFFF7A00);
 
+/// Home listing grid gradient mid-stop (`main_legacy` home `body` gradient).
+const Color _kHomeListingBackdropMid = Color(0xFF131722);
+
+/// Same as home [buildGlobalCarCard]: `Colors.white` @ 10% over dark backdrop.
+Color _homeListingCardBackgroundFill(Brightness brightness) {
+  if (brightness == Brightness.dark) {
+    return Colors.white.withValues(alpha: 0.10);
+  }
+  return Color.alphaBlend(
+    Colors.white.withValues(alpha: 0.10),
+    _kHomeListingBackdropMid,
+  );
+}
+
 String _digitsLocalized(BuildContext context, String input) {
   final code = Localizations.localeOf(context).languageCode;
   if (code == 'ar' || code == 'ku') {
@@ -2739,17 +2753,24 @@ class _ChatConversationPageState extends State<ChatConversationPage>
       MediaQuery.of(context).size.width * 0.58,
       280.0,
     );
-    // Message bubbles use brand orange in both themes; measure as white on orange.
+    // Me: white on primary; peer: white on home listing-card style bubble.
     final bodyStyle = DefaultTextStyle.of(context).style.copyWith(
       color: Colors.white,
     );
-    final timeStyle = TextStyle(
+    const timeStyle = TextStyle(
       color: Colors.white70,
       fontSize: 12,
     );
     final senderStyle =
-        Theme.of(context).textTheme.bodySmall?.copyWith(color: Colors.white) ??
-        const TextStyle(color: Colors.white, fontSize: 12);
+        Theme.of(context).textTheme.bodySmall?.copyWith(
+          color: Colors.white,
+          fontWeight: FontWeight.w600,
+        ) ??
+        const TextStyle(
+          color: Colors.white,
+          fontSize: 12,
+          fontWeight: FontWeight.w600,
+        );
     final reply = message.replyToMessage;
 
     final bodyWidth = message.content
@@ -2772,7 +2793,10 @@ class _ChatConversationPageState extends State<ChatConversationPage>
     double replyBlockWidth = 0.0;
     if (reply != null) {
       final replyNameStyle = (Theme.of(context).textTheme.bodySmall ?? const TextStyle())
-          .copyWith(fontWeight: FontWeight.w600, color: Colors.white);
+          .copyWith(
+            fontWeight: FontWeight.w600,
+            color: Colors.white,
+          );
       final replyBodyStyle = (Theme.of(context).textTheme.bodySmall ?? const TextStyle())
           .copyWith(color: Colors.white70);
 
@@ -2864,6 +2888,18 @@ class _ChatConversationPageState extends State<ChatConversationPage>
                         listen: false,
                       );
                       final isMe = message.senderId == authService.userId;
+                      final colorScheme = Theme.of(context).colorScheme;
+                      final brightness = Theme.of(context).brightness;
+                      // Peer bubbles: same treatment as home [buildGlobalCarCard].
+                      final peerBubbleFill =
+                          _homeListingCardBackgroundFill(brightness);
+                      final bubbleColor =
+                          isMe ? colorScheme.primary : peerBubbleFill;
+                      final bubbleOnStrong =
+                          isMe ? Colors.white : Colors.white;
+                      final bubbleOnMuted = isMe
+                          ? Colors.white.withValues(alpha: 0.85)
+                          : Colors.white70;
                       final isTextOnlyMessage =
                           message.attachments.isEmpty &&
                           message.listingPreview == null;
@@ -2905,14 +2941,18 @@ class _ChatConversationPageState extends State<ChatConversationPage>
                             vertical: 12,
                           ),
                           decoration: BoxDecoration(
-                            color: Theme.of(context).colorScheme.primary,
+                            color: bubbleColor,
                             borderRadius: BorderRadius.circular(20),
                             border: message.id == _highlightMessageId
                                 ? Border.all(
                                     color: Colors.amberAccent,
                                     width: 2,
                                   )
-                                : null,
+                                : !isMe
+                                    ? Border.all(
+                                        color: Colors.white.withValues(alpha: 0.12),
+                                      )
+                                    : null,
                           ),
                           child: Column(
                             mainAxisSize: MainAxisSize.min,
@@ -2922,7 +2962,7 @@ class _ChatConversationPageState extends State<ChatConversationPage>
                                 Text(
                                   message.senderName ?? AppLocalizations.of(context)!.unknownSender,
                                   style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                                    color: Colors.white,
+                                    color: bubbleOnStrong,
                                     fontWeight: FontWeight.w600,
                                   ),
                                 ),
@@ -2942,8 +2982,8 @@ class _ChatConversationPageState extends State<ChatConversationPage>
                                     padding: const EdgeInsets.only(top: 6),
                                     child: Text(
                                       message.content,
-                                      style: const TextStyle(
-                                        color: Colors.white,
+                                      style: TextStyle(
+                                        color: bubbleOnStrong,
                                       ),
                                     ),
                                   ),
@@ -2960,8 +3000,8 @@ class _ChatConversationPageState extends State<ChatConversationPage>
                                     padding: const EdgeInsets.only(top: 8),
                                     child: Text(
                                       message.content,
-                                      style: const TextStyle(
-                                        color: Colors.white,
+                                      style: TextStyle(
+                                        color: bubbleOnStrong,
                                       ),
                                     ),
                                   ),
@@ -2969,7 +3009,7 @@ class _ChatConversationPageState extends State<ChatConversationPage>
                                 Text(
                                   message.content,
                                   style: TextStyle(
-                                    color: Colors.white,
+                                    color: bubbleOnStrong,
                                     fontStyle: message.isDeleted
                                         ? FontStyle.italic
                                         : FontStyle.normal,
@@ -2985,7 +3025,7 @@ class _ChatConversationPageState extends State<ChatConversationPage>
                                       child: Text(
                                         'Edited',
                                         style: TextStyle(
-                                          color: Colors.white.withOpacity(0.85),
+                                          color: bubbleOnMuted,
                                           fontSize: 12,
                                         ),
                                       ),
@@ -2993,7 +3033,7 @@ class _ChatConversationPageState extends State<ChatConversationPage>
                                   Text(
                                     _relativeTime(context, message.createdAt),
                                     style: TextStyle(
-                                      color: Colors.white.withOpacity(0.85),
+                                      color: bubbleOnMuted,
                                       fontSize: 12,
                                     ),
                                   ),

@@ -3220,6 +3220,46 @@ class _HomePageState extends State<HomePage> {
     selectedSortBy = null;
   }
 
+  /// Clears only fields shown in the More Filters dialog (not brand/model/trim/sort).
+  Future<void> _resetFiltersFromMoreFiltersDialog(
+    VoidCallback refreshDialog,
+  ) async {
+    setState(() {
+      selectedMinPrice = null;
+      selectedMaxPrice = null;
+      selectedMinYear = null;
+      selectedMaxYear = null;
+      selectedMinMileage = null;
+      selectedMaxMileage = null;
+      selectedCondition = null;
+      selectedTransmission = null;
+      selectedFuelType = null;
+      selectedBodyType = null;
+      selectedColor = null;
+      selectedDriveType = null;
+      selectedCylinderCount = null;
+      selectedSeating = null;
+      selectedEngineSize = null;
+      selectedCity = null;
+      selectedTitleStatus = null;
+      selectedDamagedParts = null;
+      isPriceDropdown = true;
+      isYearDropdown = true;
+      isMileageDropdown = true;
+      isEngineSizeDropdown = true;
+      _minPriceController.clear();
+      _maxPriceController.clear();
+      _minYearController.clear();
+      _maxYearController.clear();
+      _minMileageController.clear();
+      _maxMileageController.clear();
+      _engineSizeController.clear();
+    });
+    refreshDialog();
+    await _persistFilters();
+    onFilterChanged();
+  }
+
   Future<void> _restoreFilters() async {
     try {
       final sp = await SharedPreferences.getInstance();
@@ -9239,6 +9279,23 @@ class _HomePageState extends State<HomePage> {
                                                 ),
                                               ),
                                               actions: [
+                                                TextButton(
+                                                  onPressed: () async {
+                                                    await _resetFiltersFromMoreFiltersDialog(
+                                                      () => setStateDialog(
+                                                        () {},
+                                                      ),
+                                                    );
+                                                  },
+                                                  child: Text(
+                                                    AppLocalizations.of(
+                                                      context,
+                                                    )!.resetButton,
+                                                    style: TextStyle(
+                                                      color: Colors.white70,
+                                                    ),
+                                                  ),
+                                                ),
                                                 TextButton(
                                                   onPressed: () =>
                                                       Navigator.pop(context),
