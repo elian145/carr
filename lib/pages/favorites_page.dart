@@ -6,6 +6,7 @@ import '../legacy/main_legacy.dart'
     show buildGlobalCarCard, mapListingToGlobalCarCardData;
 import '../services/api_service.dart';
 import '../services/auth_service.dart';
+import '../theme_provider.dart';
 
 class FavoritesPage extends StatefulWidget {
   const FavoritesPage({super.key});
@@ -18,13 +19,6 @@ class _FavoritesPageState extends State<FavoritesPage> {
   bool _loading = true;
   String? _error;
   List<Map<String, dynamic>> _cars = <Map<String, dynamic>>[];
-
-  /// Same gradient as [HomePage] body so [buildGlobalCarCard] fills match home.
-  static const List<Color> _kHomeBodyGradientColors = [
-    Color(0xFF0F1115),
-    Color(0xFF131722),
-    Color(0xFF0F1115),
-  ];
 
   @override
   void initState() {
@@ -79,6 +73,9 @@ class _FavoritesPageState extends State<FavoritesPage> {
   Widget build(BuildContext context) {
     final loc = AppLocalizations.of(context);
     final auth = context.watch<AuthService>();
+    final muted = Theme.of(context).brightness == Brightness.dark
+        ? Colors.white70
+        : Theme.of(context).colorScheme.onSurfaceVariant;
 
     return Scaffold(
       appBar: AppBar(
@@ -88,12 +85,8 @@ class _FavoritesPageState extends State<FavoritesPage> {
         fit: StackFit.expand,
         children: [
           Container(
-            decoration: const BoxDecoration(
-              gradient: LinearGradient(
-                colors: _kHomeBodyGradientColors,
-                begin: Alignment.topLeft,
-                end: Alignment.bottomRight,
-              ),
+            decoration: AppThemes.shellBackgroundDecoration(
+              Theme.of(context).brightness,
             ),
           ),
           if (!auth.isAuthenticated)
@@ -107,7 +100,7 @@ class _FavoritesPageState extends State<FavoritesPage> {
                       loc?.notLoggedIn ??
                           'You have to log in or sign up first.',
                       textAlign: TextAlign.center,
-                      style: const TextStyle(color: Colors.white70),
+                      style: TextStyle(color: muted),
                     ),
                     const SizedBox(height: 12),
                     ElevatedButton(
@@ -121,7 +114,7 @@ class _FavoritesPageState extends State<FavoritesPage> {
           else
             RefreshIndicator(
               onRefresh: _fetch,
-              color: Colors.white,
+              color: Theme.of(context).colorScheme.primary,
               child: _loading
                   ? const Center(
                       child: CircularProgressIndicator(
@@ -137,7 +130,7 @@ class _FavoritesPageState extends State<FavoritesPage> {
                               child: Text(
                                 _error!,
                                 textAlign: TextAlign.center,
-                                style: const TextStyle(color: Colors.white70),
+                                style: TextStyle(color: muted),
                               ),
                             ),
                             const SizedBox(height: 12),
@@ -156,7 +149,7 @@ class _FavoritesPageState extends State<FavoritesPage> {
                                 Center(
                                   child: Text(
                                     loc?.noFavoritesYet ?? 'No favorites yet',
-                                    style: const TextStyle(color: Colors.white70),
+                                    style: TextStyle(color: muted),
                                   ),
                                 ),
                               ],

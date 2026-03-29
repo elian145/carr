@@ -5,6 +5,7 @@ import '../l10n/app_localizations.dart';
 import '../services/api_service.dart';
 import '../services/auth_service.dart';
 import '../shared/media/media_url.dart';
+import '../theme_provider.dart';
 
 class ProfilePage extends StatefulWidget {
   const ProfilePage({super.key});
@@ -277,20 +278,12 @@ class _ProfilePageState extends State<ProfilePage> {
       body: Stack(
         children: [
           Container(
-            decoration: const BoxDecoration(
-              gradient: LinearGradient(
-                colors: [
-                  Color(0xFF0F1115),
-                  Color(0xFF131722),
-                  Color(0xFF0F1115),
-                ],
-                begin: Alignment.topLeft,
-                end: Alignment.bottomRight,
-              ),
+            decoration: AppThemes.shellBackgroundDecoration(
+              Theme.of(context).brightness,
             ),
           ),
           RefreshIndicator(
-              color: Colors.white,
+              color: Theme.of(context).colorScheme.primary,
               onRefresh: _refresh,
               child: ListView(
                 padding: const EdgeInsets.all(16),

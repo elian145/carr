@@ -49,6 +49,44 @@ class AppThemes {
   static const Color _brandOrange = Color(0xFFFF6B00);
   static const Color _brandSecondary = Color(0xFFFF8C42);
 
+  /// Light mode: full-bleed scaffold / home body (pure white).
+  static const Color lightAppBackground = Color(0xFFFFFFFF);
+
+  /// Dark home shell gradient (legacy pages).
+  static const List<Color> darkShellGradientColors = [
+    Color(0xFF0F1115),
+    Color(0xFF131722),
+    Color(0xFF0F1115),
+  ];
+
+  /// Mid tone of [darkShellGradientColors] — dark home “base” (accent text on bright listing body).
+  static const Color darkHomeShellBackground = Color(0xFF131722);
+
+  /// Page background: dark gradient or light white shell.
+  static BoxDecoration shellBackgroundDecoration(Brightness brightness) {
+    if (brightness == Brightness.dark) {
+      return const BoxDecoration(
+        gradient: LinearGradient(
+          colors: darkShellGradientColors,
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+        ),
+      );
+    }
+    return const BoxDecoration(color: lightAppBackground);
+  }
+
+  /// Bottom bar colors for legacy CARZO tabs.
+  static ({Color backgroundColor, Color unselectedItemColor}) bottomNavChrome(
+    Brightness brightness,
+  ) {
+    final isDark = brightness == Brightness.dark;
+    return (
+      backgroundColor: isDark ? const Color(0xDE000000) : lightAppBackground,
+      unselectedItemColor: isDark ? const Color(0xB3FFFFFF) : const Color(0xFF757575),
+    );
+  }
+
   /// Primary text on light surfaces (~near-black on white).
   static const Color _lightInk = Color(0xFF0A0A0A);
   /// Secondary / supporting text — still dark enough to read clearly on white cards.
@@ -91,17 +129,24 @@ class AppThemes {
       onPrimary: Colors.white,
       secondary: _brandSecondary,
       onSecondary: Colors.white,
-      surface: Colors.white,
+      // Surfaces match the home shell: white. Slightly stronger containers for inputs/chips.
+      surface: lightAppBackground,
       onSurface: _lightInk,
       onSurfaceVariant: _lightInkMuted,
+      surfaceContainerLowest: lightAppBackground,
+      surfaceContainerLow: lightAppBackground,
+      surfaceContainer: const Color(0xFFF3F3F3),
+      surfaceContainerHigh: const Color(0xFFEBEBEB),
+      surfaceContainerHighest: const Color(0xFFE0E0E0),
       outline: const Color(0xFF6B6B6B),
-      outlineVariant: const Color(0xFFB0B0B0),
+      outlineVariant: const Color(0xFFCACACA),
+      surfaceTint: Colors.transparent,
     );
 
     final base = ThemeData(
       useMaterial3: true,
       colorScheme: scheme,
-      scaffoldBackgroundColor: scheme.surfaceContainerLowest,
+      scaffoldBackgroundColor: lightAppBackground,
       pageTransitionsTheme: const PageTransitionsTheme(
         builders: {
           TargetPlatform.android: AppNoTransitionsPageTransitionsBuilder(),

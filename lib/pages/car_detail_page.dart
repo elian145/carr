@@ -6,6 +6,7 @@ import 'package:share_plus/share_plus.dart';
 import 'package:url_launcher/url_launcher.dart';
 
 import '../l10n/app_localizations.dart';
+import '../theme_provider.dart';
 import '../services/analytics_service.dart';
 import '../services/api_service.dart';
 import '../services/config.dart';
@@ -475,6 +476,8 @@ class _CarDetailPageState extends State<CarDetailPage> {
   }
 
   Widget _horizontalCars(List<Map<String, dynamic>> cars) {
+    final listOnLight =
+        Theme.of(context).brightness == Brightness.light;
     return SizedBox(
       height: 210,
       child: ListView.separated(
@@ -499,31 +502,45 @@ class _CarDetailPageState extends State<CarDetailPage> {
             },
             child: SizedBox(
               width: 160,
-              child: Card(
-                clipBehavior: Clip.antiAlias,
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    AspectRatio(
-                      aspectRatio: 16 / 10,
-                      child: img.isEmpty
-                          ? Container(
-                              color: Colors.black12,
-                              child: const Center(
-                                child: Icon(Icons.directions_car),
-                              ),
-                            )
-                          : Image.network(img, fit: BoxFit.cover),
-                    ),
-                    Padding(
-                      padding: const EdgeInsets.all(10),
-                      child: Text(
-                        title,
-                        maxLines: 2,
-                        overflow: TextOverflow.ellipsis,
+              child: Material(
+                color: Colors.transparent,
+                child: Container(
+                  decoration: BoxDecoration(
+                    color: Colors.white.withOpacity(0.08),
+                    borderRadius: BorderRadius.circular(12),
+                    border: Border.all(color: Colors.white12),
+                  ),
+                  clipBehavior: Clip.antiAlias,
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      AspectRatio(
+                        aspectRatio: 16 / 10,
+                        child: img.isEmpty
+                            ? Container(
+                                color: Colors.black12,
+                                child: const Center(
+                                  child: Icon(Icons.directions_car),
+                                ),
+                              )
+                            : Image.network(img, fit: BoxFit.cover),
                       ),
-                    ),
-                  ],
+                      Padding(
+                        padding: const EdgeInsets.all(10),
+                        child: Text(
+                          title,
+                          maxLines: 2,
+                          overflow: TextOverflow.ellipsis,
+                          style: listOnLight
+                              ? const TextStyle(
+                                  color: AppThemes.darkHomeShellBackground,
+                                  fontWeight: FontWeight.bold,
+                                )
+                              : null,
+                        ),
+                      ),
+                    ],
+                  ),
                 ),
               ),
             ),
@@ -537,13 +554,20 @@ class _CarDetailPageState extends State<CarDetailPage> {
   Widget build(BuildContext context) {
     final loc = AppLocalizations.of(context);
     final car = _car;
+    final isLightShell = Theme.of(context).brightness == Brightness.light;
 
     if (_loading && car == null) {
-      return const Scaffold(body: Center(child: CircularProgressIndicator()));
+      return Scaffold(
+        backgroundColor:
+            isLightShell ? AppThemes.lightAppBackground : null,
+        body: const Center(child: CircularProgressIndicator()),
+      );
     }
 
     if (car == null) {
       return Scaffold(
+        backgroundColor:
+            isLightShell ? AppThemes.lightAppBackground : null,
         appBar: AppBar(title: Text(loc?.listingTitle ?? 'Listing')),
         body: Center(
           child: Column(
@@ -565,6 +589,8 @@ class _CarDetailPageState extends State<CarDetailPage> {
         ? (car['title'] ?? '').toString()
         : '${car['brand'] ?? ''} ${car['model'] ?? ''} ${car['year'] ?? ''}'
             .trim();
+    final brandStr = (car['brand'] ?? '').toString().trim();
+    final modelStr = (car['model'] ?? '').toString().trim();
 
     final price = (car['price'] ?? '').toString();
     final currency = (car['currency'] ?? '').toString();
@@ -594,37 +620,9 @@ class _CarDetailPageState extends State<CarDetailPage> {
       }
     }
 
-    return Scaffold(
-      appBar: AppBar(
-        title: Text(loc?.listingTitle ?? 'Listing'),
-        actions: [
-          IconButton(
-            tooltip: loc?.shareAction ?? 'Share',
-            onPressed: _shareCar,
-            icon: const Icon(Icons.share_outlined),
-          ),
-          IconButton(
-            tooltip: loc?.callAction ?? 'Call',
-            onPressed: _callSeller,
-            icon: const Icon(Icons.call_outlined),
-          ),
-          IconButton(
-            tooltip: loc?.favoriteAction ?? 'Favorite',
-            onPressed: _toggleFavorite,
-            icon: Icon(_isFavorite ? Icons.favorite : Icons.favorite_border),
-          ),
-        ],
-      ),
-      body: RefreshIndicator(
-        onRefresh: _load,
-        child: ListView(
-          children: [
-            _imageCarousel(),
-            Padding(
-              padding: const EdgeInsets.all(16),
-                child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
+    final detailColumn = Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
                   Row(
                     crossAxisAlignment: CrossAxisAlignment.center,
                     children: [
@@ -644,13 +642,58 @@ class _CarDetailPageState extends State<CarDetailPage> {
                           ),
                         ),
                       Expanded(
-                        child: Text(
-                          title,
-                          style: Theme.of(context)
-                              .textTheme
-                              .titleLarge
-                              ?.copyWith(fontWeight: FontWeight.w800),
-                        ),
+                        child: isLightShell
+                            ? Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                mainAxisSize: MainAxisSize.min,
+                                children: [
+                                  if (brandStr.isNotEmpty)
+                                    Text(
+                                      brandStr,
+                                      style: Theme.of(context)
+                                          .textTheme
+                                          .titleMedium
+                                          ?.copyWith(
+                                            fontWeight: FontWeight.w800,
+                                            color: AppThemes.darkHomeShellBackground,
+                                          ),
+                                    ),
+                                  if (modelStr.isNotEmpty) ...[
+                                    if (brandStr.isNotEmpty)
+                                      const SizedBox(height: 4),
+                                    Text(
+                                      modelStr,
+                                      style: Theme.of(context)
+                                          .textTheme
+                                          .titleLarge
+                                          ?.copyWith(
+                                            fontWeight: FontWeight.w800,
+                                            color: AppThemes.darkHomeShellBackground,
+                                          ),
+                                    ),
+                                  ],
+                                  if (brandStr.isEmpty &&
+                                      modelStr.isEmpty &&
+                                      title.isNotEmpty)
+                                    Text(
+                                      title,
+                                      style: Theme.of(context)
+                                          .textTheme
+                                          .titleLarge
+                                          ?.copyWith(
+                                            fontWeight: FontWeight.w800,
+                                            color: AppThemes.darkHomeShellBackground,
+                                          ),
+                                    ),
+                                ],
+                              )
+                            : Text(
+                                title,
+                                style: Theme.of(context)
+                                    .textTheme
+                                    .titleLarge
+                                    ?.copyWith(fontWeight: FontWeight.w800),
+                              ),
                       ),
                     ],
                   ),
@@ -735,7 +778,12 @@ class _CarDetailPageState extends State<CarDetailPage> {
                       style: Theme.of(context)
                           .textTheme
                           .titleMedium
-                          ?.copyWith(fontWeight: FontWeight.w700),
+                          ?.copyWith(
+                            fontWeight: FontWeight.w700,
+                            color: isLightShell
+                                ? AppThemes.darkHomeShellBackground
+                                : null,
+                          ),
                     ),
                     const SizedBox(height: 10),
                     if (_loadingSimilar && _similar.isEmpty)
@@ -759,7 +807,12 @@ class _CarDetailPageState extends State<CarDetailPage> {
                       style: Theme.of(context)
                           .textTheme
                           .titleMedium
-                          ?.copyWith(fontWeight: FontWeight.w700),
+                          ?.copyWith(
+                            fontWeight: FontWeight.w700,
+                            color: isLightShell
+                                ? AppThemes.darkHomeShellBackground
+                                : null,
+                          ),
                     ),
                     const SizedBox(height: 10),
                     if (_loadingRelated && _related.isEmpty)
@@ -777,9 +830,52 @@ class _CarDetailPageState extends State<CarDetailPage> {
                       _horizontalCars(_related),
                     const SizedBox(height: 16),
                   ],
-                ],
+      ],
+    );
+
+    return Scaffold(
+      backgroundColor:
+          isLightShell ? AppThemes.lightAppBackground : null,
+      appBar: AppBar(
+        title: Text(loc?.listingTitle ?? 'Listing'),
+        actions: [
+          IconButton(
+            tooltip: loc?.shareAction ?? 'Share',
+            onPressed: _shareCar,
+            icon: const Icon(Icons.share_outlined),
+          ),
+          IconButton(
+            tooltip: loc?.callAction ?? 'Call',
+            onPressed: _callSeller,
+            icon: const Icon(Icons.call_outlined),
+          ),
+          IconButton(
+            tooltip: loc?.favoriteAction ?? 'Favorite',
+            onPressed: _toggleFavorite,
+            icon: Icon(_isFavorite ? Icons.favorite : Icons.favorite_border),
+          ),
+        ],
+      ),
+      body: RefreshIndicator(
+        onRefresh: _load,
+        child: ListView(
+          children: [
+            _imageCarousel(),
+            if (isLightShell)
+              Container(
+                width: double.infinity,
+                decoration: const BoxDecoration(
+                  color: AppThemes.lightAppBackground,
+                  borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
+                ),
+                padding: const EdgeInsets.all(16),
+                child: detailColumn,
+              )
+            else
+              Padding(
+                padding: const EdgeInsets.all(16),
+                child: detailColumn,
               ),
-            ),
           ],
         ),
       ),

@@ -229,6 +229,19 @@ class _HomePageState extends State<HomePage> {
                         },
                         child: Card(
                           clipBehavior: Clip.antiAlias,
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(12),
+                            side: Theme.of(context).brightness ==
+                                    Brightness.light
+                                ? BorderSide(
+                                    color: Theme.of(context)
+                                        .colorScheme
+                                        .outline
+                                        .withValues(alpha: 0.55),
+                                    width: 1,
+                                  )
+                                : BorderSide.none,
+                          ),
                           child: Column(
                             crossAxisAlignment: CrossAxisAlignment.start,
                             children: [

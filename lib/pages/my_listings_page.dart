@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
 import '../l10n/app_localizations.dart';
+import '../theme_provider.dart';
 import '../services/api_service.dart';
 import '../services/auth_service.dart';
 
@@ -250,8 +251,83 @@ class _MyListingsPageState extends State<MyListingsPage> {
   Widget build(BuildContext context) {
     final loc = AppLocalizations.of(context);
     final auth = context.watch<AuthService>();
+    final isLightShell = Theme.of(context).brightness == Brightness.light;
+
+    final authenticatedBody = RefreshIndicator(
+      onRefresh: () => _fetch(refresh: true),
+      child: _loading
+          ? const Center(child: CircularProgressIndicator())
+          : (_error != null)
+              ? ListView(
+                  children: [
+                    const SizedBox(height: 40),
+                    Center(child: Text(_error!)),
+                    const SizedBox(height: 12),
+                    Center(
+                      child: OutlinedButton(
+                        onPressed: () => _fetch(refresh: true),
+                        child: Text(loc?.retryAction ?? 'Retry'),
+                      ),
+                    ),
+                  ],
+                )
+              : ListView.separated(
+                  controller: _controller,
+                  padding: const EdgeInsets.all(12),
+                  itemCount: _cars.length + (_hasNext ? 1 : 0),
+                  separatorBuilder: (context, index) => const SizedBox(height: 8),
+                  itemBuilder: (context, index) {
+                    if (index >= _cars.length) {
+                      return const Padding(
+                        padding: EdgeInsets.all(12),
+                        child: Center(
+                          child: SizedBox(
+                            width: 20,
+                            height: 20,
+                            child: CircularProgressIndicator(strokeWidth: 2),
+                          ),
+                        ),
+                      );
+                    }
+                    final car = _cars[index];
+                    final id = (car['id'] ?? car['public_id'] ?? '').toString();
+                    final title = (car['title'] ?? '${car['brand'] ?? ''} ${car['model'] ?? ''}')
+                        .toString()
+                        .trim();
+                    final price = (car['price'] ?? '').toString();
+                    final location = (car['location'] ?? '').toString();
+
+                    return Card(
+                      child: ListTile(
+                        title: Text(title.isEmpty ? (loc?.listingTitle ?? 'Listing') : title),
+                        subtitle: Text([price, location].where((s) => s.isNotEmpty).join(' • ')),
+                        onTap: () {
+                          if (id.isEmpty) return;
+                          Navigator.pushNamed(
+                            context,
+                            '/car_detail',
+                            arguments: {'carId': id},
+                          );
+                        },
+                        trailing: PopupMenuButton<String>(
+                          onSelected: (v) {
+                            if (v == 'edit') _editListing(car);
+                            if (v == 'delete') _deleteListing(id);
+                          },
+                          itemBuilder: (context) => [
+                            PopupMenuItem(value: 'edit', child: Text(loc?.editAction ?? 'Edit')),
+                            PopupMenuItem(value: 'delete', child: Text(loc?.deleteAction ?? 'Delete')),
+                          ],
+                        ),
+                      ),
+                    );
+                  },
+                ),
+    );
 
     return Scaffold(
+      backgroundColor:
+          isLightShell ? AppThemes.lightAppBackground : null,
       appBar: AppBar(
         title: Text(loc?.myListingsTitle ?? 'My listings'),
       ),
@@ -272,77 +348,18 @@ class _MyListingsPageState extends State<MyListingsPage> {
                 ),
               ),
             )
-          : RefreshIndicator(
-              onRefresh: () => _fetch(refresh: true),
-              child: _loading
-                  ? const Center(child: CircularProgressIndicator())
-                  : (_error != null)
-                      ? ListView(
-                          children: [
-                            const SizedBox(height: 40),
-                            Center(child: Text(_error!)),
-                            const SizedBox(height: 12),
-                            Center(
-                              child: OutlinedButton(
-                                onPressed: () => _fetch(refresh: true),
-                                child: Text(loc?.retryAction ?? 'Retry'),
-                              ),
-                            ),
-                          ],
-                        )
-                      : ListView.separated(
-                          controller: _controller,
-                          padding: const EdgeInsets.all(12),
-                          itemCount: _cars.length + (_hasNext ? 1 : 0),
-                          separatorBuilder: (context, index) => const SizedBox(height: 8),
-                          itemBuilder: (context, index) {
-                            if (index >= _cars.length) {
-                              return const Padding(
-                                padding: EdgeInsets.all(12),
-                                child: Center(
-                                  child: SizedBox(
-                                    width: 20,
-                                    height: 20,
-                                    child: CircularProgressIndicator(strokeWidth: 2),
-                                  ),
-                                ),
-                              );
-                            }
-                            final car = _cars[index];
-                            final id = (car['id'] ?? car['public_id'] ?? '').toString();
-                            final title = (car['title'] ?? '${car['brand'] ?? ''} ${car['model'] ?? ''}')
-                                .toString()
-                                .trim();
-                            final price = (car['price'] ?? '').toString();
-                            final location = (car['location'] ?? '').toString();
-
-                            return Card(
-                              child: ListTile(
-                                title: Text(title.isEmpty ? (loc?.listingTitle ?? 'Listing') : title),
-                                subtitle: Text([price, location].where((s) => s.isNotEmpty).join(' • ')),
-                                onTap: () {
-                                  if (id.isEmpty) return;
-                                  Navigator.pushNamed(
-                                    context,
-                                    '/car_detail',
-                                    arguments: {'carId': id},
-                                  );
-                                },
-                                trailing: PopupMenuButton<String>(
-                                  onSelected: (v) {
-                                    if (v == 'edit') _editListing(car);
-                                    if (v == 'delete') _deleteListing(id);
-                                  },
-                                  itemBuilder: (context) => [
-                                    PopupMenuItem(value: 'edit', child: Text(loc?.editAction ?? 'Edit')),
-                                    PopupMenuItem(value: 'delete', child: Text(loc?.deleteAction ?? 'Delete')),
-                                  ],
-                                ),
-                              ),
-                            );
-                          },
-                        ),
-            ),
+          : isLightShell
+              ? ColoredBox(
+                  color: AppThemes.lightAppBackground,
+                  child: Theme(
+                    data: AppThemes.darkTheme,
+                    child: ColoredBox(
+                      color: const Color(0xFF131722),
+                      child: authenticatedBody,
+                    ),
+                  ),
+                )
+              : authenticatedBody,
       floatingActionButton: auth.isAuthenticated
           ? FloatingActionButton(
               onPressed: () => Navigator.pushNamed(context, '/sell'),

@@ -9,6 +9,7 @@ import '../models/analytics_model.dart';
 import '../services/analytics_service.dart';
 // Intentionally avoid importing shared card or helpers; this page uses its own duplicated implementations
 import '../globals.dart';
+import '../theme_provider.dart';
 
 class AnalyticsPage extends StatefulWidget {
   const AnalyticsPage({super.key});
@@ -296,12 +297,8 @@ class _AnalyticsPageState extends State<AnalyticsPage> {
         elevation: 0,
       ),
       body: Container(
-        decoration: BoxDecoration(
-          gradient: LinearGradient(
-            colors: [Color(0xFF0F1115), Color(0xFF131722), Color(0xFF0F1115)],
-            begin: Alignment.topLeft,
-            end: Alignment.bottomRight,
-          ),
+        decoration: AppThemes.shellBackgroundDecoration(
+          Theme.of(context).brightness,
         ),
         child: _isLoading
             ? Center(child: CircularProgressIndicator())
@@ -600,11 +597,17 @@ class _AnalyticsPageState extends State<AnalyticsPage> {
             .replaceAll('é', 'e')
             .replaceAll('ö', 'o');
 
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final cs = Theme.of(context).colorScheme;
+    final cardFill = Colors.white.withValues(alpha: 0.10);
+    final metaColor = isDark ? Colors.white70 : cs.onSurfaceVariant;
+
     return Container(
       height: 205, // Standard height for all car cards
       decoration: BoxDecoration(
-        color: Colors.white.withValues(alpha: 0.10),
+        color: cardFill,
         borderRadius: BorderRadius.circular(20),
+        border: null,
         boxShadow: [
           BoxShadow(
             color: Colors.black.withValues(alpha: 0.2),
@@ -703,6 +706,7 @@ class _AnalyticsPageState extends State<AnalyticsPage> {
                                 decoration: BoxDecoration(
                                   color: Colors.white,
                                   borderRadius: BorderRadius.circular(8),
+                                  border: null,
                                 ),
                                 child: CachedNetworkImage(
                                   imageUrl:
@@ -762,7 +766,7 @@ class _AnalyticsPageState extends State<AnalyticsPage> {
             right: 12,
             child: Text(
               '${_localizeDigitsGlobal(context, (car['year'] ?? '').toString())} • ${_localizeDigitsGlobal(context, (car['mileage'] ?? '').toString())} ${AppLocalizations.of(context)!.unit_km}',
-              style: TextStyle(color: Colors.white70, fontSize: 13),
+              style: TextStyle(color: metaColor, fontSize: 13),
             ),
           ),
           // City name at bottom
@@ -771,7 +775,7 @@ class _AnalyticsPageState extends State<AnalyticsPage> {
             left: 12,
             child: Text(
               '${_translateValueGlobal(context, car['city']?.toString()) ?? (car['city'] ?? '')}',
-              style: TextStyle(color: Colors.white70, fontSize: 13),
+              style: TextStyle(color: metaColor, fontSize: 13),
             ),
           ),
           // Selection border drawn inside so size matches Home exactly

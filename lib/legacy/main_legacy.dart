@@ -33,6 +33,7 @@ import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:intl/intl.dart';
 import 'package:provider/provider.dart';
 import '../theme_provider.dart';
+import '../chat_ui_theme_controller.dart';
 import '../widgets/theme_toggle_widget.dart';
 import '../services/config.dart';
 import '../services/ai_service.dart';
@@ -1056,10 +1057,18 @@ Widget buildGlobalCarCard(BuildContext context, Map car) {
               ? _localizeDigitsGlobal(context, yearRaw)
               : '${_localizeDigitsGlobal(context, mileageRaw)} ${locCard.unit_km}';
 
+  final isDark = Theme.of(context).brightness == Brightness.dark;
+  final cs = Theme.of(context).colorScheme;
+  // Same frosted card surface as dark mode on every theme (reads on light shell too).
+  final cardFill = Colors.white.withOpacity(0.10);
+  final metaTextColor = isDark ? Colors.white70 : cs.onSurfaceVariant;
+  final dividerLineColor = isDark ? Colors.white24 : cs.outlineVariant;
+
   return Container(
     decoration: BoxDecoration(
-      color: Colors.white.withOpacity(0.10),
+      color: cardFill,
       borderRadius: BorderRadius.circular(20),
+      border: null,
       boxShadow: [
         BoxShadow(
           color: Colors.black.withOpacity(0.2),
@@ -1155,6 +1164,7 @@ Widget buildGlobalCarCard(BuildContext context, Map car) {
                               decoration: BoxDecoration(
                                 color: Colors.white,
                                 borderRadius: BorderRadius.circular(8),
+                                border: null,
                               ),
                               child: CachedNetworkImage(
                                 imageUrl:
@@ -1211,7 +1221,7 @@ Widget buildGlobalCarCard(BuildContext context, Map car) {
                       Divider(
                         height: 1,
                         thickness: 1,
-                        color: Colors.white24,
+                        color: dividerLineColor,
                       ),
                       SizedBox(height: 6),
                     ] else ...[
@@ -1235,7 +1245,7 @@ Widget buildGlobalCarCard(BuildContext context, Map car) {
                                 ? Text(
                                     yearMileageDisplay,
                                     style: TextStyle(
-                                      color: Colors.white70,
+                                      color: metaTextColor,
                                       fontSize: 13,
                                     ),
                                     maxLines: 1,
@@ -1252,7 +1262,7 @@ Widget buildGlobalCarCard(BuildContext context, Map car) {
                                   Icon(
                                     Icons.location_city,
                                     size: 14,
-                                    color: Colors.white70,
+                                    color: metaTextColor,
                                   ),
                                   const SizedBox(width: 4),
                                   ConstrainedBox(
@@ -1262,7 +1272,7 @@ Widget buildGlobalCarCard(BuildContext context, Map car) {
                                     child: Text(
                                       cityLine,
                                       style: TextStyle(
-                                        color: Colors.white70,
+                                        color: metaTextColor,
                                         fontSize: 13,
                                       ),
                                       maxLines: 1,
@@ -2658,6 +2668,7 @@ class MyApp extends StatelessWidget {
     return MultiProvider(
       providers: [
         ChangeNotifierProvider(create: (context) => ThemeProvider()),
+        ChangeNotifierProvider(create: (context) => ChatUiThemeController()),
         ChangeNotifierProvider(create: (context) => CarComparisonStore()),
         ChangeNotifierProvider(create: (context) => AuthService()),
       ],
@@ -5750,9 +5761,11 @@ class _HomePageState extends State<HomePage> {
       // Pull-to-refresh is already provided inside the main content via internal scrollables
       bottomNavigationBar: BottomNavigationBar(
         type: BottomNavigationBarType.fixed,
-        backgroundColor: Colors.black87,
+        backgroundColor:
+            AppThemes.bottomNavChrome(Theme.of(context).brightness).backgroundColor,
         selectedItemColor: Color(0xFFFF6B00),
-        unselectedItemColor: Colors.white70,
+        unselectedItemColor:
+            AppThemes.bottomNavChrome(Theme.of(context).brightness).unselectedItemColor,
         currentIndex: 0,
         onTap: (idx) {
           switch (idx) {
@@ -5795,16 +5808,8 @@ class _HomePageState extends State<HomePage> {
         child: Stack(
           children: [
             Container(
-              decoration: BoxDecoration(
-                gradient: LinearGradient(
-                  colors: [
-                    Color(0xFF0F1115),
-                    Color(0xFF131722),
-                    Color(0xFF0F1115),
-                  ],
-                  begin: Alignment.topLeft,
-                  end: Alignment.bottomRight,
-                ),
+              decoration: AppThemes.shellBackgroundDecoration(
+                Theme.of(context).brightness,
               ),
             ),
             Padding(
@@ -5823,7 +5828,13 @@ class _HomePageState extends State<HomePage> {
                         shape: RoundedRectangleBorder(
                           borderRadius: BorderRadius.circular(20),
                         ),
-                        color: Colors.white.withOpacity(0.06),
+                        color: Theme.of(context).brightness == Brightness.dark
+                            ? Colors.white.withOpacity(0.06)
+                            : Theme.of(context).colorScheme.surface,
+                        surfaceTintColor: Colors.transparent,
+                        shadowColor: Theme.of(context).brightness == Brightness.dark
+                            ? Colors.black54
+                            : Colors.black26,
                         child: Padding(
                           padding: const EdgeInsets.all(20.0),
                           child: Column(
@@ -11356,7 +11367,10 @@ class _CarDetailsPageState extends State<CarDetailsPage> {
 
   @override
   Widget build(BuildContext context) {
+    final isLightShell = Theme.of(context).brightness == Brightness.light;
     return Scaffold(
+      backgroundColor:
+          isLightShell ? AppThemes.lightAppBackground : null,
       body: loading
           ? Center(child: CircularProgressIndicator())
           : car == null
@@ -11366,6 +11380,8 @@ class _CarDetailsPageState extends State<CarDetailsPage> {
                 SliverAppBar(
                   pinned: true,
                   stretch: true,
+                  foregroundColor:
+                      isLightShell ? Colors.white : null,
                   expandedHeight: 300,
                   leading: IconButton(
                     icon: Icon(Icons.arrow_back),
@@ -11498,9 +11514,22 @@ class _CarDetailsPageState extends State<CarDetailsPage> {
                   ),
                 ),
                 SliverToBoxAdapter(
-                  child: Padding(
-                    padding: EdgeInsets.fromLTRB(16, 20, 16, 24),
-                    child: Column(
+                  child: Container(
+                    width: double.infinity,
+                    decoration: BoxDecoration(
+                      color: isLightShell
+                          ? AppThemes.lightAppBackground
+                          : Colors.transparent,
+                      borderRadius: const BorderRadius.vertical(
+                        top: Radius.circular(24),
+                      ),
+                    ),
+                    padding: const EdgeInsets.fromLTRB(16, 20, 16, 24),
+                    child: Theme(
+                      data: isLightShell
+                          ? Theme.of(context)
+                          : AppThemes.darkTheme,
+                      child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
                         // Quick Sell Banner
@@ -11552,7 +11581,9 @@ class _CarDetailsPageState extends State<CarDetailsPage> {
                               Icon(
                                 Icons.location_city,
                                 size: 14,
-                                color: Colors.white70,
+                                color: isLightShell
+                                    ? const Color(0xFF757575)
+                                    : Colors.white70,
                               ),
                               SizedBox(width: 6),
                               Text(
@@ -11561,7 +11592,9 @@ class _CarDetailsPageState extends State<CarDetailsPage> {
                                 style: TextStyle(
                                   fontSize: 13,
                                   fontWeight: FontWeight.w700,
-                                  color: Colors.white70,
+                                  color: isLightShell
+                                      ? const Color(0xFF757575)
+                                      : Colors.white70,
                                 ),
                                 maxLines: 1,
                                 overflow: TextOverflow.ellipsis,
@@ -11583,7 +11616,9 @@ class _CarDetailsPageState extends State<CarDetailsPage> {
                                     style: TextStyle(
                                       fontSize: 19,
                                       fontWeight: FontWeight.bold,
-                                      color: Colors.white,
+                                      color: isLightShell
+                                          ? AppThemes.darkHomeShellBackground
+                                          : Colors.white,
                                     ),
                                     maxLines: 1,
                                     overflow: TextOverflow.ellipsis,
@@ -11614,7 +11649,9 @@ class _CarDetailsPageState extends State<CarDetailsPage> {
                                       style: TextStyle(
                                         fontSize: 22,
                                         fontWeight: FontWeight.w800,
-                                        color: Colors.white70,
+                                        color: isLightShell
+                                            ? AppThemes.darkHomeShellBackground
+                                            : Colors.white70,
                                       ),
                                       maxLines: 1,
                                       overflow: TextOverflow.ellipsis,
@@ -11644,7 +11681,9 @@ class _CarDetailsPageState extends State<CarDetailsPage> {
                         Divider(
                           height: 1,
                           thickness: 1,
-                          color: Colors.white24,
+                          color: isLightShell
+                              ? const Color(0xFFE0E0E0)
+                              : Colors.white24,
                         ),
                         SizedBox(height: 16),
                         Text(
@@ -11875,7 +11914,9 @@ class _CarDetailsPageState extends State<CarDetailsPage> {
                             style: TextStyle(
                               fontSize: 16,
                               fontWeight: FontWeight.bold,
-                              color: Colors.white,
+                              color: isLightShell
+                                  ? AppThemes.darkHomeShellBackground
+                                  : Colors.white,
                             ),
                           ),
                           SizedBox(height: 12),
@@ -11887,7 +11928,9 @@ class _CarDetailsPageState extends State<CarDetailsPage> {
                             style: TextStyle(
                               fontSize: 16,
                               fontWeight: FontWeight.bold,
-                              color: Colors.white,
+                              color: isLightShell
+                                  ? AppThemes.darkHomeShellBackground
+                                  : Colors.white,
                             ),
                           ),
                           SizedBox(height: 12),
@@ -11903,7 +11946,9 @@ class _CarDetailsPageState extends State<CarDetailsPage> {
                             style: TextStyle(
                               fontSize: 16,
                               fontWeight: FontWeight.bold,
-                              color: Colors.white,
+                              color: isLightShell
+                                  ? AppThemes.darkHomeShellBackground
+                                  : Colors.white,
                             ),
                           ),
                           SizedBox(height: 12),
@@ -11914,7 +11959,9 @@ class _CarDetailsPageState extends State<CarDetailsPage> {
                             style: TextStyle(
                               fontSize: 16,
                               fontWeight: FontWeight.bold,
-                              color: Colors.white,
+                              color: isLightShell
+                                  ? AppThemes.darkHomeShellBackground
+                                  : Colors.white,
                             ),
                           ),
                           SizedBox(height: 12),
@@ -11924,6 +11971,7 @@ class _CarDetailsPageState extends State<CarDetailsPage> {
                           ),
                         ],
                       ],
+                    ),
                     ),
                   ),
                 ),
@@ -11962,13 +12010,18 @@ class _CarDetailsPageState extends State<CarDetailsPage> {
     required String? value,
   }) {
     if (value == null || value.isEmpty) return SizedBox.shrink();
+    final isLight = Theme.of(context).brightness == Brightness.light;
     return Container(
       margin: EdgeInsets.only(bottom: 8),
       padding: EdgeInsets.symmetric(horizontal: 12, vertical: 10),
       decoration: BoxDecoration(
-        color: Colors.white.withOpacity(0.06),
+        color: isLight
+            ? const Color(0xFFF3F3F3)
+            : Colors.white.withOpacity(0.06),
         borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: Colors.white12),
+        border: Border.all(
+          color: isLight ? const Color(0xFFE0E0E0) : Colors.white12,
+        ),
       ),
       child: Row(
         children: [
@@ -11985,7 +12038,9 @@ class _CarDetailsPageState extends State<CarDetailsPage> {
             child: Text(
               label,
               style: TextStyle(
-                color: Colors.white70,
+                color: isLight
+                    ? const Color(0xFF3A3A3A)
+                    : Colors.white70,
                 fontSize: 14,
                 fontWeight: FontWeight.w600,
               ),
@@ -12174,18 +12229,22 @@ class _CarDetailsPageState extends State<CarDetailsPage> {
     String? value,
   }) {
     final String shown = (value == null || value.isEmpty) ? '—' : value;
+    final isLight = Theme.of(context).brightness == Brightness.light;
+    final muted =
+        isLight ? const Color(0xFF3A3A3A) : Colors.white70;
+    final body = isLight ? const Color(0xFF0A0A0A) : Colors.white;
     return Padding(
       padding: const EdgeInsets.symmetric(vertical: 6.0),
       child: Row(
         children: [
-          Icon(icon, color: Colors.white70, size: 18),
+          Icon(icon, color: muted, size: 18),
           SizedBox(width: 8),
           SizedBox(
             width: 120,
-            child: Text(label, style: TextStyle(color: Colors.white70)),
+            child: Text(label, style: TextStyle(color: muted)),
           ),
           Expanded(
-            child: Text(shown, style: TextStyle(color: Colors.white)),
+            child: Text(shown, style: TextStyle(color: body)),
           ),
         ],
       ),
@@ -12346,6 +12405,7 @@ class _CarDetailsPageState extends State<CarDetailsPage> {
   }
 
   Widget _buildSmallCarCard(Map<String, dynamic> data) {
+    final isLight = Theme.of(context).brightness == Brightness.light;
     return InkWell(
       onTap: () {
         // Analytics tracking for view listing
@@ -12407,7 +12467,9 @@ class _CarDetailsPageState extends State<CarDetailsPage> {
                     maxLines: 1,
                     overflow: TextOverflow.ellipsis,
                     style: TextStyle(
-                      color: Colors.white,
+                      color: isLight
+                          ? AppThemes.darkHomeShellBackground
+                          : Colors.white,
                       fontWeight: FontWeight.bold,
                     ),
                   ),
@@ -16462,13 +16524,18 @@ class _ListingPreviewWidgetState extends State<ListingPreviewWidget> {
     required String? value,
   }) {
     if (value == null || value.isEmpty) return SizedBox.shrink();
+    final isLight = Theme.of(context).brightness == Brightness.light;
     return Container(
       margin: EdgeInsets.only(bottom: 8),
       padding: EdgeInsets.symmetric(horizontal: 12, vertical: 10),
       decoration: BoxDecoration(
-        color: Colors.white.withOpacity(0.06),
+        color: isLight
+            ? const Color(0xFFF3F3F3)
+            : Colors.white.withOpacity(0.06),
         borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: Colors.white12),
+        border: Border.all(
+          color: isLight ? const Color(0xFFE0E0E0) : Colors.white12,
+        ),
       ),
       child: Row(
         children: [
@@ -16485,7 +16552,9 @@ class _ListingPreviewWidgetState extends State<ListingPreviewWidget> {
             child: Text(
               label,
               style: TextStyle(
-                color: Colors.white70,
+                color: isLight
+                    ? const Color(0xFF3A3A3A)
+                    : Colors.white70,
                 fontSize: 14,
                 fontWeight: FontWeight.w600,
               ),
@@ -17494,22 +17563,16 @@ class CarComparisonPage extends StatelessWidget {
       body: Stack(
         children: [
           Container(
-            decoration: BoxDecoration(
-              gradient: LinearGradient(
-                colors: [
-                  Color(0xFF0F1115),
-                  Color(0xFF131722),
-                  Color(0xFF0F1115),
-                ],
-                begin: Alignment.topLeft,
-                end: Alignment.bottomRight,
-              ),
+            decoration: AppThemes.shellBackgroundDecoration(
+              Theme.of(context).brightness,
             ),
           ),
           Consumer<CarComparisonStore>(
             builder: (context, comparisonStore, child) {
               final cars = comparisonStore.comparisonCars;
               final double columnWidth = 260.0;
+              final isDark = Theme.of(context).brightness == Brightness.dark;
+              final cs = Theme.of(context).colorScheme;
 
               if (cars.isEmpty) {
                 return Center(
@@ -17519,7 +17582,7 @@ class CarComparisonPage extends StatelessWidget {
                       Icon(
                         Icons.compare_arrows,
                         size: 84,
-                        color: Colors.white24,
+                        color: isDark ? Colors.white24 : cs.onSurfaceVariant.withValues(alpha: 0.45),
                       ),
                       SizedBox(height: 16),
                       Text(
@@ -17527,13 +17590,16 @@ class CarComparisonPage extends StatelessWidget {
                         style: TextStyle(
                           fontSize: 20,
                           fontWeight: FontWeight.bold,
-                          color: Colors.white70,
+                          color: isDark ? Colors.white70 : cs.onSurface,
                         ),
                       ),
                       SizedBox(height: 8),
                       Text(
                         AppLocalizations.of(context)!.tapToSelectBrand,
-                        style: TextStyle(fontSize: 16, color: Colors.white54),
+                        style: TextStyle(
+                          fontSize: 16,
+                          color: isDark ? Colors.white54 : cs.onSurfaceVariant,
+                        ),
                         textAlign: TextAlign.center,
                       ),
                       SizedBox(height: 24),
@@ -17564,9 +17630,13 @@ class CarComparisonPage extends StatelessWidget {
                     width: double.infinity,
                     padding: EdgeInsets.all(16),
                     decoration: BoxDecoration(
-                      color: Colors.white.withOpacity(0.06),
+                      color: isDark
+                          ? Colors.white.withOpacity(0.06)
+                          : cs.surfaceContainer,
                       borderRadius: BorderRadius.circular(16),
-                      border: Border.all(color: Colors.white10),
+                      border: Border.all(
+                        color: isDark ? Colors.white10 : cs.outlineVariant,
+                      ),
                     ),
                     child: Row(
                       children: [
@@ -17587,14 +17657,14 @@ class CarComparisonPage extends StatelessWidget {
                                 style: TextStyle(
                                   fontSize: 18,
                                   fontWeight: FontWeight.bold,
-                                  color: Colors.white,
+                                  color: isDark ? Colors.white : cs.onSurface,
                                 ),
                               ),
                               Text(
                                 '${AppLocalizations.of(context)!.sortBy}: ${cars.length}',
                                 style: TextStyle(
                                   fontSize: 12,
-                                  color: Colors.white70,
+                                  color: isDark ? Colors.white70 : cs.onSurfaceVariant,
                                 ),
                               ),
                               SizedBox(height: 8),
@@ -17607,7 +17677,8 @@ class CarComparisonPage extends StatelessWidget {
                                       side: BorderSide(
                                         color: Color(0xFFFF6B00),
                                       ),
-                                      foregroundColor: Colors.white,
+                                      foregroundColor:
+                                          isDark ? Colors.white : cs.onSurface,
                                       padding: EdgeInsets.symmetric(
                                         horizontal: 12,
                                         vertical: 8,
@@ -17632,8 +17703,13 @@ class CarComparisonPage extends StatelessWidget {
                                   ),
                                   OutlinedButton.icon(
                                     style: OutlinedButton.styleFrom(
-                                      side: BorderSide(color: Colors.white24),
-                                      foregroundColor: Colors.white,
+                                      side: BorderSide(
+                                        color: isDark
+                                            ? Colors.white24
+                                            : cs.outlineVariant,
+                                      ),
+                                      foregroundColor:
+                                          isDark ? Colors.white : cs.onSurface,
                                       padding: EdgeInsets.symmetric(
                                         horizontal: 12,
                                         vertical: 8,
@@ -17659,7 +17735,9 @@ class CarComparisonPage extends StatelessWidget {
                                     },
                                     icon: Icon(
                                       Icons.delete_outline,
-                                      color: Colors.white70,
+                                      color: isDark
+                                          ? Colors.white70
+                                          : cs.onSurfaceVariant,
                                       size: 18,
                                     ),
                                     label: Text(_clearAllTextGlobal(context)),
@@ -17705,7 +17783,9 @@ class CarComparisonPage extends StatelessWidget {
 
                       final table = Container(
                         decoration: BoxDecoration(
-                          color: Colors.white.withOpacity(0.06),
+                          color: isDark
+                              ? Colors.white.withOpacity(0.06)
+                              : cs.surfaceContainer,
                           borderRadius: BorderRadius.circular(16),
                           boxShadow: [
                             BoxShadow(
@@ -19685,9 +19765,11 @@ Widget build(BuildContext context) {
       */
     bottomNavigationBar: BottomNavigationBar(
       type: BottomNavigationBarType.fixed,
-      backgroundColor: Colors.black87,
+      backgroundColor:
+          AppThemes.bottomNavChrome(Theme.of(context).brightness).backgroundColor,
       selectedItemColor: Color(0xFFFF6B00),
-      unselectedItemColor: Colors.white70,
+      unselectedItemColor:
+          AppThemes.bottomNavChrome(Theme.of(context).brightness).unselectedItemColor,
       currentIndex: 0,
       onTap: (idx) {
         switch (idx) {
@@ -19911,22 +19993,17 @@ class _FavoritesPageState extends State<FavoritesPage> {
 
   @override
   Widget build(BuildContext context) {
+    final muted = Theme.of(context).brightness == Brightness.dark
+        ? Colors.white70
+        : Theme.of(context).colorScheme.onSurfaceVariant;
     return Scaffold(
       appBar: AppBar(title: Text(AppLocalizations.of(context)!.favoritesTitle)),
       body: Stack(
         fit: StackFit.expand,
         children: [
           Container(
-            decoration: BoxDecoration(
-              gradient: LinearGradient(
-                colors: [
-                  Color(0xFF0F1115),
-                  Color(0xFF131722),
-                  Color(0xFF0F1115),
-                ],
-                begin: Alignment.topLeft,
-                end: Alignment.bottomRight,
-              ),
+            decoration: AppThemes.shellBackgroundDecoration(
+              Theme.of(context).brightness,
             ),
           ),
           if (_loading)
@@ -19945,7 +20022,7 @@ class _FavoritesPageState extends State<FavoritesPage> {
                     Text(
                       AppLocalizations.of(context)!.notLoggedIn,
                       textAlign: TextAlign.center,
-                      style: const TextStyle(color: Colors.white70),
+                      style: TextStyle(color: muted),
                     ),
                     const SizedBox(height: 12),
                     ElevatedButton(
@@ -19961,19 +20038,19 @@ class _FavoritesPageState extends State<FavoritesPage> {
               child: Text(
                 _error!,
                 textAlign: TextAlign.center,
-                style: const TextStyle(color: Colors.white70),
+                style: TextStyle(color: muted),
               ),
             )
           else if (_favorites.isEmpty)
             Center(
               child: Text(
                 AppLocalizations.of(context)!.noFavoritesYet,
-                style: const TextStyle(color: Colors.white70),
+                style: TextStyle(color: muted),
               ),
             )
           else
             RefreshIndicator(
-              color: Colors.white,
+              color: Theme.of(context).colorScheme.primary,
               onRefresh: _loadFavorites,
               child: GridView.builder(
                 physics: const AlwaysScrollableScrollPhysics(),
@@ -20029,9 +20106,11 @@ class _FavoritesPageState extends State<FavoritesPage> {
       ),
       bottomNavigationBar: BottomNavigationBar(
         type: BottomNavigationBarType.fixed,
-        backgroundColor: Colors.black87,
+        backgroundColor:
+            AppThemes.bottomNavChrome(Theme.of(context).brightness).backgroundColor,
         selectedItemColor: Color(0xFFFF6B00),
-        unselectedItemColor: Colors.white70,
+        unselectedItemColor:
+            AppThemes.bottomNavChrome(Theme.of(context).brightness).unselectedItemColor,
         currentIndex: 1,
         onTap: (idx) {
           switch (idx) {
@@ -20197,9 +20276,11 @@ class _LoginPageState extends State<LoginPage> {
       ),
       bottomNavigationBar: BottomNavigationBar(
         type: BottomNavigationBarType.fixed,
-        backgroundColor: Colors.black87,
+        backgroundColor:
+            AppThemes.bottomNavChrome(Theme.of(context).brightness).backgroundColor,
         selectedItemColor: Color(0xFFFF6B00),
-        unselectedItemColor: Colors.white70,
+        unselectedItemColor:
+            AppThemes.bottomNavChrome(Theme.of(context).brightness).unselectedItemColor,
         currentIndex: 3,
         onTap: (idx) {
           switch (idx) {
@@ -20763,9 +20844,11 @@ class _SignupPageState extends State<SignupPage> {
       ),
       bottomNavigationBar: BottomNavigationBar(
         type: BottomNavigationBarType.fixed,
-        backgroundColor: Colors.black87,
+        backgroundColor:
+            AppThemes.bottomNavChrome(Theme.of(context).brightness).backgroundColor,
         selectedItemColor: Color(0xFFFF6B00),
-        unselectedItemColor: Colors.white70,
+        unselectedItemColor:
+            AppThemes.bottomNavChrome(Theme.of(context).brightness).unselectedItemColor,
         currentIndex: 3,
         onTap: (idx) {
           switch (idx) {
@@ -20819,18 +20902,8 @@ class ProfilePage extends StatefulWidget {
 }
 
 class _ProfilePageState extends State<ProfilePage> {
-  /// Same gradient as [HomePage] body background.
-  static const BoxDecoration _homeLikeBackgroundDecoration = BoxDecoration(
-    gradient: LinearGradient(
-      colors: [
-        Color(0xFF0F1115),
-        Color(0xFF131722),
-        Color(0xFF0F1115),
-      ],
-      begin: Alignment.topLeft,
-      end: Alignment.bottomRight,
-    ),
-  );
+  BoxDecoration _shellDecoration(BuildContext context) =>
+      AppThemes.shellBackgroundDecoration(Theme.of(context).brightness);
 
   Map<String, dynamic>? me;
   bool _loading = true;
@@ -20964,7 +21037,7 @@ class _ProfilePageState extends State<ProfilePage> {
   Widget _buildNotLoggedInState(BuildContext context) {
     return Stack(
       children: [
-        Container(decoration: _homeLikeBackgroundDecoration),
+        Container(decoration: _shellDecoration(context)),
         Center(
         child: Padding(
           padding: const EdgeInsets.all(32.0),
@@ -21067,7 +21140,7 @@ class _ProfilePageState extends State<ProfilePage> {
         ApiService.accessToken!.isNotEmpty;
     return Stack(
       children: [
-        Container(decoration: _homeLikeBackgroundDecoration),
+        Container(decoration: _shellDecoration(context)),
         SingleChildScrollView(
         padding: EdgeInsets.fromLTRB(20, 20, 20, 20),
         child: Column(
@@ -21240,21 +21313,22 @@ class _ProfilePageState extends State<ProfilePage> {
                       AppLocalizations.of(context)!.usernameLabel,
                       me?['username']?.toString() ?? '',
                     ),
-                    SizedBox(height: 16),
                     if (() {
                       final e = me?['email']?.toString() ?? '';
                       return e.isNotEmpty && !e.endsWith('@phone.local');
-                    }())
+                    }()) ...[
+                      SizedBox(height: 12),
                       _buildInfoRow(
                         Icons.email_outlined,
                         AppLocalizations.of(context)!.emailLabel,
                         me!['email'].toString(),
                       ),
+                    ],
                     if (() {
                       final p = me?['phone_number']?.toString() ?? me?['phone']?.toString() ?? '';
                       return p.isNotEmpty;
                     }()) ...[
-                      SizedBox(height: 16),
+                      SizedBox(height: 12),
                       _buildInfoRow(
                         Icons.phone_outlined,
                         AppLocalizations.of(context)!.phoneLabel,
@@ -21650,7 +21724,7 @@ class _ProfilePageState extends State<ProfilePage> {
       body: _loading
           ? Stack(
               children: [
-                Container(decoration: _homeLikeBackgroundDecoration),
+                Container(decoration: _shellDecoration(context)),
                 const Center(
                   child: CircularProgressIndicator(),
                 ),
@@ -21659,9 +21733,11 @@ class _ProfilePageState extends State<ProfilePage> {
           : _buildLoggedInState(context),
       bottomNavigationBar: BottomNavigationBar(
         type: BottomNavigationBarType.fixed,
-        backgroundColor: Colors.black87,
+        backgroundColor:
+            AppThemes.bottomNavChrome(Theme.of(context).brightness).backgroundColor,
         selectedItemColor: Color(0xFFFF6B00),
-        unselectedItemColor: Colors.white70,
+        unselectedItemColor:
+            AppThemes.bottomNavChrome(Theme.of(context).brightness).unselectedItemColor,
         currentIndex: 3,
         onTap: (idx) {
           switch (idx) {
@@ -21726,9 +21802,11 @@ class _PaymentHistoryPageState extends State<PaymentHistoryPage> {
       ),
       bottomNavigationBar: BottomNavigationBar(
         type: BottomNavigationBarType.fixed,
-        backgroundColor: Colors.black87,
+        backgroundColor:
+            AppThemes.bottomNavChrome(Theme.of(context).brightness).backgroundColor,
         selectedItemColor: Color(0xFFFF6B00),
-        unselectedItemColor: Colors.white70,
+        unselectedItemColor:
+            AppThemes.bottomNavChrome(Theme.of(context).brightness).unselectedItemColor,
         currentIndex: 0,
         onTap: (idx) {
           switch (idx) {
@@ -21986,7 +22064,17 @@ class _MyListingsPageState extends State<MyListingsPage> {
 
   @override
   Widget build(BuildContext context) {
+    final isLightShell = Theme.of(context).brightness == Brightness.light;
+    final bodyChild = isLoading
+        ? Center(child: CircularProgressIndicator())
+        : error != null
+            ? _buildErrorState()
+            : myListings.isEmpty
+                ? _buildEmptyState()
+                : _buildListingsGrid();
     return Scaffold(
+      backgroundColor:
+          isLightShell ? AppThemes.lightAppBackground : null,
       appBar: AppBar(
         title: Text(AppLocalizations.of(context)!.myListingsTitle),
         backgroundColor: Color(0xFFFF6B00),
@@ -21996,27 +22084,30 @@ class _MyListingsPageState extends State<MyListingsPage> {
           IconButton(icon: Icon(Icons.refresh), onPressed: _loadMyListings),
         ],
       ),
-      body: Container(
-        decoration: BoxDecoration(
-          gradient: LinearGradient(
-            colors: [Color(0xFF0F1115), Color(0xFF131722), Color(0xFF0F1115)],
-            begin: Alignment.topLeft,
-            end: Alignment.bottomRight,
-          ),
-        ),
-        child: isLoading
-            ? Center(child: CircularProgressIndicator())
-            : error != null
-            ? _buildErrorState()
-            : myListings.isEmpty
-            ? _buildEmptyState()
-            : _buildListingsGrid(),
-      ),
+      body: isLightShell
+          ? ColoredBox(
+              color: AppThemes.lightAppBackground,
+              child: Theme(
+                data: AppThemes.darkTheme,
+                child: ColoredBox(
+                  color: const Color(0xFF131722),
+                  child: bodyChild,
+                ),
+              ),
+            )
+          : Container(
+              decoration: AppThemes.shellBackgroundDecoration(
+                Theme.of(context).brightness,
+              ),
+              child: bodyChild,
+            ),
       bottomNavigationBar: BottomNavigationBar(
         type: BottomNavigationBarType.fixed,
-        backgroundColor: Colors.black87,
+        backgroundColor:
+            AppThemes.bottomNavChrome(Theme.of(context).brightness).backgroundColor,
         selectedItemColor: Color(0xFFFF6B00),
-        unselectedItemColor: Colors.white70,
+        unselectedItemColor:
+            AppThemes.bottomNavChrome(Theme.of(context).brightness).unselectedItemColor,
         currentIndex: 3,
         onTap: (idx) {
           switch (idx) {
