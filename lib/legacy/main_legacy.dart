@@ -1038,7 +1038,33 @@ Map<String, dynamic> mapListingToGlobalCarCardData(
     'images': listing['images'],
     'videos': listing['videos'],
     'is_quick_sell': listing['is_quick_sell'] ?? false,
+    'created_at': listing['created_at'],
   };
+}
+
+/// Human-readable "time since listing was created" for card and detail UI.
+String _listingUploadedAgo(BuildContext context, Map car) {
+  final loc = AppLocalizations.of(context);
+  if (loc == null) return '';
+  dynamic raw = car['created_at'];
+  if (raw == null || raw.toString().trim().isEmpty) {
+    raw = car['posted_at'] ?? car['listed_at'];
+  }
+  if (raw == null) return '';
+  final dt = DateTime.tryParse(raw.toString().trim());
+  if (dt == null) return '';
+  final now = DateTime.now();
+  var diff = now.difference(dt);
+  if (diff.isNegative) diff = Duration.zero;
+  if (diff.inMinutes < 1) return loc.justNow;
+  if (diff.inHours < 24) {
+    if (diff.inHours < 1) {
+      return loc.timeMinutesAgo(diff.inMinutes < 1 ? 1 : diff.inMinutes);
+    }
+    return loc.timeHoursAgo(diff.inHours);
+  }
+  final days = diff.inDays;
+  return loc.timeDaysAgo(days < 1 ? 1 : days);
 }
 
 // Global car card building function to ensure consistency across all pages
@@ -1278,32 +1304,35 @@ Widget buildGlobalCarCard(BuildContext context, Map car) {
                                 : const SizedBox.shrink(),
                           ),
                           if (cityLine.isNotEmpty)
-                            Padding(
-                              padding: const EdgeInsets.only(left: 8),
-                              child: Row(
-                                mainAxisSize: MainAxisSize.min,
-                                children: [
-                                  Icon(
-                                    Icons.location_city,
-                                    size: 14,
-                                    color: metaTextColor,
-                                  ),
-                                  const SizedBox(width: 4),
-                                  ConstrainedBox(
-                                    constraints: const BoxConstraints(
-                                      maxWidth: 96,
-                                    ),
-                                    child: Text(
-                                      cityLine,
-                                      style: TextStyle(
+                            Flexible(
+                              child: Padding(
+                                padding: const EdgeInsets.only(left: 8),
+                                child: Row(
+                                  mainAxisAlignment: MainAxisAlignment.end,
+                                  mainAxisSize: MainAxisSize.max,
+                                  children: [
+                                    if (cityLine.isNotEmpty) ...[
+                                      Icon(
+                                        Icons.location_city,
+                                        size: 14,
                                         color: metaTextColor,
-                                        fontSize: 13,
                                       ),
-                                      maxLines: 1,
-                                      overflow: TextOverflow.ellipsis,
-                                    ),
-                                  ),
-                                ],
+                                      const SizedBox(width: 4),
+                                      Flexible(
+                                        child: Text(
+                                          cityLine,
+                                          style: TextStyle(
+                                            color: metaTextColor,
+                                            fontSize: 13,
+                                          ),
+                                          maxLines: 1,
+                                          overflow: TextOverflow.ellipsis,
+                                          textAlign: TextAlign.right,
+                                        ),
+                                      ),
+                                    ],
+                                  ],
+                                ),
                               ),
                             ),
                         ],
@@ -5827,18 +5856,17 @@ class _HomePageState extends State<HomePage> {
                         vertical: 8.0,
                       ),
                       child: Card(
-                        elevation: 12,
-                        shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(20),
-                        ),
-                        color: Theme.of(context).brightness == Brightness.dark
-                            ? Colors.white.withOpacity(0.06)
-                            : Theme.of(context).colorScheme.surface,
-                        surfaceTintColor: Colors.transparent,
-                        shadowColor: Theme.of(context).brightness == Brightness.dark
-                            ? Colors.black54
-                            : Colors.black26,
-                        child: Padding(
+                          elevation: 12,
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(20),
+                          ),
+                          color: Color.alphaBlend(
+                            Colors.white.withOpacity(0.06),
+                            AppThemes.darkHomeShellBackground,
+                          ),
+                          surfaceTintColor: Colors.transparent,
+                          shadowColor: Colors.black54,
+                          child: Padding(
                           padding: const EdgeInsets.all(20.0),
                           child: Column(
                             crossAxisAlignment: CrossAxisAlignment.start,
@@ -11579,38 +11607,78 @@ class _CarDetailsPageState extends State<CarDetailsPage> {
                               ],
                             ),
                           ),
-                        // City label above title
-                        if ((_getFirstNonEmpty(car!, ['city', 'location']) ?? '')
-                            .trim()
-                            .isNotEmpty) ...[
-                          Row(
-                            mainAxisSize: MainAxisSize.min,
-                            children: [
-                              Icon(
-                                Icons.location_city,
-                                size: 14,
-                                color: isLightShell
-                                    ? const Color(0xFF757575)
-                                    : Colors.white70,
-                              ),
-                              SizedBox(width: 6),
-                              Text(
-                                '${AppLocalizations.of(context)!.cityLabel}: '
-                                '${_translateValueGlobal(context, _getFirstNonEmpty(car!, ['city', 'location'])) ?? _getFirstNonEmpty(car!, ['city', 'location'])}',
-                                style: TextStyle(
-                                  fontSize: 13,
-                                  fontWeight: FontWeight.w700,
-                                  color: isLightShell
-                                      ? const Color(0xFF757575)
-                                      : Colors.white70,
+                        // City label above title (+ relative listing age on the right)
+                        Builder(
+                          builder: (context) {
+                            final cityDetail =
+                                (_getFirstNonEmpty(car!, ['city', 'location']) ??
+                                        '')
+                                    .trim();
+                            final cityLabelStyle = TextStyle(
+                              fontSize: 13,
+                              fontWeight: FontWeight.w700,
+                              color: isLightShell
+                                  ? const Color(0xFF757575)
+                                  : Colors.white70,
+                            );
+                            final uploadedDetail =
+                                _listingUploadedAgo(context, car!);
+                            if (cityDetail.isEmpty && uploadedDetail.isEmpty) {
+                              return const SizedBox.shrink();
+                            }
+                            return Column(
+                              crossAxisAlignment: CrossAxisAlignment.stretch,
+                              children: [
+                                Row(
+                                  crossAxisAlignment: CrossAxisAlignment.center,
+                                  children: [
+                                    Expanded(
+                                      child: cityDetail.isEmpty
+                                          ? const SizedBox.shrink()
+                                          : Row(
+                                              mainAxisSize: MainAxisSize.min,
+                                              children: [
+                                                Icon(
+                                                  Icons.location_city,
+                                                  size: 14,
+                                                  color: isLightShell
+                                                      ? const Color(0xFF757575)
+                                                      : Colors.white70,
+                                                ),
+                                                SizedBox(width: 6),
+                                                Flexible(
+                                                  child: Text(
+                                                    '${AppLocalizations.of(context)!.cityLabel}: '
+                                                    '${_translateValueGlobal(context, _getFirstNonEmpty(car!, ['city', 'location'])) ?? _getFirstNonEmpty(car!, ['city', 'location'])}',
+                                                    style: cityLabelStyle,
+                                                    maxLines: 1,
+                                                    overflow:
+                                                        TextOverflow.ellipsis,
+                                                  ),
+                                                ),
+                                              ],
+                                            ),
+                                    ),
+                                    if (uploadedDetail.isNotEmpty) ...[
+                                      if (cityDetail.isNotEmpty)
+                                        const SizedBox(width: 8),
+                                      Text(
+                                        uploadedDetail,
+                                        style: cityLabelStyle.copyWith(
+                                          fontWeight: FontWeight.w600,
+                                          fontSize: 12,
+                                        ),
+                                        maxLines: 1,
+                                        overflow: TextOverflow.ellipsis,
+                                      ),
+                                    ],
+                                  ],
                                 ),
-                                maxLines: 1,
-                                overflow: TextOverflow.ellipsis,
-                              ),
-                            ],
-                          ),
-                          SizedBox(height: 8),
-                        ],
+                                SizedBox(height: 8),
+                              ],
+                            );
+                          },
+                        ),
                         // Brand full width; price aligns with model line (same row as model)
                         Column(
                           crossAxisAlignment: CrossAxisAlignment.start,
@@ -12897,167 +12965,256 @@ class _SellStep1PageState extends State<SellStep1Page> {
 
   Future<String?> _pickFromList(String title, List<String> options, {String? contextBrand}) async {
     services.HapticFeedback.selectionClick();
-    return await showGeneralDialog<String>(
-      context: context,
-      barrierDismissible: true,
-      barrierLabel: 'dismiss',
-      pageBuilder: (context, a1, a2) => const SizedBox.shrink(),
-      transitionBuilder: (context, animation, secondaryAnimation, child) {
-        final curved = CurvedAnimation(
-          parent: animation,
-          curve: Curves.easeOutCubic,
-        );
-        return Transform.translate(
-          offset: Offset(0, (1 - curved.value) * 30),
-          child: Opacity(
-            opacity: curved.value,
-            child: Dialog(
-              backgroundColor: Colors.grey[900]?.withOpacity(0.98),
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(20),
-              ),
-              child: Container(
-                width: 420,
-                padding: EdgeInsets.all(20),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    Row(
-                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                      children: [
-                        Text(
-                          title,
-                          style: TextStyle(
-                            color: Color(0xFFFF6B00),
-                            fontWeight: FontWeight.bold,
-                            fontSize: 20,
-                          ),
-                        ),
-                        IconButton(
-                          icon: Icon(Icons.close, color: Colors.white),
-                          onPressed: () => Navigator.pop(context),
-                        ),
-                      ],
+    final searchController = TextEditingController();
+    try {
+      return await showGeneralDialog<String>(
+        context: context,
+        barrierDismissible: true,
+        barrierLabel: 'dismiss',
+        pageBuilder: (context, a1, a2) => const SizedBox.shrink(),
+        transitionBuilder: (context, animation, secondaryAnimation, child) {
+          final curved = CurvedAnimation(
+            parent: animation,
+            curve: Curves.easeOutCubic,
+          );
+          return Transform.translate(
+            offset: Offset(0, (1 - curved.value) * 30),
+            child: Opacity(
+              opacity: curved.value,
+              child: StatefulBuilder(
+                builder: (context, setStateDialog) {
+                  final query = searchController.text.trim().toLowerCase();
+                  final filtered = options.where((value) {
+                    if (query.isEmpty) return true;
+                    if (value.toLowerCase().contains(query)) return true;
+                    if (contextBrand != null) {
+                      final locModel = CarNameTranslations.getLocalizedModel(
+                        context,
+                        contextBrand,
+                        value,
+                      ).toLowerCase();
+                      if (locModel.contains(query)) return true;
+                    }
+                    final locBrand = CarNameTranslations.getLocalizedBrand(
+                      context,
+                      value,
+                    ).toLowerCase();
+                    if (locBrand.contains(query)) return true;
+                    final translated =
+                        (_translateValueGlobal(context, value) ?? '').toLowerCase();
+                    return translated.contains(query);
+                  }).toList();
+                  return Dialog(
+                    backgroundColor: Colors.grey[900]?.withOpacity(0.98),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(20),
                     ),
-                    SizedBox(height: 10),
-                    SizedBox(
-                      height: 400,
-                      child: ListView.separated(
-                        itemCount: options.length,
-                        separatorBuilder: (_, __) => SizedBox(height: 10),
-                        itemBuilder: (context, index) {
-                          final value = options[index];
-                          final lowerTitle = title.toLowerCase();
-                          final loc = AppLocalizations.of(context)!;
-                          final isModelTitle = title == loc.modelLabel;
-                          final isTrimTitle = title == loc.trimLabel;
-                          final isBrandTitle = title == loc.brandLabel;
-                          String displayText = value;
-                          final bool isNumeric = RegExp(
-                            r'^[0-9]+(\.[0-9]+)?$',
-                          ).hasMatch(value);
-                          if (lowerTitle.contains('price')) {
-                            displayText = _formatCurrencyGlobal(context, value);
-                          } else if (lowerTitle.contains('mileage') &&
-                              isNumeric) {
-                            final nf = _decimalFormatterGlobal(context);
-                            displayText =
-                                '${_localizeDigitsGlobal(
-                                  context,
-                                  nf.format(num.tryParse(value) ?? 0),
-                                )} ${AppLocalizations.of(context)!.unit_km}';
-                          } else if (lowerTitle.contains('year') && isNumeric) {
-                            displayText = _localizeDigitsGlobal(context, value);
-                          } else if (lowerTitle.contains('seating') &&
-                              isNumeric) {
-                            displayText =
-                                '${_localizeDigitsGlobal(context, value)} seats';
-                          } else if (lowerTitle.contains('cylinder') &&
-                              isNumeric) {
-                            displayText =
-                                '${_localizeDigitsGlobal(context, value)} cylinders';
-                          } else if (lowerTitle.contains('engine') &&
-                              isNumeric) {
-                            displayText =
-                                '${_localizeDigitsGlobal(context, value)} L';
-                          } else if (value == 'Any') {
-                            displayText = AppLocalizations.of(context)!.anyOption;
-                          } else if (isModelTitle && contextBrand != null) {
-                            displayText = CarNameTranslations.getLocalizedModel(context, contextBrand, value).isNotEmpty
-                                ? CarNameTranslations.getLocalizedModel(context, contextBrand, value)
-                                : value;
-                          } else if (isTrimTitle) {
-                            displayText = value;
-                          } else if (isBrandTitle) {
-                            displayText = CarNameTranslations.getLocalizedBrand(context, value).isNotEmpty
-                                ? CarNameTranslations.getLocalizedBrand(context, value)
-                                : value;
-                          } else {
-                            final translated = _translateValueGlobal(
-                              context,
-                              value,
-                            );
-                            if (translated != null) displayText = translated;
-                          }
-                          return InkWell(
-                            borderRadius: BorderRadius.circular(14),
-                            onTap: () => Navigator.pop(context, value),
-                            child: Container(
-                              padding: EdgeInsets.symmetric(
-                                vertical: 14,
-                                horizontal: 12,
-                              ),
-                              decoration: BoxDecoration(
-                                borderRadius: BorderRadius.circular(14),
-                                gradient: LinearGradient(
-                                  colors: [
-                                    Colors.white.withOpacity(0.06),
-                                    Colors.white.withOpacity(0.02),
-                                  ],
-                                  begin: Alignment.topLeft,
-                                  end: Alignment.bottomRight,
+                    child: Container(
+                      width: 420,
+                      padding: EdgeInsets.all(20),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          Row(
+                            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                            children: [
+                              Text(
+                                title,
+                                style: TextStyle(
+                                  color: Color(0xFFFF6B00),
+                                  fontWeight: FontWeight.bold,
+                                  fontSize: 20,
                                 ),
-                                border: Border.all(color: Colors.white10),
                               ),
-                              child: Row(
-                                children: [
-                                  Expanded(
-                                    child: Text(
-                                      displayText,
-                                      style: TextStyle(
-                                        color: Colors.white,
-                                        fontWeight: FontWeight.w600,
-                                      ),
-                                    ),
-                                  ),
-                                  Icon(
-                                    Icons.chevron_right,
-                                    color: Colors.white70,
-                                  ),
-                                ],
+                              IconButton(
+                                icon: Icon(Icons.close, color: Colors.white),
+                                onPressed: () => Navigator.pop(context),
+                              ),
+                            ],
+                          ),
+                          SizedBox(height: 10),
+                          TextField(
+                            controller: searchController,
+                            onChanged: (_) => setStateDialog(() {}),
+                            style: const TextStyle(color: Colors.white),
+                            decoration: InputDecoration(
+                              hintText: 'Search...',
+                              hintStyle: const TextStyle(color: Colors.white60),
+                              prefixIcon: const Icon(
+                                Icons.search,
+                                color: Colors.white70,
+                              ),
+                              filled: true,
+                              fillColor: Colors.black.withOpacity(0.2),
+                              enabledBorder: OutlineInputBorder(
+                                borderRadius: BorderRadius.circular(12),
+                                borderSide: const BorderSide(color: Colors.white24),
+                              ),
+                              focusedBorder: OutlineInputBorder(
+                                borderRadius: BorderRadius.circular(12),
+                                borderSide: const BorderSide(
+                                  color: Color(0xFFFF6B00),
+                                ),
                               ),
                             ),
-                          );
-                        },
+                          ),
+                          SizedBox(height: 10),
+                          SizedBox(
+                            height: 400,
+                            child: ListView.separated(
+                              itemCount: filtered.length,
+                              separatorBuilder: (_, __) => SizedBox(height: 10),
+                              itemBuilder: (context, index) {
+                                final value = filtered[index];
+                                final lowerTitle = title.toLowerCase();
+                                final loc = AppLocalizations.of(context)!;
+                                final isModelTitle = title == loc.modelLabel;
+                                final isTrimTitle = title == loc.trimLabel;
+                                final isBrandTitle = title == loc.brandLabel;
+                                String displayText = value;
+                                final bool isNumeric =
+                                    RegExp(r'^[0-9]+(\.[0-9]+)?$').hasMatch(value);
+                                if (lowerTitle.contains('price')) {
+                                  displayText = _formatCurrencyGlobal(context, value);
+                                } else if (lowerTitle.contains('mileage') &&
+                                    isNumeric) {
+                                  final nf = _decimalFormatterGlobal(context);
+                                  displayText =
+                                      '${_localizeDigitsGlobal(
+                                        context,
+                                        nf.format(num.tryParse(value) ?? 0),
+                                      )} ${AppLocalizations.of(context)!.unit_km}';
+                                } else if (lowerTitle.contains('year') &&
+                                    isNumeric) {
+                                  displayText =
+                                      _localizeDigitsGlobal(context, value);
+                                } else if (lowerTitle.contains('seating') &&
+                                    isNumeric) {
+                                  displayText =
+                                      '${_localizeDigitsGlobal(context, value)} seats';
+                                } else if (lowerTitle.contains('cylinder') &&
+                                    isNumeric) {
+                                  displayText =
+                                      '${_localizeDigitsGlobal(context, value)} cylinders';
+                                } else if (lowerTitle.contains('engine') &&
+                                    isNumeric) {
+                                  displayText =
+                                      '${_localizeDigitsGlobal(context, value)} L';
+                                } else if (value == 'Any') {
+                                  displayText =
+                                      AppLocalizations.of(context)!.anyOption;
+                                } else if (isModelTitle &&
+                                    contextBrand != null) {
+                                  displayText =
+                                      CarNameTranslations.getLocalizedModel(
+                                            context,
+                                            contextBrand,
+                                            value,
+                                          ).isNotEmpty
+                                      ? CarNameTranslations.getLocalizedModel(
+                                          context,
+                                          contextBrand,
+                                          value,
+                                        )
+                                      : value;
+                                } else if (isTrimTitle) {
+                                  displayText = value;
+                                } else if (isBrandTitle) {
+                                  displayText =
+                                      CarNameTranslations.getLocalizedBrand(
+                                            context,
+                                            value,
+                                          ).isNotEmpty
+                                      ? CarNameTranslations.getLocalizedBrand(
+                                          context,
+                                          value,
+                                        )
+                                      : value;
+                                } else {
+                                  final translated = _translateValueGlobal(
+                                    context,
+                                    value,
+                                  );
+                                  if (translated != null) displayText = translated;
+                                }
+                                return InkWell(
+                                  borderRadius: BorderRadius.circular(14),
+                                  onTap: () => Navigator.pop(context, value),
+                                  child: Container(
+                                    padding: EdgeInsets.symmetric(
+                                      vertical: 14,
+                                      horizontal: 12,
+                                    ),
+                                    decoration: BoxDecoration(
+                                      borderRadius: BorderRadius.circular(14),
+                                      gradient: LinearGradient(
+                                        colors: [
+                                          Colors.white.withOpacity(0.06),
+                                          Colors.white.withOpacity(0.02),
+                                        ],
+                                        begin: Alignment.topLeft,
+                                        end: Alignment.bottomRight,
+                                      ),
+                                      border: Border.all(color: Colors.white10),
+                                    ),
+                                    child: Row(
+                                      children: [
+                                        Expanded(
+                                          child: Text(
+                                            displayText,
+                                            style: TextStyle(
+                                              color: Colors.white,
+                                              fontWeight: FontWeight.w600,
+                                            ),
+                                          ),
+                                        ),
+                                        Icon(
+                                          Icons.chevron_right,
+                                          color: Colors.white70,
+                                        ),
+                                      ],
+                                    ),
+                                  ),
+                                );
+                              },
+                            ),
+                          ),
+                        ],
                       ),
                     ),
-                  ],
-                ),
+                  );
+                },
               ),
             ),
-          ),
-        );
-      },
-      transitionDuration: const Duration(milliseconds: 220),
-    );
+          );
+        },
+        transitionDuration: const Duration(milliseconds: 220),
+      );
+    } finally {
+      searchController.dispose();
+    }
   }
 
   Future<String?> _pickBrandModal() async {
-    return await showDialog<String>(
-      context: context,
-      builder: (context) {
-        return Dialog(
+    final searchController = TextEditingController();
+    try {
+      return await showDialog<String>(
+        context: context,
+        builder: (context) {
+          return StatefulBuilder(
+            builder: (context, setStateDialog) {
+              final query = searchController.text.trim().toLowerCase();
+              final filteredBrands = brands.where((brand) {
+                if (query.isEmpty) return true;
+                if (brand.toLowerCase().contains(query)) return true;
+                final localized = CarNameTranslations.getLocalizedBrand(
+                  context,
+                  brand,
+                ).toLowerCase();
+                return localized.contains(query);
+              }).toList();
+              return Dialog(
           backgroundColor: Colors.grey[900]?.withOpacity(0.98),
           shape: RoundedRectangleBorder(
             borderRadius: BorderRadius.circular(20),
@@ -13087,6 +13244,27 @@ class _SellStep1PageState extends State<SellStep1Page> {
                   ],
                 ),
                 SizedBox(height: 10),
+                TextField(
+                  controller: searchController,
+                  onChanged: (_) => setStateDialog(() {}),
+                  style: const TextStyle(color: Colors.white),
+                  decoration: InputDecoration(
+                    hintText: 'Search...',
+                    hintStyle: const TextStyle(color: Colors.white60),
+                    prefixIcon: const Icon(Icons.search, color: Colors.white70),
+                    filled: true,
+                    fillColor: Colors.black.withOpacity(0.2),
+                    enabledBorder: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(12),
+                      borderSide: const BorderSide(color: Colors.white24),
+                    ),
+                    focusedBorder: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(12),
+                      borderSide: const BorderSide(color: Color(0xFFFF6B00)),
+                    ),
+                  ),
+                ),
+                SizedBox(height: 10),
                 SizedBox(
                   height: 420,
                   child: GridView.builder(
@@ -13098,9 +13276,9 @@ class _SellStep1PageState extends State<SellStep1Page> {
                       crossAxisSpacing: 10,
                       mainAxisSpacing: 10,
                     ),
-                    itemCount: brands.length,
+                    itemCount: filteredBrands.length,
                     itemBuilder: (context, index) {
-                      final brand = brands[index];
+                      final brand = filteredBrands[index];
                       final logoFile = _brandSlug(brand);
                       final logoUrl =
                           '${getApiBase()}/static/images/brands/$logoFile.png';
@@ -13166,9 +13344,14 @@ class _SellStep1PageState extends State<SellStep1Page> {
               ],
             ),
           ),
-        );
-      },
-    );
+              );
+            },
+          );
+        },
+      );
+    } finally {
+      searchController.dispose();
+    }
   }
 
   List<String> get brands => CarCatalog.brands;
