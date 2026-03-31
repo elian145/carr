@@ -326,8 +326,7 @@ class _MyListingsPageState extends State<MyListingsPage> {
     );
 
     return Scaffold(
-      backgroundColor:
-          isLightShell ? AppThemes.lightAppBackground : null,
+      backgroundColor: isLightShell ? Colors.white : null,
       appBar: AppBar(
         title: Text(loc?.myListingsTitle ?? 'My listings'),
       ),
@@ -348,18 +347,7 @@ class _MyListingsPageState extends State<MyListingsPage> {
                 ),
               ),
             )
-          : isLightShell
-              ? ColoredBox(
-                  color: AppThemes.lightAppBackground,
-                  child: Theme(
-                    data: AppThemes.darkTheme,
-                    child: ColoredBox(
-                      color: const Color(0xFF131722),
-                      child: authenticatedBody,
-                    ),
-                  ),
-                )
-              : authenticatedBody,
+          : authenticatedBody,
       floatingActionButton: auth.isAuthenticated
           ? FloatingActionButton(
               onPressed: () => Navigator.pushNamed(context, '/sell'),

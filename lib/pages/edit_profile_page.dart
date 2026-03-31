@@ -5,6 +5,7 @@ import 'dart:io';
 import '../l10n/app_localizations.dart';
 import '../services/auth_service.dart';
 import '../services/config.dart';
+import '../theme_provider.dart';
 import 'package:provider/provider.dart';
 
 String getApiBase() {
@@ -191,12 +192,16 @@ class _EditProfilePageState extends State<EditProfilePage> {
 
   Widget _buildProfileImageSection(BuildContext context) {
     final loc = AppLocalizations.of(context)!;
+    final isLightShell = Theme.of(context).brightness == Brightness.light;
     return Container(
       width: double.infinity,
       padding: EdgeInsets.all(20),
       decoration: BoxDecoration(
         color: Colors.white,
         borderRadius: BorderRadius.circular(16),
+        border: isLightShell
+            ? Border.all(color: Colors.black, width: 1)
+            : null,
         boxShadow: [
           BoxShadow(
             color: Colors.black.withOpacity(0.05),
@@ -339,7 +344,9 @@ class _EditProfilePageState extends State<EditProfilePage> {
   @override
   Widget build(BuildContext context) {
     final loc = AppLocalizations.of(context)!;
+    final isLightShell = Theme.of(context).brightness == Brightness.light;
     return Scaffold(
+      backgroundColor: isLightShell ? Colors.white : null,
       appBar: AppBar(
         title: Text(loc.editProfileTitle),
         backgroundColor: Color(0xFFFF6B00),
@@ -374,16 +381,11 @@ class _EditProfilePageState extends State<EditProfilePage> {
       body: _isLoading
           ? Center(child: CircularProgressIndicator())
           : Container(
-              decoration: BoxDecoration(
-                gradient: LinearGradient(
-                  begin: Alignment.topCenter,
-                  end: Alignment.bottomCenter,
-                  colors: [
-                    Color(0xFFFF6B00).withOpacity(0.1),
-                    Colors.grey[50]!,
-                  ],
-                ),
-              ),
+              decoration: isLightShell
+                  ? const BoxDecoration(color: Colors.white)
+                  : AppThemes.shellBackgroundDecoration(
+                      Theme.of(context).brightness,
+                    ),
               child: SingleChildScrollView(
                 padding: EdgeInsets.all(20),
                 child: Form(
@@ -455,6 +457,9 @@ class _EditProfilePageState extends State<EditProfilePage> {
                         decoration: BoxDecoration(
                           color: Colors.white,
                           borderRadius: BorderRadius.circular(16),
+                          border: isLightShell
+                              ? Border.all(color: Colors.black, width: 1)
+                              : null,
                           boxShadow: [
                             BoxShadow(
                               color: Colors.black.withOpacity(0.05),

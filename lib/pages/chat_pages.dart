@@ -12,7 +12,6 @@ import '../services/auth_service.dart';
 import '../services/api_service.dart';
 import '../services/outgoing_chat_send_service.dart';
 import '../shared/media/media_url.dart';
-import '../chat_ui_theme_controller.dart';
 import '../theme_provider.dart';
 import '../widgets/theme_toggle_widget.dart';
 
@@ -173,27 +172,6 @@ bool _isIgnorableSocketError(String err) {
   final text = err.toLowerCase();
   return text.contains('was not upgraded to websocket') ||
       text.contains('transport=websocket');
-}
-
-class _ChatThemeToggleAction extends StatelessWidget {
-  const _ChatThemeToggleAction({super.key});
-
-  @override
-  Widget build(BuildContext context) {
-    final loc = AppLocalizations.of(context)!;
-    return Consumer<ChatUiThemeController>(
-      builder: (context, chatUi, child) {
-        return IconButton(
-          icon: Icon(
-            chatUi.isDark ? Icons.light_mode : Icons.dark_mode,
-            color: Theme.of(context).colorScheme.onSurface,
-          ),
-          onPressed: () => chatUi.toggle(),
-          tooltip: chatUi.isDark ? loc.switchToLightMode : loc.switchToDarkMode,
-        );
-      },
-    );
-  }
 }
 
 class _ChatVideoPlayer extends StatefulWidget {
@@ -561,17 +539,9 @@ class _ChatListPageState extends State<ChatListPage>
 
   @override
   Widget build(BuildContext context) {
-    final chatUi = context.watch<ChatUiThemeController>();
-    return AnimatedTheme(
-      data: chatUi.themeData,
-      child: Builder(
-        builder: (context) {
-          final useLightInk = Theme.of(context).brightness == Brightness.light;
-          return Scaffold(
-            appBar: AppBar(
-              title: Text(AppLocalizations.of(context)!.chatTitle),
-              actions: [const _ChatThemeToggleAction()],
-            ),
+    final useLightInk = Theme.of(context).brightness == Brightness.light;
+    return Scaffold(
+      appBar: AppBar(title: Text(AppLocalizations.of(context)!.chatTitle)),
             body: RefreshIndicator(
               onRefresh: _loadChats,
               child: _loading && _chats.isEmpty
@@ -771,9 +741,6 @@ class _ChatListPageState extends State<ChatListPage>
                       },
                     ),
             ),
-          );
-        },
-      ),
     );
   }
 }
@@ -2899,12 +2866,7 @@ class _ChatConversationPageState extends State<ChatConversationPage>
     final conversationTitle = (_receiverName ?? '').trim().isNotEmpty
         ? _receiverName!.trim()
         : AppLocalizations.of(context)!.chatTitle;
-    final chatUi = context.watch<ChatUiThemeController>();
-    return AnimatedTheme(
-      data: chatUi.themeData,
-      child: Builder(
-        builder: (context) {
-          return Scaffold(
+    return Scaffold(
             appBar: AppBar(
               title: Text(conversationTitle),
               actions: [
@@ -2925,7 +2887,6 @@ class _ChatConversationPageState extends State<ChatConversationPage>
                       ),
                     ],
                   ),
-                const _ChatThemeToggleAction(),
               ],
             ),
             body: Column(
@@ -3356,9 +3317,6 @@ class _ChatConversationPageState extends State<ChatConversationPage>
                 ),
               ],
             ),
-          );
-        },
-      ),
     );
   }
 }

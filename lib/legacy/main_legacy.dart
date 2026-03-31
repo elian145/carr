@@ -1083,7 +1083,6 @@ Widget buildGlobalCarCard(BuildContext context, Map car) {
       car['is_quick_sell'] == true || car['is_quick_sell'] == 'true';
   final String yearRaw = (car['year'] ?? '').toString().trim();
   final String mileageRaw = (car['mileage'] ?? '').toString().trim();
-  final bool hasYearOrMileage = yearRaw.isNotEmpty || mileageRaw.isNotEmpty;
   String? cityRaw;
   for (final key in const ['city', 'location', 'city_name']) {
     final v = car[key];
@@ -1098,13 +1097,11 @@ Widget buildGlobalCarCard(BuildContext context, Map car) {
       ? ''
       : (_translateValueGlobal(context, cityRaw) ?? cityRaw).trim();
   final locCard = AppLocalizations.of(context)!;
-  final String yearMileageDisplay = !hasYearOrMileage
+  final String yearDisplay =
+      yearRaw.isEmpty ? '' : _localizeDigitsGlobal(context, yearRaw);
+  final String mileageDisplay = mileageRaw.isEmpty
       ? ''
-      : (yearRaw.isNotEmpty && mileageRaw.isNotEmpty)
-          ? '${_localizeDigitsGlobal(context, yearRaw)} • ${_localizeDigitsGlobal(context, mileageRaw)} ${locCard.unit_km}'
-          : yearRaw.isNotEmpty
-              ? _localizeDigitsGlobal(context, yearRaw)
-              : '${_localizeDigitsGlobal(context, mileageRaw)} ${locCard.unit_km}';
+      : '${_localizeDigitsGlobal(context, mileageRaw)} ${locCard.unit_km}';
 
   final isLight = Theme.of(context).brightness == Brightness.light;
   // On dark shell: true frosted overlay. On light shell: solid blend so color matches dark mode.
@@ -1277,23 +1274,45 @@ Widget buildGlobalCarCard(BuildContext context, Map car) {
                     ] else ...[
                       SizedBox(height: 6),
                     ],
-                    Text(
-                      _formatCurrencyGlobal(context, car['price']),
-                      style: TextStyle(
-                        color: Color(0xFFFF6B00),
-                        fontWeight: FontWeight.w600,
-                        fontSize: 15,
-                      ),
+                    Row(
+                      crossAxisAlignment: CrossAxisAlignment.center,
+                      children: [
+                        Expanded(
+                          child: Text(
+                            _formatCurrencyGlobal(context, car['price']),
+                            style: TextStyle(
+                              color: Color(0xFFFF6B00),
+                              fontWeight: FontWeight.w600,
+                              fontSize: 15,
+                            ),
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                          ),
+                        ),
+                        if (yearDisplay.isNotEmpty) ...[
+                          const SizedBox(width: 8),
+                          Text(
+                            yearDisplay,
+                            style: TextStyle(
+                              color: Color(0xFFFF6B00),
+                              fontWeight: FontWeight.w600,
+                              fontSize: 15,
+                            ),
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                          ),
+                        ],
+                      ],
                     ),
-                    if (hasYearOrMileage || cityLine.isNotEmpty) ...[
+                    if (mileageDisplay.isNotEmpty || cityLine.isNotEmpty) ...[
                       SizedBox(height: 10),
                       Row(
                         crossAxisAlignment: CrossAxisAlignment.end,
                         children: [
                           Expanded(
-                            child: hasYearOrMileage
+                            child: mileageDisplay.isNotEmpty
                                 ? Text(
-                                    yearMileageDisplay,
+                                    mileageDisplay,
                                     style: TextStyle(
                                       color: metaTextColor,
                                       fontSize: 13,
@@ -1304,35 +1323,32 @@ Widget buildGlobalCarCard(BuildContext context, Map car) {
                                 : const SizedBox.shrink(),
                           ),
                           if (cityLine.isNotEmpty)
-                            Flexible(
-                              child: Padding(
-                                padding: const EdgeInsets.only(left: 8),
-                                child: Row(
-                                  mainAxisAlignment: MainAxisAlignment.end,
-                                  mainAxisSize: MainAxisSize.max,
-                                  children: [
-                                    if (cityLine.isNotEmpty) ...[
-                                      Icon(
-                                        Icons.location_city,
-                                        size: 14,
+                            Padding(
+                              padding: const EdgeInsets.only(left: 8),
+                              child: Row(
+                                mainAxisSize: MainAxisSize.min,
+                                children: [
+                                  Icon(
+                                    Icons.location_city,
+                                    size: 14,
+                                    color: metaTextColor,
+                                  ),
+                                  const SizedBox(width: 4),
+                                  ConstrainedBox(
+                                    constraints: const BoxConstraints(
+                                      maxWidth: 96,
+                                    ),
+                                    child: Text(
+                                      cityLine,
+                                      style: TextStyle(
                                         color: metaTextColor,
+                                        fontSize: 13,
                                       ),
-                                      const SizedBox(width: 4),
-                                      Flexible(
-                                        child: Text(
-                                          cityLine,
-                                          style: TextStyle(
-                                            color: metaTextColor,
-                                            fontSize: 13,
-                                          ),
-                                          maxLines: 1,
-                                          overflow: TextOverflow.ellipsis,
-                                          textAlign: TextAlign.right,
-                                        ),
-                                      ),
-                                    ],
-                                  ],
-                                ),
+                                      maxLines: 1,
+                                      overflow: TextOverflow.ellipsis,
+                                    ),
+                                  ),
+                                ],
                               ),
                             ),
                         ],
@@ -6598,11 +6614,28 @@ class _HomePageState extends State<HomePage> {
                                       builder: (context) {
                                         return StatefulBuilder(
                                           builder: (context, setStateDialog) {
-                                            const moreFiltersAnyColor =
-                                                Colors.white70;
+                                            final isLightMoreFilters =
+                                                Theme.of(context).brightness ==
+                                                    Brightness.light;
+                                            final moreFiltersBg = isLightMoreFilters
+                                                ? Colors.white
+                                                : (Colors.grey[900]?.withOpacity(0.98) ??
+                                                    Colors.grey.shade900);
+                                            final moreFiltersOnSurface = isLightMoreFilters
+                                                ? const Color(0xFF1A1A1A)
+                                                : Colors.white;
+                                            final moreFiltersMuted = isLightMoreFilters
+                                                ? const Color(0xFF757575)
+                                                : Colors.white70;
+                                            final moreFiltersAnyOrange =
+                                                const Color(0xFFFF6B00);
+                                            final moreFiltersFieldFill = isLightMoreFilters
+                                                ? Colors.grey.shade200
+                                                : Colors.black.withOpacity(0.2);
+                                            const double moreFiltersFieldGap = 18;
                                             return AlertDialog(
-                                              backgroundColor: Colors.grey[900]
-                                                  ?.withOpacity(0.98),
+                                              backgroundColor: moreFiltersBg,
+                                              surfaceTintColor: Colors.transparent,
                                               shape: RoundedRectangleBorder(
                                                 borderRadius:
                                                     BorderRadius.circular(20),
@@ -6631,13 +6664,13 @@ class _HomePageState extends State<HomePage> {
                                                           context,
                                                         )!.priceRange,
                                                         style: TextStyle(
-                                                          color: Colors.white,
+                                                          color: moreFiltersOnSurface,
                                                           fontWeight:
                                                               FontWeight.bold,
                                                           fontSize: 16,
                                                         ),
                                                       ),
-                                                      SizedBox(height: 8),
+                                                      SizedBox(height: 12),
                                                       Row(
                                                         children: [
                                                           Expanded(
@@ -6660,11 +6693,9 @@ class _HomePageState extends State<HomePage> {
                                                                                     context,
                                                                                   )!.any,
                                                                                   filled: true,
-                                                                                  fillColor: Colors.black.withOpacity(
-                                                                                    0.2,
-                                                                                  ),
+                                                                                  fillColor: moreFiltersFieldFill,
                                                                                   hintStyle: TextStyle(
-                                                                                    color: Colors.white70,
+                                                                                    color: moreFiltersAnyOrange,
                                                                                   ),
                                                                                   border: OutlineInputBorder(
                                                                                     borderRadius: BorderRadius.circular(
@@ -6680,7 +6711,7 @@ class _HomePageState extends State<HomePage> {
                                                                                         context,
                                                                                       )!.any,
                                                                                       style: TextStyle(
-                                                                                        color: moreFiltersAnyColor,
+                                                                                        color: moreFiltersAnyOrange,
                                                                                       ),
                                                                                     ),
                                                                                   ),
@@ -6787,11 +6818,9 @@ class _HomePageState extends State<HomePage> {
                                                                                     context,
                                                                                   )!.any,
                                                                                   filled: true,
-                                                                                  fillColor: Colors.black.withOpacity(
-                                                                                    0.2,
-                                                                                  ),
+                                                                                  fillColor: moreFiltersFieldFill,
                                                                                   hintStyle: TextStyle(
-                                                                                    color: Colors.white70,
+                                                                                    color: moreFiltersAnyOrange,
                                                                                   ),
                                                                                   border: OutlineInputBorder(
                                                                                     borderRadius: BorderRadius.circular(
@@ -6807,7 +6836,7 @@ class _HomePageState extends State<HomePage> {
                                                                                         context,
                                                                                       )!.any,
                                                                                       style: TextStyle(
-                                                                                        color: moreFiltersAnyColor,
+                                                                                        color: moreFiltersAnyOrange,
                                                                                       ),
                                                                                     ),
                                                                                   ),
@@ -6913,11 +6942,9 @@ class _HomePageState extends State<HomePage> {
                                                                                 context,
                                                                               )!.any,
                                                                               filled: true,
-                                                                              fillColor: Colors.black.withOpacity(
-                                                                                0.2,
-                                                                              ),
+                                                                              fillColor: moreFiltersFieldFill,
                                                                               hintStyle: TextStyle(
-                                                                                color: Colors.white70,
+                                                                                color: moreFiltersAnyOrange,
                                                                               ),
                                                                               border: OutlineInputBorder(
                                                                                 borderRadius: BorderRadius.circular(
@@ -6977,11 +7004,9 @@ class _HomePageState extends State<HomePage> {
                                                                                 context,
                                                                               )!.any,
                                                                               filled: true,
-                                                                              fillColor: Colors.black.withOpacity(
-                                                                                0.2,
-                                                                              ),
+                                                                              fillColor: moreFiltersFieldFill,
                                                                               hintStyle: TextStyle(
-                                                                                color: Colors.white70,
+                                                                                color: moreFiltersAnyOrange,
                                                                               ),
                                                                               border: OutlineInputBorder(
                                                                                 borderRadius: BorderRadius.circular(
@@ -7057,11 +7082,7 @@ class _HomePageState extends State<HomePage> {
                                                             ),
                                                           ),
                                                           style: IconButton.styleFrom(
-                                                            backgroundColor:
-                                                                Colors.black
-                                                                    .withOpacity(
-                                                                      0.2,
-                                                                    ),
+                                                            backgroundColor: moreFiltersFieldFill,
                                                             shape: RoundedRectangleBorder(
                                                               borderRadius:
                                                                   BorderRadius.circular(
@@ -7072,20 +7093,20 @@ class _HomePageState extends State<HomePage> {
                                                         ),
                                                       ],
                                                     ),
-                                                    SizedBox(height: 16),
+                                                    SizedBox(height: moreFiltersFieldGap),
                                                     // Year Filter
                                                     Text(
                                                       AppLocalizations.of(
                                                         context,
                                                       )!.yearRange,
                                                       style: TextStyle(
-                                                        color: Colors.white,
+                                                        color: moreFiltersOnSurface,
                                                         fontWeight:
                                                             FontWeight.bold,
                                                         fontSize: 16,
                                                       ),
                                                     ),
-                                                    SizedBox(height: 8),
+                                                    SizedBox(height: 12),
                                                     Row(
                                                       children: [
                                                         Expanded(
@@ -7107,11 +7128,9 @@ class _HomePageState extends State<HomePage> {
                                                                                     context,
                                                                                   )!.any,
                                                                                   filled: true,
-                                                                                  fillColor: Colors.black.withOpacity(
-                                                                                    0.2,
-                                                                                  ),
+                                                                                  fillColor: moreFiltersFieldFill,
                                                                                   hintStyle: TextStyle(
-                                                                                    color: Colors.white70,
+                                                                                    color: moreFiltersAnyOrange,
                                                                                   ),
                                                                                   border: OutlineInputBorder(
                                                                                     borderRadius: BorderRadius.circular(
@@ -7127,7 +7146,7 @@ class _HomePageState extends State<HomePage> {
                                                                                         context,
                                                                                       )!.any,
                                                                                       style: TextStyle(
-                                                                                        color: moreFiltersAnyColor,
+                                                                                        color: moreFiltersAnyOrange,
                                                                                       ),
                                                                                     ),
                                                                                   ),
@@ -7175,7 +7194,7 @@ class _HomePageState extends State<HomePage> {
                                                                                               y,
                                                                                             ),
                                                                                             style: TextStyle(
-                                                                                              color: Colors.white,
+                                                                                              color: moreFiltersOnSurface,
                                                                                             ),
                                                                                           ),
                                                                                         ),
@@ -7234,11 +7253,9 @@ class _HomePageState extends State<HomePage> {
                                                                                     context,
                                                                                   )!.any,
                                                                                   filled: true,
-                                                                                  fillColor: Colors.black.withOpacity(
-                                                                                    0.2,
-                                                                                  ),
+                                                                                  fillColor: moreFiltersFieldFill,
                                                                                   hintStyle: TextStyle(
-                                                                                    color: Colors.white70,
+                                                                                    color: moreFiltersAnyOrange,
                                                                                   ),
                                                                                   border: OutlineInputBorder(
                                                                                     borderRadius: BorderRadius.circular(
@@ -7254,7 +7271,7 @@ class _HomePageState extends State<HomePage> {
                                                                                         context,
                                                                                       )!.any,
                                                                                       style: TextStyle(
-                                                                                        color: moreFiltersAnyColor,
+                                                                                        color: moreFiltersAnyOrange,
                                                                                       ),
                                                                                     ),
                                                                                   ),
@@ -7302,7 +7319,7 @@ class _HomePageState extends State<HomePage> {
                                                                                               y,
                                                                                             ),
                                                                                             style: TextStyle(
-                                                                                              color: Colors.white,
+                                                                                              color: moreFiltersOnSurface,
                                                                                             ),
                                                                                           ),
                                                                                         ),
@@ -7361,11 +7378,9 @@ class _HomePageState extends State<HomePage> {
                                                                                 context,
                                                                               )!.any,
                                                                               filled: true,
-                                                                              fillColor: Colors.black.withOpacity(
-                                                                                0.2,
-                                                                              ),
+                                                                              fillColor: moreFiltersFieldFill,
                                                                               hintStyle: TextStyle(
-                                                                                color: Colors.white70,
+                                                                                color: moreFiltersAnyOrange,
                                                                               ),
                                                                               border: OutlineInputBorder(
                                                                                 borderRadius: BorderRadius.circular(
@@ -7418,11 +7433,9 @@ class _HomePageState extends State<HomePage> {
                                                                                 context,
                                                                               )!.any,
                                                                               filled: true,
-                                                                              fillColor: Colors.black.withOpacity(
-                                                                                0.2,
-                                                                              ),
+                                                                              fillColor: moreFiltersFieldFill,
                                                                               hintStyle: TextStyle(
-                                                                                color: Colors.white70,
+                                                                                color: moreFiltersAnyOrange,
                                                                               ),
                                                                               border: OutlineInputBorder(
                                                                                 borderRadius: BorderRadius.circular(
@@ -7491,11 +7504,7 @@ class _HomePageState extends State<HomePage> {
                                                             ),
                                                           ),
                                                           style: IconButton.styleFrom(
-                                                            backgroundColor:
-                                                                Colors.black
-                                                                    .withOpacity(
-                                                                      0.2,
-                                                                    ),
+                                                            backgroundColor: moreFiltersFieldFill,
                                                             shape: RoundedRectangleBorder(
                                                               borderRadius:
                                                                   BorderRadius.circular(
@@ -7506,20 +7515,20 @@ class _HomePageState extends State<HomePage> {
                                                         ),
                                                       ],
                                                     ),
-                                                    SizedBox(height: 16),
+                                                    SizedBox(height: moreFiltersFieldGap),
                                                     // Mileage Filter
                                                     Text(
                                                       AppLocalizations.of(
                                                         context,
                                                       )!.mileageRangeLabel,
                                                       style: TextStyle(
-                                                        color: Colors.white,
+                                                        color: moreFiltersOnSurface,
                                                         fontWeight:
                                                             FontWeight.bold,
                                                         fontSize: 16,
                                                       ),
                                                     ),
-                                                    SizedBox(height: 8),
+                                                    SizedBox(height: 12),
                                                     Row(
                                                       children: [
                                                         Expanded(
@@ -7545,11 +7554,9 @@ class _HomePageState extends State<HomePage> {
                                                                                     context,
                                                                                   )!.minMileage,
                                                                                   filled: true,
-                                                                                  fillColor: Colors.black.withOpacity(
-                                                                                    0.2,
-                                                                                  ),
+                                                                                  fillColor: moreFiltersFieldFill,
                                                                                   hintStyle: TextStyle(
-                                                                                    color: Colors.white70,
+                                                                                    color: moreFiltersAnyOrange,
                                                                                   ),
                                                                                   border: OutlineInputBorder(
                                                                                     borderRadius: BorderRadius.circular(
@@ -7565,7 +7572,7 @@ class _HomePageState extends State<HomePage> {
                                                                                         context,
                                                                                       )!.any,
                                                                                       style: TextStyle(
-                                                                                        color: moreFiltersAnyColor,
+                                                                                        color: moreFiltersAnyOrange,
                                                                                       ),
                                                                                     ),
                                                                                   ),
@@ -7682,11 +7689,9 @@ class _HomePageState extends State<HomePage> {
                                                                                     context,
                                                                                   )!.maxMileage,
                                                                                   filled: true,
-                                                                                  fillColor: Colors.black.withOpacity(
-                                                                                    0.2,
-                                                                                  ),
+                                                                                  fillColor: moreFiltersFieldFill,
                                                                                   hintStyle: TextStyle(
-                                                                                    color: Colors.white70,
+                                                                                    color: moreFiltersAnyOrange,
                                                                                   ),
                                                                                   border: OutlineInputBorder(
                                                                                     borderRadius: BorderRadius.circular(
@@ -7702,7 +7707,7 @@ class _HomePageState extends State<HomePage> {
                                                                                         context,
                                                                                       )!.any,
                                                                                       style: TextStyle(
-                                                                                        color: moreFiltersAnyColor,
+                                                                                        color: moreFiltersAnyOrange,
                                                                                       ),
                                                                                     ),
                                                                                   ),
@@ -7817,11 +7822,9 @@ class _HomePageState extends State<HomePage> {
                                                                                 context,
                                                                               )!.any,
                                                                               filled: true,
-                                                                              fillColor: Colors.black.withOpacity(
-                                                                                0.2,
-                                                                              ),
+                                                                              fillColor: moreFiltersFieldFill,
                                                                               hintStyle: TextStyle(
-                                                                                color: Colors.white70,
+                                                                                color: moreFiltersAnyOrange,
                                                                               ),
                                                                               border: OutlineInputBorder(
                                                                                 borderRadius: BorderRadius.circular(
@@ -7875,11 +7878,9 @@ class _HomePageState extends State<HomePage> {
                                                                                 context,
                                                                               )!.any,
                                                                               filled: true,
-                                                                              fillColor: Colors.black.withOpacity(
-                                                                                0.2,
-                                                                              ),
+                                                                              fillColor: moreFiltersFieldFill,
                                                                               hintStyle: TextStyle(
-                                                                                color: Colors.white70,
+                                                                                color: moreFiltersAnyOrange,
                                                                               ),
                                                                               border: OutlineInputBorder(
                                                                                 borderRadius: BorderRadius.circular(
@@ -7949,11 +7950,7 @@ class _HomePageState extends State<HomePage> {
                                                             ),
                                                           ),
                                                           style: IconButton.styleFrom(
-                                                            backgroundColor:
-                                                                Colors.black
-                                                                    .withOpacity(
-                                                                      0.2,
-                                                                    ),
+                                                            backgroundColor: moreFiltersFieldFill,
                                                             shape: RoundedRectangleBorder(
                                                               borderRadius:
                                                                   BorderRadius.circular(
@@ -7964,7 +7961,7 @@ class _HomePageState extends State<HomePage> {
                                                         ),
                                                       ],
                                                     ),
-                                                    SizedBox(height: 10),
+                                                    SizedBox(height: moreFiltersFieldGap),
                                                     DropdownButtonFormField<
                                                       String
                                                     >(
@@ -7977,10 +7974,9 @@ class _HomePageState extends State<HomePage> {
                                                               context,
                                                             )!.titleStatus,
                                                         filled: true,
-                                                        fillColor: Colors.black
-                                                            .withOpacity(0.2),
+                                                        fillColor: moreFiltersFieldFill,
                                                         labelStyle: TextStyle(
-                                                          color: Colors.white,
+                                                          color: moreFiltersOnSurface,
                                                         ),
                                                         border: OutlineInputBorder(
                                                           borderRadius:
@@ -7998,7 +7994,7 @@ class _HomePageState extends State<HomePage> {
                                                             )!.any,
                                                             style: TextStyle(
                                                               color:
-                                                                  moreFiltersAnyColor,
+                                                                  moreFiltersAnyOrange,
                                                             ),
                                                           ),
                                                         ),
@@ -8034,7 +8030,7 @@ class _HomePageState extends State<HomePage> {
                                                         setStateDialog(() {});
                                                       },
                                                     ),
-                                                    SizedBox(height: 10),
+                                                    SizedBox(height: moreFiltersFieldGap),
                                                     if (selectedTitleStatus ==
                                                         'damaged')
                                                       DropdownButtonFormField<
@@ -8049,11 +8045,9 @@ class _HomePageState extends State<HomePage> {
                                                                 context,
                                                               )!.damagedParts,
                                                           filled: true,
-                                                          fillColor: Colors
-                                                              .black
-                                                              .withOpacity(0.2),
+                                                          fillColor: moreFiltersFieldFill,
                                                           labelStyle: TextStyle(
-                                                            color: Colors.white,
+                                                            color: moreFiltersOnSurface,
                                                           ),
                                                           border: OutlineInputBorder(
                                                             borderRadius:
@@ -8071,7 +8065,7 @@ class _HomePageState extends State<HomePage> {
                                                               )!.any,
                                                               style: TextStyle(
                                                                 color:
-                                                                    moreFiltersAnyColor,
+                                                                    moreFiltersAnyOrange,
                                                               ),
                                                             ),
                                                           ),
@@ -8101,7 +8095,7 @@ class _HomePageState extends State<HomePage> {
                                                           setStateDialog(() {});
                                                         },
                                                       ),
-                                                    SizedBox(height: 10),
+                                                    SizedBox(height: moreFiltersFieldGap),
                                                     DropdownButtonFormField<
                                                       String
                                                     >(
@@ -8112,10 +8106,9 @@ class _HomePageState extends State<HomePage> {
                                                               context,
                                                             )!.conditionLabel,
                                                         filled: true,
-                                                        fillColor: Colors.black
-                                                            .withOpacity(0.2),
+                                                        fillColor: moreFiltersFieldFill,
                                                         labelStyle: TextStyle(
-                                                          color: Colors.white,
+                                                          color: moreFiltersOnSurface,
                                                         ),
                                                         border: OutlineInputBorder(
                                                           borderRadius:
@@ -8139,7 +8132,7 @@ class _HomePageState extends State<HomePage> {
                                                                 style: TextStyle(
                                                                   color:
                                                                       c == 'Any'
-                                                                      ? moreFiltersAnyColor
+                                                                      ? moreFiltersAnyOrange
                                                                       : null,
                                                                 ),
                                                               ),
@@ -8156,7 +8149,7 @@ class _HomePageState extends State<HomePage> {
                                                                     : value,
                                                           ),
                                                     ),
-                                                    SizedBox(height: 10),
+                                                    SizedBox(height: moreFiltersFieldGap),
                                                     DropdownButtonFormField<
                                                       String
                                                     >(
@@ -8168,10 +8161,9 @@ class _HomePageState extends State<HomePage> {
                                                               context,
                                                             )!.transmissionLabel,
                                                         filled: true,
-                                                        fillColor: Colors.black
-                                                            .withOpacity(0.2),
+                                                        fillColor: moreFiltersFieldFill,
                                                         labelStyle: TextStyle(
-                                                          color: Colors.white,
+                                                          color: moreFiltersOnSurface,
                                                         ),
                                                         border: OutlineInputBorder(
                                                           borderRadius:
@@ -8189,7 +8181,7 @@ class _HomePageState extends State<HomePage> {
                                                             )!.any,
                                                             style: TextStyle(
                                                               color:
-                                                                  moreFiltersAnyColor,
+                                                                  moreFiltersAnyOrange,
                                                             ),
                                                           ),
                                                         ),
@@ -8222,7 +8214,7 @@ class _HomePageState extends State<HomePage> {
                                                                     : value,
                                                           ),
                                                     ),
-                                                    SizedBox(height: 10),
+                                                    SizedBox(height: moreFiltersFieldGap),
                                                     DropdownButtonFormField<
                                                       String
                                                     >(
@@ -8234,10 +8226,9 @@ class _HomePageState extends State<HomePage> {
                                                               context,
                                                             )!.fuelTypeLabel,
                                                         filled: true,
-                                                        fillColor: Colors.black
-                                                            .withOpacity(0.2),
+                                                        fillColor: moreFiltersFieldFill,
                                                         labelStyle: TextStyle(
-                                                          color: Colors.white,
+                                                          color: moreFiltersOnSurface,
                                                         ),
                                                         border: OutlineInputBorder(
                                                           borderRadius:
@@ -8255,7 +8246,7 @@ class _HomePageState extends State<HomePage> {
                                                             )!.any,
                                                             style: TextStyle(
                                                               color:
-                                                                  moreFiltersAnyColor,
+                                                                  moreFiltersAnyOrange,
                                                             ),
                                                           ),
                                                         ),
@@ -8288,7 +8279,7 @@ class _HomePageState extends State<HomePage> {
                                                                     : value,
                                                           ),
                                                     ),
-                                                    SizedBox(height: 10),
+                                                    SizedBox(height: moreFiltersFieldGap),
                                                     TextFormField(
                                                       key: ValueKey(
                                                         'bodyType_${selectedBodyType ?? 'any'}',
@@ -8299,8 +8290,8 @@ class _HomePageState extends State<HomePage> {
                                                                     null &&
                                                                 selectedBodyType!
                                                                     .isNotEmpty)
-                                                            ? Colors.white
-                                                            : moreFiltersAnyColor,
+                                                            ? moreFiltersOnSurface
+                                                            : moreFiltersAnyOrange,
                                                       ),
                                                       initialValue:
                                                           (selectedBodyType ??
@@ -8314,10 +8305,9 @@ class _HomePageState extends State<HomePage> {
                                                               context,
                                                             )!.bodyTypeLabel,
                                                         filled: true,
-                                                        fillColor: Colors.black
-                                                            .withOpacity(0.2),
+                                                        fillColor: moreFiltersFieldFill,
                                                         labelStyle: TextStyle(
-                                                          color: Colors.white,
+                                                          color: moreFiltersOnSurface,
                                                         ),
                                                         border: OutlineInputBorder(
                                                           borderRadius:
@@ -8334,8 +8324,7 @@ class _HomePageState extends State<HomePage> {
                                                               BoxDecoration(
                                                                 shape: BoxShape
                                                                     .circle,
-                                                                color: Colors
-                                                                    .white,
+                                                                color: Colors.white,
                                                                 border: Border.all(
                                                                   color: Color(
                                                                     0xFFFF6B00,
@@ -8377,14 +8366,28 @@ class _HomePageState extends State<HomePage> {
                                                       onTap: () async {
                                                         final bodyType = await showDialog<String>(
                                                           context: context,
-                                                          builder: (context) {
+                                                          builder: (dlgContext) {
+                                                            final isLightPicker =
+                                                                Theme.of(dlgContext).brightness ==
+                                                                    Brightness.light;
+                                                            final pickerBg = isLightPicker
+                                                                ? Colors.white
+                                                                : (Colors.grey[900]?.withOpacity(0.98) ??
+                                                                    Colors.grey.shade900);
+                                                            final onPicker = isLightPicker
+                                                                ? const Color(0xFF1A1A1A)
+                                                                : Colors.white;
+                                                            final onPickerMuted = isLightPicker
+                                                                ? const Color(0xFF616161)
+                                                                : Colors.white70;
+                                                            final borderSubtle = isLightPicker
+                                                                ? Colors.black26
+                                                                : Colors.white24;
+                                                            final shadowIdle = isLightPicker
+                                                                ? Colors.black12
+                                                                : Colors.black54;
                                                             return Dialog(
-                                                              backgroundColor:
-                                                                  Colors
-                                                                      .grey[900]
-                                                                      ?.withOpacity(
-                                                                        0.98,
-                                                                      ),
+                                                              backgroundColor: pickerBg,
                                                               shape: RoundedRectangleBorder(
                                                                 borderRadius:
                                                                     BorderRadius.circular(
@@ -8427,11 +8430,10 @@ class _HomePageState extends State<HomePage> {
                                                                         IconButton(
                                                                           icon: Icon(
                                                                             Icons.close,
-                                                                            color:
-                                                                                Colors.white,
+                                                                            color: onPicker,
                                                                           ),
                                                                           onPressed: () => Navigator.pop(
-                                                                            context,
+                                                                            dlgContext,
                                                                           ),
                                                                         ),
                                                                       ],
@@ -8481,7 +8483,7 @@ class _HomePageState extends State<HomePage> {
                                                                                   12,
                                                                                 ),
                                                                                 onTap: () => Navigator.pop(
-                                                                                  context,
+                                                                                  dlgContext,
                                                                                   bodyTypeName,
                                                                                 ),
                                                                                 child: Container(
@@ -8495,7 +8497,7 @@ class _HomePageState extends State<HomePage> {
                                                                                           ? const Color(
                                                                                               0xFFFF6B00,
                                                                                             )
-                                                                                          : Colors.white24,
+                                                                                          : borderSubtle,
                                                                                       width: isSelected
                                                                                           ? 2
                                                                                           : 1,
@@ -8518,11 +8520,11 @@ class _HomePageState extends State<HomePage> {
                                                                                             ),
                                                                                           ]
                                                                                         : [
-                                                                                            const BoxShadow(
-                                                                                              color: Colors.black54,
+                                                                                            BoxShadow(
+                                                                                              color: shadowIdle,
                                                                                               blurRadius: 10,
                                                                                               spreadRadius: 0,
-                                                                                              offset: Offset(
+                                                                                              offset: const Offset(
                                                                                                 0,
                                                                                                 3,
                                                                                               ),
@@ -8546,7 +8548,7 @@ class _HomePageState extends State<HomePage> {
                                                                                                 ? const Color(
                                                                                                     0xFFFF6B00,
                                                                                                   )
-                                                                                                : Colors.white24,
+                                                                                                : borderSubtle,
                                                                                             width: isSelected
                                                                                                 ? 2
                                                                                                 : 1,
@@ -8578,8 +8580,8 @@ class _HomePageState extends State<HomePage> {
                                                                                         style: GoogleFonts.orbitron(
                                                                                           fontSize: 12,
                                                                                           color: isSelected
-                                                                                              ? Colors.white
-                                                                                              : Colors.white70,
+                                                                                              ? const Color(0xFFFF6B00)
+                                                                                              : onPickerMuted,
                                                                                           fontWeight: FontWeight.bold,
                                                                                         ),
                                                                                         textAlign: TextAlign.center,
@@ -8611,7 +8613,7 @@ class _HomePageState extends State<HomePage> {
                                                         }
                                                       },
                                                     ),
-                                                    SizedBox(height: 10),
+                                                    SizedBox(height: moreFiltersFieldGap),
                                                     TextFormField(
                                                       key: ValueKey(
                                                         'color_${selectedColor ?? 'any'}',
@@ -8622,8 +8624,8 @@ class _HomePageState extends State<HomePage> {
                                                                     null &&
                                                                 selectedColor!
                                                                     .isNotEmpty)
-                                                            ? Colors.white
-                                                            : moreFiltersAnyColor,
+                                                            ? moreFiltersOnSurface
+                                                            : moreFiltersAnyOrange,
                                                       ),
                                                       initialValue:
                                                           (_translateValueGlobal(
@@ -8641,10 +8643,9 @@ class _HomePageState extends State<HomePage> {
                                                               context,
                                                             )!.colorLabel,
                                                         filled: true,
-                                                        fillColor: Colors.black
-                                                            .withOpacity(0.2),
+                                                        fillColor: moreFiltersFieldFill,
                                                         labelStyle: TextStyle(
-                                                          color: Colors.white,
+                                                          color: moreFiltersOnSurface,
                                                         ),
                                                         border: OutlineInputBorder(
                                                           borderRadius:
@@ -8680,14 +8681,25 @@ class _HomePageState extends State<HomePage> {
                                                       onTap: () async {
                                                         final color = await showDialog<String>(
                                                           context: context,
-                                                          builder: (context) {
+                                                          builder: (dlgContext) {
+                                                            final isLightPicker =
+                                                                Theme.of(dlgContext).brightness ==
+                                                                    Brightness.light;
+                                                            final pickerBg = isLightPicker
+                                                                ? Colors.white
+                                                                : (Colors.grey[900]?.withOpacity(0.98) ??
+                                                                    Colors.grey.shade900);
+                                                            final onPicker = isLightPicker
+                                                                ? const Color(0xFF1A1A1A)
+                                                                : Colors.white;
+                                                            final borderSubtle = isLightPicker
+                                                                ? Colors.black26
+                                                                : Colors.white24;
+                                                            final cellFill = isLightPicker
+                                                                ? Colors.grey.shade200
+                                                                : Colors.black.withOpacity(0.15);
                                                             return Dialog(
-                                                              backgroundColor:
-                                                                  Colors
-                                                                      .grey[900]
-                                                                      ?.withOpacity(
-                                                                        0.98,
-                                                                      ),
+                                                              backgroundColor: pickerBg,
                                                               shape: RoundedRectangleBorder(
                                                                 borderRadius:
                                                                     BorderRadius.circular(
@@ -8730,11 +8742,10 @@ class _HomePageState extends State<HomePage> {
                                                                         IconButton(
                                                                           icon: Icon(
                                                                             Icons.close,
-                                                                            color:
-                                                                                Colors.white,
+                                                                            color: onPicker,
                                                                           ),
                                                                           onPressed: () => Navigator.pop(
-                                                                            context,
+                                                                            dlgContext,
                                                                           ),
                                                                         ),
                                                                       ],
@@ -8823,19 +8834,17 @@ class _HomePageState extends State<HomePage> {
                                                                                   12,
                                                                                 ),
                                                                                 onTap: () => Navigator.pop(
-                                                                                  context,
+                                                                                  dlgContext,
                                                                                   colorName,
                                                                                 ),
                                                                                 child: Container(
                                                                                   decoration: BoxDecoration(
-                                                                                    color: Colors.black.withOpacity(
-                                                                                      0.15,
-                                                                                    ),
+                                                                                    color: cellFill,
                                                                                     borderRadius: BorderRadius.circular(
                                                                                       12,
                                                                                     ),
                                                                                     border: Border.all(
-                                                                                      color: Colors.white24,
+                                                                                      color: borderSubtle,
                                                                                     ),
                                                                                   ),
                                                                                   padding: EdgeInsets.all(
@@ -8853,7 +8862,7 @@ class _HomePageState extends State<HomePage> {
                                                                                             8,
                                                                                           ),
                                                                                           border: Border.all(
-                                                                                            color: Colors.white24,
+                                                                                            color: borderSubtle,
                                                                                             width: 2,
                                                                                           ),
                                                                                         ),
@@ -8869,7 +8878,7 @@ class _HomePageState extends State<HomePage> {
                                                                                             colorName,
                                                                                         style: GoogleFonts.orbitron(
                                                                                           fontSize: 12,
-                                                                                          color: Colors.white,
+                                                                                          color: onPicker,
                                                                                           fontWeight: FontWeight.bold,
                                                                                         ),
                                                                                         textAlign: TextAlign.center,
@@ -8900,7 +8909,7 @@ class _HomePageState extends State<HomePage> {
                                                         }
                                                       },
                                                     ),
-                                                    SizedBox(height: 10),
+                                                    SizedBox(height: 12),
                                                     // Drive Type Dropdown
                                                     DropdownButtonFormField<
                                                       String
@@ -8913,10 +8922,9 @@ class _HomePageState extends State<HomePage> {
                                                               context,
                                                             )!.driveType,
                                                         filled: true,
-                                                        fillColor: Colors.black
-                                                            .withOpacity(0.2),
+                                                        fillColor: moreFiltersFieldFill,
                                                         labelStyle: TextStyle(
-                                                          color: Colors.white,
+                                                          color: moreFiltersOnSurface,
                                                         ),
                                                         border: OutlineInputBorder(
                                                           borderRadius:
@@ -8934,7 +8942,7 @@ class _HomePageState extends State<HomePage> {
                                                             )!.any,
                                                             style: TextStyle(
                                                               color:
-                                                                  moreFiltersAnyColor,
+                                                                  moreFiltersAnyOrange,
                                                             ),
                                                           ),
                                                         ),
@@ -8969,7 +8977,7 @@ class _HomePageState extends State<HomePage> {
                                                         _persistFilters();
                                                       },
                                                     ),
-                                                    SizedBox(height: 10),
+                                                    SizedBox(height: 12),
                                                     // Cylinder Count Dropdown
                                                     DropdownButtonFormField<
                                                       String
@@ -8983,10 +8991,9 @@ class _HomePageState extends State<HomePage> {
                                                               context,
                                                             )!.cylinderCount,
                                                         filled: true,
-                                                        fillColor: Colors.black
-                                                            .withOpacity(0.2),
+                                                        fillColor: moreFiltersFieldFill,
                                                         labelStyle: TextStyle(
-                                                          color: Colors.white,
+                                                          color: moreFiltersOnSurface,
                                                         ),
                                                         border: OutlineInputBorder(
                                                           borderRadius:
@@ -9004,7 +9011,7 @@ class _HomePageState extends State<HomePage> {
                                                             )!.any,
                                                             style: TextStyle(
                                                               color:
-                                                                  moreFiltersAnyColor,
+                                                                  moreFiltersAnyOrange,
                                                             ),
                                                           ),
                                                         ),
@@ -9038,7 +9045,7 @@ class _HomePageState extends State<HomePage> {
                                                         _persistFilters();
                                                       },
                                                     ),
-                                                    SizedBox(height: 10),
+                                                    SizedBox(height: 12),
                                                     // Seating Dropdown
                                                     DropdownButtonFormField<
                                                       String
@@ -9051,10 +9058,9 @@ class _HomePageState extends State<HomePage> {
                                                               context,
                                                             )!.seating,
                                                         filled: true,
-                                                        fillColor: Colors.black
-                                                            .withOpacity(0.2),
+                                                        fillColor: moreFiltersFieldFill,
                                                         labelStyle: TextStyle(
-                                                          color: Colors.white,
+                                                          color: moreFiltersOnSurface,
                                                         ),
                                                         border: OutlineInputBorder(
                                                           borderRadius:
@@ -9072,7 +9078,7 @@ class _HomePageState extends State<HomePage> {
                                                             )!.any,
                                                             style: TextStyle(
                                                               color:
-                                                                  moreFiltersAnyColor,
+                                                                  moreFiltersAnyOrange,
                                                             ),
                                                           ),
                                                         ),
@@ -9106,7 +9112,7 @@ class _HomePageState extends State<HomePage> {
                                                         _persistFilters();
                                                       },
                                                     ),
-                                                    SizedBox(height: 10),
+                                                    SizedBox(height: 12),
                                                     // Engine Size Dropdown / Manual input
                                                     Row(
                                                       children: [
@@ -9133,8 +9139,7 @@ class _HomePageState extends State<HomePage> {
                                                                     ),
                                                                     labelStyle:
                                                                         TextStyle(
-                                                                      color: Colors
-                                                                          .white,
+                                                                      color: moreFiltersOnSurface,
                                                                     ),
                                                                     border:
                                                                         OutlineInputBorder(
@@ -9155,7 +9160,7 @@ class _HomePageState extends State<HomePage> {
                                                                             .any,
                                                                         style:
                                                                             TextStyle(
-                                                                          color: moreFiltersAnyColor,
+                                                                          color: moreFiltersAnyOrange,
                                                                         ),
                                                                       ),
                                                                     ),
@@ -9211,8 +9216,7 @@ class _HomePageState extends State<HomePage> {
                                                                     ),
                                                                     labelStyle:
                                                                         TextStyle(
-                                                                      color: Colors
-                                                                          .white,
+                                                                      color: moreFiltersOnSurface,
                                                                     ),
                                                                     border:
                                                                         OutlineInputBorder(
@@ -9276,11 +9280,7 @@ class _HomePageState extends State<HomePage> {
                                                           ),
                                                           style: IconButton
                                                               .styleFrom(
-                                                            backgroundColor:
-                                                                Colors.black
-                                                                    .withOpacity(
-                                                              0.2,
-                                                            ),
+                                                            backgroundColor: moreFiltersFieldFill,
                                                             shape:
                                                                 RoundedRectangleBorder(
                                                               borderRadius:
@@ -9293,7 +9293,7 @@ class _HomePageState extends State<HomePage> {
                                                         ),
                                                       ],
                                                     ),
-                                                    SizedBox(height: 10),
+                                                    SizedBox(height: 12),
                                                     DropdownButtonFormField<
                                                       String
                                                     >(
@@ -9304,10 +9304,9 @@ class _HomePageState extends State<HomePage> {
                                                               context,
                                                             )!.cityLabel,
                                                         filled: true,
-                                                        fillColor: Colors.black
-                                                            .withOpacity(0.2),
+                                                        fillColor: moreFiltersFieldFill,
                                                         labelStyle: TextStyle(
-                                                          color: Colors.white,
+                                                          color: moreFiltersOnSurface,
                                                         ),
                                                         border: OutlineInputBorder(
                                                           borderRadius:
@@ -9325,7 +9324,7 @@ class _HomePageState extends State<HomePage> {
                                                             )!.any,
                                                             style: TextStyle(
                                                               color:
-                                                                  moreFiltersAnyColor,
+                                                                  moreFiltersAnyOrange,
                                                             ),
                                                           ),
                                                         ),
@@ -9374,7 +9373,7 @@ class _HomePageState extends State<HomePage> {
                                                       context,
                                                     )!.resetButton,
                                                     style: TextStyle(
-                                                      color: Colors.white70,
+                                                      color: moreFiltersMuted,
                                                     ),
                                                   ),
                                                 ),
@@ -9384,7 +9383,7 @@ class _HomePageState extends State<HomePage> {
                                                   child: Text(
                                                     _cancelTextGlobal(context),
                                                     style: TextStyle(
-                                                      color: Colors.white70,
+                                                      color: moreFiltersMuted,
                                                     ),
                                                   ),
                                                 ),
@@ -9394,6 +9393,7 @@ class _HomePageState extends State<HomePage> {
                                                         backgroundColor: Color(
                                                           0xFFFF6B00,
                                                         ),
+                                                        foregroundColor: Colors.white,
                                                       ),
                                                   onPressed: () {
                                                     onFilterChanged();
@@ -11405,8 +11405,7 @@ class _CarDetailsPageState extends State<CarDetailsPage> {
   Widget build(BuildContext context) {
     final isLightShell = Theme.of(context).brightness == Brightness.light;
     return Scaffold(
-      backgroundColor:
-          isLightShell ? AppThemes.lightAppBackground : null,
+      backgroundColor: isLightShell ? Colors.white : null,
       body: loading
           ? Center(child: CircularProgressIndicator())
           : car == null
@@ -12282,22 +12281,40 @@ class _CarDetailsPageState extends State<CarDetailsPage> {
       ),
     ];
 
+    final isLightSpecs = Theme.of(context).brightness == Brightness.light;
     final primGrid = GridView.builder(
       shrinkWrap: true,
       physics: NeverScrollableScrollPhysics(),
       gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
         crossAxisCount: 3,
         crossAxisSpacing: 12,
-        mainAxisSpacing: 12,
+        mainAxisSpacing: 8,
         childAspectRatio: 1.5,
       ),
       itemCount: primary.length,
       itemBuilder: (context, index) => _buildSpecCard(primary[index]),
     );
 
+    final topSpecs = Container(
+      width: double.infinity,
+      padding: const EdgeInsets.fromLTRB(12, 2, 12, 2),
+      decoration: BoxDecoration(
+        color: isLightSpecs
+            ? const Color(0xFFEEEEEE)
+            : Colors.white.withOpacity(0.08),
+        borderRadius: BorderRadius.circular(14),
+        border: Border.all(
+          color: isLightSpecs
+              ? const Color(0xFFE0E0E0)
+              : Colors.white24,
+        ),
+      ),
+      child: primGrid,
+    );
+
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
-      children: [primGrid, SizedBox(height: 12), ...details],
+      children: [topSpecs, SizedBox(height: 12), ...details],
     );
   }
 
@@ -12331,8 +12348,8 @@ class _CarDetailsPageState extends State<CarDetailsPage> {
 
   Widget _buildSpecCard(_SpecItem item) {
     return Container(
-      padding: EdgeInsets.symmetric(horizontal: 12, vertical: 10),
-      constraints: BoxConstraints(minHeight: 84),
+      padding: EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+      constraints: BoxConstraints(minHeight: 72),
       decoration: BoxDecoration(
         color: Color(0xFFFF6B00),
         borderRadius: BorderRadius.circular(12),
@@ -12965,254 +12982,235 @@ class _SellStep1PageState extends State<SellStep1Page> {
 
   Future<String?> _pickFromList(String title, List<String> options, {String? contextBrand}) async {
     services.HapticFeedback.selectionClick();
-    final searchController = TextEditingController();
-    try {
-      return await showGeneralDialog<String>(
-        context: context,
-        barrierDismissible: true,
-        barrierLabel: 'dismiss',
-        pageBuilder: (context, a1, a2) => const SizedBox.shrink(),
-        transitionBuilder: (context, animation, secondaryAnimation, child) {
-          final curved = CurvedAnimation(
-            parent: animation,
-            curve: Curves.easeOutCubic,
-          );
-          return Transform.translate(
-            offset: Offset(0, (1 - curved.value) * 30),
-            child: Opacity(
-              opacity: curved.value,
-              child: StatefulBuilder(
-                builder: (context, setStateDialog) {
-                  final query = searchController.text.trim().toLowerCase();
-                  final filtered = options.where((value) {
-                    if (query.isEmpty) return true;
-                    if (value.toLowerCase().contains(query)) return true;
-                    if (contextBrand != null) {
-                      final locModel = CarNameTranslations.getLocalizedModel(
-                        context,
-                        contextBrand,
-                        value,
-                      ).toLowerCase();
-                      if (locModel.contains(query)) return true;
-                    }
-                    final locBrand = CarNameTranslations.getLocalizedBrand(
-                      context,
-                      value,
-                    ).toLowerCase();
-                    if (locBrand.contains(query)) return true;
-                    final translated =
-                        (_translateValueGlobal(context, value) ?? '').toLowerCase();
-                    return translated.contains(query);
-                  }).toList();
-                  return Dialog(
-                    backgroundColor: Colors.grey[900]?.withOpacity(0.98),
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(20),
-                    ),
-                    child: Container(
-                      width: 420,
-                      padding: EdgeInsets.all(20),
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        mainAxisSize: MainAxisSize.min,
+    String query = '';
+    return await showDialog<String>(
+      context: context,
+      builder: (context) {
+        return StatefulBuilder(
+          builder: (context, setStateDialog) {
+            final loc = AppLocalizations.of(context)!;
+            final isYearPicker =
+                title == loc.yearLabel || title.toLowerCase().contains('year');
+            final normalizedQuery = query.trim().toLowerCase();
+              final filtered = options.where((value) {
+                if (isYearPicker) return true;
+                if (normalizedQuery.isEmpty) return true;
+                if (value.toLowerCase().contains(normalizedQuery)) return true;
+                if (contextBrand != null) {
+                  final locModel = CarNameTranslations.getLocalizedModel(
+                    context,
+                    contextBrand,
+                    value,
+                  ).toLowerCase();
+                  if (locModel.contains(normalizedQuery)) return true;
+                }
+                final locBrand = CarNameTranslations.getLocalizedBrand(
+                  context,
+                  value,
+                ).toLowerCase();
+                if (locBrand.contains(normalizedQuery)) return true;
+                final translated =
+                    (_translateValueGlobal(context, value) ?? '').toLowerCase();
+                return translated.contains(normalizedQuery);
+              }).toList();
+              return Dialog(
+                backgroundColor: Colors.grey[900]?.withOpacity(0.98),
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(20),
+                ),
+                child: Container(
+                  width: 420,
+                  padding: EdgeInsets.all(20),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Row(
+                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
                         children: [
-                          Row(
-                            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                            children: [
-                              Text(
-                                title,
-                                style: TextStyle(
-                                  color: Color(0xFFFF6B00),
-                                  fontWeight: FontWeight.bold,
-                                  fontSize: 20,
-                                ),
-                              ),
-                              IconButton(
-                                icon: Icon(Icons.close, color: Colors.white),
-                                onPressed: () => Navigator.pop(context),
-                              ),
-                            ],
-                          ),
-                          SizedBox(height: 10),
-                          TextField(
-                            controller: searchController,
-                            onChanged: (_) => setStateDialog(() {}),
-                            style: const TextStyle(color: Colors.white),
-                            decoration: InputDecoration(
-                              hintText: 'Search...',
-                              hintStyle: const TextStyle(color: Colors.white60),
-                              prefixIcon: const Icon(
-                                Icons.search,
-                                color: Colors.white70,
-                              ),
-                              filled: true,
-                              fillColor: Colors.black.withOpacity(0.2),
-                              enabledBorder: OutlineInputBorder(
-                                borderRadius: BorderRadius.circular(12),
-                                borderSide: const BorderSide(color: Colors.white24),
-                              ),
-                              focusedBorder: OutlineInputBorder(
-                                borderRadius: BorderRadius.circular(12),
-                                borderSide: const BorderSide(
-                                  color: Color(0xFFFF6B00),
-                                ),
-                              ),
+                          Text(
+                            title,
+                            style: TextStyle(
+                              color: Color(0xFFFF6B00),
+                              fontWeight: FontWeight.bold,
+                              fontSize: 20,
                             ),
                           ),
-                          SizedBox(height: 10),
-                          SizedBox(
-                            height: 400,
-                            child: ListView.separated(
-                              itemCount: filtered.length,
-                              separatorBuilder: (_, __) => SizedBox(height: 10),
-                              itemBuilder: (context, index) {
-                                final value = filtered[index];
-                                final lowerTitle = title.toLowerCase();
-                                final loc = AppLocalizations.of(context)!;
-                                final isModelTitle = title == loc.modelLabel;
-                                final isTrimTitle = title == loc.trimLabel;
-                                final isBrandTitle = title == loc.brandLabel;
-                                String displayText = value;
-                                final bool isNumeric =
-                                    RegExp(r'^[0-9]+(\.[0-9]+)?$').hasMatch(value);
-                                if (lowerTitle.contains('price')) {
-                                  displayText = _formatCurrencyGlobal(context, value);
-                                } else if (lowerTitle.contains('mileage') &&
-                                    isNumeric) {
-                                  final nf = _decimalFormatterGlobal(context);
-                                  displayText =
-                                      '${_localizeDigitsGlobal(
-                                        context,
-                                        nf.format(num.tryParse(value) ?? 0),
-                                      )} ${AppLocalizations.of(context)!.unit_km}';
-                                } else if (lowerTitle.contains('year') &&
-                                    isNumeric) {
-                                  displayText =
-                                      _localizeDigitsGlobal(context, value);
-                                } else if (lowerTitle.contains('seating') &&
-                                    isNumeric) {
-                                  displayText =
-                                      '${_localizeDigitsGlobal(context, value)} seats';
-                                } else if (lowerTitle.contains('cylinder') &&
-                                    isNumeric) {
-                                  displayText =
-                                      '${_localizeDigitsGlobal(context, value)} cylinders';
-                                } else if (lowerTitle.contains('engine') &&
-                                    isNumeric) {
-                                  displayText =
-                                      '${_localizeDigitsGlobal(context, value)} L';
-                                } else if (value == 'Any') {
-                                  displayText =
-                                      AppLocalizations.of(context)!.anyOption;
-                                } else if (isModelTitle &&
-                                    contextBrand != null) {
-                                  displayText =
-                                      CarNameTranslations.getLocalizedModel(
-                                            context,
-                                            contextBrand,
-                                            value,
-                                          ).isNotEmpty
-                                      ? CarNameTranslations.getLocalizedModel(
-                                          context,
-                                          contextBrand,
-                                          value,
-                                        )
-                                      : value;
-                                } else if (isTrimTitle) {
-                                  displayText = value;
-                                } else if (isBrandTitle) {
-                                  displayText =
-                                      CarNameTranslations.getLocalizedBrand(
-                                            context,
-                                            value,
-                                          ).isNotEmpty
-                                      ? CarNameTranslations.getLocalizedBrand(
-                                          context,
-                                          value,
-                                        )
-                                      : value;
-                                } else {
-                                  final translated = _translateValueGlobal(
-                                    context,
-                                    value,
-                                  );
-                                  if (translated != null) displayText = translated;
-                                }
-                                return InkWell(
-                                  borderRadius: BorderRadius.circular(14),
-                                  onTap: () => Navigator.pop(context, value),
-                                  child: Container(
-                                    padding: EdgeInsets.symmetric(
-                                      vertical: 14,
-                                      horizontal: 12,
-                                    ),
-                                    decoration: BoxDecoration(
-                                      borderRadius: BorderRadius.circular(14),
-                                      gradient: LinearGradient(
-                                        colors: [
-                                          Colors.white.withOpacity(0.06),
-                                          Colors.white.withOpacity(0.02),
-                                        ],
-                                        begin: Alignment.topLeft,
-                                        end: Alignment.bottomRight,
-                                      ),
-                                      border: Border.all(color: Colors.white10),
-                                    ),
-                                    child: Row(
-                                      children: [
-                                        Expanded(
-                                          child: Text(
-                                            displayText,
-                                            style: TextStyle(
-                                              color: Colors.white,
-                                              fontWeight: FontWeight.w600,
-                                            ),
-                                          ),
-                                        ),
-                                        Icon(
-                                          Icons.chevron_right,
-                                          color: Colors.white70,
-                                        ),
-                                      ],
-                                    ),
-                                  ),
-                                );
-                              },
-                            ),
+                          IconButton(
+                            icon: Icon(Icons.close, color: Colors.white),
+                            onPressed: () => Navigator.pop(context),
                           ),
                         ],
                       ),
-                    ),
-                  );
-                },
-              ),
-            ),
-          );
-        },
-        transitionDuration: const Duration(milliseconds: 220),
-      );
-    } finally {
-      searchController.dispose();
-    }
+                      SizedBox(height: 10),
+                      if (!isYearPicker) ...[
+                        TextField(
+                          onChanged: (value) {
+                            query = value;
+                            setStateDialog(() {});
+                          },
+                          style: const TextStyle(color: Colors.white),
+                          decoration: InputDecoration(
+                            hintText: 'Search...',
+                            hintStyle: const TextStyle(color: Colors.white60),
+                            prefixIcon: const Icon(
+                              Icons.search,
+                              color: Colors.white70,
+                            ),
+                            filled: true,
+                            fillColor: Colors.black.withOpacity(0.2),
+                            enabledBorder: OutlineInputBorder(
+                              borderRadius: BorderRadius.circular(12),
+                              borderSide: const BorderSide(color: Colors.white24),
+                            ),
+                            focusedBorder: OutlineInputBorder(
+                              borderRadius: BorderRadius.circular(12),
+                              borderSide: const BorderSide(
+                                color: Color(0xFFFF6B00),
+                              ),
+                            ),
+                          ),
+                        ),
+                        SizedBox(height: 10),
+                      ],
+                      SizedBox(
+                        height: 400,
+                        child: ListView.separated(
+                          itemCount: filtered.length,
+                          separatorBuilder: (_, __) => SizedBox(height: 10),
+                          itemBuilder: (context, index) {
+                            final value = filtered[index];
+                            final lowerTitle = title.toLowerCase();
+                            final loc = AppLocalizations.of(context)!;
+                            final isModelTitle = title == loc.modelLabel;
+                            final isTrimTitle = title == loc.trimLabel;
+                            final isBrandTitle = title == loc.brandLabel;
+                            String displayText = value;
+                            final bool isNumeric =
+                                RegExp(r'^[0-9]+(\.[0-9]+)?$').hasMatch(value);
+                            if (lowerTitle.contains('price')) {
+                              displayText = _formatCurrencyGlobal(context, value);
+                            } else if (lowerTitle.contains('mileage') && isNumeric) {
+                              final nf = _decimalFormatterGlobal(context);
+                              displayText =
+                                  '${_localizeDigitsGlobal(
+                                    context,
+                                    nf.format(num.tryParse(value) ?? 0),
+                                  )} ${AppLocalizations.of(context)!.unit_km}';
+                            } else if (lowerTitle.contains('year') && isNumeric) {
+                              displayText = _localizeDigitsGlobal(context, value);
+                            } else if (lowerTitle.contains('seating') && isNumeric) {
+                              displayText =
+                                  '${_localizeDigitsGlobal(context, value)} seats';
+                            } else if (lowerTitle.contains('cylinder') && isNumeric) {
+                              displayText =
+                                  '${_localizeDigitsGlobal(context, value)} cylinders';
+                            } else if (lowerTitle.contains('engine') && isNumeric) {
+                              displayText =
+                                  '${_localizeDigitsGlobal(context, value)} L';
+                            } else if (value == 'Any') {
+                              displayText = AppLocalizations.of(context)!.anyOption;
+                            } else if (isModelTitle && contextBrand != null) {
+                              displayText =
+                                  CarNameTranslations.getLocalizedModel(
+                                        context,
+                                        contextBrand,
+                                        value,
+                                      ).isNotEmpty
+                                  ? CarNameTranslations.getLocalizedModel(
+                                      context,
+                                      contextBrand,
+                                      value,
+                                    )
+                                  : value;
+                            } else if (isTrimTitle) {
+                              displayText = value;
+                            } else if (isBrandTitle) {
+                              displayText =
+                                  CarNameTranslations.getLocalizedBrand(
+                                        context,
+                                        value,
+                                      ).isNotEmpty
+                                  ? CarNameTranslations.getLocalizedBrand(
+                                      context,
+                                      value,
+                                    )
+                                  : value;
+                            } else {
+                              final translated = _translateValueGlobal(
+                                context,
+                                value,
+                              );
+                              if (translated != null) displayText = translated;
+                            }
+                            return InkWell(
+                              borderRadius: BorderRadius.circular(14),
+                              onTap: () => Navigator.pop(context, value),
+                              child: Container(
+                                padding: EdgeInsets.symmetric(
+                                  vertical: 14,
+                                  horizontal: 12,
+                                ),
+                                decoration: BoxDecoration(
+                                  borderRadius: BorderRadius.circular(14),
+                                  gradient: LinearGradient(
+                                    colors: [
+                                      Colors.white.withOpacity(0.06),
+                                      Colors.white.withOpacity(0.02),
+                                    ],
+                                    begin: Alignment.topLeft,
+                                    end: Alignment.bottomRight,
+                                  ),
+                                  border: Border.all(color: Colors.white10),
+                                ),
+                                child: Row(
+                                  children: [
+                                    Expanded(
+                                      child: Text(
+                                        displayText,
+                                        style: TextStyle(
+                                          color: Colors.white,
+                                          fontWeight: FontWeight.w600,
+                                        ),
+                                      ),
+                                    ),
+                                    Icon(
+                                      Icons.chevron_right,
+                                      color: Colors.white70,
+                                    ),
+                                  ],
+                                ),
+                              ),
+                            );
+                          },
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              );
+          },
+        );
+      },
+    );
   }
 
   Future<String?> _pickBrandModal() async {
-    final searchController = TextEditingController();
-    try {
-      return await showDialog<String>(
-        context: context,
-        builder: (context) {
-          return StatefulBuilder(
-            builder: (context, setStateDialog) {
-              final query = searchController.text.trim().toLowerCase();
+    String query = '';
+    return await showDialog<String>(
+      context: context,
+      builder: (context) {
+        return StatefulBuilder(
+          builder: (context, setStateDialog) {
+              final normalizedQuery = query.trim().toLowerCase();
               final filteredBrands = brands.where((brand) {
-                if (query.isEmpty) return true;
-                if (brand.toLowerCase().contains(query)) return true;
+                if (normalizedQuery.isEmpty) return true;
+                if (brand.toLowerCase().contains(normalizedQuery)) return true;
                 final localized = CarNameTranslations.getLocalizedBrand(
                   context,
                   brand,
                 ).toLowerCase();
-                return localized.contains(query);
+                return localized.contains(normalizedQuery);
               }).toList();
               return Dialog(
           backgroundColor: Colors.grey[900]?.withOpacity(0.98),
@@ -13245,8 +13243,10 @@ class _SellStep1PageState extends State<SellStep1Page> {
                 ),
                 SizedBox(height: 10),
                 TextField(
-                  controller: searchController,
-                  onChanged: (_) => setStateDialog(() {}),
+                  onChanged: (value) {
+                    query = value;
+                    setStateDialog(() {});
+                  },
                   style: const TextStyle(color: Colors.white),
                   decoration: InputDecoration(
                     hintText: 'Search...',
@@ -13349,9 +13349,6 @@ class _SellStep1PageState extends State<SellStep1Page> {
           );
         },
       );
-    } finally {
-      searchController.dispose();
-    }
   }
 
   List<String> get brands => CarCatalog.brands;
@@ -22284,8 +22281,7 @@ class _MyListingsPageState extends State<MyListingsPage> {
                 ? _buildEmptyState()
                 : _buildListingsGrid();
     return Scaffold(
-      backgroundColor:
-          isLightShell ? AppThemes.lightAppBackground : null,
+      backgroundColor: isLightShell ? Colors.white : null,
       appBar: AppBar(
         title: Text(AppLocalizations.of(context)!.myListingsTitle),
         backgroundColor: Color(0xFFFF6B00),
@@ -22296,16 +22292,7 @@ class _MyListingsPageState extends State<MyListingsPage> {
         ],
       ),
       body: isLightShell
-          ? ColoredBox(
-              color: AppThemes.lightAppBackground,
-              child: Theme(
-                data: AppThemes.darkTheme,
-                child: ColoredBox(
-                  color: const Color(0xFF131722),
-                  child: bodyChild,
-                ),
-              ),
-            )
+          ? bodyChild
           : Container(
               decoration: AppThemes.shellBackgroundDecoration(
                 Theme.of(context).brightness,
@@ -22456,6 +22443,7 @@ class _MyListingsPageState extends State<MyListingsPage> {
   }
 
   Widget _buildListingsGrid() {
+    final isLightShell = Theme.of(context).brightness == Brightness.light;
     return Column(
       children: [
         Padding(
@@ -22463,7 +22451,7 @@ class _MyListingsPageState extends State<MyListingsPage> {
           child: Container(
             padding: EdgeInsets.all(16),
             decoration: BoxDecoration(
-              color: Colors.white,
+              color: isLightShell ? const Color(0xFF131722) : Colors.white,
               borderRadius: BorderRadius.circular(12),
               boxShadow: [
                 BoxShadow(
@@ -22482,7 +22470,7 @@ class _MyListingsPageState extends State<MyListingsPage> {
                   style: TextStyle(
                     fontSize: 18,
                     fontWeight: FontWeight.bold,
-                    color: Colors.grey[800],
+                    color: isLightShell ? Colors.white : Colors.grey[800],
                   ),
                 ),
                 Spacer(),
