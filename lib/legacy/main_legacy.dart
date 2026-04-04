@@ -1279,7 +1279,12 @@ Widget buildGlobalCarCard(BuildContext context, Map car) {
                       children: [
                         Expanded(
                           child: Text(
-                            _formatCurrencyGlobal(context, car['price']),
+                            yearDisplay.isNotEmpty
+                                ? yearDisplay
+                                : _formatCurrencyGlobal(
+                                    context,
+                                    car['price'],
+                                  ),
                             style: TextStyle(
                               color: Color(0xFFFF6B00),
                               fontWeight: FontWeight.w600,
@@ -1292,7 +1297,7 @@ Widget buildGlobalCarCard(BuildContext context, Map car) {
                         if (yearDisplay.isNotEmpty) ...[
                           const SizedBox(width: 8),
                           Text(
-                            yearDisplay,
+                            _formatCurrencyGlobal(context, car['price']),
                             style: TextStyle(
                               color: Color(0xFFFF6B00),
                               fontWeight: FontWeight.w600,
@@ -11771,7 +11776,7 @@ class _CarDetailsPageState extends State<CarDetailsPage> {
                             color: Color(0xFFFF6B00),
                           ),
                         ),
-                        SizedBox(height: 12),
+                        SizedBox(height: 20),
                         _buildSpecsGrid(),
                         SizedBox(height: 24),
 
@@ -12080,243 +12085,7 @@ class _CarDetailsPageState extends State<CarDetailsPage> {
     return null;
   }
 
-  // Styled detail row with icon, label and value pill
-  Widget _detailRow({
-    required IconData icon,
-    required String label,
-    required String? value,
-  }) {
-    if (value == null || value.isEmpty) return SizedBox.shrink();
-    final isLight = Theme.of(context).brightness == Brightness.light;
-    return Container(
-      margin: EdgeInsets.only(bottom: 8),
-      padding: EdgeInsets.symmetric(horizontal: 12, vertical: 10),
-      decoration: BoxDecoration(
-        color: isLight
-            ? const Color(0xFFF3F3F3)
-            : Colors.white.withOpacity(0.06),
-        borderRadius: BorderRadius.circular(12),
-        border: Border.all(
-          color: isLight ? const Color(0xFFE0E0E0) : Colors.white12,
-        ),
-      ),
-      child: Row(
-        children: [
-          Container(
-            padding: EdgeInsets.all(8),
-            decoration: BoxDecoration(
-              color: Color(0xFFFF6B00),
-              borderRadius: BorderRadius.circular(10),
-            ),
-            child: Icon(icon, size: 18, color: Colors.black),
-          ),
-          SizedBox(width: 12),
-          Expanded(
-            child: Text(
-              label,
-              style: TextStyle(
-                color: isLight
-                    ? const Color(0xFF3A3A3A)
-                    : Colors.white70,
-                fontSize: 14,
-                fontWeight: FontWeight.w600,
-              ),
-            ),
-          ),
-          Container(
-            padding: EdgeInsets.symmetric(horizontal: 10, vertical: 6),
-            decoration: BoxDecoration(
-              color: Color(0xFFFF6B00),
-              borderRadius: BorderRadius.circular(999),
-            ),
-            child: Text(
-              value,
-              style: TextStyle(
-                color: Colors.black,
-                fontWeight: FontWeight.w800,
-              ),
-            ),
-          ),
-          // Inline overlay only belongs to HomePage, not here
-        ],
-      ),
-    );
-  }
-
-  Widget _buildSpecsGrid() {
-    String _orDash(String? s) {
-      final v = (s ?? '').toString().trim();
-      return v.isEmpty ? '—' : v;
-    }
-
-    // Primary fields
-    final String mileageVal = car!['mileage'] != null
-        ? '${_localizeDigitsGlobal(context, _formatPrice(car!['mileage'].toString()))} ${AppLocalizations.of(context)!.unit_km}'
-        : '—';
-
-    final String? transRaw = _getFirstNonEmpty(car!, ['transmission']);
-    final String transmissionVal =
-        _orDash(_translateValueGlobal(context, transRaw) ?? transRaw);
-
-    final String? engineSizePrimary = _getFirstNonEmpty(car!, [
-      'engine_size',
-      'engineSize',
-      'engine',
-    ]);
-    final String engineCardVal = engineSizePrimary != null
-        ? '${_localizeDigitsGlobal(context, engineSizePrimary.toString())}${AppLocalizations.of(context)!.unit_liter_suffix}'
-        : '—';
-
-    final String? cylRawPrimary = _getFirstNonEmpty(car!, [
-      'cylinder_count',
-      'cylinders',
-      'cylinderCount',
-    ]);
-    final String cylinderVal = cylRawPrimary != null
-        ? _localizeDigitsGlobal(context, cylRawPrimary)
-        : '—';
-
-    final String titleStatusVal = _orDash(
-      car!['title_status'] != null
-          ? (car!['title_status'].toString().toLowerCase() == 'damaged'
-              ? (AppLocalizations.of(context)!.value_title_damaged +
-                  (car!['damaged_parts'] != null
-                      ? ' (${_localizeDigitsGlobal(context, car!['damaged_parts'].toString())} ${AppLocalizations.of(context)!.damagedParts})'
-                      : ''))
-              : AppLocalizations.of(context)!.value_title_clean)
-          : null,
-    );
-
-    final String? fuelRaw = _getFirstNonEmpty(car!, ['fuel_type', 'fuelType', 'fuel']);
-    final String fuelVal = _orDash(_translateValueGlobal(context, fuelRaw) ?? fuelRaw);
-
-    final List<_SpecItem> primary = [
-      _SpecItem(
-        icon: Icons.speed,
-        label: AppLocalizations.of(context)!.mileageLabel,
-        value: mileageVal,
-      ),
-      _SpecItem(
-        icon: Icons.settings_input_component,
-        label: AppLocalizations.of(context)!.detail_cylinders,
-        value: cylinderVal,
-      ),
-      _SpecItem(
-        icon: Icons.straighten,
-        label: AppLocalizations.of(context)!.detail_engine,
-        value: engineCardVal,
-      ),
-      _SpecItem(
-        icon: Icons.layers,
-        label: AppLocalizations.of(context)!.trimLabel,
-        value: _orDash(_translateValueGlobal(
-              context,
-              _getFirstNonEmpty(car!, ['trim']),
-            ) ??
-            _getFirstNonEmpty(car!, ['trim'])),
-      ),
-      _SpecItem(
-        icon: Icons.settings,
-        label: AppLocalizations.of(context)!.transmissionLabel,
-        value: transmissionVal,
-      ),
-      _SpecItem(
-        icon: Icons.local_gas_station,
-        label: AppLocalizations.of(context)!.detail_fuel,
-        value: fuelVal,
-      ),
-    ];
-
-    // Vertical list: all specs except the top 6; show "—" when value is missing
-    final List<Widget> details = [
-      _detailRow(
-        icon: Icons.check_circle,
-        label: AppLocalizations.of(context)!.detail_condition,
-        value: _orDash(_translateValueGlobal(
-          context,
-          _getFirstNonEmpty(car!, ['condition']),
-        )),
-      ),
-      _detailRow(
-        icon: Icons.directions_car_filled,
-        label: AppLocalizations.of(context)!.detail_body,
-        value: _orDash(_translateValueGlobal(
-          context,
-          _getFirstNonEmpty(car!, ['body_type', 'bodyType', 'body']),
-        )),
-      ),
-      _detailRow(
-        icon: Icons.assignment_turned_in,
-        label: AppLocalizations.of(context)!.titleStatus,
-        value: titleStatusVal,
-      ),
-      _detailRow(
-        icon: Icons.color_lens,
-        label: AppLocalizations.of(context)!.detail_color,
-        value: _orDash(_translateValueGlobal(
-          context,
-          _getFirstNonEmpty(car!, ['color']),
-        )),
-      ),
-      _detailRow(
-        icon: Icons.drive_eta,
-        label: AppLocalizations.of(context)!.detail_drive,
-        value: _orDash(_translateValueGlobal(
-          context,
-          _getFirstNonEmpty(car!, [
-            'drive_type',
-            'driveType',
-            'drivetrain',
-            'drive',
-          ]),
-        )),
-      ),
-      _detailRow(
-        icon: Icons.airline_seat_recline_normal,
-        label: AppLocalizations.of(context)!.detail_seating,
-        value: _orDash(_localizeDigitsGlobal(
-          context,
-          _getFirstNonEmpty(car!, ['seating', 'seats', 'seatCount']) ?? '',
-        )),
-      ),
-    ];
-
-    final isLightSpecs = Theme.of(context).brightness == Brightness.light;
-    final primGrid = GridView.builder(
-      shrinkWrap: true,
-      physics: NeverScrollableScrollPhysics(),
-      gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
-        crossAxisCount: 3,
-        crossAxisSpacing: 12,
-        mainAxisSpacing: 8,
-        childAspectRatio: 1.5,
-      ),
-      itemCount: primary.length,
-      itemBuilder: (context, index) => _buildSpecCard(primary[index]),
-    );
-
-    final topSpecs = Container(
-      width: double.infinity,
-      padding: const EdgeInsets.fromLTRB(12, 2, 12, 2),
-      decoration: BoxDecoration(
-        color: isLightSpecs
-            ? const Color(0xFFEEEEEE)
-            : Colors.white.withOpacity(0.08),
-        borderRadius: BorderRadius.circular(14),
-        border: Border.all(
-          color: isLightSpecs
-              ? const Color(0xFFE0E0E0)
-              : Colors.white24,
-        ),
-      ),
-      child: primGrid,
-    );
-
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [topSpecs, SizedBox(height: 12), ...details],
-    );
-  }
+  Widget _buildSpecsGrid() => buildCarListingSpecsGrid(context, car!);
 
   Widget _detailRowAlways({
     required IconData icon,
@@ -12342,89 +12111,6 @@ class _CarDetailsPageState extends State<CarDetailsPage> {
             child: Text(shown, style: TextStyle(color: body)),
           ),
         ],
-      ),
-    );
-  }
-
-  Widget _buildSpecCard(_SpecItem item) {
-    return Container(
-      padding: EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-      constraints: BoxConstraints(minHeight: 72),
-      decoration: BoxDecoration(
-        color: Color(0xFFFF6B00),
-        borderRadius: BorderRadius.circular(12),
-      ),
-      child: LayoutBuilder(
-        builder: (context, constraints) {
-          final labelStyle = TextStyle(
-            fontSize: constraints.maxWidth * 0.13,
-            color: Colors.black87,
-            fontWeight: FontWeight.w700,
-            letterSpacing: 0.3,
-            height: 1.05,
-          );
-          final valueStyle = TextStyle(
-            fontSize: constraints.maxWidth * 0.18,
-            height: 1.0,
-            color: Colors.black,
-            fontWeight: FontWeight.w800,
-          );
-
-          return Column(
-            crossAxisAlignment: CrossAxisAlignment.center,
-            children: [
-              Expanded(
-                flex: 5,
-                child: Row(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  crossAxisAlignment: CrossAxisAlignment.center,
-                  children: [
-                    Icon(item.icon, size: constraints.maxWidth * 0.14, color: Colors.black87),
-                    SizedBox(width: constraints.maxWidth * 0.04),
-                    Flexible(
-                      child: FittedBox(
-                        alignment: Alignment.center,
-                        fit: BoxFit.scaleDown,
-                        child: Text(
-                          item.label,
-                          maxLines: 1,
-                          textAlign: TextAlign.center,
-                          style: labelStyle,
-                        ),
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-              Padding(
-                padding: EdgeInsets.symmetric(
-                  vertical: math.max(4.0, constraints.maxHeight * 0.03),
-                  horizontal: 6,
-                ),
-                child: Divider(
-                  height: 1,
-                  thickness: 1,
-                  color: Colors.black.withOpacity(0.22),
-                ),
-              ),
-              Expanded(
-                flex: 6,
-                child: Center(
-                  child: FittedBox(
-                    alignment: Alignment.center,
-                    fit: BoxFit.scaleDown,
-                    child: Text(
-                      item.value!,
-                      maxLines: 1,
-                      textAlign: TextAlign.center,
-                      style: valueStyle,
-                    ),
-                  ),
-                ),
-              ),
-            ],
-          );
-        },
       ),
     );
   }
@@ -12603,6 +12289,349 @@ class _CarDetailsPageState extends State<CarDetailsPage> {
       ),
     );
   }
+}
+
+/// Specification grid matching [CarDetailsPage] (shared with sell-flow review).
+Widget buildCarListingSpecsGrid(
+  BuildContext context,
+  Map<String, dynamic> car,
+) {
+  String? pickNE(Map<String, dynamic> map, List<String> keys) {
+    for (final key in keys) {
+      final dynamic value = map[key];
+      if (value == null) continue;
+      final String stringValue = value.toString().trim();
+      if (stringValue.isNotEmpty) return stringValue;
+    }
+    return null;
+  }
+
+  String formatNumericLabel(String raw) {
+    try {
+      final num? value = num.tryParse(raw.replaceAll(RegExp(r'[^0-9\.-]'), ''));
+      if (value == null) return raw;
+      return _decimalFormatterGlobal(context).format(value);
+    } catch (_) {
+      return raw;
+    }
+  }
+
+  String _orDash(String? s) {
+    final v = (s ?? '').toString().trim();
+    return v.isEmpty ? '—' : v;
+  }
+
+  Widget detailRowSpec({
+    required IconData icon,
+    required String label,
+    required String? value,
+  }) {
+    if (value == null || value.isEmpty) return SizedBox.shrink();
+    final isLight = Theme.of(context).brightness == Brightness.light;
+    return Container(
+      margin: EdgeInsets.only(bottom: 8),
+      padding: EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+      decoration: BoxDecoration(
+        color: isLight
+            ? const Color(0xFFF3F3F3)
+            : Colors.white.withOpacity(0.06),
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(
+          color: isLight ? const Color(0xFFE0E0E0) : Colors.white12,
+        ),
+      ),
+      child: Row(
+        children: [
+          Container(
+            padding: EdgeInsets.all(8),
+            decoration: BoxDecoration(
+              color: Color(0xFFFF6B00),
+              borderRadius: BorderRadius.circular(10),
+            ),
+            child: Icon(icon, size: 18, color: Colors.black),
+          ),
+          SizedBox(width: 12),
+          Expanded(
+            child: Text(
+              label,
+              style: TextStyle(
+                color: isLight
+                    ? const Color(0xFF3A3A3A)
+                    : Colors.white70,
+                fontSize: 14,
+                fontWeight: FontWeight.w600,
+              ),
+            ),
+          ),
+          Container(
+            padding: EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+            decoration: BoxDecoration(
+              color: Color(0xFFFF6B00),
+              borderRadius: BorderRadius.circular(999),
+            ),
+            child: Text(
+              value,
+              style: TextStyle(
+                color: Colors.black,
+                fontWeight: FontWeight.w800,
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget specCard(_SpecItem item) {
+    return Container(
+      padding: EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+      constraints: BoxConstraints(minHeight: 72),
+      decoration: BoxDecoration(
+        color: Color(0xFFFF6B00),
+        borderRadius: BorderRadius.circular(12),
+      ),
+      child: LayoutBuilder(
+        builder: (context, constraints) {
+          final labelStyle = TextStyle(
+            fontSize: constraints.maxWidth * 0.13,
+            color: Colors.black87,
+            fontWeight: FontWeight.w700,
+            letterSpacing: 0.3,
+            height: 1.05,
+          );
+          final valueStyle = TextStyle(
+            fontSize: constraints.maxWidth * 0.18,
+            height: 1.0,
+            color: Colors.black,
+            fontWeight: FontWeight.w800,
+          );
+
+          return Column(
+            crossAxisAlignment: CrossAxisAlignment.center,
+            children: [
+              Expanded(
+                flex: 5,
+                child: Row(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  crossAxisAlignment: CrossAxisAlignment.center,
+                  children: [
+                    Icon(
+                      item.icon,
+                      size: constraints.maxWidth * 0.14,
+                      color: Colors.black87,
+                    ),
+                    SizedBox(width: constraints.maxWidth * 0.04),
+                    Flexible(
+                      child: FittedBox(
+                        alignment: Alignment.center,
+                        fit: BoxFit.scaleDown,
+                        child: Text(
+                          item.label,
+                          maxLines: 1,
+                          textAlign: TextAlign.center,
+                          style: labelStyle,
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              Padding(
+                padding: EdgeInsets.symmetric(
+                  vertical: math.max(4.0, constraints.maxHeight * 0.03),
+                  horizontal: 6,
+                ),
+                child: Divider(
+                  height: 1,
+                  thickness: 1,
+                  color: Colors.black.withOpacity(0.22),
+                ),
+              ),
+              Expanded(
+                flex: 6,
+                child: Center(
+                  child: FittedBox(
+                    alignment: Alignment.center,
+                    fit: BoxFit.scaleDown,
+                    child: Text(
+                      item.value!,
+                      maxLines: 1,
+                      textAlign: TextAlign.center,
+                      style: valueStyle,
+                    ),
+                  ),
+                ),
+              ),
+            ],
+          );
+        },
+      ),
+    );
+  }
+
+  final String mileageVal = car['mileage'] != null
+      ? '${_localizeDigitsGlobal(context, formatNumericLabel(car['mileage'].toString()))} ${AppLocalizations.of(context)!.unit_km}'
+      : '—';
+
+  final String? transRaw = pickNE(car, ['transmission']);
+  final String transmissionVal =
+      _orDash(_translateValueGlobal(context, transRaw) ?? transRaw);
+
+  final String? engineSizePrimary =
+      pickNE(car, ['engine_size', 'engineSize', 'engine']);
+  final String engineCardVal = engineSizePrimary != null
+      ? '${_localizeDigitsGlobal(context, engineSizePrimary.toString())}${AppLocalizations.of(context)!.unit_liter_suffix}'
+      : '—';
+
+  final String? cylRawPrimary =
+      pickNE(car, ['cylinder_count', 'cylinders', 'cylinderCount']);
+  final String cylinderVal = cylRawPrimary != null
+      ? _localizeDigitsGlobal(context, cylRawPrimary)
+      : '—';
+
+  final String titleStatusVal = _orDash(
+    car['title_status'] != null
+        ? (car['title_status'].toString().toLowerCase() == 'damaged'
+              ? (AppLocalizations.of(context)!.value_title_damaged +
+                    (car['damaged_parts'] != null
+                        ? ' (${_localizeDigitsGlobal(context, car['damaged_parts'].toString())} ${AppLocalizations.of(context)!.damagedParts})'
+                        : ''))
+              : AppLocalizations.of(context)!.value_title_clean)
+        : null,
+  );
+
+  final String? fuelRaw = pickNE(car, ['fuel_type', 'fuelType', 'fuel']);
+  final String fuelVal =
+      _orDash(_translateValueGlobal(context, fuelRaw) ?? fuelRaw);
+
+  final List<_SpecItem> primary = [
+    _SpecItem(
+      icon: Icons.speed,
+      label: AppLocalizations.of(context)!.mileageLabel,
+      value: mileageVal,
+    ),
+    _SpecItem(
+      icon: Icons.settings_input_component,
+      label: AppLocalizations.of(context)!.detail_cylinders,
+      value: cylinderVal,
+    ),
+    _SpecItem(
+      icon: Icons.straighten,
+      label: AppLocalizations.of(context)!.detail_engine,
+      value: engineCardVal,
+    ),
+    _SpecItem(
+      icon: Icons.layers,
+      label: AppLocalizations.of(context)!.trimLabel,
+      value: _orDash(
+        _translateValueGlobal(context, pickNE(car, ['trim'])) ??
+            pickNE(car, ['trim']),
+      ),
+    ),
+    _SpecItem(
+      icon: Icons.settings,
+      label: AppLocalizations.of(context)!.transmissionLabel,
+      value: transmissionVal,
+    ),
+    _SpecItem(
+      icon: Icons.local_gas_station,
+      label: AppLocalizations.of(context)!.detail_fuel,
+      value: fuelVal,
+    ),
+  ];
+
+  final List<Widget> details = [
+    detailRowSpec(
+      icon: Icons.check_circle,
+      label: AppLocalizations.of(context)!.detail_condition,
+      value: _orDash(
+        _translateValueGlobal(context, pickNE(car, ['condition'])),
+      ),
+    ),
+    detailRowSpec(
+      icon: Icons.directions_car_filled,
+      label: AppLocalizations.of(context)!.detail_body,
+      value: _orDash(
+        _translateValueGlobal(
+          context,
+          pickNE(car, ['body_type', 'bodyType', 'body']),
+        ),
+      ),
+    ),
+    detailRowSpec(
+      icon: Icons.assignment_turned_in,
+      label: AppLocalizations.of(context)!.titleStatus,
+      value: titleStatusVal,
+    ),
+    detailRowSpec(
+      icon: Icons.color_lens,
+      label: AppLocalizations.of(context)!.detail_color,
+      value: _orDash(
+        _translateValueGlobal(context, pickNE(car, ['color'])),
+      ),
+    ),
+    detailRowSpec(
+      icon: Icons.drive_eta,
+      label: AppLocalizations.of(context)!.detail_drive,
+      value: _orDash(
+        _translateValueGlobal(
+          context,
+          pickNE(car, [
+            'drive_type',
+            'driveType',
+            'drivetrain',
+            'drive',
+          ]),
+        ),
+      ),
+    ),
+    detailRowSpec(
+      icon: Icons.airline_seat_recline_normal,
+      label: AppLocalizations.of(context)!.detail_seating,
+      value: _orDash(
+        _localizeDigitsGlobal(
+          context,
+          pickNE(car, ['seating', 'seats', 'seatCount']) ?? '',
+        ),
+      ),
+    ),
+  ];
+
+  final isLightSpecs = Theme.of(context).brightness == Brightness.light;
+  final primGrid = GridView.builder(
+    shrinkWrap: true,
+    physics: NeverScrollableScrollPhysics(),
+    gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
+      crossAxisCount: 3,
+      crossAxisSpacing: 12,
+      mainAxisSpacing: 12,
+      childAspectRatio: 1.5,
+    ),
+    itemCount: primary.length,
+    itemBuilder: (context, index) => specCard(primary[index]),
+  );
+
+  final topSpecs = Container(
+    width: double.infinity,
+    padding: const EdgeInsets.fromLTRB(12, 24, 12, 14),
+    decoration: BoxDecoration(
+      color: isLightSpecs
+          ? const Color(0xFFEEEEEE)
+          : Colors.white.withOpacity(0.08),
+      borderRadius: BorderRadius.circular(14),
+      border: Border.all(
+        color: isLightSpecs
+            ? const Color(0xFFE0E0E0)
+            : Colors.white24,
+      ),
+    ),
+    child: primGrid,
+  );
+
+  return Column(
+    crossAxisAlignment: CrossAxisAlignment.start,
+    children: [topSpecs, SizedBox(height: 12), ...details],
+  );
 }
 
 class _SpecItem {
@@ -12810,9 +12839,7 @@ class _SellCarPageState extends State<SellCarPage> {
             carData['title_status'] != null &&
             carData['title_status'].toString().isNotEmpty;
       case 2: // Pricing & Contact
-        return carData['price'] != null &&
-            carData['price'].toString().isNotEmpty &&
-            carData['city'] != null &&
+        return carData['city'] != null &&
             carData['city'].toString().isNotEmpty &&
             carData['contact_phone'] != null &&
             carData['contact_phone'].toString().isNotEmpty;
@@ -15201,6 +15228,8 @@ class SellStep3Page extends StatefulWidget {
 }
 
 class _SellStep3PageState extends State<SellStep3Page> {
+  static const String _pricePickerNoneOption = 'none';
+
   final _formKey = GlobalKey<FormState>();
   String? selectedPrice;
   String? selectedCity;
@@ -15467,7 +15496,7 @@ class _SellStep3PageState extends State<SellStep3Page> {
                               focusNode: _priceFocusNode,
                               controller: _priceController,
                               decoration: InputDecoration(
-                                labelText: 'Price *',
+                                labelText: 'Price (optional)',
                                 hintText: 'Enter price',
                                 prefixText: selectedCurrency == 'IQD'
                                     ? 'IQD '
@@ -15502,10 +15531,10 @@ class _SellStep3PageState extends State<SellStep3Page> {
                                 });
                               },
                               validator: (value) {
-                                if (value == null || value.isEmpty) {
-                                  return 'Please enter price';
+                                if (value == null || value.trim().isEmpty) {
+                                  return null;
                                 }
-                                final price = int.tryParse(value);
+                                final price = int.tryParse(value.trim());
                                 if (price == null) return 'Invalid price';
                                 if (price < 0) {
                                   return 'Price cannot be negative';
@@ -15514,14 +15543,11 @@ class _SellStep3PageState extends State<SellStep3Page> {
                               },
                             )
                           : FormField<String>(
-                              validator: (_) =>
-                                  (selectedPrice == null ||
-                                      selectedPrice!.isEmpty)
-                                  ? 'Please select price'
-                                  : null,
+                              validator: (_) => null,
                               builder: (state) => GestureDetector(
                                 onTap: () async {
-                                  final priceOptions = selectedCurrency == 'IQD'
+                                  final List<String> numericOptions =
+                                      selectedCurrency == 'IQD'
                                       ? [
                                           ...List.generate(
                                             200,
@@ -15546,18 +15572,28 @@ class _SellStep3PageState extends State<SellStep3Page> {
                                                 .toString(),
                                           ),
                                         ].map((p) => '\$$p').toList();
+                                  final priceOptions = <String>[
+                                    _pricePickerNoneOption,
+                                    ...numericOptions,
+                                  ];
                                   final choice = await _pickFromList(
-                                    'Price ($selectedCurrency)',
+                                    'Price ($selectedCurrency) (optional)',
                                     priceOptions,
                                   );
                                   if (choice != null) {
-                                    setState(() => selectedPrice = choice);
+                                    setState(() {
+                                      selectedPrice =
+                                          choice == _pricePickerNoneOption
+                                          ? null
+                                          : choice;
+                                    });
                                   }
                                 },
                                 child: buildFancySelector(
                                   context,
                                   currency: selectedCurrency,
-                                  label: 'Price ($selectedCurrency) *',
+                                  label:
+                                      'Price ($selectedCurrency) (optional)',
                                   value: selectedPrice != null
                                       ? _formatCurrencyGlobal(
                                           context,
@@ -15631,6 +15667,8 @@ class _SellStep3PageState extends State<SellStep3Page> {
                               selectedPrice = selectedCurrency == 'IQD'
                                   ? 'IQD $numericValue'
                                   : '\$$numericValue';
+                            } else {
+                              selectedPrice = null;
                             }
                           });
                         } else {
@@ -15809,10 +15847,6 @@ class _SellStep3PageState extends State<SellStep3Page> {
                     child: ElevatedButton(
                       onPressed: () {
                         final List<String> missing = [];
-                        if (selectedPrice == null ||
-                            (selectedPrice ?? '').isEmpty) {
-                          missing.add(AppLocalizations.of(context)!.priceLabel);
-                        }
                         if (selectedCity == null ||
                             (selectedCity ?? '').isEmpty) {
                           missing.add(AppLocalizations.of(context)!.cityLabel);
@@ -17082,7 +17116,8 @@ class _ListingPreviewWidgetState extends State<ListingPreviewWidget> {
                   overflow: TextOverflow.ellipsis,
                 ),
                 SizedBox(height: 8),
-                if (data['price'] != null)
+                if (data['price'] != null &&
+                    data['price'].toString().trim().isNotEmpty)
                   Text(
                     _formatCurrencyGlobal(context, data['price']),
                     style: TextStyle(
@@ -17117,6 +17152,470 @@ class _ListingPreviewWidgetState extends State<ListingPreviewWidget> {
   }
 }
 
+String _sellReviewListingBrand(
+  BuildContext context,
+  Map<String, dynamic> car,
+) {
+  final brand = (car['brand'] ?? '').toString().trim();
+  final locBrand = CarNameTranslations.getLocalizedBrand(
+    context,
+    brand.isEmpty ? null : brand,
+  );
+  if (locBrand.isNotEmpty) return locBrand;
+  return (car['title'] ?? '').toString().trim();
+}
+
+String _sellReviewListingModel(
+  BuildContext context,
+  Map<String, dynamic> car,
+) {
+  final brand = (car['brand'] ?? '').toString().trim();
+  final model = (car['model'] ?? '').toString().trim();
+  return CarNameTranslations.getLocalizedModel(
+    context,
+    brand.isEmpty ? null : brand,
+    model.isEmpty ? null : model,
+  );
+}
+
+bool _sellReviewHasPrice(Map<String, dynamic> car) {
+  final p = car['price'];
+  if (p == null) return false;
+  return p.toString().trim().isNotEmpty;
+}
+
+/// Sell step 5 preview: matches [CarDetailsPage] layout and light/dark theming.
+class SellReviewCarDetailScrollView extends StatefulWidget {
+  const SellReviewCarDetailScrollView({super.key, required this.carData});
+
+  final Map<String, dynamic> carData;
+
+  @override
+  State<SellReviewCarDetailScrollView> createState() =>
+      _SellReviewCarDetailScrollViewState();
+}
+
+class _SellReviewCarDetailScrollViewState
+    extends State<SellReviewCarDetailScrollView> {
+  final PageController _pageController = PageController();
+  int _currentMediaIndex = 0;
+
+  @override
+  void dispose() {
+    _pageController.dispose();
+    super.dispose();
+  }
+
+  List<_PreviewMediaEntry> _buildMediaList() {
+    final imgs = widget.carData['images'];
+    final vids = widget.carData['videos'];
+    final List<dynamic> il = imgs is List ? imgs : const [];
+    final List<dynamic> vl = vids is List ? vids : const [];
+    return [
+      ...il.map((e) => _PreviewMediaEntry(isVideo: false, item: e)),
+      ...vl.map((e) => _PreviewMediaEntry(isVideo: true, item: e)),
+    ];
+  }
+
+  void _openCarouselDetail(
+    BuildContext context,
+    List<_PreviewMediaEntry> media,
+    List<dynamic> images,
+  ) {
+    if (media.isEmpty) return;
+    final i = _currentMediaIndex.clamp(0, media.length - 1);
+    final videos = media.where((m) => m.isVideo).map((m) => m.item).toList();
+    Navigator.of(context).push(
+      MaterialPageRoute(
+        builder: (_) => ListingPreviewGalleryPage(
+          imageFilesOrUrls: images,
+          videoFilesOrUrls: videos,
+          initialIndex: i,
+        ),
+      ),
+    );
+  }
+
+  Widget _buildVideoCarouselSlide(dynamic item) {
+    final String path = item is XFile ? item.path : item.toString().trim();
+    final bool isLocalFile = path.isNotEmpty &&
+        !path.startsWith('http://') &&
+        !path.startsWith('https://');
+    return Stack(
+      fit: StackFit.expand,
+      children: [
+        if (isLocalFile)
+          FutureBuilder<String?>(
+            future: generateVideoThumbnail(path),
+            builder: (context, snapshot) {
+              if (snapshot.hasData && snapshot.data != null) {
+                return Image.file(
+                  File(snapshot.data!),
+                  fit: BoxFit.cover,
+                  width: double.infinity,
+                );
+              }
+              return Container(
+                color: Colors.grey[850],
+                child: Center(
+                  child: Icon(Icons.videocam, color: Colors.white70, size: 48),
+                ),
+              );
+            },
+          )
+        else
+          Container(
+            color: Colors.grey[850],
+            child: Center(
+              child: Icon(Icons.videocam, color: Colors.white70, size: 56),
+            ),
+          ),
+        Center(
+          child: Container(
+            padding: EdgeInsets.all(12),
+            decoration: BoxDecoration(
+              color: Colors.black54,
+              shape: BoxShape.circle,
+            ),
+            child: Icon(Icons.play_arrow, color: Colors.white, size: 40),
+          ),
+        ),
+      ],
+    );
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final isLightShell = Theme.of(context).brightness == Brightness.light;
+    final car = widget.carData;
+    final media = _buildMediaList();
+    final brandStr = _sellReviewListingBrand(context, car);
+    final modelStr = _sellReviewListingModel(context, car);
+    final rawImages = car['images'] is List ? (car['images'] as List) : [];
+
+    return CustomScrollView(
+      slivers: [
+        SliverToBoxAdapter(
+          child: SizedBox(
+            height: 300,
+            child: ClipRRect(
+              borderRadius: const BorderRadius.only(
+                bottomLeft: Radius.circular(24),
+                bottomRight: Radius.circular(24),
+              ),
+              child: Stack(
+                fit: StackFit.expand,
+                children: [
+                  if (media.isEmpty)
+                    Container(
+                      color: Colors.grey[900],
+                      child: Icon(
+                        Icons.directions_car,
+                        size: 60,
+                        color: Colors.grey[400],
+                      ),
+                    )
+                  else
+                    GestureDetector(
+                      onTap: () =>
+                          _openCarouselDetail(context, media, rawImages),
+                      child: PageView.builder(
+                        controller: _pageController,
+                        onPageChanged: (idx) =>
+                            setState(() => _currentMediaIndex = idx),
+                        itemCount: media.length,
+                        itemBuilder: (context, index) {
+                          final slot = media[index];
+                          if (slot.isVideo) {
+                            return _buildVideoCarouselSlide(slot.item);
+                          }
+                          final item = slot.item;
+                          if (item is XFile) {
+                            return Image.file(
+                              File(item.path),
+                              fit: BoxFit.cover,
+                              width: double.infinity,
+                            );
+                          }
+                          final url = item.toString().trim();
+                          final fullUrl = url.startsWith('http')
+                              ? url
+                              : _buildFullImageUrl(url);
+                          return _listingNetworkImage(
+                            fullUrl,
+                            fit: BoxFit.cover,
+                            width: double.infinity,
+                          );
+                        },
+                      ),
+                    ),
+                  if (media.length > 1)
+                    Positioned(
+                      bottom: 16,
+                      left: 0,
+                      right: 0,
+                      child: IgnorePointer(
+                        ignoring: true,
+                        child: Center(
+                          child: SingleChildScrollView(
+                            scrollDirection: Axis.horizontal,
+                            physics: const BouncingScrollPhysics(),
+                            child: Row(
+                              mainAxisAlignment: MainAxisAlignment.center,
+                              children: List.generate(media.length, (i) {
+                                final active = i == _currentMediaIndex;
+                                return AnimatedContainer(
+                                  duration: const Duration(milliseconds: 200),
+                                  margin: const EdgeInsets.symmetric(
+                                    horizontal: 4,
+                                  ),
+                                  width: active ? 10 : 6,
+                                  height: active ? 10 : 6,
+                                  decoration: BoxDecoration(
+                                    color: active ? Colors.white : Colors.white70,
+                                    shape: BoxShape.circle,
+                                  ),
+                                );
+                              }),
+                            ),
+                          ),
+                        ),
+                      ),
+                    ),
+                ],
+              ),
+            ),
+          ),
+        ),
+        SliverToBoxAdapter(
+          child: Container(
+            width: double.infinity,
+            decoration: BoxDecoration(
+              color: isLightShell
+                  ? AppThemes.lightAppBackground
+                  : Colors.transparent,
+              borderRadius: const BorderRadius.vertical(
+                top: Radius.circular(24),
+              ),
+            ),
+            padding: const EdgeInsets.fromLTRB(16, 20, 16, 24),
+            child: Theme(
+              data: isLightShell ? Theme.of(context) : AppThemes.darkTheme,
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  if (car['is_quick_sell'] == true ||
+                      car['is_quick_sell'] == 'true')
+                    Container(
+                      width: double.infinity,
+                      padding: const EdgeInsets.symmetric(
+                        vertical: 12,
+                        horizontal: 16,
+                      ),
+                      margin: const EdgeInsets.only(bottom: 16),
+                      decoration: BoxDecoration(
+                        gradient: const LinearGradient(
+                          colors: [Colors.orange, Colors.deepOrange],
+                          begin: Alignment.centerLeft,
+                          end: Alignment.centerRight,
+                        ),
+                        borderRadius: BorderRadius.circular(12),
+                      ),
+                      child: Row(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          const Icon(Icons.flash_on,
+                              color: Colors.white, size: 20),
+                          const SizedBox(width: 8),
+                          Text(
+                            AppLocalizations.of(context)!.quickSell,
+                            style: const TextStyle(
+                              color: Colors.white,
+                              fontWeight: FontWeight.bold,
+                              fontSize: 16,
+                              letterSpacing: 1.5,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  Builder(
+                    builder: (context) {
+                      String? pickCity(List<String> keys) {
+                        for (final k in keys) {
+                          final v = car[k]?.toString().trim();
+                          if (v != null && v.isNotEmpty) return v;
+                        }
+                        return null;
+                      }
+
+                      final cityDetail = (pickCity(['city', 'location']) ?? '')
+                          .trim();
+                      final cityLabelStyle = TextStyle(
+                        fontSize: 13,
+                        fontWeight: FontWeight.w700,
+                        color: isLightShell
+                            ? const Color(0xFF757575)
+                            : Colors.white70,
+                      );
+                      final uploadedDetail =
+                          _listingUploadedAgo(context, car);
+                      if (cityDetail.isEmpty && uploadedDetail.isEmpty) {
+                        return const SizedBox.shrink();
+                      }
+                      return Column(
+                        crossAxisAlignment: CrossAxisAlignment.stretch,
+                        children: [
+                          Row(
+                            crossAxisAlignment: CrossAxisAlignment.center,
+                            children: [
+                              Expanded(
+                                child: cityDetail.isEmpty
+                                    ? const SizedBox.shrink()
+                                    : Row(
+                                        mainAxisSize: MainAxisSize.min,
+                                        children: [
+                                          Icon(
+                                            Icons.location_city,
+                                            size: 14,
+                                            color: isLightShell
+                                                ? const Color(0xFF757575)
+                                                : Colors.white70,
+                                          ),
+                                          const SizedBox(width: 6),
+                                          Flexible(
+                                            child: Text(
+                                              '${AppLocalizations.of(context)!.cityLabel}: ${_translateValueGlobal(context, pickCity(['city', 'location'])) ?? pickCity(['city', 'location'])}',
+                                              style: cityLabelStyle,
+                                              maxLines: 1,
+                                              overflow: TextOverflow.ellipsis,
+                                            ),
+                                          ),
+                                        ],
+                                      ),
+                              ),
+                              if (uploadedDetail.isNotEmpty) ...[
+                                if (cityDetail.isNotEmpty)
+                                  const SizedBox(width: 8),
+                                Text(
+                                  uploadedDetail,
+                                  style: cityLabelStyle.copyWith(
+                                    fontWeight: FontWeight.w600,
+                                    fontSize: 12,
+                                  ),
+                                  maxLines: 1,
+                                  overflow: TextOverflow.ellipsis,
+                                ),
+                              ],
+                            ],
+                          ),
+                          const SizedBox(height: 8),
+                        ],
+                      );
+                    },
+                  ),
+                  Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Row(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Expanded(
+                            child: Text(
+                              brandStr,
+                              style: TextStyle(
+                                fontSize: 19,
+                                fontWeight: FontWeight.bold,
+                                color: isLightShell
+                                    ? AppThemes.darkHomeShellBackground
+                                    : Colors.white,
+                              ),
+                              maxLines: 1,
+                              overflow: TextOverflow.ellipsis,
+                            ),
+                          ),
+                          if (_sellReviewHasPrice(car) && modelStr.isEmpty) ...[
+                            const SizedBox(width: 12),
+                            Text(
+                              _formatCurrencyGlobal(context, car['price']),
+                              style: const TextStyle(
+                                fontSize: 18,
+                                fontWeight: FontWeight.w700,
+                                color: Color(0xFFFF6B00),
+                              ),
+                            ),
+                          ],
+                        ],
+                      ),
+                      if (modelStr.isNotEmpty) ...[
+                        const SizedBox(height: 4),
+                        Row(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Expanded(
+                              child: Text(
+                                modelStr,
+                                style: TextStyle(
+                                  fontSize: 22,
+                                  fontWeight: FontWeight.w800,
+                                  color: isLightShell
+                                      ? Theme.of(context)
+                                          .colorScheme
+                                          .onSurfaceVariant
+                                      : Colors.white70,
+                                ),
+                                maxLines: 1,
+                                overflow: TextOverflow.ellipsis,
+                              ),
+                            ),
+                            if (_sellReviewHasPrice(car)) ...[
+                              const SizedBox(width: 12),
+                              Text(
+                                _formatCurrencyGlobal(
+                                  context,
+                                  car['price'],
+                                ),
+                                style: const TextStyle(
+                                  fontSize: 18,
+                                  fontWeight: FontWeight.w700,
+                                  color: Color(0xFFFF6B00),
+                                ),
+                              ),
+                            ],
+                          ],
+                        ),
+                      ],
+                    ],
+                  ),
+                  const SizedBox(height: 16),
+                  Divider(
+                    height: 1,
+                    thickness: 1,
+                    color: isLightShell
+                        ? const Color(0xFFE0E0E0)
+                        : Colors.white24,
+                  ),
+                  const SizedBox(height: 16),
+                  Text(
+                    AppLocalizations.of(context)!.specificationsLabel,
+                    style: const TextStyle(
+                      fontSize: 22,
+                      fontWeight: FontWeight.bold,
+                      color: Color(0xFFFF6B00),
+                    ),
+                  ),
+                  const SizedBox(height: 20),
+                  buildCarListingSpecsGrid(context, car),
+                ],
+              ),
+            ),
+          ),
+        ),
+      ],
+    );
+  }
+}
+
 // Step 5: Review & Submit
 class SellStep5Page extends StatefulWidget {
   const SellStep5Page({super.key});
@@ -17131,25 +17630,21 @@ class _SellStep5PageState extends State<SellStep5Page> {
   Widget build(BuildContext context) {
     final parentState = context.findAncestorStateOfType<_SellCarPageState>();
     final carData = parentState?.carData ?? {};
+    final isLight = Theme.of(context).brightness == Brightness.light;
+    final shellBg = isLight
+        ? Colors.white
+        : Theme.of(context).scaffoldBackgroundColor;
 
-    return Container(
-      color: Colors.grey[900],
+    return ColoredBox(
+      color: shellBg,
       child: Column(
         children: [
           Expanded(
-            child: SingleChildScrollView(
-              child: ListingPreviewWidget(
-                carData: carData,
-                imageFilesOrUrls: carData['images'] is List
-                    ? (carData['images'] as List)
-                    : [],
-                fullPage: true,
-              ),
-            ),
+            child: SellReviewCarDetailScrollView(carData: carData),
           ),
           Container(
             padding: EdgeInsets.fromLTRB(16, 12, 16, 12),
-            color: Colors.grey[900],
+            color: shellBg,
             child: SafeArea(
               top: false,
               child: Row(

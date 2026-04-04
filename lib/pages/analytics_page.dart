@@ -602,6 +602,10 @@ class _AnalyticsPageState extends State<AnalyticsPage> {
         ? AppThemes.listingCardFillGridOnLightShell()
         : Colors.white.withValues(alpha: 0.10);
     const metaColor = Colors.white70;
+    final String yearRaw = (car['year'] ?? '').toString().trim();
+    final String yearDisplay = yearRaw.isEmpty
+        ? ''
+        : _localizeDigitsGlobal(context, yearRaw);
 
     return Container(
       height: 205, // Standard height for all car cards
@@ -746,7 +750,9 @@ class _AnalyticsPageState extends State<AnalyticsPage> {
                       ),
                       SizedBox(height: 6),
                       Text(
-                        _formatCurrencyGlobal(context, car['price']),
+                        yearDisplay.isNotEmpty
+                            ? yearDisplay
+                            : _formatCurrencyGlobal(context, car['price']),
                         style: TextStyle(
                           color: Color(0xFFFF6B00),
                           fontWeight: FontWeight.w600,
@@ -766,7 +772,11 @@ class _AnalyticsPageState extends State<AnalyticsPage> {
             left: 12,
             right: 12,
             child: Text(
-              '${_localizeDigitsGlobal(context, (car['year'] ?? '').toString())} • ${_localizeDigitsGlobal(context, (car['mileage'] ?? '').toString())} ${AppLocalizations.of(context)!.unit_km}',
+              [
+                if (yearDisplay.isNotEmpty)
+                  _formatCurrencyGlobal(context, car['price']),
+                '${_localizeDigitsGlobal(context, (car['mileage'] ?? '').toString())} ${AppLocalizations.of(context)!.unit_km}',
+              ].where((s) => s.isNotEmpty).join(' • '),
               style: TextStyle(color: metaColor, fontSize: 13),
             ),
           ),
