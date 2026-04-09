@@ -10,7 +10,8 @@ services:
   - type: web
     runtime: python
     name: carr
-    # Use script so logs show each step; --no-cache-dir avoids filling small build disks.
-    buildCommand: bash build_render.sh
+    # Inline command avoids Windows CRLF in .sh files breaking `bash build_render.sh` on Linux (exit 1, no logs).
+    # If the dashboard overrides Build Command, paste this same line there.
+    buildCommand: echo "=== pip upgrade ===" && pip install --upgrade pip setuptools wheel && echo "=== pip install ===" && pip install --no-cache-dir -r kk/requirements.txt && echo "=== build OK ==="
     startCommand: bash start_render.sh
     healthCheckPath: /health

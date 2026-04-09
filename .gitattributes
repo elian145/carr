@@ -1,0 +1,2 @@
+# Linux/Render run bash — CRLF breaks scripts (silent fail, empty logs, exit 1).
+*.sh text eol=lf
