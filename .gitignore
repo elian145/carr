@@ -62,6 +62,7 @@ signing.properties
 
 # Scratch outputs (never commit)
 tools/scratch/
+tools/out/
 
 # Local scratch scripts (never commit)
 kk/_*.py

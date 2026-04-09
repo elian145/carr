@@ -5,7 +5,7 @@ import os
 from flask import Blueprint, Response, abort, current_app, jsonify, request
 from flask_jwt_extended import jwt_required
 
-from ..ai_service import car_analysis_service
+from ..ai_service import car_analysis_service, suggest_car_specs_from_ymm
 from ..auth import get_current_user
 from ..media_processing import blur_image_bytes, heic_to_jpeg, process_and_store_image
 from ..security import generate_secure_filename
@@ -14,6 +14,41 @@ from ..config import get_app_env
 from ..time_utils import utcnow
 
 bp = Blueprint("ai", __name__)
+
+
+@bp.route("/api/suggest-car-specs", methods=["POST"])
+@jwt_required()
+def suggest_car_specs():
+    """YMMT → proposed specs via OpenAI (fallback when Car API has no match)."""
+    try:
+        current_user = get_current_user()
+        if not current_user:
+            # 401 avoids confusion with Flask "route not found" 404 in access logs.
+            return jsonify({"error": "User not found"}), 401
+
+        data = request.get_json(silent=True) or {}
+        year_raw = data.get("year")
+        try:
+            year = int(year_raw)
+        except (TypeError, ValueError):
+            return jsonify({"error": "Invalid or missing year"}), 400
+        brand = (data.get("brand") or "").strip()
+        model = (data.get("model") or "").strip()
+        trim = (data.get("trim") or "").strip()
+        market = (data.get("market") or "").strip() or None
+        if not brand or not model or not trim:
+            return jsonify({"error": "brand, model, and trim are required"}), 400
+        if year < 1900 or year > 2035:
+            return jsonify({"error": "year out of range"}), 400
+
+        specs = suggest_car_specs_from_ymm(
+            year, brand, model, trim, market_hint=market
+        )
+        if specs.get("error"):
+            return jsonify(specs), 503
+        return jsonify({"success": True, "specs": specs}), 200
+    except Exception:
+        return jsonify({"error": "Failed to suggest car specs"}), 500
 
 
 @bp.route("/api/analyze-car-image", methods=["POST"])

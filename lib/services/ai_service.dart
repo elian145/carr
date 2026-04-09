@@ -8,6 +8,12 @@ import 'config.dart';
 import 'api_service.dart';
 
 class AiService {
+  /// [json.decode] sometimes yields [Map<dynamic, dynamic>]; normalize for type-safe access.
+  static Map<String, dynamic>? coerceJsonMap(dynamic value) {
+    if (value == null || value is! Map) return null;
+    return Map<String, dynamic>.from(value as Map);
+  }
+
   /// Analyze a single car image and extract vehicle information
   static Future<Map<String, dynamic>?> analyzeCarImage(XFile imageFile) async {
     try {
@@ -323,6 +329,102 @@ class AiService {
 
   static Future<String?> _getAuthToken() async {
     return ApiService.accessToken;
+  }
+
+  /// Server-side OpenAI suggestion when the Car API has no trim match.
+  /// Returns the `specs` map on success, or null if auth/network error.
+  /// On provider/config error the map may include `error` and `configured` from JSON — check the raw response in callers if needed.
+  static Future<Map<String, dynamic>?> suggestCarSpecsFromYmm({
+    required int year,
+    required String brand,
+    required String model,
+    required String trim,
+    String? market,
+  }) async {
+    try {
+      final token = await _getAuthToken();
+      if (token == null || token.isEmpty) {
+        if (kDebugMode) {
+          debugPrint('AI suggest specs: missing auth token');
+        }
+        return null;
+      }
+      final url = Uri.parse('${apiBaseApi()}/suggest-car-specs');
+      final response = await http
+          .post(
+            url,
+            headers: {
+              'Authorization': 'Bearer $token',
+              'Content-Type': 'application/json; charset=utf-8',
+            },
+            body: json.encode({
+              'year': year,
+              'brand': brand,
+              'model': model,
+              'trim': trim,
+              if (market != null && market.trim().isNotEmpty) 'market': market.trim(),
+            }),
+          )
+          .timeout(const Duration(seconds: 120));
+      final body = response.body;
+      if (response.statusCode != 200) {
+        if (kDebugMode) {
+          debugPrint(
+            'AI suggest specs failed: ${response.statusCode} $body',
+          );
+        }
+        try {
+          final decoded = json.decode(body);
+          return coerceJsonMap(decoded);
+        } catch (_) {}
+        return null;
+      }
+      final data = coerceJsonMap(json.decode(body));
+      if (data == null) return null;
+      return coerceJsonMap(data['specs']);
+    } catch (e) {
+      if (kDebugMode) {
+        debugPrint('AI suggest specs error: $e');
+      }
+      return null;
+    }
+  }
+
+  /// Same as [suggestCarSpecsFromYmm] but returns full JSON (e.g. for `error` message).
+  static Future<Map<String, dynamic>?> suggestCarSpecsFromYmmRaw({
+    required int year,
+    required String brand,
+    required String model,
+    required String trim,
+    String? market,
+  }) async {
+    try {
+      final token = await _getAuthToken();
+      if (token == null || token.isEmpty) return null;
+      final url = Uri.parse('${apiBaseApi()}/suggest-car-specs');
+      final response = await http
+          .post(
+            url,
+            headers: {
+              'Authorization': 'Bearer $token',
+              'Content-Type': 'application/json; charset=utf-8',
+            },
+            body: json.encode({
+              'year': year,
+              'brand': brand,
+              'model': model,
+              'trim': trim,
+              if (market != null && market.trim().isNotEmpty) 'market': market.trim(),
+            }),
+          )
+          .timeout(const Duration(seconds: 120));
+      return coerceJsonMap(json.decode(response.body));
+    } catch (e) {
+      if (kDebugMode) {
+        debugPrint('AI suggest specs raw error: $e');
+      }
+      return null;
+    }
   }
 
   /// Extract car information from AI analysis result

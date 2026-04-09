@@ -251,7 +251,6 @@ class _MyListingsPageState extends State<MyListingsPage> {
   Widget build(BuildContext context) {
     final loc = AppLocalizations.of(context);
     final auth = context.watch<AuthService>();
-    final isLightShell = Theme.of(context).brightness == Brightness.light;
 
     final authenticatedBody = RefreshIndicator(
       onRefresh: () => _fetch(refresh: true),
@@ -326,7 +325,7 @@ class _MyListingsPageState extends State<MyListingsPage> {
     );
 
     return Scaffold(
-      backgroundColor: isLightShell ? Colors.white : null,
+      backgroundColor: Theme.of(context).scaffoldBackgroundColor,
       appBar: AppBar(
         title: Text(loc?.myListingsTitle ?? 'My listings'),
       ),

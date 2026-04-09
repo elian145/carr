@@ -193,6 +193,7 @@ class CarCatalog {
       '4 Series',
       '5 Series',
       '6 Series',
+      '600',
       '7 Series',
       '8 Series',
       'i3',
@@ -2600,6 +2601,10 @@ class CarCatalog {
         '650i Gran Coupe Excellence',
         'Other',
         '650i',
+      ],
+      '600': [
+        'Base',
+        'Other',
       ],
       '7 Series': [
         '740d',

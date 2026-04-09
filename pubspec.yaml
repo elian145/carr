@@ -86,6 +86,7 @@ flutter:
 
   assets:
     - assets/body_types_png/
+    - assets/car_spec_dataset.json
 
   generate: true
 
