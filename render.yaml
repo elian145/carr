@@ -10,6 +10,7 @@ services:
   - type: web
     runtime: python
     name: carr
-    buildCommand: pip install -r kk/requirements.txt
+    # Use script so logs show each step; --no-cache-dir avoids filling small build disks.
+    buildCommand: bash build_render.sh
     startCommand: bash start_render.sh
     healthCheckPath: /health

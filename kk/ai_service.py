@@ -75,6 +75,38 @@ class CarAnalysisService:
 car_analysis_service = CarAnalysisService()
 
 
+def _openai_error_message(status_code: int, body: str) -> str:
+    """Turn OpenAI HTTP errors into short, user-facing text for the mobile app."""
+    try:
+        data = json.loads(body)
+        err = data.get("error") if isinstance(data, dict) else None
+        if isinstance(err, dict):
+            code = (err.get("code") or "").strip()
+            typ = (err.get("type") or "").strip()
+            msg = (err.get("message") or "").strip()
+            if status_code == 429:
+                if code == "insufficient_quota" or typ == "insufficient_quota":
+                    return (
+                        "OpenAI quota or billing exhausted. Add payment method or credits at "
+                        "platform.openai.com/account/billing — then retry."
+                    )
+                return (
+                    "OpenAI rate limit (429). Wait a minute and retry, or upgrade your API tier."
+                )
+            if status_code == 401:
+                return "OpenAI rejected the API key. Set a valid OPENAI_API_KEY on the server."
+            if msg:
+                return f"OpenAI: {msg[:200]}"
+    except (json.JSONDecodeError, TypeError):
+        pass
+    if status_code == 429:
+        return (
+            "OpenAI returned 429 (quota or rate limit). Check billing and limits at "
+            "platform.openai.com."
+        )
+    return "AI provider returned an error. Check server logs and OPENAI_API_KEY."
+
+
 def _strip_json_fence(text: str) -> str:
     s = (text or "").strip()
     if s.startswith("```"):
@@ -215,7 +247,7 @@ def suggest_car_specs_from_ymm(
         if resp.status_code != 200:
             logger.warning("OpenAI specs HTTP %s: %s", resp.status_code, resp.text[:500])
             return {
-                "error": "AI provider returned an error. Check server logs and OPENAI_API_KEY.",
+                "error": _openai_error_message(resp.status_code, resp.text or ""),
                 "configured": True,
             }
         payload = resp.json()
