@@ -6,11 +6,9 @@ import 'dart:io';
 import '../data/car_catalog.dart';
 import '../l10n/app_localizations.dart';
 import '../services/api_service.dart';
-import '../services/car_specs_api_service.dart';
 import '../services/auth_service.dart';
 import '../services/car_spec_index.dart';
-import '../services/ai_service.dart';
-import '../services/ai_specs_normalizer.dart';
+import '../models/online_spec_variant.dart';
 
 class SellPage extends StatefulWidget {
   const SellPage({super.key});
@@ -59,13 +57,11 @@ class _SellPageState extends State<SellPage> {
   bool _submitting = false;
   String? _error;
   String? _stage;
-  bool _loadingOnlineSpecs = false;
-  bool _loadingAiSpecs = false;
-  String? _onlineSpecStatus;
 
-  /// When online lookup finds 2+ distinct values, the matching field becomes a dropdown
+  /// When the bundled catalog provides 2+ distinct values, the matching field becomes a dropdown
   /// limited to these options (cleared when applying catalog specs).
-  List<double>? _engineSizeLiterOptions;
+  /// Display strings, e.g. `3.0`, `3.0 D`, `2.4 T` (from catalog variants).
+  List<String>? _engineSizeDisplayOptions;
   List<int>? _cylinderOptions;
   List<String>? _fuelEconomyOptions;
   List<int>? _seatingOptions;
@@ -75,12 +71,13 @@ class _SellPageState extends State<SellPage> {
   List<String>? _engineTypeOptions;
   List<String>? _fuelTypeOptions;
 
-  /// Populated after online lookup: paired engine size, cylinders, transmission, etc. per trim.
+  /// Populated after catalog apply: paired engine size, cylinders, transmission, etc. per row.
   List<OnlineSpecVariant>? _onlineSpecVariants;
 
   @override
   void initState() {
     super.initState();
+    _year.addListener(_onListingYearChanged);
     CarSpecIndex.loadWithResult().then((r) {
       if (!mounted) return;
       setState(() {
@@ -94,6 +91,7 @@ class _SellPageState extends State<SellPage> {
 
   @override
   void dispose() {
+    _year.removeListener(_onListingYearChanged);
     _year.dispose();
     _mileage.dispose();
     _price.dispose();
@@ -107,7 +105,7 @@ class _SellPageState extends State<SellPage> {
   }
 
   void _clearOnlineSpecOptionLists() {
-    _engineSizeLiterOptions = null;
+    _engineSizeDisplayOptions = null;
     _cylinderOptions = null;
     _fuelEconomyOptions = null;
     _seatingOptions = null;
@@ -131,7 +129,6 @@ class _SellPageState extends State<SellPage> {
     final idx = _specIndex;
     final brand = _selectedBrand;
     final model = _selectedModel;
-    final trim = _selectedTrim;
 
     int? newModelId = _datasetModelId;
     int? newYear = _catalogYear;
@@ -139,8 +136,6 @@ class _SellPageState extends State<SellPage> {
     if (idx == null ||
         brand == null ||
         model == null ||
-        trim == null ||
-        trim.trim().isEmpty ||
         !idx.hasCoverage(brand, model)) {
       newModelId = null;
       newYear = null;
@@ -155,17 +150,38 @@ class _SellPageState extends State<SellPage> {
           newModelId = null;
           newYear = null;
         } else {
-          var modelId = newModelId ?? 0;
-          if (modelId == 0 || !variants.any((v) => v.id == modelId)) {
-            modelId =
-                idx.suggestDatasetModelId(bid, model, trim) ?? variants.first.id;
-          }
-          newModelId = modelId;
-          final years = idx.yearsForModel(modelId);
+          final formYear = int.tryParse(_year.text.trim());
+          final years = idx.yearsForCatalogStep(
+            brand,
+            model,
+            CarSpecIndex.catalogAutofillModelOnly,
+          );
           if (years.isEmpty) {
+            newModelId = null;
             newYear = null;
-          } else if (newYear == null || !years.contains(newYear)) {
-            newYear = years.first;
+          } else {
+            int resolvedYear;
+            if (formYear != null && years.contains(formYear)) {
+              resolvedYear = formYear;
+            } else if (newYear != null && years.contains(newYear)) {
+              resolvedYear = newYear;
+            } else {
+              resolvedYear = years.first;
+            }
+            newYear = resolvedYear;
+            final preferred = idx.suggestDatasetModelIdForFormYear(
+              brand,
+              model,
+              CarSpecIndex.catalogAutofillModelOnly,
+              resolvedYear,
+            );
+            var modelId = newModelId ?? 0;
+            if (modelId == 0 || !variants.any((v) => v.id == modelId)) {
+              modelId = preferred ?? variants.first.id;
+            } else if (!idx.datasetVariantCoversYear(modelId, resolvedYear)) {
+              modelId = preferred ?? modelId;
+            }
+            newModelId = modelId;
           }
         }
       }
@@ -177,12 +193,76 @@ class _SellPageState extends State<SellPage> {
     });
   }
 
+  /// Fills constrained step-2 lists from bundled-catalog [OnlineSpecVariant] rows.
+  void _applyConstrainedOptionsFromCatalogVariants(List<OnlineSpecVariant> vs) {
+    if (vs.isEmpty) return;
+    final tr = <String>{};
+    final dr = <String>{};
+    final body = <String>{};
+    final engt = <String>{};
+    final fuel = <String>{};
+    final sizeLabels = <String>[];
+    final seenSizes = <String>{};
+    final cyl = <int>{};
+    final seat = <int>{};
+    final fe = <String>{};
+    for (final v in vs) {
+      if (v.transmission != null) tr.add(v.transmission!);
+      if (v.drivetrain != null) dr.add(v.drivetrain!);
+      if (v.bodyType != null) body.add(v.bodyType!);
+      if (v.engineType != null) engt.add(v.engineType!);
+      if (v.fuelType != null) fuel.add(v.fuelType!);
+      if (v.engineSizeLiters != null && v.engineSizeLiters! > 0.001) {
+        final lit = double.parse(v.engineSizeLiters!.toStringAsFixed(1));
+        final label = '${lit.toStringAsFixed(1)}${v.displacementSuffix}';
+        if (seenSizes.add(label)) sizeLabels.add(label);
+      }
+      if (v.cylinderCount != null && v.cylinderCount! > 0) {
+        cyl.add(v.cylinderCount!);
+      }
+      if (v.seating != null && v.seating! > 0) seat.add(v.seating!);
+      if (v.fuelEconomy != null && v.fuelEconomy!.trim().isNotEmpty) {
+        fe.add(v.fuelEconomy!.trim());
+      }
+    }
+    _transmissionOptions = tr.isNotEmpty ? (tr.toList()..sort()) : null;
+    _drivetrainOptions = dr.isNotEmpty ? (dr.toList()..sort()) : null;
+    _bodyTypeOptions = body.isNotEmpty ? (body.toList()..sort()) : null;
+    _engineTypeOptions = engt.isNotEmpty ? (engt.toList()..sort()) : null;
+    _fuelTypeOptions = fuel.isNotEmpty ? (fuel.toList()..sort()) : null;
+    if (sizeLabels.isNotEmpty) {
+      sizeLabels.sort((a, b) {
+        final la = OnlineSpecVariant.parseLeadingEngineLiters(a) ?? 0;
+        final lb = OnlineSpecVariant.parseLeadingEngineLiters(b) ?? 0;
+        final c = la.compareTo(lb);
+        if (c != 0) return c;
+        return a.compareTo(b);
+      });
+      _engineSizeDisplayOptions = sizeLabels;
+    } else {
+      _engineSizeDisplayOptions = null;
+    }
+    _cylinderOptions = cyl.isNotEmpty ? (cyl.toList()..sort()) : null;
+    _seatingOptions = seat.isNotEmpty ? (seat.toList()..sort()) : null;
+    _fuelEconomyOptions = fe.isNotEmpty ? (fe.toList()..sort()) : null;
+  }
+
   void _applyCatalogSpecs() {
     final idx = _specIndex;
-    if (idx == null || _datasetModelId == null || _catalogYear == null) {
+    if (idx == null || _catalogYear == null) {
       return;
     }
-    final fields = idx.appliedFieldsFor(_datasetModelId!, _catalogYear!);
+    final brand = (_selectedBrand ?? '').trim();
+    final model = (_selectedModel ?? '').trim();
+    if (brand.isEmpty || model.isEmpty) return;
+
+    final rep = idx.representativeForCatalogSell(
+      brand,
+      model,
+      CarSpecIndex.catalogAutofillModelOnly,
+      _catalogYear!,
+    );
+    CatalogSpecFields? fields = rep?.fields;
     if (fields == null) {
       final loc = AppLocalizations.of(context);
       ScaffoldMessenger.of(context).showSnackBar(
@@ -195,22 +275,54 @@ class _SellPageState extends State<SellPage> {
       );
       return;
     }
+    final specFields = fields;
+
+    var catVs = (brand.isNotEmpty && model.isNotEmpty)
+        ? idx.catalogSellSpecVariants(
+            brand,
+            model,
+            CarSpecIndex.catalogAutofillModelOnly,
+            _catalogYear!,
+          )
+        : <OnlineSpecVariant>[];
+    if (catVs.isEmpty) {
+      catVs = [
+        OnlineSpecVariant(
+          engineSizeLiters: specFields.engineSizeLiters,
+          displacementSuffix: specFields.displacementSuffix,
+          cylinderCount: specFields.cylinderCount,
+          seating: specFields.seating,
+          fuelEconomy: specFields.fuelEconomy,
+          transmission: specFields.transmission,
+          drivetrain: specFields.driveType,
+          bodyType: specFields.bodyType,
+          engineType: specFields.engineType,
+          fuelType: specFields.fuelType,
+        ),
+      ];
+    }
+
     setState(() {
-      _clearOnlineSpecOptionLists();
-      _engineType = fields.engineType;
-      _fuelType = fields.fuelType;
-      _transmission = fields.transmission;
-      _driveType = fields.driveType;
-      _bodyType = fields.bodyType;
+      if (rep != null) {
+        _datasetModelId = rep.datasetModelId;
+      }
+      _onlineSpecVariants = List<OnlineSpecVariant>.from(catVs);
+      _applyConstrainedOptionsFromCatalogVariants(catVs);
+      _engineType = specFields.engineType;
+      _fuelType = specFields.fuelType;
+      _transmission = specFields.transmission;
+      _driveType = specFields.driveType;
+      _bodyType = specFields.bodyType;
       _specDropdownKey++;
-      _engineSizeCtl.text = fields.engineSizeLiters != null
-          ? fields.engineSizeLiters!.toStringAsFixed(1)
+      _engineSizeCtl.text = specFields.engineSizeLiters != null
+          ? '${specFields.engineSizeLiters!.toStringAsFixed(1)}${specFields.displacementSuffix}'
           : '';
       _cylinderCtl.text =
-          fields.cylinderCount != null ? '${fields.cylinderCount}' : '';
-      _fuelEconomyCtl.text = fields.fuelEconomy ?? '';
-      _seatingCtl.text = fields.seating != null ? '${fields.seating}' : '';
+          specFields.cylinderCount != null ? '${specFields.cylinderCount}' : '';
+      _fuelEconomyCtl.text = specFields.fuelEconomy ?? '';
+      _seatingCtl.text = specFields.seating != null ? '${specFields.seating}' : '';
       _year.text = '${_catalogYear!}';
+      _syncConstrainedSelectionsAfterCatalogApply();
     });
     ScaffoldMessenger.of(context).showSnackBar(
       const SnackBar(content: Text('Applied specs from catalog')),
@@ -223,204 +335,8 @@ class _SellPageState extends State<SellPage> {
     });
   }
 
-  Future<void> _fetchOnlineSpecs() async {
-    final brand = (_selectedBrand ?? '').trim();
-    final model = (_selectedModel ?? '').trim();
-    final trim = (_selectedTrim ?? '').trim();
-    final year = int.tryParse(_year.text.trim());
-    if (brand.isEmpty || model.isEmpty || trim.isEmpty) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('Select brand, model, and trim first'),
-        ),
-      );
-      return;
-    }
-    if (year == null || year < 1980 || year > DateTime.now().year + 1) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('Enter a valid year before online spec lookup'),
-        ),
-      );
-      return;
-    }
-    if (!CarSpecsApiService.isConfigured) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text(CarSpecsApiService.missingConfigurationMessage),
-        ),
-      );
-      return;
-    }
-
-    setState(() {
-      _loadingOnlineSpecs = true;
-      _onlineSpecStatus = null;
-    });
-    try {
-      final specs = await CarSpecsApiService.lookupByYmm(
-        year: year,
-        brand: brand,
-        model: model,
-        trim: trim,
-      );
-      if (!mounted) return;
-      setState(() {
-        if (specs.engineType != null) _engineType = specs.engineType!;
-        if (specs.fuelType != null) _fuelType = specs.fuelType!;
-        if (specs.transmission != null) _transmission = specs.transmission!;
-        if (specs.drivetrain != null) _driveType = specs.drivetrain!;
-        if (specs.bodyType != null) _bodyType = specs.bodyType!;
-        _specDropdownKey++;
-        _engineSizeLiterOptions = specs.engineSizeLiterOptions;
-        _cylinderOptions = specs.cylinderOptions;
-        _fuelEconomyOptions = specs.fuelEconomyOptions;
-        _seatingOptions = specs.seatingOptions;
-        _transmissionOptions = specs.transmissionOptions;
-        _drivetrainOptions = specs.drivetrainOptions;
-        _bodyTypeOptions = specs.bodyTypeOptions;
-        _engineTypeOptions = specs.engineTypeOptions;
-        _fuelTypeOptions = specs.fuelTypeOptions;
-        _onlineSpecVariants = specs.specVariants.isEmpty
-            ? null
-            : List<OnlineSpecVariant>.from(specs.specVariants);
-        _engineSizeCtl.text = specs.engineSizeLiters != null
-            ? specs.engineSizeLiters!.toStringAsFixed(1)
-            : _engineSizeCtl.text;
-        _cylinderCtl.text =
-            specs.cylinderCount != null ? '${specs.cylinderCount}' : _cylinderCtl.text;
-        _fuelEconomyCtl.text =
-            specs.fuelEconomy != null ? specs.fuelEconomy! : _fuelEconomyCtl.text;
-        _seatingCtl.text = specs.seating != null ? '${specs.seating}' : _seatingCtl.text;
-        _syncConstrainedSelectionsAfterOnlineSpecs();
-        _onlineSpecStatus =
-            'Online specs applied for $brand $model $trim ($year).';
-      });
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Applied specs from online API')),
-      );
-    } catch (e) {
-      if (!mounted) return;
-      setState(() {
-        _onlineSpecStatus = 'Online spec lookup failed: $e';
-      });
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Online spec lookup failed: $e')),
-      );
-    } finally {
-      if (mounted) {
-        setState(() => _loadingOnlineSpecs = false);
-      }
-    }
-  }
-
-  void _applyAiSuggestedSpecs(Map<String, dynamic> specs) {
-    final tr = AiSpecsNormalizer.transmissionApi(specs['transmission']);
-    final drv = AiSpecsNormalizer.drivetrainApi(specs['drivetrain']);
-    final body = AiSpecsNormalizer.bodyTypeApi(specs['body_type']);
-    final fuel = AiSpecsNormalizer.fuelApi(specs['fuel_type'] ?? specs['engine_type']);
-    final engt = AiSpecsNormalizer.fuelApi(specs['engine_type'] ?? fuel);
-    final liters = AiSpecsNormalizer.engineLiters(specs['engine_size_liters']);
-    final cyl = AiSpecsNormalizer.cylinders(specs['cylinder_count']);
-    final seat = AiSpecsNormalizer.seating(specs['seating']);
-    final fe = AiSpecsNormalizer.fuelEconomy(specs['fuel_economy']);
-    final note = (specs['notes'] ?? '').toString().trim();
-
-    setState(() {
-      _clearOnlineSpecOptionLists();
-      _specDropdownKey++;
-      _transmission = tr;
-      _driveType = drv;
-      _bodyType = body;
-      _fuelType = fuel;
-      _engineType = engt;
-      if (liters != null) {
-        _engineSizeCtl.text = liters.toStringAsFixed(1);
-      }
-      _cylinderCtl.text = cyl != null ? '$cyl' : _cylinderCtl.text;
-      if (fe != null) {
-        _fuelEconomyCtl.text = fe;
-      }
-      _seatingCtl.text = seat != null ? '$seat' : _seatingCtl.text;
-      _onlineSpecStatus = note.isEmpty
-          ? 'AI suggestion applied — please verify before publishing.'
-          : 'AI suggestion — please verify. $note';
-    });
-  }
-
-  Future<void> _suggestSpecsWithAi() async {
-    final brand = (_selectedBrand ?? '').trim();
-    final model = (_selectedModel ?? '').trim();
-    final trim = (_selectedTrim ?? '').trim();
-    final year = int.tryParse(_year.text.trim());
-    if (brand.isEmpty || model.isEmpty || trim.isEmpty) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('Select brand, model, and trim first'),
-        ),
-      );
-      return;
-    }
-    if (year == null || year < 1980 || year > DateTime.now().year + 1) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('Enter a valid year first'),
-        ),
-      );
-      return;
-    }
-
-    setState(() {
-      _loadingAiSpecs = true;
-      _onlineSpecStatus = null;
-    });
-    try {
-      final raw = await AiService.suggestCarSpecsFromYmmRaw(
-        year: year,
-        brand: brand,
-        model: model,
-        trim: trim,
-      );
-      if (!mounted) return;
-      if (raw == null) {
-        setState(() {
-          _onlineSpecStatus =
-              'AI suggestion failed — check network and sign-in.';
-        });
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text(
-              'Could not get AI suggestion. Sign in and check your connection.',
-            ),
-          ),
-        );
-        return;
-      }
-      if (raw['error'] != null) {
-        final msg = raw['error'].toString();
-        setState(() => _onlineSpecStatus = msg);
-        ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(msg)));
-        return;
-      }
-      final specs = AiService.coerceJsonMap(raw['specs']);
-      if (specs == null) {
-        setState(() {
-          _onlineSpecStatus = 'Invalid AI response from server.';
-        });
-        return;
-      }
-      _applyAiSuggestedSpecs(specs);
-      if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text(
-            'AI suggestion applied — review specs before submitting.',
-          ),
-        ),
-      );
-    } finally {
-      if (mounted) setState(() => _loadingAiSpecs = false);
-    }
+  void _onListingYearChanged() {
+    _scheduleRefreshDataset();
   }
 
   Future<void> _pickImages() async {
@@ -546,7 +462,9 @@ class _SellPageState extends State<SellPage> {
         'location': _location.text.trim(),
         'description': _description.text.trim().isEmpty ? null : _description.text.trim(),
       };
-      final eng = double.tryParse(_engineSizeCtl.text.trim());
+      final eng = OnlineSpecVariant.parseLeadingEngineLiters(
+        _engineSizeCtl.text.trim(),
+      );
       if (eng != null && eng > 0) body['engine_size'] = eng;
       final cyl = int.tryParse(_cylinderCtl.text.trim());
       if (cyl != null && cyl > 0) body['cylinder_count'] = cyl;
@@ -672,7 +590,7 @@ class _SellPageState extends State<SellPage> {
               ),
               const SizedBox(height: 8),
               Text(
-                'You selected $brand $model. The bundled database only covers certain model lines (examples below). Pick one of those to unlock variant, year, and “Apply to form”.',
+                'You selected $brand $model. The bundled database only covers certain model lines (examples below). Pick one of those to unlock catalog year and “Apply to form”.',
                 style: Theme.of(context).textTheme.bodySmall,
               ),
               if (sample.isNotEmpty) ...[
@@ -708,36 +626,31 @@ class _SellPageState extends State<SellPage> {
     final variants = idx.variantsForAppModel(brand, model);
     if (variants.isEmpty) return const SizedBox.shrink();
 
-    final modelOk =
-        _datasetModelId != null && variants.any((v) => v.id == _datasetModelId);
-    if (!modelOk) {
-      return Card(
-        margin: const EdgeInsets.only(bottom: 12),
-        child: Padding(
-          padding: const EdgeInsets.all(16),
-          child: Row(
-            children: [
-              const SizedBox(
-                width: 22,
-                height: 22,
-                child: CircularProgressIndicator(strokeWidth: 2),
-              ),
-              const SizedBox(width: 12),
-              Expanded(
-                child: Text(
-                  'Loading catalog matches…',
-                  style: Theme.of(context).textTheme.bodyMedium,
-                ),
-              ),
-            ],
-          ),
-        ),
-      );
-    }
+    final listingYear = int.tryParse(_year.text.trim());
+    final years = idx.yearsForCatalogStep(
+      brand,
+      model,
+      CarSpecIndex.catalogAutofillModelOnly,
+    );
+    if (years.isEmpty) return const SizedBox.shrink();
 
-    final years = idx.yearsForModel(_datasetModelId!);
-    final preview = (_datasetModelId != null && _catalogYear != null)
-        ? idx.appliedFieldsFor(_datasetModelId!, _catalogYear!)
+    final CatalogSpecFields? preview = _catalogYear != null
+        ? idx
+            .representativeForCatalogSell(
+              brand,
+              model,
+              CarSpecIndex.catalogAutofillModelOnly,
+              _catalogYear!,
+            )
+            ?.fields
+        : null;
+    final unionPreview = _catalogYear != null
+        ? idx.sellFieldOptionsUnion(
+            brand,
+            model,
+            CarSpecIndex.catalogAutofillModelOnly,
+            _catalogYear!,
+          )
         : null;
 
     return Card(
@@ -753,23 +666,65 @@ class _SellPageState extends State<SellPage> {
             ),
             const SizedBox(height: 6),
             Text(
-              'Choose the catalog variant and year, then tap the button to copy values into the form below.',
+              listingYear != null
+                  ? 'Pick catalog year and apply. Step 2 lists every engine and spec row we have for this model line—choose what matches your car.'
+                  : 'Enter a year above, pick catalog year, then apply. Choose engine and other specs in step 2.',
               style: Theme.of(context).textTheme.bodySmall,
             ),
-            if (preview != null) ...[
-              const SizedBox(height: 10),
-              Text(
-                'Will set: ${preview.engineType}, ${preview.transmission}, ${preview.driveType.toUpperCase()}, ${preview.bodyType}'
-                '${preview.engineSizeLiters != null ? ', ${preview.engineSizeLiters!.toStringAsFixed(1)} L engine' : ''}'
-                '${preview.cylinderCount != null ? ', ${preview.cylinderCount} cyl' : ''}',
-                style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                      fontWeight: FontWeight.w600,
-                      color: Theme.of(context).colorScheme.primary,
-                    ),
+            if (preview != null || unionPreview != null) ...[
+              const SizedBox(height: 12),
+              Container(
+                width: double.infinity,
+                padding:
+                    const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+                decoration: BoxDecoration(
+                  color: Theme.of(context)
+                      .colorScheme
+                      .primary
+                      .withOpacity(0.1),
+                  borderRadius: BorderRadius.circular(8),
+                  border: Border.all(
+                    color: Theme.of(context)
+                        .colorScheme
+                        .primary
+                        .withOpacity(0.28),
+                  ),
+                ),
+                child: Text(
+                  () {
+                    var engExtra = '';
+                    if (unionPreview != null &&
+                        unionPreview.engineSizes.length > 1) {
+                      final engList = unionPreview.engineSizes.toList()
+                        ..sort((a, b) {
+                          final la =
+                              OnlineSpecVariant.parseLeadingEngineLiters(a) ??
+                                  0;
+                          final lb =
+                              OnlineSpecVariant.parseLeadingEngineLiters(b) ??
+                                  0;
+                          final c = la.compareTo(lb);
+                          if (c != 0) return c;
+                          return a.compareTo(b);
+                        });
+                      engExtra = '\nStep 2 engines: ${engList.join(', ')}';
+                    }
+                    if (preview != null) {
+                      return 'Will set (smallest engine in list — pick another in step 2 if needed): ${preview.engineType}, ${preview.transmission}, ${preview.driveType.toUpperCase()}, ${preview.bodyType}'
+                          '${preview.engineSizeLiters != null ? ', ${preview.engineSizeLiters!.toStringAsFixed(1)}${preview.displacementSuffix} L engine' : ''}'
+                          '${preview.cylinderCount != null ? ', ${preview.cylinderCount} cyl' : ''}$engExtra';
+                    }
+                    return 'Catalog has options for this year — apply to load step 2 (engine, cylinders, etc.).$engExtra';
+                  }(),
+                  softWrap: true,
+                  style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                        fontWeight: FontWeight.w600,
+                        height: 1.35,
+                        color: Theme.of(context).colorScheme.primary,
+                      ),
+                ),
               ),
-            ] else if (_datasetModelId != null &&
-                _catalogYear != null &&
-                years.isNotEmpty) ...[
+            ] else if (_catalogYear != null && years.isNotEmpty) ...[
               const SizedBox(height: 10),
               Text(
                 'No spec row for this year — try another year or variant.',
@@ -778,38 +733,10 @@ class _SellPageState extends State<SellPage> {
                     ),
               ),
             ],
-            if (variants.length > 1) ...[
-              const SizedBox(height: 10),
-              DropdownButtonFormField<int>(
-                value: _datasetModelId,
-                decoration: const InputDecoration(
-                  labelText: 'Catalog variant',
-                ),
-                items: variants
-                    .map(
-                      (v) => DropdownMenuItem(
-                        value: v.id,
-                        child: Text(
-                          v.name,
-                          maxLines: 2,
-                          overflow: TextOverflow.ellipsis,
-                        ),
-                      ),
-                    )
-                    .toList(),
-                onChanged: (id) {
-                  if (id == null) return;
-                  setState(() {
-                    _datasetModelId = id;
-                    final ys = idx.yearsForModel(id);
-                    _catalogYear = ys.isNotEmpty ? ys.first : null;
-                  });
-                },
-              ),
-            ],
             if (years.isNotEmpty) ...[
-              const SizedBox(height: 10),
+              const SizedBox(height: 12),
               DropdownButtonFormField<int>(
+                isExpanded: true,
                 value: _catalogYear != null && years.contains(_catalogYear)
                     ? _catalogYear
                     : years.first,
@@ -827,14 +754,14 @@ class _SellPageState extends State<SellPage> {
                 onChanged: (y) {
                   if (y == null) return;
                   setState(() => _catalogYear = y);
+                  _scheduleRefreshDataset();
                 },
               ),
             ],
             const SizedBox(height: 12),
             ElevatedButton.icon(
-              onPressed: (_datasetModelId != null &&
-                      _catalogYear != null &&
-                      preview != null &&
+              onPressed: (_catalogYear != null &&
+                      (preview != null || unionPreview != null) &&
                       !_submitting)
                   ? _applyCatalogSpecs
                   : null,
@@ -878,16 +805,19 @@ class _SellPageState extends State<SellPage> {
   }
 
   double? _parsedEngineLiters() {
-    final v = double.tryParse(_engineSizeCtl.text.trim());
+    final v = OnlineSpecVariant.parseLeadingEngineLiters(_engineSizeCtl.text);
     if (v == null) return null;
     return double.parse(v.toStringAsFixed(1));
   }
 
-  double _coerceEngineLitersPick(List<double> opts) {
-    final p = _parsedEngineLiters();
+  String _coerceEngineDisplayPick(List<String> opts) {
+    final t = _engineSizeCtl.text.trim();
+    if (t.isNotEmpty && opts.contains(t)) return t;
+    final p = OnlineSpecVariant.parseLeadingEngineLiters(t);
     if (p != null) {
       for (final o in opts) {
-        if ((o - p).abs() < 0.06) return o;
+        final oL = OnlineSpecVariant.parseLeadingEngineLiters(o);
+        if (oL != null && (oL - p).abs() < 0.06) return o;
       }
     }
     return opts.first;
@@ -922,7 +852,8 @@ class _SellPageState extends State<SellPage> {
 
   void _applyOnlineVariantToForm(OnlineSpecVariant v) {
     if (v.engineSizeLiters != null) {
-      _engineSizeCtl.text = v.engineSizeLiters!.toStringAsFixed(1);
+      _engineSizeCtl.text =
+          '${v.engineSizeLiters!.toStringAsFixed(1)}${v.displacementSuffix}';
     }
     if (v.cylinderCount != null) {
       _cylinderCtl.text = '${v.cylinderCount}';
@@ -940,7 +871,7 @@ class _SellPageState extends State<SellPage> {
     if (v.fuelType != null) _fuelType = v.fuelType!;
   }
 
-  /// After user changes one spec, align other fields to the matching Car API variant (if any).
+  /// After user changes one spec, align other fields to the matching catalog variant (if any).
   void _syncCorrelatedFromOnlineVariants(
     Set<String> anchors, {
     double? engineLiters,
@@ -962,15 +893,15 @@ class _SellPageState extends State<SellPage> {
     final m = OnlineSpecVariant.matchBestAnchored(
       vs,
       anchors,
-      engineLiters: engineLiters,
-      cylinders: cylinders,
-      transmission: transmission,
-      drivetrain: drivetrain,
-      bodyType: bodyType,
-      engineType: engineType,
-      fuelType: fuelType,
+      engineLiters: engineLiters ?? _parsedEngineLiters(),
+      cylinders: cylinders ?? int.tryParse(_cylinderCtl.text.trim()),
+      transmission: transmission ?? _transmission,
+      drivetrain: drivetrain ?? _driveType,
+      bodyType: bodyType ?? _bodyType,
+      engineType: engineType ?? _engineType,
+      fuelType: fuelType ?? _fuelType,
       fuelEconomy: fe,
-      seating: seating,
+      seating: seating ?? int.tryParse(_seatingCtl.text.trim()),
       currentTransmission: _transmission,
       currentDrivetrain: _driveType,
       currentSeating: int.tryParse(_seatingCtl.text.trim()),
@@ -981,8 +912,8 @@ class _SellPageState extends State<SellPage> {
     }
   }
 
-  /// Keeps controllers / enum strings inside API option sets so submit matches the UI.
-  void _syncConstrainedSelectionsAfterOnlineSpecs() {
+  /// Keeps controllers / enum strings inside catalog option sets so submit matches the UI.
+  void _syncConstrainedSelectionsAfterCatalogApply() {
     if (_transmissionOptions != null && _transmissionOptions!.isNotEmpty) {
       _transmission = _coerceInList(_transmission, _transmissionOptions!);
     }
@@ -997,13 +928,19 @@ class _SellPageState extends State<SellPage> {
       _engineType = _coerceInList(_engineType, engOpts);
       _fuelType = _coerceInList(_fuelType, engOpts);
     }
-    if (_engineSizeLiterOptions != null && _engineSizeLiterOptions!.isNotEmpty) {
-      final opts = _engineSizeLiterOptions!;
-      final p = double.tryParse(_engineSizeCtl.text.trim());
-      final ok =
-          p != null && opts.any((o) => (o - p).abs() < 0.06);
-      if (!ok) {
-        _engineSizeCtl.text = opts.first.toStringAsFixed(1);
+    if (_engineSizeDisplayOptions != null &&
+        _engineSizeDisplayOptions!.isNotEmpty) {
+      final opts = _engineSizeDisplayOptions!;
+      final t = _engineSizeCtl.text.trim();
+      final exact = t.isNotEmpty && opts.contains(t);
+      final p = OnlineSpecVariant.parseLeadingEngineLiters(t);
+      final fuzzy = p != null &&
+          opts.any((o) {
+            final oL = OnlineSpecVariant.parseLeadingEngineLiters(o);
+            return oL != null && (oL - p).abs() < 0.06;
+          });
+      if (!exact && !fuzzy) {
+        _engineSizeCtl.text = opts.first;
       }
     }
     if (_cylinderOptions != null && _cylinderOptions!.isNotEmpty) {
@@ -1203,33 +1140,33 @@ class _SellPageState extends State<SellPage> {
   }
 
   Widget _engineSizeField() {
-    final opts = _engineSizeLiterOptions;
+    final opts = _engineSizeDisplayOptions;
     if (opts != null && opts.isNotEmpty) {
-      final pick = _coerceEngineLitersPick(opts);
-      return DropdownButtonFormField<double>(
-        key: ValueKey<String>('es_${opts.join(',')}'),
+      final pick = _coerceEngineDisplayPick(opts);
+      return DropdownButtonFormField<String>(
+        key: ValueKey<String>('es_${opts.join('|')}'),
         value: pick,
         isExpanded: true,
         decoration: InputDecoration(
           labelText: 'Engine size (L)',
-          helperText: opts.length < 2
-              ? null
-              : opts.map((e) => e.toStringAsFixed(1)).join(' · '),
+          helperText: opts.length < 2 ? null : opts.join(' · '),
         ),
         items: opts
             .map(
-              (e) => DropdownMenuItem<double>(
+              (e) => DropdownMenuItem<String>(
                 value: e,
-                child: Text(e.toStringAsFixed(1)),
+                child: Text(e),
               ),
             )
             .toList(),
         onChanged: (x) {
           if (x == null) return;
           setState(() {
+            _engineSizeCtl.text = x;
+            final lit = OnlineSpecVariant.parseLeadingEngineLiters(x);
             _syncCorrelatedFromOnlineVariants(
               {'e'},
-              engineLiters: x,
+              engineLiters: lit,
             );
           });
         },
@@ -1499,71 +1436,6 @@ class _SellPageState extends State<SellPage> {
                     (v ?? '').trim().isEmpty ? (loc?.requiredField ?? 'Required') : null,
               ),
               const SizedBox(height: 10),
-              Card(
-                margin: const EdgeInsets.only(bottom: 12),
-                child: Padding(
-                  padding: const EdgeInsets.all(12),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.stretch,
-                    children: [
-                      Text(
-                        'Online specs lookup',
-                        style: Theme.of(context).textTheme.titleSmall,
-                      ),
-                      const SizedBox(height: 6),
-                      Text(
-                        'Uses brand, model, trim, and year to fetch specs from API.',
-                        style: Theme.of(context).textTheme.bodySmall,
-                      ),
-                      const SizedBox(height: 10),
-                      ElevatedButton.icon(
-                        onPressed: _loadingOnlineSpecs ||
-                                _loadingAiSpecs ||
-                                _submitting
-                            ? null
-                            : _fetchOnlineSpecs,
-                        icon: _loadingOnlineSpecs
-                            ? const SizedBox(
-                                width: 16,
-                                height: 16,
-                                child: CircularProgressIndicator(strokeWidth: 2),
-                              )
-                            : const Icon(Icons.cloud_download_outlined),
-                        label: Text(
-                          _loadingOnlineSpecs ? 'Fetching online specs…' : 'Fetch online specs',
-                        ),
-                      ),
-                      const SizedBox(height: 8),
-                      OutlinedButton.icon(
-                        onPressed: _loadingOnlineSpecs ||
-                                _loadingAiSpecs ||
-                                _submitting
-                            ? null
-                            : _suggestSpecsWithAi,
-                        icon: _loadingAiSpecs
-                            ? const SizedBox(
-                                width: 16,
-                                height: 16,
-                                child: CircularProgressIndicator(strokeWidth: 2),
-                              )
-                            : const Icon(Icons.auto_awesome_outlined),
-                        label: Text(
-                          _loadingAiSpecs
-                              ? 'AI suggesting…'
-                              : 'Suggest specs with AI (verify)',
-                        ),
-                      ),
-                      if ((_onlineSpecStatus ?? '').trim().isNotEmpty) ...[
-                        const SizedBox(height: 8),
-                        Text(
-                          _onlineSpecStatus!,
-                          style: Theme.of(context).textTheme.bodySmall,
-                        ),
-                      ],
-                    ],
-                  ),
-                ),
-              ),
               _trimDependentCatalogSection(loc),
               Row(
                 children: [

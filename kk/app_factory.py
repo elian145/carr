@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import os
 import re
+import time
 from dotenv import load_dotenv
 from flask import Flask
 from flask_cors import CORS
@@ -16,6 +17,43 @@ from .monitoring import init_monitoring
 from .routes import register_blueprints
 from .routes.auth import init_jwt_callbacks
 from .socketio_handlers import register_socketio_handlers
+
+
+def _normalize_database_url(url: str) -> str:
+    """
+    Neon and some hosts expect SSL; pooler URLs may omit sslmode in snippets.
+    """
+    u = url.strip()
+    if not u:
+        return u
+    lower = u.lower()
+    if "neon.tech" in lower and "sslmode=" not in lower:
+        sep = "&" if "?" in u else "?"
+        u = f"{u}{sep}sslmode=require"
+    return u
+
+
+def _transient_db_operational_error(exc: Exception) -> bool:
+    from sqlalchemy.exc import OperationalError
+
+    if not isinstance(exc, OperationalError):
+        return False
+    orig = getattr(exc, "orig", None)
+    msg = f"{orig or exc}".lower()
+    return any(
+        x in msg
+        for x in (
+            "name resolution",
+            "temporary failure",
+            "could not translate host name",
+            "could not translate host",
+            "connection refused",
+            "timeout expired",
+            "server closed the connection",
+            "connection reset",
+            "network is unreachable",
+        )
+    )
 
 
 def _parse_cors_origins() -> list[str]:
@@ -149,6 +187,7 @@ def create_app():
     using_legacy_db = False
 
     if database_url:
+        database_url = _normalize_database_url(database_url)
         # Use psycopg (v3) driver for postgresql:// URLs (we have psycopg, not psycopg2)
         if database_url.startswith("postgresql://") and not database_url.startswith("postgresql+psycopg"):
             database_url = "postgresql+psycopg" + database_url[len("postgresql"):]
@@ -227,7 +266,13 @@ def create_app():
     # If the SQLite DB file is brand new, it has no tables and the API will 500.
     # In development/testing, auto-create tables to make local boot reliable.
     # In production, require migrations to be applied explicitly.
-    try:
+    bootstrap_delays_s = (
+        [0, 2, 5, 12]
+        if env_name == "production" and uri_lower.startswith("postgresql")
+        else [0]
+    )
+
+    def _bootstrap_schema_once() -> None:
         with app.app_context():
             from sqlalchemy import inspect
             from flask import current_app
@@ -299,6 +344,26 @@ def create_app():
                     except Exception:
                         # Never brick local dev due to migration issues.
                         current_app.logger.exception("auto_migrate failed (dev-only)")
+
+    try:
+        from sqlalchemy.exc import OperationalError
+
+        for attempt, delay_s in enumerate(bootstrap_delays_s):
+            if delay_s > 0:
+                time.sleep(delay_s)
+            try:
+                _bootstrap_schema_once()
+                break
+            except OperationalError as e:
+                if _transient_db_operational_error(e) and attempt < len(bootstrap_delays_s) - 1:
+                    app.logger.warning(
+                        "Database connection failed (transient?); retry %s/%s: %s",
+                        attempt + 1,
+                        len(bootstrap_delays_s),
+                        str(getattr(e, "orig", e))[:220],
+                    )
+                    continue
+                raise
     except Exception:
         # Do not prevent startup in dev if something went wrong; requests will surface errors.
         if env_name == "production":
