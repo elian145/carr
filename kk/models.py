@@ -185,6 +185,8 @@ class Car(db.Model):
     vin = db.Column(db.String(17), nullable=True, unique=True)
     engine_size = db.Column(db.Float, nullable=True)  # liters
     cylinder_count = db.Column(db.Integer, nullable=True)
+    # Market / homologation region (e.g. us, gcc, eu); see app filter `region_specs`.
+    region_specs = db.Column(db.String(20), nullable=True, index=True)
     
     # Status and metadata
     is_active = db.Column(db.Boolean, default=True, index=True)
@@ -237,6 +239,7 @@ class Car(db.Model):
             'engine_size': getattr(self, "engine_size", None),
             'cylinder_count': getattr(self, "cylinder_count", None),
             'cylinders': getattr(self, "cylinder_count", None),  # alias for app
+            'region_specs': getattr(self, "region_specs", None),
             'is_active': self.is_active,
             'is_featured': self.is_featured,
             'views_count': self.views_count,

@@ -490,6 +490,12 @@ abstract class AppLocalizations {
   /// **'Drive Type'**
   String get driveType;
 
+  /// No description provided for @regionSpecsLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'Region specs'**
+  String get regionSpecsLabel;
+
   /// No description provided for @cylinderCount.
   ///
   /// In en, this message translates to:
@@ -2595,6 +2601,12 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Please select drive type'**
   String get pleaseSelectDriveType;
+
+  /// No description provided for @pleaseSelectRegionSpecs.
+  ///
+  /// In en, this message translates to:
+  /// **'Please select region specs'**
+  String get pleaseSelectRegionSpecs;
 
   /// No description provided for @pleaseSelectSeating.
   ///

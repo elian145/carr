@@ -15,6 +15,39 @@ class ComparisonPage extends StatelessWidget {
     return (s.toLowerCase() == 'null') ? '' : s;
   }
 
+  /// Keep in sync with `carRegionSpecDisplayLabel` in legacy home/sell flow.
+  String _regionSpecsDisplay(String raw) {
+    switch (raw.trim().toLowerCase()) {
+      case 'us':
+        return 'US';
+      case 'gcc':
+        return 'GCC';
+      case 'iraq':
+        return 'Iraq';
+      case 'canada':
+        return 'Canada';
+      case 'eu':
+        return 'EU';
+      case 'cn':
+        return 'CN';
+      case 'korea':
+        return 'Korea';
+      case 'ru':
+        return 'RU';
+      case 'iran':
+        return 'Iran';
+      default:
+        return raw;
+    }
+  }
+
+  String _displayCell(Map<String, dynamic> car, String key) {
+    if (key == 'region_specs') {
+      return _regionSpecsDisplay(_val(car, key));
+    }
+    return _val(car, key);
+  }
+
   @override
   Widget build(BuildContext context) {
     final loc = AppLocalizations.of(context);
@@ -58,6 +91,7 @@ class ComparisonPage extends StatelessWidget {
       {'label': 'Fuel', 'key': 'fuel_type'},
       {'label': 'Transmission', 'key': 'transmission'},
       {'label': 'Drive', 'key': 'drive_type'},
+      {'label': loc?.regionSpecsLabel ?? 'Region specs', 'key': 'region_specs'},
       {'label': 'Condition', 'key': 'condition'},
       {'label': 'Body', 'key': 'body_type'},
       {'label': 'Location', 'key': 'location'},
@@ -130,7 +164,7 @@ class ComparisonPage extends StatelessWidget {
               return DataRow(
                 cells: [
                   DataCell(Text(label)),
-                  ...cars.map((c) => DataCell(Text(_val(c, key)))),
+                  ...cars.map((c) => DataCell(Text(_displayCell(c, key)))),
                 ],
               );
             }).toList(),

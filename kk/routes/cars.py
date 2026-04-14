@@ -19,6 +19,10 @@ bp = Blueprint("cars", __name__)
 MAX_PER_PAGE = int(os.environ.get("MAX_PER_PAGE", "50"))
 MAX_PER_PAGE = max(1, min(MAX_PER_PAGE, 200))
 
+_ALLOWED_REGION_SPECS = frozenset(
+    {"us", "gcc", "iraq", "canada", "eu", "cn", "korea", "ru", "iran"}
+)
+
 # Best-effort anonymous view cooldown (in-memory, per process)
 _anon_view_cache: dict[tuple[str, int], float] = {}
 _ANON_VIEW_COOLDOWN_S = 600.0  # 10 minutes
@@ -200,6 +204,8 @@ def get_cars():
         color = (request.args.get("color") or "").strip().lower() or None
         trim = request.args.get("trim")
         title_status = (request.args.get("title_status") or "").strip().lower() or None
+        region_specs_raw = (request.args.get("region_specs") or "").strip().lower()
+        region_specs = region_specs_raw if region_specs_raw in _ALLOWED_REGION_SPECS else None
 
         query = (
             Car.query.filter_by(is_active=True)
@@ -252,6 +258,8 @@ def get_cars():
             query = query.filter(Car.color.ilike(f"%{color}%"))
         if title_status:
             query = query.filter(Car.title_status == title_status)
+        if region_specs:
+            query = query.filter(Car.region_specs == region_specs)
 
         sort_by = (request.args.get("sort_by") or "").strip().lower()
         if sort_by == "newest":
@@ -507,6 +515,11 @@ def create_car():
         if engine_size_val == 0.0:
             engine_size_val = None
 
+        region_specs_raw = _s(raw.get("region_specs"), "").lower()
+        region_specs_val = (
+            region_specs_raw if region_specs_raw in _ALLOWED_REGION_SPECS else None
+        )
+
         if not brand or not model:
             return jsonify({"message": "Validation failed", "errors": {"brand/model": "required"}}), 400
 
@@ -536,6 +549,7 @@ def create_car():
             currency=currency,
             engine_size=engine_size_val,
             cylinder_count=cylinder_count_val,
+            region_specs=region_specs_val,
         )
 
         db.session.add(car)
@@ -581,10 +595,14 @@ def update_car(car_id: str):
             "vin",
             "engine_size",
             "cylinder_count",
+            "region_specs",
         ]
         for field in updatable_fields:
             if field in data:
                 val = data[field]
+                if field == "region_specs":
+                    rs = (str(val or "").strip().lower())
+                    val = rs if rs in _ALLOWED_REGION_SPECS else None
                 if field == "engine_size" and val is not None:
                     try:
                         val = float(val)

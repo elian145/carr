@@ -204,6 +204,9 @@ class AppLocalizationsKu extends AppLocalizations {
   String get driveType => 'جۆری هاندان';
 
   @override
+  String get regionSpecsLabel => 'تایبەتمەندی ناوچە';
+
+  @override
   String get cylinderCount => 'ژمارەی سیلەندەر';
 
   @override
@@ -1314,6 +1317,9 @@ class AppLocalizationsKu extends AppLocalizations {
 
   @override
   String get pleaseSelectDriveType => 'تکایە جۆری درایڤ هەڵبژێرە';
+
+  @override
+  String get pleaseSelectRegionSpecs => 'تکایە تایبەتمەندی ناوچە هەڵبژێرە';
 
   @override
   String get pleaseSelectSeating => 'تکایە ژمارەی کورسی هەڵبژێرە';

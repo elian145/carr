@@ -204,6 +204,9 @@ class AppLocalizationsEn extends AppLocalizations {
   String get driveType => 'Drive Type';
 
   @override
+  String get regionSpecsLabel => 'Region specs';
+
+  @override
   String get cylinderCount => 'Cylinder Count';
 
   @override
@@ -1312,6 +1315,9 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get pleaseSelectDriveType => 'Please select drive type';
+
+  @override
+  String get pleaseSelectRegionSpecs => 'Please select region specs';
 
   @override
   String get pleaseSelectSeating => 'Please select seating';

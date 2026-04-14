@@ -65,6 +65,49 @@ const List<String> _kOnlineSpecOptionKeys = [
   '_online_opts_seating',
 ];
 
+/// Canonical codes for listing / filter "region specs" (lowercase API / DB values).
+const List<String> kCarRegionSpecCodes = [
+  'us',
+  'gcc',
+  'iraq',
+  'canada',
+  'eu',
+  'cn',
+  'korea',
+  'ru',
+  'iran',
+];
+
+String carRegionSpecDisplayLabel(String code) {
+  switch (code.trim().toLowerCase()) {
+    case 'us':
+      return 'US';
+    case 'gcc':
+      return 'GCC';
+    case 'iraq':
+      return 'Iraq';
+    case 'canada':
+      return 'Canada';
+    case 'eu':
+      return 'EU';
+    case 'cn':
+      return 'CN';
+    case 'korea':
+      return 'Korea';
+    case 'ru':
+      return 'RU';
+    case 'iran':
+      return 'Iran';
+    default:
+      return code;
+  }
+}
+
+bool isValidCarRegionSpecCode(String? s) {
+  if (s == null || s.isEmpty) return false;
+  return kCarRegionSpecCodes.contains(s.trim().toLowerCase());
+}
+
 /// JSON list of [OnlineSpecVariant] maps for correlated step-2 fields (bundled catalog).
 const String _kOnlineSpecVariantsKey = '_online_spec_variants';
 
@@ -3437,6 +3480,8 @@ class _HomePageState extends State<HomePage> {
   String? selectedBodyType;
   String? selectedColor;
   String? selectedDriveType;
+  /// Lowercase API code: us, gcc, iraq, … (see [kCarRegionSpecCodes]).
+  String? selectedRegionSpecs;
   String? selectedCylinderCount;
   String? selectedSeating;
   String? selectedEngineSize;
@@ -3736,6 +3781,7 @@ class _HomePageState extends State<HomePage> {
     selectedBodyType = null;
     selectedColor = null;
     selectedDriveType = null;
+    selectedRegionSpecs = null;
     selectedCylinderCount = null;
     selectedSeating = null;
     selectedEngineSize = null;
@@ -3763,6 +3809,7 @@ class _HomePageState extends State<HomePage> {
       selectedBodyType = null;
       selectedColor = null;
       selectedDriveType = null;
+      selectedRegionSpecs = null;
       selectedCylinderCount = null;
       selectedSeating = null;
       selectedEngineSize = null;
@@ -3810,6 +3857,11 @@ class _HomePageState extends State<HomePage> {
         selectedBodyType = map['body_type'];
         selectedColor = map['color'];
         selectedDriveType = map['drive_type'];
+        final rsRaw = map['region_specs']?.toString().trim().toLowerCase();
+        selectedRegionSpecs =
+            (rsRaw != null && rsRaw.isNotEmpty && isValidCarRegionSpecCode(rsRaw))
+                ? rsRaw
+                : null;
         selectedCylinderCount = map['cylinders'];
         selectedSeating = map['seating'];
         selectedEngineSize = map['engine_size'];
@@ -3840,6 +3892,7 @@ class _HomePageState extends State<HomePage> {
         'body_type': selectedBodyType,
         'color': selectedColor,
         'drive_type': selectedDriveType,
+        'region_specs': selectedRegionSpecs,
         'cylinders': selectedCylinderCount,
         'seating': selectedSeating,
         'engine_size': selectedEngineSize,
@@ -3971,6 +4024,8 @@ class _HomePageState extends State<HomePage> {
         (selectedBodyType?.isNotEmpty == true && selectedBodyType != 'Any') ||
         (selectedColor?.isNotEmpty == true && selectedColor != 'Any') ||
         (selectedDriveType?.isNotEmpty == true && selectedDriveType != 'Any') ||
+        (selectedRegionSpecs?.isNotEmpty == true &&
+            isValidCarRegionSpecCode(selectedRegionSpecs)) ||
         (selectedCylinderCount?.isNotEmpty == true &&
             selectedCylinderCount != 'Any') ||
         (selectedSeating?.isNotEmpty == true && selectedSeating != 'Any') ||
@@ -4029,6 +4084,10 @@ class _HomePageState extends State<HomePage> {
     }
     if (selectedDriveType?.isNotEmpty == true && selectedDriveType != 'Any') {
       filters['drive_type'] = selectedDriveType!.toLowerCase();
+    }
+    if (selectedRegionSpecs?.isNotEmpty == true &&
+        isValidCarRegionSpecCode(selectedRegionSpecs)) {
+      filters['region_specs'] = selectedRegionSpecs!.trim().toLowerCase();
     }
     if (selectedCylinderCount?.isNotEmpty == true &&
         selectedCylinderCount != 'Any') {
@@ -5067,6 +5126,11 @@ class _HomePageState extends State<HomePage> {
         selectedDriveType != 'Any') {
       filters['drive_type'] = selectedDriveType!.toLowerCase();
     }
+    if (selectedRegionSpecs != null &&
+        selectedRegionSpecs!.isNotEmpty &&
+        isValidCarRegionSpecCode(selectedRegionSpecs)) {
+      filters['region_specs'] = selectedRegionSpecs!.trim().toLowerCase();
+    }
     if (selectedCylinderCount != null &&
         selectedCylinderCount!.isNotEmpty &&
         selectedCylinderCount != 'Any') {
@@ -5724,6 +5788,12 @@ class _HomePageState extends State<HomePage> {
     return '';
   }
 
+  String _getValidRegionSpecsValue() {
+    final s = selectedRegionSpecs?.trim().toLowerCase() ?? '';
+    if (s.isEmpty) return '';
+    return isValidCarRegionSpecCode(s) ? s : '';
+  }
+
   // Helper method to get a valid transmission value for dropdown (dropdown uses '' for Any)
   String? _getValidTransmissionValue() {
     if (selectedTransmission == null || selectedTransmission == 'Any' || selectedTransmission!.isEmpty) return '';
@@ -5825,6 +5895,7 @@ class _HomePageState extends State<HomePage> {
         selectedBodyType != null ||
         selectedColor != null ||
         selectedDriveType != null ||
+        selectedRegionSpecs != null ||
         selectedCylinderCount != null ||
         selectedSeating != null ||
         selectedEngineSize != null ||
@@ -5852,6 +5923,7 @@ class _HomePageState extends State<HomePage> {
       selectedBodyType = null;
       selectedColor = null;
       selectedDriveType = null;
+      selectedRegionSpecs = null;
       selectedCylinderCount = null;
       selectedSeating = null;
       selectedEngineSize = null;
@@ -5915,6 +5987,9 @@ class _HomePageState extends State<HomePage> {
           break;
         case 'driveType':
           selectedDriveType = null;
+          break;
+        case 'regionSpecs':
+          selectedRegionSpecs = null;
           break;
         case 'cylinderCount':
           selectedCylinderCount = null;
@@ -6164,6 +6239,20 @@ class _HomePageState extends State<HomePage> {
           'driveType',
           Icons.directions_car,
           Colors.cyan,
+        ),
+      );
+    }
+
+    if (selectedRegionSpecs != null &&
+        selectedRegionSpecs!.isNotEmpty &&
+        isValidCarRegionSpecCode(selectedRegionSpecs)) {
+      chips.add(
+        _buildFilterChip(
+          AppLocalizations.of(context)!.regionSpecsLabel,
+          carRegionSpecDisplayLabel(selectedRegionSpecs!),
+          'regionSpecs',
+          Icons.public,
+          Colors.blueGrey,
         ),
       );
     }
@@ -9499,6 +9588,70 @@ class _HomePageState extends State<HomePage> {
                                                       },
                                                     ),
                                                     SizedBox(height: 12),
+                                                    DropdownButtonFormField<
+                                                      String
+                                                    >(
+                                                      key: ValueKey(
+                                                        'home_more_region_specs_${_moreFiltersDialogFieldGeneration}',
+                                                      ),
+                                                      initialValue:
+                                                          _getValidRegionSpecsValue(),
+                                                      decoration: InputDecoration(
+                                                        labelText:
+                                                            AppLocalizations.of(
+                                                              context,
+                                                            )!.regionSpecsLabel,
+                                                        filled: true,
+                                                        fillColor: moreFiltersFieldFill,
+                                                        labelStyle: TextStyle(
+                                                          color: moreFiltersOnSurface,
+                                                        ),
+                                                        border: OutlineInputBorder(
+                                                          borderRadius:
+                                                              BorderRadius.circular(
+                                                                12,
+                                                              ),
+                                                        ),
+                                                      ),
+                                                      items: [
+                                                        DropdownMenuItem(
+                                                          value: '',
+                                                          child: Text(
+                                                            AppLocalizations.of(
+                                                              context,
+                                                            )!.any,
+                                                            style: TextStyle(
+                                                              color:
+                                                                  moreFiltersAnyOrange,
+                                                            ),
+                                                          ),
+                                                        ),
+                                                        ...kCarRegionSpecCodes.map(
+                                                          (code) =>
+                                                              DropdownMenuItem(
+                                                                value: code,
+                                                                child: Text(
+                                                                  carRegionSpecDisplayLabel(
+                                                                    code,
+                                                                  ),
+                                                                ),
+                                                              ),
+                                                        ),
+                                                      ],
+                                                      onChanged: (value) {
+                                                        setState(
+                                                          () =>
+                                                              selectedRegionSpecs =
+                                                                  value == null ||
+                                                                      value
+                                                                          .isEmpty
+                                                                  ? null
+                                                                  : value,
+                                                        );
+                                                        _persistFilters();
+                                                      },
+                                                    ),
+                                                    SizedBox(height: 12),
                                                     // Cylinder Count Dropdown
                                                     DropdownButtonFormField<
                                                       String
@@ -10721,6 +10874,16 @@ class _SavedSearchesPageState extends State<SavedSearchesPage> {
     if (filters['drive_type'] != null) {
       chips.add(_buildFilterChip(context, l.driveType, tr(filters['drive_type'].toString())));
     }
+    if (filters['region_specs'] != null) {
+      final code = filters['region_specs'].toString().trim().toLowerCase();
+      chips.add(
+        _buildFilterChip(
+          context,
+          l.regionSpecsLabel,
+          carRegionSpecDisplayLabel(code),
+        ),
+      );
+    }
     if (filters['cylinder_count'] != null) {
       chips.add(_buildFilterChip(context, l.cylinderCount, filters['cylinder_count'].toString()));
     }
@@ -10824,6 +10987,14 @@ class _SavedSearchesPageState extends State<SavedSearchesPage> {
         widget.parentState!.selectedBodyType = filters['body_type'];
         widget.parentState!.selectedColor = filters['color'];
         widget.parentState!.selectedDriveType = filters['drive_type'];
+        final rsApply =
+            filters['region_specs']?.toString().trim().toLowerCase();
+        widget.parentState!.selectedRegionSpecs =
+            (rsApply != null &&
+                rsApply.isNotEmpty &&
+                isValidCarRegionSpecCode(rsApply))
+            ? rsApply
+            : null;
         widget.parentState!.selectedCylinderCount = filters['cylinder_count'];
         widget.parentState!.selectedSeating = filters['seating'];
         widget.parentState!.selectedEngineSize = filters['engine_size'];
@@ -11006,6 +11177,15 @@ class _SavedSearchesPageState extends State<SavedSearchesPage> {
         _buildFilterDetailItem(
           'Drive Type',
           filters['drive_type'].toString().toUpperCase(),
+        ),
+      );
+    }
+    if (filters['region_specs'] != null) {
+      final code = filters['region_specs'].toString().trim().toLowerCase();
+      filterItems.add(
+        _buildFilterDetailItem(
+          AppLocalizations.of(context)!.regionSpecsLabel,
+          carRegionSpecDisplayLabel(code),
         ),
       );
     }
@@ -13127,6 +13307,16 @@ Widget buildCarListingSpecsGrid(
       ),
     ),
     detailRowSpec(
+      icon: Icons.public,
+      label: AppLocalizations.of(context)!.regionSpecsLabel,
+      value: _orDash(() {
+        final raw = pickNE(car, ['region_specs', 'regionSpecs']) ?? '';
+        final c = raw.toString().trim().toLowerCase();
+        if (!isValidCarRegionSpecCode(c)) return '';
+        return carRegionSpecDisplayLabel(c);
+      }()),
+    ),
+    detailRowSpec(
       icon: Icons.airline_seat_recline_normal,
       label: AppLocalizations.of(context)!.detail_seating,
       value: _orDash(
@@ -13397,6 +13587,11 @@ class _SellCarPageState extends State<SellCarPage> {
             carData['seating'].toString().isNotEmpty &&
             carData['drive_type'] != null &&
             carData['drive_type'].toString().isNotEmpty &&
+            carData['region_specs'] != null &&
+            carData['region_specs'].toString().trim().isNotEmpty &&
+            isValidCarRegionSpecCode(
+              carData['region_specs'].toString().trim().toLowerCase(),
+            ) &&
             carData['title_status'] != null &&
             carData['title_status'].toString().isNotEmpty;
       case 2: // Pricing & Contact
@@ -14747,6 +14942,8 @@ class _SellStep2PageState extends State<SellStep2Page> {
   String? selectedBodyType;
   String? selectedColor;
   String? selectedDriveType;
+  /// Lowercase code sent as `region_specs` (see [kCarRegionSpecCodes]).
+  String? selectedRegionSpecs;
   String? selectedSeating;
   String? selectedEngineSize;
   String? selectedCylinderCount;
@@ -14759,6 +14956,7 @@ class _SellStep2PageState extends State<SellStep2Page> {
   bool errBodyType = false;
   bool errColor = false;
   bool errDrive = false;
+  bool errRegionSpecs = false;
   bool errSeating = false;
   bool errEngineSize = false;
   bool errCylinderCount = false;
@@ -14900,6 +15098,10 @@ class _SellStep2PageState extends State<SellStep2Page> {
         '_online_opts_drive',
         (v) => selectedDriveType = v,
       );
+      take('region_specs', (v) {
+        final c = v.trim().toLowerCase();
+        if (isValidCarRegionSpecCode(c)) selectedRegionSpecs = c;
+      });
       takeScalarOrOnlineOpt(
         'seating',
         '_online_opts_seating',
@@ -14966,6 +15168,7 @@ class _SellStep2PageState extends State<SellStep2Page> {
     selectedBodyType = null;
     selectedColor = null;
     selectedDriveType = null;
+    selectedRegionSpecs = null;
     selectedSeating = null;
     selectedEngineSize = null;
     selectedCylinderCount = null;
@@ -15379,6 +15582,9 @@ class _SellStep2PageState extends State<SellStep2Page> {
                               isNumeric) {
                             displayText =
                                 '${_localizeDigitsGlobal(context, value)} cylinders';
+                          } else if (lowerTitle.contains('region') &&
+                              isValidCarRegionSpecCode(value)) {
+                            displayText = carRegionSpecDisplayLabel(value);
                           } else if (lowerTitle.contains('engine') &&
                               isNumeric) {
                             displayText =
@@ -16066,6 +16272,39 @@ class _SellStep2PageState extends State<SellStep2Page> {
             ),
             SizedBox(height: 16),
 
+            FormField<String>(
+              validator: (_) => (selectedRegionSpecs == null ||
+                      !isValidCarRegionSpecCode(selectedRegionSpecs))
+                  ? AppLocalizations.of(context)!.pleaseSelectRegionSpecs
+                  : null,
+              builder: (state) => GestureDetector(
+                onTap: () async {
+                  final choice = await _pickFromList(
+                    AppLocalizations.of(context)!.regionSpecsLabel,
+                    List<String>.from(kCarRegionSpecCodes),
+                  );
+                  if (choice != null) {
+                    setState(() {
+                      selectedRegionSpecs = choice.trim().toLowerCase();
+                    });
+                  }
+                },
+                child: buildFancySelector(
+                  context,
+                  icon: Icons.public,
+                  label: '${AppLocalizations.of(context)!.regionSpecsLabel} *',
+                  value: selectedRegionSpecs == null
+                      ? null
+                      : carRegionSpecDisplayLabel(selectedRegionSpecs!),
+                  isError:
+                      errRegionSpecs &&
+                      (selectedRegionSpecs == null ||
+                          !isValidCarRegionSpecCode(selectedRegionSpecs)),
+                ),
+              ),
+            ),
+            SizedBox(height: 16),
+
             // Seating (Modal)
             FormField<String>(
               validator: (_) =>
@@ -16429,6 +16668,12 @@ class _SellStep2PageState extends State<SellStep2Page> {
                             (selectedDriveType ?? '').isEmpty) {
                           missing.add(AppLocalizations.of(context)!.driveType);
                         }
+                        if (selectedRegionSpecs == null ||
+                            !isValidCarRegionSpecCode(selectedRegionSpecs)) {
+                          missing.add(
+                            AppLocalizations.of(context)!.regionSpecsLabel,
+                          );
+                        }
                         if (selectedSeating == null ||
                             (selectedSeating ?? '').isEmpty) {
                           missing.add(AppLocalizations.of(context)!.seating);
@@ -16488,6 +16733,11 @@ class _SellStep2PageState extends State<SellStep2Page> {
                             errDrive =
                                 selectedDriveType == null ||
                                 (selectedDriveType ?? '').isEmpty;
+                            errRegionSpecs =
+                                selectedRegionSpecs == null ||
+                                !isValidCarRegionSpecCode(
+                                  selectedRegionSpecs,
+                                );
                             errSeating =
                                 selectedSeating == null ||
                                 (selectedSeating ?? '').isEmpty;
@@ -16529,6 +16779,8 @@ class _SellStep2PageState extends State<SellStep2Page> {
                           parentState.carData['body_type'] = selectedBodyType;
                           parentState.carData['color'] = selectedColor;
                           parentState.carData['drive_type'] = selectedDriveType;
+                          parentState.carData['region_specs'] =
+                              selectedRegionSpecs?.trim().toLowerCase();
                           parentState.carData['seating'] = selectedSeating;
                           parentState.carData['engine_size'] =
                               selectedEngineSize;
@@ -16541,9 +16793,9 @@ class _SellStep2PageState extends State<SellStep2Page> {
                           setState(() {
                             errMileage = errCondition = errTransmission =
                                 errFuelType = errBodyType = errColor =
-                                    errDrive = errSeating = errEngineSize =
-                                    errCylinderCount = errTitle =
-                                        errDamagedParts = false;
+                                    errDrive = errRegionSpecs = errSeating =
+                                    errEngineSize = errCylinderCount =
+                                    errTitle = errDamagedParts = false;
                           });
                           parentState._goToNextStep();
                         }
@@ -19075,6 +19327,7 @@ class _SellStep5PageState extends State<SellStep5Page> {
                                     'body_type',
                                     'seating',
                                     'drive_type',
+                                    'region_specs',
                                     'title_status',
                                   ];
                                   final List<String> missing = [];
@@ -19102,6 +19355,7 @@ class _SellStep5PageState extends State<SellStep5Page> {
                                         'body_type',
                                         'seating',
                                         'drive_type',
+                                        'region_specs',
                                         'title_status',
                                       };
                                       if (step1.contains(k)) return 1;
@@ -19257,6 +19511,11 @@ class _SellStep5PageState extends State<SellStep5Page> {
     final seating = int.tryParse(carData['seating']?.toString() ?? '5') ?? 5;
     final driveType = (carData['drive_type']?.toString() ?? 'fwd')
         .toLowerCase();
+    final regionSpecsRaw =
+        carData['region_specs']?.toString().trim().toLowerCase() ?? '';
+    final regionSpecs = isValidCarRegionSpecCode(regionSpecsRaw)
+        ? regionSpecsRaw
+        : null;
     final titleStatus = (carData['title_status']?.toString() ?? 'clean')
         .toLowerCase();
     final damagedParts = titleStatus == 'damaged'
@@ -19306,6 +19565,7 @@ class _SellStep5PageState extends State<SellStep5Page> {
       'body_type': bodyType,
       'seating': seating,
       'drive_type': driveType,
+      'region_specs': regionSpecs,
       'title_status': titleStatus,
       'damaged_parts': damagedParts,
       'cylinder_count': cylinderCount,
@@ -20324,6 +20584,11 @@ class CarComparisonPage extends StatelessWidget {
             'icon': Icons.all_inclusive,
           },
           {
+            'label': AppLocalizations.of(context)!.regionSpecsLabel,
+            'key': 'region_specs',
+            'icon': Icons.public,
+          },
+          {
             'label': AppLocalizations.of(context)!.detail_color,
             'key': 'color',
             'icon': Icons.color_lens,
@@ -20557,6 +20822,11 @@ class CarComparisonPage extends StatelessWidget {
     if (value == null) return '-';
     if (key == 'price') {
       return _formatCurrencyGlobal(context, value);
+    }
+    if (key == 'region_specs') {
+      final c = value.toString().trim().toLowerCase();
+      if (!isValidCarRegionSpecCode(c)) return '-';
+      return carRegionSpecDisplayLabel(c);
     }
 
     if (property['isBoolean'] == true || property['isBoolean'] == 'true') {

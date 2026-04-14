@@ -204,6 +204,9 @@ class AppLocalizationsAr extends AppLocalizations {
   String get driveType => 'نوع الدفع';
 
   @override
+  String get regionSpecsLabel => 'مواصفات المنطقة';
+
+  @override
   String get cylinderCount => 'عدد الإسطوانات';
 
   @override
@@ -1305,6 +1308,9 @@ class AppLocalizationsAr extends AppLocalizations {
 
   @override
   String get pleaseSelectDriveType => 'يرجى اختيار نوع الدفع';
+
+  @override
+  String get pleaseSelectRegionSpecs => 'يرجى اختيار مواصفات المنطقة';
 
   @override
   String get pleaseSelectSeating => 'يرجى اختيار عدد المقاعد';
