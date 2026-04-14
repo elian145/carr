@@ -13344,7 +13344,7 @@ Widget buildCarListingSpecsGrid(
 
   final topSpecs = Container(
     width: double.infinity,
-    padding: const EdgeInsets.fromLTRB(12, 24, 12, 14),
+    padding: const EdgeInsets.fromLTRB(12, 4, 12, 2),
     decoration: BoxDecoration(
       color: isLightSpecs
           ? const Color(0xFFEEEEEE)

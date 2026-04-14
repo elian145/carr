@@ -506,6 +506,9 @@ def create_car():
         trim = _s(raw.get("trim"), "base")
         seating = _i(raw.get("seating"), 5)
         status = _s(raw.get("status"), "active")
+        title_status_raw = _s(raw.get("title_status"), "clean").lower()
+        # Persist title status submitted by sell flows; default to clean for unknown values.
+        title_status = title_status_raw if title_status_raw in {"clean", "damaged"} else "clean"
         engine_size = raw.get("engine_size")
         engine_size_val = _f(engine_size, 0.0) if engine_size not in (None, "") else None
         cylinder_count_raw = raw.get("cylinder_count")
@@ -526,7 +529,7 @@ def create_car():
         car = Car(
             seller_id=current_user.id,
             title=(f"{brand.title()} {model.title()} {year or ''}".strip() or f"{brand.title()} {model.title()}").strip(),
-            title_status="active",
+            title_status=title_status,
             trim=trim,
             brand=brand,
             model=model,
@@ -596,6 +599,7 @@ def update_car(car_id: str):
             "engine_size",
             "cylinder_count",
             "region_specs",
+            "title_status",
         ]
         for field in updatable_fields:
             if field in data:
@@ -613,6 +617,10 @@ def update_car(car_id: str):
                         val = int(val)
                     except (TypeError, ValueError):
                         val = None
+                if field == "title_status":
+                    val = str(val or "").strip().lower()
+                    if val not in {"clean", "damaged"}:
+                        continue
                 setattr(car, field, val)
 
         car.updated_at = utcnow()
