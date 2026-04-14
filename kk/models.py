@@ -157,6 +157,7 @@ class Car(db.Model):
     # Basic car information
     title = db.Column(db.String(200), nullable=False, default='')  # Some legacy DBs require NOT NULL
     title_status = db.Column(db.String(20), nullable=False, default='clean')
+    damaged_parts = db.Column(db.Integer, nullable=True)
     brand = db.Column(db.String(50), nullable=False, index=True)
     model = db.Column(db.String(50), nullable=False, index=True)
     trim = db.Column(db.String(50), nullable=False, default='base')
@@ -227,7 +228,7 @@ class Car(db.Model):
             'condition': self.condition,
             'body_type': self.body_type,
             'title_status': getattr(self, "title_status", None),
-            'damaged_parts': getattr(self, "damaged_parts", None),
+            'damaged_parts': self.damaged_parts,
             'status': getattr(self, "status", None),
             'price': self.price,
             'currency': self.currency,

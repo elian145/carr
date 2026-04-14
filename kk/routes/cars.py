@@ -509,6 +509,12 @@ def create_car():
         title_status_raw = _s(raw.get("title_status"), "clean").lower()
         # Persist title status submitted by sell flows; default to clean for unknown values.
         title_status = title_status_raw if title_status_raw in {"clean", "damaged"} else "clean"
+        damaged_parts_raw = raw.get("damaged_parts")
+        damaged_parts_val = None
+        if title_status == "damaged" and damaged_parts_raw not in (None, ""):
+            damaged_parts_val = _safe_int(damaged_parts_raw)
+            if damaged_parts_val is not None and damaged_parts_val < 1:
+                damaged_parts_val = None
         engine_size = raw.get("engine_size")
         engine_size_val = _f(engine_size, 0.0) if engine_size not in (None, "") else None
         cylinder_count_raw = raw.get("cylinder_count")
@@ -530,6 +536,7 @@ def create_car():
             seller_id=current_user.id,
             title=(f"{brand.title()} {model.title()} {year or ''}".strip() or f"{brand.title()} {model.title()}").strip(),
             title_status=title_status,
+            damaged_parts=damaged_parts_val,
             trim=trim,
             brand=brand,
             model=model,
@@ -600,6 +607,7 @@ def update_car(car_id: str):
             "cylinder_count",
             "region_specs",
             "title_status",
+            "damaged_parts",
         ]
         for field in updatable_fields:
             if field in data:
@@ -621,7 +629,16 @@ def update_car(car_id: str):
                     val = str(val or "").strip().lower()
                     if val not in {"clean", "damaged"}:
                         continue
+                if field == "damaged_parts":
+                    if (car.title_status or "").lower() != "damaged":
+                        continue
+                    val = _safe_int(val)
+                    if val is not None and val < 1:
+                        val = None
                 setattr(car, field, val)
+
+        if (car.title_status or "").lower() == "clean":
+            car.damaged_parts = None
 
         car.updated_at = utcnow()
         db.session.commit()
