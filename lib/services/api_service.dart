@@ -593,6 +593,34 @@ class ApiService {
     return await _makeAuthenticatedRequest('GET', '/auth/me');
   }
 
+  /// Admin: users with `dealer_status == pending` (requires `is_admin` JWT).
+  static Future<Map<String, dynamic>> adminDealersPending() async {
+    return await _makeAuthenticatedRequest('GET', '/admin/dealers/pending');
+  }
+
+  /// Admin: approve pending dealer (`account_type` becomes dealer, status approved).
+  static Future<Map<String, dynamic>> adminApproveDealer(String publicUserId) async {
+    final id = Uri.encodeComponent(publicUserId.trim());
+    return await _makeAuthenticatedRequest('POST', '/admin/dealers/$id/approve');
+  }
+
+  /// Admin: reject pending dealer application.
+  static Future<Map<String, dynamic>> adminRejectDealer(
+    String publicUserId, {
+    String? reason,
+  }) async {
+    final id = Uri.encodeComponent(publicUserId.trim());
+    final body = <String, dynamic>{};
+    if (reason != null && reason.trim().isNotEmpty) {
+      body['reason'] = reason.trim();
+    }
+    return await _makeAuthenticatedRequest(
+      'POST',
+      '/admin/dealers/$id/reject',
+      body: body.isNotEmpty ? body : null,
+    );
+  }
+
   static Future<Map<String, dynamic>> updateProfile(
     Map<String, dynamic> profileData,
   ) async {

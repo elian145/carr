@@ -47,6 +47,7 @@ import '../pages/auth_pages.dart' as auth_pages;
 import '../pages/chat_pages.dart' as carzo_chat;
 import '../pages/reset_password_page.dart';
 import '../pages/verify_email_page.dart';
+import '../pages/admin_dealers_page.dart';
 import '../features/comparison/state/car_comparison_store.dart';
 import '../data/car_catalog.dart';
 import '../data/car_name_translations.dart';
@@ -3143,6 +3144,8 @@ class MyApp extends StatelessWidget {
                 },
                 '/forgot-password': (context) =>
                     auth_pages.ForgotPasswordPage(),
+                '/admin/dealers': (context) =>
+                    AuthGuard(child: AdminDealersPage()),
               },
             ),
           ),
@@ -24673,6 +24676,21 @@ class _ProfilePageState extends State<ProfilePage> {
                         Navigator.pushNamed(context, '/analytics');
                       },
                     ),
+                    if (me?['is_admin'] == true) ...[
+                      SizedBox(height: 12),
+                      _buildActionButton(
+                        Icons.verified_user_outlined,
+                        'Dealer approvals (admin)',
+                        () {
+                          if (ApiService.accessToken == null ||
+                              ApiService.accessToken!.isEmpty) {
+                            _showAuthRequiredDialog(context);
+                            return;
+                          }
+                          Navigator.pushNamed(context, '/admin/dealers');
+                        },
+                      ),
+                    ],
                     SizedBox(height: 12),
                     _buildActionButton(
                       Icons.chat_outlined,

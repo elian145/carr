@@ -4,8 +4,9 @@ import logging
 
 from flask import Blueprint, jsonify, request
 
-from ..auth import admin_required
+from ..auth import admin_required, get_current_user, log_user_action
 from ..models import Car, Message, Notification, User, UserAction, db
+from ..time_utils import utcnow
 
 bp = Blueprint("admin", __name__, url_prefix="/api/admin")
 logger = logging.getLogger(__name__)
@@ -254,4 +255,95 @@ def user_actions():
     except Exception as e:
         logger.error("admin get user-actions error: %s", e, exc_info=True)
         return jsonify({"message": "Failed to get user actions"}), 500
+
+
+@bp.route("/dealers/pending", methods=["GET"])
+@admin_required
+def dealers_pending():
+    """List users waiting for dealer verification (`dealer_status == pending`)."""
+    try:
+        rows = (
+            User.query.filter(User.dealer_status == "pending")
+            .order_by(User.created_at.asc())
+            .all()
+        )
+        return jsonify({"dealers": [u.to_dict(include_private=True) for u in rows]}), 200
+    except Exception as e:
+        logger.error("admin dealers_pending error: %s", e, exc_info=True)
+        return jsonify({"message": "Failed to list pending dealers"}), 500
+
+
+@bp.route("/dealers/<user_public_id>/approve", methods=["POST"])
+@admin_required
+def dealers_approve(user_public_id: str):
+    """Approve a pending dealer application."""
+    try:
+        admin_user = get_current_user()
+        if not admin_user:
+            return jsonify({"message": "Unauthorized"}), 401
+        pid = (user_public_id or "").strip()
+        if not pid:
+            return jsonify({"message": "User id is required"}), 400
+        target = User.query.filter_by(public_id=pid).first()
+        if not target:
+            return jsonify({"message": "User not found"}), 404
+        if getattr(target, "dealer_status", None) != "pending":
+            return jsonify({"message": "This user is not pending dealer approval"}), 400
+
+        target.account_type = "dealer"
+        target.dealer_status = "approved"
+        target.updated_at = utcnow()
+        db.session.commit()
+
+        log_user_action(
+            admin_user,
+            "dealer_approve",
+            target_type="user",
+            target_id=pid,
+            metadata={"approved_user_internal_id": target.id},
+        )
+        return jsonify({"message": "Dealer approved", "user": target.to_dict(include_private=True)}), 200
+    except Exception as e:
+        db.session.rollback()
+        logger.error("admin dealers_approve error: %s", e, exc_info=True)
+        return jsonify({"message": "Failed to approve dealer"}), 500
+
+
+@bp.route("/dealers/<user_public_id>/reject", methods=["POST"])
+@admin_required
+def dealers_reject(user_public_id: str):
+    """Reject a pending dealer application (user stays a normal account)."""
+    try:
+        admin_user = get_current_user()
+        if not admin_user:
+            return jsonify({"message": "Unauthorized"}), 401
+        pid = (user_public_id or "").strip()
+        if not pid:
+            return jsonify({"message": "User id is required"}), 400
+        target = User.query.filter_by(public_id=pid).first()
+        if not target:
+            return jsonify({"message": "User not found"}), 404
+        if getattr(target, "dealer_status", None) != "pending":
+            return jsonify({"message": "This user is not pending dealer approval"}), 400
+
+        data = request.get_json(silent=True) or {}
+        reason = (data.get("reason") or "").strip() or None
+
+        target.account_type = "user"
+        target.dealer_status = "rejected"
+        target.updated_at = utcnow()
+        db.session.commit()
+
+        log_user_action(
+            admin_user,
+            "dealer_reject",
+            target_type="user",
+            target_id=pid,
+            metadata={"reason": reason} if reason else None,
+        )
+        return jsonify({"message": "Dealer application rejected", "user": target.to_dict(include_private=True)}), 200
+    except Exception as e:
+        db.session.rollback()
+        logger.error("admin dealers_reject error: %s", e, exc_info=True)
+        return jsonify({"message": "Failed to reject dealer application"}), 500
 
