@@ -69,12 +69,25 @@ def get_current_user():
         return None
 
 def create_password_reset_token(user):
-    """Create password reset token"""
+    """Create password reset token.
+
+    Use numeric-only tokens so SMS providers (e.g. OTPIQ verification flow)
+    can deliver reset codes without alphanumeric restrictions.
+    """
     # Delete any existing tokens for this user
     PasswordReset.query.filter_by(user_id=user.id, is_used=False).delete()
-    
-    # Create new token
-    token = secrets.token_urlsafe(32)
+
+    # Create new token (8-digit numeric, retry to avoid uniqueness collisions).
+    token = None
+    for _ in range(10):
+        candidate = f"{secrets.randbelow(100_000_000):08d}"
+        exists = PasswordReset.query.filter_by(token=candidate, is_used=False).first()
+        if not exists:
+            token = candidate
+            break
+    if token is None:
+        # Fallback with more entropy (still numeric-only).
+        token = "".join(str(secrets.randbelow(10)) for _ in range(12))
     from .time_utils import utcnow
 
     expires_at = utcnow() + timedelta(hours=1)
