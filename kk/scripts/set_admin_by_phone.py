@@ -41,11 +41,17 @@ def _validate_database_url() -> bool:
     url = (os.environ.get("DATABASE_URL") or "").strip()
     if not url:
         return True
-    # Common copy-paste mistake from docs
-    if "USER:PASSWORD@" in url or "@HOST:" in url or ":PORT/" in url:
+    # Common copy-paste mistakes from docs / tutorials
+    if (
+        "USER:PASSWORD@" in url
+        or "@HOST:" in url
+        or ":PORT/" in url
+        or "YOUR_PASSWORD" in url
+    ):
         print(
             "SET_ADMIN_BY_PHONE_ERR DATABASE_URL looks like a placeholder, not a real connection string.\n"
-            "  Replace USER, PASSWORD, HOST, PORT, and DATABASE with values from Render, or paste the full URL.",
+            "  Use the full URL from your host (Neon: Connection details; Render: Postgres → Connections).\n"
+            "  Do not leave YOUR_PASSWORD or USER:PASSWORD@ as literal text.",
             file=sys.stderr,
         )
         return False
@@ -94,6 +100,7 @@ def main() -> int:
     from kk import app_new as app_module
     from kk.models import User, db
     from sqlalchemy import or_
+    from sqlalchemy.exc import OperationalError
 
     variants = _phone_match_variants(args.phone)
     if not variants:
@@ -103,7 +110,21 @@ def main() -> int:
     app = app_module.app
     with app.app_context():
         q = User.query.filter(or_(*[User.phone_number == v for v in variants]))
-        rows = q.all()
+        try:
+            rows = q.all()
+        except OperationalError as e:
+            err = str(e).lower()
+            print("SET_ADMIN_BY_PHONE_ERR could not connect to the database.", file=sys.stderr)
+            if "password authentication failed" in err:
+                print(
+                    "  Wrong database password (or user). Paste the exact connection string from Neon,\n"
+                    "  or reset the role password in Neon and update DATABASE_URL.\n"
+                    "  If the password has special characters (@ # etc.), use Neon’s copied URL (it is URL-encoded).",
+                    file=sys.stderr,
+                )
+            else:
+                print(f"  {e}", file=sys.stderr)
+            return 3
         if not rows:
             print(
                 "SET_ADMIN_BY_PHONE_ERR no_user_found "
