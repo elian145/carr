@@ -724,6 +724,12 @@ abstract class AppLocalizations {
   /// **'Damaged'**
   String get value_title_damaged;
 
+  /// No description provided for @titleStatusDamagedWithParts.
+  ///
+  /// In en, this message translates to:
+  /// **'damaged ({count} parts)'**
+  String titleStatusDamagedWithParts(String count);
+
   /// No description provided for @value_drive_fwd.
   ///
   /// In en, this message translates to:

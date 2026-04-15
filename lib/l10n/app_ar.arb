@@ -105,6 +105,15 @@
   "value_fuel_plugin_hybrid": "هجين قابل للشحن",
   "value_title_clean": "نظيف",
   "value_title_damaged": "متضرر",
+  "titleStatusDamagedWithParts": "متضرر ({count} أجزاء)",
+  "@titleStatusDamagedWithParts": {
+    "placeholders": {
+      "count": {
+        "type": "String",
+        "example": "5"
+      }
+    }
+  },
   "value_drive_fwd": "أمامي",
   "value_drive_rwd": "خلفي",
   "value_drive_awd": "كلي",

@@ -104,6 +104,15 @@
   "value_fuel_plugin_hybrid": "plug-in hybrid",
   "value_title_clean": "Clean",
   "value_title_damaged": "Damaged",
+  "titleStatusDamagedWithParts": "damaged ({count} parts)",
+  "@titleStatusDamagedWithParts": {
+    "placeholders": {
+      "count": {
+        "type": "String",
+        "example": "5"
+      }
+    }
+  },
   "value_drive_fwd": "fwd",
   "value_drive_rwd": "rwd",
   "value_drive_awd": "awd",

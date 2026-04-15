@@ -59,7 +59,7 @@ class _CarDetailPageState extends State<CarDetailPage> {
       for (final it in imgs) {
         final s = it is Map
             ? (it['image_url'] ?? it['url'] ?? it['path'] ?? it['src'] ?? '')
-                .toString()
+                  .toString()
             : it.toString();
         if (s.isEmpty) continue;
         final full = buildMediaUrl(s);
@@ -116,8 +116,8 @@ class _CarDetailPageState extends State<CarDetailPage> {
       } catch (_) {}
 
       // Track view (auth-only, best-effort).
-      final idForAnalytics =
-          (car['id'] ?? car['public_id'] ?? widget.carId).toString();
+      final idForAnalytics = (car['id'] ?? car['public_id'] ?? widget.carId)
+          .toString();
       await AnalyticsService.trackView(idForAnalytics);
 
       // Favorite status (best-effort).
@@ -138,8 +138,8 @@ class _CarDetailPageState extends State<CarDetailPage> {
     try {
       final tok = ApiService.accessToken;
       if (tok == null || tok.isEmpty) return;
-      final targetId =
-          (_car?['id'] ?? _car?['public_id'] ?? widget.carId).toString();
+      final targetId = (_car?['id'] ?? _car?['public_id'] ?? widget.carId)
+          .toString();
       final fav = await ApiService.isCarFavorited(targetId);
       if (!mounted) return;
       setState(() => _isFavorite = fav);
@@ -153,14 +153,15 @@ class _CarDetailPageState extends State<CarDetailPage> {
         if (!mounted) return;
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content:
-                Text(AppLocalizations.of(context)?.loginRequired ?? 'Login required'),
+            content: Text(
+              AppLocalizations.of(context)?.loginRequired ?? 'Login required',
+            ),
           ),
         );
         return;
       }
-      final targetId =
-          (_car?['id'] ?? _car?['public_id'] ?? widget.carId).toString();
+      final targetId = (_car?['id'] ?? _car?['public_id'] ?? widget.carId)
+          .toString();
       final res = await ApiService.toggleFavorite(targetId);
       final bool favorited =
           (res['is_favorited'] == true) || (res['favorited'] == true);
@@ -171,9 +172,9 @@ class _CarDetailPageState extends State<CarDetailPage> {
       }
     } catch (e) {
       if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text(e.toString())),
-      );
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text(e.toString())));
     }
   }
 
@@ -181,9 +182,10 @@ class _CarDetailPageState extends State<CarDetailPage> {
     final car = _car;
     if (car == null) return;
     final id = (car['id'] ?? car['public_id'] ?? widget.carId).toString();
-    final title = (car['title'] ?? '${car['brand'] ?? ''} ${car['model'] ?? ''}')
-        .toString()
-        .trim();
+    final title =
+        (car['title'] ?? '${car['brand'] ?? ''} ${car['model'] ?? ''}')
+            .toString()
+            .trim();
     final price = (car['price'] ?? '').toString();
     final currency = (car['currency'] ?? '').toString();
     final location = (car['location'] ?? car['city'] ?? '').toString();
@@ -228,7 +230,9 @@ class _CarDetailPageState extends State<CarDetailPage> {
     } catch (_) {
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text(loc?.couldNotStartCall ?? 'Could not start a call')),
+        SnackBar(
+          content: Text(loc?.couldNotStartCall ?? 'Could not start a call'),
+        ),
       );
     }
   }
@@ -255,7 +259,9 @@ class _CarDetailPageState extends State<CarDetailPage> {
           setState(() {
             _similar = decoded
                 .whereType<Map>()
-                .map((m) => Map<String, dynamic>.from(m.cast<String, dynamic>()))
+                .map(
+                  (m) => Map<String, dynamic>.from(m.cast<String, dynamic>()),
+                )
                 .toList();
           });
         }
@@ -267,7 +273,9 @@ class _CarDetailPageState extends State<CarDetailPage> {
           setState(() {
             _related = decoded
                 .whereType<Map>()
-                .map((m) => Map<String, dynamic>.from(m.cast<String, dynamic>()))
+                .map(
+                  (m) => Map<String, dynamic>.from(m.cast<String, dynamic>()),
+                )
                 .toList();
           });
         }
@@ -295,14 +303,16 @@ class _CarDetailPageState extends State<CarDetailPage> {
         }
         try {
           final sp = await SharedPreferences.getInstance();
-          await sp.setString('cache_similar_${widget.carId}', json.encode(items));
+          await sp.setString(
+            'cache_similar_${widget.carId}',
+            json.encode(items),
+          );
         } catch (_) {}
       }
 
       // Related: same brand, newest first.
       final rel = await ApiService.getCars(page: 1, perPage: 20, brand: brand);
-      final relList =
-          (rel['cars'] is List) ? (rel['cars'] as List) : const [];
+      final relList = (rel['cars'] is List) ? (rel['cars'] as List) : const [];
       final relItems = relList
           .whereType<Map>()
           .map((m) => Map<String, dynamic>.from(m.cast<String, dynamic>()))
@@ -314,7 +324,10 @@ class _CarDetailPageState extends State<CarDetailPage> {
       }
       try {
         final sp = await SharedPreferences.getInstance();
-        await sp.setString('cache_related_${widget.carId}', json.encode(relItems));
+        await sp.setString(
+          'cache_related_${widget.carId}',
+          json.encode(relItems),
+        );
       } catch (_) {}
     } catch (_) {
       // ignore: non-critical
@@ -341,6 +354,219 @@ class _CarDetailPageState extends State<CarDetailPage> {
     return base.isEmpty ? '' : '$base/static/images/brands/$slug.png';
   }
 
+  static String _firstNonEmptyFromMap(
+    Map<dynamic, dynamic>? map,
+    List<String> keys,
+  ) {
+    if (map == null) return '';
+    for (final key in keys) {
+      final value = map[key];
+      if (value == null) continue;
+      final text = value.toString().trim();
+      if (text.isNotEmpty && text.toLowerCase() != 'null') return text;
+    }
+    return '';
+  }
+
+  static String _formatDateYmd(String raw) {
+    if (raw.trim().isEmpty) return '';
+    final parsed = DateTime.tryParse(raw.trim());
+    if (parsed == null) return raw;
+    final y = parsed.year.toString().padLeft(4, '0');
+    final m = parsed.month.toString().padLeft(2, '0');
+    final d = parsed.day.toString().padLeft(2, '0');
+    return '$y-$m-$d';
+  }
+
+  Widget _buildSellerInfoSection(Map<dynamic, dynamic>? seller) {
+    if (seller == null) return const SizedBox.shrink();
+
+    final loc = AppLocalizations.of(context);
+    final firstName = (seller['first_name'] ?? '').toString().trim();
+    final lastName = (seller['last_name'] ?? '').toString().trim();
+    final fullName = '$firstName $lastName'.trim();
+
+    final name = _firstNonEmptyFromMap(seller, ['name', 'display_name']);
+    final username = _firstNonEmptyFromMap(seller, ['username', 'handle']);
+    final phone = _firstNonEmptyFromMap(seller, [
+      'phone_number',
+      'phone',
+      'mobile',
+    ]);
+    final email = _firstNonEmptyFromMap(seller, ['email']);
+    final city = _firstNonEmptyFromMap(seller, ['city', 'location']);
+    final joinedRaw = _firstNonEmptyFromMap(seller, [
+      'created_at',
+      'joined_at',
+      'member_since',
+    ]);
+    final joined = _formatDateYmd(joinedRaw);
+    final avatarRaw = _firstNonEmptyFromMap(seller, [
+      'profile_picture',
+      'avatar',
+      'avatar_url',
+      'image_url',
+      'photo_url',
+    ]);
+    final avatarUrl = buildMediaUrl(avatarRaw);
+
+    final bool isVerified =
+        seller['is_verified'] == true || seller['verified'] == true;
+    final displayName = name.isNotEmpty
+        ? name
+        : (fullName.isNotEmpty
+              ? fullName
+              : (username.isNotEmpty ? username : 'Seller'));
+
+    final initialsSource = displayName.trim();
+    String initials = 'S';
+    if (initialsSource.isNotEmpty) {
+      final parts = initialsSource
+          .split(RegExp(r'\s+'))
+          .where((e) => e.trim().isNotEmpty)
+          .toList();
+      if (parts.length >= 2) {
+        initials = '${parts[0][0]}${parts[1][0]}'.toUpperCase();
+      } else {
+        initials = parts[0][0].toUpperCase();
+      }
+    }
+
+    final List<Widget> details = [];
+    void addRow(IconData icon, String label, String value) {
+      if (value.trim().isEmpty) return;
+      details.add(
+        Padding(
+          padding: const EdgeInsets.only(bottom: 8),
+          child: Row(
+            children: [
+              Icon(
+                icon,
+                size: 16,
+                color: Theme.of(context).colorScheme.primary,
+              ),
+              const SizedBox(width: 8),
+              Text(
+                '$label: ',
+                style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                  color: Theme.of(context).colorScheme.onSurfaceVariant,
+                ),
+              ),
+              Expanded(
+                child: Text(
+                  value,
+                  style: Theme.of(context).textTheme.bodyMedium,
+                  overflow: TextOverflow.ellipsis,
+                  maxLines: 2,
+                ),
+              ),
+            ],
+          ),
+        ),
+      );
+    }
+
+    addRow(Icons.phone_outlined, loc?.phoneLabel ?? 'Phone', phone);
+    addRow(Icons.email_outlined, loc?.emailLabel ?? 'Email', email);
+    addRow(Icons.location_on_outlined, loc?.locationLabel ?? 'Location', city);
+    addRow(Icons.calendar_today_outlined, 'Member since', joined);
+
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.all(14),
+      decoration: BoxDecoration(
+        color: Theme.of(
+          context,
+        ).colorScheme.surfaceContainerHighest.withOpacity(0.38),
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(
+          color: Theme.of(context).colorScheme.outlineVariant.withOpacity(0.55),
+        ),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            crossAxisAlignment: CrossAxisAlignment.center,
+            children: [
+              CircleAvatar(
+                radius: 24,
+                backgroundColor: Theme.of(
+                  context,
+                ).colorScheme.primary.withOpacity(0.14),
+                backgroundImage: avatarUrl.isNotEmpty
+                    ? NetworkImage(avatarUrl)
+                    : null,
+                child: avatarUrl.isEmpty
+                    ? Text(
+                        initials,
+                        style: Theme.of(context).textTheme.titleMedium
+                            ?.copyWith(
+                              fontWeight: FontWeight.w700,
+                              color: Theme.of(context).colorScheme.primary,
+                            ),
+                      )
+                    : null,
+              ),
+              const SizedBox(width: 12),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      displayName,
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                      style: Theme.of(context).textTheme.titleSmall?.copyWith(
+                        fontWeight: FontWeight.w700,
+                      ),
+                    ),
+                    if (username.isNotEmpty) ...[
+                      const SizedBox(height: 2),
+                      Text(
+                        '@$username',
+                        style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                          color: Theme.of(context).colorScheme.onSurfaceVariant,
+                        ),
+                      ),
+                    ],
+                  ],
+                ),
+              ),
+              if (isVerified)
+                Container(
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 8,
+                    vertical: 4,
+                  ),
+                  decoration: BoxDecoration(
+                    color: Colors.green.withOpacity(0.12),
+                    borderRadius: BorderRadius.circular(999),
+                  ),
+                  child: const Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Icon(Icons.verified, color: Colors.green, size: 14),
+                      SizedBox(width: 4),
+                      Text(
+                        'Verified',
+                        style: TextStyle(
+                          color: Colors.green,
+                          fontSize: 11,
+                          fontWeight: FontWeight.w600,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+            ],
+          ),
+          if (details.isNotEmpty) ...[const SizedBox(height: 12), ...details],
+        ],
+      ),
+    );
+  }
+
   Widget _buildSpecifications(Map<String, dynamic> car) {
     final loc = AppLocalizations.of(context);
     final List<MapEntry<String, String>> rows = [];
@@ -350,8 +576,12 @@ class _CarDetailPageState extends State<CarDetailPage> {
       if (s.isEmpty || s == '0') return;
       rows.add(MapEntry(label, s));
     }
+
     add(loc?.yearLabel ?? 'Year', car['year']);
-    add(loc?.mileageLabel ?? 'Mileage', car['mileage'] != null ? '${car['mileage']} km' : null);
+    add(
+      loc?.mileageLabel ?? 'Mileage',
+      car['mileage'] != null ? '${car['mileage']} km' : null,
+    );
     add(loc?.engineTypeLabel ?? 'Engine', car['engine_type']);
     add(loc?.driveType ?? 'Drive type', car['drive_type']);
     add(loc?.bodyTypeLabel ?? 'Body type', car['body_type']);
@@ -359,9 +589,11 @@ class _CarDetailPageState extends State<CarDetailPage> {
     add(loc?.colorLabel ?? 'Color', car['color']);
     add(loc?.fuelEconomyLabel ?? 'Fuel economy', car['fuel_economy']);
     add(loc?.trimLabel ?? 'Trim', car['trim']);
-    if (car['seating'] != null && (car['seating'] is int || car['seating'] is String)) {
+    if (car['seating'] != null &&
+        (car['seating'] is int || car['seating'] is String)) {
       final n = car['seating'].toString().trim();
-      if (n.isNotEmpty && n != '0') rows.add(MapEntry(loc?.seating ?? 'Seating', n));
+      if (n.isNotEmpty && n != '0')
+        rows.add(MapEntry(loc?.seating ?? 'Seating', n));
     }
     if (rows.isEmpty) return const SizedBox.shrink();
     return Column(
@@ -369,7 +601,9 @@ class _CarDetailPageState extends State<CarDetailPage> {
       children: [
         Text(
           loc?.specificationsLabel ?? 'Specifications',
-          style: Theme.of(context).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.w700),
+          style: Theme.of(
+            context,
+          ).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.w700),
         ),
         const SizedBox(height: 10),
         Wrap(
@@ -379,7 +613,9 @@ class _CarDetailPageState extends State<CarDetailPage> {
             return Container(
               padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
               decoration: BoxDecoration(
-                color: Theme.of(context).colorScheme.surfaceContainerHighest.withOpacity(0.5),
+                color: Theme.of(
+                  context,
+                ).colorScheme.surfaceContainerHighest.withOpacity(0.5),
                 borderRadius: BorderRadius.circular(8),
               ),
               child: Column(
@@ -457,8 +693,10 @@ class _CarDetailPageState extends State<CarDetailPage> {
               right: 0,
               child: Center(
                 child: Container(
-                  padding:
-                      const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 10,
+                    vertical: 6,
+                  ),
                   decoration: BoxDecoration(
                     color: Colors.black54,
                     borderRadius: BorderRadius.circular(12),
@@ -476,8 +714,7 @@ class _CarDetailPageState extends State<CarDetailPage> {
   }
 
   Widget _horizontalCars(List<Map<String, dynamic>> cars) {
-    final listOnLight =
-        Theme.of(context).brightness == Brightness.light;
+    final listOnLight = Theme.of(context).brightness == Brightness.light;
     return SizedBox(
       height: 210,
       child: ListView.separated(
@@ -488,8 +725,9 @@ class _CarDetailPageState extends State<CarDetailPage> {
         itemBuilder: (context, index) {
           final c = cars[index];
           final id = (c['id'] ?? '').toString();
-          final title = (c['title'] ?? '${c['brand'] ?? ''} ${c['model'] ?? ''}')
-              .toString();
+          final title =
+              (c['title'] ?? '${c['brand'] ?? ''} ${c['model'] ?? ''}')
+                  .toString();
           final img = buildMediaUrl((c['image_url'] ?? '').toString());
           return InkWell(
             onTap: () {
@@ -558,16 +796,14 @@ class _CarDetailPageState extends State<CarDetailPage> {
 
     if (_loading && car == null) {
       return Scaffold(
-        backgroundColor:
-            isLightShell ? AppThemes.lightAppBackground : null,
+        backgroundColor: isLightShell ? AppThemes.lightAppBackground : null,
         body: const Center(child: CircularProgressIndicator()),
       );
     }
 
     if (car == null) {
       return Scaffold(
-        backgroundColor:
-            isLightShell ? AppThemes.lightAppBackground : null,
+        backgroundColor: isLightShell ? AppThemes.lightAppBackground : null,
         appBar: AppBar(title: Text(loc?.listingTitle ?? 'Listing')),
         body: Center(
           child: Column(
@@ -588,7 +824,7 @@ class _CarDetailPageState extends State<CarDetailPage> {
     final title = (car['title'] ?? '').toString().trim().isNotEmpty
         ? (car['title'] ?? '').toString()
         : '${car['brand'] ?? ''} ${car['model'] ?? ''} ${car['year'] ?? ''}'
-            .trim();
+              .trim();
     final brandStr = (car['brand'] ?? '').toString().trim();
     final modelStr = (car['model'] ?? '').toString().trim();
 
@@ -611,7 +847,9 @@ class _CarDetailPageState extends State<CarDetailPage> {
     if (seller != null) {
       final fullName =
           '${seller['first_name'] ?? ''} ${seller['last_name'] ?? ''}'.trim();
-      receiverName = (seller['name'] ?? seller['username'] ?? '').toString().trim();
+      receiverName = (seller['name'] ?? seller['username'] ?? '')
+          .toString()
+          .trim();
       if (receiverName.isEmpty && fullName.isNotEmpty) {
         receiverName = fullName;
       }
@@ -623,221 +861,204 @@ class _CarDetailPageState extends State<CarDetailPage> {
     final detailColumn = Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-                  Row(
-                    crossAxisAlignment: CrossAxisAlignment.center,
-                    children: [
-                      if (_brandLogoUrl((car['brand'] ?? '').toString()).isNotEmpty)
-                        Padding(
-                          padding: const EdgeInsets.only(right: 10),
-                          child: ClipRRect(
-                            borderRadius: BorderRadius.circular(8),
-                            child: Image.network(
-                              _brandLogoUrl((car['brand'] ?? '').toString()),
-                              width: 40,
-                              height: 40,
-                              fit: BoxFit.contain,
-                              errorBuilder: (context, error, stackTrace) =>
-                                  const SizedBox(width: 40, height: 40),
-                            ),
-                          ),
-                        ),
-                      Expanded(
-                        child: isLightShell
-                            ? Column(
-                                crossAxisAlignment: CrossAxisAlignment.start,
-                                mainAxisSize: MainAxisSize.min,
-                                children: [
-                                  if (brandStr.isNotEmpty)
-                                    Text(
-                                      brandStr,
-                                      style: Theme.of(context)
-                                          .textTheme
-                                          .titleMedium
-                                          ?.copyWith(
-                                            fontWeight: FontWeight.w800,
-                                            color: AppThemes.darkHomeShellBackground,
-                                          ),
-                                    ),
-                                  if (modelStr.isNotEmpty) ...[
-                                    if (brandStr.isNotEmpty)
-                                      const SizedBox(height: 4),
-                                    Text(
-                                      modelStr,
-                                      style: Theme.of(context)
-                                          .textTheme
-                                          .titleLarge
-                                          ?.copyWith(
-                                            fontWeight: FontWeight.w800,
-                                            color: Theme.of(context)
-                                                .colorScheme
-                                                .onSurfaceVariant,
-                                          ),
-                                    ),
-                                  ],
-                                  if (brandStr.isEmpty &&
-                                      modelStr.isEmpty &&
-                                      title.isNotEmpty)
-                                    Text(
-                                      title,
-                                      style: Theme.of(context)
-                                          .textTheme
-                                          .titleLarge
-                                          ?.copyWith(
-                                            fontWeight: FontWeight.w800,
-                                            color: AppThemes.darkHomeShellBackground,
-                                          ),
-                                    ),
-                                ],
-                              )
-                            : Text(
-                                title,
-                                style: Theme.of(context)
-                                    .textTheme
-                                    .titleLarge
-                                    ?.copyWith(fontWeight: FontWeight.w800),
-                              ),
-                      ),
-                    ],
+        Row(
+          crossAxisAlignment: CrossAxisAlignment.center,
+          children: [
+            if (_brandLogoUrl((car['brand'] ?? '').toString()).isNotEmpty)
+              Padding(
+                padding: const EdgeInsets.only(right: 10),
+                child: ClipRRect(
+                  borderRadius: BorderRadius.circular(8),
+                  child: Image.network(
+                    _brandLogoUrl((car['brand'] ?? '').toString()),
+                    width: 40,
+                    height: 40,
+                    fit: BoxFit.contain,
+                    errorBuilder: (context, error, stackTrace) =>
+                        const SizedBox(width: 40, height: 40),
                   ),
-                  const SizedBox(height: 6),
-                  Text(
-                    [price, currency].where((s) => s.isNotEmpty).join(' '),
-                    style: Theme.of(context).textTheme.titleMedium,
-                  ),
-                  const SizedBox(height: 6),
-                  Text(location),
-                  const SizedBox(height: 16),
-                  _buildSpecifications(car),
-                  if (_error != null) ...[
-                    const SizedBox(height: 10),
-                    Text(
-                      _error!,
-                      style: const TextStyle(color: Colors.orange),
-                    ),
-                  ],
-                  const SizedBox(height: 14),
-                  Row(
-                    children: [
-                      Expanded(
-                        child: OutlinedButton.icon(
-                          onPressed: () {
-                            Navigator.pushNamed(
-                              context,
-                              '/chat/conversation',
-                              arguments: {
-                                'carId': (car['id'] ?? car['public_id'] ?? widget.carId).toString(),
-                                if (receiverId != null && receiverId.isNotEmpty)
-                                  'receiverId': receiverId,
-                                if (receiverName != null && receiverName.isNotEmpty)
-                                  'receiverName': receiverName,
-                                'initialDraft': starterMessage,
-                                'listingPreview': {
-                                  'id': (car['id'] ?? car['public_id'] ?? widget.carId).toString(),
-                                  'title': title,
-                                  'price': car['price'],
-                                  'currency': currency,
-                                  'location': location,
-                                  'image_url': car['image_url'],
-                                  'images': car['images'],
-                                  'brand': car['brand'],
-                                  'model': car['model'],
-                                  'trim': car['trim'],
-                                  'year': car['year'],
-                                },
-                              },
-                            );
-                          },
-                          icon: const Icon(Icons.chat_bubble_outline),
-                          label: Text(loc?.chatAction ?? 'Chat'),
-                        ),
+                ),
+              ),
+            Expanded(
+              child: isLightShell
+                  ? Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        if (brandStr.isNotEmpty)
+                          Text(
+                            brandStr,
+                            style: Theme.of(context).textTheme.titleMedium
+                                ?.copyWith(
+                                  fontWeight: FontWeight.w800,
+                                  color: AppThemes.darkHomeShellBackground,
+                                ),
+                          ),
+                        if (modelStr.isNotEmpty) ...[
+                          if (brandStr.isNotEmpty) const SizedBox(height: 4),
+                          Text(
+                            modelStr,
+                            style: Theme.of(context).textTheme.titleLarge
+                                ?.copyWith(
+                                  fontWeight: FontWeight.w800,
+                                  color: Theme.of(
+                                    context,
+                                  ).colorScheme.onSurfaceVariant,
+                                ),
+                          ),
+                        ],
+                        if (brandStr.isEmpty &&
+                            modelStr.isEmpty &&
+                            title.isNotEmpty)
+                          Text(
+                            title,
+                            style: Theme.of(context).textTheme.titleLarge
+                                ?.copyWith(
+                                  fontWeight: FontWeight.w800,
+                                  color: AppThemes.darkHomeShellBackground,
+                                ),
+                          ),
+                      ],
+                    )
+                  : Text(
+                      title,
+                      style: Theme.of(context).textTheme.titleLarge?.copyWith(
+                        fontWeight: FontWeight.w800,
                       ),
-                      const SizedBox(width: 12),
-                      Expanded(
-                        child: OutlinedButton.icon(
-                          onPressed: () => Navigator.pushNamed(context, '/favorites'),
-                          icon: const Icon(Icons.favorite_border),
-                          label: Text(loc?.favoritesAction ?? 'Favorites'),
-                        ),
-                      ),
-                    ],
-                  ),
-                  const SizedBox(height: 16),
-                  if ((car['description'] ?? '').toString().trim().isNotEmpty) ...[
-                    Text(
-                      loc?.descriptionTitle ?? 'Description',
-                      style: Theme.of(context)
-                          .textTheme
-                          .titleMedium
-                          ?.copyWith(fontWeight: FontWeight.w700),
                     ),
-                    const SizedBox(height: 8),
-                    Text((car['description'] ?? '').toString()),
-                    const SizedBox(height: 16),
-                  ],
-                  if (_loadingSimilar || _similar.isNotEmpty) ...[
-                    Text(
-                      loc?.similarListings ?? 'Similar',
-                      style: Theme.of(context)
-                          .textTheme
-                          .titleMedium
-                          ?.copyWith(
-                            fontWeight: FontWeight.w700,
-                            color: isLightShell
-                                ? AppThemes.darkHomeShellBackground
-                                : null,
-                          ),
-                    ),
-                    const SizedBox(height: 10),
-                    if (_loadingSimilar && _similar.isEmpty)
-                      const Padding(
-                        padding: EdgeInsets.all(12),
-                        child: Center(
-                          child: SizedBox(
-                            width: 20,
-                            height: 20,
-                            child: CircularProgressIndicator(strokeWidth: 2),
-                          ),
-                        ),
-                      )
-                    else
-                      _horizontalCars(_similar),
-                    const SizedBox(height: 16),
-                  ],
-                  if (_loadingRelated || _related.isNotEmpty) ...[
-                    Text(
-                      loc?.relatedListings ?? 'Related',
-                      style: Theme.of(context)
-                          .textTheme
-                          .titleMedium
-                          ?.copyWith(
-                            fontWeight: FontWeight.w700,
-                            color: isLightShell
-                                ? AppThemes.darkHomeShellBackground
-                                : null,
-                          ),
-                    ),
-                    const SizedBox(height: 10),
-                    if (_loadingRelated && _related.isEmpty)
-                      const Padding(
-                        padding: EdgeInsets.all(12),
-                        child: Center(
-                          child: SizedBox(
-                            width: 20,
-                            height: 20,
-                            child: CircularProgressIndicator(strokeWidth: 2),
-                          ),
-                        ),
-                      )
-                    else
-                      _horizontalCars(_related),
-                    const SizedBox(height: 16),
-                  ],
+            ),
+          ],
+        ),
+        const SizedBox(height: 6),
+        Text(
+          [price, currency].where((s) => s.isNotEmpty).join(' '),
+          style: Theme.of(context).textTheme.titleMedium,
+        ),
+        const SizedBox(height: 6),
+        Text(location),
+        const SizedBox(height: 16),
+        _buildSpecifications(car),
+        if (_error != null) ...[
+          const SizedBox(height: 10),
+          Text(_error!, style: const TextStyle(color: Colors.orange)),
+        ],
+        const SizedBox(height: 14),
+        Row(
+          children: [
+            Expanded(
+              child: OutlinedButton.icon(
+                onPressed: () {
+                  Navigator.pushNamed(
+                    context,
+                    '/chat/conversation',
+                    arguments: {
+                      'carId': (car['id'] ?? car['public_id'] ?? widget.carId)
+                          .toString(),
+                      if (receiverId != null && receiverId.isNotEmpty)
+                        'receiverId': receiverId,
+                      if (receiverName != null && receiverName.isNotEmpty)
+                        'receiverName': receiverName,
+                      'initialDraft': starterMessage,
+                      'listingPreview': {
+                        'id': (car['id'] ?? car['public_id'] ?? widget.carId)
+                            .toString(),
+                        'title': title,
+                        'price': car['price'],
+                        'currency': currency,
+                        'location': location,
+                        'image_url': car['image_url'],
+                        'images': car['images'],
+                        'brand': car['brand'],
+                        'model': car['model'],
+                        'trim': car['trim'],
+                        'year': car['year'],
+                      },
+                    },
+                  );
+                },
+                icon: const Icon(Icons.chat_bubble_outline),
+                label: Text(loc?.chatAction ?? 'Chat'),
+              ),
+            ),
+            const SizedBox(width: 12),
+            Expanded(
+              child: OutlinedButton.icon(
+                onPressed: () => Navigator.pushNamed(context, '/favorites'),
+                icon: const Icon(Icons.favorite_border),
+                label: Text(loc?.favoritesAction ?? 'Favorites'),
+              ),
+            ),
+          ],
+        ),
+        if (seller != null) ...[
+          const SizedBox(height: 16),
+          _buildSellerInfoSection(seller),
+          const SizedBox(height: 16),
+        ],
+        if ((car['description'] ?? '').toString().trim().isNotEmpty) ...[
+          Text(
+            loc?.descriptionTitle ?? 'Description',
+            style: Theme.of(
+              context,
+            ).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.w700),
+          ),
+          const SizedBox(height: 8),
+          Text((car['description'] ?? '').toString()),
+          const SizedBox(height: 16),
+        ],
+        if (_loadingSimilar || _similar.isNotEmpty) ...[
+          Text(
+            loc?.similarListings ?? 'Similar',
+            style: Theme.of(context).textTheme.titleMedium?.copyWith(
+              fontWeight: FontWeight.w700,
+              color: isLightShell ? AppThemes.darkHomeShellBackground : null,
+            ),
+          ),
+          const SizedBox(height: 10),
+          if (_loadingSimilar && _similar.isEmpty)
+            const Padding(
+              padding: EdgeInsets.all(12),
+              child: Center(
+                child: SizedBox(
+                  width: 20,
+                  height: 20,
+                  child: CircularProgressIndicator(strokeWidth: 2),
+                ),
+              ),
+            )
+          else
+            _horizontalCars(_similar),
+          const SizedBox(height: 16),
+        ],
+        if (_loadingRelated || _related.isNotEmpty) ...[
+          Text(
+            loc?.relatedListings ?? 'Related',
+            style: Theme.of(context).textTheme.titleMedium?.copyWith(
+              fontWeight: FontWeight.w700,
+              color: isLightShell ? AppThemes.darkHomeShellBackground : null,
+            ),
+          ),
+          const SizedBox(height: 10),
+          if (_loadingRelated && _related.isEmpty)
+            const Padding(
+              padding: EdgeInsets.all(12),
+              child: Center(
+                child: SizedBox(
+                  width: 20,
+                  height: 20,
+                  child: CircularProgressIndicator(strokeWidth: 2),
+                ),
+              ),
+            )
+          else
+            _horizontalCars(_related),
+          const SizedBox(height: 16),
+        ],
       ],
     );
 
     return Scaffold(
-      backgroundColor:
-          isLightShell ? AppThemes.lightAppBackground : null,
+      backgroundColor: isLightShell ? AppThemes.lightAppBackground : null,
       appBar: AppBar(
         title: Text(loc?.listingTitle ?? 'Listing'),
         actions: [
@@ -874,14 +1095,10 @@ class _CarDetailPageState extends State<CarDetailPage> {
                 child: detailColumn,
               )
             else
-              Padding(
-                padding: const EdgeInsets.all(16),
-                child: detailColumn,
-              ),
+              Padding(padding: const EdgeInsets.all(16), child: detailColumn),
           ],
         ),
       ),
     );
   }
 }
-

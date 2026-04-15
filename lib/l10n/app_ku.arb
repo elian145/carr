@@ -105,6 +105,15 @@
   "value_fuel_plugin_hybrid": "هایبریدی پڵەگ",
   "value_title_clean": "پاك",
   "value_title_damaged": "زیان",
+  "titleStatusDamagedWithParts": "زیان ({count} پارچە)",
+  "@titleStatusDamagedWithParts": {
+    "placeholders": {
+      "count": {
+        "type": "String",
+        "example": "5"
+      }
+    }
+  },
   "value_drive_fwd": "پێشەوە",
   "value_drive_rwd": "دواوە",
   "value_drive_awd": "هەموو چوار",

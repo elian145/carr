@@ -162,8 +162,7 @@ void _applyCatalogSellFieldUnionToCarData(
   }
   if (o.cylinderCounts.isNotEmpty) {
     d['_online_opts_cylinder'] = o.cylinderCounts.toList()
-      ..sort((a, b) =>
-          (int.tryParse(a) ?? 0).compareTo(int.tryParse(b) ?? 0));
+      ..sort((a, b) => (int.tryParse(a) ?? 0).compareTo(int.tryParse(b) ?? 0));
   }
   if (o.seatings.isNotEmpty) {
     d['_online_opts_seating'] = o.seatings.toList()..sort();
@@ -255,8 +254,7 @@ void _applyFirstOnlineSpecVariantForMissingScalars(Map<String, dynamic> d) {
   if (_legacyScalarStep2KeyMissing(d, 'fuel_type') && v.fuelType != null) {
     d['fuel_type'] = sellFlowFuelLabel(v.fuelType!);
   }
-  if (_legacyScalarStep2KeyMissing(d, 'engine_type') &&
-      v.engineType != null) {
+  if (_legacyScalarStep2KeyMissing(d, 'engine_type') && v.engineType != null) {
     d['engine_type'] = v.engineType!;
   }
   if (_legacyScalarStep2KeyMissing(d, 'body_type') && v.bodyType != null) {
@@ -326,7 +324,9 @@ Future<http.MultipartFile> _buildVideoMultipartFile(XFile video) async {
       // MP4/MOV/3GP family: [size][ftyp][brand...]
       final box = String.fromCharCodes(headerBytes.sublist(4, 8));
       if (box == 'ftyp') {
-        final brand = String.fromCharCodes(headerBytes.sublist(8, 12)).toLowerCase();
+        final brand = String.fromCharCodes(
+          headerBytes.sublist(8, 12),
+        ).toLowerCase();
         if (brand.startsWith('qt')) return 'video/quicktime';
         if (brand.startsWith('3g')) return 'video/3gpp';
         return 'video/mp4';
@@ -364,7 +364,9 @@ Future<http.MultipartFile> _buildVideoMultipartFile(XFile video) async {
       ? video.name.trim()
       : p.basename(path);
   final base = p.basenameWithoutExtension(srcName).trim();
-  final fallbackBase = base.isNotEmpty ? base : 'video_${DateTime.now().millisecondsSinceEpoch}';
+  final fallbackBase = base.isNotEmpty
+      ? base
+      : 'video_${DateTime.now().millisecondsSinceEpoch}';
   String ext = extensionFromMime(mime) ?? '';
   // Normalize edge cases to extensions backend validators commonly accept.
   if (mime == 'video/quicktime') ext = 'mov';
@@ -717,23 +719,23 @@ const Color kSellLightShellFieldFill = Color(0xFFFFF1E6);
 
 Color _sellFlowManualFieldFill(BuildContext context) =>
     Theme.of(context).brightness == Brightness.dark
-        ? Colors.black.withOpacity(0.2)
-        : kSellLightShellFieldFill;
+    ? Colors.black.withOpacity(0.2)
+    : kSellLightShellFieldFill;
 
 TextStyle _sellFlowManualFieldLabelStyle(BuildContext context) =>
     Theme.of(context).brightness == Brightness.dark
-        ? const TextStyle(color: Colors.white)
-        : TextStyle(color: Colors.grey[800]!);
+    ? const TextStyle(color: Colors.white)
+    : TextStyle(color: Colors.grey[800]!);
 
 TextStyle _sellFlowManualFieldHintStyle(BuildContext context) =>
     Theme.of(context).brightness == Brightness.dark
-        ? const TextStyle(color: Colors.white54)
-        : TextStyle(color: Colors.grey[600]!);
+    ? const TextStyle(color: Colors.white54)
+    : TextStyle(color: Colors.grey[600]!);
 
 TextStyle _sellFlowManualFieldTextStyle(BuildContext context) =>
     Theme.of(context).brightness == Brightness.dark
-        ? const TextStyle(color: Colors.white)
-        : TextStyle(color: Colors.grey[900]!);
+    ? const TextStyle(color: Colors.white)
+    : TextStyle(color: Colors.grey[900]!);
 
 // Fancy selector tile used in Sell page pickers
 Widget buildFancySelector(
@@ -821,7 +823,9 @@ Widget buildFancySelector(
               Text(
                 value == null || value.isEmpty
                     ? AppLocalizations.of(context)!.tapToSelect
-                    : (value == 'Any' ? AppLocalizations.of(context)!.anyOption : value),
+                    : (value == 'Any'
+                          ? AppLocalizations.of(context)!.anyOption
+                          : value),
                 maxLines: 1,
                 overflow: TextOverflow.ellipsis,
                 style: TextStyle(
@@ -1268,11 +1272,9 @@ Map<String, dynamic> mapListingToGlobalCarCardData(
       ? (listing['mileage']?.toString() ?? '')
       : _decimalFormatterGlobal(context).format(mileageNum);
 
-  final String carId = (listing['public_id'] ??
-          listing['id'] ??
-          listing['car_id'] ??
-          '')
-      .toString();
+  final String carId =
+      (listing['public_id'] ?? listing['id'] ?? listing['car_id'] ?? '')
+          .toString();
 
   return {
     'id': carId,
@@ -1283,9 +1285,7 @@ Map<String, dynamic> mapListingToGlobalCarCardData(
     'price': listing['price'],
     'year': listing['year'],
     'mileage': mileageFormatted,
-    'city': listing['city'] ??
-        listing['location'] ??
-        listing['city_name'],
+    'city': listing['city'] ?? listing['location'] ?? listing['city_name'],
     'image_url': listing['image_url'],
     'images': listing['images'],
     'videos': listing['videos'],
@@ -1349,8 +1349,9 @@ Widget buildGlobalCarCard(BuildContext context, Map car) {
       ? ''
       : (_translateValueGlobal(context, cityRaw) ?? cityRaw).trim();
   final locCard = AppLocalizations.of(context)!;
-  final String yearDisplay =
-      yearRaw.isEmpty ? '' : _localizeDigitsGlobal(context, yearRaw);
+  final String yearDisplay = yearRaw.isEmpty
+      ? ''
+      : _localizeDigitsGlobal(context, yearRaw);
   final String mileageDisplay = mileageRaw.isEmpty
       ? ''
       : '${_localizeDigitsGlobal(context, mileageRaw)} ${locCard.unit_km}';
@@ -1517,11 +1518,7 @@ Widget buildGlobalCarCard(BuildContext context, Map car) {
                         overflow: TextOverflow.ellipsis,
                       ),
                       SizedBox(height: 6),
-                      Divider(
-                        height: 1,
-                        thickness: 1,
-                        color: dividerLineColor,
-                      ),
+                      Divider(height: 1, thickness: 1, color: dividerLineColor),
                       SizedBox(height: 6),
                     ] else ...[
                       SizedBox(height: 6),
@@ -1533,10 +1530,7 @@ Widget buildGlobalCarCard(BuildContext context, Map car) {
                           child: Text(
                             yearDisplay.isNotEmpty
                                 ? yearDisplay
-                                : _formatCurrencyGlobal(
-                                    context,
-                                    car['price'],
-                                  ),
+                                : _formatCurrencyGlobal(context, car['price']),
                             style: TextStyle(
                               color: Color(0xFFFF6B00),
                               fontWeight: FontWeight.w600,
@@ -1786,18 +1780,9 @@ Widget buildLanguageMenu() {
       LocaleController.setLocale(Locale(code));
     },
     itemBuilder: (context) => const [
-      PopupMenuItem(
-        value: 'en',
-        child: Text('English'),
-      ),
-      PopupMenuItem(
-        value: 'ar',
-        child: Text('العربية'),
-      ),
-      PopupMenuItem(
-        value: 'ku',
-        child: Text('کوردی'),
-      ),
+      PopupMenuItem(value: 'en', child: Text('English')),
+      PopupMenuItem(value: 'ar', child: Text('العربية')),
+      PopupMenuItem(value: 'ku', child: Text('کوردی')),
     ],
   );
 }
@@ -1892,7 +1877,10 @@ class _FullScreenGalleryPageState extends State<FullScreenGalleryPage> {
   void initState() {
     super.initState();
     _mediaCount = widget.imageUrls.length + widget.videoUrls.length;
-    _index = widget.initialIndex.clamp(0, _mediaCount > 0 ? _mediaCount - 1 : 0);
+    _index = widget.initialIndex.clamp(
+      0,
+      _mediaCount > 0 ? _mediaCount - 1 : 0,
+    );
     _controller = PageController(initialPage: _index);
   }
 
@@ -2005,8 +1993,12 @@ class _ListingPreviewGalleryPageState extends State<ListingPreviewGalleryPage> {
   @override
   void initState() {
     super.initState();
-    _mediaCount = widget.imageFilesOrUrls.length + widget.videoFilesOrUrls.length;
-    _index = widget.initialIndex.clamp(0, _mediaCount > 0 ? _mediaCount - 1 : 0);
+    _mediaCount =
+        widget.imageFilesOrUrls.length + widget.videoFilesOrUrls.length;
+    _index = widget.initialIndex.clamp(
+      0,
+      _mediaCount > 0 ? _mediaCount - 1 : 0,
+    );
     _controller = PageController(initialPage: _index);
   }
 
@@ -2032,7 +2024,8 @@ class _ListingPreviewGalleryPageState extends State<ListingPreviewGalleryPage> {
         child: Icon(Icons.videocam_off, color: Colors.white38, size: 48),
       );
     }
-    final String source = (raw.startsWith('http://') || raw.startsWith('https://'))
+    final String source =
+        (raw.startsWith('http://') || raw.startsWith('https://'))
         ? (raw.startsWith('http') ? raw : _buildFullImageUrl(raw))
         : raw;
     return GalleryEmbeddedVideoPlayer(videoUrl: source, isActive: isActive);
@@ -2571,8 +2564,7 @@ class _SearchDialogState extends State<_SearchDialog> {
                 .replaceAll(' ', '-')
                 .replaceAll('Ã©', 'e')
                 .replaceAll('Ã¶', 'o');
-        final logoUrl =
-            '${getApiBase()}/static/images/brands/$logoFile.png';
+        final logoUrl = '${getApiBase()}/static/images/brands/$logoFile.png';
 
         return ListTile(
           leading: Container(
@@ -2643,8 +2635,7 @@ class _SearchDialogState extends State<_SearchDialog> {
                 .replaceAll(' ', '-')
                 .replaceAll('Ã©', 'e')
                 .replaceAll('Ã¶', 'o');
-        final logoUrl =
-            '${getApiBase()}/static/images/brands/$logoFile.png';
+        final logoUrl = '${getApiBase()}/static/images/brands/$logoFile.png';
 
         return ListTile(
           leading: Container(
@@ -2671,7 +2662,11 @@ class _SearchDialogState extends State<_SearchDialog> {
             ),
           ),
           title: Text(
-            CarNameTranslations.getLocalizedModel(context, brand, model).isNotEmpty
+            CarNameTranslations.getLocalizedModel(
+                  context,
+                  brand,
+                  model,
+                ).isNotEmpty
                 ? CarNameTranslations.getLocalizedModel(context, brand, model)
                 : model,
             style: TextStyle(
@@ -2788,20 +2783,25 @@ class ComparisonButton extends StatelessWidget {
   final Map<String, dynamic> car;
   final bool isCompact;
 
-  const ComparisonButton({super.key, required this.car, this.isCompact = false});
+  const ComparisonButton({
+    super.key,
+    required this.car,
+    this.isCompact = false,
+  });
 
   @override
   Widget build(BuildContext context) {
     return Consumer<CarComparisonStore>(
       builder: (context, comparisonStore, child) {
         // Comparison store uses string IDs (public_id preferred).
-        final String carId = (car['public_id'] ??
-                car['id'] ??
-                car['car_id'] ??
-                car['carId'] ??
-                car['uuid'])
-            .toString()
-            .trim();
+        final String carId =
+            (car['public_id'] ??
+                    car['id'] ??
+                    car['car_id'] ??
+                    car['carId'] ??
+                    car['uuid'])
+                .toString()
+                .trim();
         final isInComparison = carId.isNotEmpty
             ? comparisonStore.isCarInComparison(carId)
             : false;
@@ -2835,7 +2835,8 @@ class ComparisonButton extends StatelessWidget {
                   );
                 } else if (canAddMore && carId.isNotEmpty) {
                   final normalized = Map<String, dynamic>.from(car);
-                  normalized['id'] = carId; // ensure consistent string ID stored
+                  normalized['id'] =
+                      carId; // ensure consistent string ID stored
                   comparisonStore.addCarToComparison(normalized);
                   ScaffoldMessenger.of(context).showSnackBar(
                     SnackBar(
@@ -2962,9 +2963,7 @@ class _SellAuthPromptState extends State<_SellAuthPrompt> {
 
   @override
   Widget build(BuildContext context) {
-    return const Scaffold(
-      body: Center(child: CircularProgressIndicator()),
-    );
+    return const Scaffold(body: Center(child: CircularProgressIndicator()));
   }
 }
 
@@ -2981,7 +2980,9 @@ class AuthGuard extends StatelessWidget {
     final auth = Provider.of<AuthService>(context);
     // Allow FavoritesPage and ProfilePage for logged-out users so they can
     // show their own friendly login/signup prompts and UI.
-    if (auth.isAuthenticated || child is FavoritesPage || child is ProfilePage) {
+    if (auth.isAuthenticated ||
+        child is FavoritesPage ||
+        child is ProfilePage) {
       return child;
     }
     if (child is SellCarPage) {
@@ -2992,9 +2993,7 @@ class AuthGuard extends StatelessWidget {
         Navigator.pushReplacementNamed(context, '/login');
       }
     });
-    return const Scaffold(
-      body: Center(child: CircularProgressIndicator()),
-    );
+    return const Scaffold(body: Center(child: CircularProgressIndicator()));
   }
 }
 
@@ -3036,110 +3035,117 @@ class MyApp extends StatelessWidget {
         valueListenable: LocaleController.currentLocale,
         builder: (context, locale, _) => Consumer<ThemeProvider>(
           builder: (context, themeProvider, child) => _AppWithDeepLinks(
-          child: MaterialApp(
-            navigatorKey: _appNavigatorKey,
-            title: 'CARZO',
-            locale: locale,
-            supportedLocales: const [Locale('en'), Locale('ar'), Locale('ku')],
-            localizationsDelegates: [
-              AppLocalizations.delegate,
-              GlobalMaterialLocalizations.delegate,
-              GlobalWidgetsLocalizations.delegate,
-              GlobalCupertinoLocalizations.delegate,
-              const KuMaterialLocalizationsDelegate(),
-              const KuWidgetsLocalizationsDelegate(),
-              const KuCupertinoLocalizationsDelegate(),
-            ],
-            localeResolutionCallback: (deviceLocale, supported) {
-              if (locale != null) return locale;
-              if (deviceLocale == null) return const Locale('en');
-              for (final l in supported) {
-                if (l.languageCode == deviceLocale.languageCode) return l;
-              }
-              return const Locale('en');
-            },
-            theme: AppThemes.lightTheme,
-            darkTheme: AppThemes.darkTheme,
-            themeMode: themeProvider.themeMode,
-            debugShowCheckedModeBanner: false,
-            initialRoute: '/',
-            routes: {
-              '/': (context) => HomePage(),
-              '/sell': (context) => AuthGuard(child: SellCarPage()),
-              '/settings': (context) => SettingsPage(),
-              '/favorites': (context) => AuthGuard(child: FavoritesPage()),
-              '/chat': (context) => AuthGuard(child: ChatListPage()),
-              '/login': (context) => LoginPage(),
-              '/signup': (context) => SignupPage(),
-              '/profile': (context) => AuthGuard(child: ProfilePage()),
-              '/edit-profile': (context) => AuthGuard(child: EditProfilePage()),
-              '/payment/history': (context) =>
-                  AuthGuard(child: PaymentHistoryPage()),
-              '/payment/initiate': (context) =>
-                  AuthGuard(child: PaymentInitiatePage()),
-              '/car_detail': (context) {
-                final args =
-                    ModalRoute.of(context)!.settings.arguments
-                        as Map<String, dynamic>;
-                return CarDetailsPage(carId: args['carId'].toString());
+            child: MaterialApp(
+              navigatorKey: _appNavigatorKey,
+              title: 'CARZO',
+              locale: locale,
+              supportedLocales: const [
+                Locale('en'),
+                Locale('ar'),
+                Locale('ku'),
+              ],
+              localizationsDelegates: [
+                AppLocalizations.delegate,
+                GlobalMaterialLocalizations.delegate,
+                GlobalWidgetsLocalizations.delegate,
+                GlobalCupertinoLocalizations.delegate,
+                const KuMaterialLocalizationsDelegate(),
+                const KuWidgetsLocalizationsDelegate(),
+                const KuCupertinoLocalizationsDelegate(),
+              ],
+              localeResolutionCallback: (deviceLocale, supported) {
+                if (locale != null) return locale;
+                if (deviceLocale == null) return const Locale('en');
+                for (final l in supported) {
+                  if (l.languageCode == deviceLocale.languageCode) return l;
+                }
+                return const Locale('en');
               },
-              '/chat/conversation': (context) {
-                final args =
-                    ModalRoute.of(context)!.settings.arguments
-                        as Map<String, dynamic>;
-                final rawId = (args['carId'] ?? args['conversationId'] ?? '')
-                    .toString()
-                    .trim();
-                if (rawId.isEmpty) {
-                  return Scaffold(
-                    appBar: AppBar(title: const Text('Navigation error')),
-                    body: const Center(
-                      child: Text('Missing chat conversation id'),
+              theme: AppThemes.lightTheme,
+              darkTheme: AppThemes.darkTheme,
+              themeMode: themeProvider.themeMode,
+              debugShowCheckedModeBanner: false,
+              initialRoute: '/',
+              routes: {
+                '/': (context) => HomePage(),
+                '/sell': (context) => AuthGuard(child: SellCarPage()),
+                '/settings': (context) => SettingsPage(),
+                '/favorites': (context) => AuthGuard(child: FavoritesPage()),
+                '/chat': (context) => AuthGuard(child: ChatListPage()),
+                '/login': (context) => LoginPage(),
+                '/signup': (context) => SignupPage(),
+                '/profile': (context) => AuthGuard(child: ProfilePage()),
+                '/edit-profile': (context) =>
+                    AuthGuard(child: EditProfilePage()),
+                '/payment/history': (context) =>
+                    AuthGuard(child: PaymentHistoryPage()),
+                '/payment/initiate': (context) =>
+                    AuthGuard(child: PaymentInitiatePage()),
+                '/car_detail': (context) {
+                  final args =
+                      ModalRoute.of(context)!.settings.arguments
+                          as Map<String, dynamic>;
+                  return CarDetailsPage(carId: args['carId'].toString());
+                },
+                '/chat/conversation': (context) {
+                  final args =
+                      ModalRoute.of(context)!.settings.arguments
+                          as Map<String, dynamic>;
+                  final rawId = (args['carId'] ?? args['conversationId'] ?? '')
+                      .toString()
+                      .trim();
+                  if (rawId.isEmpty) {
+                    return Scaffold(
+                      appBar: AppBar(title: const Text('Navigation error')),
+                      body: const Center(
+                        child: Text('Missing chat conversation id'),
+                      ),
+                    );
+                  }
+                  return AuthGuard(
+                    child: carzo_chat.ChatConversationPage(
+                      carId: rawId,
+                      receiverId: args['receiverId']?.toString(),
+                      initialDraft: args['initialDraft']?.toString(),
+                      initialListingPreview: args['listingPreview'] is Map
+                          ? Map<String, dynamic>.from(
+                              (args['listingPreview'] as Map)
+                                  .cast<String, dynamic>(),
+                            )
+                          : null,
                     ),
                   );
-                }
-                return AuthGuard(
-                  child: carzo_chat.ChatConversationPage(
-                    carId: rawId,
-                    receiverId: args['receiverId']?.toString(),
-                    initialDraft: args['initialDraft']?.toString(),
-                    initialListingPreview: args['listingPreview'] is Map
-                        ? Map<String, dynamic>.from(
-                            (args['listingPreview'] as Map)
-                                .cast<String, dynamic>(),
-                          )
-                        : null,
-                  ),
-                );
+                },
+                '/payment/status': (context) {
+                  final args =
+                      ModalRoute.of(context)!.settings.arguments
+                          as Map<String, dynamic>;
+                  return PaymentStatusPage(paymentId: args['paymentId']);
+                },
+                '/edit': (context) {
+                  final args =
+                      ModalRoute.of(context)!.settings.arguments
+                          as Map<String, dynamic>;
+                  return AuthGuard(child: EditListingPage(car: args['car']));
+                },
+                '/my_listings': (context) => AuthGuard(child: MyListingsPage()),
+                '/comparison': (context) => CarComparisonPage(),
+                '/analytics': (context) => AnalyticsPage(),
+                '/reset-password': (context) => ResetPasswordPage(),
+                '/verify-email': (context) {
+                  final args = ModalRoute.of(context)?.settings.arguments;
+                  final token = args is Map
+                      ? (args['token'] ?? '').toString().trim()
+                      : '';
+                  return VerifyEmailPage(
+                    initialToken: token.isNotEmpty ? token : null,
+                  );
+                },
+                '/forgot-password': (context) =>
+                    auth_pages.ForgotPasswordPage(),
               },
-              '/payment/status': (context) {
-                final args =
-                    ModalRoute.of(context)!.settings.arguments
-                        as Map<String, dynamic>;
-                return PaymentStatusPage(paymentId: args['paymentId']);
-              },
-              '/edit': (context) {
-                final args =
-                    ModalRoute.of(context)!.settings.arguments
-                        as Map<String, dynamic>;
-                return AuthGuard(
-                  child: EditListingPage(car: args['car']),
-                );
-              },
-              '/my_listings': (context) =>
-                  AuthGuard(child: MyListingsPage()),
-              '/comparison': (context) => CarComparisonPage(),
-              '/analytics': (context) => AnalyticsPage(),
-              '/reset-password': (context) => ResetPasswordPage(),
-              '/verify-email': (context) {
-                final args = ModalRoute.of(context)?.settings.arguments;
-                final token = args is Map ? (args['token'] ?? '').toString().trim() : '';
-                return VerifyEmailPage(initialToken: token.isNotEmpty ? token : null);
-              },
-              '/forgot-password': (context) => auth_pages.ForgotPasswordPage(),
-            },
+            ),
           ),
-        ),
         ),
       ),
     );
@@ -3480,6 +3486,7 @@ class _HomePageState extends State<HomePage> {
   String? selectedBodyType;
   String? selectedColor;
   String? selectedDriveType;
+
   /// Lowercase API code: us, gcc, iraq, … (see [kCarRegionSpecCodes]).
   String? selectedRegionSpecs;
   String? selectedCylinderCount;
@@ -3568,8 +3575,9 @@ class _HomePageState extends State<HomePage> {
         _homeFilterSpecVariantsCache != null) {
       return _homeFilterSpecVariantsCache!;
     }
-    final appTrim =
-        trimKey.isEmpty ? CarSpecIndex.catalogAutofillModelOnly : trimKey;
+    final appTrim = trimKey.isEmpty
+        ? CarSpecIndex.catalogAutofillModelOnly
+        : trimKey;
     final list = idx.homeFilterSpecVariantsUnion(
       b,
       m,
@@ -3587,9 +3595,7 @@ class _HomePageState extends State<HomePage> {
   void _applyMoreFiltersCylinderSyncFromEngine(String? engineLabel) {
     if (engineLabel == null || engineLabel.trim().isEmpty) return;
     final prevCyl = selectedCylinderCount;
-    if (prevCyl == null ||
-        prevCyl.isEmpty ||
-        prevCyl.toLowerCase() == 'any') {
+    if (prevCyl == null || prevCyl.isEmpty || prevCyl.toLowerCase() == 'any') {
       return;
     }
     final vs = _homeMoreFiltersSpecVariants();
@@ -3629,11 +3635,9 @@ class _HomePageState extends State<HomePage> {
     } else {
       final lit = OnlineSpecVariant.parseLeadingEngineLiters(t);
       final lit1 = lit == null ? null : double.parse(lit.toStringAsFixed(1));
-      final pick = OnlineSpecVariant.matchBestAnchored(
-        narrowed,
-        {'e'},
-        engineLiters: lit1,
-      );
+      final pick = OnlineSpecVariant.matchBestAnchored(narrowed, {
+        'e',
+      }, engineLiters: lit1);
       if (pick?.cylinderCount != null && pick!.cylinderCount! > 0) {
         nextCyl = pick.cylinderCount;
       }
@@ -3652,9 +3656,7 @@ class _HomePageState extends State<HomePage> {
   /// Only runs if the user already chose a concrete engine size (not Any / unset).
   void _applyMoreFiltersEngineSyncFromCylinder(String? newCylinderStr) {
     final prevEng = selectedEngineSize;
-    if (prevEng == null ||
-        prevEng.isEmpty ||
-        prevEng.toLowerCase() == 'any') {
+    if (prevEng == null || prevEng.isEmpty || prevEng.toLowerCase() == 'any') {
       return;
     }
     if (newCylinderStr == null ||
@@ -3680,8 +3682,7 @@ class _HomePageState extends State<HomePage> {
       return '${v.engineSizeLiters!.toStringAsFixed(1)}${v.displacementSuffix}';
     }
 
-    final labels =
-        narrowed.map(labelFromVariant).whereType<String>().toSet();
+    final labels = narrowed.map(labelFromVariant).whereType<String>().toSet();
     if (labels.isEmpty) return;
 
     String? nextLabel;
@@ -3710,7 +3711,8 @@ class _HomePageState extends State<HomePage> {
   }
 
   /// Catalog-backed engine/cylinder unions for the current brand + model (+ trim), or null.
-  ({List<String> engines, List<String> cylinders})? _catalogMotorFilterOptions() {
+  ({List<String> engines, List<String> cylinders})?
+  _catalogMotorFilterOptions() {
     final b = selectedBrand?.trim();
     final m = selectedModel?.trim();
     if (b == null || b.isEmpty || m == null || m.isEmpty) return null;
@@ -3723,8 +3725,9 @@ class _HomePageState extends State<HomePage> {
     if (_homeMotorOptsCacheKey == key && _homeMotorOptsCache != null) {
       return _homeMotorOptsCache;
     }
-    final appTrim =
-        trimKey.isEmpty ? CarSpecIndex.catalogAutofillModelOnly : trimKey;
+    final appTrim = trimKey.isEmpty
+        ? CarSpecIndex.catalogAutofillModelOnly
+        : trimKey;
     final raw = idx.homeFilterEngineCylinderOptions(
       b,
       m,
@@ -3742,8 +3745,10 @@ class _HomePageState extends State<HomePage> {
       return null;
     }
     _homeMotorOptsCacheKey = key;
-    _homeMotorOptsCache =
-        (engines: raw.engineSizes, cylinders: raw.cylinderCounts);
+    _homeMotorOptsCache = (
+      engines: raw.engineSizes,
+      cylinders: raw.cylinderCounts,
+    );
     return _homeMotorOptsCache;
   }
 
@@ -3859,9 +3864,11 @@ class _HomePageState extends State<HomePage> {
         selectedDriveType = map['drive_type'];
         final rsRaw = map['region_specs']?.toString().trim().toLowerCase();
         selectedRegionSpecs =
-            (rsRaw != null && rsRaw.isNotEmpty && isValidCarRegionSpecCode(rsRaw))
-                ? rsRaw
-                : null;
+            (rsRaw != null &&
+                rsRaw.isNotEmpty &&
+                isValidCarRegionSpecCode(rsRaw))
+            ? rsRaw
+            : null;
         selectedCylinderCount = map['cylinders'];
         selectedSeating = map['seating'];
         selectedEngineSize = map['engine_size'];
@@ -4164,12 +4171,7 @@ class _HomePageState extends State<HomePage> {
   ];
   final List<String> conditions = ['Any', 'New', 'Used'];
   // Same options as sell page (with 'Any' for filter)
-  final List<String> transmissions = [
-    'Any',
-    'Automatic',
-    'Manual',
-    'CVT',
-  ];
+  final List<String> transmissions = ['Any', 'Automatic', 'Manual', 'CVT'];
   final List<String> fuelTypes = [
     'Any',
     'Gasoline',
@@ -4966,7 +4968,9 @@ class _HomePageState extends State<HomePage> {
           });
         }
 
-        _debugLog('âœ… Alternative fetch successful: ${parsed.length} cars loaded');
+        _debugLog(
+          'âœ… Alternative fetch successful: ${parsed.length} cars loaded',
+        );
       } else {
         throw Exception('Server error: ${response.statusCode}');
       }
@@ -5014,7 +5018,9 @@ class _HomePageState extends State<HomePage> {
           });
         }
 
-        _debugLog('âœ… Fallback fetch successful: ${parsed.length} cars loaded');
+        _debugLog(
+          'âœ… Fallback fetch successful: ${parsed.length} cars loaded',
+        );
 
         // Show a message that sorting was disabled
         if (mounted) {
@@ -5289,8 +5295,8 @@ class _HomePageState extends State<HomePage> {
           final List<dynamic> listSource = decoded is List
               ? decoded
               : (decoded is Map && decoded['cars'] is List)
-                  ? decoded['cars'] as List
-                  : <dynamic>[];
+              ? decoded['cars'] as List
+              : <dynamic>[];
           final List<Map<String, dynamic>> parsed = listSource
               .whereType<Map>()
               .map((e) => e.map((k, v) => MapEntry(k.toString(), v)))
@@ -5363,8 +5369,8 @@ class _HomePageState extends State<HomePage> {
           final List<dynamic> listSource = decoded is List
               ? decoded
               : (decoded is Map && decoded['cars'] is List)
-                  ? decoded['cars'] as List
-                  : <dynamic>[];
+              ? decoded['cars'] as List
+              : <dynamic>[];
           final List<Map<String, dynamic>> parsed = listSource
               .whereType<Map>()
               .map((e) => e.map((k, v) => MapEntry(k.toString(), v)))
@@ -5419,8 +5425,8 @@ class _HomePageState extends State<HomePage> {
       final List<dynamic> listSource = decoded is List
           ? decoded
           : (decoded is Map && decoded['cars'] is List)
-              ? decoded['cars'] as List
-              : <dynamic>[];
+          ? decoded['cars'] as List
+          : <dynamic>[];
       final List<Map<String, dynamic>> parsed = listSource
           .whereType<Map>()
           .map((e) => e.map((k, v) => MapEntry(k.toString(), v)))
@@ -5468,8 +5474,8 @@ class _HomePageState extends State<HomePage> {
         final List<dynamic> listSource = decoded is List
             ? decoded
             : (decoded is Map && decoded['cars'] is List)
-                ? decoded['cars'] as List
-                : <dynamic>[];
+            ? decoded['cars'] as List
+            : <dynamic>[];
         final List<Map<String, dynamic>> parsed = listSource
             .whereType<Map>()
             .map((e) => e.map((k, v) => MapEntry(k.toString(), v)))
@@ -5768,12 +5774,16 @@ class _HomePageState extends State<HomePage> {
 
   // Helper method to get a valid drive type value for dropdown (dropdown uses '' for Any)
   String? _getValidDriveTypeValue() {
-    if (selectedDriveType == null || selectedDriveType == 'Any' || selectedDriveType!.isEmpty) return '';
+    if (selectedDriveType == null ||
+        selectedDriveType == 'Any' ||
+        selectedDriveType!.isEmpty)
+      return '';
 
     final availableTypes = getAvailableDriveTypes();
 
     // First try exact match (excluding 'Any' which is represented as '' in dropdown items)
-    if (availableTypes.contains(selectedDriveType) && selectedDriveType != 'Any') {
+    if (availableTypes.contains(selectedDriveType) &&
+        selectedDriveType != 'Any') {
       return selectedDriveType;
     }
 
@@ -5796,12 +5806,16 @@ class _HomePageState extends State<HomePage> {
 
   // Helper method to get a valid transmission value for dropdown (dropdown uses '' for Any)
   String? _getValidTransmissionValue() {
-    if (selectedTransmission == null || selectedTransmission == 'Any' || selectedTransmission!.isEmpty) return '';
+    if (selectedTransmission == null ||
+        selectedTransmission == 'Any' ||
+        selectedTransmission!.isEmpty)
+      return '';
 
     final availableTypes = getAvailableTransmissions();
 
     // First try exact match (excluding 'Any' which is represented as '' in dropdown items)
-    if (availableTypes.contains(selectedTransmission) && selectedTransmission != 'Any') {
+    if (availableTypes.contains(selectedTransmission) &&
+        selectedTransmission != 'Any') {
       return selectedTransmission;
     }
 
@@ -5818,12 +5832,16 @@ class _HomePageState extends State<HomePage> {
 
   // Helper method to get a valid fuel type value for dropdown (dropdown uses '' for Any)
   String? _getValidFuelTypeValue() {
-    if (selectedFuelType == null || selectedFuelType == 'Any' || selectedFuelType!.isEmpty) return '';
+    if (selectedFuelType == null ||
+        selectedFuelType == 'Any' ||
+        selectedFuelType!.isEmpty)
+      return '';
 
     final availableTypes = getAvailableFuelTypes();
 
     // First try exact match (excluding 'Any' which is represented as '' in dropdown items)
-    if (availableTypes.contains(selectedFuelType) && selectedFuelType != 'Any') {
+    if (availableTypes.contains(selectedFuelType) &&
+        selectedFuelType != 'Any') {
       return selectedFuelType;
     }
 
@@ -5865,8 +5883,7 @@ class _HomePageState extends State<HomePage> {
       return '';
     }
     final available = getAvailableEngineSizes();
-    if (available.contains(selectedEngineSize) &&
-        selectedEngineSize != 'Any') {
+    if (available.contains(selectedEngineSize) && selectedEngineSize != 'Any') {
       return selectedEngineSize!;
     }
     final lower = selectedEngineSize!.toLowerCase();
@@ -6020,7 +6037,10 @@ class _HomePageState extends State<HomePage> {
       chips.add(
         _buildFilterChip(
           AppLocalizations.of(context)!.brandLabel,
-          CarNameTranslations.getLocalizedBrand(context, selectedBrand).isNotEmpty
+          CarNameTranslations.getLocalizedBrand(
+                context,
+                selectedBrand,
+              ).isNotEmpty
               ? CarNameTranslations.getLocalizedBrand(context, selectedBrand)
               : selectedBrand!,
           'brand',
@@ -6035,8 +6055,16 @@ class _HomePageState extends State<HomePage> {
       chips.add(
         _buildFilterChip(
           AppLocalizations.of(context)!.modelLabel,
-          CarNameTranslations.getLocalizedModel(context, selectedBrand, selectedModel).isNotEmpty
-              ? CarNameTranslations.getLocalizedModel(context, selectedBrand, selectedModel)
+          CarNameTranslations.getLocalizedModel(
+                context,
+                selectedBrand,
+                selectedModel,
+              ).isNotEmpty
+              ? CarNameTranslations.getLocalizedModel(
+                  context,
+                  selectedBrand,
+                  selectedModel,
+                )
               : selectedModel!,
           'model',
           Icons.directions_car,
@@ -6181,7 +6209,9 @@ class _HomePageState extends State<HomePage> {
         chips.add(
           _buildFilterChip(
             AppLocalizations.of(context)!.titleStatus,
-            '${AppLocalizations.of(context)!.value_title_damaged} (${_localizeDigitsGlobal(context, selectedDamagedParts!)} ${AppLocalizations.of(context)!.damagedParts})',
+            AppLocalizations.of(context)!.titleStatusDamagedWithParts(
+              _localizeDigitsGlobal(context, selectedDamagedParts!),
+            ),
             'titleStatus',
             Icons.report,
             Colors.redAccent,
@@ -6399,7 +6429,10 @@ class _HomePageState extends State<HomePage> {
               );
             },
             icon: Icon(Icons.add, color: Colors.white),
-            label: Text(AppLocalizations.of(context)!.sellButton, style: TextStyle(color: Colors.white)),
+            label: Text(
+              AppLocalizations.of(context)!.sellButton,
+              style: TextStyle(color: Colors.white),
+            ),
             style: OutlinedButton.styleFrom(
               side: BorderSide(color: Colors.white70),
               shape: RoundedRectangleBorder(
@@ -6415,11 +6448,13 @@ class _HomePageState extends State<HomePage> {
       // Pull-to-refresh is already provided inside the main content via internal scrollables
       bottomNavigationBar: BottomNavigationBar(
         type: BottomNavigationBarType.fixed,
-        backgroundColor:
-            AppThemes.bottomNavChrome(Theme.of(context).brightness).backgroundColor,
+        backgroundColor: AppThemes.bottomNavChrome(
+          Theme.of(context).brightness,
+        ).backgroundColor,
         selectedItemColor: Color(0xFFFF6B00),
-        unselectedItemColor:
-            AppThemes.bottomNavChrome(Theme.of(context).brightness).unselectedItemColor,
+        unselectedItemColor: AppThemes.bottomNavChrome(
+          Theme.of(context).brightness,
+        ).unselectedItemColor,
         currentIndex: 0,
         onTap: (idx) {
           switch (idx) {
@@ -6478,17 +6513,17 @@ class _HomePageState extends State<HomePage> {
                         vertical: 8.0,
                       ),
                       child: Card(
-                          elevation: 12,
-                          shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(20),
-                          ),
-                          color: Color.alphaBlend(
-                            Colors.white.withOpacity(0.06),
-                            AppThemes.darkHomeShellBackground,
-                          ),
-                          surfaceTintColor: Colors.transparent,
-                          shadowColor: Colors.black54,
-                          child: Padding(
+                        elevation: 12,
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(20),
+                        ),
+                        color: Color.alphaBlend(
+                          Colors.white.withOpacity(0.06),
+                          AppThemes.darkHomeShellBackground,
+                        ),
+                        surfaceTintColor: Colors.transparent,
+                        shadowColor: Colors.black54,
+                        child: Padding(
                           padding: const EdgeInsets.all(20.0),
                           child: Column(
                             crossAxisAlignment: CrossAxisAlignment.start,
@@ -6500,7 +6535,9 @@ class _HomePageState extends State<HomePage> {
                                   GestureDetector(
                                     onTap: () => _showSearchDialog(context),
                                     child: Text(
-                                      AppLocalizations.of(context)!.homeSearchHeading,
+                                      AppLocalizations.of(
+                                        context,
+                                      )!.homeSearchHeading,
                                       style: GoogleFonts.orbitron(
                                         color: Color(0xFFFF6B00),
                                         fontWeight: FontWeight.bold,
@@ -6695,8 +6732,14 @@ class _HomePageState extends State<HomePage> {
                                                                     height: 4,
                                                                   ),
                                                                   Text(
-                                                                    CarNameTranslations.getLocalizedBrand(context, brand).isNotEmpty
-                                                                        ? CarNameTranslations.getLocalizedBrand(context, brand)
+                                                                    CarNameTranslations.getLocalizedBrand(
+                                                                          context,
+                                                                          brand,
+                                                                        ).isNotEmpty
+                                                                        ? CarNameTranslations.getLocalizedBrand(
+                                                                            context,
+                                                                            brand,
+                                                                          )
                                                                         : brand,
                                                                     style: GoogleFonts.orbitron(
                                                                       fontSize:
@@ -6777,13 +6820,7 @@ class _HomePageState extends State<HomePage> {
                                                 padding: EdgeInsets.all(2),
                                                 child: CachedNetworkImage(
                                                   imageUrl:
-                                                      '${getApiBase()}/static/images/brands/${brandLogoFilenames[selectedBrand] ??
-                                                          selectedBrand!
-                                                              .toLowerCase()
-                                                              .replaceAll(
-                                                                ' ',
-                                                                '-',
-                                                              )}.png',
+                                                      '${getApiBase()}/static/images/brands/${brandLogoFilenames[selectedBrand] ?? selectedBrand!.toLowerCase().replaceAll(' ', '-')}.png',
                                                   placeholder: (context, url) =>
                                                       SizedBox(
                                                         width: 16,
@@ -6822,9 +6859,15 @@ class _HomePageState extends State<HomePage> {
                                                     ? AppLocalizations.of(
                                                         context,
                                                       )!.any
-                                                    : (CarNameTranslations.getLocalizedBrand(context, selectedBrand).isNotEmpty
-                                                        ? CarNameTranslations.getLocalizedBrand(context, selectedBrand)
-                                                        : selectedBrand!),
+                                                    : (CarNameTranslations.getLocalizedBrand(
+                                                            context,
+                                                            selectedBrand,
+                                                          ).isNotEmpty
+                                                          ? CarNameTranslations.getLocalizedBrand(
+                                                              context,
+                                                              selectedBrand,
+                                                            )
+                                                          : selectedBrand!),
                                                 style: GoogleFonts.orbitron(
                                                   fontSize: 14,
                                                   color: Colors.white,
@@ -6896,21 +6939,27 @@ class _HomePageState extends State<HomePage> {
                                         ),
                                         if (selectedBrand != null &&
                                             models[selectedBrand!] != null)
-                                          ...models[selectedBrand!]!
-                                              .map(
-                                                (m) => DropdownMenuItem(
-                                                  value: m,
-                                                  child: Text(
-                                                    CarNameTranslations.getLocalizedModel(context, selectedBrand, m).isNotEmpty
-                                                        ? CarNameTranslations.getLocalizedModel(context, selectedBrand, m)
-                                                        : m,
-                                                    style: GoogleFonts.orbitron(
-                                                      fontSize: 14,
-                                                    ),
-                                                  ),
+                                          ...models[selectedBrand!]!.map(
+                                            (m) => DropdownMenuItem(
+                                              value: m,
+                                              child: Text(
+                                                CarNameTranslations.getLocalizedModel(
+                                                      context,
+                                                      selectedBrand,
+                                                      m,
+                                                    ).isNotEmpty
+                                                    ? CarNameTranslations.getLocalizedModel(
+                                                        context,
+                                                        selectedBrand,
+                                                        m,
+                                                      )
+                                                    : m,
+                                                style: GoogleFonts.orbitron(
+                                                  fontSize: 14,
                                                 ),
-                                              )
-                                              ,
+                                              ),
+                                            ),
+                                          ),
                                       ],
                                       onChanged: (value) {
                                         setState(() {
@@ -7000,8 +7049,7 @@ class _HomePageState extends State<HomePage> {
                                                     ),
                                                   ),
                                                 ),
-                                              )
-                                              ,
+                                              ),
                                       ],
                                       onChanged: (value) {
                                         setState(() {
@@ -7222,26 +7270,33 @@ class _HomePageState extends State<HomePage> {
                                           builder: (context, setStateDialog) {
                                             final isLightMoreFilters =
                                                 Theme.of(context).brightness ==
-                                                    Brightness.light;
-                                            final moreFiltersBg = isLightMoreFilters
+                                                Brightness.light;
+                                            final moreFiltersBg =
+                                                isLightMoreFilters
                                                 ? Colors.white
-                                                : (Colors.grey[900]?.withOpacity(0.98) ??
-                                                    Colors.grey.shade900);
-                                            final moreFiltersOnSurface = isLightMoreFilters
+                                                : (Colors.grey[900]
+                                                          ?.withOpacity(0.98) ??
+                                                      Colors.grey.shade900);
+                                            final moreFiltersOnSurface =
+                                                isLightMoreFilters
                                                 ? const Color(0xFF1A1A1A)
                                                 : Colors.white;
-                                            final moreFiltersMuted = isLightMoreFilters
+                                            final moreFiltersMuted =
+                                                isLightMoreFilters
                                                 ? const Color(0xFF757575)
                                                 : Colors.white70;
                                             final moreFiltersAnyOrange =
                                                 const Color(0xFFFF6B00);
-                                            final moreFiltersFieldFill = isLightMoreFilters
+                                            final moreFiltersFieldFill =
+                                                isLightMoreFilters
                                                 ? Colors.grey.shade200
                                                 : Colors.black.withOpacity(0.2);
-                                            const double moreFiltersFieldGap = 18;
+                                            const double moreFiltersFieldGap =
+                                                18;
                                             return AlertDialog(
                                               backgroundColor: moreFiltersBg,
-                                              surfaceTintColor: Colors.transparent,
+                                              surfaceTintColor:
+                                                  Colors.transparent,
                                               shape: RoundedRectangleBorder(
                                                 borderRadius:
                                                     BorderRadius.circular(20),
@@ -7270,7 +7325,8 @@ class _HomePageState extends State<HomePage> {
                                                           context,
                                                         )!.priceRange,
                                                         style: TextStyle(
-                                                          color: moreFiltersOnSurface,
+                                                          color:
+                                                              moreFiltersOnSurface,
                                                           fontWeight:
                                                               FontWeight.bold,
                                                           fontSize: 16,
@@ -7280,1384 +7336,1336 @@ class _HomePageState extends State<HomePage> {
                                                       Row(
                                                         children: [
                                                           Expanded(
-                                                            child: isPriceDropdown
-                                                              ? Column(
-                                                                  children: [
-                                                                    Row(
-                                                                      children: [
-                                                                        Expanded(
-                                                                          child:
-                                                                              DropdownButtonFormField<
-                                                                                String
-                                                                              >(
-                                                                                isExpanded: true,
-                                                                                initialValue:
-                                                                                    selectedMinPrice ??
-                                                                                    '',
-                                                                                decoration: InputDecoration(
-                                                                                  hintText: AppLocalizations.of(
-                                                                                    context,
-                                                                                  )!.any,
-                                                                                  filled: true,
-                                                                                  fillColor: moreFiltersFieldFill,
-                                                                                  hintStyle: TextStyle(
-                                                                                    color: moreFiltersAnyOrange,
-                                                                                  ),
-                                                                                  border: OutlineInputBorder(
-                                                                                    borderRadius: BorderRadius.circular(
-                                                                                      12,
+                                                            child:
+                                                                isPriceDropdown
+                                                                ? Column(
+                                                                    children: [
+                                                                      Row(
+                                                                        children: [
+                                                                          Expanded(
+                                                                            child:
+                                                                                DropdownButtonFormField<
+                                                                                  String
+                                                                                >(
+                                                                                  isExpanded: true,
+                                                                                  initialValue:
+                                                                                      selectedMinPrice ??
+                                                                                      '',
+                                                                                  decoration: InputDecoration(
+                                                                                    hintText: AppLocalizations.of(
+                                                                                      context,
+                                                                                    )!.any,
+                                                                                    filled: true,
+                                                                                    fillColor: moreFiltersFieldFill,
+                                                                                    hintStyle: TextStyle(
+                                                                                      color: moreFiltersAnyOrange,
                                                                                     ),
-                                                                                  ),
-                                                                                ),
-                                                                                items: [
-                                                                                  DropdownMenuItem(
-                                                                                    value: '',
-                                                                                    child: Text(
-                                                                                      AppLocalizations.of(
-                                                                                        context,
-                                                                                      )!.any,
-                                                                                      style: TextStyle(
-                                                                                        color: moreFiltersAnyOrange,
+                                                                                    border: OutlineInputBorder(
+                                                                                      borderRadius: BorderRadius.circular(
+                                                                                        12,
                                                                                       ),
                                                                                     ),
                                                                                   ),
-                                                                                  ...[
-                                                                                        for (
-                                                                                          int p = 500;
-                                                                                          p <=
-                                                                                              300000;
-                                                                                          p += 500
+                                                                                  items: [
+                                                                                    DropdownMenuItem(
+                                                                                      value: '',
+                                                                                      child: Text(
+                                                                                        AppLocalizations.of(
+                                                                                          context,
+                                                                                        )!.any,
+                                                                                        style: TextStyle(
+                                                                                          color: moreFiltersAnyOrange,
+                                                                                        ),
+                                                                                      ),
+                                                                                    ),
+                                                                                    ...[
+                                                                                          for (
+                                                                                            int p = 500;
+                                                                                            p <=
+                                                                                                300000;
+                                                                                            p += 500
+                                                                                          )
+                                                                                            p,
+                                                                                          for (
+                                                                                            int p = 310000;
+                                                                                            p <=
+                                                                                                2000000;
+                                                                                            p += 10000
+                                                                                          )
+                                                                                            p,
+                                                                                        ]
+                                                                                        .where(
+                                                                                          (
+                                                                                            p,
+                                                                                          ) {
+                                                                                            if (selectedMaxPrice ==
+                                                                                                    null ||
+                                                                                                selectedMaxPrice!.isEmpty) {
+                                                                                              return true;
+                                                                                            }
+                                                                                            final max = int.tryParse(
+                                                                                              selectedMaxPrice!,
+                                                                                            );
+                                                                                            return max ==
+                                                                                                    null
+                                                                                                ? true
+                                                                                                : p <=
+                                                                                                      max;
+                                                                                          },
                                                                                         )
-                                                                                          p,
-                                                                                        for (
-                                                                                          int p = 310000;
-                                                                                          p <=
-                                                                                              2000000;
-                                                                                          p += 10000
-                                                                                        )
-                                                                                          p,
-                                                                                      ]
-                                                                                      .where(
-                                                                                        (
-                                                                                          p,
-                                                                                        ) {
-                                                                                          if (selectedMaxPrice ==
-                                                                                                  null ||
-                                                                                              selectedMaxPrice!.isEmpty) {
-                                                                                            return true;
-                                                                                          }
-                                                                                          final max = int.tryParse(
-                                                                                            selectedMaxPrice!,
-                                                                                          );
-                                                                                          return max ==
-                                                                                                  null
-                                                                                              ? true
-                                                                                              : p <=
-                                                                                                    max;
-                                                                                        },
-                                                                                      )
-                                                                                      .map(
-                                                                                        (
-                                                                                          p,
-                                                                                        ) => DropdownMenuItem(
-                                                                                          value: p.toString(),
-                                                                                          child: Text(
-                                                                                            _formatCurrencyGlobal(
-                                                                                              context,
-                                                                                              p,
+                                                                                        .map(
+                                                                                          (
+                                                                                            p,
+                                                                                          ) => DropdownMenuItem(
+                                                                                            value: p.toString(),
+                                                                                            child: Text(
+                                                                                              _formatCurrencyGlobal(
+                                                                                                context,
+                                                                                                p,
+                                                                                              ),
                                                                                             ),
                                                                                           ),
                                                                                         ),
-                                                                                      )
-                                                                                      ,
-                                                                                ],
-                                                                                onChanged:
-                                                                                    (
-                                                                                      value,
-                                                                                    ) {
-                                                                                      setState(
-                                                                                        () {
-                                                                                          selectedMinPrice =
-                                                                                              value?.isEmpty ==
-                                                                                                  true
-                                                                                              ? null
-                                                                                              : value;
-                                                                                          final min = int.tryParse(
-                                                                                            selectedMinPrice ??
-                                                                                                '',
-                                                                                          );
-                                                                                          final max = int.tryParse(
-                                                                                            selectedMaxPrice ??
-                                                                                                '',
-                                                                                          );
-                                                                                          if (min !=
-                                                                                                  null &&
-                                                                                              max !=
-                                                                                                  null &&
-                                                                                              min >
-                                                                                                  max) {
-                                                                                            selectedMaxPrice = selectedMinPrice;
-                                                                                          }
-                                                                                        },
-                                                                                      );
-                                                                                      setStateDialog(
-                                                                                        () {},
-                                                                                      );
-                                                                                    },
-                                                                              ),
-                                                                        ),
-                                                                        SizedBox(
-                                                                          width:
-                                                                              8,
-                                                                        ),
-                                                                        Expanded(
-                                                                          child:
-                                                                              DropdownButtonFormField<
-                                                                                String
-                                                                              >(
-                                                                                isExpanded: true,
-                                                                                initialValue:
-                                                                                    selectedMaxPrice ??
-                                                                                    '',
-                                                                                decoration: InputDecoration(
-                                                                                  hintText: AppLocalizations.of(
-                                                                                    context,
-                                                                                  )!.any,
-                                                                                  filled: true,
-                                                                                  fillColor: moreFiltersFieldFill,
-                                                                                  hintStyle: TextStyle(
-                                                                                    color: moreFiltersAnyOrange,
-                                                                                  ),
-                                                                                  border: OutlineInputBorder(
-                                                                                    borderRadius: BorderRadius.circular(
-                                                                                      12,
-                                                                                    ),
-                                                                                  ),
+                                                                                  ],
+                                                                                  onChanged:
+                                                                                      (
+                                                                                        value,
+                                                                                      ) {
+                                                                                        setState(
+                                                                                          () {
+                                                                                            selectedMinPrice =
+                                                                                                value?.isEmpty ==
+                                                                                                    true
+                                                                                                ? null
+                                                                                                : value;
+                                                                                            final min = int.tryParse(
+                                                                                              selectedMinPrice ??
+                                                                                                  '',
+                                                                                            );
+                                                                                            final max = int.tryParse(
+                                                                                              selectedMaxPrice ??
+                                                                                                  '',
+                                                                                            );
+                                                                                            if (min !=
+                                                                                                    null &&
+                                                                                                max !=
+                                                                                                    null &&
+                                                                                                min >
+                                                                                                    max) {
+                                                                                              selectedMaxPrice = selectedMinPrice;
+                                                                                            }
+                                                                                          },
+                                                                                        );
+                                                                                        setStateDialog(
+                                                                                          () {},
+                                                                                        );
+                                                                                      },
                                                                                 ),
-                                                                                items: [
-                                                                                  DropdownMenuItem(
-                                                                                    value: '',
-                                                                                    child: Text(
-                                                                                      AppLocalizations.of(
-                                                                                        context,
-                                                                                      )!.any,
-                                                                                      style: TextStyle(
-                                                                                        color: moreFiltersAnyOrange,
+                                                                          ),
+                                                                          SizedBox(
+                                                                            width:
+                                                                                8,
+                                                                          ),
+                                                                          Expanded(
+                                                                            child:
+                                                                                DropdownButtonFormField<
+                                                                                  String
+                                                                                >(
+                                                                                  isExpanded: true,
+                                                                                  initialValue:
+                                                                                      selectedMaxPrice ??
+                                                                                      '',
+                                                                                  decoration: InputDecoration(
+                                                                                    hintText: AppLocalizations.of(
+                                                                                      context,
+                                                                                    )!.any,
+                                                                                    filled: true,
+                                                                                    fillColor: moreFiltersFieldFill,
+                                                                                    hintStyle: TextStyle(
+                                                                                      color: moreFiltersAnyOrange,
+                                                                                    ),
+                                                                                    border: OutlineInputBorder(
+                                                                                      borderRadius: BorderRadius.circular(
+                                                                                        12,
                                                                                       ),
                                                                                     ),
                                                                                   ),
-                                                                                  ...[
-                                                                                        for (
-                                                                                          int p = 500;
-                                                                                          p <=
-                                                                                              300000;
-                                                                                          p += 500
+                                                                                  items: [
+                                                                                    DropdownMenuItem(
+                                                                                      value: '',
+                                                                                      child: Text(
+                                                                                        AppLocalizations.of(
+                                                                                          context,
+                                                                                        )!.any,
+                                                                                        style: TextStyle(
+                                                                                          color: moreFiltersAnyOrange,
+                                                                                        ),
+                                                                                      ),
+                                                                                    ),
+                                                                                    ...[
+                                                                                          for (
+                                                                                            int p = 500;
+                                                                                            p <=
+                                                                                                300000;
+                                                                                            p += 500
+                                                                                          )
+                                                                                            p,
+                                                                                          for (
+                                                                                            int p = 310000;
+                                                                                            p <=
+                                                                                                2000000;
+                                                                                            p += 10000
+                                                                                          )
+                                                                                            p,
+                                                                                        ]
+                                                                                        .where(
+                                                                                          (
+                                                                                            p,
+                                                                                          ) {
+                                                                                            if (selectedMinPrice ==
+                                                                                                    null ||
+                                                                                                selectedMinPrice!.isEmpty) {
+                                                                                              return true;
+                                                                                            }
+                                                                                            final min = int.tryParse(
+                                                                                              selectedMinPrice!,
+                                                                                            );
+                                                                                            return min ==
+                                                                                                    null
+                                                                                                ? true
+                                                                                                : p >=
+                                                                                                      min;
+                                                                                          },
                                                                                         )
-                                                                                          p,
-                                                                                        for (
-                                                                                          int p = 310000;
-                                                                                          p <=
-                                                                                              2000000;
-                                                                                          p += 10000
-                                                                                        )
-                                                                                          p,
-                                                                                      ]
-                                                                                      .where(
-                                                                                        (
-                                                                                          p,
-                                                                                        ) {
-                                                                                          if (selectedMinPrice ==
-                                                                                                  null ||
-                                                                                              selectedMinPrice!.isEmpty) {
-                                                                                            return true;
-                                                                                          }
-                                                                                          final min = int.tryParse(
-                                                                                            selectedMinPrice!,
-                                                                                          );
-                                                                                          return min ==
-                                                                                                  null
-                                                                                              ? true
-                                                                                              : p >=
-                                                                                                    min;
-                                                                                        },
-                                                                                      )
-                                                                                      .map(
-                                                                                        (
-                                                                                          p,
-                                                                                        ) => DropdownMenuItem(
-                                                                                          value: p.toString(),
-                                                                                          child: Text(
-                                                                                            _formatCurrencyGlobal(
-                                                                                              context,
-                                                                                              p,
+                                                                                        .map(
+                                                                                          (
+                                                                                            p,
+                                                                                          ) => DropdownMenuItem(
+                                                                                            value: p.toString(),
+                                                                                            child: Text(
+                                                                                              _formatCurrencyGlobal(
+                                                                                                context,
+                                                                                                p,
+                                                                                              ),
                                                                                             ),
                                                                                           ),
                                                                                         ),
-                                                                                      )
-                                                                                      ,
-                                                                                ],
-                                                                                onChanged:
-                                                                                    (
-                                                                                      value,
-                                                                                    ) {
-                                                                                      setState(
-                                                                                        () {
-                                                                                          selectedMaxPrice =
-                                                                                              value?.isEmpty ==
-                                                                                                  true
-                                                                                              ? null
-                                                                                              : value;
-                                                                                          final min = int.tryParse(
-                                                                                            selectedMinPrice ??
-                                                                                                '',
-                                                                                          );
-                                                                                          final max = int.tryParse(
-                                                                                            selectedMaxPrice ??
-                                                                                                '',
-                                                                                          );
-                                                                                          if (min !=
-                                                                                                  null &&
-                                                                                              max !=
-                                                                                                  null &&
-                                                                                              max <
-                                                                                                  min) {
-                                                                                            selectedMinPrice = selectedMaxPrice;
-                                                                                          }
-                                                                                        },
-                                                                                      );
-                                                                                      setStateDialog(
-                                                                                        () {},
-                                                                                      );
-                                                                                    },
-                                                                              ),
-                                                                        ),
-                                                                      ],
-                                                                    ),
-                                                                  ],
-                                                                )
-                                                              : Column(
-                                                                  children: [
-                                                                    Row(
-                                                                      children: [
-                                                                        Expanded(
-                                                                          child: TextFormField(
-                                                                            controller:
-                                                                                _minPriceController,
-                                                                            decoration: InputDecoration(
-                                                                              hintText: AppLocalizations.of(
-                                                                                context,
-                                                                              )!.any,
-                                                                              filled: true,
-                                                                              fillColor: moreFiltersFieldFill,
-                                                                              hintStyle: TextStyle(
-                                                                                color: moreFiltersAnyOrange,
-                                                                              ),
-                                                                              border: OutlineInputBorder(
-                                                                                borderRadius: BorderRadius.circular(
-                                                                                  12,
+                                                                                  ],
+                                                                                  onChanged:
+                                                                                      (
+                                                                                        value,
+                                                                                      ) {
+                                                                                        setState(
+                                                                                          () {
+                                                                                            selectedMaxPrice =
+                                                                                                value?.isEmpty ==
+                                                                                                    true
+                                                                                                ? null
+                                                                                                : value;
+                                                                                            final min = int.tryParse(
+                                                                                              selectedMinPrice ??
+                                                                                                  '',
+                                                                                            );
+                                                                                            final max = int.tryParse(
+                                                                                              selectedMaxPrice ??
+                                                                                                  '',
+                                                                                            );
+                                                                                            if (min !=
+                                                                                                    null &&
+                                                                                                max !=
+                                                                                                    null &&
+                                                                                                max <
+                                                                                                    min) {
+                                                                                              selectedMinPrice = selectedMaxPrice;
+                                                                                            }
+                                                                                          },
+                                                                                        );
+                                                                                        setStateDialog(
+                                                                                          () {},
+                                                                                        );
+                                                                                      },
+                                                                                ),
+                                                                          ),
+                                                                        ],
+                                                                      ),
+                                                                    ],
+                                                                  )
+                                                                : Column(
+                                                                    children: [
+                                                                      Row(
+                                                                        children: [
+                                                                          Expanded(
+                                                                            child: TextFormField(
+                                                                              controller: _minPriceController,
+                                                                              decoration: InputDecoration(
+                                                                                hintText: AppLocalizations.of(
+                                                                                  context,
+                                                                                )!.any,
+                                                                                filled: true,
+                                                                                fillColor: moreFiltersFieldFill,
+                                                                                hintStyle: TextStyle(
+                                                                                  color: moreFiltersAnyOrange,
+                                                                                ),
+                                                                                border: OutlineInputBorder(
+                                                                                  borderRadius: BorderRadius.circular(
+                                                                                    12,
+                                                                                  ),
                                                                                 ),
                                                                               ),
+                                                                              keyboardType: TextInputType.number,
+                                                                              onChanged:
+                                                                                  (
+                                                                                    value,
+                                                                                  ) {
+                                                                                    setState(
+                                                                                      () {
+                                                                                        selectedMinPrice = value.isEmpty
+                                                                                            ? null
+                                                                                            : value;
+                                                                                        final min = int.tryParse(
+                                                                                          selectedMinPrice ??
+                                                                                              '',
+                                                                                        );
+                                                                                        final max = int.tryParse(
+                                                                                          selectedMaxPrice ??
+                                                                                              '',
+                                                                                        );
+                                                                                        if (min !=
+                                                                                                null &&
+                                                                                            max !=
+                                                                                                null &&
+                                                                                            min >
+                                                                                                max) {
+                                                                                          selectedMaxPrice = selectedMinPrice;
+                                                                                          _maxPriceController.text =
+                                                                                              selectedMaxPrice ??
+                                                                                              '';
+                                                                                        }
+                                                                                      },
+                                                                                    );
+                                                                                    setStateDialog(
+                                                                                      () {},
+                                                                                    );
+                                                                                  },
                                                                             ),
-                                                                            keyboardType:
-                                                                                TextInputType.number,
-                                                                            onChanged:
-                                                                                (
-                                                                                  value,
-                                                                                ) {
-                                                                                  setState(
-                                                                                    () {
-                                                                                      selectedMinPrice = value.isEmpty
-                                                                                          ? null
-                                                                                          : value;
-                                                                                      final min = int.tryParse(
-                                                                                        selectedMinPrice ??
-                                                                                            '',
-                                                                                      );
-                                                                                      final max = int.tryParse(
-                                                                                        selectedMaxPrice ??
-                                                                                            '',
-                                                                                      );
-                                                                                      if (min !=
-                                                                                              null &&
-                                                                                          max !=
-                                                                                              null &&
-                                                                                          min >
-                                                                                              max) {
-                                                                                        selectedMaxPrice = selectedMinPrice;
-                                                                                        _maxPriceController
-                                                                                                .text =
-                                                                                            selectedMaxPrice ??
-                                                                                                '';
-                                                                                      }
-                                                                                    },
-                                                                                  );
-                                                                                  setStateDialog(
-                                                                                    () {},
-                                                                                  );
-                                                                                },
                                                                           ),
-                                                                        ),
-                                                                        SizedBox(
-                                                                          width:
-                                                                              8,
-                                                                        ),
-                                                                        Expanded(
-                                                                          child: TextFormField(
-                                                                            controller:
-                                                                                _maxPriceController,
-                                                                            decoration: InputDecoration(
-                                                                              hintText: AppLocalizations.of(
-                                                                                context,
-                                                                              )!.any,
-                                                                              filled: true,
-                                                                              fillColor: moreFiltersFieldFill,
-                                                                              hintStyle: TextStyle(
-                                                                                color: moreFiltersAnyOrange,
-                                                                              ),
-                                                                              border: OutlineInputBorder(
-                                                                                borderRadius: BorderRadius.circular(
-                                                                                  12,
+                                                                          SizedBox(
+                                                                            width:
+                                                                                8,
+                                                                          ),
+                                                                          Expanded(
+                                                                            child: TextFormField(
+                                                                              controller: _maxPriceController,
+                                                                              decoration: InputDecoration(
+                                                                                hintText: AppLocalizations.of(
+                                                                                  context,
+                                                                                )!.any,
+                                                                                filled: true,
+                                                                                fillColor: moreFiltersFieldFill,
+                                                                                hintStyle: TextStyle(
+                                                                                  color: moreFiltersAnyOrange,
+                                                                                ),
+                                                                                border: OutlineInputBorder(
+                                                                                  borderRadius: BorderRadius.circular(
+                                                                                    12,
+                                                                                  ),
                                                                                 ),
                                                                               ),
+                                                                              keyboardType: TextInputType.number,
+                                                                              onChanged:
+                                                                                  (
+                                                                                    value,
+                                                                                  ) {
+                                                                                    setState(
+                                                                                      () {
+                                                                                        selectedMaxPrice = value.isEmpty
+                                                                                            ? null
+                                                                                            : value;
+                                                                                        final min = int.tryParse(
+                                                                                          selectedMinPrice ??
+                                                                                              '',
+                                                                                        );
+                                                                                        final max = int.tryParse(
+                                                                                          selectedMaxPrice ??
+                                                                                              '',
+                                                                                        );
+                                                                                        if (min !=
+                                                                                                null &&
+                                                                                            max !=
+                                                                                                null &&
+                                                                                            max <
+                                                                                                min) {
+                                                                                          selectedMinPrice = selectedMaxPrice;
+                                                                                          _minPriceController.text =
+                                                                                              selectedMinPrice ??
+                                                                                              '';
+                                                                                        }
+                                                                                      },
+                                                                                    );
+                                                                                    setStateDialog(
+                                                                                      () {},
+                                                                                    );
+                                                                                  },
                                                                             ),
-                                                                            keyboardType:
-                                                                                TextInputType.number,
-                                                                            onChanged:
-                                                                                (
-                                                                                  value,
-                                                                                ) {
-                                                                                  setState(
-                                                                                    () {
-                                                                                      selectedMaxPrice = value.isEmpty
-                                                                                          ? null
-                                                                                          : value;
-                                                                                      final min = int.tryParse(
-                                                                                        selectedMinPrice ??
-                                                                                            '',
-                                                                                      );
-                                                                                      final max = int.tryParse(
-                                                                                        selectedMaxPrice ??
-                                                                                            '',
-                                                                                      );
-                                                                                      if (min !=
-                                                                                              null &&
-                                                                                          max !=
-                                                                                              null &&
-                                                                                          max <
-                                                                                              min) {
-                                                                                        selectedMinPrice = selectedMaxPrice;
-                                                                                        _minPriceController
-                                                                                                .text =
-                                                                                            selectedMinPrice ??
-                                                                                                '';
-                                                                                      }
-                                                                                    },
-                                                                                  );
-                                                                                  setStateDialog(
-                                                                                    () {},
-                                                                                  );
-                                                                                },
                                                                           ),
-                                                                        ),
-                                                                      ],
-                                                                    ),
-                                                                  ],
-                                                                ),
-                                                        ),
-                                                        SizedBox(width: 8),
-                                                        IconButton(
-                                                          onPressed: () =>
-                                                              setStateDialog(
-                                                                () {
-                                                                  if (isPriceDropdown) {
-                                                                    _minPriceController.text =
-                                                                        selectedMinPrice ?? '';
-                                                                    _maxPriceController.text =
-                                                                        selectedMaxPrice ?? '';
-                                                                  }
-                                                                  isPriceDropdown =
-                                                                      !isPriceDropdown;
-                                                                },
-                                                              ),
-                                                          icon: Icon(
-                                                            isPriceDropdown
-                                                                ? Icons.edit
-                                                                : Icons.list,
-                                                            color: Color(
-                                                              0xFFFF6B00,
-                                                            ),
-                                                          ),
-                                                          style: IconButton.styleFrom(
-                                                            backgroundColor: moreFiltersFieldFill,
-                                                            shape: RoundedRectangleBorder(
-                                                              borderRadius:
-                                                                  BorderRadius.circular(
-                                                                    8,
+                                                                        ],
+                                                                      ),
+                                                                    ],
                                                                   ),
-                                                            ),
                                                           ),
-                                                        ),
-                                                      ],
-                                                    ),
-                                                    SizedBox(height: moreFiltersFieldGap),
-                                                    // Year Filter
-                                                    Text(
-                                                      AppLocalizations.of(
-                                                        context,
-                                                      )!.yearRange,
-                                                      style: TextStyle(
-                                                        color: moreFiltersOnSurface,
-                                                        fontWeight:
-                                                            FontWeight.bold,
-                                                        fontSize: 16,
-                                                      ),
-                                                    ),
-                                                    SizedBox(height: 12),
-                                                    Row(
-                                                      children: [
-                                                        Expanded(
-                                                          child: isYearDropdown
-                                                              ? Column(
-                                                                  children: [
-                                                                    Row(
-                                                                      children: [
-                                                                        Expanded(
-                                                                          child:
-                                                                              DropdownButtonFormField<
-                                                                                String
-                                                                              >(
-                                                                                initialValue:
-                                                                                    selectedMinYear ??
-                                                                                    '',
-                                                                                decoration: InputDecoration(
-                                                                                  hintText: AppLocalizations.of(
-                                                                                    context,
-                                                                                  )!.any,
-                                                                                  filled: true,
-                                                                                  fillColor: moreFiltersFieldFill,
-                                                                                  hintStyle: TextStyle(
-                                                                                    color: moreFiltersAnyOrange,
-                                                                                  ),
-                                                                                  border: OutlineInputBorder(
-                                                                                    borderRadius: BorderRadius.circular(
-                                                                                      12,
-                                                                                    ),
-                                                                                  ),
-                                                                                ),
-                                                                                items: [
-                                                                                  DropdownMenuItem(
-                                                                                    value: '',
-                                                                                    child: Text(
-                                                                                      AppLocalizations.of(
-                                                                                        context,
-                                                                                      )!.any,
-                                                                                      style: TextStyle(
-                                                                                        color: moreFiltersAnyOrange,
-                                                                                      ),
-                                                                                    ),
-                                                                                  ),
-                                                                                  ...List.generate(
-                                                                                        127,
-                                                                                        (
-                                                                                          i,
-                                                                                        ) =>
-                                                                                            (1900 +
-                                                                                                    i)
-                                                                                                .toString(),
-                                                                                      ).reversed
-                                                                                      .where(
-                                                                                        (
-                                                                                          y,
-                                                                                        ) {
-                                                                                          if (selectedMaxYear ==
-                                                                                                  null ||
-                                                                                              selectedMaxYear!.isEmpty) {
-                                                                                            return true;
-                                                                                          }
-                                                                                          final max = int.tryParse(
-                                                                                            selectedMaxYear!,
-                                                                                          );
-                                                                                          final val = int.tryParse(
-                                                                                            y,
-                                                                                          );
-                                                                                          return max ==
-                                                                                                      null ||
-                                                                                                  val ==
-                                                                                                      null
-                                                                                              ? true
-                                                                                              : val <=
-                                                                                                    max;
-                                                                                        },
-                                                                                      )
-                                                                                      .map(
-                                                                                        (
-                                                                                          y,
-                                                                                        ) => DropdownMenuItem(
-                                                                                          value: y,
-                                                                                          child: Text(
-                                                                                            _localizeDigitsGlobal(
-                                                                                              context,
-                                                                                              y,
-                                                                                            ),
-                                                                                            style: TextStyle(
-                                                                                              color: moreFiltersOnSurface,
-                                                                                            ),
-                                                                                          ),
-                                                                                        ),
-                                                                                      )
-                                                                                      ,
-                                                                                ],
-                                                                                onChanged:
-                                                                                    (
-                                                                                      value,
-                                                                                    ) {
-                                                                                      setState(
-                                                                                        () {
-                                                                                          selectedMinYear =
-                                                                                              value?.isEmpty ==
-                                                                                                  true
-                                                                                              ? null
-                                                                                              : value;
-                                                                                          final min = int.tryParse(
-                                                                                            selectedMinYear ??
-                                                                                                '',
-                                                                                          );
-                                                                                          final max = int.tryParse(
-                                                                                            selectedMaxYear ??
-                                                                                                '',
-                                                                                          );
-                                                                                          if (min !=
-                                                                                                  null &&
-                                                                                              max !=
-                                                                                                  null &&
-                                                                                              min >
-                                                                                                  max) {
-                                                                                            selectedMaxYear = selectedMinYear;
-                                                                                          }
-                                                                                          _afterHomeYearBoundsChanged();
-                                                                                        },
-                                                                                      );
-                                                                                      setStateDialog(
-                                                                                        () {},
-                                                                                      );
-                                                                                    },
-                                                                              ),
-                                                                        ),
-                                                                        SizedBox(
-                                                                          width:
-                                                                              8,
-                                                                        ),
-                                                                        Expanded(
-                                                                          child:
-                                                                              DropdownButtonFormField<
-                                                                                String
-                                                                              >(
-                                                                                initialValue:
-                                                                                    selectedMaxYear ??
-                                                                                    '',
-                                                                                decoration: InputDecoration(
-                                                                                  hintText: AppLocalizations.of(
-                                                                                    context,
-                                                                                  )!.any,
-                                                                                  filled: true,
-                                                                                  fillColor: moreFiltersFieldFill,
-                                                                                  hintStyle: TextStyle(
-                                                                                    color: moreFiltersAnyOrange,
-                                                                                  ),
-                                                                                  border: OutlineInputBorder(
-                                                                                    borderRadius: BorderRadius.circular(
-                                                                                      12,
-                                                                                    ),
-                                                                                  ),
-                                                                                ),
-                                                                                items: [
-                                                                                  DropdownMenuItem(
-                                                                                    value: '',
-                                                                                    child: Text(
-                                                                                      AppLocalizations.of(
-                                                                                        context,
-                                                                                      )!.any,
-                                                                                      style: TextStyle(
-                                                                                        color: moreFiltersAnyOrange,
-                                                                                      ),
-                                                                                    ),
-                                                                                  ),
-                                                                                  ...List.generate(
-                                                                                        127,
-                                                                                        (
-                                                                                          i,
-                                                                                        ) =>
-                                                                                            (1900 +
-                                                                                                    i)
-                                                                                                .toString(),
-                                                                                      ).reversed
-                                                                                      .where(
-                                                                                        (
-                                                                                          y,
-                                                                                        ) {
-                                                                                          if (selectedMinYear ==
-                                                                                                  null ||
-                                                                                              selectedMinYear!.isEmpty) {
-                                                                                            return true;
-                                                                                          }
-                                                                                          final min = int.tryParse(
-                                                                                            selectedMinYear!,
-                                                                                          );
-                                                                                          final val = int.tryParse(
-                                                                                            y,
-                                                                                          );
-                                                                                          return min ==
-                                                                                                      null ||
-                                                                                                  val ==
-                                                                                                      null
-                                                                                              ? true
-                                                                                              : val >=
-                                                                                                    min;
-                                                                                        },
-                                                                                      )
-                                                                                      .map(
-                                                                                        (
-                                                                                          y,
-                                                                                        ) => DropdownMenuItem(
-                                                                                          value: y,
-                                                                                          child: Text(
-                                                                                            _localizeDigitsGlobal(
-                                                                                              context,
-                                                                                              y,
-                                                                                            ),
-                                                                                            style: TextStyle(
-                                                                                              color: moreFiltersOnSurface,
-                                                                                            ),
-                                                                                          ),
-                                                                                        ),
-                                                                                      )
-                                                                                      ,
-                                                                                ],
-                                                                                onChanged:
-                                                                                    (
-                                                                                      value,
-                                                                                    ) {
-                                                                                      setState(
-                                                                                        () {
-                                                                                          selectedMaxYear =
-                                                                                              value?.isEmpty ==
-                                                                                                  true
-                                                                                              ? null
-                                                                                              : value;
-                                                                                          final min = int.tryParse(
-                                                                                            selectedMinYear ??
-                                                                                                '',
-                                                                                          );
-                                                                                          final max = int.tryParse(
-                                                                                            selectedMaxYear ??
-                                                                                                '',
-                                                                                          );
-                                                                                          if (min !=
-                                                                                                  null &&
-                                                                                              max !=
-                                                                                                  null &&
-                                                                                              max <
-                                                                                                  min) {
-                                                                                            selectedMinYear = selectedMaxYear;
-                                                                                          }
-                                                                                          _afterHomeYearBoundsChanged();
-                                                                                        },
-                                                                                      );
-                                                                                      setStateDialog(
-                                                                                        () {},
-                                                                                      );
-                                                                                    },
-                                                                              ),
-                                                                        ),
-                                                                      ],
-                                                                    ),
-                                                                  ],
-                                                                )
-                                                              : Column(
-                                                                  children: [
-                                                                    Row(
-                                                                      children: [
-                                                                        Expanded(
-                                                                          child: TextFormField(
-                                                                            controller:
-                                                                                _minYearController,
-                                                                            decoration: InputDecoration(
-                                                                              hintText: AppLocalizations.of(
-                                                                                context,
-                                                                              )!.any,
-                                                                              filled: true,
-                                                                              fillColor: moreFiltersFieldFill,
-                                                                              hintStyle: TextStyle(
-                                                                                color: moreFiltersAnyOrange,
-                                                                              ),
-                                                                              border: OutlineInputBorder(
-                                                                                borderRadius: BorderRadius.circular(
-                                                                                  12,
-                                                                                ),
-                                                                              ),
-                                                                            ),
-                                                                            keyboardType:
-                                                                                TextInputType.number,
-                                                                            onChanged:
-                                                                                (
-                                                                                  value,
-                                                                                ) {
-                                                                                  setState(
-                                                                                    () {
-                                                                                      selectedMinYear = value.isEmpty
-                                                                                          ? null
-                                                                                          : value;
-                                                                                      final min = int.tryParse(
-                                                                                        selectedMinYear ?? '',
-                                                                                      );
-                                                                                      final max = int.tryParse(
-                                                                                        selectedMaxYear ?? '',
-                                                                                      );
-                                                                                      if (min != null &&
-                                                                                          max != null &&
-                                                                                          min > max) {
-                                                                                        selectedMaxYear = selectedMinYear;
-                                                                                        _maxYearController.text =
-                                                                                            selectedMaxYear ?? '';
-                                                                                      }
-                                                                                      _afterHomeYearBoundsChanged();
-                                                                                    },
-                                                                                  );
-                                                                                  setStateDialog(
-                                                                                    () {},
-                                                                                  );
-                                                                                },
-                                                                          ),
-                                                                        ),
-                                                                        SizedBox(
-                                                                          width:
-                                                                              8,
-                                                                        ),
-                                                                        Expanded(
-                                                                          child: TextFormField(
-                                                                            controller:
-                                                                                _maxYearController,
-                                                                            decoration: InputDecoration(
-                                                                              hintText: AppLocalizations.of(
-                                                                                context,
-                                                                              )!.any,
-                                                                              filled: true,
-                                                                              fillColor: moreFiltersFieldFill,
-                                                                              hintStyle: TextStyle(
-                                                                                color: moreFiltersAnyOrange,
-                                                                              ),
-                                                                              border: OutlineInputBorder(
-                                                                                borderRadius: BorderRadius.circular(
-                                                                                  12,
-                                                                                ),
-                                                                              ),
-                                                                            ),
-                                                                            keyboardType:
-                                                                                TextInputType.number,
-                                                                            onChanged:
-                                                                                (
-                                                                                  value,
-                                                                                ) {
-                                                                                  setState(
-                                                                                    () {
-                                                                                      selectedMaxYear = value.isEmpty
-                                                                                          ? null
-                                                                                          : value;
-                                                                                      final min = int.tryParse(
-                                                                                        selectedMinYear ?? '',
-                                                                                      );
-                                                                                      final max = int.tryParse(
-                                                                                        selectedMaxYear ?? '',
-                                                                                      );
-                                                                                      if (min != null &&
-                                                                                          max != null &&
-                                                                                          max < min) {
-                                                                                        selectedMinYear = selectedMaxYear;
-                                                                                        _minYearController.text =
-                                                                                            selectedMinYear ?? '';
-                                                                                      }
-                                                                                      _afterHomeYearBoundsChanged();
-                                                                                    },
-                                                                                  );
-                                                                                  setStateDialog(
-                                                                                    () {},
-                                                                                  );
-                                                                                },
-                                                                          ),
-                                                                        ),
-                                                                      ],
-                                                                    ),
-                                                                  ],
-                                                                ),
-                                                        ),
-                                                        SizedBox(width: 8),
-                                                        IconButton(
-                                                          onPressed: () =>
-                                                              setStateDialog(
-                                                                () {
-                                                                  if (isYearDropdown) {
-                                                                    _minYearController.text =
-                                                                        selectedMinYear ?? '';
-                                                                    _maxYearController.text =
-                                                                        selectedMaxYear ?? '';
-                                                                  }
-                                                                  isYearDropdown =
-                                                                      !isYearDropdown;
-                                                                },
+                                                          SizedBox(width: 8),
+                                                          IconButton(
+                                                            onPressed: () => setStateDialog(() {
+                                                              if (isPriceDropdown) {
+                                                                _minPriceController
+                                                                        .text =
+                                                                    selectedMinPrice ??
+                                                                    '';
+                                                                _maxPriceController
+                                                                        .text =
+                                                                    selectedMaxPrice ??
+                                                                    '';
+                                                              }
+                                                              isPriceDropdown =
+                                                                  !isPriceDropdown;
+                                                            }),
+                                                            icon: Icon(
+                                                              isPriceDropdown
+                                                                  ? Icons.edit
+                                                                  : Icons.list,
+                                                              color: Color(
+                                                                0xFFFF6B00,
                                                               ),
-                                                          icon: Icon(
-                                                            isYearDropdown
-                                                                ? Icons.edit
-                                                                : Icons.list,
-                                                            color: Color(
-                                                              0xFFFF6B00,
+                                                            ),
+                                                            style: IconButton.styleFrom(
+                                                              backgroundColor:
+                                                                  moreFiltersFieldFill,
+                                                              shape: RoundedRectangleBorder(
+                                                                borderRadius:
+                                                                    BorderRadius.circular(
+                                                                      8,
+                                                                    ),
+                                                              ),
                                                             ),
                                                           ),
-                                                          style: IconButton.styleFrom(
-                                                            backgroundColor: moreFiltersFieldFill,
-                                                            shape: RoundedRectangleBorder(
-                                                              borderRadius:
-                                                                  BorderRadius.circular(
-                                                                    8,
-                                                                  ),
-                                                            ),
-                                                          ),
-                                                        ),
-                                                      ],
-                                                    ),
-                                                    SizedBox(height: moreFiltersFieldGap),
-                                                    // Mileage Filter
-                                                    Text(
-                                                      AppLocalizations.of(
-                                                        context,
-                                                      )!.mileageRangeLabel,
-                                                      style: TextStyle(
-                                                        color: moreFiltersOnSurface,
-                                                        fontWeight:
-                                                            FontWeight.bold,
-                                                        fontSize: 16,
+                                                        ],
                                                       ),
-                                                    ),
-                                                    SizedBox(height: 12),
-                                                    Row(
-                                                      children: [
-                                                        Expanded(
-                                                          child:
+                                                      SizedBox(
+                                                        height:
+                                                            moreFiltersFieldGap,
+                                                      ),
+                                                      // Year Filter
+                                                      Text(
+                                                        AppLocalizations.of(
+                                                          context,
+                                                        )!.yearRange,
+                                                        style: TextStyle(
+                                                          color:
+                                                              moreFiltersOnSurface,
+                                                          fontWeight:
+                                                              FontWeight.bold,
+                                                          fontSize: 16,
+                                                        ),
+                                                      ),
+                                                      SizedBox(height: 12),
+                                                      Row(
+                                                        children: [
+                                                          Expanded(
+                                                            child:
+                                                                isYearDropdown
+                                                                ? Column(
+                                                                    children: [
+                                                                      Row(
+                                                                        children: [
+                                                                          Expanded(
+                                                                            child:
+                                                                                DropdownButtonFormField<
+                                                                                  String
+                                                                                >(
+                                                                                  initialValue:
+                                                                                      selectedMinYear ??
+                                                                                      '',
+                                                                                  decoration: InputDecoration(
+                                                                                    hintText: AppLocalizations.of(
+                                                                                      context,
+                                                                                    )!.any,
+                                                                                    filled: true,
+                                                                                    fillColor: moreFiltersFieldFill,
+                                                                                    hintStyle: TextStyle(
+                                                                                      color: moreFiltersAnyOrange,
+                                                                                    ),
+                                                                                    border: OutlineInputBorder(
+                                                                                      borderRadius: BorderRadius.circular(
+                                                                                        12,
+                                                                                      ),
+                                                                                    ),
+                                                                                  ),
+                                                                                  items: [
+                                                                                    DropdownMenuItem(
+                                                                                      value: '',
+                                                                                      child: Text(
+                                                                                        AppLocalizations.of(
+                                                                                          context,
+                                                                                        )!.any,
+                                                                                        style: TextStyle(
+                                                                                          color: moreFiltersAnyOrange,
+                                                                                        ),
+                                                                                      ),
+                                                                                    ),
+                                                                                    ...List.generate(
+                                                                                          127,
+                                                                                          (
+                                                                                            i,
+                                                                                          ) =>
+                                                                                              (1900 +
+                                                                                                      i)
+                                                                                                  .toString(),
+                                                                                        ).reversed
+                                                                                        .where(
+                                                                                          (
+                                                                                            y,
+                                                                                          ) {
+                                                                                            if (selectedMaxYear ==
+                                                                                                    null ||
+                                                                                                selectedMaxYear!.isEmpty) {
+                                                                                              return true;
+                                                                                            }
+                                                                                            final max = int.tryParse(
+                                                                                              selectedMaxYear!,
+                                                                                            );
+                                                                                            final val = int.tryParse(
+                                                                                              y,
+                                                                                            );
+                                                                                            return max ==
+                                                                                                        null ||
+                                                                                                    val ==
+                                                                                                        null
+                                                                                                ? true
+                                                                                                : val <=
+                                                                                                      max;
+                                                                                          },
+                                                                                        )
+                                                                                        .map(
+                                                                                          (
+                                                                                            y,
+                                                                                          ) => DropdownMenuItem(
+                                                                                            value: y,
+                                                                                            child: Text(
+                                                                                              _localizeDigitsGlobal(
+                                                                                                context,
+                                                                                                y,
+                                                                                              ),
+                                                                                              style: TextStyle(
+                                                                                                color: moreFiltersOnSurface,
+                                                                                              ),
+                                                                                            ),
+                                                                                          ),
+                                                                                        ),
+                                                                                  ],
+                                                                                  onChanged:
+                                                                                      (
+                                                                                        value,
+                                                                                      ) {
+                                                                                        setState(
+                                                                                          () {
+                                                                                            selectedMinYear =
+                                                                                                value?.isEmpty ==
+                                                                                                    true
+                                                                                                ? null
+                                                                                                : value;
+                                                                                            final min = int.tryParse(
+                                                                                              selectedMinYear ??
+                                                                                                  '',
+                                                                                            );
+                                                                                            final max = int.tryParse(
+                                                                                              selectedMaxYear ??
+                                                                                                  '',
+                                                                                            );
+                                                                                            if (min !=
+                                                                                                    null &&
+                                                                                                max !=
+                                                                                                    null &&
+                                                                                                min >
+                                                                                                    max) {
+                                                                                              selectedMaxYear = selectedMinYear;
+                                                                                            }
+                                                                                            _afterHomeYearBoundsChanged();
+                                                                                          },
+                                                                                        );
+                                                                                        setStateDialog(
+                                                                                          () {},
+                                                                                        );
+                                                                                      },
+                                                                                ),
+                                                                          ),
+                                                                          SizedBox(
+                                                                            width:
+                                                                                8,
+                                                                          ),
+                                                                          Expanded(
+                                                                            child:
+                                                                                DropdownButtonFormField<
+                                                                                  String
+                                                                                >(
+                                                                                  initialValue:
+                                                                                      selectedMaxYear ??
+                                                                                      '',
+                                                                                  decoration: InputDecoration(
+                                                                                    hintText: AppLocalizations.of(
+                                                                                      context,
+                                                                                    )!.any,
+                                                                                    filled: true,
+                                                                                    fillColor: moreFiltersFieldFill,
+                                                                                    hintStyle: TextStyle(
+                                                                                      color: moreFiltersAnyOrange,
+                                                                                    ),
+                                                                                    border: OutlineInputBorder(
+                                                                                      borderRadius: BorderRadius.circular(
+                                                                                        12,
+                                                                                      ),
+                                                                                    ),
+                                                                                  ),
+                                                                                  items: [
+                                                                                    DropdownMenuItem(
+                                                                                      value: '',
+                                                                                      child: Text(
+                                                                                        AppLocalizations.of(
+                                                                                          context,
+                                                                                        )!.any,
+                                                                                        style: TextStyle(
+                                                                                          color: moreFiltersAnyOrange,
+                                                                                        ),
+                                                                                      ),
+                                                                                    ),
+                                                                                    ...List.generate(
+                                                                                          127,
+                                                                                          (
+                                                                                            i,
+                                                                                          ) =>
+                                                                                              (1900 +
+                                                                                                      i)
+                                                                                                  .toString(),
+                                                                                        ).reversed
+                                                                                        .where(
+                                                                                          (
+                                                                                            y,
+                                                                                          ) {
+                                                                                            if (selectedMinYear ==
+                                                                                                    null ||
+                                                                                                selectedMinYear!.isEmpty) {
+                                                                                              return true;
+                                                                                            }
+                                                                                            final min = int.tryParse(
+                                                                                              selectedMinYear!,
+                                                                                            );
+                                                                                            final val = int.tryParse(
+                                                                                              y,
+                                                                                            );
+                                                                                            return min ==
+                                                                                                        null ||
+                                                                                                    val ==
+                                                                                                        null
+                                                                                                ? true
+                                                                                                : val >=
+                                                                                                      min;
+                                                                                          },
+                                                                                        )
+                                                                                        .map(
+                                                                                          (
+                                                                                            y,
+                                                                                          ) => DropdownMenuItem(
+                                                                                            value: y,
+                                                                                            child: Text(
+                                                                                              _localizeDigitsGlobal(
+                                                                                                context,
+                                                                                                y,
+                                                                                              ),
+                                                                                              style: TextStyle(
+                                                                                                color: moreFiltersOnSurface,
+                                                                                              ),
+                                                                                            ),
+                                                                                          ),
+                                                                                        ),
+                                                                                  ],
+                                                                                  onChanged:
+                                                                                      (
+                                                                                        value,
+                                                                                      ) {
+                                                                                        setState(
+                                                                                          () {
+                                                                                            selectedMaxYear =
+                                                                                                value?.isEmpty ==
+                                                                                                    true
+                                                                                                ? null
+                                                                                                : value;
+                                                                                            final min = int.tryParse(
+                                                                                              selectedMinYear ??
+                                                                                                  '',
+                                                                                            );
+                                                                                            final max = int.tryParse(
+                                                                                              selectedMaxYear ??
+                                                                                                  '',
+                                                                                            );
+                                                                                            if (min !=
+                                                                                                    null &&
+                                                                                                max !=
+                                                                                                    null &&
+                                                                                                max <
+                                                                                                    min) {
+                                                                                              selectedMinYear = selectedMaxYear;
+                                                                                            }
+                                                                                            _afterHomeYearBoundsChanged();
+                                                                                          },
+                                                                                        );
+                                                                                        setStateDialog(
+                                                                                          () {},
+                                                                                        );
+                                                                                      },
+                                                                                ),
+                                                                          ),
+                                                                        ],
+                                                                      ),
+                                                                    ],
+                                                                  )
+                                                                : Column(
+                                                                    children: [
+                                                                      Row(
+                                                                        children: [
+                                                                          Expanded(
+                                                                            child: TextFormField(
+                                                                              controller: _minYearController,
+                                                                              decoration: InputDecoration(
+                                                                                hintText: AppLocalizations.of(
+                                                                                  context,
+                                                                                )!.any,
+                                                                                filled: true,
+                                                                                fillColor: moreFiltersFieldFill,
+                                                                                hintStyle: TextStyle(
+                                                                                  color: moreFiltersAnyOrange,
+                                                                                ),
+                                                                                border: OutlineInputBorder(
+                                                                                  borderRadius: BorderRadius.circular(
+                                                                                    12,
+                                                                                  ),
+                                                                                ),
+                                                                              ),
+                                                                              keyboardType: TextInputType.number,
+                                                                              onChanged:
+                                                                                  (
+                                                                                    value,
+                                                                                  ) {
+                                                                                    setState(
+                                                                                      () {
+                                                                                        selectedMinYear = value.isEmpty
+                                                                                            ? null
+                                                                                            : value;
+                                                                                        final min = int.tryParse(
+                                                                                          selectedMinYear ??
+                                                                                              '',
+                                                                                        );
+                                                                                        final max = int.tryParse(
+                                                                                          selectedMaxYear ??
+                                                                                              '',
+                                                                                        );
+                                                                                        if (min !=
+                                                                                                null &&
+                                                                                            max !=
+                                                                                                null &&
+                                                                                            min >
+                                                                                                max) {
+                                                                                          selectedMaxYear = selectedMinYear;
+                                                                                          _maxYearController.text =
+                                                                                              selectedMaxYear ??
+                                                                                              '';
+                                                                                        }
+                                                                                        _afterHomeYearBoundsChanged();
+                                                                                      },
+                                                                                    );
+                                                                                    setStateDialog(
+                                                                                      () {},
+                                                                                    );
+                                                                                  },
+                                                                            ),
+                                                                          ),
+                                                                          SizedBox(
+                                                                            width:
+                                                                                8,
+                                                                          ),
+                                                                          Expanded(
+                                                                            child: TextFormField(
+                                                                              controller: _maxYearController,
+                                                                              decoration: InputDecoration(
+                                                                                hintText: AppLocalizations.of(
+                                                                                  context,
+                                                                                )!.any,
+                                                                                filled: true,
+                                                                                fillColor: moreFiltersFieldFill,
+                                                                                hintStyle: TextStyle(
+                                                                                  color: moreFiltersAnyOrange,
+                                                                                ),
+                                                                                border: OutlineInputBorder(
+                                                                                  borderRadius: BorderRadius.circular(
+                                                                                    12,
+                                                                                  ),
+                                                                                ),
+                                                                              ),
+                                                                              keyboardType: TextInputType.number,
+                                                                              onChanged:
+                                                                                  (
+                                                                                    value,
+                                                                                  ) {
+                                                                                    setState(
+                                                                                      () {
+                                                                                        selectedMaxYear = value.isEmpty
+                                                                                            ? null
+                                                                                            : value;
+                                                                                        final min = int.tryParse(
+                                                                                          selectedMinYear ??
+                                                                                              '',
+                                                                                        );
+                                                                                        final max = int.tryParse(
+                                                                                          selectedMaxYear ??
+                                                                                              '',
+                                                                                        );
+                                                                                        if (min !=
+                                                                                                null &&
+                                                                                            max !=
+                                                                                                null &&
+                                                                                            max <
+                                                                                                min) {
+                                                                                          selectedMinYear = selectedMaxYear;
+                                                                                          _minYearController.text =
+                                                                                              selectedMinYear ??
+                                                                                              '';
+                                                                                        }
+                                                                                        _afterHomeYearBoundsChanged();
+                                                                                      },
+                                                                                    );
+                                                                                    setStateDialog(
+                                                                                      () {},
+                                                                                    );
+                                                                                  },
+                                                                            ),
+                                                                          ),
+                                                                        ],
+                                                                      ),
+                                                                    ],
+                                                                  ),
+                                                          ),
+                                                          SizedBox(width: 8),
+                                                          IconButton(
+                                                            onPressed: () => setStateDialog(() {
+                                                              if (isYearDropdown) {
+                                                                _minYearController
+                                                                        .text =
+                                                                    selectedMinYear ??
+                                                                    '';
+                                                                _maxYearController
+                                                                        .text =
+                                                                    selectedMaxYear ??
+                                                                    '';
+                                                              }
+                                                              isYearDropdown =
+                                                                  !isYearDropdown;
+                                                            }),
+                                                            icon: Icon(
+                                                              isYearDropdown
+                                                                  ? Icons.edit
+                                                                  : Icons.list,
+                                                              color: Color(
+                                                                0xFFFF6B00,
+                                                              ),
+                                                            ),
+                                                            style: IconButton.styleFrom(
+                                                              backgroundColor:
+                                                                  moreFiltersFieldFill,
+                                                              shape: RoundedRectangleBorder(
+                                                                borderRadius:
+                                                                    BorderRadius.circular(
+                                                                      8,
+                                                                    ),
+                                                              ),
+                                                            ),
+                                                          ),
+                                                        ],
+                                                      ),
+                                                      SizedBox(
+                                                        height:
+                                                            moreFiltersFieldGap,
+                                                      ),
+                                                      // Mileage Filter
+                                                      Text(
+                                                        AppLocalizations.of(
+                                                          context,
+                                                        )!.mileageRangeLabel,
+                                                        style: TextStyle(
+                                                          color:
+                                                              moreFiltersOnSurface,
+                                                          fontWeight:
+                                                              FontWeight.bold,
+                                                          fontSize: 16,
+                                                        ),
+                                                      ),
+                                                      SizedBox(height: 12),
+                                                      Row(
+                                                        children: [
+                                                          Expanded(
+                                                            child:
+                                                                isMileageDropdown
+                                                                ? Column(
+                                                                    children: [
+                                                                      Row(
+                                                                        children: [
+                                                                          Expanded(
+                                                                            child:
+                                                                                DropdownButtonFormField<
+                                                                                  String
+                                                                                >(
+                                                                                  initialValue:
+                                                                                      (selectedMinMileage !=
+                                                                                              null &&
+                                                                                          selectedMinMileage!.isNotEmpty)
+                                                                                      ? selectedMinMileage
+                                                                                      : '',
+                                                                                  decoration: InputDecoration(
+                                                                                    hintText: AppLocalizations.of(
+                                                                                      context,
+                                                                                    )!.minMileage,
+                                                                                    filled: true,
+                                                                                    fillColor: moreFiltersFieldFill,
+                                                                                    hintStyle: TextStyle(
+                                                                                      color: moreFiltersAnyOrange,
+                                                                                    ),
+                                                                                    border: OutlineInputBorder(
+                                                                                      borderRadius: BorderRadius.circular(
+                                                                                        12,
+                                                                                      ),
+                                                                                    ),
+                                                                                  ),
+                                                                                  items: [
+                                                                                    DropdownMenuItem(
+                                                                                      value: '',
+                                                                                      child: Text(
+                                                                                        AppLocalizations.of(
+                                                                                          context,
+                                                                                        )!.any,
+                                                                                        style: TextStyle(
+                                                                                          color: moreFiltersAnyOrange,
+                                                                                        ),
+                                                                                      ),
+                                                                                    ),
+                                                                                    ...[
+                                                                                          for (
+                                                                                            int m = 0;
+                                                                                            m <=
+                                                                                                100000;
+                                                                                            m += 1000
+                                                                                          )
+                                                                                            m,
+                                                                                          for (
+                                                                                            int m = 105000;
+                                                                                            m <=
+                                                                                                300000;
+                                                                                            m += 5000
+                                                                                          )
+                                                                                            m,
+                                                                                        ]
+                                                                                        .where(
+                                                                                          (
+                                                                                            m,
+                                                                                          ) {
+                                                                                            if (selectedMaxMileage ==
+                                                                                                    null ||
+                                                                                                selectedMaxMileage!.isEmpty) {
+                                                                                              return true;
+                                                                                            }
+                                                                                            final max = int.tryParse(
+                                                                                              selectedMaxMileage!,
+                                                                                            );
+                                                                                            return max ==
+                                                                                                    null
+                                                                                                ? true
+                                                                                                : m <=
+                                                                                                      max;
+                                                                                          },
+                                                                                        )
+                                                                                        .map(
+                                                                                          (
+                                                                                            m,
+                                                                                          ) => DropdownMenuItem(
+                                                                                            value: m.toString(),
+                                                                                            child: Text(
+                                                                                              _localizeDigitsGlobal(
+                                                                                                context,
+                                                                                                m.toString().replaceAllMapped(
+                                                                                                  RegExp(
+                                                                                                    r'(\d{1,3})(?=(\d{3})+(?!\d))',
+                                                                                                  ),
+                                                                                                  (
+                                                                                                    mm,
+                                                                                                  ) => '${mm[1]},',
+                                                                                                ),
+                                                                                              ),
+                                                                                            ),
+                                                                                          ),
+                                                                                        ),
+                                                                                  ],
+                                                                                  onChanged:
+                                                                                      (
+                                                                                        value,
+                                                                                      ) {
+                                                                                        setState(
+                                                                                          () {
+                                                                                            selectedMinMileage =
+                                                                                                (value ==
+                                                                                                        null ||
+                                                                                                    value.isEmpty)
+                                                                                                ? null
+                                                                                                : value;
+                                                                                            final min = int.tryParse(
+                                                                                              selectedMinMileage ??
+                                                                                                  '',
+                                                                                            );
+                                                                                            final max = int.tryParse(
+                                                                                              selectedMaxMileage ??
+                                                                                                  '',
+                                                                                            );
+                                                                                            if (min !=
+                                                                                                    null &&
+                                                                                                max !=
+                                                                                                    null &&
+                                                                                                min >
+                                                                                                    max) {
+                                                                                              selectedMaxMileage = selectedMinMileage;
+                                                                                            }
+                                                                                          },
+                                                                                        );
+                                                                                        setStateDialog(
+                                                                                          () {},
+                                                                                        );
+                                                                                      },
+                                                                                ),
+                                                                          ),
+                                                                          SizedBox(
+                                                                            width:
+                                                                                8,
+                                                                          ),
+                                                                          Expanded(
+                                                                            child:
+                                                                                DropdownButtonFormField<
+                                                                                  String
+                                                                                >(
+                                                                                  initialValue:
+                                                                                      (selectedMaxMileage !=
+                                                                                              null &&
+                                                                                          selectedMaxMileage!.isNotEmpty)
+                                                                                      ? selectedMaxMileage
+                                                                                      : '',
+                                                                                  decoration: InputDecoration(
+                                                                                    hintText: AppLocalizations.of(
+                                                                                      context,
+                                                                                    )!.maxMileage,
+                                                                                    filled: true,
+                                                                                    fillColor: moreFiltersFieldFill,
+                                                                                    hintStyle: TextStyle(
+                                                                                      color: moreFiltersAnyOrange,
+                                                                                    ),
+                                                                                    border: OutlineInputBorder(
+                                                                                      borderRadius: BorderRadius.circular(
+                                                                                        12,
+                                                                                      ),
+                                                                                    ),
+                                                                                  ),
+                                                                                  items: [
+                                                                                    DropdownMenuItem(
+                                                                                      value: '',
+                                                                                      child: Text(
+                                                                                        AppLocalizations.of(
+                                                                                          context,
+                                                                                        )!.any,
+                                                                                        style: TextStyle(
+                                                                                          color: moreFiltersAnyOrange,
+                                                                                        ),
+                                                                                      ),
+                                                                                    ),
+                                                                                    ...[
+                                                                                          for (
+                                                                                            int m = 0;
+                                                                                            m <=
+                                                                                                100000;
+                                                                                            m += 1000
+                                                                                          )
+                                                                                            m,
+                                                                                          for (
+                                                                                            int m = 105000;
+                                                                                            m <=
+                                                                                                300000;
+                                                                                            m += 5000
+                                                                                          )
+                                                                                            m,
+                                                                                        ]
+                                                                                        .where(
+                                                                                          (
+                                                                                            m,
+                                                                                          ) {
+                                                                                            if (selectedMinMileage ==
+                                                                                                    null ||
+                                                                                                selectedMinMileage!.isNotEmpty ==
+                                                                                                    false) {
+                                                                                              return true;
+                                                                                            }
+                                                                                            final min = int.tryParse(
+                                                                                              selectedMinMileage!,
+                                                                                            );
+                                                                                            return min ==
+                                                                                                    null
+                                                                                                ? true
+                                                                                                : m >=
+                                                                                                      min;
+                                                                                          },
+                                                                                        )
+                                                                                        .map(
+                                                                                          (
+                                                                                            m,
+                                                                                          ) => DropdownMenuItem(
+                                                                                            value: m.toString(),
+                                                                                            child: Text(
+                                                                                              _localizeDigitsGlobal(
+                                                                                                context,
+                                                                                                m.toString().replaceAllMapped(
+                                                                                                  RegExp(
+                                                                                                    r'(\d{1,3})(?=(\d{3})+(?!\d))',
+                                                                                                  ),
+                                                                                                  (
+                                                                                                    mm,
+                                                                                                  ) => '${mm[1]},',
+                                                                                                ),
+                                                                                              ),
+                                                                                            ),
+                                                                                          ),
+                                                                                        ),
+                                                                                  ],
+                                                                                  onChanged:
+                                                                                      (
+                                                                                        value,
+                                                                                      ) {
+                                                                                        setState(
+                                                                                          () {
+                                                                                            selectedMaxMileage =
+                                                                                                (value ==
+                                                                                                        null ||
+                                                                                                    value.isEmpty)
+                                                                                                ? null
+                                                                                                : value;
+                                                                                            final min = int.tryParse(
+                                                                                              selectedMinMileage ??
+                                                                                                  '',
+                                                                                            );
+                                                                                            final max = int.tryParse(
+                                                                                              selectedMaxMileage ??
+                                                                                                  '',
+                                                                                            );
+                                                                                            if (min !=
+                                                                                                    null &&
+                                                                                                max !=
+                                                                                                    null &&
+                                                                                                max <
+                                                                                                    min) {
+                                                                                              selectedMinMileage = selectedMaxMileage;
+                                                                                            }
+                                                                                          },
+                                                                                        );
+                                                                                        setStateDialog(
+                                                                                          () {},
+                                                                                        );
+                                                                                      },
+                                                                                ),
+                                                                          ),
+                                                                        ],
+                                                                      ),
+                                                                    ],
+                                                                  )
+                                                                : Column(
+                                                                    children: [
+                                                                      Row(
+                                                                        children: [
+                                                                          Expanded(
+                                                                            child: TextFormField(
+                                                                              controller: _minMileageController,
+                                                                              decoration: InputDecoration(
+                                                                                hintText: AppLocalizations.of(
+                                                                                  context,
+                                                                                )!.any,
+                                                                                filled: true,
+                                                                                fillColor: moreFiltersFieldFill,
+                                                                                hintStyle: TextStyle(
+                                                                                  color: moreFiltersAnyOrange,
+                                                                                ),
+                                                                                border: OutlineInputBorder(
+                                                                                  borderRadius: BorderRadius.circular(
+                                                                                    12,
+                                                                                  ),
+                                                                                ),
+                                                                              ),
+                                                                              keyboardType: TextInputType.number,
+                                                                              onChanged:
+                                                                                  (
+                                                                                    value,
+                                                                                  ) {
+                                                                                    setState(
+                                                                                      () {
+                                                                                        selectedMinMileage = value.isEmpty
+                                                                                            ? null
+                                                                                            : value;
+                                                                                        final min = int.tryParse(
+                                                                                          selectedMinMileage ??
+                                                                                              '',
+                                                                                        );
+                                                                                        final max = int.tryParse(
+                                                                                          selectedMaxMileage ??
+                                                                                              '',
+                                                                                        );
+                                                                                        if (min !=
+                                                                                                null &&
+                                                                                            max !=
+                                                                                                null &&
+                                                                                            min >
+                                                                                                max) {
+                                                                                          selectedMaxMileage = selectedMinMileage;
+                                                                                          _maxMileageController.text =
+                                                                                              selectedMaxMileage ??
+                                                                                              '';
+                                                                                        }
+                                                                                      },
+                                                                                    );
+                                                                                    setStateDialog(
+                                                                                      () {},
+                                                                                    );
+                                                                                  },
+                                                                            ),
+                                                                          ),
+                                                                          SizedBox(
+                                                                            width:
+                                                                                8,
+                                                                          ),
+                                                                          Expanded(
+                                                                            child: TextFormField(
+                                                                              controller: _maxMileageController,
+                                                                              decoration: InputDecoration(
+                                                                                hintText: AppLocalizations.of(
+                                                                                  context,
+                                                                                )!.any,
+                                                                                filled: true,
+                                                                                fillColor: moreFiltersFieldFill,
+                                                                                hintStyle: TextStyle(
+                                                                                  color: moreFiltersAnyOrange,
+                                                                                ),
+                                                                                border: OutlineInputBorder(
+                                                                                  borderRadius: BorderRadius.circular(
+                                                                                    12,
+                                                                                  ),
+                                                                                ),
+                                                                              ),
+                                                                              keyboardType: TextInputType.number,
+                                                                              onChanged:
+                                                                                  (
+                                                                                    value,
+                                                                                  ) {
+                                                                                    setState(
+                                                                                      () {
+                                                                                        selectedMaxMileage = value.isEmpty
+                                                                                            ? null
+                                                                                            : value;
+                                                                                        final min = int.tryParse(
+                                                                                          selectedMinMileage ??
+                                                                                              '',
+                                                                                        );
+                                                                                        final max = int.tryParse(
+                                                                                          selectedMaxMileage ??
+                                                                                              '',
+                                                                                        );
+                                                                                        if (min !=
+                                                                                                null &&
+                                                                                            max !=
+                                                                                                null &&
+                                                                                            max <
+                                                                                                min) {
+                                                                                          selectedMinMileage = selectedMaxMileage;
+                                                                                          _minMileageController.text =
+                                                                                              selectedMinMileage ??
+                                                                                              '';
+                                                                                        }
+                                                                                      },
+                                                                                    );
+                                                                                    setStateDialog(
+                                                                                      () {},
+                                                                                    );
+                                                                                  },
+                                                                            ),
+                                                                          ),
+                                                                        ],
+                                                                      ),
+                                                                    ],
+                                                                  ),
+                                                          ),
+                                                          SizedBox(width: 8),
+                                                          IconButton(
+                                                            onPressed: () => setStateDialog(() {
+                                                              if (isMileageDropdown) {
+                                                                _minMileageController
+                                                                        .text =
+                                                                    selectedMinMileage ??
+                                                                    '';
+                                                                _maxMileageController
+                                                                        .text =
+                                                                    selectedMaxMileage ??
+                                                                    '';
+                                                              }
+                                                              isMileageDropdown =
+                                                                  !isMileageDropdown;
+                                                            }),
+                                                            icon: Icon(
                                                               isMileageDropdown
-                                                              ? Column(
-                                                                  children: [
-                                                                    Row(
-                                                                      children: [
-                                                                        Expanded(
-                                                                          child:
-                                                                              DropdownButtonFormField<
-                                                                                String
-                                                                              >(
-                                                                                initialValue:
-                                                                                    (selectedMinMileage !=
-                                                                                            null &&
-                                                                                        selectedMinMileage!.isNotEmpty)
-                                                                                    ? selectedMinMileage
-                                                                                    : '',
-                                                                                decoration: InputDecoration(
-                                                                                  hintText: AppLocalizations.of(
-                                                                                    context,
-                                                                                  )!.minMileage,
-                                                                                  filled: true,
-                                                                                  fillColor: moreFiltersFieldFill,
-                                                                                  hintStyle: TextStyle(
-                                                                                    color: moreFiltersAnyOrange,
-                                                                                  ),
-                                                                                  border: OutlineInputBorder(
-                                                                                    borderRadius: BorderRadius.circular(
-                                                                                      12,
-                                                                                    ),
-                                                                                  ),
-                                                                                ),
-                                                                                items: [
-                                                                                  DropdownMenuItem(
-                                                                                    value: '',
-                                                                                    child: Text(
-                                                                                      AppLocalizations.of(
-                                                                                        context,
-                                                                                      )!.any,
-                                                                                      style: TextStyle(
-                                                                                        color: moreFiltersAnyOrange,
-                                                                                      ),
-                                                                                    ),
-                                                                                  ),
-                                                                                  ...[
-                                                                                        for (
-                                                                                          int m = 0;
-                                                                                          m <=
-                                                                                              100000;
-                                                                                          m += 1000
-                                                                                        )
-                                                                                          m,
-                                                                                        for (
-                                                                                          int m = 105000;
-                                                                                          m <=
-                                                                                              300000;
-                                                                                          m += 5000
-                                                                                        )
-                                                                                          m,
-                                                                                      ]
-                                                                                      .where(
-                                                                                        (
-                                                                                          m,
-                                                                                        ) {
-                                                                                          if (selectedMaxMileage ==
-                                                                                                  null ||
-                                                                                              selectedMaxMileage!.isEmpty) {
-                                                                                            return true;
-                                                                                          }
-                                                                                          final max = int.tryParse(
-                                                                                            selectedMaxMileage!,
-                                                                                          );
-                                                                                          return max ==
-                                                                                                  null
-                                                                                              ? true
-                                                                                              : m <=
-                                                                                                    max;
-                                                                                        },
-                                                                                      )
-                                                                                      .map(
-                                                                                        (
-                                                                                          m,
-                                                                                        ) => DropdownMenuItem(
-                                                                                          value: m.toString(),
-                                                                                          child: Text(
-                                                                                            _localizeDigitsGlobal(
-                                                                                              context,
-                                                                                              m.toString().replaceAllMapped(
-                                                                                                RegExp(
-                                                                                                  r'(\d{1,3})(?=(\d{3})+(?!\d))',
-                                                                                                ),
-                                                                                                (
-                                                                                                  mm,
-                                                                                                ) => '${mm[1]},',
-                                                                                              ),
-                                                                                            ),
-                                                                                          ),
-                                                                                        ),
-                                                                                      )
-                                                                                      ,
-                                                                                ],
-                                                                                onChanged:
-                                                                                    (
-                                                                                      value,
-                                                                                    ) {
-                                                                                      setState(
-                                                                                        () {
-                                                                                          selectedMinMileage =
-                                                                                              (value ==
-                                                                                                      null ||
-                                                                                                  value.isEmpty)
-                                                                                              ? null
-                                                                                              : value;
-                                                                                          final min = int.tryParse(
-                                                                                            selectedMinMileage ??
-                                                                                                '',
-                                                                                          );
-                                                                                          final max = int.tryParse(
-                                                                                            selectedMaxMileage ??
-                                                                                                '',
-                                                                                          );
-                                                                                          if (min !=
-                                                                                                  null &&
-                                                                                              max !=
-                                                                                                  null &&
-                                                                                              min >
-                                                                                                  max) {
-                                                                                            selectedMaxMileage = selectedMinMileage;
-                                                                                          }
-                                                                                        },
-                                                                                      );
-                                                                                      setStateDialog(
-                                                                                        () {},
-                                                                                      );
-                                                                                    },
-                                                                              ),
-                                                                        ),
-                                                                        SizedBox(
-                                                                          width:
-                                                                              8,
-                                                                        ),
-                                                                        Expanded(
-                                                                          child:
-                                                                              DropdownButtonFormField<
-                                                                                String
-                                                                              >(
-                                                                                initialValue:
-                                                                                    (selectedMaxMileage !=
-                                                                                            null &&
-                                                                                        selectedMaxMileage!.isNotEmpty)
-                                                                                    ? selectedMaxMileage
-                                                                                    : '',
-                                                                                decoration: InputDecoration(
-                                                                                  hintText: AppLocalizations.of(
-                                                                                    context,
-                                                                                  )!.maxMileage,
-                                                                                  filled: true,
-                                                                                  fillColor: moreFiltersFieldFill,
-                                                                                  hintStyle: TextStyle(
-                                                                                    color: moreFiltersAnyOrange,
-                                                                                  ),
-                                                                                  border: OutlineInputBorder(
-                                                                                    borderRadius: BorderRadius.circular(
-                                                                                      12,
-                                                                                    ),
-                                                                                  ),
-                                                                                ),
-                                                                                items: [
-                                                                                  DropdownMenuItem(
-                                                                                    value: '',
-                                                                                    child: Text(
-                                                                                      AppLocalizations.of(
-                                                                                        context,
-                                                                                      )!.any,
-                                                                                      style: TextStyle(
-                                                                                        color: moreFiltersAnyOrange,
-                                                                                      ),
-                                                                                    ),
-                                                                                  ),
-                                                                                  ...[
-                                                                                        for (
-                                                                                          int m = 0;
-                                                                                          m <=
-                                                                                              100000;
-                                                                                          m += 1000
-                                                                                        )
-                                                                                          m,
-                                                                                        for (
-                                                                                          int m = 105000;
-                                                                                          m <=
-                                                                                              300000;
-                                                                                          m += 5000
-                                                                                        )
-                                                                                          m,
-                                                                                      ]
-                                                                                      .where(
-                                                                                        (
-                                                                                          m,
-                                                                                        ) {
-                                                                                          if (selectedMinMileage ==
-                                                                                                  null ||
-                                                                                              selectedMinMileage!.isNotEmpty ==
-                                                                                                  false) {
-                                                                                            return true;
-                                                                                          }
-                                                                                          final min = int.tryParse(
-                                                                                            selectedMinMileage!,
-                                                                                          );
-                                                                                          return min ==
-                                                                                                  null
-                                                                                              ? true
-                                                                                              : m >=
-                                                                                                    min;
-                                                                                        },
-                                                                                      )
-                                                                                      .map(
-                                                                                        (
-                                                                                          m,
-                                                                                        ) => DropdownMenuItem(
-                                                                                          value: m.toString(),
-                                                                                          child: Text(
-                                                                                            _localizeDigitsGlobal(
-                                                                                              context,
-                                                                                              m.toString().replaceAllMapped(
-                                                                                                RegExp(
-                                                                                                  r'(\d{1,3})(?=(\d{3})+(?!\d))',
-                                                                                                ),
-                                                                                                (
-                                                                                                  mm,
-                                                                                                ) => '${mm[1]},',
-                                                                                              ),
-                                                                                            ),
-                                                                                          ),
-                                                                                        ),
-                                                                                      )
-                                                                                      ,
-                                                                                ],
-                                                                                onChanged:
-                                                                                    (
-                                                                                      value,
-                                                                                    ) {
-                                                                                      setState(
-                                                                                        () {
-                                                                                          selectedMaxMileage =
-                                                                                              (value ==
-                                                                                                      null ||
-                                                                                                  value.isEmpty)
-                                                                                              ? null
-                                                                                              : value;
-                                                                                          final min = int.tryParse(
-                                                                                            selectedMinMileage ??
-                                                                                                '',
-                                                                                          );
-                                                                                          final max = int.tryParse(
-                                                                                            selectedMaxMileage ??
-                                                                                                '',
-                                                                                          );
-                                                                                          if (min !=
-                                                                                                  null &&
-                                                                                              max !=
-                                                                                                  null &&
-                                                                                              max <
-                                                                                                  min) {
-                                                                                            selectedMinMileage = selectedMaxMileage;
-                                                                                          }
-                                                                                        },
-                                                                                      );
-                                                                                      setStateDialog(
-                                                                                        () {},
-                                                                                      );
-                                                                                    },
-                                                                              ),
-                                                                        ),
-                                                                      ],
-                                                                    ),
-                                                                  ],
-                                                                )
-                                                              : Column(
-                                                                  children: [
-                                                                    Row(
-                                                                      children: [
-                                                                        Expanded(
-                                                                          child: TextFormField(
-                                                                            controller:
-                                                                                _minMileageController,
-                                                                            decoration: InputDecoration(
-                                                                              hintText: AppLocalizations.of(
-                                                                                context,
-                                                                              )!.any,
-                                                                              filled: true,
-                                                                              fillColor: moreFiltersFieldFill,
-                                                                              hintStyle: TextStyle(
-                                                                                color: moreFiltersAnyOrange,
-                                                                              ),
-                                                                              border: OutlineInputBorder(
-                                                                                borderRadius: BorderRadius.circular(
-                                                                                  12,
-                                                                                ),
-                                                                              ),
-                                                                            ),
-                                                                            keyboardType:
-                                                                                TextInputType.number,
-                                                                            onChanged:
-                                                                                (
-                                                                                  value,
-                                                                                ) {
-                                                                                  setState(
-                                                                                    () {
-                                                                                      selectedMinMileage = value.isEmpty
-                                                                                          ? null
-                                                                                          : value;
-                                                                                      final min = int.tryParse(
-                                                                                        selectedMinMileage ?? '',
-                                                                                      );
-                                                                                      final max = int.tryParse(
-                                                                                        selectedMaxMileage ?? '',
-                                                                                      );
-                                                                                      if (min != null &&
-                                                                                          max != null &&
-                                                                                          min > max) {
-                                                                                        selectedMaxMileage =
-                                                                                            selectedMinMileage;
-                                                                                        _maxMileageController
-                                                                                            .text = selectedMaxMileage ?? '';
-                                                                                      }
-                                                                                    },
-                                                                                  );
-                                                                                  setStateDialog(
-                                                                                    () {},
-                                                                                  );
-                                                                                },
-                                                                          ),
-                                                                        ),
-                                                                        SizedBox(
-                                                                          width:
-                                                                              8,
-                                                                        ),
-                                                                        Expanded(
-                                                                          child: TextFormField(
-                                                                            controller:
-                                                                                _maxMileageController,
-                                                                            decoration: InputDecoration(
-                                                                              hintText: AppLocalizations.of(
-                                                                                context,
-                                                                              )!.any,
-                                                                              filled: true,
-                                                                              fillColor: moreFiltersFieldFill,
-                                                                              hintStyle: TextStyle(
-                                                                                color: moreFiltersAnyOrange,
-                                                                              ),
-                                                                              border: OutlineInputBorder(
-                                                                                borderRadius: BorderRadius.circular(
-                                                                                  12,
-                                                                                ),
-                                                                              ),
-                                                                            ),
-                                                                            keyboardType:
-                                                                                TextInputType.number,
-                                                                            onChanged:
-                                                                                (
-                                                                                  value,
-                                                                                ) {
-                                                                                  setState(
-                                                                                    () {
-                                                                                      selectedMaxMileage = value.isEmpty
-                                                                                          ? null
-                                                                                          : value;
-                                                                                      final min = int.tryParse(
-                                                                                        selectedMinMileage ?? '',
-                                                                                      );
-                                                                                      final max = int.tryParse(
-                                                                                        selectedMaxMileage ?? '',
-                                                                                      );
-                                                                                      if (min != null &&
-                                                                                          max != null &&
-                                                                                          max < min) {
-                                                                                        selectedMinMileage =
-                                                                                            selectedMaxMileage;
-                                                                                        _minMileageController
-                                                                                            .text = selectedMinMileage ?? '';
-                                                                                      }
-                                                                                    },
-                                                                                  );
-                                                                                  setStateDialog(
-                                                                                    () {},
-                                                                                  );
-                                                                                },
-                                                                          ),
-                                                                        ),
-                                                                      ],
-                                                                    ),
-                                                                  ],
-                                                                ),
-                                                        ),
-                                                        SizedBox(width: 8),
-                                                        IconButton(
-                                                          onPressed: () =>
-                                                              setStateDialog(
-                                                                () {
-                                                                  if (isMileageDropdown) {
-                                                                    _minMileageController.text =
-                                                                        selectedMinMileage ?? '';
-                                                                    _maxMileageController.text =
-                                                                        selectedMaxMileage ?? '';
-                                                                  }
-                                                                  isMileageDropdown =
-                                                                      !isMileageDropdown;
-                                                                },
+                                                                  ? Icons.edit
+                                                                  : Icons.list,
+                                                              color: Color(
+                                                                0xFFFF6B00,
                                                               ),
-                                                          icon: Icon(
-                                                            isMileageDropdown
-                                                                ? Icons.edit
-                                                                : Icons.list,
-                                                            color: Color(
-                                                              0xFFFF6B00,
+                                                            ),
+                                                            style: IconButton.styleFrom(
+                                                              backgroundColor:
+                                                                  moreFiltersFieldFill,
+                                                              shape: RoundedRectangleBorder(
+                                                                borderRadius:
+                                                                    BorderRadius.circular(
+                                                                      8,
+                                                                    ),
+                                                              ),
                                                             ),
                                                           ),
-                                                          style: IconButton.styleFrom(
-                                                            backgroundColor: moreFiltersFieldFill,
-                                                            shape: RoundedRectangleBorder(
-                                                              borderRadius:
-                                                                  BorderRadius.circular(
-                                                                    8,
-                                                                  ),
-                                                            ),
-                                                          ),
-                                                        ),
-                                                      ],
-                                                    ),
-                                                    SizedBox(height: moreFiltersFieldGap),
-                                                    DropdownButtonFormField<
-                                                      String
-                                                    >(
-                                                      initialValue:
-                                                          selectedTitleStatus ??
-                                                          '',
-                                                      decoration: InputDecoration(
-                                                        labelText:
-                                                            AppLocalizations.of(
-                                                              context,
-                                                            )!.titleStatus,
-                                                        filled: true,
-                                                        fillColor: moreFiltersFieldFill,
-                                                        labelStyle: TextStyle(
-                                                          color: moreFiltersOnSurface,
-                                                        ),
-                                                        border: OutlineInputBorder(
-                                                          borderRadius:
-                                                              BorderRadius.circular(
-                                                                12,
-                                                              ),
-                                                        ),
+                                                        ],
                                                       ),
-                                                      items: [
-                                                        DropdownMenuItem(
-                                                          value: '',
-                                                          child: Text(
-                                                            AppLocalizations.of(
-                                                              context,
-                                                            )!.any,
-                                                            style: TextStyle(
-                                                              color:
-                                                                  moreFiltersAnyOrange,
-                                                            ),
-                                                          ),
-                                                        ),
-                                                        DropdownMenuItem(
-                                                          value: 'clean',
-                                                          child: Text(
-                                                            AppLocalizations.of(
-                                                              context,
-                                                            )!.value_title_clean,
-                                                          ),
-                                                        ),
-                                                        DropdownMenuItem(
-                                                          value: 'damaged',
-                                                          child: Text(
-                                                            AppLocalizations.of(
-                                                              context,
-                                                            )!.value_title_damaged,
-                                                          ),
-                                                        ),
-                                                      ],
-                                                      onChanged: (value) {
-                                                        setState(() {
-                                                          selectedTitleStatus =
-                                                              value == ''
-                                                              ? null
-                                                              : value;
-                                                          if (selectedTitleStatus !=
-                                                              'damaged') {
-                                                            selectedDamagedParts =
-                                                                null;
-                                                          }
-                                                        });
-                                                        setStateDialog(() {});
-                                                      },
-                                                    ),
-                                                    SizedBox(height: moreFiltersFieldGap),
-                                                    if (selectedTitleStatus ==
-                                                        'damaged')
+                                                      SizedBox(
+                                                        height:
+                                                            moreFiltersFieldGap,
+                                                      ),
                                                       DropdownButtonFormField<
                                                         String
                                                       >(
                                                         initialValue:
-                                                            selectedDamagedParts ??
+                                                            selectedTitleStatus ??
                                                             '',
                                                         decoration: InputDecoration(
                                                           labelText:
                                                               AppLocalizations.of(
                                                                 context,
-                                                              )!.damagedParts,
+                                                              )!.titleStatus,
                                                           filled: true,
-                                                          fillColor: moreFiltersFieldFill,
+                                                          fillColor:
+                                                              moreFiltersFieldFill,
                                                           labelStyle: TextStyle(
-                                                            color: moreFiltersOnSurface,
+                                                            color:
+                                                                moreFiltersOnSurface,
                                                           ),
                                                           border: OutlineInputBorder(
                                                             borderRadius:
@@ -8679,1347 +8687,145 @@ class _HomePageState extends State<HomePage> {
                                                               ),
                                                             ),
                                                           ),
-                                                          ...List.generate(
-                                                            15,
-                                                            (i) => (i + 1)
-                                                                .toString(),
-                                                          ).map(
-                                                            (
-                                                              p,
-                                                            ) => DropdownMenuItem(
-                                                              value: p,
-                                                              child: Text(
-                                                                '${_localizeDigitsGlobal(context, p)} ${AppLocalizations.of(context)!.damagedParts}',
-                                                              ),
+                                                          DropdownMenuItem(
+                                                            value: 'clean',
+                                                            child: Text(
+                                                              AppLocalizations.of(
+                                                                context,
+                                                              )!.value_title_clean,
+                                                            ),
+                                                          ),
+                                                          DropdownMenuItem(
+                                                            value: 'damaged',
+                                                            child: Text(
+                                                              AppLocalizations.of(
+                                                                context,
+                                                              )!.value_title_damaged,
                                                             ),
                                                           ),
                                                         ],
                                                         onChanged: (value) {
-                                                          setState(
-                                                            () =>
-                                                                selectedDamagedParts =
-                                                                    value == ''
-                                                                    ? null
-                                                                    : value,
-                                                          );
+                                                          setState(() {
+                                                            selectedTitleStatus =
+                                                                value == ''
+                                                                ? null
+                                                                : value;
+                                                            if (selectedTitleStatus !=
+                                                                'damaged') {
+                                                              selectedDamagedParts =
+                                                                  null;
+                                                            }
+                                                          });
                                                           setStateDialog(() {});
                                                         },
                                                       ),
-                                                    SizedBox(height: moreFiltersFieldGap),
-                                                    DropdownButtonFormField<
-                                                      String
-                                                    >(
-                                                      initialValue: conditions.contains(selectedCondition) ? (selectedCondition ?? 'Any') : conditions.first,
-                                                      decoration: InputDecoration(
-                                                        labelText:
-                                                            AppLocalizations.of(
-                                                              context,
-                                                            )!.conditionLabel,
-                                                        filled: true,
-                                                        fillColor: moreFiltersFieldFill,
-                                                        labelStyle: TextStyle(
-                                                          color: moreFiltersOnSurface,
-                                                        ),
-                                                        border: OutlineInputBorder(
-                                                          borderRadius:
-                                                              BorderRadius.circular(
-                                                                12,
-                                                              ),
-                                                        ),
+                                                      SizedBox(
+                                                        height:
+                                                            moreFiltersFieldGap,
                                                       ),
-                                                      items: conditions
-                                                          .map(
-                                                            (
-                                                              c,
-                                                            ) => DropdownMenuItem(
-                                                              value: c,
+                                                      if (selectedTitleStatus ==
+                                                          'damaged')
+                                                        DropdownButtonFormField<
+                                                          String
+                                                        >(
+                                                          initialValue:
+                                                              selectedDamagedParts ??
+                                                              '',
+                                                          decoration: InputDecoration(
+                                                            labelText:
+                                                                AppLocalizations.of(
+                                                                  context,
+                                                                )!.damagedParts,
+                                                            filled: true,
+                                                            fillColor:
+                                                                moreFiltersFieldFill,
+                                                            labelStyle: TextStyle(
+                                                              color:
+                                                                  moreFiltersOnSurface,
+                                                            ),
+                                                            border: OutlineInputBorder(
+                                                              borderRadius:
+                                                                  BorderRadius.circular(
+                                                                    12,
+                                                                  ),
+                                                            ),
+                                                          ),
+                                                          items: [
+                                                            DropdownMenuItem(
+                                                              value: '',
                                                               child: Text(
-                                                                _translateValueGlobal(
-                                                                      context,
-                                                                      c,
-                                                                    ) ??
-                                                                    c,
+                                                                AppLocalizations.of(
+                                                                  context,
+                                                                )!.any,
                                                                 style: TextStyle(
                                                                   color:
-                                                                      c == 'Any'
-                                                                      ? moreFiltersAnyOrange
-                                                                      : null,
+                                                                      moreFiltersAnyOrange,
                                                                 ),
                                                               ),
                                                             ),
-                                                          )
-                                                          .toList(),
-                                                      onChanged: (value) =>
-                                                          setState(
-                                                            () =>
-                                                                selectedCondition =
-                                                                    value ==
-                                                                        'Any'
-                                                                    ? 'Any'
-                                                                    : value,
-                                                          ),
-                                                    ),
-                                                    SizedBox(height: moreFiltersFieldGap),
-                                                    DropdownButtonFormField<
-                                                      String
-                                                    >(
-                                                      initialValue:
-                                                          _getValidTransmissionValue(),
-                                                      decoration: InputDecoration(
-                                                        labelText:
-                                                            AppLocalizations.of(
-                                                              context,
-                                                            )!.transmissionLabel,
-                                                        filled: true,
-                                                        fillColor: moreFiltersFieldFill,
-                                                        labelStyle: TextStyle(
-                                                          color: moreFiltersOnSurface,
-                                                        ),
-                                                        border: OutlineInputBorder(
-                                                          borderRadius:
-                                                              BorderRadius.circular(
-                                                                12,
-                                                              ),
-                                                        ),
-                                                      ),
-                                                      items: [
-                                                        DropdownMenuItem(
-                                                          value: '',
-                                                          child: Text(
-                                                            AppLocalizations.of(
-                                                              context,
-                                                            )!.any,
-                                                            style: TextStyle(
-                                                              color:
-                                                                  moreFiltersAnyOrange,
-                                                            ),
-                                                          ),
-                                                        ),
-                                                        ...getAvailableTransmissions()
-                                                            .where(
-                                                              (t) => t != 'Any',
-                                                            )
-                                                            .map(
+                                                            ...List.generate(
+                                                              15,
+                                                              (i) => (i + 1)
+                                                                  .toString(),
+                                                            ).map(
                                                               (
-                                                                t,
+                                                                p,
                                                               ) => DropdownMenuItem(
-                                                                value: t,
+                                                                value: p,
                                                                 child: Text(
-                                                                  _translateValueGlobal(
-                                                                        context,
-                                                                        t,
-                                                                      ) ??
-                                                                      t,
+                                                                  '${_localizeDigitsGlobal(context, p)} ${AppLocalizations.of(context)!.damagedParts}',
                                                                 ),
-                                                              ),
-                                                            )
-                                                            ,
-                                                      ],
-                                                      onChanged: (value) =>
-                                                          setState(
-                                                            () =>
-                                                                selectedTransmission =
-                                                                    value == ''
-                                                                    ? 'Any'
-                                                                    : value,
-                                                          ),
-                                                    ),
-                                                    SizedBox(height: moreFiltersFieldGap),
-                                                    DropdownButtonFormField<
-                                                      String
-                                                    >(
-                                                      initialValue:
-                                                          _getValidFuelTypeValue(),
-                                                      decoration: InputDecoration(
-                                                        labelText:
-                                                            AppLocalizations.of(
-                                                              context,
-                                                            )!.fuelTypeLabel,
-                                                        filled: true,
-                                                        fillColor: moreFiltersFieldFill,
-                                                        labelStyle: TextStyle(
-                                                          color: moreFiltersOnSurface,
-                                                        ),
-                                                        border: OutlineInputBorder(
-                                                          borderRadius:
-                                                              BorderRadius.circular(
-                                                                12,
-                                                              ),
-                                                        ),
-                                                      ),
-                                                      items: [
-                                                        DropdownMenuItem(
-                                                          value: '',
-                                                          child: Text(
-                                                            AppLocalizations.of(
-                                                              context,
-                                                            )!.any,
-                                                            style: TextStyle(
-                                                              color:
-                                                                  moreFiltersAnyOrange,
-                                                            ),
-                                                          ),
-                                                        ),
-                                                        ...getAvailableFuelTypes()
-                                                            .where(
-                                                              (f) => f != 'Any',
-                                                            )
-                                                            .map(
-                                                              (
-                                                                f,
-                                                              ) => DropdownMenuItem(
-                                                                value: f,
-                                                                child: Text(
-                                                                  _translateValueGlobal(
-                                                                        context,
-                                                                        f,
-                                                                      ) ??
-                                                                      f,
-                                                                ),
-                                                              ),
-                                                            )
-                                                            ,
-                                                      ],
-                                                      onChanged: (value) =>
-                                                          setState(
-                                                            () =>
-                                                                selectedFuelType =
-                                                                    value == ''
-                                                                    ? 'Any'
-                                                                    : value,
-                                                          ),
-                                                    ),
-                                                    SizedBox(height: moreFiltersFieldGap),
-                                                    TextFormField(
-                                                      key: ValueKey(
-                                                        'bodyType_${selectedBodyType ?? 'any'}',
-                                                      ),
-                                                      readOnly: true,
-                                                      style: TextStyle(
-                                                        color: (selectedBodyType !=
-                                                                    null &&
-                                                                selectedBodyType!
-                                                                    .isNotEmpty)
-                                                            ? moreFiltersOnSurface
-                                                            : moreFiltersAnyOrange,
-                                                      ),
-                                                      initialValue:
-                                                          (selectedBodyType ??
-                                                              AppLocalizations.of(
-                                                                context,
-                                                              )!
-                                                                  .any),
-                                                      decoration: InputDecoration(
-                                                        labelText:
-                                                            AppLocalizations.of(
-                                                              context,
-                                                            )!.bodyTypeLabel,
-                                                        filled: true,
-                                                        fillColor: moreFiltersFieldFill,
-                                                        labelStyle: TextStyle(
-                                                          color: moreFiltersOnSurface,
-                                                        ),
-                                                        border: OutlineInputBorder(
-                                                          borderRadius:
-                                                              BorderRadius.circular(
-                                                                12,
-                                                              ),
-                                                        ),
-                                                        suffixIcon: Container(
-                                                          margin:
-                                                              EdgeInsets.all(8),
-                                                          width: 44,
-                                                          height: 44,
-                                                          decoration:
-                                                              BoxDecoration(
-                                                                shape: BoxShape
-                                                                    .circle,
-                                                                color: Colors.white,
-                                                                border: Border.all(
-                                                                  color: Color(
-                                                                    0xFFFF6B00,
-                                                                  ),
-                                                                  width: 2,
-                                                                ),
-                                                              ),
-                                                          child: Padding(
-                                                            padding:
-                                                                EdgeInsets.all(
-                                                                  6,
-                                                                ),
-                                                            child: ClipOval(
-                                                              child: FittedBox(
-                                                                fit: BoxFit
-                                                                    .contain,
-                                                                child:
-                                                                    (selectedBodyType !=
-                                                                            null &&
-                                                                        selectedBodyType!
-                                                                            .isNotEmpty)
-                                                                    ? _buildBodyTypeImage(
-                                                                        _getBodyTypeAsset(
-                                                                          selectedBodyType!,
-                                                                        ),
-                                                                      )
-                                                                    : Icon(
-                                                                        _getBodyTypeIcon(
-                                                                          'car',
-                                                                        ),
-                                                                        color: Colors
-                                                                            .black,
-                                                                      ),
                                                               ),
                                                             ),
-                                                          ),
-                                                        ),
-                                                      ),
-                                                      onTap: () async {
-                                                        final bodyType = await showDialog<String>(
-                                                          context: context,
-                                                          builder: (dlgContext) {
-                                                            final isLightPicker =
-                                                                Theme.of(dlgContext).brightness ==
-                                                                    Brightness.light;
-                                                            final pickerBg = isLightPicker
-                                                                ? Colors.white
-                                                                : (Colors.grey[900]?.withOpacity(0.98) ??
-                                                                    Colors.grey.shade900);
-                                                            final onPicker = isLightPicker
-                                                                ? const Color(0xFF1A1A1A)
-                                                                : Colors.white;
-                                                            final onPickerMuted = isLightPicker
-                                                                ? const Color(0xFF616161)
-                                                                : Colors.white70;
-                                                            final borderSubtle = isLightPicker
-                                                                ? Colors.black26
-                                                                : Colors.white24;
-                                                            final shadowIdle = isLightPicker
-                                                                ? Colors.black12
-                                                                : Colors.black54;
-                                                            return Dialog(
-                                                              backgroundColor: pickerBg,
-                                                              shape: RoundedRectangleBorder(
-                                                                borderRadius:
-                                                                    BorderRadius.circular(
-                                                                      20,
-                                                                    ),
-                                                              ),
-                                                              child: Container(
-                                                                width: 400,
-                                                                padding:
-                                                                    EdgeInsets.all(
-                                                                      20,
-                                                                    ),
-                                                                child: Column(
-                                                                  crossAxisAlignment:
-                                                                      CrossAxisAlignment
-                                                                          .start,
-                                                                  mainAxisSize:
-                                                                      MainAxisSize
-                                                                          .min,
-                                                                  children: [
-                                                                    Row(
-                                                                      mainAxisAlignment:
-                                                                          MainAxisAlignment
-                                                                              .spaceBetween,
-                                                                      children: [
-                                                                        Text(
-                                                                          AppLocalizations.of(
-                                                                            context,
-                                                                          )!.selectBodyType,
-                                                                          style: GoogleFonts.orbitron(
-                                                                            color: Color(
-                                                                              0xFFFF6B00,
-                                                                            ),
-                                                                            fontWeight:
-                                                                                FontWeight.bold,
-                                                                            fontSize:
-                                                                                20,
-                                                                          ),
-                                                                        ),
-                                                                        IconButton(
-                                                                          icon: Icon(
-                                                                            Icons.close,
-                                                                            color: onPicker,
-                                                                          ),
-                                                                          onPressed: () => Navigator.pop(
-                                                                            dlgContext,
-                                                                          ),
-                                                                        ),
-                                                                      ],
-                                                                    ),
-                                                                    SizedBox(
-                                                                      height:
-                                                                          10,
-                                                                    ),
-                                                                    SizedBox(
-                                                                      height:
-                                                                          300,
-                                                                      child: GridView.builder(
-                                                                        shrinkWrap:
-                                                                            true,
-                                                                        physics:
-                                                                            BouncingScrollPhysics(),
-                                                                        gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
-                                                                          crossAxisCount:
-                                                                              3,
-                                                                          childAspectRatio:
-                                                                              0.82,
-                                                                          crossAxisSpacing:
-                                                                              12,
-                                                                          mainAxisSpacing:
-                                                                              12,
-                                                                        ),
-                                                                        itemCount:
-                                                                            getAvailableBodyTypes().length,
-                                                                        itemBuilder:
-                                                                            (
-                                                                              context,
-                                                                              index,
-                                                                            ) {
-                                                                              final bodyTypeName = getAvailableBodyTypes()[index];
-                                                                              final asset = _getBodyTypeAsset(
-                                                                                bodyTypeName,
-                                                                              );
-                                                                              final bool
-                                                                              isSelected =
-                                                                                  (selectedBodyType ??
-                                                                                      AppLocalizations.of(
-                                                                                        context,
-                                                                                      )!.any) ==
-                                                                                  bodyTypeName;
-                                                                              return InkWell(
-                                                                                borderRadius: BorderRadius.circular(
-                                                                                  12,
-                                                                                ),
-                                                                                onTap: () => Navigator.pop(
-                                                                                  dlgContext,
-                                                                                  bodyTypeName,
-                                                                                ),
-                                                                                child: Container(
-                                                                                  decoration: BoxDecoration(
-                                                                                    color: Colors.transparent,
-                                                                                    borderRadius: BorderRadius.circular(
-                                                                                      12,
-                                                                                    ),
-                                                                                    border: Border.all(
-                                                                                      color: isSelected
-                                                                                          ? const Color(
-                                                                                              0xFFFF6B00,
-                                                                                            )
-                                                                                          : borderSubtle,
-                                                                                      width: isSelected
-                                                                                          ? 2
-                                                                                          : 1,
-                                                                                    ),
-                                                                                    boxShadow: isSelected
-                                                                                        ? [
-                                                                                            BoxShadow(
-                                                                                              color:
-                                                                                                  const Color(
-                                                                                                    0xFFFF6B00,
-                                                                                                  ).withOpacity(
-                                                                                                    0.35,
-                                                                                                  ),
-                                                                                              blurRadius: 14,
-                                                                                              spreadRadius: 1,
-                                                                                              offset: const Offset(
-                                                                                                0,
-                                                                                                4,
-                                                                                              ),
-                                                                                            ),
-                                                                                          ]
-                                                                                        : [
-                                                                                            BoxShadow(
-                                                                                              color: shadowIdle,
-                                                                                              blurRadius: 10,
-                                                                                              spreadRadius: 0,
-                                                                                              offset: const Offset(
-                                                                                                0,
-                                                                                                3,
-                                                                                              ),
-                                                                                            ),
-                                                                                          ],
-                                                                                  ),
-                                                                                  padding: EdgeInsets.all(
-                                                                                    8,
-                                                                                  ),
-                                                                                  child: Column(
-                                                                                    mainAxisAlignment: MainAxisAlignment.center,
-                                                                                    children: [
-                                                                                      Container(
-                                                                                        width: 56,
-                                                                                        height: 56,
-                                                                                        decoration: BoxDecoration(
-                                                                                          shape: BoxShape.circle,
-                                                                                          color: Colors.white,
-                                                                                          border: Border.all(
-                                                                                            color: isSelected
-                                                                                                ? const Color(
-                                                                                                    0xFFFF6B00,
-                                                                                                  )
-                                                                                                : borderSubtle,
-                                                                                            width: isSelected
-                                                                                                ? 2
-                                                                                                : 1,
-                                                                                          ),
-                                                                                        ),
-                                                                                        child: Padding(
-                                                                                          padding: const EdgeInsets.all(
-                                                                                            8,
-                                                                                          ),
-                                                                                          child: FittedBox(
-                                                                                            fit: BoxFit.contain,
-                                                                                            child: _buildBodyTypeImage(
-                                                                                              asset,
-                                                                                            ),
-                                                                                          ),
-                                                                                        ),
-                                                                                      ),
-                                                                                      const SizedBox(
-                                                                                        height: 8,
-                                                                                      ),
-                                                                                      Text(
-                                                                                        bodyTypeName == 'Any'
-                                                                                            ? AppLocalizations.of(context)!.anyOption
-                                                                                            : (_translateValueGlobal(
-                                                                                                  context,
-                                                                                                  bodyTypeName,
-                                                                                                ) ??
-                                                                                                bodyTypeName),
-                                                                                        style: GoogleFonts.orbitron(
-                                                                                          fontSize: 12,
-                                                                                          color: isSelected
-                                                                                              ? const Color(0xFFFF6B00)
-                                                                                              : onPickerMuted,
-                                                                                          fontWeight: FontWeight.bold,
-                                                                                        ),
-                                                                                        textAlign: TextAlign.center,
-                                                                                        overflow: TextOverflow.ellipsis,
-                                                                                        maxLines: 1,
-                                                                                      ),
-                                                                                    ],
-                                                                                  ),
-                                                                                ),
-                                                                              );
-                                                                            },
-                                                                      ),
-                                                                    ),
-                                                                  ],
-                                                                ),
-                                                              ),
+                                                          ],
+                                                          onChanged: (value) {
+                                                            setState(
+                                                              () =>
+                                                                  selectedDamagedParts =
+                                                                      value ==
+                                                                          ''
+                                                                      ? null
+                                                                      : value,
+                                                            );
+                                                            setStateDialog(
+                                                              () {},
                                                             );
                                                           },
-                                                        );
-                                                        if (bodyType != null) {
-                                                          setState(() {
-                                                            selectedBodyType =
-                                                                bodyType ==
-                                                                    'Any'
-                                                                ? null
-                                                                : bodyType;
-                                                          });
-                                                          setStateDialog(() {});
-                                                        }
-                                                      },
-                                                    ),
-                                                    SizedBox(height: moreFiltersFieldGap),
-                                                    TextFormField(
-                                                      key: ValueKey(
-                                                        'color_${selectedColor ?? 'any'}',
+                                                        ),
+                                                      SizedBox(
+                                                        height:
+                                                            moreFiltersFieldGap,
                                                       ),
-                                                      readOnly: true,
-                                                      style: TextStyle(
-                                                        color: (selectedColor !=
-                                                                    null &&
-                                                                selectedColor!
-                                                                    .isNotEmpty)
-                                                            ? moreFiltersOnSurface
-                                                            : moreFiltersAnyOrange,
-                                                      ),
-                                                      initialValue:
-                                                          (_translateValueGlobal(
-                                                                context,
-                                                                selectedColor,
-                                                              ) ??
-                                                              selectedColor ??
+                                                      DropdownButtonFormField<
+                                                        String
+                                                      >(
+                                                        initialValue:
+                                                            conditions.contains(
+                                                              selectedCondition,
+                                                            )
+                                                            ? (selectedCondition ??
+                                                                  'Any')
+                                                            : conditions.first,
+                                                        decoration: InputDecoration(
+                                                          labelText:
                                                               AppLocalizations.of(
                                                                 context,
-                                                              )!
-                                                                  .any),
-                                                      decoration: InputDecoration(
-                                                        labelText:
-                                                            AppLocalizations.of(
-                                                              context,
-                                                            )!.colorLabel,
-                                                        filled: true,
-                                                        fillColor: moreFiltersFieldFill,
-                                                        labelStyle: TextStyle(
-                                                          color: moreFiltersOnSurface,
-                                                        ),
-                                                        border: OutlineInputBorder(
-                                                          borderRadius:
-                                                              BorderRadius.circular(
-                                                                12,
-                                                              ),
-                                                        ),
-                                                        suffixIcon: Container(
-                                                          width: 24,
-                                                          height: 24,
-                                                          margin:
-                                                              EdgeInsets.all(8),
-                                                          decoration: BoxDecoration(
+                                                              )!.conditionLabel,
+                                                          filled: true,
+                                                          fillColor:
+                                                              moreFiltersFieldFill,
+                                                          labelStyle: TextStyle(
                                                             color:
-                                                                selectedColor !=
-                                                                    null
-                                                                ? _getColorValue(
-                                                                    selectedColor!,
-                                                                  )
-                                                                : Colors.grey,
+                                                                moreFiltersOnSurface,
+                                                          ),
+                                                          border: OutlineInputBorder(
                                                             borderRadius:
                                                                 BorderRadius.circular(
-                                                                  6,
+                                                                  12,
                                                                 ),
-                                                            border: Border.all(
-                                                              color: Colors
-                                                                  .white24,
-                                                              width: 2,
-                                                            ),
                                                           ),
                                                         ),
-                                                      ),
-                                                      onTap: () async {
-                                                        final color = await showDialog<String>(
-                                                          context: context,
-                                                          builder: (dlgContext) {
-                                                            final isLightPicker =
-                                                                Theme.of(dlgContext).brightness ==
-                                                                    Brightness.light;
-                                                            final pickerBg = isLightPicker
-                                                                ? Colors.white
-                                                                : (Colors.grey[900]?.withOpacity(0.98) ??
-                                                                    Colors.grey.shade900);
-                                                            final onPicker = isLightPicker
-                                                                ? const Color(0xFF1A1A1A)
-                                                                : Colors.white;
-                                                            final borderSubtle = isLightPicker
-                                                                ? Colors.black26
-                                                                : Colors.white24;
-                                                            final cellFill = isLightPicker
-                                                                ? Colors.grey.shade200
-                                                                : Colors.black.withOpacity(0.15);
-                                                            return Dialog(
-                                                              backgroundColor: pickerBg,
-                                                              shape: RoundedRectangleBorder(
-                                                                borderRadius:
-                                                                    BorderRadius.circular(
-                                                                      20,
-                                                                    ),
-                                                              ),
-                                                              child: Container(
-                                                                width: 400,
-                                                                padding:
-                                                                    EdgeInsets.all(
-                                                                      20,
-                                                                    ),
-                                                                child: Column(
-                                                                  crossAxisAlignment:
-                                                                      CrossAxisAlignment
-                                                                          .start,
-                                                                  mainAxisSize:
-                                                                      MainAxisSize
-                                                                          .min,
-                                                                  children: [
-                                                                    Row(
-                                                                      mainAxisAlignment:
-                                                                          MainAxisAlignment
-                                                                              .spaceBetween,
-                                                                      children: [
-                                                                        Text(
-                                                                          AppLocalizations.of(
-                                                                            context,
-                                                                          )!.selectColor,
-                                                                          style: GoogleFonts.orbitron(
-                                                                            color: Color(
-                                                                              0xFFFF6B00,
-                                                                            ),
-                                                                            fontWeight:
-                                                                                FontWeight.bold,
-                                                                            fontSize:
-                                                                                20,
-                                                                          ),
-                                                                        ),
-                                                                        IconButton(
-                                                                          icon: Icon(
-                                                                            Icons.close,
-                                                                            color: onPicker,
-                                                                          ),
-                                                                          onPressed: () => Navigator.pop(
-                                                                            dlgContext,
-                                                                          ),
-                                                                        ),
-                                                                      ],
-                                                                    ),
-                                                                    SizedBox(
-                                                                      height:
-                                                                          10,
-                                                                    ),
-                                                                    SizedBox(
-                                                                      height:
-                                                                          300,
-                                                                      child: GridView.builder(
-                                                                        shrinkWrap:
-                                                                            true,
-                                                                        physics:
-                                                                            BouncingScrollPhysics(),
-                                                                        gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
-                                                                          crossAxisCount:
-                                                                              3,
-                                                                          childAspectRatio:
-                                                                              1.2,
-                                                                          crossAxisSpacing:
-                                                                              10,
-                                                                          mainAxisSpacing:
-                                                                              10,
-                                                                        ),
-                                                                        itemCount:
-                                                                            getAvailableColors().length,
-                                                                        itemBuilder:
-                                                                            (
-                                                                              context,
-                                                                              index,
-                                                                            ) {
-                                                                              final colorName = getAvailableColors()[index];
-                                                                              Color
-                                                                              colorValue = Colors.grey;
-                                                                              switch (colorName.toLowerCase()) {
-                                                                                case 'black':
-                                                                                  colorValue = Colors.black;
-                                                                                  break;
-                                                                                case 'white':
-                                                                                  colorValue = Colors.white;
-                                                                                  break;
-                                                                                case 'silver':
-                                                                                  colorValue = Colors.grey[300]!;
-                                                                                  break;
-                                                                                case 'gray':
-                                                                                  colorValue = Colors.grey[600]!;
-                                                                                  break;
-                                                                                case 'red':
-                                                                                  colorValue = Colors.red;
-                                                                                  break;
-                                                                                case 'blue':
-                                                                                  colorValue = Colors.blue;
-                                                                                  break;
-                                                                                case 'green':
-                                                                                  colorValue = Colors.green;
-                                                                                  break;
-                                                                                case 'yellow':
-                                                                                  colorValue = Colors.yellow;
-                                                                                  break;
-                                                                                case 'orange':
-                                                                                  colorValue = Colors.orange;
-                                                                                  break;
-                                                                                case 'purple':
-                                                                                  colorValue = Colors.purple;
-                                                                                  break;
-                                                                                case 'brown':
-                                                                                  colorValue = Colors.brown;
-                                                                                  break;
-                                                                                case 'beige':
-                                                                                  colorValue = Color(
-                                                                                    0xFFF5F5DC,
-                                                                                  );
-                                                                                  break;
-                                                                                case 'gold':
-                                                                                  colorValue = Color(
-                                                                                    0xFFFFD700,
-                                                                                  );
-                                                                                  break;
-                                                                                default:
-                                                                                  colorValue = Colors.grey;
-                                                                              }
-                                                                              return InkWell(
-                                                                                borderRadius: BorderRadius.circular(
-                                                                                  12,
-                                                                                ),
-                                                                                onTap: () => Navigator.pop(
-                                                                                  dlgContext,
-                                                                                  colorName,
-                                                                                ),
-                                                                                child: Container(
-                                                                                  decoration: BoxDecoration(
-                                                                                    color: cellFill,
-                                                                                    borderRadius: BorderRadius.circular(
-                                                                                      12,
-                                                                                    ),
-                                                                                    border: Border.all(
-                                                                                      color: borderSubtle,
-                                                                                    ),
-                                                                                  ),
-                                                                                  padding: EdgeInsets.all(
-                                                                                    8,
-                                                                                  ),
-                                                                                  child: Column(
-                                                                                    mainAxisAlignment: MainAxisAlignment.center,
-                                                                                    children: [
-                                                                                      Container(
-                                                                                        width: 40,
-                                                                                        height: 40,
-                                                                                        decoration: BoxDecoration(
-                                                                                          color: colorValue,
-                                                                                          borderRadius: BorderRadius.circular(
-                                                                                            8,
-                                                                                          ),
-                                                                                          border: Border.all(
-                                                                                            color: borderSubtle,
-                                                                                            width: 2,
-                                                                                          ),
-                                                                                        ),
-                                                                                      ),
-                                                                                      SizedBox(
-                                                                                        height: 8,
-                                                                                      ),
-                                                                                      Text(
-                                                                                        _translateValueGlobal(
-                                                                                              context,
-                                                                                              colorName,
-                                                                                            ) ??
-                                                                                            colorName,
-                                                                                        style: GoogleFonts.orbitron(
-                                                                                          fontSize: 12,
-                                                                                          color: onPicker,
-                                                                                          fontWeight: FontWeight.bold,
-                                                                                        ),
-                                                                                        textAlign: TextAlign.center,
-                                                                                        overflow: TextOverflow.ellipsis,
-                                                                                        maxLines: 1,
-                                                                                      ),
-                                                                                    ],
-                                                                                  ),
-                                                                                ),
-                                                                              );
-                                                                            },
-                                                                      ),
-                                                                    ),
-                                                                  ],
-                                                                ),
-                                                              ),
-                                                            );
-                                                          },
-                                                        );
-                                                        if (color != null) {
-                                                          setState(() {
-                                                            selectedColor =
-                                                                color == 'Any'
-                                                                ? null
-                                                                : color;
-                                                          });
-                                                          setStateDialog(() {});
-                                                        }
-                                                      },
-                                                    ),
-                                                    SizedBox(height: 12),
-                                                    // Drive Type Dropdown
-                                                    DropdownButtonFormField<
-                                                      String
-                                                    >(
-                                                      initialValue:
-                                                          _getValidDriveTypeValue(),
-                                                      decoration: InputDecoration(
-                                                        labelText:
-                                                            AppLocalizations.of(
-                                                              context,
-                                                            )!.driveType,
-                                                        filled: true,
-                                                        fillColor: moreFiltersFieldFill,
-                                                        labelStyle: TextStyle(
-                                                          color: moreFiltersOnSurface,
-                                                        ),
-                                                        border: OutlineInputBorder(
-                                                          borderRadius:
-                                                              BorderRadius.circular(
-                                                                12,
-                                                              ),
-                                                        ),
-                                                      ),
-                                                      items: [
-                                                        DropdownMenuItem(
-                                                          value: '',
-                                                          child: Text(
-                                                            AppLocalizations.of(
-                                                              context,
-                                                            )!.any,
-                                                            style: TextStyle(
-                                                              color:
-                                                                  moreFiltersAnyOrange,
-                                                            ),
-                                                          ),
-                                                        ),
-                                                        ...getAvailableDriveTypes()
-                                                            .where(
-                                                              (d) => d != 'Any',
-                                                            )
-                                                            .map(
-                                                              (
-                                                                d,
-                                                              ) => DropdownMenuItem(
-                                                                value: d,
-                                                                child: Text(
-                                                                  _translateValueGlobal(
-                                                                        context,
-                                                                        d,
-                                                                      ) ??
-                                                                      d,
-                                                                ),
-                                                              ),
-                                                            )
-                                                            ,
-                                                      ],
-                                                      onChanged: (value) {
-                                                        setState(
-                                                          () =>
-                                                              selectedDriveType =
-                                                                  value == ''
-                                                                  ? null
-                                                                  : value,
-                                                        );
-                                                        _persistFilters();
-                                                      },
-                                                    ),
-                                                    SizedBox(height: 12),
-                                                    DropdownButtonFormField<
-                                                      String
-                                                    >(
-                                                      key: ValueKey(
-                                                        'home_more_region_specs_${_moreFiltersDialogFieldGeneration}',
-                                                      ),
-                                                      initialValue:
-                                                          _getValidRegionSpecsValue(),
-                                                      decoration: InputDecoration(
-                                                        labelText:
-                                                            AppLocalizations.of(
-                                                              context,
-                                                            )!.regionSpecsLabel,
-                                                        filled: true,
-                                                        fillColor: moreFiltersFieldFill,
-                                                        labelStyle: TextStyle(
-                                                          color: moreFiltersOnSurface,
-                                                        ),
-                                                        border: OutlineInputBorder(
-                                                          borderRadius:
-                                                              BorderRadius.circular(
-                                                                12,
-                                                              ),
-                                                        ),
-                                                      ),
-                                                      items: [
-                                                        DropdownMenuItem(
-                                                          value: '',
-                                                          child: Text(
-                                                            AppLocalizations.of(
-                                                              context,
-                                                            )!.any,
-                                                            style: TextStyle(
-                                                              color:
-                                                                  moreFiltersAnyOrange,
-                                                            ),
-                                                          ),
-                                                        ),
-                                                        ...kCarRegionSpecCodes.map(
-                                                          (code) =>
-                                                              DropdownMenuItem(
-                                                                value: code,
-                                                                child: Text(
-                                                                  carRegionSpecDisplayLabel(
-                                                                    code,
-                                                                  ),
-                                                                ),
-                                                              ),
-                                                        ),
-                                                      ],
-                                                      onChanged: (value) {
-                                                        setState(
-                                                          () =>
-                                                              selectedRegionSpecs =
-                                                                  value == null ||
-                                                                      value
-                                                                          .isEmpty
-                                                                  ? null
-                                                                  : value,
-                                                        );
-                                                        _persistFilters();
-                                                      },
-                                                    ),
-                                                    SizedBox(height: 12),
-                                                    // Cylinder Count Dropdown
-                                                    DropdownButtonFormField<
-                                                      String
-                                                    >(
-                                                      initialValue:
-                                                          _getValidCylinderCountValue(),
-                                                      decoration: InputDecoration(
-                                                        labelText:
-                                                            AppLocalizations.of(
-                                                              context,
-                                                            )!.cylinderCount,
-                                                        filled: true,
-                                                        fillColor: moreFiltersFieldFill,
-                                                        labelStyle: TextStyle(
-                                                          color: moreFiltersOnSurface,
-                                                        ),
-                                                        border: OutlineInputBorder(
-                                                          borderRadius:
-                                                              BorderRadius.circular(
-                                                                12,
-                                                              ),
-                                                        ),
-                                                      ),
-                                                      items: [
-                                                        DropdownMenuItem(
-                                                          value: '',
-                                                          child: Text(
-                                                            AppLocalizations.of(
-                                                              context,
-                                                            )!.any,
-                                                            style: TextStyle(
-                                                              color:
-                                                                  moreFiltersAnyOrange,
-                                                            ),
-                                                          ),
-                                                        ),
-                                                        ...getAvailableCylinderCounts()
-                                                            .where(
-                                                              (c) => c != 'Any',
-                                                            )
-                                                            .map(
-                                                              (
-                                                                c,
-                                                              ) => DropdownMenuItem(
-                                                                value: c,
-                                                                child: Text(
-                                                                  _localizeDigitsGlobal(
-                                                                    context,
-                                                                    c,
-                                                                  ),
-                                                                ),
-                                                              ),
-                                                            )
-                                                            ,
-                                                      ],
-                                                      onChanged: (value) {
-                                                        setState(
-                                                          () {
-                                                            selectedCylinderCount =
-                                                                value == ''
-                                                                    ? null
-                                                                    : value;
-                                                            _applyMoreFiltersEngineSyncFromCylinder(
-                                                              selectedCylinderCount,
-                                                            );
-                                                          },
-                                                        );
-                                                        setStateDialog(
-                                                          () {},
-                                                        );
-                                                        _persistFilters();
-                                                      },
-                                                    ),
-                                                    SizedBox(height: 12),
-                                                    // Seating Dropdown
-                                                    DropdownButtonFormField<
-                                                      String
-                                                    >(
-                                                      initialValue:
-                                                          selectedSeating ?? '',
-                                                      decoration: InputDecoration(
-                                                        labelText:
-                                                            AppLocalizations.of(
-                                                              context,
-                                                            )!.seating,
-                                                        filled: true,
-                                                        fillColor: moreFiltersFieldFill,
-                                                        labelStyle: TextStyle(
-                                                          color: moreFiltersOnSurface,
-                                                        ),
-                                                        border: OutlineInputBorder(
-                                                          borderRadius:
-                                                              BorderRadius.circular(
-                                                                12,
-                                                              ),
-                                                        ),
-                                                      ),
-                                                      items: [
-                                                        DropdownMenuItem(
-                                                          value: '',
-                                                          child: Text(
-                                                            AppLocalizations.of(
-                                                              context,
-                                                            )!.any,
-                                                            style: TextStyle(
-                                                              color:
-                                                                  moreFiltersAnyOrange,
-                                                            ),
-                                                          ),
-                                                        ),
-                                                        ...getAvailableSeatings()
-                                                            .where(
-                                                              (s) => s != 'Any',
-                                                            )
-                                                            .map(
-                                                              (
-                                                                s,
-                                                              ) => DropdownMenuItem(
-                                                                value: s,
-                                                                child: Text(
-                                                                  _localizeDigitsGlobal(
-                                                                    context,
-                                                                    s,
-                                                                  ),
-                                                                ),
-                                                              ),
-                                                            )
-                                                            ,
-                                                      ],
-                                                      onChanged: (value) {
-                                                        setState(
-                                                          () =>
-                                                              selectedSeating =
-                                                                  value == ''
-                                                                  ? null
-                                                                  : value,
-                                                        );
-                                                        _persistFilters();
-                                                      },
-                                                    ),
-                                                    SizedBox(height: 12),
-                                                    // Engine Size Dropdown / Manual input
-                                                    Row(
-                                                      children: [
-                                                        Expanded(
-                                                          child: isEngineSizeDropdown
-                                                              ? DropdownButtonFormField<
-                                                                  String
-                                                                >(
-                                                                  initialValue:
-                                                                      _getValidEngineSizeValue(),
-                                                                  decoration:
-                                                                      InputDecoration(
-                                                                    labelText:
-                                                                        AppLocalizations.of(
-                                                                      context,
-                                                                    )!
-                                                                        .engineSizeL,
-                                                                    filled: true,
-                                                                    fillColor: Colors
-                                                                        .black
-                                                                        .withOpacity(
-                                                                      0.2,
-                                                                    ),
-                                                                    labelStyle:
-                                                                        TextStyle(
-                                                                      color: moreFiltersOnSurface,
-                                                                    ),
-                                                                    border:
-                                                                        OutlineInputBorder(
-                                                                      borderRadius:
-                                                                          BorderRadius
-                                                                              .circular(
-                                                                        12,
-                                                                      ),
-                                                                    ),
-                                                                  ),
-                                                                  items: [
-                                                                    DropdownMenuItem(
-                                                                      value: '',
-                                                                      child: Text(
-                                                                        AppLocalizations.of(
-                                                                          context,
-                                                                        )!
-                                                                            .any,
-                                                                        style:
-                                                                            TextStyle(
-                                                                          color: moreFiltersAnyOrange,
-                                                                        ),
-                                                                      ),
-                                                                    ),
-                                                                    ...getAvailableEngineSizes()
-                                                                        .where(
-                                                                          (e) =>
-                                                                              e !=
-                                                                              'Any',
-                                                                        )
-                                                                        .map(
-                                                                          (
-                                                                            e,
-                                                                          ) =>
-                                                                              DropdownMenuItem(
-                                                                            value:
-                                                                                e,
-                                                                            child:
-                                                                                Text(
-                                                                              '${_localizeDigitsGlobal(context, e)}${AppLocalizations.of(context)!.unit_liter_suffix}',
-                                                                            ),
-                                                                          ),
-                                                                        )
-                                                                        ,
-                                                                  ],
-                                                                  onChanged:
-                                                                      (value) {
-                                                                    setState(
-                                                                      () {
-                                                                        selectedEngineSize =
-                                                                            value == ''
-                                                                                ? null
-                                                                                : value;
-                                                                        _applyMoreFiltersCylinderSyncFromEngine(
-                                                                          selectedEngineSize,
-                                                                        );
-                                                                      },
-                                                                    );
-                                                                    setStateDialog(
-                                                                      () {},
-                                                                    );
-                                                                    _persistFilters();
-                                                                  },
-                                                                )
-                                                              : TextFormField(
-                                                                  controller:
-                                                                      _engineSizeController,
-                                                                  decoration:
-                                                                      InputDecoration(
-                                                                    labelText:
-                                                                        AppLocalizations.of(
-                                                                      context,
-                                                                    )!
-                                                                        .engineSizeL,
-                                                                    filled: true,
-                                                                    fillColor: Colors
-                                                                        .black
-                                                                        .withOpacity(
-                                                                      0.2,
-                                                                    ),
-                                                                    labelStyle:
-                                                                        TextStyle(
-                                                                      color: moreFiltersOnSurface,
-                                                                    ),
-                                                                    border:
-                                                                        OutlineInputBorder(
-                                                                      borderRadius:
-                                                                          BorderRadius
-                                                                              .circular(
-                                                                        12,
-                                                                      ),
-                                                                    ),
-                                                                  ),
-                                                                  keyboardType:
-                                                                      const TextInputType
-                                                                              .numberWithOptions(
-                                                                    decimal: true,
-                                                                  ),
-                                                                  inputFormatters: [
-                                                                    services
-                                                                        .FilteringTextInputFormatter
-                                                                        .allow(
-                                                                      RegExp(
-                                                                        r'[0-9.]',
-                                                                      ),
-                                                                    ),
-                                                                  ],
-                                                                  onChanged:
-                                                                      (value) {
-                                                                    setState(
-                                                                      () {
-                                                                        selectedEngineSize =
-                                                                            value.isEmpty
-                                                                                ? null
-                                                                                : value;
-                                                                        _applyMoreFiltersCylinderSyncFromEngine(
-                                                                          selectedEngineSize,
-                                                                        );
-                                                                      },
-                                                                    );
-                                                                    setStateDialog(
-                                                                      () {},
-                                                                    );
-                                                                    _persistFilters();
-                                                                  },
-                                                                ),
-                                                        ),
-                                                        const SizedBox(width: 8),
-                                                        IconButton(
-                                                          onPressed: () =>
-                                                              setStateDialog(
-                                                            () {
-                                                              if (isEngineSizeDropdown) {
-                                                                _engineSizeController
-                                                                        .text =
-                                                                    selectedEngineSize ??
-                                                                        '';
-                                                              }
-                                                              isEngineSizeDropdown =
-                                                                  !isEngineSizeDropdown;
-                                                            },
-                                                          ),
-                                                          icon: Icon(
-                                                            isEngineSizeDropdown
-                                                                ? Icons.edit
-                                                                : Icons.list,
-                                                            color: const Color(
-                                                              0xFFFF6B00,
-                                                            ),
-                                                          ),
-                                                          style: IconButton
-                                                              .styleFrom(
-                                                            backgroundColor: moreFiltersFieldFill,
-                                                            shape:
-                                                                RoundedRectangleBorder(
-                                                              borderRadius:
-                                                                  BorderRadius
-                                                                      .circular(
-                                                                8,
-                                                              ),
-                                                            ),
-                                                          ),
-                                                        ),
-                                                      ],
-                                                    ),
-                                                    SizedBox(height: 12),
-                                                    DropdownButtonFormField<
-                                                      String
-                                                    >(
-                                                      initialValue: selectedCity ?? '',
-                                                      decoration: InputDecoration(
-                                                        labelText:
-                                                            AppLocalizations.of(
-                                                              context,
-                                                            )!.cityLabel,
-                                                        filled: true,
-                                                        fillColor: moreFiltersFieldFill,
-                                                        labelStyle: TextStyle(
-                                                          color: moreFiltersOnSurface,
-                                                        ),
-                                                        border: OutlineInputBorder(
-                                                          borderRadius:
-                                                              BorderRadius.circular(
-                                                                12,
-                                                              ),
-                                                        ),
-                                                      ),
-                                                      items: [
-                                                        DropdownMenuItem(
-                                                          value: '',
-                                                          child: Text(
-                                                            AppLocalizations.of(
-                                                              context,
-                                                            )!.any,
-                                                            style: TextStyle(
-                                                              color:
-                                                                  moreFiltersAnyOrange,
-                                                            ),
-                                                          ),
-                                                        ),
-                                                        ...cities
+                                                        items: conditions
                                                             .map(
                                                               (
                                                                 c,
@@ -10031,21 +8837,1382 @@ class _HomePageState extends State<HomePage> {
                                                                         c,
                                                                       ) ??
                                                                       c,
+                                                                  style: TextStyle(
+                                                                    color:
+                                                                        c ==
+                                                                            'Any'
+                                                                        ? moreFiltersAnyOrange
+                                                                        : null,
+                                                                  ),
                                                                 ),
                                                               ),
                                                             )
-                                                            ,
-                                                      ],
-                                                      onChanged: (value) {
-                                                        setState(
-                                                          () => selectedCity =
-                                                              value == ''
-                                                              ? null
-                                                              : value,
-                                                        );
-                                                        _persistFilters();
-                                                      },
-                                                    ),
+                                                            .toList(),
+                                                        onChanged: (value) =>
+                                                            setState(
+                                                              () =>
+                                                                  selectedCondition =
+                                                                      value ==
+                                                                          'Any'
+                                                                      ? 'Any'
+                                                                      : value,
+                                                            ),
+                                                      ),
+                                                      SizedBox(
+                                                        height:
+                                                            moreFiltersFieldGap,
+                                                      ),
+                                                      DropdownButtonFormField<
+                                                        String
+                                                      >(
+                                                        initialValue:
+                                                            _getValidTransmissionValue(),
+                                                        decoration: InputDecoration(
+                                                          labelText:
+                                                              AppLocalizations.of(
+                                                                context,
+                                                              )!.transmissionLabel,
+                                                          filled: true,
+                                                          fillColor:
+                                                              moreFiltersFieldFill,
+                                                          labelStyle: TextStyle(
+                                                            color:
+                                                                moreFiltersOnSurface,
+                                                          ),
+                                                          border: OutlineInputBorder(
+                                                            borderRadius:
+                                                                BorderRadius.circular(
+                                                                  12,
+                                                                ),
+                                                          ),
+                                                        ),
+                                                        items: [
+                                                          DropdownMenuItem(
+                                                            value: '',
+                                                            child: Text(
+                                                              AppLocalizations.of(
+                                                                context,
+                                                              )!.any,
+                                                              style: TextStyle(
+                                                                color:
+                                                                    moreFiltersAnyOrange,
+                                                              ),
+                                                            ),
+                                                          ),
+                                                          ...getAvailableTransmissions()
+                                                              .where(
+                                                                (t) =>
+                                                                    t != 'Any',
+                                                              )
+                                                              .map(
+                                                                (
+                                                                  t,
+                                                                ) => DropdownMenuItem(
+                                                                  value: t,
+                                                                  child: Text(
+                                                                    _translateValueGlobal(
+                                                                          context,
+                                                                          t,
+                                                                        ) ??
+                                                                        t,
+                                                                  ),
+                                                                ),
+                                                              ),
+                                                        ],
+                                                        onChanged: (value) =>
+                                                            setState(
+                                                              () =>
+                                                                  selectedTransmission =
+                                                                      value ==
+                                                                          ''
+                                                                      ? 'Any'
+                                                                      : value,
+                                                            ),
+                                                      ),
+                                                      SizedBox(
+                                                        height:
+                                                            moreFiltersFieldGap,
+                                                      ),
+                                                      DropdownButtonFormField<
+                                                        String
+                                                      >(
+                                                        initialValue:
+                                                            _getValidFuelTypeValue(),
+                                                        decoration: InputDecoration(
+                                                          labelText:
+                                                              AppLocalizations.of(
+                                                                context,
+                                                              )!.fuelTypeLabel,
+                                                          filled: true,
+                                                          fillColor:
+                                                              moreFiltersFieldFill,
+                                                          labelStyle: TextStyle(
+                                                            color:
+                                                                moreFiltersOnSurface,
+                                                          ),
+                                                          border: OutlineInputBorder(
+                                                            borderRadius:
+                                                                BorderRadius.circular(
+                                                                  12,
+                                                                ),
+                                                          ),
+                                                        ),
+                                                        items: [
+                                                          DropdownMenuItem(
+                                                            value: '',
+                                                            child: Text(
+                                                              AppLocalizations.of(
+                                                                context,
+                                                              )!.any,
+                                                              style: TextStyle(
+                                                                color:
+                                                                    moreFiltersAnyOrange,
+                                                              ),
+                                                            ),
+                                                          ),
+                                                          ...getAvailableFuelTypes()
+                                                              .where(
+                                                                (f) =>
+                                                                    f != 'Any',
+                                                              )
+                                                              .map(
+                                                                (
+                                                                  f,
+                                                                ) => DropdownMenuItem(
+                                                                  value: f,
+                                                                  child: Text(
+                                                                    _translateValueGlobal(
+                                                                          context,
+                                                                          f,
+                                                                        ) ??
+                                                                        f,
+                                                                  ),
+                                                                ),
+                                                              ),
+                                                        ],
+                                                        onChanged: (value) =>
+                                                            setState(
+                                                              () =>
+                                                                  selectedFuelType =
+                                                                      value ==
+                                                                          ''
+                                                                      ? 'Any'
+                                                                      : value,
+                                                            ),
+                                                      ),
+                                                      SizedBox(
+                                                        height:
+                                                            moreFiltersFieldGap,
+                                                      ),
+                                                      TextFormField(
+                                                        key: ValueKey(
+                                                          'bodyType_${selectedBodyType ?? 'any'}',
+                                                        ),
+                                                        readOnly: true,
+                                                        style: TextStyle(
+                                                          color:
+                                                              (selectedBodyType !=
+                                                                      null &&
+                                                                  selectedBodyType!
+                                                                      .isNotEmpty)
+                                                              ? moreFiltersOnSurface
+                                                              : moreFiltersAnyOrange,
+                                                        ),
+                                                        initialValue:
+                                                            (selectedBodyType ??
+                                                            AppLocalizations.of(
+                                                              context,
+                                                            )!.any),
+                                                        decoration: InputDecoration(
+                                                          labelText:
+                                                              AppLocalizations.of(
+                                                                context,
+                                                              )!.bodyTypeLabel,
+                                                          filled: true,
+                                                          fillColor:
+                                                              moreFiltersFieldFill,
+                                                          labelStyle: TextStyle(
+                                                            color:
+                                                                moreFiltersOnSurface,
+                                                          ),
+                                                          border: OutlineInputBorder(
+                                                            borderRadius:
+                                                                BorderRadius.circular(
+                                                                  12,
+                                                                ),
+                                                          ),
+                                                          suffixIcon: Container(
+                                                            margin:
+                                                                EdgeInsets.all(
+                                                                  8,
+                                                                ),
+                                                            width: 44,
+                                                            height: 44,
+                                                            decoration: BoxDecoration(
+                                                              shape: BoxShape
+                                                                  .circle,
+                                                              color:
+                                                                  Colors.white,
+                                                              border: Border.all(
+                                                                color: Color(
+                                                                  0xFFFF6B00,
+                                                                ),
+                                                                width: 2,
+                                                              ),
+                                                            ),
+                                                            child: Padding(
+                                                              padding:
+                                                                  EdgeInsets.all(
+                                                                    6,
+                                                                  ),
+                                                              child: ClipOval(
+                                                                child: FittedBox(
+                                                                  fit: BoxFit
+                                                                      .contain,
+                                                                  child:
+                                                                      (selectedBodyType !=
+                                                                              null &&
+                                                                          selectedBodyType!
+                                                                              .isNotEmpty)
+                                                                      ? _buildBodyTypeImage(
+                                                                          _getBodyTypeAsset(
+                                                                            selectedBodyType!,
+                                                                          ),
+                                                                        )
+                                                                      : Icon(
+                                                                          _getBodyTypeIcon(
+                                                                            'car',
+                                                                          ),
+                                                                          color:
+                                                                              Colors.black,
+                                                                        ),
+                                                                ),
+                                                              ),
+                                                            ),
+                                                          ),
+                                                        ),
+                                                        onTap: () async {
+                                                          final bodyType = await showDialog<String>(
+                                                            context: context,
+                                                            builder: (dlgContext) {
+                                                              final isLightPicker =
+                                                                  Theme.of(
+                                                                    dlgContext,
+                                                                  ).brightness ==
+                                                                  Brightness
+                                                                      .light;
+                                                              final pickerBg =
+                                                                  isLightPicker
+                                                                  ? Colors.white
+                                                                  : (Colors.grey[900]
+                                                                            ?.withOpacity(
+                                                                              0.98,
+                                                                            ) ??
+                                                                        Colors
+                                                                            .grey
+                                                                            .shade900);
+                                                              final onPicker =
+                                                                  isLightPicker
+                                                                  ? const Color(
+                                                                      0xFF1A1A1A,
+                                                                    )
+                                                                  : Colors
+                                                                        .white;
+                                                              final onPickerMuted =
+                                                                  isLightPicker
+                                                                  ? const Color(
+                                                                      0xFF616161,
+                                                                    )
+                                                                  : Colors
+                                                                        .white70;
+                                                              final borderSubtle =
+                                                                  isLightPicker
+                                                                  ? Colors
+                                                                        .black26
+                                                                  : Colors
+                                                                        .white24;
+                                                              final shadowIdle =
+                                                                  isLightPicker
+                                                                  ? Colors
+                                                                        .black12
+                                                                  : Colors
+                                                                        .black54;
+                                                              return Dialog(
+                                                                backgroundColor:
+                                                                    pickerBg,
+                                                                shape: RoundedRectangleBorder(
+                                                                  borderRadius:
+                                                                      BorderRadius.circular(
+                                                                        20,
+                                                                      ),
+                                                                ),
+                                                                child: Container(
+                                                                  width: 400,
+                                                                  padding:
+                                                                      EdgeInsets.all(
+                                                                        20,
+                                                                      ),
+                                                                  child: Column(
+                                                                    crossAxisAlignment:
+                                                                        CrossAxisAlignment
+                                                                            .start,
+                                                                    mainAxisSize:
+                                                                        MainAxisSize
+                                                                            .min,
+                                                                    children: [
+                                                                      Row(
+                                                                        mainAxisAlignment:
+                                                                            MainAxisAlignment.spaceBetween,
+                                                                        children: [
+                                                                          Text(
+                                                                            AppLocalizations.of(
+                                                                              context,
+                                                                            )!.selectBodyType,
+                                                                            style: GoogleFonts.orbitron(
+                                                                              color: Color(
+                                                                                0xFFFF6B00,
+                                                                              ),
+                                                                              fontWeight: FontWeight.bold,
+                                                                              fontSize: 20,
+                                                                            ),
+                                                                          ),
+                                                                          IconButton(
+                                                                            icon: Icon(
+                                                                              Icons.close,
+                                                                              color: onPicker,
+                                                                            ),
+                                                                            onPressed: () => Navigator.pop(
+                                                                              dlgContext,
+                                                                            ),
+                                                                          ),
+                                                                        ],
+                                                                      ),
+                                                                      SizedBox(
+                                                                        height:
+                                                                            10,
+                                                                      ),
+                                                                      SizedBox(
+                                                                        height:
+                                                                            300,
+                                                                        child: GridView.builder(
+                                                                          shrinkWrap:
+                                                                              true,
+                                                                          physics:
+                                                                              BouncingScrollPhysics(),
+                                                                          gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
+                                                                            crossAxisCount:
+                                                                                3,
+                                                                            childAspectRatio:
+                                                                                0.82,
+                                                                            crossAxisSpacing:
+                                                                                12,
+                                                                            mainAxisSpacing:
+                                                                                12,
+                                                                          ),
+                                                                          itemCount:
+                                                                              getAvailableBodyTypes().length,
+                                                                          itemBuilder:
+                                                                              (
+                                                                                context,
+                                                                                index,
+                                                                              ) {
+                                                                                final bodyTypeName = getAvailableBodyTypes()[index];
+                                                                                final asset = _getBodyTypeAsset(
+                                                                                  bodyTypeName,
+                                                                                );
+                                                                                final bool
+                                                                                isSelected =
+                                                                                    (selectedBodyType ??
+                                                                                        AppLocalizations.of(
+                                                                                          context,
+                                                                                        )!.any) ==
+                                                                                    bodyTypeName;
+                                                                                return InkWell(
+                                                                                  borderRadius: BorderRadius.circular(
+                                                                                    12,
+                                                                                  ),
+                                                                                  onTap: () => Navigator.pop(
+                                                                                    dlgContext,
+                                                                                    bodyTypeName,
+                                                                                  ),
+                                                                                  child: Container(
+                                                                                    decoration: BoxDecoration(
+                                                                                      color: Colors.transparent,
+                                                                                      borderRadius: BorderRadius.circular(
+                                                                                        12,
+                                                                                      ),
+                                                                                      border: Border.all(
+                                                                                        color: isSelected
+                                                                                            ? const Color(
+                                                                                                0xFFFF6B00,
+                                                                                              )
+                                                                                            : borderSubtle,
+                                                                                        width: isSelected
+                                                                                            ? 2
+                                                                                            : 1,
+                                                                                      ),
+                                                                                      boxShadow: isSelected
+                                                                                          ? [
+                                                                                              BoxShadow(
+                                                                                                color:
+                                                                                                    const Color(
+                                                                                                      0xFFFF6B00,
+                                                                                                    ).withOpacity(
+                                                                                                      0.35,
+                                                                                                    ),
+                                                                                                blurRadius: 14,
+                                                                                                spreadRadius: 1,
+                                                                                                offset: const Offset(
+                                                                                                  0,
+                                                                                                  4,
+                                                                                                ),
+                                                                                              ),
+                                                                                            ]
+                                                                                          : [
+                                                                                              BoxShadow(
+                                                                                                color: shadowIdle,
+                                                                                                blurRadius: 10,
+                                                                                                spreadRadius: 0,
+                                                                                                offset: const Offset(
+                                                                                                  0,
+                                                                                                  3,
+                                                                                                ),
+                                                                                              ),
+                                                                                            ],
+                                                                                    ),
+                                                                                    padding: EdgeInsets.all(
+                                                                                      8,
+                                                                                    ),
+                                                                                    child: Column(
+                                                                                      mainAxisAlignment: MainAxisAlignment.center,
+                                                                                      children: [
+                                                                                        Container(
+                                                                                          width: 56,
+                                                                                          height: 56,
+                                                                                          decoration: BoxDecoration(
+                                                                                            shape: BoxShape.circle,
+                                                                                            color: Colors.white,
+                                                                                            border: Border.all(
+                                                                                              color: isSelected
+                                                                                                  ? const Color(
+                                                                                                      0xFFFF6B00,
+                                                                                                    )
+                                                                                                  : borderSubtle,
+                                                                                              width: isSelected
+                                                                                                  ? 2
+                                                                                                  : 1,
+                                                                                            ),
+                                                                                          ),
+                                                                                          child: Padding(
+                                                                                            padding: const EdgeInsets.all(
+                                                                                              8,
+                                                                                            ),
+                                                                                            child: FittedBox(
+                                                                                              fit: BoxFit.contain,
+                                                                                              child: _buildBodyTypeImage(
+                                                                                                asset,
+                                                                                              ),
+                                                                                            ),
+                                                                                          ),
+                                                                                        ),
+                                                                                        const SizedBox(
+                                                                                          height: 8,
+                                                                                        ),
+                                                                                        Text(
+                                                                                          bodyTypeName ==
+                                                                                                  'Any'
+                                                                                              ? AppLocalizations.of(
+                                                                                                  context,
+                                                                                                )!.anyOption
+                                                                                              : (_translateValueGlobal(
+                                                                                                      context,
+                                                                                                      bodyTypeName,
+                                                                                                    ) ??
+                                                                                                    bodyTypeName),
+                                                                                          style: GoogleFonts.orbitron(
+                                                                                            fontSize: 12,
+                                                                                            color: isSelected
+                                                                                                ? const Color(
+                                                                                                    0xFFFF6B00,
+                                                                                                  )
+                                                                                                : onPickerMuted,
+                                                                                            fontWeight: FontWeight.bold,
+                                                                                          ),
+                                                                                          textAlign: TextAlign.center,
+                                                                                          overflow: TextOverflow.ellipsis,
+                                                                                          maxLines: 1,
+                                                                                        ),
+                                                                                      ],
+                                                                                    ),
+                                                                                  ),
+                                                                                );
+                                                                              },
+                                                                        ),
+                                                                      ),
+                                                                    ],
+                                                                  ),
+                                                                ),
+                                                              );
+                                                            },
+                                                          );
+                                                          if (bodyType !=
+                                                              null) {
+                                                            setState(() {
+                                                              selectedBodyType =
+                                                                  bodyType ==
+                                                                      'Any'
+                                                                  ? null
+                                                                  : bodyType;
+                                                            });
+                                                            setStateDialog(
+                                                              () {},
+                                                            );
+                                                          }
+                                                        },
+                                                      ),
+                                                      SizedBox(
+                                                        height:
+                                                            moreFiltersFieldGap,
+                                                      ),
+                                                      TextFormField(
+                                                        key: ValueKey(
+                                                          'color_${selectedColor ?? 'any'}',
+                                                        ),
+                                                        readOnly: true,
+                                                        style: TextStyle(
+                                                          color:
+                                                              (selectedColor !=
+                                                                      null &&
+                                                                  selectedColor!
+                                                                      .isNotEmpty)
+                                                              ? moreFiltersOnSurface
+                                                              : moreFiltersAnyOrange,
+                                                        ),
+                                                        initialValue:
+                                                            (_translateValueGlobal(
+                                                              context,
+                                                              selectedColor,
+                                                            ) ??
+                                                            selectedColor ??
+                                                            AppLocalizations.of(
+                                                              context,
+                                                            )!.any),
+                                                        decoration: InputDecoration(
+                                                          labelText:
+                                                              AppLocalizations.of(
+                                                                context,
+                                                              )!.colorLabel,
+                                                          filled: true,
+                                                          fillColor:
+                                                              moreFiltersFieldFill,
+                                                          labelStyle: TextStyle(
+                                                            color:
+                                                                moreFiltersOnSurface,
+                                                          ),
+                                                          border: OutlineInputBorder(
+                                                            borderRadius:
+                                                                BorderRadius.circular(
+                                                                  12,
+                                                                ),
+                                                          ),
+                                                          suffixIcon: Container(
+                                                            width: 24,
+                                                            height: 24,
+                                                            margin:
+                                                                EdgeInsets.all(
+                                                                  8,
+                                                                ),
+                                                            decoration: BoxDecoration(
+                                                              color:
+                                                                  selectedColor !=
+                                                                      null
+                                                                  ? _getColorValue(
+                                                                      selectedColor!,
+                                                                    )
+                                                                  : Colors.grey,
+                                                              borderRadius:
+                                                                  BorderRadius.circular(
+                                                                    6,
+                                                                  ),
+                                                              border: Border.all(
+                                                                color: Colors
+                                                                    .white24,
+                                                                width: 2,
+                                                              ),
+                                                            ),
+                                                          ),
+                                                        ),
+                                                        onTap: () async {
+                                                          final color = await showDialog<String>(
+                                                            context: context,
+                                                            builder: (dlgContext) {
+                                                              final isLightPicker =
+                                                                  Theme.of(
+                                                                    dlgContext,
+                                                                  ).brightness ==
+                                                                  Brightness
+                                                                      .light;
+                                                              final pickerBg =
+                                                                  isLightPicker
+                                                                  ? Colors.white
+                                                                  : (Colors.grey[900]
+                                                                            ?.withOpacity(
+                                                                              0.98,
+                                                                            ) ??
+                                                                        Colors
+                                                                            .grey
+                                                                            .shade900);
+                                                              final onPicker =
+                                                                  isLightPicker
+                                                                  ? const Color(
+                                                                      0xFF1A1A1A,
+                                                                    )
+                                                                  : Colors
+                                                                        .white;
+                                                              final borderSubtle =
+                                                                  isLightPicker
+                                                                  ? Colors
+                                                                        .black26
+                                                                  : Colors
+                                                                        .white24;
+                                                              final cellFill =
+                                                                  isLightPicker
+                                                                  ? Colors
+                                                                        .grey
+                                                                        .shade200
+                                                                  : Colors.black
+                                                                        .withOpacity(
+                                                                          0.15,
+                                                                        );
+                                                              return Dialog(
+                                                                backgroundColor:
+                                                                    pickerBg,
+                                                                shape: RoundedRectangleBorder(
+                                                                  borderRadius:
+                                                                      BorderRadius.circular(
+                                                                        20,
+                                                                      ),
+                                                                ),
+                                                                child: Container(
+                                                                  width: 400,
+                                                                  padding:
+                                                                      EdgeInsets.all(
+                                                                        20,
+                                                                      ),
+                                                                  child: Column(
+                                                                    crossAxisAlignment:
+                                                                        CrossAxisAlignment
+                                                                            .start,
+                                                                    mainAxisSize:
+                                                                        MainAxisSize
+                                                                            .min,
+                                                                    children: [
+                                                                      Row(
+                                                                        mainAxisAlignment:
+                                                                            MainAxisAlignment.spaceBetween,
+                                                                        children: [
+                                                                          Text(
+                                                                            AppLocalizations.of(
+                                                                              context,
+                                                                            )!.selectColor,
+                                                                            style: GoogleFonts.orbitron(
+                                                                              color: Color(
+                                                                                0xFFFF6B00,
+                                                                              ),
+                                                                              fontWeight: FontWeight.bold,
+                                                                              fontSize: 20,
+                                                                            ),
+                                                                          ),
+                                                                          IconButton(
+                                                                            icon: Icon(
+                                                                              Icons.close,
+                                                                              color: onPicker,
+                                                                            ),
+                                                                            onPressed: () => Navigator.pop(
+                                                                              dlgContext,
+                                                                            ),
+                                                                          ),
+                                                                        ],
+                                                                      ),
+                                                                      SizedBox(
+                                                                        height:
+                                                                            10,
+                                                                      ),
+                                                                      SizedBox(
+                                                                        height:
+                                                                            300,
+                                                                        child: GridView.builder(
+                                                                          shrinkWrap:
+                                                                              true,
+                                                                          physics:
+                                                                              BouncingScrollPhysics(),
+                                                                          gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
+                                                                            crossAxisCount:
+                                                                                3,
+                                                                            childAspectRatio:
+                                                                                1.2,
+                                                                            crossAxisSpacing:
+                                                                                10,
+                                                                            mainAxisSpacing:
+                                                                                10,
+                                                                          ),
+                                                                          itemCount:
+                                                                              getAvailableColors().length,
+                                                                          itemBuilder:
+                                                                              (
+                                                                                context,
+                                                                                index,
+                                                                              ) {
+                                                                                final colorName = getAvailableColors()[index];
+                                                                                Color
+                                                                                colorValue = Colors.grey;
+                                                                                switch (colorName.toLowerCase()) {
+                                                                                  case 'black':
+                                                                                    colorValue = Colors.black;
+                                                                                    break;
+                                                                                  case 'white':
+                                                                                    colorValue = Colors.white;
+                                                                                    break;
+                                                                                  case 'silver':
+                                                                                    colorValue = Colors.grey[300]!;
+                                                                                    break;
+                                                                                  case 'gray':
+                                                                                    colorValue = Colors.grey[600]!;
+                                                                                    break;
+                                                                                  case 'red':
+                                                                                    colorValue = Colors.red;
+                                                                                    break;
+                                                                                  case 'blue':
+                                                                                    colorValue = Colors.blue;
+                                                                                    break;
+                                                                                  case 'green':
+                                                                                    colorValue = Colors.green;
+                                                                                    break;
+                                                                                  case 'yellow':
+                                                                                    colorValue = Colors.yellow;
+                                                                                    break;
+                                                                                  case 'orange':
+                                                                                    colorValue = Colors.orange;
+                                                                                    break;
+                                                                                  case 'purple':
+                                                                                    colorValue = Colors.purple;
+                                                                                    break;
+                                                                                  case 'brown':
+                                                                                    colorValue = Colors.brown;
+                                                                                    break;
+                                                                                  case 'beige':
+                                                                                    colorValue = Color(
+                                                                                      0xFFF5F5DC,
+                                                                                    );
+                                                                                    break;
+                                                                                  case 'gold':
+                                                                                    colorValue = Color(
+                                                                                      0xFFFFD700,
+                                                                                    );
+                                                                                    break;
+                                                                                  default:
+                                                                                    colorValue = Colors.grey;
+                                                                                }
+                                                                                return InkWell(
+                                                                                  borderRadius: BorderRadius.circular(
+                                                                                    12,
+                                                                                  ),
+                                                                                  onTap: () => Navigator.pop(
+                                                                                    dlgContext,
+                                                                                    colorName,
+                                                                                  ),
+                                                                                  child: Container(
+                                                                                    decoration: BoxDecoration(
+                                                                                      color: cellFill,
+                                                                                      borderRadius: BorderRadius.circular(
+                                                                                        12,
+                                                                                      ),
+                                                                                      border: Border.all(
+                                                                                        color: borderSubtle,
+                                                                                      ),
+                                                                                    ),
+                                                                                    padding: EdgeInsets.all(
+                                                                                      8,
+                                                                                    ),
+                                                                                    child: Column(
+                                                                                      mainAxisAlignment: MainAxisAlignment.center,
+                                                                                      children: [
+                                                                                        Container(
+                                                                                          width: 40,
+                                                                                          height: 40,
+                                                                                          decoration: BoxDecoration(
+                                                                                            color: colorValue,
+                                                                                            borderRadius: BorderRadius.circular(
+                                                                                              8,
+                                                                                            ),
+                                                                                            border: Border.all(
+                                                                                              color: borderSubtle,
+                                                                                              width: 2,
+                                                                                            ),
+                                                                                          ),
+                                                                                        ),
+                                                                                        SizedBox(
+                                                                                          height: 8,
+                                                                                        ),
+                                                                                        Text(
+                                                                                          _translateValueGlobal(
+                                                                                                context,
+                                                                                                colorName,
+                                                                                              ) ??
+                                                                                              colorName,
+                                                                                          style: GoogleFonts.orbitron(
+                                                                                            fontSize: 12,
+                                                                                            color: onPicker,
+                                                                                            fontWeight: FontWeight.bold,
+                                                                                          ),
+                                                                                          textAlign: TextAlign.center,
+                                                                                          overflow: TextOverflow.ellipsis,
+                                                                                          maxLines: 1,
+                                                                                        ),
+                                                                                      ],
+                                                                                    ),
+                                                                                  ),
+                                                                                );
+                                                                              },
+                                                                        ),
+                                                                      ),
+                                                                    ],
+                                                                  ),
+                                                                ),
+                                                              );
+                                                            },
+                                                          );
+                                                          if (color != null) {
+                                                            setState(() {
+                                                              selectedColor =
+                                                                  color == 'Any'
+                                                                  ? null
+                                                                  : color;
+                                                            });
+                                                            setStateDialog(
+                                                              () {},
+                                                            );
+                                                          }
+                                                        },
+                                                      ),
+                                                      SizedBox(height: 12),
+                                                      // Drive Type Dropdown
+                                                      DropdownButtonFormField<
+                                                        String
+                                                      >(
+                                                        initialValue:
+                                                            _getValidDriveTypeValue(),
+                                                        decoration: InputDecoration(
+                                                          labelText:
+                                                              AppLocalizations.of(
+                                                                context,
+                                                              )!.driveType,
+                                                          filled: true,
+                                                          fillColor:
+                                                              moreFiltersFieldFill,
+                                                          labelStyle: TextStyle(
+                                                            color:
+                                                                moreFiltersOnSurface,
+                                                          ),
+                                                          border: OutlineInputBorder(
+                                                            borderRadius:
+                                                                BorderRadius.circular(
+                                                                  12,
+                                                                ),
+                                                          ),
+                                                        ),
+                                                        items: [
+                                                          DropdownMenuItem(
+                                                            value: '',
+                                                            child: Text(
+                                                              AppLocalizations.of(
+                                                                context,
+                                                              )!.any,
+                                                              style: TextStyle(
+                                                                color:
+                                                                    moreFiltersAnyOrange,
+                                                              ),
+                                                            ),
+                                                          ),
+                                                          ...getAvailableDriveTypes()
+                                                              .where(
+                                                                (d) =>
+                                                                    d != 'Any',
+                                                              )
+                                                              .map(
+                                                                (
+                                                                  d,
+                                                                ) => DropdownMenuItem(
+                                                                  value: d,
+                                                                  child: Text(
+                                                                    _translateValueGlobal(
+                                                                          context,
+                                                                          d,
+                                                                        ) ??
+                                                                        d,
+                                                                  ),
+                                                                ),
+                                                              ),
+                                                        ],
+                                                        onChanged: (value) {
+                                                          setState(
+                                                            () =>
+                                                                selectedDriveType =
+                                                                    value == ''
+                                                                    ? null
+                                                                    : value,
+                                                          );
+                                                          _persistFilters();
+                                                        },
+                                                      ),
+                                                      SizedBox(height: 12),
+                                                      DropdownButtonFormField<
+                                                        String
+                                                      >(
+                                                        key: ValueKey(
+                                                          'home_more_region_specs_${_moreFiltersDialogFieldGeneration}',
+                                                        ),
+                                                        initialValue:
+                                                            _getValidRegionSpecsValue(),
+                                                        decoration: InputDecoration(
+                                                          labelText:
+                                                              AppLocalizations.of(
+                                                                context,
+                                                              )!.regionSpecsLabel,
+                                                          filled: true,
+                                                          fillColor:
+                                                              moreFiltersFieldFill,
+                                                          labelStyle: TextStyle(
+                                                            color:
+                                                                moreFiltersOnSurface,
+                                                          ),
+                                                          border: OutlineInputBorder(
+                                                            borderRadius:
+                                                                BorderRadius.circular(
+                                                                  12,
+                                                                ),
+                                                          ),
+                                                        ),
+                                                        items: [
+                                                          DropdownMenuItem(
+                                                            value: '',
+                                                            child: Text(
+                                                              AppLocalizations.of(
+                                                                context,
+                                                              )!.any,
+                                                              style: TextStyle(
+                                                                color:
+                                                                    moreFiltersAnyOrange,
+                                                              ),
+                                                            ),
+                                                          ),
+                                                          ...kCarRegionSpecCodes.map(
+                                                            (
+                                                              code,
+                                                            ) => DropdownMenuItem(
+                                                              value: code,
+                                                              child: Text(
+                                                                carRegionSpecDisplayLabel(
+                                                                  code,
+                                                                ),
+                                                              ),
+                                                            ),
+                                                          ),
+                                                        ],
+                                                        onChanged: (value) {
+                                                          setState(
+                                                            () => selectedRegionSpecs =
+                                                                value == null ||
+                                                                    value
+                                                                        .isEmpty
+                                                                ? null
+                                                                : value,
+                                                          );
+                                                          _persistFilters();
+                                                        },
+                                                      ),
+                                                      SizedBox(height: 12),
+                                                      // Cylinder Count Dropdown
+                                                      DropdownButtonFormField<
+                                                        String
+                                                      >(
+                                                        initialValue:
+                                                            _getValidCylinderCountValue(),
+                                                        decoration: InputDecoration(
+                                                          labelText:
+                                                              AppLocalizations.of(
+                                                                context,
+                                                              )!.cylinderCount,
+                                                          filled: true,
+                                                          fillColor:
+                                                              moreFiltersFieldFill,
+                                                          labelStyle: TextStyle(
+                                                            color:
+                                                                moreFiltersOnSurface,
+                                                          ),
+                                                          border: OutlineInputBorder(
+                                                            borderRadius:
+                                                                BorderRadius.circular(
+                                                                  12,
+                                                                ),
+                                                          ),
+                                                        ),
+                                                        items: [
+                                                          DropdownMenuItem(
+                                                            value: '',
+                                                            child: Text(
+                                                              AppLocalizations.of(
+                                                                context,
+                                                              )!.any,
+                                                              style: TextStyle(
+                                                                color:
+                                                                    moreFiltersAnyOrange,
+                                                              ),
+                                                            ),
+                                                          ),
+                                                          ...getAvailableCylinderCounts()
+                                                              .where(
+                                                                (c) =>
+                                                                    c != 'Any',
+                                                              )
+                                                              .map(
+                                                                (
+                                                                  c,
+                                                                ) => DropdownMenuItem(
+                                                                  value: c,
+                                                                  child: Text(
+                                                                    _localizeDigitsGlobal(
+                                                                      context,
+                                                                      c,
+                                                                    ),
+                                                                  ),
+                                                                ),
+                                                              ),
+                                                        ],
+                                                        onChanged: (value) {
+                                                          setState(() {
+                                                            selectedCylinderCount =
+                                                                value == ''
+                                                                ? null
+                                                                : value;
+                                                            _applyMoreFiltersEngineSyncFromCylinder(
+                                                              selectedCylinderCount,
+                                                            );
+                                                          });
+                                                          setStateDialog(() {});
+                                                          _persistFilters();
+                                                        },
+                                                      ),
+                                                      SizedBox(height: 12),
+                                                      // Seating Dropdown
+                                                      DropdownButtonFormField<
+                                                        String
+                                                      >(
+                                                        initialValue:
+                                                            selectedSeating ??
+                                                            '',
+                                                        decoration: InputDecoration(
+                                                          labelText:
+                                                              AppLocalizations.of(
+                                                                context,
+                                                              )!.seating,
+                                                          filled: true,
+                                                          fillColor:
+                                                              moreFiltersFieldFill,
+                                                          labelStyle: TextStyle(
+                                                            color:
+                                                                moreFiltersOnSurface,
+                                                          ),
+                                                          border: OutlineInputBorder(
+                                                            borderRadius:
+                                                                BorderRadius.circular(
+                                                                  12,
+                                                                ),
+                                                          ),
+                                                        ),
+                                                        items: [
+                                                          DropdownMenuItem(
+                                                            value: '',
+                                                            child: Text(
+                                                              AppLocalizations.of(
+                                                                context,
+                                                              )!.any,
+                                                              style: TextStyle(
+                                                                color:
+                                                                    moreFiltersAnyOrange,
+                                                              ),
+                                                            ),
+                                                          ),
+                                                          ...getAvailableSeatings()
+                                                              .where(
+                                                                (s) =>
+                                                                    s != 'Any',
+                                                              )
+                                                              .map(
+                                                                (
+                                                                  s,
+                                                                ) => DropdownMenuItem(
+                                                                  value: s,
+                                                                  child: Text(
+                                                                    _localizeDigitsGlobal(
+                                                                      context,
+                                                                      s,
+                                                                    ),
+                                                                  ),
+                                                                ),
+                                                              ),
+                                                        ],
+                                                        onChanged: (value) {
+                                                          setState(
+                                                            () =>
+                                                                selectedSeating =
+                                                                    value == ''
+                                                                    ? null
+                                                                    : value,
+                                                          );
+                                                          _persistFilters();
+                                                        },
+                                                      ),
+                                                      SizedBox(height: 12),
+                                                      // Engine Size Dropdown / Manual input
+                                                      Row(
+                                                        children: [
+                                                          Expanded(
+                                                            child:
+                                                                isEngineSizeDropdown
+                                                                ? DropdownButtonFormField<
+                                                                    String
+                                                                  >(
+                                                                    initialValue:
+                                                                        _getValidEngineSizeValue(),
+                                                                    decoration: InputDecoration(
+                                                                      labelText: AppLocalizations.of(
+                                                                        context,
+                                                                      )!.engineSizeL,
+                                                                      filled:
+                                                                          true,
+                                                                      fillColor: Colors
+                                                                          .black
+                                                                          .withOpacity(
+                                                                            0.2,
+                                                                          ),
+                                                                      labelStyle:
+                                                                          TextStyle(
+                                                                            color:
+                                                                                moreFiltersOnSurface,
+                                                                          ),
+                                                                      border: OutlineInputBorder(
+                                                                        borderRadius:
+                                                                            BorderRadius.circular(
+                                                                              12,
+                                                                            ),
+                                                                      ),
+                                                                    ),
+                                                                    items: [
+                                                                      DropdownMenuItem(
+                                                                        value:
+                                                                            '',
+                                                                        child: Text(
+                                                                          AppLocalizations.of(
+                                                                            context,
+                                                                          )!.any,
+                                                                          style: TextStyle(
+                                                                            color:
+                                                                                moreFiltersAnyOrange,
+                                                                          ),
+                                                                        ),
+                                                                      ),
+                                                                      ...getAvailableEngineSizes()
+                                                                          .where(
+                                                                            (
+                                                                              e,
+                                                                            ) =>
+                                                                                e !=
+                                                                                'Any',
+                                                                          )
+                                                                          .map(
+                                                                            (
+                                                                              e,
+                                                                            ) => DropdownMenuItem(
+                                                                              value: e,
+                                                                              child: Text(
+                                                                                '${_localizeDigitsGlobal(context, e)}${AppLocalizations.of(context)!.unit_liter_suffix}',
+                                                                              ),
+                                                                            ),
+                                                                          ),
+                                                                    ],
+                                                                    onChanged: (value) {
+                                                                      setState(() {
+                                                                        selectedEngineSize =
+                                                                            value ==
+                                                                                ''
+                                                                            ? null
+                                                                            : value;
+                                                                        _applyMoreFiltersCylinderSyncFromEngine(
+                                                                          selectedEngineSize,
+                                                                        );
+                                                                      });
+                                                                      setStateDialog(
+                                                                        () {},
+                                                                      );
+                                                                      _persistFilters();
+                                                                    },
+                                                                  )
+                                                                : TextFormField(
+                                                                    controller:
+                                                                        _engineSizeController,
+                                                                    decoration: InputDecoration(
+                                                                      labelText: AppLocalizations.of(
+                                                                        context,
+                                                                      )!.engineSizeL,
+                                                                      filled:
+                                                                          true,
+                                                                      fillColor: Colors
+                                                                          .black
+                                                                          .withOpacity(
+                                                                            0.2,
+                                                                          ),
+                                                                      labelStyle:
+                                                                          TextStyle(
+                                                                            color:
+                                                                                moreFiltersOnSurface,
+                                                                          ),
+                                                                      border: OutlineInputBorder(
+                                                                        borderRadius:
+                                                                            BorderRadius.circular(
+                                                                              12,
+                                                                            ),
+                                                                      ),
+                                                                    ),
+                                                                    keyboardType:
+                                                                        const TextInputType.numberWithOptions(
+                                                                          decimal:
+                                                                              true,
+                                                                        ),
+                                                                    inputFormatters: [
+                                                                      services
+                                                                          .FilteringTextInputFormatter.allow(
+                                                                        RegExp(
+                                                                          r'[0-9.]',
+                                                                        ),
+                                                                      ),
+                                                                    ],
+                                                                    onChanged: (value) {
+                                                                      setState(() {
+                                                                        selectedEngineSize =
+                                                                            value.isEmpty
+                                                                            ? null
+                                                                            : value;
+                                                                        _applyMoreFiltersCylinderSyncFromEngine(
+                                                                          selectedEngineSize,
+                                                                        );
+                                                                      });
+                                                                      setStateDialog(
+                                                                        () {},
+                                                                      );
+                                                                      _persistFilters();
+                                                                    },
+                                                                  ),
+                                                          ),
+                                                          const SizedBox(
+                                                            width: 8,
+                                                          ),
+                                                          IconButton(
+                                                            onPressed: () => setStateDialog(() {
+                                                              if (isEngineSizeDropdown) {
+                                                                _engineSizeController
+                                                                        .text =
+                                                                    selectedEngineSize ??
+                                                                    '';
+                                                              }
+                                                              isEngineSizeDropdown =
+                                                                  !isEngineSizeDropdown;
+                                                            }),
+                                                            icon: Icon(
+                                                              isEngineSizeDropdown
+                                                                  ? Icons.edit
+                                                                  : Icons.list,
+                                                              color:
+                                                                  const Color(
+                                                                    0xFFFF6B00,
+                                                                  ),
+                                                            ),
+                                                            style: IconButton.styleFrom(
+                                                              backgroundColor:
+                                                                  moreFiltersFieldFill,
+                                                              shape: RoundedRectangleBorder(
+                                                                borderRadius:
+                                                                    BorderRadius.circular(
+                                                                      8,
+                                                                    ),
+                                                              ),
+                                                            ),
+                                                          ),
+                                                        ],
+                                                      ),
+                                                      SizedBox(height: 12),
+                                                      DropdownButtonFormField<
+                                                        String
+                                                      >(
+                                                        initialValue:
+                                                            selectedCity ?? '',
+                                                        decoration: InputDecoration(
+                                                          labelText:
+                                                              AppLocalizations.of(
+                                                                context,
+                                                              )!.cityLabel,
+                                                          filled: true,
+                                                          fillColor:
+                                                              moreFiltersFieldFill,
+                                                          labelStyle: TextStyle(
+                                                            color:
+                                                                moreFiltersOnSurface,
+                                                          ),
+                                                          border: OutlineInputBorder(
+                                                            borderRadius:
+                                                                BorderRadius.circular(
+                                                                  12,
+                                                                ),
+                                                          ),
+                                                        ),
+                                                        items: [
+                                                          DropdownMenuItem(
+                                                            value: '',
+                                                            child: Text(
+                                                              AppLocalizations.of(
+                                                                context,
+                                                              )!.any,
+                                                              style: TextStyle(
+                                                                color:
+                                                                    moreFiltersAnyOrange,
+                                                              ),
+                                                            ),
+                                                          ),
+                                                          ...cities.map(
+                                                            (
+                                                              c,
+                                                            ) => DropdownMenuItem(
+                                                              value: c,
+                                                              child: Text(
+                                                                _translateValueGlobal(
+                                                                      context,
+                                                                      c,
+                                                                    ) ??
+                                                                    c,
+                                                              ),
+                                                            ),
+                                                          ),
+                                                        ],
+                                                        onChanged: (value) {
+                                                          setState(
+                                                            () => selectedCity =
+                                                                value == ''
+                                                                ? null
+                                                                : value,
+                                                          );
+                                                          _persistFilters();
+                                                        },
+                                                      ),
                                                     ],
                                                   ),
                                                 ),
@@ -10054,9 +10221,8 @@ class _HomePageState extends State<HomePage> {
                                                 TextButton(
                                                   onPressed: () async {
                                                     await _resetFiltersFromMoreFiltersDialog(
-                                                      () => setStateDialog(
-                                                        () {},
-                                                      ),
+                                                      () =>
+                                                          setStateDialog(() {}),
                                                     );
                                                   },
                                                   child: Text(
@@ -10084,7 +10250,8 @@ class _HomePageState extends State<HomePage> {
                                                         backgroundColor: Color(
                                                           0xFFFF6B00,
                                                         ),
-                                                        foregroundColor: Colors.white,
+                                                        foregroundColor:
+                                                            Colors.white,
                                                       ),
                                                   onPressed: () {
                                                     onFilterChanged();
@@ -10157,7 +10324,9 @@ class _HomePageState extends State<HomePage> {
                                     _fetchRetryCount = 0;
                                     fetchCars(bypassCache: true);
                                   },
-                                  child: Text(AppLocalizations.of(context)!.retryAction),
+                                  child: Text(
+                                    AppLocalizations.of(context)!.retryAction,
+                                  ),
                                 ),
                                 OutlinedButton(
                                   onPressed: () => onFilterChanged(),
@@ -10222,8 +10391,7 @@ class _HomePageState extends State<HomePage> {
                                         value: s,
                                         child: Text(s),
                                       ),
-                                    )
-                                    ,
+                                    ),
                               ],
                             ),
                             ToggleButtons(
@@ -10742,7 +10910,9 @@ class _SavedSearchesPageState extends State<SavedSearchesPage> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: Text(AppLocalizations.of(context)!.savedSearchesTitle)),
+      appBar: AppBar(
+        title: Text(AppLocalizations.of(context)!.savedSearchesTitle),
+      ),
       body: _loading
           ? Center(child: CircularProgressIndicator())
           : _items.isEmpty
@@ -10776,12 +10946,14 @@ class _SavedSearchesPageState extends State<SavedSearchesPage> {
                   margin: EdgeInsets.symmetric(horizontal: 8, vertical: 4),
                   child: ListTile(
                     onTap: () => _showFilterDetails(
-                      item['name']?.toString() ?? AppLocalizations.of(context)!.unnamedSearch,
+                      item['name']?.toString() ??
+                          AppLocalizations.of(context)!.unnamedSearch,
                       filters,
                     ),
                     leading: Icon(Icons.bookmark, color: Color(0xFFFF6B00)),
                     title: Text(
-                      item['name']?.toString() ?? AppLocalizations.of(context)!.unnamedSearch,
+                      item['name']?.toString() ??
+                          AppLocalizations.of(context)!.unnamedSearch,
                       style: TextStyle(fontWeight: FontWeight.bold),
                     ),
                     subtitle: Column(
@@ -10791,7 +10963,10 @@ class _SavedSearchesPageState extends State<SavedSearchesPage> {
                         _buildFilterChips(context, filters),
                         SizedBox(height: 4),
                         Text(
-                          _formatDate(context, item['created_at']?.toString() ?? ''),
+                          _formatDate(
+                            context,
+                            item['created_at']?.toString() ?? '',
+                          ),
                           style: TextStyle(
                             fontSize: 12,
                             color: Colors.grey[600],
@@ -10830,49 +11005,97 @@ class _SavedSearchesPageState extends State<SavedSearchesPage> {
   Widget _buildFilterChips(BuildContext context, Map<String, dynamic> filters) {
     final chips = <Widget>[];
     final l = AppLocalizations.of(context)!;
-    String tr(String? v) => _translateValueGlobal(context, v?.toString()) ?? v ?? '';
+    String tr(String? v) =>
+        _translateValueGlobal(context, v?.toString()) ?? v ?? '';
 
     if (filters['brand'] != null) {
-      chips.add(_buildFilterChip(context, l.brandLabel, filters['brand'].toString()));
+      chips.add(
+        _buildFilterChip(context, l.brandLabel, filters['brand'].toString()),
+      );
     }
     if (filters['model'] != null) {
-      chips.add(_buildFilterChip(context, l.modelLabel, filters['model'].toString()));
+      chips.add(
+        _buildFilterChip(context, l.modelLabel, filters['model'].toString()),
+      );
     }
     if (filters['trim'] != null) {
-      chips.add(_buildFilterChip(context, l.trimLabel, filters['trim'].toString()));
+      chips.add(
+        _buildFilterChip(context, l.trimLabel, filters['trim'].toString()),
+      );
     }
     if (filters['city'] != null) {
-      chips.add(_buildFilterChip(context, l.cityLabel, tr(filters['city'].toString())));
+      chips.add(
+        _buildFilterChip(context, l.cityLabel, tr(filters['city'].toString())),
+      );
     }
     if (filters['min_price'] != null || filters['max_price'] != null) {
-      final priceRange = '${filters['min_price'] ?? '0'} - ${filters['max_price'] ?? '∞'}';
+      final priceRange =
+          '${filters['min_price'] ?? '0'} - ${filters['max_price'] ?? '∞'}';
       chips.add(_buildFilterChip(context, l.priceLabel, priceRange));
     }
     if (filters['min_year'] != null || filters['max_year'] != null) {
-      final yearRange = '${filters['min_year'] ?? '0'} - ${filters['max_year'] ?? '∞'}';
+      final yearRange =
+          '${filters['min_year'] ?? '0'} - ${filters['max_year'] ?? '∞'}';
       chips.add(_buildFilterChip(context, l.yearLabel, yearRange));
     }
     if (filters['min_mileage'] != null || filters['max_mileage'] != null) {
-      final mileageRange = '${filters['min_mileage'] ?? '0'} - ${filters['max_mileage'] ?? '∞'} ${l.unit_km}';
+      final mileageRange =
+          '${filters['min_mileage'] ?? '0'} - ${filters['max_mileage'] ?? '∞'} ${l.unit_km}';
       chips.add(_buildFilterChip(context, l.mileageLabel, mileageRange));
     }
     if (filters['transmission'] != null) {
-      chips.add(_buildFilterChip(context, l.transmissionLabel, tr(filters['transmission'].toString())));
+      chips.add(
+        _buildFilterChip(
+          context,
+          l.transmissionLabel,
+          tr(filters['transmission'].toString()),
+        ),
+      );
     }
     if (filters['condition'] != null) {
-      chips.add(_buildFilterChip(context, l.conditionLabel, tr(filters['condition'].toString())));
+      chips.add(
+        _buildFilterChip(
+          context,
+          l.conditionLabel,
+          tr(filters['condition'].toString()),
+        ),
+      );
     }
     if (filters['body_type'] != null) {
-      chips.add(_buildFilterChip(context, l.bodyTypeLabel, tr(filters['body_type'].toString())));
+      chips.add(
+        _buildFilterChip(
+          context,
+          l.bodyTypeLabel,
+          tr(filters['body_type'].toString()),
+        ),
+      );
     }
     if (filters['fuel_type'] != null) {
-      chips.add(_buildFilterChip(context, l.fuelTypeLabel, tr(filters['fuel_type'].toString())));
+      chips.add(
+        _buildFilterChip(
+          context,
+          l.fuelTypeLabel,
+          tr(filters['fuel_type'].toString()),
+        ),
+      );
     }
     if (filters['color'] != null) {
-      chips.add(_buildFilterChip(context, l.colorLabel, tr(filters['color'].toString())));
+      chips.add(
+        _buildFilterChip(
+          context,
+          l.colorLabel,
+          tr(filters['color'].toString()),
+        ),
+      );
     }
     if (filters['drive_type'] != null) {
-      chips.add(_buildFilterChip(context, l.driveType, tr(filters['drive_type'].toString())));
+      chips.add(
+        _buildFilterChip(
+          context,
+          l.driveType,
+          tr(filters['drive_type'].toString()),
+        ),
+      );
     }
     if (filters['region_specs'] != null) {
       final code = filters['region_specs'].toString().trim().toLowerCase();
@@ -10885,10 +11108,22 @@ class _SavedSearchesPageState extends State<SavedSearchesPage> {
       );
     }
     if (filters['cylinder_count'] != null) {
-      chips.add(_buildFilterChip(context, l.cylinderCount, filters['cylinder_count'].toString()));
+      chips.add(
+        _buildFilterChip(
+          context,
+          l.cylinderCount,
+          filters['cylinder_count'].toString(),
+        ),
+      );
     }
     if (filters['seating'] != null) {
-      chips.add(_buildFilterChip(context, l.seating, '${filters['seating'].toString()}'));
+      chips.add(
+        _buildFilterChip(
+          context,
+          l.seating,
+          '${filters['seating'].toString()}',
+        ),
+      );
     }
     if (filters['engine_size'] != null) {
       chips.add(
@@ -10900,26 +11135,55 @@ class _SavedSearchesPageState extends State<SavedSearchesPage> {
       );
     }
     if (filters['title_status'] != null) {
-      chips.add(_buildFilterChip(context, l.status, tr(filters['title_status'].toString())));
+      chips.add(
+        _buildFilterChip(
+          context,
+          l.status,
+          tr(filters['title_status'].toString()),
+        ),
+      );
     }
     if (filters['damaged_parts'] != null) {
-      chips.add(_buildFilterChip(context, 'Damaged Parts', filters['damaged_parts'].toString()));
+      chips.add(
+        _buildFilterChip(
+          context,
+          'Damaged Parts',
+          filters['damaged_parts'].toString(),
+        ),
+      );
     }
     if (filters['sort_by'] != null) {
-      chips.add(_buildFilterChip(context, l.sortBy, _capitalizeFirst(filters['sort_by'].toString())));
+      chips.add(
+        _buildFilterChip(
+          context,
+          l.sortBy,
+          _capitalizeFirst(filters['sort_by'].toString()),
+        ),
+      );
     }
     if (filters['owners'] != null) {
-      chips.add(_buildFilterChip(context, 'Owners', filters['owners'].toString()));
+      chips.add(
+        _buildFilterChip(context, 'Owners', filters['owners'].toString()),
+      );
     }
     if (filters['vin'] != null) {
       chips.add(_buildFilterChip(context, 'VIN', filters['vin'].toString()));
     }
     if (filters['accident_history'] != null) {
-      chips.add(_buildFilterChip(context, 'Accident History', _capitalizeFirst(filters['accident_history'].toString())));
+      chips.add(
+        _buildFilterChip(
+          context,
+          'Accident History',
+          _capitalizeFirst(filters['accident_history'].toString()),
+        ),
+      );
     }
 
     if (chips.isEmpty) {
-      return Text(l.noFiltersApplied, style: TextStyle(color: Colors.grey[600], fontSize: 12));
+      return Text(
+        l.noFiltersApplied,
+        style: TextStyle(color: Colors.grey[600], fontSize: 12),
+      );
     }
     return Wrap(spacing: 4, runSpacing: 4, children: chips);
   }
@@ -10945,7 +11209,8 @@ class _SavedSearchesPageState extends State<SavedSearchesPage> {
       final now = DateTime.now();
       final difference = now.difference(date);
       final l = AppLocalizations.of(context)!;
-      final timeStr = '${date.hour.toString().padLeft(2, '0')}:${date.minute.toString().padLeft(2, '0')}';
+      final timeStr =
+          '${date.hour.toString().padLeft(2, '0')}:${date.minute.toString().padLeft(2, '0')}';
 
       if (difference.inDays == 0) {
         return '${l.today} $timeStr';
@@ -10987,8 +11252,10 @@ class _SavedSearchesPageState extends State<SavedSearchesPage> {
         widget.parentState!.selectedBodyType = filters['body_type'];
         widget.parentState!.selectedColor = filters['color'];
         widget.parentState!.selectedDriveType = filters['drive_type'];
-        final rsApply =
-            filters['region_specs']?.toString().trim().toLowerCase();
+        final rsApply = filters['region_specs']
+            ?.toString()
+            .trim()
+            .toLowerCase();
         widget.parentState!.selectedRegionSpecs =
             (rsApply != null &&
                 rsApply.isNotEmpty &&
@@ -11209,10 +11476,7 @@ class _SavedSearchesPageState extends State<SavedSearchesPage> {
       final es = filters['engine_size'].toString().trim();
       final plain = double.tryParse(es) != null;
       filterItems.add(
-        _buildFilterDetailItem(
-          'Engine Size',
-          plain ? '${es}L' : es,
-        ),
+        _buildFilterDetailItem('Engine Size', plain ? '${es}L' : es),
       );
     }
 
@@ -11430,8 +11694,15 @@ class _CarDetailsPageState extends State<CarDetailsPage> {
     final year = (car!['year'] ?? '').toString().trim();
     final trim = (car!['trim'] ?? '').toString().trim();
 
-    final locBrand = CarNameTranslations.getLocalizedBrand(context, brand.isEmpty ? null : brand);
-    final locModel = CarNameTranslations.getLocalizedModel(context, brand.isEmpty ? null : brand, model.isEmpty ? null : model);
+    final locBrand = CarNameTranslations.getLocalizedBrand(
+      context,
+      brand.isEmpty ? null : brand,
+    );
+    final locModel = CarNameTranslations.getLocalizedModel(
+      context,
+      brand.isEmpty ? null : brand,
+      model.isEmpty ? null : model,
+    );
     final parts = <String>[];
     if (locBrand.isNotEmpty) parts.add(locBrand);
     if (locModel.isNotEmpty) parts.add(locModel);
@@ -11634,11 +11905,7 @@ class _CarDetailsPageState extends State<CarDetailsPage> {
               shape: BoxShape.circle,
             ),
             padding: EdgeInsets.all(14),
-            child: Icon(
-              Icons.play_arrow,
-              color: Colors.white,
-              size: 36,
-            ),
+            child: Icon(Icons.play_arrow, color: Colors.white, size: 36),
           ),
         ),
       ],
@@ -11694,9 +11961,7 @@ class _CarDetailsPageState extends State<CarDetailsPage> {
     try {
       final sp = await SharedPreferences.getInstance();
       final cacheKey = 'cache_car_${widget.carId}';
-      final url = Uri.parse(
-        '${getApiBase()}/api/cars/${widget.carId}',
-      );
+      final url = Uri.parse('${getApiBase()}/api/cars/${widget.carId}');
 
       // Prefer network first so new uploads (images/videos) are not hidden behind stale cache.
       bool appliedFromNetwork = false;
@@ -11778,9 +12043,10 @@ class _CarDetailsPageState extends State<CarDetailsPage> {
         loading = false;
       });
     } catch (_) {
-      if (mounted) setState(() {
-        loading = false;
-      });
+      if (mounted)
+        setState(() {
+          loading = false;
+        });
     }
   }
 
@@ -11852,12 +12118,8 @@ class _CarDetailsPageState extends State<CarDetailsPage> {
     final String msg = Uri.encodeComponent(
       'Hi, I am interested in your ${_displayCarTitle(context).isNotEmpty ? _displayCarTitle(context) : 'car'}',
     );
-    final Uri waApp = Uri.parse(
-      'whatsapp://send?phone=$digits&text=$msg',
-    );
-    final Uri waWeb = Uri.parse(
-      'https://wa.me/$digits?text=$msg',
-    );
+    final Uri waApp = Uri.parse('whatsapp://send?phone=$digits&text=$msg');
+    final Uri waWeb = Uri.parse('https://wa.me/$digits?text=$msg');
     bool launched = await launchUrl(
       waApp,
       mode: LaunchMode.externalNonBrowserApplication,
@@ -11877,15 +12139,11 @@ class _CarDetailsPageState extends State<CarDetailsPage> {
     if (!launched && mounted) {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
-          content: Text(
-            AppLocalizations.of(context)!.unableToOpenWhatsApp,
-          ),
+          content: Text(AppLocalizations.of(context)!.unableToOpenWhatsApp),
         ),
       );
     } else if (launched) {
-      await AnalyticsService.trackMessage(
-        widget.carId.toString(),
-      );
+      await AnalyticsService.trackMessage(widget.carId.toString());
     }
   }
 
@@ -11894,21 +12152,20 @@ class _CarDetailsPageState extends State<CarDetailsPage> {
     final loc = AppLocalizations.of(context)!;
     final auth = Provider.of<AuthService>(context, listen: false);
     if (!auth.isAuthenticated) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text(loc.loginRequired)),
-      );
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text(loc.loginRequired)));
       return;
     }
 
-    final String carIdForChat = (car!['public_id'] ?? car!['id'] ?? widget.carId)
-        .toString()
-        .trim();
+    final String carIdForChat =
+        (car!['public_id'] ?? car!['id'] ?? widget.carId).toString().trim();
     if (carIdForChat.isEmpty) return;
 
     final String title = _displayCarTitle(context).isNotEmpty
         ? _displayCarTitle(context)
         : '${car!['brand'] ?? ''} ${car!['model'] ?? ''} ${car!['year'] ?? ''}'
-            .trim();
+              .trim();
     final String starterMessage =
         'Hi, I am interested in "$title". What is the price for this listing?';
 
@@ -11922,7 +12179,8 @@ class _CarDetailsPageState extends State<CarDetailsPage> {
         final s = rid.toString().trim();
         if (s.isNotEmpty) receiverId = s;
       }
-      final fullName = '${m['first_name'] ?? ''} ${m['last_name'] ?? ''}'.trim();
+      final fullName = '${m['first_name'] ?? ''} ${m['last_name'] ?? ''}'
+          .trim();
       receiverName = (m['name'] ?? m['username'] ?? '').toString().trim();
       if (receiverName.isEmpty && fullName.isNotEmpty) {
         receiverName = fullName;
@@ -11937,9 +12195,9 @@ class _CarDetailsPageState extends State<CarDetailsPage> {
         myId != null &&
         myId.isNotEmpty &&
         receiverId == myId) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text(loc.chatCarzoOwnListing)),
-      );
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text(loc.chatCarzoOwnListing)));
       return;
     }
 
@@ -12040,7 +12298,9 @@ class _CarDetailsPageState extends State<CarDetailsPage> {
             // ensure newest first handled by API default
           },
         );
-        final simResp = await http.get(simUrl).timeout(const Duration(seconds: 15));
+        final simResp = await http
+            .get(simUrl)
+            .timeout(const Duration(seconds: 15));
         if (simResp.statusCode == 200 && mounted) {
           final simData = json.decode(simResp.body);
           if (simData is List) {
@@ -12049,16 +12309,18 @@ class _CarDetailsPageState extends State<CarDetailsPage> {
                 .map<Map<String, dynamic>>((e) => Map<String, dynamic>.from(e))
                 .where((e) => e['id']?.toString() != widget.carId.toString())
                 .toList();
-            if (mounted) setState(() {
-              similarCars = list.take(12).toList();
-            });
+            if (mounted)
+              setState(() {
+                similarCars = list.take(12).toList();
+              });
             unawaited(sp.setString(simKey, json.encode(similarCars)));
           }
         }
       } else {
-        if (mounted) setState(() {
-          similarCars = [];
-        });
+        if (mounted)
+          setState(() {
+            similarCars = [];
+          });
       }
 
       // Related: same brand and matching key attributes ("same filters")
@@ -12100,7 +12362,9 @@ class _CarDetailsPageState extends State<CarDetailsPage> {
         path: '/cars',
         queryParameters: qp,
       );
-      final relResp = await http.get(relUrl).timeout(const Duration(seconds: 15));
+      final relResp = await http
+          .get(relUrl)
+          .timeout(const Duration(seconds: 15));
       if (relResp.statusCode == 200 && mounted) {
         final relData = json.decode(relResp.body);
         if (relData is List) {
@@ -12109,9 +12373,10 @@ class _CarDetailsPageState extends State<CarDetailsPage> {
               .map<Map<String, dynamic>>((e) => Map<String, dynamic>.from(e))
               .where((e) => e['id']?.toString() != widget.carId.toString())
               .toList();
-          if (mounted) setState(() {
-            relatedCars = list.take(12).toList();
-          });
+          if (mounted)
+            setState(() {
+              relatedCars = list.take(12).toList();
+            });
           unawaited(sp.setString(relKey, json.encode(relatedCars)));
         }
       }
@@ -12141,8 +12406,7 @@ class _CarDetailsPageState extends State<CarDetailsPage> {
                 SliverAppBar(
                   pinned: true,
                   stretch: true,
-                  foregroundColor:
-                      isLightShell ? Colors.white : null,
+                  foregroundColor: isLightShell ? Colors.white : null,
                   expandedHeight: 300,
                   leading: IconButton(
                     icon: Icon(Icons.arrow_back),
@@ -12183,17 +12447,15 @@ class _CarDetailsPageState extends State<CarDetailsPage> {
                                 );
                               } else {
                                 final vIdx = idx - _imageUrls.length;
-                                if (vIdx < 0 ||
-                                    vIdx >= _videoUrls.length) {
+                                if (vIdx < 0 || vIdx >= _videoUrls.length) {
                                   return;
                                 }
                                 final videoUrl = _videoUrls[vIdx];
                                 if (videoUrl.trim().isEmpty) return;
                                 Navigator.of(context).push<void>(
                                   MaterialPageRoute<void>(
-                                    builder: (ctx) => InAppVideoScreen(
-                                      videoUrl: videoUrl,
-                                    ),
+                                    builder: (ctx) =>
+                                        InAppVideoScreen(videoUrl: videoUrl),
                                   ),
                                 );
                               }
@@ -12291,176 +12553,151 @@ class _CarDetailsPageState extends State<CarDetailsPage> {
                           ? Theme.of(context)
                           : AppThemes.darkTheme,
                       child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        // Quick Sell Banner
-                        if (car!['is_quick_sell'] == true ||
-                            car!['is_quick_sell'] == 'true')
-                          Container(
-                            width: double.infinity,
-                            padding: EdgeInsets.symmetric(
-                              vertical: 12,
-                              horizontal: 16,
-                            ),
-                            margin: EdgeInsets.only(bottom: 16),
-                            decoration: BoxDecoration(
-                              gradient: LinearGradient(
-                                colors: [Colors.orange, Colors.deepOrange],
-                                begin: Alignment.centerLeft,
-                                end: Alignment.centerRight,
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          // Quick Sell Banner
+                          if (car!['is_quick_sell'] == true ||
+                              car!['is_quick_sell'] == 'true')
+                            Container(
+                              width: double.infinity,
+                              padding: EdgeInsets.symmetric(
+                                vertical: 12,
+                                horizontal: 16,
                               ),
-                              borderRadius: BorderRadius.circular(12),
-                            ),
-                            child: Row(
-                              mainAxisAlignment: MainAxisAlignment.center,
-                              children: [
-                                Icon(
-                                  Icons.flash_on,
-                                  color: Colors.white,
-                                  size: 20,
+                              margin: EdgeInsets.only(bottom: 16),
+                              decoration: BoxDecoration(
+                                gradient: LinearGradient(
+                                  colors: [Colors.orange, Colors.deepOrange],
+                                  begin: Alignment.centerLeft,
+                                  end: Alignment.centerRight,
                                 ),
-                                SizedBox(width: 8),
-                                Text(
-                                  AppLocalizations.of(context)!.quickSell,
-                                  style: TextStyle(
+                                borderRadius: BorderRadius.circular(12),
+                              ),
+                              child: Row(
+                                mainAxisAlignment: MainAxisAlignment.center,
+                                children: [
+                                  Icon(
+                                    Icons.flash_on,
                                     color: Colors.white,
-                                    fontWeight: FontWeight.bold,
-                                    fontSize: 16,
-                                    letterSpacing: 1.5,
+                                    size: 20,
                                   ),
-                                ),
-                              ],
-                            ),
-                          ),
-                        // City label above title (+ relative listing age on the right)
-                        Builder(
-                          builder: (context) {
-                            final cityDetail =
-                                (_getFirstNonEmpty(car!, ['city', 'location']) ??
-                                        '')
-                                    .trim();
-                            final cityLabelStyle = TextStyle(
-                              fontSize: 13,
-                              fontWeight: FontWeight.w700,
-                              color: isLightShell
-                                  ? const Color(0xFF757575)
-                                  : Colors.white70,
-                            );
-                            final uploadedDetail =
-                                _listingUploadedAgo(context, car!);
-                            if (cityDetail.isEmpty && uploadedDetail.isEmpty) {
-                              return const SizedBox.shrink();
-                            }
-                            return Column(
-                              crossAxisAlignment: CrossAxisAlignment.stretch,
-                              children: [
-                                Row(
-                                  crossAxisAlignment: CrossAxisAlignment.center,
-                                  children: [
-                                    Expanded(
-                                      child: cityDetail.isEmpty
-                                          ? const SizedBox.shrink()
-                                          : Row(
-                                              mainAxisSize: MainAxisSize.min,
-                                              children: [
-                                                Icon(
-                                                  Icons.location_city,
-                                                  size: 14,
-                                                  color: isLightShell
-                                                      ? const Color(0xFF757575)
-                                                      : Colors.white70,
-                                                ),
-                                                SizedBox(width: 6),
-                                                Flexible(
-                                                  child: Text(
-                                                    '${AppLocalizations.of(context)!.cityLabel}: '
-                                                    '${_translateValueGlobal(context, _getFirstNonEmpty(car!, ['city', 'location'])) ?? _getFirstNonEmpty(car!, ['city', 'location'])}',
-                                                    style: cityLabelStyle,
-                                                    maxLines: 1,
-                                                    overflow:
-                                                        TextOverflow.ellipsis,
-                                                  ),
-                                                ),
-                                              ],
-                                            ),
-                                    ),
-                                    if (uploadedDetail.isNotEmpty) ...[
-                                      if (cityDetail.isNotEmpty)
-                                        const SizedBox(width: 8),
-                                      Text(
-                                        uploadedDetail,
-                                        style: cityLabelStyle.copyWith(
-                                          fontWeight: FontWeight.w600,
-                                          fontSize: 12,
-                                        ),
-                                        maxLines: 1,
-                                        overflow: TextOverflow.ellipsis,
-                                      ),
-                                    ],
-                                  ],
-                                ),
-                                SizedBox(height: 8),
-                              ],
-                            );
-                          },
-                        ),
-                        // Brand full width; price aligns with model line (same row as model)
-                        Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Row(
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              children: [
-                                Expanded(
-                                  child: Text(
-                                    _displayBrandName(context),
-                                    style: TextStyle(
-                                      fontSize: 19,
-                                      fontWeight: FontWeight.bold,
-                                      color: isLightShell
-                                          ? AppThemes.darkHomeShellBackground
-                                          : Colors.white,
-                                    ),
-                                    maxLines: 1,
-                                    overflow: TextOverflow.ellipsis,
-                                  ),
-                                ),
-                                if (car!['price'] != null &&
-                                    _displayModelName(context).isEmpty) ...[
-                                  SizedBox(width: 12),
+                                  SizedBox(width: 8),
                                   Text(
-                                    _formatCurrencyGlobal(context, car!['price']),
+                                    AppLocalizations.of(context)!.quickSell,
                                     style: TextStyle(
-                                      fontSize: 18,
-                                      fontWeight: FontWeight.w700,
-                                      color: Color(0xFFFF6B00),
+                                      color: Colors.white,
+                                      fontWeight: FontWeight.bold,
+                                      fontSize: 16,
+                                      letterSpacing: 1.5,
                                     ),
                                   ),
                                 ],
-                              ],
+                              ),
                             ),
-                            if (_displayModelName(context).isNotEmpty) ...[
-                              SizedBox(height: 4),
+                          // City label above title (+ relative listing age on the right)
+                          Builder(
+                            builder: (context) {
+                              final cityDetail =
+                                  (_getFirstNonEmpty(car!, [
+                                            'city',
+                                            'location',
+                                          ]) ??
+                                          '')
+                                      .trim();
+                              final cityLabelStyle = TextStyle(
+                                fontSize: 13,
+                                fontWeight: FontWeight.w700,
+                                color: isLightShell
+                                    ? const Color(0xFF757575)
+                                    : Colors.white70,
+                              );
+                              final uploadedDetail = _listingUploadedAgo(
+                                context,
+                                car!,
+                              );
+                              if (cityDetail.isEmpty &&
+                                  uploadedDetail.isEmpty) {
+                                return const SizedBox.shrink();
+                              }
+                              return Column(
+                                crossAxisAlignment: CrossAxisAlignment.stretch,
+                                children: [
+                                  Row(
+                                    crossAxisAlignment:
+                                        CrossAxisAlignment.center,
+                                    children: [
+                                      Expanded(
+                                        child: cityDetail.isEmpty
+                                            ? const SizedBox.shrink()
+                                            : Row(
+                                                mainAxisSize: MainAxisSize.min,
+                                                children: [
+                                                  Icon(
+                                                    Icons.location_city,
+                                                    size: 14,
+                                                    color: isLightShell
+                                                        ? const Color(
+                                                            0xFF757575,
+                                                          )
+                                                        : Colors.white70,
+                                                  ),
+                                                  SizedBox(width: 6),
+                                                  Flexible(
+                                                    child: Text(
+                                                      '${AppLocalizations.of(context)!.cityLabel}: '
+                                                      '${_translateValueGlobal(context, _getFirstNonEmpty(car!, ['city', 'location'])) ?? _getFirstNonEmpty(car!, ['city', 'location'])}',
+                                                      style: cityLabelStyle,
+                                                      maxLines: 1,
+                                                      overflow:
+                                                          TextOverflow.ellipsis,
+                                                    ),
+                                                  ),
+                                                ],
+                                              ),
+                                      ),
+                                      if (uploadedDetail.isNotEmpty) ...[
+                                        if (cityDetail.isNotEmpty)
+                                          const SizedBox(width: 8),
+                                        Text(
+                                          uploadedDetail,
+                                          style: cityLabelStyle.copyWith(
+                                            fontWeight: FontWeight.w600,
+                                            fontSize: 12,
+                                          ),
+                                          maxLines: 1,
+                                          overflow: TextOverflow.ellipsis,
+                                        ),
+                                      ],
+                                    ],
+                                  ),
+                                  SizedBox(height: 8),
+                                ],
+                              );
+                            },
+                          ),
+                          // Brand full width; price aligns with model line (same row as model)
+                          Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
                               Row(
                                 crossAxisAlignment: CrossAxisAlignment.start,
                                 children: [
                                   Expanded(
                                     child: Text(
-                                      _displayModelName(context),
+                                      _displayBrandName(context),
                                       style: TextStyle(
-                                        fontSize: 22,
-                                        fontWeight: FontWeight.w800,
+                                        fontSize: 19,
+                                        fontWeight: FontWeight.bold,
                                         color: isLightShell
-                                            ? Theme.of(context)
-                                                .colorScheme
-                                                .onSurfaceVariant
-                                            : Colors.white70,
+                                            ? AppThemes.darkHomeShellBackground
+                                            : Colors.white,
                                       ),
                                       maxLines: 1,
                                       overflow: TextOverflow.ellipsis,
                                     ),
                                   ),
-                                  if (car!['price'] != null) ...[
+                                  if (car!['price'] != null &&
+                                      _displayModelName(context).isEmpty) ...[
                                     SizedBox(width: 12),
                                     Text(
                                       _formatCurrencyGlobal(
@@ -12476,85 +12713,216 @@ class _CarDetailsPageState extends State<CarDetailsPage> {
                                   ],
                                 ],
                               ),
+                              if (_displayModelName(context).isNotEmpty) ...[
+                                SizedBox(height: 4),
+                                Row(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  children: [
+                                    Expanded(
+                                      child: Text(
+                                        _displayModelName(context),
+                                        style: TextStyle(
+                                          fontSize: 22,
+                                          fontWeight: FontWeight.w800,
+                                          color: isLightShell
+                                              ? Theme.of(
+                                                  context,
+                                                ).colorScheme.onSurfaceVariant
+                                              : Colors.white70,
+                                        ),
+                                        maxLines: 1,
+                                        overflow: TextOverflow.ellipsis,
+                                      ),
+                                    ),
+                                    if (car!['price'] != null) ...[
+                                      SizedBox(width: 12),
+                                      Text(
+                                        _formatCurrencyGlobal(
+                                          context,
+                                          car!['price'],
+                                        ),
+                                        style: TextStyle(
+                                          fontSize: 18,
+                                          fontWeight: FontWeight.w700,
+                                          color: Color(0xFFFF6B00),
+                                        ),
+                                      ),
+                                    ],
+                                  ],
+                                ),
+                              ],
                             ],
-                          ],
-                        ),
-                        SizedBox(height: 16),
-
-                        Divider(
-                          height: 1,
-                          thickness: 1,
-                          color: isLightShell
-                              ? const Color(0xFFE0E0E0)
-                              : Colors.white24,
-                        ),
-                        SizedBox(height: 16),
-                        Text(
-                          AppLocalizations.of(context)!.specificationsLabel,
-                          style: TextStyle(
-                            fontSize: 22,
-                            fontWeight: FontWeight.bold,
-                            color: Color(0xFFFF6B00),
                           ),
-                        ),
-                        SizedBox(height: 20),
-                        _buildSpecsGrid(),
-                        SizedBox(height: 24),
+                          SizedBox(height: 16),
 
-                        Column(
-                          mainAxisSize: MainAxisSize.min,
-                          children: [
-                            if (_hasDialableSellerPhone) ...[
+                          Divider(
+                            height: 1,
+                            thickness: 1,
+                            color: isLightShell
+                                ? const Color(0xFFE0E0E0)
+                                : Colors.white24,
+                          ),
+                          SizedBox(height: 16),
+                          Text(
+                            AppLocalizations.of(context)!.specificationsLabel,
+                            style: TextStyle(
+                              fontSize: 22,
+                              fontWeight: FontWeight.bold,
+                              color: Color(0xFFFF6B00),
+                            ),
+                          ),
+                          SizedBox(height: 20),
+                          _buildSpecsGrid(),
+                          SizedBox(height: 24),
+
+                          Column(
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              if (_hasDialableSellerPhone) ...[
+                                Row(
+                                  children: [
+                                    Expanded(
+                                      child: SizedBox(
+                                        height: 46,
+                                        child: ElevatedButton.icon(
+                                          style: ElevatedButton.styleFrom(
+                                            backgroundColor: Color(0xFF25D366),
+                                            foregroundColor: Colors.white,
+                                            elevation: 2,
+                                            shadowColor: Colors.black26,
+                                            padding: EdgeInsets.symmetric(
+                                              horizontal: 10,
+                                              vertical: 8,
+                                            ),
+                                            minimumSize: Size(0, 46),
+                                            tapTargetSize: MaterialTapTargetSize
+                                                .shrinkWrap,
+                                            shape: RoundedRectangleBorder(
+                                              borderRadius:
+                                                  BorderRadius.circular(17),
+                                            ),
+                                          ),
+                                          icon: Icon(Icons.chat, size: 19),
+                                          label: Text(
+                                            AppLocalizations.of(
+                                              context,
+                                            )!.chatOnWhatsApp,
+                                            style: TextStyle(
+                                              fontSize: 13,
+                                              fontWeight: FontWeight.w600,
+                                            ),
+                                            maxLines: 1,
+                                            overflow: TextOverflow.ellipsis,
+                                          ),
+                                          onPressed: _openWhatsAppToSeller,
+                                        ),
+                                      ),
+                                    ),
+                                    SizedBox(width: 6),
+                                    Expanded(
+                                      child: SizedBox(
+                                        height: 46,
+                                        child: ElevatedButton.icon(
+                                          style: ElevatedButton.styleFrom(
+                                            backgroundColor: Color(0xFF007AFF),
+                                            foregroundColor: Colors.white,
+                                            elevation: 2,
+                                            shadowColor: Colors.black26,
+                                            padding: EdgeInsets.symmetric(
+                                              horizontal: 10,
+                                              vertical: 8,
+                                            ),
+                                            minimumSize: Size(0, 46),
+                                            tapTargetSize: MaterialTapTargetSize
+                                                .shrinkWrap,
+                                            shape: RoundedRectangleBorder(
+                                              borderRadius:
+                                                  BorderRadius.circular(17),
+                                            ),
+                                          ),
+                                          icon: Icon(Icons.phone, size: 19),
+                                          label: Text(
+                                            'Call Seller',
+                                            style: TextStyle(
+                                              fontSize: 13,
+                                              fontWeight: FontWeight.w600,
+                                            ),
+                                            maxLines: 1,
+                                            overflow: TextOverflow.ellipsis,
+                                          ),
+                                          onPressed: () async {
+                                            final String raw =
+                                                _sellerPhoneRawForContact() ??
+                                                '';
+                                            final String digits = raw
+                                                .replaceAll(
+                                                  RegExp(r'[^0-9]'),
+                                                  '',
+                                                );
+                                            if (digits.isEmpty) {
+                                              if (mounted) {
+                                                ScaffoldMessenger.of(
+                                                  context,
+                                                ).showSnackBar(
+                                                  SnackBar(
+                                                    content: Text(
+                                                      AppLocalizations.of(
+                                                        context,
+                                                      )!.sellerPhoneNotAvailable,
+                                                    ),
+                                                  ),
+                                                );
+                                              }
+                                              return;
+                                            }
+
+                                            final Uri callUri = Uri.parse(
+                                              'tel:$digits',
+                                            );
+
+                                            bool launched = await launchUrl(
+                                              callUri,
+                                              mode: LaunchMode
+                                                  .externalApplication,
+                                            ).catchError((_) => false);
+
+                                            if (launched) {
+                                              await AnalyticsService.trackCall(
+                                                widget.carId.toString(),
+                                              );
+                                            } else if (mounted) {
+                                              ScaffoldMessenger.of(
+                                                context,
+                                              ).showSnackBar(
+                                                SnackBar(
+                                                  content: Text(
+                                                    'Unable to make call',
+                                                  ),
+                                                ),
+                                              );
+                                            }
+                                          },
+                                        ),
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                                SizedBox(height: 6),
+                              ],
                               Row(
                                 children: [
                                   Expanded(
                                     child: SizedBox(
                                       height: 46,
-                                      child: ElevatedButton.icon(
-                                        style: ElevatedButton.styleFrom(
-                                          backgroundColor: Color(0xFF25D366),
-                                          foregroundColor: Colors.white,
-                                          elevation: 2,
-                                          shadowColor: Colors.black26,
-                                          padding: EdgeInsets.symmetric(
-                                            horizontal: 10,
-                                            vertical: 8,
-                                          ),
-                                          minimumSize: Size(0, 46),
-                                          tapTargetSize:
-                                              MaterialTapTargetSize.shrinkWrap,
-                                          shape: RoundedRectangleBorder(
-                                            borderRadius: BorderRadius.circular(
-                                              17,
-                                            ),
-                                          ),
-                                        ),
-                                        icon: Icon(Icons.chat, size: 19),
-                                        label: Text(
-                                          AppLocalizations.of(
-                                            context,
-                                          )!.chatOnWhatsApp,
-                                          style: TextStyle(
-                                            fontSize: 13,
-                                            fontWeight: FontWeight.w600,
-                                          ),
-                                          maxLines: 1,
-                                          overflow: TextOverflow.ellipsis,
-                                        ),
-                                        onPressed: _openWhatsAppToSeller,
-                                      ),
+                                      child: ComparisonButton(car: car!),
                                     ),
                                   ),
                                   SizedBox(width: 6),
                                   Expanded(
                                     child: SizedBox(
                                       height: 46,
-                                      child: ElevatedButton.icon(
-                                        style: ElevatedButton.styleFrom(
-                                          backgroundColor: Color(0xFF007AFF),
-                                          foregroundColor: Colors.white,
-                                          elevation: 2,
-                                          shadowColor: Colors.black26,
+                                      child: OutlinedButton.icon(
+                                        style: OutlinedButton.styleFrom(
                                           padding: EdgeInsets.symmetric(
                                             horizontal: 10,
                                             vertical: 8,
@@ -12568,213 +12936,120 @@ class _CarDetailsPageState extends State<CarDetailsPage> {
                                             ),
                                           ),
                                         ),
-                                        icon: Icon(Icons.phone, size: 19),
+                                        onPressed: _shareCar,
+                                        icon: Icon(Icons.share, size: 19),
                                         label: Text(
-                                          'Call Seller',
+                                          AppLocalizations.of(
+                                            context,
+                                          )!.shareAction,
                                           style: TextStyle(
                                             fontSize: 13,
                                             fontWeight: FontWeight.w600,
                                           ),
-                                          maxLines: 1,
-                                          overflow: TextOverflow.ellipsis,
                                         ),
-                                        onPressed: () async {
-                                          final String raw =
-                                              _sellerPhoneRawForContact() ??
-                                              '';
-                                          final String digits = raw.replaceAll(
-                                            RegExp(r'[^0-9]'),
-                                            '',
-                                          );
-                                          if (digits.isEmpty) {
-                                            if (mounted) {
-                                              ScaffoldMessenger.of(
-                                                context,
-                                              ).showSnackBar(
-                                                SnackBar(
-                                                  content: Text(
-                                                    AppLocalizations.of(
-                                                      context,
-                                                    )!.sellerPhoneNotAvailable,
-                                                  ),
-                                                ),
-                                              );
-                                            }
-                                            return;
-                                          }
-
-                                          final Uri callUri =
-                                              Uri.parse('tel:$digits');
-
-                                          bool launched = await launchUrl(
-                                            callUri,
-                                            mode: LaunchMode
-                                                .externalApplication,
-                                          ).catchError((_) => false);
-
-                                          if (launched) {
-                                            await AnalyticsService.trackCall(
-                                              widget.carId.toString(),
-                                            );
-                                          } else if (mounted) {
-                                            ScaffoldMessenger.of(
-                                              context,
-                                            ).showSnackBar(
-                                              SnackBar(
-                                                content: Text(
-                                                  'Unable to make call',
-                                                ),
-                                              ),
-                                            );
-                                          }
-                                        },
                                       ),
                                     ),
                                   ),
                                 ],
                               ),
                               SizedBox(height: 6),
-                            ],
-                            Row(
-                              children: [
-                                Expanded(
-                                  child: SizedBox(
-                                    height: 46,
-                                    child: ComparisonButton(car: car!),
+                              SizedBox(
+                                width: double.infinity,
+                                height: 46,
+                                child: OutlinedButton.icon(
+                                  style: OutlinedButton.styleFrom(
+                                    foregroundColor: Color(0xFFFF6B00),
+                                    side: BorderSide(color: Color(0xFFFF6B00)),
+                                    padding: EdgeInsets.symmetric(
+                                      horizontal: 10,
+                                      vertical: 8,
+                                    ),
+                                    minimumSize: Size(0, 46),
+                                    tapTargetSize:
+                                        MaterialTapTargetSize.shrinkWrap,
+                                    shape: RoundedRectangleBorder(
+                                      borderRadius: BorderRadius.circular(17),
+                                    ),
                                   ),
-                                ),
-                                SizedBox(width: 6),
-                                Expanded(
-                                  child: SizedBox(
-                                    height: 46,
-                                    child: OutlinedButton.icon(
-                                      style: OutlinedButton.styleFrom(
-                                        padding: EdgeInsets.symmetric(
-                                          horizontal: 10,
-                                          vertical: 8,
-                                        ),
-                                        minimumSize: Size(0, 46),
-                                        tapTargetSize:
-                                            MaterialTapTargetSize.shrinkWrap,
-                                        shape: RoundedRectangleBorder(
-                                          borderRadius: BorderRadius.circular(
-                                            17,
-                                          ),
-                                        ),
-                                      ),
-                                      onPressed: _shareCar,
-                                      icon: Icon(Icons.share, size: 19),
-                                      label: Text(
-                                        AppLocalizations.of(
-                                          context,
-                                        )!.shareAction,
-                                        style: TextStyle(
-                                          fontSize: 13,
-                                          fontWeight: FontWeight.w600,
-                                        ),
-                                      ),
+                                  onPressed: _openCarzoChat,
+                                  icon: Icon(Icons.forum_outlined, size: 19),
+                                  label: Text(
+                                    AppLocalizations.of(context)!.chatOnCarzo,
+                                    style: TextStyle(
+                                      fontSize: 13,
+                                      fontWeight: FontWeight.w600,
                                     ),
                                   ),
                                 ),
-                              ],
-                            ),
-                            SizedBox(height: 6),
-                            SizedBox(
-                              width: double.infinity,
-                              height: 46,
-                              child: OutlinedButton.icon(
-                                style: OutlinedButton.styleFrom(
-                                  foregroundColor: Color(0xFFFF6B00),
-                                  side: BorderSide(color: Color(0xFFFF6B00)),
-                                  padding: EdgeInsets.symmetric(
-                                    horizontal: 10,
-                                    vertical: 8,
-                                  ),
-                                  minimumSize: Size(0, 46),
-                                  tapTargetSize:
-                                      MaterialTapTargetSize.shrinkWrap,
-                                  shape: RoundedRectangleBorder(
-                                    borderRadius: BorderRadius.circular(17),
-                                  ),
-                                ),
-                                onPressed: _openCarzoChat,
-                                icon: Icon(Icons.forum_outlined, size: 19),
-                                label: Text(
-                                  AppLocalizations.of(context)!.chatOnCarzo,
-                                  style: TextStyle(
-                                    fontSize: 13,
-                                    fontWeight: FontWeight.w600,
-                                  ),
-                                ),
+                              ),
+                              _buildSellerProfileSection(),
+                            ],
+                          ),
+                          SizedBox(height: 28),
+                          if (similarCars.isNotEmpty) ...[
+                            Text(
+                              AppLocalizations.of(context)!.similarListings,
+                              style: TextStyle(
+                                fontSize: 16,
+                                fontWeight: FontWeight.bold,
+                                color: isLightShell
+                                    ? AppThemes.darkHomeShellBackground
+                                    : Colors.white,
                               ),
                             ),
+                            SizedBox(height: 12),
+                            _buildHorizontalList(similarCars),
+                            SizedBox(height: 28),
+                          ] else if (loadingSimilar) ...[
+                            Text(
+                              AppLocalizations.of(context)!.similarListings,
+                              style: TextStyle(
+                                fontSize: 16,
+                                fontWeight: FontWeight.bold,
+                                color: isLightShell
+                                    ? AppThemes.darkHomeShellBackground
+                                    : Colors.white,
+                              ),
+                            ),
+                            SizedBox(height: 12),
+                            SizedBox(
+                              height: 120,
+                              child: Center(child: CircularProgressIndicator()),
+                            ),
+                            SizedBox(height: 28),
                           ],
-                        ),
-                        SizedBox(height: 28),
-                        if (similarCars.isNotEmpty) ...[
-                          Text(
-                            AppLocalizations.of(context)!.similarListings,
-                            style: TextStyle(
-                              fontSize: 16,
-                              fontWeight: FontWeight.bold,
-                              color: isLightShell
-                                  ? AppThemes.darkHomeShellBackground
-                                  : Colors.white,
+                          if (relatedCars.isNotEmpty) ...[
+                            Text(
+                              AppLocalizations.of(context)!.relatedListings,
+                              style: TextStyle(
+                                fontSize: 16,
+                                fontWeight: FontWeight.bold,
+                                color: isLightShell
+                                    ? AppThemes.darkHomeShellBackground
+                                    : Colors.white,
+                              ),
                             ),
-                          ),
-                          SizedBox(height: 12),
-                          _buildHorizontalList(similarCars),
-                          SizedBox(height: 28),
-                        ] else if (loadingSimilar) ...[
-                          Text(
-                            AppLocalizations.of(context)!.similarListings,
-                            style: TextStyle(
-                              fontSize: 16,
-                              fontWeight: FontWeight.bold,
-                              color: isLightShell
-                                  ? AppThemes.darkHomeShellBackground
-                                  : Colors.white,
+                            SizedBox(height: 12),
+                            _buildHorizontalList(relatedCars),
+                          ] else if (loadingRelated) ...[
+                            Text(
+                              AppLocalizations.of(context)!.relatedListings,
+                              style: TextStyle(
+                                fontSize: 16,
+                                fontWeight: FontWeight.bold,
+                                color: isLightShell
+                                    ? AppThemes.darkHomeShellBackground
+                                    : Colors.white,
+                              ),
                             ),
-                          ),
-                          SizedBox(height: 12),
-                          SizedBox(
-                            height: 120,
-                            child: Center(child: CircularProgressIndicator()),
-                          ),
-                          SizedBox(height: 28),
+                            SizedBox(height: 12),
+                            SizedBox(
+                              height: 120,
+                              child: Center(child: CircularProgressIndicator()),
+                            ),
+                          ],
                         ],
-                        if (relatedCars.isNotEmpty) ...[
-                          Text(
-                            AppLocalizations.of(context)!.relatedListings,
-                            style: TextStyle(
-                              fontSize: 16,
-                              fontWeight: FontWeight.bold,
-                              color: isLightShell
-                                  ? AppThemes.darkHomeShellBackground
-                                  : Colors.white,
-                            ),
-                          ),
-                          SizedBox(height: 12),
-                          _buildHorizontalList(relatedCars),
-                        ] else if (loadingRelated) ...[
-                          Text(
-                            AppLocalizations.of(context)!.relatedListings,
-                            style: TextStyle(
-                              fontSize: 16,
-                              fontWeight: FontWeight.bold,
-                              color: isLightShell
-                                  ? AppThemes.darkHomeShellBackground
-                                  : Colors.white,
-                            ),
-                          ),
-                          SizedBox(height: 12),
-                          SizedBox(
-                            height: 120,
-                            child: Center(child: CircularProgressIndicator()),
-                          ),
-                        ],
-                      ],
-                    ),
+                      ),
                     ),
                   ),
                 ),
@@ -12806,6 +13081,247 @@ class _CarDetailsPageState extends State<CarDetailsPage> {
     return null;
   }
 
+  Map<String, dynamic>? _sellerMap() {
+    if (car == null) return null;
+    final dynamic seller = car!['seller'];
+    if (seller is Map) {
+      return Map<String, dynamic>.from(seller);
+    }
+    return null;
+  }
+
+  String _formatSellerDate(String raw) {
+    final String input = raw.trim();
+    if (input.isEmpty) return '';
+    final DateTime? parsed = DateTime.tryParse(input);
+    if (parsed == null) return input;
+    final String y = parsed.year.toString().padLeft(4, '0');
+    final String m = parsed.month.toString().padLeft(2, '0');
+    final String d = parsed.day.toString().padLeft(2, '0');
+    return '$y-$m-$d';
+  }
+
+  Widget _buildSellerProfileSection() {
+    final Map<String, dynamic> seller = _sellerMap() ?? <String, dynamic>{};
+    final bool isLight = Theme.of(context).brightness == Brightness.light;
+
+    final String firstName = (seller['first_name'] ?? '').toString().trim();
+    final String lastName = (seller['last_name'] ?? '').toString().trim();
+    final String fullName = '$firstName $lastName'.trim();
+    final String name =
+        (_getFirstNonEmpty(seller, ['name', 'display_name']) ??
+                _getFirstNonEmpty(car ?? <String, dynamic>{}, [
+                  'seller_name',
+                  'owner_name',
+                  'posted_by',
+                ]) ??
+                '')
+            .trim();
+    final String username =
+        (_getFirstNonEmpty(seller, ['username', 'handle']) ?? '').trim();
+    final String phone =
+        (_getFirstNonEmpty(seller, ['phone_number', 'phone', 'mobile']) ??
+                _sellerPhoneRawForContact() ??
+                '')
+            .trim();
+    final String email =
+        ((_getFirstNonEmpty(seller, ['email']) ??
+                    _getFirstNonEmpty(car ?? <String, dynamic>{}, [
+                      'seller_email',
+                    ])) ??
+                '')
+            .trim();
+    final String city =
+        ((_getFirstNonEmpty(seller, ['city', 'location']) ??
+                    _getFirstNonEmpty(car ?? <String, dynamic>{}, [
+                      'city',
+                      'location',
+                    ])) ??
+                '')
+            .trim();
+    final String joinedRaw =
+        (_getFirstNonEmpty(seller, [
+                  'created_at',
+                  'joined_at',
+                  'member_since',
+                ]) ??
+                _getFirstNonEmpty(car ?? <String, dynamic>{}, [
+                  'seller_created_at',
+                  'created_at',
+                ]) ??
+                '')
+            .trim();
+    final String joined = _formatSellerDate(joinedRaw);
+
+    final String avatarRaw =
+        ((_getFirstNonEmpty(seller, [
+                      'profile_picture',
+                      'avatar',
+                      'avatar_url',
+                      'image_url',
+                      'photo_url',
+                    ]) ??
+                    _getFirstNonEmpty(car ?? <String, dynamic>{}, [
+                      'seller_profile_picture',
+                    ])) ??
+                '')
+            .trim();
+    final String avatarUrl = avatarRaw.isEmpty
+        ? ''
+        : _buildFullImageUrl(avatarRaw);
+
+    final bool isVerified =
+        seller['is_verified'] == true || seller['verified'] == true;
+    final String displayName = name.isNotEmpty
+        ? name
+        : (fullName.isNotEmpty
+              ? fullName
+              : (username.isNotEmpty ? username : 'Seller'));
+
+    String initials = 'S';
+    if (displayName.isNotEmpty) {
+      final List<String> parts = displayName
+          .split(RegExp(r'\s+'))
+          .where((s) => s.trim().isNotEmpty)
+          .toList();
+      if (parts.length >= 2) {
+        initials = '${parts[0][0]}${parts[1][0]}'.toUpperCase();
+      } else {
+        initials = parts.first[0].toUpperCase();
+      }
+    }
+
+    Widget detailRow(IconData icon, String label, String value) {
+      if (value.trim().isEmpty) return const SizedBox.shrink();
+      return Padding(
+        padding: const EdgeInsets.only(top: 8),
+        child: Row(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Icon(icon, size: 16, color: const Color(0xFFFF6B00)),
+            const SizedBox(width: 8),
+            Expanded(
+              child: RichText(
+                text: TextSpan(
+                  style: TextStyle(
+                    fontSize: 13,
+                    color: isLight
+                        ? AppThemes.darkHomeShellBackground
+                        : Colors.white70,
+                  ),
+                  children: [
+                    TextSpan(
+                      text: '$label: ',
+                      style: const TextStyle(fontWeight: FontWeight.w600),
+                    ),
+                    TextSpan(text: value),
+                  ],
+                ),
+              ),
+            ),
+          ],
+        ),
+      );
+    }
+
+    return Container(
+      width: double.infinity,
+      margin: const EdgeInsets.only(top: 12),
+      padding: const EdgeInsets.all(12),
+      decoration: BoxDecoration(
+        color: isLight ? Colors.white : const Color(0xFF1A120E),
+        borderRadius: BorderRadius.circular(14),
+        border: Border.all(
+          color: isLight ? const Color(0x1A000000) : const Color(0x33FF6B00),
+        ),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              CircleAvatar(
+                radius: 22,
+                backgroundColor: const Color(0x26FF6B00),
+                backgroundImage: avatarUrl.isNotEmpty
+                    ? NetworkImage(avatarUrl)
+                    : null,
+                child: avatarUrl.isEmpty
+                    ? Text(
+                        initials,
+                        style: const TextStyle(
+                          color: Color(0xFFFF6B00),
+                          fontSize: 16,
+                          fontWeight: FontWeight.w700,
+                        ),
+                      )
+                    : null,
+              ),
+              const SizedBox(width: 10),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      displayName,
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                      style: TextStyle(
+                        fontSize: 15,
+                        fontWeight: FontWeight.w700,
+                        color: isLight
+                            ? AppThemes.darkHomeShellBackground
+                            : Colors.white,
+                      ),
+                    ),
+                    if (username.isNotEmpty)
+                      Text(
+                        '@$username',
+                        style: TextStyle(
+                          fontSize: 12,
+                          color: isLight ? Colors.black54 : Colors.white60,
+                        ),
+                      ),
+                  ],
+                ),
+              ),
+              if (isVerified)
+                Container(
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 8,
+                    vertical: 4,
+                  ),
+                  decoration: BoxDecoration(
+                    color: const Color(0x1A4CAF50),
+                    borderRadius: BorderRadius.circular(999),
+                  ),
+                  child: const Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Icon(Icons.verified, color: Color(0xFF4CAF50), size: 13),
+                      SizedBox(width: 4),
+                      Text(
+                        'Verified',
+                        style: TextStyle(
+                          fontSize: 11,
+                          color: Color(0xFF4CAF50),
+                          fontWeight: FontWeight.w600,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+            ],
+          ),
+          detailRow(Icons.phone_outlined, 'Phone', phone),
+          detailRow(Icons.email_outlined, 'Email', email),
+          detailRow(Icons.location_on_outlined, 'Location', city),
+          detailRow(Icons.calendar_today_outlined, 'Member since', joined),
+        ],
+      ),
+    );
+  }
+
   Widget _buildSpecsGrid() => buildCarListingSpecsGrid(context, car!);
 
   Widget _detailRowAlways({
@@ -12815,8 +13331,7 @@ class _CarDetailsPageState extends State<CarDetailsPage> {
   }) {
     final String shown = (value == null || value.isEmpty) ? '—' : value;
     final isLight = Theme.of(context).brightness == Brightness.light;
-    final muted =
-        isLight ? const Color(0xFF3A3A3A) : Colors.white70;
+    final muted = isLight ? const Color(0xFF3A3A3A) : Colors.white70;
     final body = isLight ? const Color(0xFF0A0A0A) : Colors.white;
     return Padding(
       padding: const EdgeInsets.symmetric(vertical: 6.0),
@@ -13076,9 +13591,7 @@ Widget buildCarListingSpecsGrid(
             child: Text(
               label,
               style: TextStyle(
-                color: isLight
-                    ? const Color(0xFF3A3A3A)
-                    : Colors.white70,
+                color: isLight ? const Color(0xFF3A3A3A) : Colors.white70,
                 fontSize: 14,
                 fontWeight: FontWeight.w600,
               ),
@@ -13106,7 +13619,6 @@ Widget buildCarListingSpecsGrid(
   Widget specCard(_SpecItem item) {
     return Container(
       padding: EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-      constraints: BoxConstraints(minHeight: 72),
       decoration: BoxDecoration(
         color: Color(0xFFFF6B00),
         borderRadius: BorderRadius.circular(12),
@@ -13195,17 +13707,24 @@ Widget buildCarListingSpecsGrid(
       : '—';
 
   final String? transRaw = pickNE(car, ['transmission']);
-  final String transmissionVal =
-      _orDash(_translateValueGlobal(context, transRaw) ?? transRaw);
+  final String transmissionVal = _orDash(
+    _translateValueGlobal(context, transRaw) ?? transRaw,
+  );
 
-  final String? engineSizePrimary =
-      pickNE(car, ['engine_size', 'engineSize', 'engine']);
+  final String? engineSizePrimary = pickNE(car, [
+    'engine_size',
+    'engineSize',
+    'engine',
+  ]);
   final String engineCardVal = engineSizePrimary != null
       ? '${_localizeDigitsGlobal(context, engineSizePrimary.toString())}${AppLocalizations.of(context)!.unit_liter_suffix}'
       : '—';
 
-  final String? cylRawPrimary =
-      pickNE(car, ['cylinder_count', 'cylinders', 'cylinderCount']);
+  final String? cylRawPrimary = pickNE(car, [
+    'cylinder_count',
+    'cylinders',
+    'cylinderCount',
+  ]);
   final String cylinderVal = cylRawPrimary != null
       ? _localizeDigitsGlobal(context, cylRawPrimary)
       : '—';
@@ -13213,17 +13732,22 @@ Widget buildCarListingSpecsGrid(
   final String titleStatusVal = _orDash(
     car['title_status'] != null
         ? (car['title_status'].toString().toLowerCase() == 'damaged'
-              ? (AppLocalizations.of(context)!.value_title_damaged +
-                    (car['damaged_parts'] != null
-                        ? ' (${_localizeDigitsGlobal(context, car['damaged_parts'].toString())} ${AppLocalizations.of(context)!.damagedParts})'
-                        : ''))
+              ? (car['damaged_parts'] != null
+                    ? AppLocalizations.of(context)!.titleStatusDamagedWithParts(
+                        _localizeDigitsGlobal(
+                          context,
+                          car['damaged_parts'].toString(),
+                        ),
+                      )
+                    : AppLocalizations.of(context)!.value_title_damaged)
               : AppLocalizations.of(context)!.value_title_clean)
         : null,
   );
 
   final String? fuelRaw = pickNE(car, ['fuel_type', 'fuelType', 'fuel']);
-  final String fuelVal =
-      _orDash(_translateValueGlobal(context, fuelRaw) ?? fuelRaw);
+  final String fuelVal = _orDash(
+    _translateValueGlobal(context, fuelRaw) ?? fuelRaw,
+  );
 
   final List<_SpecItem> primary = [
     _SpecItem(
@@ -13287,9 +13811,7 @@ Widget buildCarListingSpecsGrid(
     detailRowSpec(
       icon: Icons.color_lens,
       label: AppLocalizations.of(context)!.detail_color,
-      value: _orDash(
-        _translateValueGlobal(context, pickNE(car, ['color'])),
-      ),
+      value: _orDash(_translateValueGlobal(context, pickNE(car, ['color']))),
     ),
     detailRowSpec(
       icon: Icons.drive_eta,
@@ -13297,12 +13819,7 @@ Widget buildCarListingSpecsGrid(
       value: _orDash(
         _translateValueGlobal(
           context,
-          pickNE(car, [
-            'drive_type',
-            'driveType',
-            'drivetrain',
-            'drive',
-          ]),
+          pickNE(car, ['drive_type', 'driveType', 'drivetrain', 'drive']),
         ),
       ),
     ),
@@ -13329,31 +13846,42 @@ Widget buildCarListingSpecsGrid(
   ];
 
   final isLightSpecs = Theme.of(context).brightness == Brightness.light;
-  final primGrid = GridView.builder(
-    shrinkWrap: true,
-    physics: NeverScrollableScrollPhysics(),
-    gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
-      crossAxisCount: 3,
-      crossAxisSpacing: 12,
-      mainAxisSpacing: 12,
-      childAspectRatio: 1.5,
-    ),
-    itemCount: primary.length,
-    itemBuilder: (context, index) => specCard(primary[index]),
+  // Width-based row height: tighter than childAspectRatio 1.5 so the outer
+  // shell does not grow vertically on narrow phones (GridView + padding).
+  final primGrid = LayoutBuilder(
+    builder: (context, constraints) {
+      const double crossGap = 12;
+      const int crossCount = 3;
+      final double maxW = constraints.maxWidth;
+      final double tileW = (maxW - crossGap * (crossCount - 1)) / crossCount;
+      // Was ~1.5 (height = tileW/1.5); 1.72 shortens each row ~13%.
+      final double rowH = tileW / 1.72;
+      return GridView.builder(
+        shrinkWrap: true,
+        physics: const NeverScrollableScrollPhysics(),
+        padding: EdgeInsets.zero,
+        gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
+          crossAxisCount: crossCount,
+          crossAxisSpacing: crossGap,
+          mainAxisSpacing: 12,
+          mainAxisExtent: rowH,
+        ),
+        itemCount: primary.length,
+        itemBuilder: (context, index) => specCard(primary[index]),
+      );
+    },
   );
 
   final topSpecs = Container(
     width: double.infinity,
-    padding: const EdgeInsets.fromLTRB(12, 4, 12, 2),
+    padding: const EdgeInsets.fromLTRB(12, 10, 12, 10),
     decoration: BoxDecoration(
       color: isLightSpecs
           ? const Color(0xFFEEEEEE)
           : Colors.white.withOpacity(0.08),
       borderRadius: BorderRadius.circular(14),
       border: Border.all(
-        color: isLightSpecs
-            ? const Color(0xFFE0E0E0)
-            : Colors.white24,
+        color: isLightSpecs ? const Color(0xFFE0E0E0) : Colors.white24,
       ),
     ),
     child: primGrid,
@@ -13448,94 +13976,94 @@ class _SellCarPageState extends State<SellCarPage> {
         _goToPreviousStep();
       },
       child: Scaffold(
-      backgroundColor: Theme.of(context).scaffoldBackgroundColor,
-      appBar: AppBar(
-        title: Text(AppLocalizations.of(context)!.addListingTitle),
-        backgroundColor: Color(0xFFFF6B00),
-        foregroundColor: Colors.white,
-        elevation: 0,
-        leading: IconButton(
-          icon: Icon(Icons.arrow_back),
-          onPressed: _goToPreviousStep,
+        backgroundColor: Theme.of(context).scaffoldBackgroundColor,
+        appBar: AppBar(
+          title: Text(AppLocalizations.of(context)!.addListingTitle),
+          backgroundColor: Color(0xFFFF6B00),
+          foregroundColor: Colors.white,
+          elevation: 0,
+          leading: IconButton(
+            icon: Icon(Icons.arrow_back),
+            onPressed: _goToPreviousStep,
+          ),
         ),
-      ),
-      body: Container(
-        decoration: AppThemes.shellBackgroundDecoration(
-          Theme.of(context).brightness,
-        ),
-        child: Column(
-        children: [
-          // Progress indicator
-          Container(
-            padding: EdgeInsets.all(16),
-            child: Row(
-              children: List.generate(5, (index) {
-                bool isCompleted = completedSteps.contains(index);
-                bool isCurrent = index == currentStep;
-                bool isAccessible = index <= currentStep || isCompleted;
+        body: Container(
+          decoration: AppThemes.shellBackgroundDecoration(
+            Theme.of(context).brightness,
+          ),
+          child: Column(
+            children: [
+              // Progress indicator
+              Container(
+                padding: EdgeInsets.all(16),
+                child: Row(
+                  children: List.generate(5, (index) {
+                    bool isCompleted = completedSteps.contains(index);
+                    bool isCurrent = index == currentStep;
+                    bool isAccessible = index <= currentStep || isCompleted;
 
-                return Expanded(
-                  child: Container(
-                    margin: EdgeInsets.symmetric(horizontal: 4),
-                    height: 4,
-                    decoration: BoxDecoration(
-                      color: isCompleted
-                          ? Colors.green
-                          : isCurrent
-                          ? Color(0xFFFF6B00)
-                          : isAccessible
-                          ? Color(0xFFFF6B00).withOpacity(0.5)
-                          : Colors.grey[300],
-                      borderRadius: BorderRadius.circular(2),
+                    return Expanded(
+                      child: Container(
+                        margin: EdgeInsets.symmetric(horizontal: 4),
+                        height: 4,
+                        decoration: BoxDecoration(
+                          color: isCompleted
+                              ? Colors.green
+                              : isCurrent
+                              ? Color(0xFFFF6B00)
+                              : isAccessible
+                              ? Color(0xFFFF6B00).withOpacity(0.5)
+                              : Colors.grey[300],
+                          borderRadius: BorderRadius.circular(2),
+                        ),
+                      ),
+                    );
+                  }),
+                ),
+              ),
+              // Step indicator
+              Container(
+                padding: EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                child: Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    Text(
+                      AppLocalizations.of(context)!.stepXOf5(currentStep + 1),
+                      style: TextStyle(
+                        fontSize: 14,
+                        color: Colors.grey[600],
+                        fontWeight: FontWeight.w500,
+                      ),
                     ),
-                  ),
-                );
-              }),
-            ),
-          ),
-          // Step indicator
-          Container(
-            padding: EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-            child: Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-              children: [
-                Text(
-                  AppLocalizations.of(context)!.stepXOf5(currentStep + 1),
-                  style: TextStyle(
-                    fontSize: 14,
-                    color: Colors.grey[600],
-                    fontWeight: FontWeight.w500,
-                  ),
+                    Text(
+                      _getStepTitle(context, currentStep),
+                      style: TextStyle(
+                        fontSize: 16,
+                        color: Color(0xFFFF6B00),
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
+                  ],
                 ),
-                Text(
-                  _getStepTitle(context, currentStep),
-                  style: TextStyle(
-                    fontSize: 16,
-                    color: Color(0xFFFF6B00),
-                    fontWeight: FontWeight.bold,
-                  ),
+              ),
+              // Page content
+              Expanded(
+                child: PageView.builder(
+                  controller: _pageController,
+                  physics:
+                      NeverScrollableScrollPhysics(), // Disable swipe scrolling
+                  onPageChanged: (index) {
+                    setState(() {
+                      currentStep = index;
+                    });
+                  },
+                  itemCount: _kSellStepCount,
+                  itemBuilder: (context, index) => _sellStepChild(index),
                 ),
-              ],
-            ),
+              ),
+            ],
           ),
-          // Page content
-          Expanded(
-            child: PageView.builder(
-              controller: _pageController,
-              physics:
-                  NeverScrollableScrollPhysics(), // Disable swipe scrolling
-              onPageChanged: (index) {
-                setState(() {
-                  currentStep = index;
-                });
-              },
-              itemCount: _kSellStepCount,
-              itemBuilder: (context, index) => _sellStepChild(index),
-            ),
-          ),
-        ],
-      ),
-      ),
+        ),
       ),
     );
   }
@@ -13802,10 +14330,7 @@ class _SellStep1PageState extends State<SellStep1Page> {
     final m = selectedModel;
     int? newId = _dsModelId;
     int? newY = _catYear;
-    if (idx == null ||
-        b == null ||
-        m == null ||
-        !idx.hasCoverage(b, m)) {
+    if (idx == null || b == null || m == null || !idx.hasCoverage(b, m)) {
       newId = null;
       newY = null;
     } else {
@@ -13813,41 +14338,49 @@ class _SellStep1PageState extends State<SellStep1Page> {
       if (bid == null) {
         newId = null;
         newY = null;
+      } else {
+        final variants = idx.variantsForAppModel(b, m);
+        if (variants.isEmpty) {
+          newId = null;
+          newY = null;
         } else {
-          final variants = idx.variantsForAppModel(b, m);
-          if (variants.isEmpty) {
+          final formYear =
+              int.tryParse(_yearController.text.trim()) ??
+              int.tryParse((selectedYear ?? '').trim());
+          final years = idx.yearsForCatalogStep(
+            b,
+            m,
+            CarSpecIndex.catalogAutofillModelOnly,
+          );
+          if (years.isEmpty) {
             newId = null;
             newY = null;
           } else {
-            final formYear = int.tryParse(_yearController.text.trim()) ??
-                int.tryParse((selectedYear ?? '').trim());
-            final years = idx.yearsForCatalogStep(
-                b, m, CarSpecIndex.catalogAutofillModelOnly);
-            if (years.isEmpty) {
-              newId = null;
-              newY = null;
+            int resolvedYear;
+            if (formYear != null && years.contains(formYear)) {
+              resolvedYear = formYear;
+            } else if (newY != null && years.contains(newY)) {
+              resolvedYear = newY;
             } else {
-              int resolvedYear;
-              if (formYear != null && years.contains(formYear)) {
-                resolvedYear = formYear;
-              } else if (newY != null && years.contains(newY)) {
-                resolvedYear = newY;
-              } else {
-                resolvedYear = years.first;
-              }
-              newY = resolvedYear;
-              final preferred = idx.suggestDatasetModelIdForFormYear(
-                  b, m, CarSpecIndex.catalogAutofillModelOnly, resolvedYear);
-              var mid = newId ?? 0;
-              if (mid == 0 || !variants.any((v) => v.id == mid)) {
-                mid = preferred ?? variants.first.id;
-              } else if (!idx.datasetVariantCoversYear(mid, resolvedYear)) {
-                mid = preferred ?? mid;
-              }
-              newId = mid;
+              resolvedYear = years.first;
             }
+            newY = resolvedYear;
+            final preferred = idx.suggestDatasetModelIdForFormYear(
+              b,
+              m,
+              CarSpecIndex.catalogAutofillModelOnly,
+              resolvedYear,
+            );
+            var mid = newId ?? 0;
+            if (mid == 0 || !variants.any((v) => v.id == mid)) {
+              mid = preferred ?? variants.first.id;
+            } else if (!idx.datasetVariantCoversYear(mid, resolvedYear)) {
+              mid = preferred ?? mid;
+            }
+            newId = mid;
           }
         }
+      }
     }
     setState(() {
       _dsModelId = newId;
@@ -13866,7 +14399,10 @@ class _SellStep1PageState extends State<SellStep1Page> {
     }
     if (!idx.hasCoverage(b, m)) return null;
     final ys = idx.yearsForCatalogStep(
-        b, m, CarSpecIndex.catalogAutofillModelOnly);
+      b,
+      m,
+      CarSpecIndex.catalogAutofillModelOnly,
+    );
     if (ys.isEmpty) return null;
     return ys.map((e) => '$e').toList();
   }
@@ -13887,12 +14423,18 @@ class _SellStep1PageState extends State<SellStep1Page> {
     final m = (selectedModel ?? '').trim();
     if (b.isEmpty || m.isEmpty) return;
     final rep = idx.representativeForCatalogSell(
-        b, m, CarSpecIndex.catalogAutofillModelOnly, _catYear!);
+      b,
+      m,
+      CarSpecIndex.catalogAutofillModelOnly,
+      _catYear!,
+    );
     final CatalogSpecFields? f = rep?.fields;
     if (f == null) {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
-          content: Text('No spec row for this year — try another year or variant.'),
+          content: Text(
+            'No spec row for this year — try another year or variant.',
+          ),
           backgroundColor: Colors.red,
         ),
       );
@@ -13911,8 +14453,7 @@ class _SellStep1PageState extends State<SellStep1Page> {
         _yearController.text = y;
       }
     });
-    parent.carData['transmission'] =
-        sellFlowTransmissionLabel(f.transmission);
+    parent.carData['transmission'] = sellFlowTransmissionLabel(f.transmission);
     parent.carData['fuel_type'] = sellFlowFuelLabel(f.fuelType);
     parent.carData['engine_type'] = f.engineType;
     parent.carData['body_type'] = sellFlowBodyLabel(f.bodyType);
@@ -13933,11 +14474,19 @@ class _SellStep1PageState extends State<SellStep1Page> {
     }
     final union = (b.isNotEmpty && m.isNotEmpty)
         ? idx.sellFieldOptionsUnion(
-            b, m, CarSpecIndex.catalogAutofillModelOnly, _catYear!)
+            b,
+            m,
+            CarSpecIndex.catalogAutofillModelOnly,
+            _catYear!,
+          )
         : null;
     var catVs = (b.isNotEmpty && m.isNotEmpty)
         ? idx.catalogSellSpecVariants(
-            b, m, CarSpecIndex.catalogAutofillModelOnly, _catYear!)
+            b,
+            m,
+            CarSpecIndex.catalogAutofillModelOnly,
+            _catYear!,
+          )
         : const <OnlineSpecVariant>[];
     if (catVs.isEmpty) {
       catVs = [_onlineSpecVariantFromCatalogFields(f)];
@@ -13948,8 +14497,9 @@ class _SellStep1PageState extends State<SellStep1Page> {
       _applyCatalogSpecConstrainedOptionsToCarData(parent.carData, f);
     }
     if (catVs.isNotEmpty) {
-      parent.carData[_kOnlineSpecVariantsKey] =
-          catVs.map((e) => e.toJson()).toList();
+      parent.carData[_kOnlineSpecVariantsKey] = catVs
+          .map((e) => e.toJson())
+          .toList();
     }
     parent.carData['_catalog_specs_applied'] =
         DateTime.now().millisecondsSinceEpoch;
@@ -13982,9 +14532,7 @@ class _SellStep1PageState extends State<SellStep1Page> {
                 child: CircularProgressIndicator(strokeWidth: 2),
               ),
               const SizedBox(width: 12),
-              const Expanded(
-                child: Text('Loading vehicle spec database…'),
-              ),
+              const Expanded(child: Text('Loading vehicle spec database…')),
             ],
           ),
         ),
@@ -14043,21 +14591,33 @@ class _SellStep1PageState extends State<SellStep1Page> {
     final variants = idx.variantsForAppModel(b, m);
     if (variants.isEmpty) return const SizedBox.shrink();
 
-    final listingYear = int.tryParse(_yearController.text.trim()) ??
+    final listingYear =
+        int.tryParse(_yearController.text.trim()) ??
         int.tryParse((selectedYear ?? '').trim());
     final years = idx.yearsForCatalogStep(
-        b, m, CarSpecIndex.catalogAutofillModelOnly);
+      b,
+      m,
+      CarSpecIndex.catalogAutofillModelOnly,
+    );
     if (years.isEmpty) return const SizedBox.shrink();
 
     final CatalogSpecFields? preview = _catYear != null
         ? idx
-            .representativeForCatalogSell(
-                b, m, CarSpecIndex.catalogAutofillModelOnly, _catYear!)
-            ?.fields
+              .representativeForCatalogSell(
+                b,
+                m,
+                CarSpecIndex.catalogAutofillModelOnly,
+                _catYear!,
+              )
+              ?.fields
         : null;
     final unionPreview = _catYear != null
         ? idx.sellFieldOptionsUnion(
-            b, m, CarSpecIndex.catalogAutofillModelOnly, _catYear!)
+            b,
+            m,
+            CarSpecIndex.catalogAutofillModelOnly,
+            _catYear!,
+          )
         : null;
 
     return Card(
@@ -14083,7 +14643,10 @@ class _SellStep1PageState extends State<SellStep1Page> {
               const SizedBox(height: 12),
               Container(
                 width: double.infinity,
-                padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 12,
+                  vertical: 10,
+                ),
                 decoration: BoxDecoration(
                   color: const Color(0xFFFF6B00).withOpacity(0.12),
                   borderRadius: BorderRadius.circular(8),
@@ -14098,8 +14661,9 @@ class _SellStep1PageState extends State<SellStep1Page> {
                         unionPreview.engineSizes.length > 1) {
                       final engList = unionPreview.engineSizes.toList()
                         ..sort(
-                          (a, b) => (double.tryParse(a) ?? 0)
-                              .compareTo(double.tryParse(b) ?? 0),
+                          (a, b) => (double.tryParse(a) ?? 0).compareTo(
+                            double.tryParse(b) ?? 0,
+                          ),
                         );
                       engExtra =
                           '\nStep 2 will offer engines: ${engList.join(', ')} L';
@@ -14129,10 +14693,7 @@ class _SellStep1PageState extends State<SellStep1Page> {
                 decoration: const InputDecoration(labelText: 'Model year'),
                 items: years
                     .map(
-                      (y) => DropdownMenuItem<int>(
-                        value: y,
-                        child: Text('$y'),
-                      ),
+                      (y) => DropdownMenuItem<int>(value: y, child: Text('$y')),
                     )
                     .toList(),
                 onChanged: (y) {
@@ -14160,7 +14721,11 @@ class _SellStep1PageState extends State<SellStep1Page> {
     );
   }
 
-  Future<String?> _pickFromList(String title, List<String> options, {String? contextBrand}) async {
+  Future<String?> _pickFromList(
+    String title,
+    List<String> options, {
+    String? contextBrand,
+  }) async {
     services.HapticFeedback.selectionClick();
     String query = '';
     return await showDialog<String>(
@@ -14172,203 +14737,207 @@ class _SellStep1PageState extends State<SellStep1Page> {
             final isYearPicker =
                 title == loc.yearLabel || title.toLowerCase().contains('year');
             final normalizedQuery = query.trim().toLowerCase();
-              final filtered = options.where((value) {
-                if (isYearPicker) return true;
-                if (normalizedQuery.isEmpty) return true;
-                if (value.toLowerCase().contains(normalizedQuery)) return true;
-                if (contextBrand != null) {
-                  final locModel = CarNameTranslations.getLocalizedModel(
-                    context,
-                    contextBrand,
-                    value,
-                  ).toLowerCase();
-                  if (locModel.contains(normalizedQuery)) return true;
-                }
-                final locBrand = CarNameTranslations.getLocalizedBrand(
+            final filtered = options.where((value) {
+              if (isYearPicker) return true;
+              if (normalizedQuery.isEmpty) return true;
+              if (value.toLowerCase().contains(normalizedQuery)) return true;
+              if (contextBrand != null) {
+                final locModel = CarNameTranslations.getLocalizedModel(
                   context,
+                  contextBrand,
                   value,
                 ).toLowerCase();
-                if (locBrand.contains(normalizedQuery)) return true;
-                final translated =
-                    (_translateValueGlobal(context, value) ?? '').toLowerCase();
-                return translated.contains(normalizedQuery);
-              }).toList();
-              return Dialog(
-                backgroundColor: Colors.grey[900]?.withOpacity(0.98),
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(20),
-                ),
-                child: Container(
-                  width: 420,
-                  padding: EdgeInsets.all(20),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      Row(
-                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                        children: [
-                          Text(
-                            title,
-                            style: TextStyle(
+                if (locModel.contains(normalizedQuery)) return true;
+              }
+              final locBrand = CarNameTranslations.getLocalizedBrand(
+                context,
+                value,
+              ).toLowerCase();
+              if (locBrand.contains(normalizedQuery)) return true;
+              final translated = (_translateValueGlobal(context, value) ?? '')
+                  .toLowerCase();
+              return translated.contains(normalizedQuery);
+            }).toList();
+            return Dialog(
+              backgroundColor: Colors.grey[900]?.withOpacity(0.98),
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(20),
+              ),
+              child: Container(
+                width: 420,
+                padding: EdgeInsets.all(20),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      children: [
+                        Text(
+                          title,
+                          style: TextStyle(
+                            color: Color(0xFFFF6B00),
+                            fontWeight: FontWeight.bold,
+                            fontSize: 20,
+                          ),
+                        ),
+                        IconButton(
+                          icon: Icon(Icons.close, color: Colors.white),
+                          onPressed: () => Navigator.pop(context),
+                        ),
+                      ],
+                    ),
+                    SizedBox(height: 10),
+                    if (!isYearPicker) ...[
+                      TextField(
+                        onChanged: (value) {
+                          query = value;
+                          setStateDialog(() {});
+                        },
+                        style: const TextStyle(color: Colors.white),
+                        decoration: InputDecoration(
+                          hintText: 'Search...',
+                          hintStyle: const TextStyle(color: Colors.white60),
+                          prefixIcon: const Icon(
+                            Icons.search,
+                            color: Colors.white70,
+                          ),
+                          filled: true,
+                          fillColor: Colors.black.withOpacity(0.2),
+                          enabledBorder: OutlineInputBorder(
+                            borderRadius: BorderRadius.circular(12),
+                            borderSide: const BorderSide(color: Colors.white24),
+                          ),
+                          focusedBorder: OutlineInputBorder(
+                            borderRadius: BorderRadius.circular(12),
+                            borderSide: const BorderSide(
                               color: Color(0xFFFF6B00),
-                              fontWeight: FontWeight.bold,
-                              fontSize: 20,
                             ),
                           ),
-                          IconButton(
-                            icon: Icon(Icons.close, color: Colors.white),
-                            onPressed: () => Navigator.pop(context),
-                          ),
-                        ],
+                        ),
                       ),
                       SizedBox(height: 10),
-                      if (!isYearPicker) ...[
-                        TextField(
-                          onChanged: (value) {
-                            query = value;
-                            setStateDialog(() {});
-                          },
-                          style: const TextStyle(color: Colors.white),
-                          decoration: InputDecoration(
-                            hintText: 'Search...',
-                            hintStyle: const TextStyle(color: Colors.white60),
-                            prefixIcon: const Icon(
-                              Icons.search,
-                              color: Colors.white70,
-                            ),
-                            filled: true,
-                            fillColor: Colors.black.withOpacity(0.2),
-                            enabledBorder: OutlineInputBorder(
-                              borderRadius: BorderRadius.circular(12),
-                              borderSide: const BorderSide(color: Colors.white24),
-                            ),
-                            focusedBorder: OutlineInputBorder(
-                              borderRadius: BorderRadius.circular(12),
-                              borderSide: const BorderSide(
-                                color: Color(0xFFFF6B00),
-                              ),
-                            ),
-                          ),
-                        ),
-                        SizedBox(height: 10),
-                      ],
-                      SizedBox(
-                        height: 400,
-                        child: ListView.separated(
-                          itemCount: filtered.length,
-                          separatorBuilder: (_, __) => SizedBox(height: 10),
-                          itemBuilder: (context, index) {
-                            final value = filtered[index];
-                            final lowerTitle = title.toLowerCase();
-                            final loc = AppLocalizations.of(context)!;
-                            final isModelTitle = title == loc.modelLabel;
-                            final isTrimTitle = title == loc.trimLabel;
-                            final isBrandTitle = title == loc.brandLabel;
-                            String displayText = value;
-                            final bool isNumeric =
-                                RegExp(r'^[0-9]+(\.[0-9]+)?$').hasMatch(value);
-                            if (lowerTitle.contains('price')) {
-                              displayText = _formatCurrencyGlobal(context, value);
-                            } else if (lowerTitle.contains('mileage') && isNumeric) {
-                              final nf = _decimalFormatterGlobal(context);
-                              displayText =
-                                  '${_localizeDigitsGlobal(
+                    ],
+                    SizedBox(
+                      height: 400,
+                      child: ListView.separated(
+                        itemCount: filtered.length,
+                        separatorBuilder: (_, __) => SizedBox(height: 10),
+                        itemBuilder: (context, index) {
+                          final value = filtered[index];
+                          final lowerTitle = title.toLowerCase();
+                          final loc = AppLocalizations.of(context)!;
+                          final isModelTitle = title == loc.modelLabel;
+                          final isTrimTitle = title == loc.trimLabel;
+                          final isBrandTitle = title == loc.brandLabel;
+                          String displayText = value;
+                          final bool isNumeric = RegExp(
+                            r'^[0-9]+(\.[0-9]+)?$',
+                          ).hasMatch(value);
+                          if (lowerTitle.contains('price')) {
+                            displayText = _formatCurrencyGlobal(context, value);
+                          } else if (lowerTitle.contains('mileage') &&
+                              isNumeric) {
+                            final nf = _decimalFormatterGlobal(context);
+                            displayText =
+                                '${_localizeDigitsGlobal(context, nf.format(num.tryParse(value) ?? 0))} ${AppLocalizations.of(context)!.unit_km}';
+                          } else if (lowerTitle.contains('year') && isNumeric) {
+                            displayText = _localizeDigitsGlobal(context, value);
+                          } else if (lowerTitle.contains('seating') &&
+                              isNumeric) {
+                            displayText =
+                                '${_localizeDigitsGlobal(context, value)} seats';
+                          } else if (lowerTitle.contains('cylinder') &&
+                              isNumeric) {
+                            displayText =
+                                '${_localizeDigitsGlobal(context, value)} cylinders';
+                          } else if (lowerTitle.contains('engine') &&
+                              isNumeric) {
+                            displayText =
+                                '${_localizeDigitsGlobal(context, value)} L';
+                          } else if (value == 'Any') {
+                            displayText = AppLocalizations.of(
+                              context,
+                            )!.anyOption;
+                          } else if (isModelTitle && contextBrand != null) {
+                            displayText =
+                                CarNameTranslations.getLocalizedModel(
+                                  context,
+                                  contextBrand,
+                                  value,
+                                ).isNotEmpty
+                                ? CarNameTranslations.getLocalizedModel(
                                     context,
-                                    nf.format(num.tryParse(value) ?? 0),
-                                  )} ${AppLocalizations.of(context)!.unit_km}';
-                            } else if (lowerTitle.contains('year') && isNumeric) {
-                              displayText = _localizeDigitsGlobal(context, value);
-                            } else if (lowerTitle.contains('seating') && isNumeric) {
-                              displayText =
-                                  '${_localizeDigitsGlobal(context, value)} seats';
-                            } else if (lowerTitle.contains('cylinder') && isNumeric) {
-                              displayText =
-                                  '${_localizeDigitsGlobal(context, value)} cylinders';
-                            } else if (lowerTitle.contains('engine') && isNumeric) {
-                              displayText =
-                                  '${_localizeDigitsGlobal(context, value)} L';
-                            } else if (value == 'Any') {
-                              displayText = AppLocalizations.of(context)!.anyOption;
-                            } else if (isModelTitle && contextBrand != null) {
-                              displayText =
-                                  CarNameTranslations.getLocalizedModel(
-                                        context,
-                                        contextBrand,
-                                        value,
-                                      ).isNotEmpty
-                                  ? CarNameTranslations.getLocalizedModel(
-                                      context,
-                                      contextBrand,
-                                      value,
-                                    )
-                                  : value;
-                            } else if (isTrimTitle) {
-                              displayText = value;
-                            } else if (isBrandTitle) {
-                              displayText =
-                                  CarNameTranslations.getLocalizedBrand(
-                                        context,
-                                        value,
-                                      ).isNotEmpty
-                                  ? CarNameTranslations.getLocalizedBrand(
-                                      context,
-                                      value,
-                                    )
-                                  : value;
-                            } else {
-                              final translated = _translateValueGlobal(
-                                context,
-                                value,
-                              );
-                              if (translated != null) displayText = translated;
-                            }
-                            return InkWell(
-                              borderRadius: BorderRadius.circular(14),
-                              onTap: () => Navigator.pop(context, value),
-                              child: Container(
-                                padding: EdgeInsets.symmetric(
-                                  vertical: 14,
-                                  horizontal: 12,
+                                    contextBrand,
+                                    value,
+                                  )
+                                : value;
+                          } else if (isTrimTitle) {
+                            displayText = value;
+                          } else if (isBrandTitle) {
+                            displayText =
+                                CarNameTranslations.getLocalizedBrand(
+                                  context,
+                                  value,
+                                ).isNotEmpty
+                                ? CarNameTranslations.getLocalizedBrand(
+                                    context,
+                                    value,
+                                  )
+                                : value;
+                          } else {
+                            final translated = _translateValueGlobal(
+                              context,
+                              value,
+                            );
+                            if (translated != null) displayText = translated;
+                          }
+                          return InkWell(
+                            borderRadius: BorderRadius.circular(14),
+                            onTap: () => Navigator.pop(context, value),
+                            child: Container(
+                              padding: EdgeInsets.symmetric(
+                                vertical: 14,
+                                horizontal: 12,
+                              ),
+                              decoration: BoxDecoration(
+                                borderRadius: BorderRadius.circular(14),
+                                gradient: LinearGradient(
+                                  colors: [
+                                    Colors.white.withOpacity(0.06),
+                                    Colors.white.withOpacity(0.02),
+                                  ],
+                                  begin: Alignment.topLeft,
+                                  end: Alignment.bottomRight,
                                 ),
-                                decoration: BoxDecoration(
-                                  borderRadius: BorderRadius.circular(14),
-                                  gradient: LinearGradient(
-                                    colors: [
-                                      Colors.white.withOpacity(0.06),
-                                      Colors.white.withOpacity(0.02),
-                                    ],
-                                    begin: Alignment.topLeft,
-                                    end: Alignment.bottomRight,
-                                  ),
-                                  border: Border.all(color: Colors.white10),
-                                ),
-                                child: Row(
-                                  children: [
-                                    Expanded(
-                                      child: Text(
-                                        displayText,
-                                        style: TextStyle(
-                                          color: Colors.white,
-                                          fontWeight: FontWeight.w600,
-                                        ),
+                                border: Border.all(color: Colors.white10),
+                              ),
+                              child: Row(
+                                children: [
+                                  Expanded(
+                                    child: Text(
+                                      displayText,
+                                      style: TextStyle(
+                                        color: Colors.white,
+                                        fontWeight: FontWeight.w600,
                                       ),
                                     ),
-                                    Icon(
-                                      Icons.chevron_right,
-                                      color: Colors.white70,
-                                    ),
-                                  ],
-                                ),
+                                  ),
+                                  Icon(
+                                    Icons.chevron_right,
+                                    color: Colors.white70,
+                                  ),
+                                ],
                               ),
-                            );
-                          },
-                        ),
+                            ),
+                          );
+                        },
                       ),
-                    ],
-                  ),
+                    ),
+                  ],
                 ),
-              );
+              ),
+            );
           },
         );
       },
@@ -14382,153 +14951,164 @@ class _SellStep1PageState extends State<SellStep1Page> {
       builder: (context) {
         return StatefulBuilder(
           builder: (context, setStateDialog) {
-              final normalizedQuery = query.trim().toLowerCase();
-              final filteredBrands = brands.where((brand) {
-                if (normalizedQuery.isEmpty) return true;
-                if (brand.toLowerCase().contains(normalizedQuery)) return true;
-                final localized = CarNameTranslations.getLocalizedBrand(
-                  context,
-                  brand,
-                ).toLowerCase();
-                return localized.contains(normalizedQuery);
-              }).toList();
-              return Dialog(
-          backgroundColor: Colors.grey[900]?.withOpacity(0.98),
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(20),
-          ),
-          child: Container(
-            width: 480,
-            padding: EdgeInsets.all(20),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            final normalizedQuery = query.trim().toLowerCase();
+            final filteredBrands = brands.where((brand) {
+              if (normalizedQuery.isEmpty) return true;
+              if (brand.toLowerCase().contains(normalizedQuery)) return true;
+              final localized = CarNameTranslations.getLocalizedBrand(
+                context,
+                brand,
+              ).toLowerCase();
+              return localized.contains(normalizedQuery);
+            }).toList();
+            return Dialog(
+              backgroundColor: Colors.grey[900]?.withOpacity(0.98),
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(20),
+              ),
+              child: Container(
+                width: 480,
+                padding: EdgeInsets.all(20),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  mainAxisSize: MainAxisSize.min,
                   children: [
-                    Text(
-                      AppLocalizations.of(context)!.selectBrand,
-                      style: TextStyle(
-                        color: Color(0xFFFF6B00),
-                        fontWeight: FontWeight.bold,
-                        fontSize: 20,
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      children: [
+                        Text(
+                          AppLocalizations.of(context)!.selectBrand,
+                          style: TextStyle(
+                            color: Color(0xFFFF6B00),
+                            fontWeight: FontWeight.bold,
+                            fontSize: 20,
+                          ),
+                        ),
+                        IconButton(
+                          icon: Icon(Icons.close, color: Colors.white),
+                          onPressed: () => Navigator.pop(context),
+                        ),
+                      ],
+                    ),
+                    SizedBox(height: 10),
+                    TextField(
+                      onChanged: (value) {
+                        query = value;
+                        setStateDialog(() {});
+                      },
+                      style: const TextStyle(color: Colors.white),
+                      decoration: InputDecoration(
+                        hintText: 'Search...',
+                        hintStyle: const TextStyle(color: Colors.white60),
+                        prefixIcon: const Icon(
+                          Icons.search,
+                          color: Colors.white70,
+                        ),
+                        filled: true,
+                        fillColor: Colors.black.withOpacity(0.2),
+                        enabledBorder: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(12),
+                          borderSide: const BorderSide(color: Colors.white24),
+                        ),
+                        focusedBorder: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(12),
+                          borderSide: const BorderSide(
+                            color: Color(0xFFFF6B00),
+                          ),
+                        ),
                       ),
                     ),
-                    IconButton(
-                      icon: Icon(Icons.close, color: Colors.white),
-                      onPressed: () => Navigator.pop(context),
+                    SizedBox(height: 10),
+                    SizedBox(
+                      height: 420,
+                      child: GridView.builder(
+                        shrinkWrap: true,
+                        physics: BouncingScrollPhysics(),
+                        gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
+                          crossAxisCount: 4,
+                          childAspectRatio: 0.85,
+                          crossAxisSpacing: 10,
+                          mainAxisSpacing: 10,
+                        ),
+                        itemCount: filteredBrands.length,
+                        itemBuilder: (context, index) {
+                          final brand = filteredBrands[index];
+                          final logoFile = _brandSlug(brand);
+                          final logoUrl =
+                              '${getApiBase()}/static/images/brands/$logoFile.png';
+                          return InkWell(
+                            borderRadius: BorderRadius.circular(12),
+                            onTap: () => Navigator.pop(context, brand),
+                            child: Container(
+                              decoration: BoxDecoration(
+                                color: Colors.black.withOpacity(0.15),
+                                borderRadius: BorderRadius.circular(12),
+                                border: Border.all(color: Colors.white24),
+                              ),
+                              padding: EdgeInsets.all(6),
+                              child: Column(
+                                mainAxisAlignment: MainAxisAlignment.center,
+                                children: [
+                                  Container(
+                                    width: 32,
+                                    height: 32,
+                                    padding: EdgeInsets.all(4),
+                                    decoration: BoxDecoration(
+                                      color: Colors.white,
+                                      borderRadius: BorderRadius.circular(8),
+                                    ),
+                                    child: CachedNetworkImage(
+                                      imageUrl: logoUrl,
+                                      placeholder: (context, url) => SizedBox(
+                                        width: 24,
+                                        height: 24,
+                                        child: CircularProgressIndicator(
+                                          strokeWidth: 2,
+                                        ),
+                                      ),
+                                      errorWidget: (context, url, error) =>
+                                          Image.network(
+                                            '${getApiBase()}/static/images/brands/default.png',
+                                            fit: BoxFit.contain,
+                                          ),
+                                      fit: BoxFit.contain,
+                                    ),
+                                  ),
+                                  SizedBox(height: 4),
+                                  Text(
+                                    CarNameTranslations.getLocalizedBrand(
+                                          context,
+                                          brand,
+                                        ).isNotEmpty
+                                        ? CarNameTranslations.getLocalizedBrand(
+                                            context,
+                                            brand,
+                                          )
+                                        : brand,
+                                    style: TextStyle(
+                                      fontSize: 10,
+                                      color: Colors.white,
+                                      fontWeight: FontWeight.bold,
+                                    ),
+                                    maxLines: 1,
+                                    overflow: TextOverflow.ellipsis,
+                                    textAlign: TextAlign.center,
+                                  ),
+                                ],
+                              ),
+                            ),
+                          );
+                        },
+                      ),
                     ),
                   ],
                 ),
-                SizedBox(height: 10),
-                TextField(
-                  onChanged: (value) {
-                    query = value;
-                    setStateDialog(() {});
-                  },
-                  style: const TextStyle(color: Colors.white),
-                  decoration: InputDecoration(
-                    hintText: 'Search...',
-                    hintStyle: const TextStyle(color: Colors.white60),
-                    prefixIcon: const Icon(Icons.search, color: Colors.white70),
-                    filled: true,
-                    fillColor: Colors.black.withOpacity(0.2),
-                    enabledBorder: OutlineInputBorder(
-                      borderRadius: BorderRadius.circular(12),
-                      borderSide: const BorderSide(color: Colors.white24),
-                    ),
-                    focusedBorder: OutlineInputBorder(
-                      borderRadius: BorderRadius.circular(12),
-                      borderSide: const BorderSide(color: Color(0xFFFF6B00)),
-                    ),
-                  ),
-                ),
-                SizedBox(height: 10),
-                SizedBox(
-                  height: 420,
-                  child: GridView.builder(
-                    shrinkWrap: true,
-                    physics: BouncingScrollPhysics(),
-                    gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
-                      crossAxisCount: 4,
-                      childAspectRatio: 0.85,
-                      crossAxisSpacing: 10,
-                      mainAxisSpacing: 10,
-                    ),
-                    itemCount: filteredBrands.length,
-                    itemBuilder: (context, index) {
-                      final brand = filteredBrands[index];
-                      final logoFile = _brandSlug(brand);
-                      final logoUrl =
-                          '${getApiBase()}/static/images/brands/$logoFile.png';
-                      return InkWell(
-                        borderRadius: BorderRadius.circular(12),
-                        onTap: () => Navigator.pop(context, brand),
-                        child: Container(
-                          decoration: BoxDecoration(
-                            color: Colors.black.withOpacity(0.15),
-                            borderRadius: BorderRadius.circular(12),
-                            border: Border.all(color: Colors.white24),
-                          ),
-                          padding: EdgeInsets.all(6),
-                          child: Column(
-                            mainAxisAlignment: MainAxisAlignment.center,
-                            children: [
-                              Container(
-                                width: 32,
-                                height: 32,
-                                padding: EdgeInsets.all(4),
-                                decoration: BoxDecoration(
-                                  color: Colors.white,
-                                  borderRadius: BorderRadius.circular(8),
-                                ),
-                                child: CachedNetworkImage(
-                                  imageUrl: logoUrl,
-                                  placeholder: (context, url) => SizedBox(
-                                    width: 24,
-                                    height: 24,
-                                    child: CircularProgressIndicator(
-                                      strokeWidth: 2,
-                                    ),
-                                  ),
-                                  errorWidget: (context, url, error) =>
-                                      Image.network(
-                                        '${getApiBase()}/static/images/brands/default.png',
-                                        fit: BoxFit.contain,
-                                      ),
-                                  fit: BoxFit.contain,
-                                ),
-                              ),
-                              SizedBox(height: 4),
-                              Text(
-                                CarNameTranslations.getLocalizedBrand(context, brand).isNotEmpty
-                                    ? CarNameTranslations.getLocalizedBrand(context, brand)
-                                    : brand,
-                                style: TextStyle(
-                                  fontSize: 10,
-                                  color: Colors.white,
-                                  fontWeight: FontWeight.bold,
-                                ),
-                                maxLines: 1,
-                                overflow: TextOverflow.ellipsis,
-                                textAlign: TextAlign.center,
-                              ),
-                            ],
-                          ),
-                        ),
-                      );
-                    },
-                  ),
-                ),
-              ],
-            ),
-          ),
-              );
-            },
-          );
-        },
-      );
+              ),
+            );
+          },
+        );
+      },
+    );
   }
 
   List<String> get brands => CarCatalog.brands;
@@ -14597,8 +15177,9 @@ class _SellStep1PageState extends State<SellStep1Page> {
 
             // Brand Selection (Modal)
             FormField<String>(
-              validator: (_) =>
-                  selectedBrand == null ? AppLocalizations.of(context)!.pleaseSelectBrand : null,
+              validator: (_) => selectedBrand == null
+                  ? AppLocalizations.of(context)!.pleaseSelectBrand
+                  : null,
               builder: (state) => GestureDetector(
                 onTap: () async {
                   _dismissKeyboard();
@@ -14618,9 +15199,15 @@ class _SellStep1PageState extends State<SellStep1Page> {
                   context,
                   label: '${AppLocalizations.of(context)!.brandLabel} *',
                   value: selectedBrand != null
-                      ? (CarNameTranslations.getLocalizedBrand(context, selectedBrand).isNotEmpty
-                          ? CarNameTranslations.getLocalizedBrand(context, selectedBrand)
-                          : selectedBrand)
+                      ? (CarNameTranslations.getLocalizedBrand(
+                              context,
+                              selectedBrand,
+                            ).isNotEmpty
+                            ? CarNameTranslations.getLocalizedBrand(
+                                context,
+                                selectedBrand,
+                              )
+                            : selectedBrand)
                       : selectedBrand,
                   isError:
                       errBrand &&
@@ -14640,11 +15227,10 @@ class _SellStep1PageState extends State<SellStep1Page> {
                               imageUrl:
                                   '${getApiBase()}/static/images/brands/${_brandSlug(selectedBrand!)}.png',
                               fit: BoxFit.contain,
-                              errorWidget: (context, url, error) =>
-                                  Image.network(
-                                    '${getApiBase()}/static/images/brands/default.png',
-                                    fit: BoxFit.contain,
-                                  ),
+                              errorWidget: (context, url, error) => Image.network(
+                                '${getApiBase()}/static/images/brands/default.png',
+                                fit: BoxFit.contain,
+                              ),
                             ),
                           ),
                   ),
@@ -14655,14 +15241,19 @@ class _SellStep1PageState extends State<SellStep1Page> {
 
             // Model (Modal)
             FormField<String>(
-              validator: (_) =>
-                  selectedModel == null ? AppLocalizations.of(context)!.pleaseSelectModel : null,
+              validator: (_) => selectedModel == null
+                  ? AppLocalizations.of(context)!.pleaseSelectModel
+                  : null,
               builder: (state) => GestureDetector(
                 onTap: () async {
                   _dismissKeyboard();
                   if (selectedBrand == null) return;
                   final options = models[selectedBrand!] ?? [];
-                  final choice = await _pickFromList(AppLocalizations.of(context)!.modelLabel, options, contextBrand: selectedBrand);
+                  final choice = await _pickFromList(
+                    AppLocalizations.of(context)!.modelLabel,
+                    options,
+                    contextBrand: selectedBrand,
+                  );
                   if (choice != null) {
                     setState(() {
                       selectedModel = choice;
@@ -14678,10 +15269,20 @@ class _SellStep1PageState extends State<SellStep1Page> {
                   icon: Icons.directions_car,
                   label: '${AppLocalizations.of(context)!.modelLabel} *',
                   value: selectedModel != null
-                      ? (CarNameTranslations.getLocalizedModel(context, selectedBrand, selectedModel).isNotEmpty
-                          ? CarNameTranslations.getLocalizedModel(context, selectedBrand, selectedModel)
-                          : selectedModel)
-                      : (selectedBrand == null ? AppLocalizations.of(context)!.selectBrandFirst : ''),
+                      ? (CarNameTranslations.getLocalizedModel(
+                              context,
+                              selectedBrand,
+                              selectedModel,
+                            ).isNotEmpty
+                            ? CarNameTranslations.getLocalizedModel(
+                                context,
+                                selectedBrand,
+                                selectedModel,
+                              )
+                            : selectedModel)
+                      : (selectedBrand == null
+                            ? AppLocalizations.of(context)!.selectBrandFirst
+                            : ''),
                   isError:
                       errModel &&
                       (selectedModel == null || selectedModel!.isEmpty),
@@ -14692,12 +15293,16 @@ class _SellStep1PageState extends State<SellStep1Page> {
 
             // Trim (Modal)
             FormField<String>(
-              validator: (_) =>
-                  selectedTrim == null ? AppLocalizations.of(context)!.pleaseSelectTrim : null,
+              validator: (_) => selectedTrim == null
+                  ? AppLocalizations.of(context)!.pleaseSelectTrim
+                  : null,
               builder: (state) => GestureDetector(
                 onTap: () async {
                   _dismissKeyboard();
-                  final choice = await _pickFromList(AppLocalizations.of(context)!.trimLabel, availableTrims);
+                  final choice = await _pickFromList(
+                    AppLocalizations.of(context)!.trimLabel,
+                    availableTrims,
+                  );
                   if (choice != null) {
                     setState(() {
                       selectedTrim = choice;
@@ -14731,8 +15336,11 @@ class _SellStep1PageState extends State<SellStep1Page> {
                           focusNode: _yearFocusNode,
                           controller: _yearController,
                           decoration: InputDecoration(
-                            labelText: '${AppLocalizations.of(context)!.yearLabel} *',
-                            hintText: AppLocalizations.of(context)!.enterYearHint,
+                            labelText:
+                                '${AppLocalizations.of(context)!.yearLabel} *',
+                            hintText: AppLocalizations.of(
+                              context,
+                            )!.enterYearHint,
                             filled: true,
                             fillColor: _sellFlowManualFieldFill(context),
                             labelStyle: _sellFlowManualFieldLabelStyle(context),
@@ -14784,7 +15392,8 @@ class _SellStep1PageState extends State<SellStep1Page> {
                             child: buildFancySelector(
                               context,
                               icon: Icons.calendar_today,
-                              label: '${AppLocalizations.of(context)!.yearLabel} *',
+                              label:
+                                  '${AppLocalizations.of(context)!.yearLabel} *',
                               value: selectedYear != null
                                   ? _localizeDigitsGlobal(
                                       context,
@@ -14833,7 +15442,9 @@ class _SellStep1PageState extends State<SellStep1Page> {
                       borderRadius: BorderRadius.circular(8),
                     ),
                   ),
-                  tooltip: isYearManualInput ? AppLocalizations.of(context)!.confirmYear : AppLocalizations.of(context)!.typeManually,
+                  tooltip: isYearManualInput
+                      ? AppLocalizations.of(context)!.confirmYear
+                      : AppLocalizations.of(context)!.typeManually,
                 ),
               ],
             ),
@@ -14921,10 +15532,7 @@ class _SellStep1PageState extends State<SellStep1Page> {
 
 // Step 2: Car Details (Mileage, Condition, Transmission, etc.)
 class SellStep2Page extends StatefulWidget {
-  const SellStep2Page({
-    super.key,
-    this.specsHydrateToken = '',
-  });
+  const SellStep2Page({super.key, this.specsHydrateToken = ''});
 
   /// When catalog/online/AI specs timestamps change, state re-reads [carData] (covers off-screen step 2).
   final String specsHydrateToken;
@@ -14942,6 +15550,7 @@ class _SellStep2PageState extends State<SellStep2Page> {
   String? selectedBodyType;
   String? selectedColor;
   String? selectedDriveType;
+
   /// Lowercase code sent as `region_specs` (see [kCarRegionSpecCodes]).
   String? selectedRegionSpecs;
   String? selectedSeating;
@@ -15019,7 +15628,12 @@ class _SellStep2PageState extends State<SellStep2Page> {
     final y = int.tryParse(carData['year']?.toString().trim() ?? '');
     if (b.isEmpty || m.isEmpty || y == null) return null;
     if (!idx.hasCoverage(b, m)) return null;
-    return idx.sellFieldOptionsUnion(b, m, CarSpecIndex.catalogAutofillModelOnly, y);
+    return idx.sellFieldOptionsUnion(
+      b,
+      m,
+      CarSpecIndex.catalogAutofillModelOnly,
+      y,
+    );
   }
 
   void _refreshCatalogOptsFromParent() {
@@ -15183,10 +15797,7 @@ class _SellStep2PageState extends State<SellStep2Page> {
   }
 
   final List<String> conditions = ['New', 'Used'];
-  final List<String> transmissions = [
-    'Automatic',
-    'Manual',
-  ];
+  final List<String> transmissions = ['Automatic', 'Manual'];
   final List<String> fuelTypes = [
     'Gasoline',
     'Diesel',
@@ -15222,21 +15833,162 @@ class _SellStep2PageState extends State<SellStep2Page> {
   // Same engine size options as More Filters (0.5 to 16.0 step 0.1)
   final List<String> engineSizes = [
     'Any',
-    '0.5', '0.6', '0.7', '0.8', '0.9', '1.0', '1.1', '1.2', '1.3', '1.4', '1.5',
-    '1.6', '1.7', '1.8', '1.9', '2.0', '2.1', '2.2', '2.3', '2.4', '2.5', '2.6',
-    '2.7', '2.8', '2.9', '3.0', '3.1', '3.2', '3.3', '3.4', '3.5', '3.6', '3.7',
-    '3.8', '3.9', '4.0', '4.1', '4.2', '4.3', '4.4', '4.5', '4.6', '4.7', '4.8',
-    '4.9', '5.0', '5.1', '5.2', '5.3', '5.4', '5.5', '5.6', '5.7', '5.8', '5.9',
-    '6.0', '6.1', '6.2', '6.3', '6.4', '6.5', '6.6', '6.7', '6.8', '6.9', '7.0',
-    '7.1', '7.2', '7.3', '7.4', '7.5', '7.6', '7.7', '7.8', '7.9', '8.0', '8.1',
-    '8.2', '8.3', '8.4', '8.5', '8.6', '8.7', '8.8', '8.9', '9.0', '9.1', '9.2',
-    '9.3', '9.4', '9.5', '9.6', '9.7', '9.8', '9.9', '10.0', '10.1', '10.2',
-    '10.3', '10.4', '10.5', '10.6', '10.7', '10.8', '10.9', '11.0', '11.1', '11.2',
-    '11.3', '11.4', '11.5', '11.6', '11.7', '11.8', '11.9', '12.0', '12.1', '12.2',
-    '12.3', '12.4', '12.5', '12.6', '12.7', '12.8', '12.9', '13.0', '13.1', '13.2',
-    '13.3', '13.4', '13.5', '13.6', '13.7', '13.8', '13.9', '14.0', '14.1', '14.2',
-    '14.3', '14.4', '14.5', '14.6', '14.7', '14.8', '14.9', '15.0', '15.1', '15.2',
-    '15.3', '15.4', '15.5', '15.6', '15.7', '15.8', '15.9', '16.0',
+    '0.5',
+    '0.6',
+    '0.7',
+    '0.8',
+    '0.9',
+    '1.0',
+    '1.1',
+    '1.2',
+    '1.3',
+    '1.4',
+    '1.5',
+    '1.6',
+    '1.7',
+    '1.8',
+    '1.9',
+    '2.0',
+    '2.1',
+    '2.2',
+    '2.3',
+    '2.4',
+    '2.5',
+    '2.6',
+    '2.7',
+    '2.8',
+    '2.9',
+    '3.0',
+    '3.1',
+    '3.2',
+    '3.3',
+    '3.4',
+    '3.5',
+    '3.6',
+    '3.7',
+    '3.8',
+    '3.9',
+    '4.0',
+    '4.1',
+    '4.2',
+    '4.3',
+    '4.4',
+    '4.5',
+    '4.6',
+    '4.7',
+    '4.8',
+    '4.9',
+    '5.0',
+    '5.1',
+    '5.2',
+    '5.3',
+    '5.4',
+    '5.5',
+    '5.6',
+    '5.7',
+    '5.8',
+    '5.9',
+    '6.0',
+    '6.1',
+    '6.2',
+    '6.3',
+    '6.4',
+    '6.5',
+    '6.6',
+    '6.7',
+    '6.8',
+    '6.9',
+    '7.0',
+    '7.1',
+    '7.2',
+    '7.3',
+    '7.4',
+    '7.5',
+    '7.6',
+    '7.7',
+    '7.8',
+    '7.9',
+    '8.0',
+    '8.1',
+    '8.2',
+    '8.3',
+    '8.4',
+    '8.5',
+    '8.6',
+    '8.7',
+    '8.8',
+    '8.9',
+    '9.0',
+    '9.1',
+    '9.2',
+    '9.3',
+    '9.4',
+    '9.5',
+    '9.6',
+    '9.7',
+    '9.8',
+    '9.9',
+    '10.0',
+    '10.1',
+    '10.2',
+    '10.3',
+    '10.4',
+    '10.5',
+    '10.6',
+    '10.7',
+    '10.8',
+    '10.9',
+    '11.0',
+    '11.1',
+    '11.2',
+    '11.3',
+    '11.4',
+    '11.5',
+    '11.6',
+    '11.7',
+    '11.8',
+    '11.9',
+    '12.0',
+    '12.1',
+    '12.2',
+    '12.3',
+    '12.4',
+    '12.5',
+    '12.6',
+    '12.7',
+    '12.8',
+    '12.9',
+    '13.0',
+    '13.1',
+    '13.2',
+    '13.3',
+    '13.4',
+    '13.5',
+    '13.6',
+    '13.7',
+    '13.8',
+    '13.9',
+    '14.0',
+    '14.1',
+    '14.2',
+    '14.3',
+    '14.4',
+    '14.5',
+    '14.6',
+    '14.7',
+    '14.8',
+    '14.9',
+    '15.0',
+    '15.1',
+    '15.2',
+    '15.3',
+    '15.4',
+    '15.5',
+    '15.6',
+    '15.7',
+    '15.8',
+    '15.9',
+    '16.0',
   ];
   final List<String> cylinderCounts = ['3', '4', '5', '6', '8', '10', '12'];
   final List<String> titleStatuses = ['Clean', 'Damaged'];
@@ -15308,13 +16060,10 @@ class _SellStep2PageState extends State<SellStep2Page> {
   List<String> getAvailableEngineSizes() {
     final onlineRaw = _onlineMultiFromCarData('_online_opts_engine_size');
     if (onlineRaw != null) {
-      final online = onlineRaw
-          .map((e) => e.toString().trim())
-          .where((s) {
-            final x = OnlineSpecVariant.parseLeadingEngineLiters(s);
-            return x != null && x > 0.001;
-          })
-          .toList();
+      final online = onlineRaw.map((e) => e.toString().trim()).where((s) {
+        final x = OnlineSpecVariant.parseLeadingEngineLiters(s);
+        return x != null && x > 0.001;
+      }).toList();
       if (online.isEmpty) {
         // Bad API data (e.g. 0.0 L) — use full list like no-online.
       } else if (online.length == 1) {
@@ -15343,7 +16092,9 @@ class _SellStep2PageState extends State<SellStep2Page> {
     if (online != null) return online;
     final o = _catalogSellOpts;
     if (o == null || o.cylinderCounts.isEmpty) return cylinderCounts;
-    final f = cylinderCounts.where((e) => o.cylinderCounts.contains(e)).toList();
+    final f = cylinderCounts
+        .where((e) => o.cylinderCounts.contains(e))
+        .toList();
     return f.isEmpty ? cylinderCounts : f;
   }
 
@@ -15462,7 +16213,9 @@ class _SellStep2PageState extends State<SellStep2Page> {
       bodyType: _sellStep2BodyLabelToApi(selectedBodyType),
       fuelType: _sellStep2FuelApiForMatch(vs, selectedFuelType),
       seating: _sellStep2CurrentSeatingInt(),
-      currentTransmission: _sellStep2TransmissionLabelToApi(selectedTransmission),
+      currentTransmission: _sellStep2TransmissionLabelToApi(
+        selectedTransmission,
+      ),
       currentDrivetrain: _sellStep2DriveLabelToApi(selectedDriveType),
       currentSeating: _sellStep2CurrentSeatingInt(),
     );
@@ -15568,10 +16321,7 @@ class _SellStep2PageState extends State<SellStep2Page> {
                             ).toLanguageTag();
                             final nf = _decimalFormatterGlobal(context);
                             displayText =
-                                '${_localizeDigitsGlobal(
-                                  context,
-                                  nf.format(num.tryParse(value) ?? 0),
-                                )} ${AppLocalizations.of(context)!.unit_km}';
+                                '${_localizeDigitsGlobal(context, nf.format(num.tryParse(value) ?? 0))} ${AppLocalizations.of(context)!.unit_km}';
                           } else if (lowerTitle.contains('year') && isNumeric) {
                             displayText = _localizeDigitsGlobal(context, value);
                           } else if (lowerTitle.contains('seating') &&
@@ -15590,7 +16340,9 @@ class _SellStep2PageState extends State<SellStep2Page> {
                             displayText =
                                 '${_localizeDigitsGlobal(context, value)} L';
                           } else if (value == 'Any') {
-                            displayText = AppLocalizations.of(context)!.anyOption;
+                            displayText = AppLocalizations.of(
+                              context,
+                            )!.anyOption;
                           } else {
                             final translated = _translateValueGlobal(
                               context,
@@ -15705,8 +16457,11 @@ class _SellStep2PageState extends State<SellStep2Page> {
                           focusNode: _mileageFocusNode,
                           controller: _mileageController,
                           decoration: InputDecoration(
-                            labelText: '${AppLocalizations.of(context)!.mileageKmLabel} *',
-                            hintText: AppLocalizations.of(context)!.enterMileage,
+                            labelText:
+                                '${AppLocalizations.of(context)!.mileageKmLabel} *',
+                            hintText: AppLocalizations.of(
+                              context,
+                            )!.enterMileage,
                             filled: true,
                             fillColor: _sellFlowManualFieldFill(context),
                             labelStyle: _sellFlowManualFieldLabelStyle(context),
@@ -15743,7 +16498,9 @@ class _SellStep2PageState extends State<SellStep2Page> {
                           validator: (_) =>
                               (selectedMileage == null ||
                                   selectedMileage!.isEmpty)
-                              ? AppLocalizations.of(context)!.pleaseSelectMileage
+                              ? AppLocalizations.of(
+                                  context,
+                                )!.pleaseSelectMileage
                               : null,
                           builder: (state) => GestureDetector(
                             onTap: () async {
@@ -15768,16 +16525,10 @@ class _SellStep2PageState extends State<SellStep2Page> {
                             child: buildFancySelector(
                               context,
                               icon: Icons.speed,
-                              label: '${AppLocalizations.of(context)!.mileageKmLabel} *',
+                              label:
+                                  '${AppLocalizations.of(context)!.mileageKmLabel} *',
                               value: selectedMileage != null
-                                  ? ('${_localizeDigitsGlobal(
-                                          context,
-                                          _decimalFormatterGlobal(
-                                            context,
-                                          ).format(
-                                            int.tryParse(selectedMileage!) ?? 0,
-                                          ),
-                                        )} ${AppLocalizations.of(context)!.unit_km}')
+                                  ? ('${_localizeDigitsGlobal(context, _decimalFormatterGlobal(context).format(int.tryParse(selectedMileage!) ?? 0))} ${AppLocalizations.of(context)!.unit_km}')
                                   : null,
                               isError:
                                   errMileage &&
@@ -15831,8 +16582,9 @@ class _SellStep2PageState extends State<SellStep2Page> {
 
             // Condition (Modal)
             FormField<String>(
-              validator: (_) =>
-                  selectedCondition == null ? AppLocalizations.of(context)!.pleaseSelectCondition : null,
+              validator: (_) => selectedCondition == null
+                  ? AppLocalizations.of(context)!.pleaseSelectCondition
+                  : null,
               builder: (state) => GestureDetector(
                 onTap: () async {
                   _dismissKeyboard();
@@ -15891,8 +16643,9 @@ class _SellStep2PageState extends State<SellStep2Page> {
 
             // Fuel Type (Modal)
             FormField<String>(
-              validator: (_) =>
-                  selectedFuelType == null ? AppLocalizations.of(context)!.pleaseSelectFuelType : null,
+              validator: (_) => selectedFuelType == null
+                  ? AppLocalizations.of(context)!.pleaseSelectFuelType
+                  : null,
               builder: (state) => GestureDetector(
                 onTap: () async {
                   final choice = await _pickFromList(
@@ -15921,8 +16674,9 @@ class _SellStep2PageState extends State<SellStep2Page> {
 
             // Body Type (Modal - grid like search)
             FormField<String>(
-              validator: (_) =>
-                  selectedBodyType == null ? AppLocalizations.of(context)!.pleaseSelectBodyType : null,
+              validator: (_) => selectedBodyType == null
+                  ? AppLocalizations.of(context)!.pleaseSelectBodyType
+                  : null,
               builder: (state) => GestureDetector(
                 onTap: () async {
                   final choice = await showDialog<String>(
@@ -15945,7 +16699,9 @@ class _SellStep2PageState extends State<SellStep2Page> {
                                     MainAxisAlignment.spaceBetween,
                                 children: [
                                   Text(
-                                    AppLocalizations.of(context)!.selectBodyType,
+                                    AppLocalizations.of(
+                                      context,
+                                    )!.selectBodyType,
                                     style: GoogleFonts.orbitron(
                                       color: Color(0xFFFF6B00),
                                       fontWeight: FontWeight.bold,
@@ -16053,12 +16809,14 @@ class _SellStep2PageState extends State<SellStep2Page> {
                                             const SizedBox(height: 8),
                                             Text(
                                               bodyTypeName == 'Any'
-                                                  ? AppLocalizations.of(context)!.anyOption
+                                                  ? AppLocalizations.of(
+                                                      context,
+                                                    )!.anyOption
                                                   : (_translateValueGlobal(
-                                                        context,
-                                                        bodyTypeName,
-                                                      ) ??
-                                                      bodyTypeName),
+                                                          context,
+                                                          bodyTypeName,
+                                                        ) ??
+                                                        bodyTypeName),
                                               style: GoogleFonts.orbitron(
                                                 fontSize: 12,
                                                 color: isSelected
@@ -16244,8 +17002,9 @@ class _SellStep2PageState extends State<SellStep2Page> {
 
             // Drive Type (Modal)
             FormField<String>(
-              validator: (_) =>
-                  selectedDriveType == null ? AppLocalizations.of(context)!.pleaseSelectDriveType : null,
+              validator: (_) => selectedDriveType == null
+                  ? AppLocalizations.of(context)!.pleaseSelectDriveType
+                  : null,
               builder: (state) => GestureDetector(
                 onTap: () async {
                   final choice = await _pickFromList(
@@ -16273,7 +17032,8 @@ class _SellStep2PageState extends State<SellStep2Page> {
             SizedBox(height: 16),
 
             FormField<String>(
-              validator: (_) => (selectedRegionSpecs == null ||
+              validator: (_) =>
+                  (selectedRegionSpecs == null ||
                       !isValidCarRegionSpecCode(selectedRegionSpecs))
                   ? AppLocalizations.of(context)!.pleaseSelectRegionSpecs
                   : null,
@@ -16307,8 +17067,9 @@ class _SellStep2PageState extends State<SellStep2Page> {
 
             // Seating (Modal)
             FormField<String>(
-              validator: (_) =>
-                  selectedSeating == null ? AppLocalizations.of(context)!.pleaseSelectSeating : null,
+              validator: (_) => selectedSeating == null
+                  ? AppLocalizations.of(context)!.pleaseSelectSeating
+                  : null,
               builder: (state) => GestureDetector(
                 onTap: () async {
                   final choice = await _pickFromList(
@@ -16348,7 +17109,9 @@ class _SellStep2PageState extends State<SellStep2Page> {
                           decoration: InputDecoration(
                             labelText:
                                 '${AppLocalizations.of(context)!.engineSizeL} *',
-                            hintText: AppLocalizations.of(context)!.pleaseSelectEngineSize,
+                            hintText: AppLocalizations.of(
+                              context,
+                            )!.pleaseSelectEngineSize,
                             filled: true,
                             fillColor: _sellFlowManualFieldFill(context),
                             labelStyle: _sellFlowManualFieldLabelStyle(context),
@@ -16383,8 +17146,9 @@ class _SellStep2PageState extends State<SellStep2Page> {
                           ],
                           onChanged: (value) {
                             setState(() {
-                              selectedEngineSize =
-                                  value.isEmpty ? null : value.trim();
+                              selectedEngineSize = value.isEmpty
+                                  ? null
+                                  : value.trim();
                               if (errEngineSize) errEngineSize = false;
                             });
                           },
@@ -16404,9 +17168,11 @@ class _SellStep2PageState extends State<SellStep2Page> {
                       : FormField<String>(
                           validator: (_) =>
                               (selectedEngineSize == null ||
-                                      selectedEngineSize!.isEmpty)
-                                  ? AppLocalizations.of(context)!.pleaseSelectEngineSize
-                                  : null,
+                                  selectedEngineSize!.isEmpty)
+                              ? AppLocalizations.of(
+                                  context,
+                                )!.pleaseSelectEngineSize
+                              : null,
                           builder: (state) => GestureDetector(
                             onTap: () async {
                               final choice = await _pickFromList(
@@ -16417,8 +17183,10 @@ class _SellStep2PageState extends State<SellStep2Page> {
                               );
                               if (choice != null) {
                                 setState(() {
-                                  selectedEngineSize =
-                                      choice.replaceAll(' L', '');
+                                  selectedEngineSize = choice.replaceAll(
+                                    ' L',
+                                    '',
+                                  );
                                   if (errEngineSize) errEngineSize = false;
                                   _syncStep2ToOnlineVariant({'e'});
                                 });
@@ -16435,7 +17203,8 @@ class _SellStep2PageState extends State<SellStep2Page> {
                                       context,
                                       selectedEngineSize!,
                                     ),
-                              isError: errEngineSize &&
+                              isError:
+                                  errEngineSize &&
                                   (selectedEngineSize == null ||
                                       selectedEngineSize!.trim().isEmpty),
                             ),
@@ -16452,8 +17221,8 @@ class _SellStep2PageState extends State<SellStep2Page> {
                       setState(() {
                         isEngineSizeManualInput = false;
                         if (_engineSizeController.text.isNotEmpty) {
-                          selectedEngineSize =
-                              _engineSizeController.text.trim();
+                          selectedEngineSize = _engineSizeController.text
+                              .trim();
                           _syncStep2ToOnlineVariant({'e'});
                         }
                       });
@@ -16513,15 +17282,12 @@ class _SellStep2PageState extends State<SellStep2Page> {
                 child: buildFancySelector(
                   context,
                   icon: Icons.settings_input_component,
-                  label:
-                      '${AppLocalizations.of(context)!.cylinderCount} *',
+                  label: '${AppLocalizations.of(context)!.cylinderCount} *',
                   value: selectedCylinderCount == null
                       ? null
-                      : ('${_localizeDigitsGlobal(
-                              context,
-                              selectedCylinderCount!,
-                            )} cylinders'),
-                  isError: errCylinderCount &&
+                      : ('${_localizeDigitsGlobal(context, selectedCylinderCount!)} cylinders'),
+                  isError:
+                      errCylinderCount &&
                       (selectedCylinderCount == null ||
                           selectedCylinderCount!.trim().isEmpty),
                 ),
@@ -16681,9 +17447,11 @@ class _SellStep2PageState extends State<SellStep2Page> {
                         final String engineForStep = isEngineSizeManualInput
                             ? _engineSizeController.text.trim()
                             : (selectedEngineSize ?? '').trim();
-                        final double? engineLiters =
-                            double.tryParse(engineForStep);
-                        final bool engineOk = engineForStep.isNotEmpty &&
+                        final double? engineLiters = double.tryParse(
+                          engineForStep,
+                        );
+                        final bool engineOk =
+                            engineForStep.isNotEmpty &&
                             engineLiters != null &&
                             engineLiters > 0;
                         if (!engineOk) {
@@ -16735,9 +17503,7 @@ class _SellStep2PageState extends State<SellStep2Page> {
                                 (selectedDriveType ?? '').isEmpty;
                             errRegionSpecs =
                                 selectedRegionSpecs == null ||
-                                !isValidCarRegionSpecCode(
-                                  selectedRegionSpecs,
-                                );
+                                !isValidCarRegionSpecCode(selectedRegionSpecs);
                             errSeating =
                                 selectedSeating == null ||
                                 (selectedSeating ?? '').isEmpty;
@@ -16794,8 +17560,8 @@ class _SellStep2PageState extends State<SellStep2Page> {
                             errMileage = errCondition = errTransmission =
                                 errFuelType = errBodyType = errColor =
                                     errDrive = errRegionSpecs = errSeating =
-                                    errEngineSize = errCylinderCount =
-                                    errTitle = errDamagedParts = false;
+                                        errEngineSize = errCylinderCount =
+                                            errTitle = errDamagedParts = false;
                           });
                           parentState._goToNextStep();
                         }
@@ -17116,8 +17882,12 @@ class _SellStep3PageState extends State<SellStep3Page> {
                                 ),
                                 filled: true,
                                 fillColor: _sellFlowManualFieldFill(context),
-                                labelStyle: _sellFlowManualFieldLabelStyle(context),
-                                hintStyle: _sellFlowManualFieldHintStyle(context),
+                                labelStyle: _sellFlowManualFieldLabelStyle(
+                                  context,
+                                ),
+                                hintStyle: _sellFlowManualFieldHintStyle(
+                                  context,
+                                ),
                                 border: OutlineInputBorder(
                                   borderRadius: BorderRadius.circular(12),
                                 ),
@@ -17200,8 +17970,7 @@ class _SellStep3PageState extends State<SellStep3Page> {
                                 child: buildFancySelector(
                                   context,
                                   currency: selectedCurrency,
-                                  label:
-                                      'Price ($selectedCurrency) (optional)',
+                                  label: 'Price ($selectedCurrency) (optional)',
                                   value: selectedPrice != null
                                       ? _formatCurrencyGlobal(
                                           context,
@@ -17561,8 +18330,7 @@ class _SellStep4PageState extends State<SellStep4Page> {
       final files = await _imagePicker.pickMultiImage();
       if (files.isEmpty || !mounted) return;
       final existing = _selectedImages.map(_imagePathKey).toSet();
-      final additions =
-          files.where((f) => !existing.contains(f.path)).toList();
+      final additions = files.where((f) => !existing.contains(f.path)).toList();
       if (additions.isEmpty) return;
       setState(() {
         _selectedImages = [..._selectedImages, ...additions];
@@ -17708,9 +18476,9 @@ class _SellStep4PageState extends State<SellStep4Page> {
       _syncVideosToParent();
     } catch (e) {
       if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Video selection failed: $e')),
-      );
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text('Video selection failed: $e')));
     }
   }
 
@@ -17945,9 +18713,7 @@ class _SellStep4PageState extends State<SellStep4Page> {
           SizedBox(height: 12),
           if (_selectedVideos.isNotEmpty)
             GridView.builder(
-              key: ValueKey(
-                _selectedVideos.map((e) => e.path).join('|'),
-              ),
+              key: ValueKey(_selectedVideos.map((e) => e.path).join('|')),
               shrinkWrap: true,
               physics: NeverScrollableScrollPhysics(),
               gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
@@ -18225,7 +18991,8 @@ class _ListingPreviewWidgetState extends State<ListingPreviewWidget> {
 
   Widget _buildVideoCarouselSlide(dynamic item) {
     final String path = item is XFile ? item.path : item.toString().trim();
-    final bool isLocalFile = path.isNotEmpty &&
+    final bool isLocalFile =
+        path.isNotEmpty &&
         !path.startsWith('http://') &&
         !path.startsWith('https://');
     return Stack(
@@ -18389,9 +19156,7 @@ class _ListingPreviewWidgetState extends State<ListingPreviewWidget> {
             child: Text(
               label,
               style: TextStyle(
-                color: isLight
-                    ? const Color(0xFF3A3A3A)
-                    : Colors.white70,
+                color: isLight ? const Color(0xFF3A3A3A) : Colors.white70,
                 fontSize: 14,
                 fontWeight: FontWeight.w600,
               ),
@@ -18454,10 +19219,8 @@ class _ListingPreviewWidgetState extends State<ListingPreviewWidget> {
       _SpecItem(
         icon: Icons.layers,
         label: loc.trimLabel,
-        value: _translateValueGlobal(
-              context,
-              _getFirstNonEmpty(data, ['trim']),
-            ) ??
+        value:
+            _translateValueGlobal(context, _getFirstNonEmpty(data, ['trim'])) ??
             _getFirstNonEmpty(data, ['trim']),
       ),
       _SpecItem(
@@ -18499,10 +19262,14 @@ class _ListingPreviewWidgetState extends State<ListingPreviewWidget> {
         label: loc.titleStatus,
         value: data['title_status'] != null
             ? (data['title_status'].toString().toLowerCase() == 'damaged'
-                  ? (loc.value_title_damaged +
-                        (data['damaged_parts'] != null
-                            ? ' (${_localizeDigitsGlobal(context, data['damaged_parts'].toString())} ${loc.damagedParts})'
-                            : ''))
+                  ? (data['damaged_parts'] != null
+                        ? loc.titleStatusDamagedWithParts(
+                            _localizeDigitsGlobal(
+                              context,
+                              data['damaged_parts'].toString(),
+                            ),
+                          )
+                        : loc.value_title_damaged)
                   : loc.value_title_clean)
             : null,
       ),
@@ -18569,12 +19336,8 @@ class _ListingPreviewWidgetState extends State<ListingPreviewWidget> {
     final dynamic rawVideos = data['videos'];
     final List<dynamic> videos = rawVideos is List ? rawVideos : const [];
     final List<_PreviewMediaEntry> media = [
-      ...images.map(
-        (e) => _PreviewMediaEntry(isVideo: false, item: e),
-      ),
-      ...videos.map(
-        (e) => _PreviewMediaEntry(isVideo: true, item: e),
-      ),
+      ...images.map((e) => _PreviewMediaEntry(isVideo: false, item: e)),
+      ...videos.map((e) => _PreviewMediaEntry(isVideo: true, item: e)),
     ];
     final hasMedia = media.isNotEmpty;
 
@@ -18608,8 +19371,7 @@ class _ListingPreviewWidgetState extends State<ListingPreviewWidget> {
               children: [
                 if (hasMedia)
                   GestureDetector(
-                    onTap: () =>
-                        _openCarouselDetail(context, media, images),
+                    onTap: () => _openCarouselDetail(context, media, images),
                     child: PageView.builder(
                       controller: _imagePageController,
                       onPageChanged: (idx) =>
@@ -18735,11 +19497,7 @@ class _ListingPreviewWidgetState extends State<ListingPreviewWidget> {
                     ),
                   ),
                 SizedBox(height: 16),
-                Divider(
-                  height: 1,
-                  thickness: 1,
-                  color: Colors.white24,
-                ),
+                Divider(height: 1, thickness: 1, color: Colors.white24),
                 SizedBox(height: 16),
                 Text(
                   AppLocalizations.of(context)!.specificationsLabel,
@@ -18760,10 +19518,7 @@ class _ListingPreviewWidgetState extends State<ListingPreviewWidget> {
   }
 }
 
-String _sellReviewListingBrand(
-  BuildContext context,
-  Map<String, dynamic> car,
-) {
+String _sellReviewListingBrand(BuildContext context, Map<String, dynamic> car) {
   final brand = (car['brand'] ?? '').toString().trim();
   final locBrand = CarNameTranslations.getLocalizedBrand(
     context,
@@ -18773,10 +19528,7 @@ String _sellReviewListingBrand(
   return (car['title'] ?? '').toString().trim();
 }
 
-String _sellReviewListingModel(
-  BuildContext context,
-  Map<String, dynamic> car,
-) {
+String _sellReviewListingModel(BuildContext context, Map<String, dynamic> car) {
   final brand = (car['brand'] ?? '').toString().trim();
   final model = (car['model'] ?? '').toString().trim();
   return CarNameTranslations.getLocalizedModel(
@@ -18846,7 +19598,8 @@ class _SellReviewCarDetailScrollViewState
 
   Widget _buildVideoCarouselSlide(dynamic item) {
     final String path = item is XFile ? item.path : item.toString().trim();
-    final bool isLocalFile = path.isNotEmpty &&
+    final bool isLocalFile =
+        path.isNotEmpty &&
         !path.startsWith('http://') &&
         !path.startsWith('https://');
     return Stack(
@@ -18980,7 +19733,9 @@ class _SellReviewCarDetailScrollViewState
                                   width: active ? 10 : 6,
                                   height: active ? 10 : 6,
                                   decoration: BoxDecoration(
-                                    color: active ? Colors.white : Colors.white70,
+                                    color: active
+                                        ? Colors.white
+                                        : Colors.white70,
                                     shape: BoxShape.circle,
                                   ),
                                 );
@@ -19032,8 +19787,11 @@ class _SellReviewCarDetailScrollViewState
                       child: Row(
                         mainAxisAlignment: MainAxisAlignment.center,
                         children: [
-                          const Icon(Icons.flash_on,
-                              color: Colors.white, size: 20),
+                          const Icon(
+                            Icons.flash_on,
+                            color: Colors.white,
+                            size: 20,
+                          ),
                           const SizedBox(width: 8),
                           Text(
                             AppLocalizations.of(context)!.quickSell,
@@ -19066,8 +19824,7 @@ class _SellReviewCarDetailScrollViewState
                             ? const Color(0xFF757575)
                             : Colors.white70,
                       );
-                      final uploadedDetail =
-                          _listingUploadedAgo(context, car);
+                      final uploadedDetail = _listingUploadedAgo(context, car);
                       if (cityDetail.isEmpty && uploadedDetail.isEmpty) {
                         return const SizedBox.shrink();
                       }
@@ -19167,9 +19924,9 @@ class _SellReviewCarDetailScrollViewState
                                   fontSize: 22,
                                   fontWeight: FontWeight.w800,
                                   color: isLightShell
-                                      ? Theme.of(context)
-                                          .colorScheme
-                                          .onSurfaceVariant
+                                      ? Theme.of(
+                                          context,
+                                        ).colorScheme.onSurfaceVariant
                                       : Colors.white70,
                                 ),
                                 maxLines: 1,
@@ -19179,10 +19936,7 @@ class _SellReviewCarDetailScrollViewState
                             if (_sellReviewHasPrice(car)) ...[
                               const SizedBox(width: 12),
                               Text(
-                                _formatCurrencyGlobal(
-                                  context,
-                                  car['price'],
-                                ),
+                                _formatCurrencyGlobal(context, car['price']),
                                 style: const TextStyle(
                                   fontSize: 18,
                                   fontWeight: FontWeight.w700,
@@ -19247,9 +20001,7 @@ class _SellStep5PageState extends State<SellStep5Page> {
       color: shellBg,
       child: Column(
         children: [
-          Expanded(
-            child: SellReviewCarDetailScrollView(carData: carData),
-          ),
+          Expanded(child: SellReviewCarDetailScrollView(carData: carData)),
           Container(
             padding: EdgeInsets.fromLTRB(16, 12, 16, 12),
             color: shellBg,
@@ -19362,6 +20114,7 @@ class _SellStep5PageState extends State<SellStep5Page> {
                                       if (step2.contains(k)) return 2;
                                       return 3;
                                     }
+
                                     final first = missing.first;
                                     final targetStep = stepFor(first);
                                     // Navigate user to the step containing the first missing field
@@ -19672,9 +20425,7 @@ class _SellStep5PageState extends State<SellStep5Page> {
             final uploaded = payload['videos'];
             final uploadedCount = uploaded is List ? uploaded.length : 0;
             if (resp.statusCode != 200 && resp.statusCode != 201) {
-              _debugLog(
-                'Video upload failed: ${resp.statusCode} $respBody',
-              );
+              _debugLog('Video upload failed: ${resp.statusCode} $respBody');
               if (mounted) {
                 ScaffoldMessenger.of(context).showSnackBar(
                   SnackBar(
@@ -19686,7 +20437,9 @@ class _SellStep5PageState extends State<SellStep5Page> {
                 );
               }
             } else if (uploadedCount == 0) {
-              _debugLog('Video upload returned success but 0 videos: $respBody');
+              _debugLog(
+                'Video upload returned success but 0 videos: $respBody',
+              );
               if (mounted) {
                 ScaffoldMessenger.of(context).showSnackBar(
                   SnackBar(
@@ -19773,7 +20526,9 @@ class _SellStep5PageState extends State<SellStep5Page> {
         _debugLog('Submission failed: Authentication failed');
         throw Exception('Authentication failed. Please log in again.');
       } else {
-        _debugLog('Submission failed: ${response.statusCode} - ${response.body}');
+        _debugLog(
+          'Submission failed: ${response.statusCode} - ${response.body}',
+        );
         dynamic errorData;
         try {
           errorData = json.decode(response.body);
@@ -19888,7 +20643,9 @@ class CarComparisonPage extends StatelessWidget {
                       Icon(
                         Icons.compare_arrows,
                         size: 84,
-                        color: isDark ? Colors.white24 : cs.onSurfaceVariant.withValues(alpha: 0.45),
+                        color: isDark
+                            ? Colors.white24
+                            : cs.onSurfaceVariant.withValues(alpha: 0.45),
                       ),
                       SizedBox(height: 16),
                       Text(
@@ -19970,7 +20727,9 @@ class CarComparisonPage extends StatelessWidget {
                                 '${AppLocalizations.of(context)!.sortBy}: ${cars.length}',
                                 style: TextStyle(
                                   fontSize: 12,
-                                  color: isDark ? Colors.white70 : cs.onSurfaceVariant,
+                                  color: isDark
+                                      ? Colors.white70
+                                      : cs.onSurfaceVariant,
                                 ),
                               ),
                               SizedBox(height: 8),
@@ -19983,8 +20742,9 @@ class CarComparisonPage extends StatelessWidget {
                                       side: BorderSide(
                                         color: Color(0xFFFF6B00),
                                       ),
-                                      foregroundColor:
-                                          isDark ? Colors.white : cs.onSurface,
+                                      foregroundColor: isDark
+                                          ? Colors.white
+                                          : cs.onSurface,
                                       padding: EdgeInsets.symmetric(
                                         horizontal: 12,
                                         vertical: 8,
@@ -20014,8 +20774,9 @@ class CarComparisonPage extends StatelessWidget {
                                             ? Colors.white24
                                             : cs.outlineVariant,
                                       ),
-                                      foregroundColor:
-                                          isDark ? Colors.white : cs.onSurface,
+                                      foregroundColor: isDark
+                                          ? Colors.white
+                                          : cs.onSurface,
                                       padding: EdgeInsets.symmetric(
                                         horizontal: 12,
                                         vertical: 8,
@@ -20315,46 +21076,43 @@ class CarComparisonPage extends StatelessWidget {
                                         SizedBox(
                                           width: labelWidth,
                                         ), // Space for property names
-                                        ...cars
-                                            .map(
-                                              (car) => SizedBox(
-                                                width: columnWidth,
-                                                child: Padding(
-                                                  padding: EdgeInsets.symmetric(
-                                                    horizontal: 8,
-                                                  ),
-                                                  child: Column(
-                                                    children: [
-                                                      Container(
-                                                        height: 110,
-                                                        width: 110,
-                                                        decoration: BoxDecoration(
-                                                          borderRadius:
-                                                              BorderRadius.circular(
-                                                                8,
-                                                              ),
-                                                          border: Border.all(
-                                                            color:
-                                                                Colors.white10,
+                                        ...cars.map(
+                                          (car) => SizedBox(
+                                            width: columnWidth,
+                                            child: Padding(
+                                              padding: EdgeInsets.symmetric(
+                                                horizontal: 8,
+                                              ),
+                                              child: Column(
+                                                children: [
+                                                  Container(
+                                                    height: 110,
+                                                    width: 110,
+                                                    decoration: BoxDecoration(
+                                                      borderRadius:
+                                                          BorderRadius.circular(
+                                                            8,
                                                           ),
-                                                        ),
-                                                        child: ClipRRect(
-                                                          borderRadius:
-                                                              BorderRadius.circular(
-                                                                8,
-                                                              ),
-                                                          child: _buildCarImage(
-                                                            car,
-                                                          ),
-                                                        ),
+                                                      border: Border.all(
+                                                        color: Colors.white10,
                                                       ),
-                                                      SizedBox(height: 8),
-                                                      SizedBox(
-                                                        height:
-                                                            headerTitleHeight,
-                                                        child: Center(
-                                                          child: Text(
-                                                            [
+                                                    ),
+                                                    child: ClipRRect(
+                                                      borderRadius:
+                                                          BorderRadius.circular(
+                                                            8,
+                                                          ),
+                                                      child: _buildCarImage(
+                                                        car,
+                                                      ),
+                                                    ),
+                                                  ),
+                                                  SizedBox(height: 8),
+                                                  SizedBox(
+                                                    height: headerTitleHeight,
+                                                    child: Center(
+                                                      child: Text(
+                                                        [
                                                               _localizedCarTitleForCard(
                                                                 context,
                                                                 car,
@@ -20364,76 +21122,69 @@ class CarComparisonPage extends StatelessWidget {
                                                                 car,
                                                               ),
                                                             ]
-                                                                .where(
-                                                                  (s) =>
-                                                                      s.isNotEmpty,
-                                                                )
-                                                                .join(' '),
-                                                            style: TextStyle(
-                                                              fontWeight:
-                                                                  FontWeight
-                                                                      .bold,
-                                                              fontSize: 14,
-                                                              color:
-                                                                  Colors.white,
-                                                            ),
-                                                            textAlign: TextAlign
-                                                                .center,
-                                                            maxLines: 1,
-                                                            overflow:
-                                                                TextOverflow
-                                                                    .ellipsis,
-                                                          ),
+                                                            .where(
+                                                              (s) =>
+                                                                  s.isNotEmpty,
+                                                            )
+                                                            .join(' '),
+                                                        style: TextStyle(
+                                                          fontWeight:
+                                                              FontWeight.bold,
+                                                          fontSize: 14,
+                                                          color: Colors.white,
                                                         ),
+                                                        textAlign:
+                                                            TextAlign.center,
+                                                        maxLines: 1,
+                                                        overflow: TextOverflow
+                                                            .ellipsis,
                                                       ),
-                                                      SizedBox(height: 4),
-                                                      SizedBox(
-                                                        height:
-                                                            headerPriceHeight,
-                                                        child: Center(
-                                                          child: Text(
-                                                            _formatCurrencyGlobal(
-                                                              context,
-                                                              car['price']
-                                                                      ?.toString() ??
-                                                                  '0',
-                                                            ),
-                                                            style: TextStyle(
-                                                              color: Color(
-                                                                0xFFFF6B00,
-                                                              ),
-                                                              fontWeight:
-                                                                  FontWeight
-                                                                      .bold,
-                                                              fontSize: 16,
-                                                            ),
-                                                          ),
-                                                        ),
-                                                      ),
-                                                      SizedBox(height: 8),
-                                                      IconButton(
-                                                        onPressed: () {
-                                                          comparisonStore
-                                                              .removeCarFromComparison(
-                                                                car['id'],
-                                                              );
-                                                        },
-                                                        icon: Icon(
-                                                          Icons.close,
-                                                          color: Colors.red,
-                                                          size: 24,
-                                                        ),
-                                                        constraints:
-                                                            BoxConstraints(),
-                                                        padding:
-                                                            EdgeInsets.zero,
-                                                      ),
-                                                    ],
+                                                    ),
                                                   ),
-                                                ),
+                                                  SizedBox(height: 4),
+                                                  SizedBox(
+                                                    height: headerPriceHeight,
+                                                    child: Center(
+                                                      child: Text(
+                                                        _formatCurrencyGlobal(
+                                                          context,
+                                                          car['price']
+                                                                  ?.toString() ??
+                                                              '0',
+                                                        ),
+                                                        style: TextStyle(
+                                                          color: Color(
+                                                            0xFFFF6B00,
+                                                          ),
+                                                          fontWeight:
+                                                              FontWeight.bold,
+                                                          fontSize: 16,
+                                                        ),
+                                                      ),
+                                                    ),
+                                                  ),
+                                                  SizedBox(height: 8),
+                                                  IconButton(
+                                                    onPressed: () {
+                                                      comparisonStore
+                                                          .removeCarFromComparison(
+                                                            car['id'],
+                                                          );
+                                                    },
+                                                    icon: Icon(
+                                                      Icons.close,
+                                                      color: Colors.red,
+                                                      size: 24,
+                                                    ),
+                                                    constraints:
+                                                        BoxConstraints(),
+                                                    padding: EdgeInsets.zero,
+                                                  ),
+                                                ],
                                               ),
-                                            )
-                                            ,
+                                            ),
+                                          ),
+                                        ),
                                       ],
                               ),
                             ),
@@ -22081,11 +22832,13 @@ Widget build(BuildContext context) {
       */
     bottomNavigationBar: BottomNavigationBar(
       type: BottomNavigationBarType.fixed,
-      backgroundColor:
-          AppThemes.bottomNavChrome(Theme.of(context).brightness).backgroundColor,
+      backgroundColor: AppThemes.bottomNavChrome(
+        Theme.of(context).brightness,
+      ).backgroundColor,
       selectedItemColor: Color(0xFFFF6B00),
-      unselectedItemColor:
-          AppThemes.bottomNavChrome(Theme.of(context).brightness).unselectedItemColor,
+      unselectedItemColor: AppThemes.bottomNavChrome(
+        Theme.of(context).brightness,
+      ).unselectedItemColor,
       currentIndex: 0,
       onTap: (idx) {
         switch (idx) {
@@ -22384,10 +23137,8 @@ class _FavoritesPageState extends State<FavoritesPage> {
                     context,
                     mapListingToGlobalCarCardData(context, carMap),
                   );
-                  final String carId = (carMap['public_id'] ??
-                          carMap['id'] ??
-                          '')
-                      .toString();
+                  final String carId =
+                      (carMap['public_id'] ?? carMap['id'] ?? '').toString();
                   if (carId.isEmpty) return card;
                   return Stack(
                     clipBehavior: Clip.none,
@@ -22422,11 +23173,13 @@ class _FavoritesPageState extends State<FavoritesPage> {
       ),
       bottomNavigationBar: BottomNavigationBar(
         type: BottomNavigationBarType.fixed,
-        backgroundColor:
-            AppThemes.bottomNavChrome(Theme.of(context).brightness).backgroundColor,
+        backgroundColor: AppThemes.bottomNavChrome(
+          Theme.of(context).brightness,
+        ).backgroundColor,
         selectedItemColor: Color(0xFFFF6B00),
-        unselectedItemColor:
-            AppThemes.bottomNavChrome(Theme.of(context).brightness).unselectedItemColor,
+        unselectedItemColor: AppThemes.bottomNavChrome(
+          Theme.of(context).brightness,
+        ).unselectedItemColor,
         currentIndex: 1,
         onTap: (idx) {
           switch (idx) {
@@ -22578,7 +23331,8 @@ class _LoginPageState extends State<LoginPage> {
                     : Text(AppLocalizations.of(context)!.navLogin),
               ),
               TextButton(
-                onPressed: () => Navigator.pushNamed(context, '/forgot-password'),
+                onPressed: () =>
+                    Navigator.pushNamed(context, '/forgot-password'),
                 child: Text(AppLocalizations.of(context)!.forgotPasswordLink),
               ),
               TextButton(
@@ -22592,11 +23346,13 @@ class _LoginPageState extends State<LoginPage> {
       ),
       bottomNavigationBar: BottomNavigationBar(
         type: BottomNavigationBarType.fixed,
-        backgroundColor:
-            AppThemes.bottomNavChrome(Theme.of(context).brightness).backgroundColor,
+        backgroundColor: AppThemes.bottomNavChrome(
+          Theme.of(context).brightness,
+        ).backgroundColor,
         selectedItemColor: Color(0xFFFF6B00),
-        unselectedItemColor:
-            AppThemes.bottomNavChrome(Theme.of(context).brightness).unselectedItemColor,
+        unselectedItemColor: AppThemes.bottomNavChrome(
+          Theme.of(context).brightness,
+        ).unselectedItemColor,
         currentIndex: 3,
         onTap: (idx) {
           switch (idx) {
@@ -22754,7 +23510,8 @@ class _SignupPageState extends State<SignupPage> {
                 : (retryAfter is num ? retryAfter.toInt() : null);
             if (seconds != null && seconds > 0) {
               final minutes = (seconds / 60).ceil();
-              msg = '$message Try again in $minutes minute${minutes == 1 ? '' : 's'}.';
+              msg =
+                  '$message Try again in $minutes minute${minutes == 1 ? '' : 's'}.';
             }
           } catch (_) {}
         }
@@ -22931,10 +23688,12 @@ class _SignupPageState extends State<SignupPage> {
     } catch (e) {
       if (!mounted) return;
       developer.log('Signup failed', name: 'SignupPage', error: e);
-      String message = 'Signup failed. Please check your details and try again.';
+      String message =
+          'Signup failed. Please check your details and try again.';
       if (e is ApiException) {
         if (e.statusCode == 409) {
-          message = 'An account with this email already exists. Try logging in or use Forgot password.';
+          message =
+              'An account with this email already exists. Try logging in or use Forgot password.';
         } else if (kDebugMode) {
           message = e.message;
         }
@@ -23160,11 +23919,13 @@ class _SignupPageState extends State<SignupPage> {
       ),
       bottomNavigationBar: BottomNavigationBar(
         type: BottomNavigationBarType.fixed,
-        backgroundColor:
-            AppThemes.bottomNavChrome(Theme.of(context).brightness).backgroundColor,
+        backgroundColor: AppThemes.bottomNavChrome(
+          Theme.of(context).brightness,
+        ).backgroundColor,
         selectedItemColor: Color(0xFFFF6B00),
-        unselectedItemColor:
-            AppThemes.bottomNavChrome(Theme.of(context).brightness).unselectedItemColor,
+        unselectedItemColor: AppThemes.bottomNavChrome(
+          Theme.of(context).brightness,
+        ).unselectedItemColor,
         currentIndex: 3,
         onTap: (idx) {
           switch (idx) {
@@ -23234,7 +23995,9 @@ class _ProfilePageState extends State<ProfilePage> {
     // Listen to auth service changes
     _authService = Provider.of<AuthService>(context, listen: false);
     _authService.addListener(_onAuthChange);
-    _chatNotificationSub = WebSocketService.notifications.listen((notification) {
+    _chatNotificationSub = WebSocketService.notifications.listen((
+      notification,
+    ) {
       if (!mounted) return;
       final type = (notification['notification_type'] ?? '').toString();
       if (type == 'message') {
@@ -23314,9 +24077,7 @@ class _ProfilePageState extends State<ProfilePage> {
       builder: (ctx) {
         return AlertDialog(
           title: Text(AppLocalizations.of(ctx)!.loginTitle),
-          content: Text(
-            AppLocalizations.of(ctx)!.notLoggedIn,
-          ),
+          content: Text(AppLocalizations.of(ctx)!.notLoggedIn),
           actions: [
             TextButton(
               onPressed: () => Navigator.pop(ctx),
@@ -23356,62 +24117,173 @@ class _ProfilePageState extends State<ProfilePage> {
       children: [
         Container(decoration: _shellDecoration(context)),
         Center(
-        child: Padding(
-          padding: const EdgeInsets.all(32.0),
-          child: Column(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              Container(
-                padding: EdgeInsets.all(24),
-                decoration: BoxDecoration(
-                  color: Colors.white,
-                  borderRadius: BorderRadius.circular(20),
-                  border: isLightShell
-                      ? Border.all(color: const Color(0xFFE0E0E0), width: 1)
-                      : null,
-                  boxShadow: [
-                    BoxShadow(
-                      color: Colors.black.withOpacity(0.1),
-                      blurRadius: 20,
-                      offset: Offset(0, 10),
-                    ),
-                  ],
+          child: Padding(
+            padding: const EdgeInsets.all(32.0),
+            child: Column(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                Container(
+                  padding: EdgeInsets.all(24),
+                  decoration: BoxDecoration(
+                    color: Colors.white,
+                    borderRadius: BorderRadius.circular(20),
+                    border: isLightShell
+                        ? Border.all(color: const Color(0xFFE0E0E0), width: 1)
+                        : null,
+                    boxShadow: [
+                      BoxShadow(
+                        color: Colors.black.withOpacity(0.1),
+                        blurRadius: 20,
+                        offset: Offset(0, 10),
+                      ),
+                    ],
+                  ),
+                  child: Column(
+                    children: [
+                      Container(
+                        padding: EdgeInsets.all(20),
+                        decoration: BoxDecoration(
+                          color: Color(0xFFFF6B00).withOpacity(0.1),
+                          shape: BoxShape.circle,
+                        ),
+                        child: Icon(
+                          Icons.person_outline,
+                          size: 64,
+                          color: Color(0xFFFF6B00),
+                        ),
+                      ),
+                      SizedBox(height: 24),
+                      Text(
+                        AppLocalizations.of(context)!.notLoggedIn,
+                        textAlign: TextAlign.center,
+                        style: TextStyle(
+                          fontSize: 20,
+                          fontWeight: FontWeight.w600,
+                          color: Colors.grey[800],
+                        ),
+                      ),
+                      SizedBox(height: 8),
+                      Text(
+                        'Sign in to access your profile and manage your account',
+                        textAlign: TextAlign.center,
+                        style: TextStyle(fontSize: 14, color: Colors.grey[600]),
+                      ),
+                      SizedBox(height: 32),
+                      SizedBox(
+                        width: double.infinity,
+                        height: 50,
+                        child: ElevatedButton(
+                          onPressed: () =>
+                              Navigator.pushReplacementNamed(context, '/login'),
+                          style: ElevatedButton.styleFrom(
+                            backgroundColor: Color(0xFFFF6B00),
+                            foregroundColor: Colors.white,
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(12),
+                            ),
+                            elevation: 2,
+                          ),
+                          child: Text(
+                            AppLocalizations.of(context)!.loginAction,
+                            style: TextStyle(
+                              fontSize: 16,
+                              fontWeight: FontWeight.w600,
+                            ),
+                          ),
+                        ),
+                      ),
+                      SizedBox(height: 16),
+                      TextButton(
+                        onPressed: () =>
+                            Navigator.pushReplacementNamed(context, '/signup'),
+                        child: Text(
+                          AppLocalizations.of(context)!.createAccount,
+                          style: TextStyle(
+                            color: Color(0xFFFF6B00),
+                            fontSize: 16,
+                            fontWeight: FontWeight.w500,
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
                 ),
-                child: Column(
-                  children: [
-                    Container(
-                      padding: EdgeInsets.all(20),
-                      decoration: BoxDecoration(
-                        color: Color(0xFFFF6B00).withOpacity(0.1),
-                        shape: BoxShape.circle,
+              ],
+            ),
+          ),
+        ),
+      ],
+    );
+  }
+
+  Widget _buildLoggedInState(BuildContext context) {
+    final isLoggedIn =
+        ApiService.accessToken != null && ApiService.accessToken!.isNotEmpty;
+    final isLightShell = Theme.of(context).brightness == Brightness.light;
+    final profileOutline = Border.all(color: const Color(0xFFE0E0E0), width: 1);
+    return Stack(
+      children: [
+        Container(decoration: _shellDecoration(context)),
+        SingleChildScrollView(
+          padding: EdgeInsets.fromLTRB(20, 20, 20, 20),
+          child: Column(
+            children: [
+              if (!isLoggedIn) ...[
+                Container(
+                  width: double.infinity,
+                  padding: EdgeInsets.all(18),
+                  decoration: BoxDecoration(
+                    color: Colors.white,
+                    borderRadius: BorderRadius.circular(16),
+                    border: isLightShell ? profileOutline : null,
+                    boxShadow: [
+                      BoxShadow(
+                        color: Colors.black.withOpacity(0.05),
+                        blurRadius: 10,
+                        offset: Offset(0, 5),
                       ),
-                      child: Icon(
-                        Icons.person_outline,
-                        size: 64,
-                        color: Color(0xFFFF6B00),
+                    ],
+                  ),
+                  child: Row(
+                    children: [
+                      Container(
+                        padding: EdgeInsets.all(12),
+                        decoration: BoxDecoration(
+                          color: Color(0xFFFF6B00).withOpacity(0.1),
+                          shape: BoxShape.circle,
+                        ),
+                        child: Icon(
+                          Icons.person_outline,
+                          color: Color(0xFFFF6B00),
+                          size: 26,
+                        ),
                       ),
-                    ),
-                    SizedBox(height: 24),
-                    Text(
-                      AppLocalizations.of(context)!.notLoggedIn,
-                      textAlign: TextAlign.center,
-                      style: TextStyle(
-                        fontSize: 20,
-                        fontWeight: FontWeight.w600,
-                        color: Colors.grey[800],
+                      SizedBox(width: 12),
+                      Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(
+                              'Guest',
+                              style: TextStyle(
+                                fontSize: 18,
+                                fontWeight: FontWeight.w700,
+                                color: Colors.grey[800],
+                              ),
+                            ),
+                            SizedBox(height: 2),
+                            Text(
+                              'Sign in to access your profile features.',
+                              style: TextStyle(
+                                fontSize: 13,
+                                color: Colors.grey[600],
+                              ),
+                            ),
+                          ],
+                        ),
                       ),
-                    ),
-                    SizedBox(height: 8),
-                    Text(
-                      'Sign in to access your profile and manage your account',
-                      textAlign: TextAlign.center,
-                      style: TextStyle(fontSize: 14, color: Colors.grey[600]),
-                    ),
-                    SizedBox(height: 32),
-                    SizedBox(
-                      width: double.infinity,
-                      height: 50,
-                      child: ElevatedButton(
+                      SizedBox(width: 10),
+                      ElevatedButton(
                         onPressed: () =>
                             Navigator.pushReplacementNamed(context, '/login'),
                         style: ElevatedButton.styleFrom(
@@ -23420,195 +24292,150 @@ class _ProfilePageState extends State<ProfilePage> {
                           shape: RoundedRectangleBorder(
                             borderRadius: BorderRadius.circular(12),
                           ),
-                          elevation: 2,
+                          elevation: 1,
                         ),
-                        child: Text(
-                          AppLocalizations.of(context)!.loginAction,
-                          style: TextStyle(
-                            fontSize: 16,
-                            fontWeight: FontWeight.w600,
-                          ),
+                        child: Text(AppLocalizations.of(context)!.loginAction),
+                      ),
+                    ],
+                  ),
+                ),
+                SizedBox(height: 16),
+              ],
+              if (isLoggedIn) ...[
+                // Profile Header
+                Container(
+                  width: double.infinity,
+                  padding: EdgeInsets.all(24),
+                  decoration: BoxDecoration(
+                    color: Colors.white,
+                    borderRadius: BorderRadius.circular(20),
+                    border: isLightShell ? profileOutline : null,
+                    boxShadow: [
+                      BoxShadow(
+                        color: Colors.black.withOpacity(0.1),
+                        blurRadius: 20,
+                        offset: Offset(0, 10),
+                      ),
+                    ],
+                  ),
+                  child: Column(
+                    children: [
+                      Container(
+                        padding: EdgeInsets.all(20),
+                        decoration: BoxDecoration(
+                          color: Color(0xFFFF6B00).withOpacity(0.1),
+                          shape: BoxShape.circle,
                         ),
-                      ),
-                    ),
-                    SizedBox(height: 16),
-                    TextButton(
-                      onPressed: () =>
-                          Navigator.pushReplacementNamed(context, '/signup'),
-                      child: Text(
-                        AppLocalizations.of(context)!.createAccount,
-                        style: TextStyle(
-                          color: Color(0xFFFF6B00),
-                          fontSize: 16,
-                          fontWeight: FontWeight.w500,
-                        ),
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-            ],
-          ),
-        ),
-      ),
-      ],
-    );
-  }
-
-  Widget _buildLoggedInState(BuildContext context) {
-    final isLoggedIn = ApiService.accessToken != null &&
-        ApiService.accessToken!.isNotEmpty;
-    final isLightShell = Theme.of(context).brightness == Brightness.light;
-    final profileOutline = Border.all(
-      color: const Color(0xFFE0E0E0),
-      width: 1,
-    );
-    return Stack(
-      children: [
-        Container(decoration: _shellDecoration(context)),
-        SingleChildScrollView(
-        padding: EdgeInsets.fromLTRB(20, 20, 20, 20),
-        child: Column(
-          children: [
-            if (!isLoggedIn) ...[
-              Container(
-                width: double.infinity,
-                padding: EdgeInsets.all(18),
-                decoration: BoxDecoration(
-                  color: Colors.white,
-                  borderRadius: BorderRadius.circular(16),
-                  border: isLightShell ? profileOutline : null,
-                  boxShadow: [
-                    BoxShadow(
-                      color: Colors.black.withOpacity(0.05),
-                      blurRadius: 10,
-                      offset: Offset(0, 5),
-                    ),
-                  ],
-                ),
-                child: Row(
-                  children: [
-                    Container(
-                      padding: EdgeInsets.all(12),
-                      decoration: BoxDecoration(
-                        color: Color(0xFFFF6B00).withOpacity(0.1),
-                        shape: BoxShape.circle,
-                      ),
-                      child: Icon(
-                        Icons.person_outline,
-                        color: Color(0xFFFF6B00),
-                        size: 26,
-                      ),
-                    ),
-                    SizedBox(width: 12),
-                    Expanded(
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Text(
-                            'Guest',
-                            style: TextStyle(
-                              fontSize: 18,
-                              fontWeight: FontWeight.w700,
-                              color: Colors.grey[800],
-                            ),
-                          ),
-                          SizedBox(height: 2),
-                          Text(
-                            'Sign in to access your profile features.',
-                            style: TextStyle(
-                              fontSize: 13,
-                              color: Colors.grey[600],
-                            ),
-                          ),
-                        ],
-                      ),
-                    ),
-                    SizedBox(width: 10),
-                    ElevatedButton(
-                      onPressed: () =>
-                          Navigator.pushReplacementNamed(context, '/login'),
-                      style: ElevatedButton.styleFrom(
-                        backgroundColor: Color(0xFFFF6B00),
-                        foregroundColor: Colors.white,
-                        shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(12),
-                        ),
-                        elevation: 1,
-                      ),
-                      child: Text(AppLocalizations.of(context)!.loginAction),
-                    ),
-                  ],
-                ),
-              ),
-              SizedBox(height: 16),
-            ],
-            if (isLoggedIn) ...[
-              // Profile Header
-              Container(
-                width: double.infinity,
-                padding: EdgeInsets.all(24),
-                decoration: BoxDecoration(
-                  color: Colors.white,
-                  borderRadius: BorderRadius.circular(20),
-                  border: isLightShell ? profileOutline : null,
-                  boxShadow: [
-                    BoxShadow(
-                      color: Colors.black.withOpacity(0.1),
-                      blurRadius: 20,
-                      offset: Offset(0, 10),
-                    ),
-                  ],
-                ),
-                child: Column(
-                  children: [
-                    Container(
-                      padding: EdgeInsets.all(20),
-                      decoration: BoxDecoration(
-                        color: Color(0xFFFF6B00).withOpacity(0.1),
-                        shape: BoxShape.circle,
-                      ),
-                      child:
-                          (me?['profile_picture'] != null &&
-                              me!['profile_picture'].toString().isNotEmpty)
-                          ? CircleAvatar(
-                              radius: 24,
-                              backgroundImage: NetworkImage(
-                                '${getApiBase()}/static/${me!['profile_picture']}',
+                        child:
+                            (me?['profile_picture'] != null &&
+                                me!['profile_picture'].toString().isNotEmpty)
+                            ? CircleAvatar(
+                                radius: 24,
+                                backgroundImage: NetworkImage(
+                                  '${getApiBase()}/static/${me!['profile_picture']}',
+                                ),
+                                backgroundColor: Colors.grey[200],
+                              )
+                            : Icon(
+                                Icons.person,
+                                size: 48,
+                                color: Color(0xFFFF6B00),
                               ),
-                              backgroundColor: Colors.grey[200],
-                            )
-                          : Icon(
-                              Icons.person,
-                              size: 48,
-                              color: Color(0xFFFF6B00),
-                            ),
-                    ),
-                    SizedBox(height: 16),
-                    Text(
-                      me?['username']?.toString() ?? 'User',
-                      style: TextStyle(
-                        fontSize: 24,
-                        fontWeight: FontWeight.bold,
-                        color: Colors.grey[800],
                       ),
-                    ),
-                    SizedBox(height: 8),
-                    Text(
-                      () {
-                        final e = me?['email']?.toString() ?? '';
-                        final p = me?['phone_number']?.toString() ?? me?['phone']?.toString() ?? '';
-                        final realEmail = e.isNotEmpty && !e.endsWith('@phone.local');
-                        return realEmail ? e : (p.isNotEmpty ? p : e);
-                      }(),
-                      style: TextStyle(fontSize: 16, color: Colors.grey[600]),
-                    ),
-                  ],
+                      SizedBox(height: 16),
+                      Text(
+                        me?['username']?.toString() ?? 'User',
+                        style: TextStyle(
+                          fontSize: 24,
+                          fontWeight: FontWeight.bold,
+                          color: Colors.grey[800],
+                        ),
+                      ),
+                      SizedBox(height: 8),
+                      Text(
+                        () {
+                          final e = me?['email']?.toString() ?? '';
+                          final p =
+                              me?['phone_number']?.toString() ??
+                              me?['phone']?.toString() ??
+                              '';
+                          final realEmail =
+                              e.isNotEmpty && !e.endsWith('@phone.local');
+                          return realEmail ? e : (p.isNotEmpty ? p : e);
+                        }(),
+                        style: TextStyle(fontSize: 16, color: Colors.grey[600]),
+                      ),
+                    ],
+                  ),
                 ),
-              ),
-              SizedBox(height: 24),
+                SizedBox(height: 24),
 
-              // User Information Card
+                // User Information Card
+                Container(
+                  width: double.infinity,
+                  padding: EdgeInsets.all(20),
+                  decoration: BoxDecoration(
+                    color: Colors.white,
+                    borderRadius: BorderRadius.circular(16),
+                    border: isLightShell ? profileOutline : null,
+                    boxShadow: [
+                      BoxShadow(
+                        color: Colors.black.withOpacity(0.05),
+                        blurRadius: 10,
+                        offset: Offset(0, 5),
+                      ),
+                    ],
+                  ),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        'Account Information',
+                        style: TextStyle(
+                          fontSize: 18,
+                          fontWeight: FontWeight.bold,
+                          color: Colors.grey[800],
+                        ),
+                      ),
+                      SizedBox(height: 20),
+                      _buildInfoRow(
+                        Icons.person_outline,
+                        AppLocalizations.of(context)!.usernameLabel,
+                        me?['username']?.toString() ?? '',
+                      ),
+                      if (() {
+                        final e = me?['email']?.toString() ?? '';
+                        return e.isNotEmpty && !e.endsWith('@phone.local');
+                      }()) ...[
+                        SizedBox(height: 12),
+                        _buildInfoRow(
+                          Icons.email_outlined,
+                          AppLocalizations.of(context)!.emailLabel,
+                          me!['email'].toString(),
+                        ),
+                      ],
+                      if (() {
+                        final p =
+                            me?['phone_number']?.toString() ??
+                            me?['phone']?.toString() ??
+                            '';
+                        return p.isNotEmpty;
+                      }()) ...[
+                        SizedBox(height: 12),
+                        _buildInfoRow(
+                          Icons.phone_outlined,
+                          AppLocalizations.of(context)!.phoneLabel,
+                          (me?['phone_number'] ?? me?['phone'] ?? '')
+                              .toString(),
+                        ),
+                      ],
+                    ],
+                  ),
+                ),
+                SizedBox(height: 24),
+              ],
+
+              // Action Buttons
               Container(
                 width: double.infinity,
                 padding: EdgeInsets.all(20),
@@ -23628,7 +24455,7 @@ class _ProfilePageState extends State<ProfilePage> {
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Text(
-                      'Account Information',
+                      AppLocalizations.of(context)!.accountActionsTitle,
                       style: TextStyle(
                         fontSize: 18,
                         fontWeight: FontWeight.bold,
@@ -23636,205 +24463,156 @@ class _ProfilePageState extends State<ProfilePage> {
                       ),
                     ),
                     SizedBox(height: 20),
-                    _buildInfoRow(
-                      Icons.person_outline,
-                      AppLocalizations.of(context)!.usernameLabel,
-                      me?['username']?.toString() ?? '',
+                    _buildActionButton(
+                      Icons.directions_car_outlined,
+                      AppLocalizations.of(context)!.myListingsTitle,
+                      () {
+                        if (ApiService.accessToken == null ||
+                            ApiService.accessToken!.isEmpty) {
+                          _showAuthRequiredDialog(context);
+                          return;
+                        }
+                        Navigator.pushNamed(context, '/my_listings');
+                      },
                     ),
-                    if (() {
-                      final e = me?['email']?.toString() ?? '';
-                      return e.isNotEmpty && !e.endsWith('@phone.local');
-                    }()) ...[
-                      SizedBox(height: 12),
-                      _buildInfoRow(
-                        Icons.email_outlined,
-                        AppLocalizations.of(context)!.emailLabel,
-                        me!['email'].toString(),
-                      ),
-                    ],
-                    if (() {
-                      final p = me?['phone_number']?.toString() ?? me?['phone']?.toString() ?? '';
-                      return p.isNotEmpty;
-                    }()) ...[
-                      SizedBox(height: 12),
-                      _buildInfoRow(
-                        Icons.phone_outlined,
-                        AppLocalizations.of(context)!.phoneLabel,
-                        (me?['phone_number'] ?? me?['phone'] ?? '').toString(),
-                      ),
-                    ],
-                  ],
-                ),
-              ),
-              SizedBox(height: 24),
-            ],
-
-            // Action Buttons
-            Container(
-              width: double.infinity,
-              padding: EdgeInsets.all(20),
-              decoration: BoxDecoration(
-                color: Colors.white,
-                borderRadius: BorderRadius.circular(16),
-                border: isLightShell ? profileOutline : null,
-                boxShadow: [
-                  BoxShadow(
-                    color: Colors.black.withOpacity(0.05),
-                    blurRadius: 10,
-                    offset: Offset(0, 5),
-                  ),
-                ],
-              ),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    AppLocalizations.of(context)!.accountActionsTitle,
-                    style: TextStyle(
-                      fontSize: 18,
-                      fontWeight: FontWeight.bold,
-                      color: Colors.grey[800],
-                    ),
-                  ),
-                  SizedBox(height: 20),
-                  _buildActionButton(
-                    Icons.directions_car_outlined,
-                    AppLocalizations.of(context)!.myListingsTitle,
-                    () {
-                      if (ApiService.accessToken == null ||
-                          ApiService.accessToken!.isEmpty) {
-                        _showAuthRequiredDialog(context);
-                        return;
-                      }
-                      Navigator.pushNamed(context, '/my_listings');
-                    },
-                  ),
-                  SizedBox(height: 12),
-                  _buildActionButton(
-                    Icons.settings_outlined,
-                    AppLocalizations.of(context)!.settingsTitle,
-                    () {
-                      Navigator.pushNamed(context, '/settings');
-                    },
-                  ),
-                  SizedBox(height: 12),
-                  _buildActionButton(Icons.analytics_outlined, AppLocalizations.of(context)!.analyticsTitle, () {
-                    if (ApiService.accessToken == null ||
-                        ApiService.accessToken!.isEmpty) {
-                      _showAuthRequiredDialog(context);
-                      return;
-                    }
-                    Navigator.pushNamed(context, '/analytics');
-                  }),
-                  SizedBox(height: 12),
-                  _buildActionButton(
-                    Icons.chat_outlined,
-                    AppLocalizations.of(context)!.chatTitle,
-                    () async {
-                      if (ApiService.accessToken == null ||
-                          ApiService.accessToken!.isEmpty) {
-                        _showAuthRequiredDialog(context);
-                        return;
-                      }
-                      await Navigator.pushNamed(context, '/chat');
-                      if (!mounted) return;
-                      _loadUnreadChatCount();
-                    },
-                    badgeCount: _unreadChatCount,
-                  ),
-                  SizedBox(height: 12),
-                  Consumer<CarComparisonStore>(
-                    builder: (context, comparisonStore, child) {
-                      return _buildActionButton(
-                        Icons.compare_arrows,
-                        AppLocalizations.of(context)!.carComparisonCount(comparisonStore.comparisonCount),
-                        () {
-                          Navigator.pushNamed(context, '/comparison');
-                        },
-                      );
-                    },
-                  ),
-                  SizedBox(height: 12),
-                  _buildActionButton(
-                    Icons.edit_outlined,
-                    AppLocalizations.of(context)!.editProfileAction,
-                    () async {
-                      if (ApiService.accessToken == null ||
-                          ApiService.accessToken!.isEmpty) {
-                        _showAuthRequiredDialog(context);
-                        return;
-                      }
-                      final result = await Navigator.pushNamed(
-                        context,
-                        '/edit-profile',
-                      );
-                      // Refresh profile data if changes were made
-                      if (result == true) {
-                        _loadMe();
-                      }
-                    },
-                  ),
-                  SizedBox(height: 12),
-                  _buildActionButton(Icons.contact_mail_outlined, 'Contact', () {
-                    // TODO: Add support contact email/action.
-                    ScaffoldMessenger.of(context).showSnackBar(
-                      SnackBar(
-                        content: Text('Contact support details coming soon.'),
-                      ),
-                    );
-                  }),
-                  if (ApiService.accessToken != null &&
-                      ApiService.accessToken!.isNotEmpty) ...[
                     SizedBox(height: 12),
                     _buildActionButton(
-                      Icons.delete_forever_outlined,
-                      AppLocalizations.of(context)!.deleteAccountTitle,
+                      Icons.settings_outlined,
+                      AppLocalizations.of(context)!.settingsTitle,
                       () {
-                        _showDeleteAccountDialog(context);
+                        Navigator.pushNamed(context, '/settings');
                       },
-                      color: Colors.red,
                     ),
-                  ],
-                ],
-              ),
-            ),
-            if (isLoggedIn) ...[
-              SizedBox(height: 16),
-              SizedBox(
-                width: double.infinity,
-                height: 50,
-                child: ElevatedButton(
-                  onPressed: () {
-                    _showLogoutDialog(context);
-                  },
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: Colors.red[600],
-                    foregroundColor: Colors.white,
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(12),
+                    SizedBox(height: 12),
+                    _buildActionButton(
+                      Icons.analytics_outlined,
+                      AppLocalizations.of(context)!.analyticsTitle,
+                      () {
+                        if (ApiService.accessToken == null ||
+                            ApiService.accessToken!.isEmpty) {
+                          _showAuthRequiredDialog(context);
+                          return;
+                        }
+                        Navigator.pushNamed(context, '/analytics');
+                      },
                     ),
-                    elevation: 2,
-                  ),
-                  child: Row(
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    children: [
-                      Icon(Icons.logout, size: 20),
-                      SizedBox(width: 8),
-                      Text(
-                        AppLocalizations.of(context)!.logout,
-                        style: TextStyle(
-                          fontSize: 16,
-                          fontWeight: FontWeight.w600,
-                        ),
+                    SizedBox(height: 12),
+                    _buildActionButton(
+                      Icons.chat_outlined,
+                      AppLocalizations.of(context)!.chatTitle,
+                      () async {
+                        if (ApiService.accessToken == null ||
+                            ApiService.accessToken!.isEmpty) {
+                          _showAuthRequiredDialog(context);
+                          return;
+                        }
+                        await Navigator.pushNamed(context, '/chat');
+                        if (!mounted) return;
+                        _loadUnreadChatCount();
+                      },
+                      badgeCount: _unreadChatCount,
+                    ),
+                    SizedBox(height: 12),
+                    Consumer<CarComparisonStore>(
+                      builder: (context, comparisonStore, child) {
+                        return _buildActionButton(
+                          Icons.compare_arrows,
+                          AppLocalizations.of(context)!.carComparisonCount(
+                            comparisonStore.comparisonCount,
+                          ),
+                          () {
+                            Navigator.pushNamed(context, '/comparison');
+                          },
+                        );
+                      },
+                    ),
+                    SizedBox(height: 12),
+                    _buildActionButton(
+                      Icons.edit_outlined,
+                      AppLocalizations.of(context)!.editProfileAction,
+                      () async {
+                        if (ApiService.accessToken == null ||
+                            ApiService.accessToken!.isEmpty) {
+                          _showAuthRequiredDialog(context);
+                          return;
+                        }
+                        final result = await Navigator.pushNamed(
+                          context,
+                          '/edit-profile',
+                        );
+                        // Refresh profile data if changes were made
+                        if (result == true) {
+                          _loadMe();
+                        }
+                      },
+                    ),
+                    SizedBox(height: 12),
+                    _buildActionButton(
+                      Icons.contact_mail_outlined,
+                      'Contact',
+                      () {
+                        // TODO: Add support contact email/action.
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          SnackBar(
+                            content: Text(
+                              'Contact support details coming soon.',
+                            ),
+                          ),
+                        );
+                      },
+                    ),
+                    if (ApiService.accessToken != null &&
+                        ApiService.accessToken!.isNotEmpty) ...[
+                      SizedBox(height: 12),
+                      _buildActionButton(
+                        Icons.delete_forever_outlined,
+                        AppLocalizations.of(context)!.deleteAccountTitle,
+                        () {
+                          _showDeleteAccountDialog(context);
+                        },
+                        color: Colors.red,
                       ),
                     ],
-                  ),
+                  ],
                 ),
               ),
+              if (isLoggedIn) ...[
+                SizedBox(height: 16),
+                SizedBox(
+                  width: double.infinity,
+                  height: 50,
+                  child: ElevatedButton(
+                    onPressed: () {
+                      _showLogoutDialog(context);
+                    },
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: Colors.red[600],
+                      foregroundColor: Colors.white,
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(12),
+                      ),
+                      elevation: 2,
+                    ),
+                    child: Row(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        Icon(Icons.logout, size: 20),
+                        SizedBox(width: 8),
+                        Text(
+                          AppLocalizations.of(context)!.logout,
+                          style: TextStyle(
+                            fontSize: 16,
+                            fontWeight: FontWeight.w600,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
+              ],
             ],
-          ],
+          ),
         ),
-      ),
       ],
     );
   }
@@ -23951,8 +24729,13 @@ class _ProfilePageState extends State<ProfilePage> {
       context: context,
       builder: (ctx) {
         return AlertDialog(
-          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-          title: Text('Delete account', style: TextStyle(fontWeight: FontWeight.bold)),
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(16),
+          ),
+          title: Text(
+            'Delete account',
+            style: TextStyle(fontWeight: FontWeight.bold),
+          ),
           content: SingleChildScrollView(
             child: Column(
               mainAxisSize: MainAxisSize.min,
@@ -23985,9 +24768,15 @@ class _ProfilePageState extends State<ProfilePage> {
                 final password = passwordController.text.trim();
                 Navigator.of(ctx).pop();
                 try {
-                  await AuthService().deleteAccount(password: password.isEmpty ? null : password);
+                  await AuthService().deleteAccount(
+                    password: password.isEmpty ? null : password,
+                  );
                   if (!context.mounted) return;
-                  Navigator.pushNamedAndRemoveUntil(context, '/login', (route) => false);
+                  Navigator.pushNamedAndRemoveUntil(
+                    context,
+                    '/login',
+                    (route) => false,
+                  );
                   ScaffoldMessenger.of(context).showSnackBar(
                     SnackBar(content: Text('Your account has been deleted')),
                   );
@@ -23995,13 +24784,21 @@ class _ProfilePageState extends State<ProfilePage> {
                   if (!context.mounted) return;
                   ScaffoldMessenger.of(context).showSnackBar(
                     SnackBar(
-                      content: Text(e.toString().replaceFirst('Exception: ', '')),
+                      content: Text(
+                        e.toString().replaceFirst('Exception: ', ''),
+                      ),
                       backgroundColor: Colors.red,
                     ),
                   );
                 }
               },
-              child: Text('Delete my account', style: TextStyle(color: Colors.red, fontWeight: FontWeight.w600)),
+              child: Text(
+                'Delete my account',
+                style: TextStyle(
+                  color: Colors.red,
+                  fontWeight: FontWeight.w600,
+                ),
+              ),
             ),
           ],
         );
@@ -24047,26 +24844,24 @@ class _ProfilePageState extends State<ProfilePage> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(
-        title: Text(AppLocalizations.of(context)!.profileTitle),
-      ),
+      appBar: AppBar(title: Text(AppLocalizations.of(context)!.profileTitle)),
       body: _loading
           ? Stack(
               children: [
                 Container(decoration: _shellDecoration(context)),
-                const Center(
-                  child: CircularProgressIndicator(),
-                ),
+                const Center(child: CircularProgressIndicator()),
               ],
             )
           : _buildLoggedInState(context),
       bottomNavigationBar: BottomNavigationBar(
         type: BottomNavigationBarType.fixed,
-        backgroundColor:
-            AppThemes.bottomNavChrome(Theme.of(context).brightness).backgroundColor,
+        backgroundColor: AppThemes.bottomNavChrome(
+          Theme.of(context).brightness,
+        ).backgroundColor,
         selectedItemColor: Color(0xFFFF6B00),
-        unselectedItemColor:
-            AppThemes.bottomNavChrome(Theme.of(context).brightness).unselectedItemColor,
+        unselectedItemColor: AppThemes.bottomNavChrome(
+          Theme.of(context).brightness,
+        ).unselectedItemColor,
         currentIndex: 3,
         onTap: (idx) {
           switch (idx) {
@@ -24131,11 +24926,13 @@ class _PaymentHistoryPageState extends State<PaymentHistoryPage> {
       ),
       bottomNavigationBar: BottomNavigationBar(
         type: BottomNavigationBarType.fixed,
-        backgroundColor:
-            AppThemes.bottomNavChrome(Theme.of(context).brightness).backgroundColor,
+        backgroundColor: AppThemes.bottomNavChrome(
+          Theme.of(context).brightness,
+        ).backgroundColor,
         selectedItemColor: Color(0xFFFF6B00),
-        unselectedItemColor:
-            AppThemes.bottomNavChrome(Theme.of(context).brightness).unselectedItemColor,
+        unselectedItemColor: AppThemes.bottomNavChrome(
+          Theme.of(context).brightness,
+        ).unselectedItemColor,
         currentIndex: 0,
         onTap: (idx) {
           switch (idx) {
@@ -24397,10 +25194,10 @@ class _MyListingsPageState extends State<MyListingsPage> {
     final bodyChild = isLoading
         ? Center(child: CircularProgressIndicator())
         : error != null
-            ? _buildErrorState()
-            : myListings.isEmpty
-                ? _buildEmptyState()
-                : _buildListingsGrid();
+        ? _buildErrorState()
+        : myListings.isEmpty
+        ? _buildEmptyState()
+        : _buildListingsGrid();
     return Scaffold(
       backgroundColor: isLightShell ? Colors.white : null,
       appBar: AppBar(
@@ -24422,11 +25219,13 @@ class _MyListingsPageState extends State<MyListingsPage> {
             ),
       bottomNavigationBar: BottomNavigationBar(
         type: BottomNavigationBarType.fixed,
-        backgroundColor:
-            AppThemes.bottomNavChrome(Theme.of(context).brightness).backgroundColor,
+        backgroundColor: AppThemes.bottomNavChrome(
+          Theme.of(context).brightness,
+        ).backgroundColor,
         selectedItemColor: Color(0xFFFF6B00),
-        unselectedItemColor:
-            AppThemes.bottomNavChrome(Theme.of(context).brightness).unselectedItemColor,
+        unselectedItemColor: AppThemes.bottomNavChrome(
+          Theme.of(context).brightness,
+        ).unselectedItemColor,
         currentIndex: 3,
         onTap: (idx) {
           switch (idx) {
@@ -24587,7 +25386,9 @@ class _MyListingsPageState extends State<MyListingsPage> {
                 Icon(Icons.directions_car, color: Color(0xFFFF6B00)),
                 SizedBox(width: 12),
                 Text(
-                  AppLocalizations.of(context)!.yourListingsCount(myListings.length),
+                  AppLocalizations.of(
+                    context,
+                  )!.yourListingsCount(myListings.length),
                   style: TextStyle(
                     fontSize: 18,
                     fontWeight: FontWeight.bold,

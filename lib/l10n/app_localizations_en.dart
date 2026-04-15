@@ -321,6 +321,11 @@ class AppLocalizationsEn extends AppLocalizations {
   String get value_title_damaged => 'Damaged';
 
   @override
+  String titleStatusDamagedWithParts(String count) {
+    return 'damaged ($count parts)';
+  }
+
+  @override
   String get value_drive_fwd => 'fwd';
 
   @override

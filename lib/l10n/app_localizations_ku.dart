@@ -321,6 +321,11 @@ class AppLocalizationsKu extends AppLocalizations {
   String get value_title_damaged => 'زیان';
 
   @override
+  String titleStatusDamagedWithParts(String count) {
+    return 'زیان ($count پارچە)';
+  }
+
+  @override
   String get value_drive_fwd => 'پێشەوە';
 
   @override
