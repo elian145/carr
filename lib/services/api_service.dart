@@ -10,11 +10,7 @@ class ApiException implements Exception {
   final String message;
   final Map<String, dynamic>? body;
 
-  ApiException({
-    required this.statusCode,
-    required this.message,
-    this.body,
-  });
+  ApiException({required this.statusCode, required this.message, this.body});
 
   @override
   String toString() => message;
@@ -73,7 +69,10 @@ class ApiService {
   }
 
   /// Set both access and refresh tokens (best-effort persisted).
-  static Future<void> setTokens({String? accessToken, String? refreshToken}) async {
+  static Future<void> setTokens({
+    String? accessToken,
+    String? refreshToken,
+  }) async {
     await setAccessToken(accessToken);
     await setRefreshToken(refreshToken);
   }
@@ -114,7 +113,10 @@ class ApiService {
         body: err,
       );
     } catch (_) {
-      throw ApiException(statusCode: code, message: 'API request failed ($code)');
+      throw ApiException(
+        statusCode: code,
+        message: 'API request failed ($code)',
+      );
     }
   }
 
@@ -266,6 +268,10 @@ class ApiService {
     required String firstName,
     required String lastName,
     String? phoneNumber,
+    bool isDealer = false,
+    String? dealershipName,
+    String? dealershipPhone,
+    String? dealershipLocation,
   }) async {
     final response = await http
         .post(
@@ -279,6 +285,19 @@ class ApiService {
             'last_name': lastName,
             if (phoneNumber != null && phoneNumber.trim().isNotEmpty)
               'phone_number': phoneNumber.trim(),
+            'is_dealer': isDealer,
+            if (isDealer &&
+                dealershipName != null &&
+                dealershipName.trim().isNotEmpty)
+              'dealership_name': dealershipName.trim(),
+            if (isDealer &&
+                dealershipPhone != null &&
+                dealershipPhone.trim().isNotEmpty)
+              'dealership_phone': dealershipPhone.trim(),
+            if (isDealer &&
+                dealershipLocation != null &&
+                dealershipLocation.trim().isNotEmpty)
+              'dealership_location': dealershipLocation.trim(),
           }),
         )
         .timeout(_defaultTimeout);
@@ -344,6 +363,10 @@ class ApiService {
     String? lastName,
     String? email,
     String? password,
+    bool isDealer = false,
+    String? dealershipName,
+    String? dealershipPhone,
+    String? dealershipLocation,
   }) async {
     final response = await http
         .post(
@@ -356,6 +379,13 @@ class ApiService {
             if ((lastName ?? '').trim().isNotEmpty) 'last_name': lastName,
             if ((email ?? '').trim().isNotEmpty) 'email': email,
             if ((password ?? '').trim().isNotEmpty) 'password': password,
+            'is_dealer': isDealer,
+            if (isDealer && (dealershipName ?? '').trim().isNotEmpty)
+              'dealership_name': dealershipName,
+            if (isDealer && (dealershipPhone ?? '').trim().isNotEmpty)
+              'dealership_phone': dealershipPhone,
+            if (isDealer && (dealershipLocation ?? '').trim().isNotEmpty)
+              'dealership_location': dealershipLocation,
           }),
         )
         .timeout(_defaultTimeout);
@@ -370,6 +400,10 @@ class ApiService {
     String? lastName,
     String? email,
     String? password,
+    bool isDealer = false,
+    String? dealershipName,
+    String? dealershipPhone,
+    String? dealershipLocation,
   }) async {
     final response = await http
         .post(
@@ -383,6 +417,13 @@ class ApiService {
             if ((lastName ?? '').trim().isNotEmpty) 'last_name': lastName,
             if ((email ?? '').trim().isNotEmpty) 'email': email,
             if ((password ?? '').trim().isNotEmpty) 'password': password,
+            'is_dealer': isDealer,
+            if (isDealer && (dealershipName ?? '').trim().isNotEmpty)
+              'dealership_name': dealershipName,
+            if (isDealer && (dealershipPhone ?? '').trim().isNotEmpty)
+              'dealership_phone': dealershipPhone,
+            if (isDealer && (dealershipLocation ?? '').trim().isNotEmpty)
+              'dealership_location': dealershipLocation,
           }),
         )
         .timeout(_defaultTimeout);
@@ -406,11 +447,7 @@ class ApiService {
       final rt = (_refreshToken ?? '').trim();
       final body = (rt.isNotEmpty) ? json.encode({'refresh_token': rt}) : null;
       await http
-          .post(
-            Uri.parse('$baseUrl/auth/logout'),
-            headers: headers,
-            body: body,
-          )
+          .post(Uri.parse('$baseUrl/auth/logout'), headers: headers, body: body)
           .timeout(_defaultTimeout);
     } catch (_) {}
     await clearTokens();
@@ -424,10 +461,7 @@ class ApiService {
     return await _makeAuthenticatedRequest(
       'POST',
       '/auth/change-password',
-      body: {
-        'current_password': currentPassword,
-        'new_password': newPassword,
-      },
+      body: {'current_password': currentPassword, 'new_password': newPassword},
     );
   }
 
@@ -498,11 +532,16 @@ class ApiService {
 
   /// Request a verification email for the current user (authenticated).
   static Future<Map<String, dynamic>> sendEmailVerification() async {
-    return await _makeAuthenticatedRequest('POST', '/auth/send-email-verification');
+    return await _makeAuthenticatedRequest(
+      'POST',
+      '/auth/send-email-verification',
+    );
   }
 
   /// Send 6-digit SMS code to phone (for verification). Rate-limited.
-  static Future<Map<String, dynamic>> sendPhoneVerificationCode(String phoneNumber) async {
+  static Future<Map<String, dynamic>> sendPhoneVerificationCode(
+    String phoneNumber,
+  ) async {
     final apiRoot = baseUrl.endsWith('/api') ? baseUrl : '$baseUrl/api';
     final url = '$apiRoot/auth/send-verification';
     final response = await http
@@ -523,7 +562,10 @@ class ApiService {
   }
 
   /// Verify phone with 6-digit code.
-  static Future<Map<String, dynamic>> verifyPhone(String phoneNumber, String code) async {
+  static Future<Map<String, dynamic>> verifyPhone(
+    String phoneNumber,
+    String code,
+  ) async {
     final apiRoot = baseUrl.endsWith('/api') ? baseUrl : '$baseUrl/api';
     final url = '$apiRoot/auth/verify-phone';
     final response = await http
@@ -729,8 +771,12 @@ class ApiService {
     String? contentType,
   }) async {
     final body = <String, dynamic>{};
-    if (filename != null && filename.isNotEmpty) body['filename'] = filename;
-    if (contentType != null && contentType.isNotEmpty) body['content_type'] = contentType;
+    if (filename != null && filename.isNotEmpty) {
+      body['filename'] = filename;
+    }
+    if (contentType != null && contentType.isNotEmpty) {
+      body['content_type'] = contentType;
+    }
     return await _makeAuthenticatedRequest(
       'POST',
       '/media/r2/sign-upload',
@@ -742,13 +788,15 @@ class ApiService {
   static Future<void> uploadToSignedUpload(String uploadUrl, XFile file) async {
     final bytes = await file.readAsBytes();
     final uri = Uri.parse(uploadUrl);
-    final response = await http.put(
-      uri,
-      body: bytes,
-      headers: <String, String>{
-        'Content-Type': file.mimeType ?? 'image/jpeg',
-      },
-    ).timeout(_uploadTimeout);
+    final response = await http
+        .put(
+          uri,
+          body: bytes,
+          headers: <String, String>{
+            'Content-Type': file.mimeType ?? 'image/jpeg',
+          },
+        )
+        .timeout(_uploadTimeout);
     if (response.statusCode < 200 || response.statusCode >= 300) {
       throw ApiException(
         statusCode: response.statusCode,
@@ -884,7 +932,8 @@ class ApiService {
     int page = 1,
     int perPage = 50,
   }) async {
-    final endpoint = '/chat/$conversationId/messages?page=$page&per_page=$perPage';
+    final endpoint =
+        '/chat/$conversationId/messages?page=$page&per_page=$perPage';
     final url = Uri.parse('$baseUrl$endpoint');
     Map<String, String> headers = _getHeaders();
 
@@ -899,9 +948,7 @@ class ApiService {
         throw Exception('Authentication failed');
       }
       headers = _getHeaders();
-      response = await http
-          .get(url, headers: headers)
-          .timeout(_defaultTimeout);
+      response = await http.get(url, headers: headers).timeout(_defaultTimeout);
     }
 
     if (response.statusCode < 200 || response.statusCode >= 300) {
@@ -909,7 +956,12 @@ class ApiService {
     }
 
     if (response.body.trim().isEmpty) {
-      return {'messages': <Map<String, dynamic>>[], 'has_more': false, 'total': 0, 'page': page};
+      return {
+        'messages': <Map<String, dynamic>>[],
+        'has_more': false,
+        'total': 0,
+        'page': page,
+      };
     }
     final decoded = json.decode(response.body);
 
@@ -995,7 +1047,9 @@ class ApiService {
       final req = http.MultipartRequest('POST', url);
       req.headers.addAll(_getHeaders());
       for (final file in files) {
-        req.files.add(await http.MultipartFile.fromPath('attachments', file.path));
+        req.files.add(
+          await http.MultipartFile.fromPath('attachments', file.path),
+        );
       }
       if (receiverId != null && receiverId.trim().isNotEmpty) {
         req.fields['receiver_id'] = receiverId.trim();
@@ -1100,7 +1154,11 @@ class ApiService {
 
   /// Register FCM push notification token with the backend.
   static Future<void> registerPushToken(String token) async {
-    await _makeAuthenticatedRequest('POST', '/users/push_token', body: {'token': token});
+    await _makeAuthenticatedRequest(
+      'POST',
+      '/users/push_token',
+      body: {'token': token},
+    );
   }
 
   /// Block a user.
@@ -1114,11 +1172,20 @@ class ApiService {
   }
 
   /// Report a user.
-  static Future<void> reportUser(String userId, {required String reason, String? details}) async {
-    await _makeAuthenticatedRequest('POST', '/users/$userId/report', body: {
-      'reason': reason,
-      if (details != null && details.trim().isNotEmpty) 'details': details.trim(),
-    });
+  static Future<void> reportUser(
+    String userId, {
+    required String reason,
+    String? details,
+  }) async {
+    await _makeAuthenticatedRequest(
+      'POST',
+      '/users/$userId/report',
+      body: {
+        'reason': reason,
+        if (details != null && details.trim().isNotEmpty)
+          'details': details.trim(),
+      },
+    );
   }
 
   /// Get list of blocked user IDs.
@@ -1148,9 +1215,7 @@ class ApiService {
         throw Exception('Authentication failed');
       }
       headers = _getHeaders();
-      response = await http
-          .get(url, headers: headers)
-          .timeout(_defaultTimeout);
+      response = await http.get(url, headers: headers).timeout(_defaultTimeout);
     }
 
     if (response.statusCode < 200 || response.statusCode >= 300) {

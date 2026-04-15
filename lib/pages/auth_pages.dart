@@ -184,7 +184,8 @@ String _forgotPasswordIntroPhone(BuildContext context) {
 String _pleaseEnterValidPhone(BuildContext context) {
   final c = _lang(context);
   if (c == 'ar') return 'يرجى إدخال رقم هاتف صالح (8 أرقام على الأقل)';
-  if (c == 'ku') return 'تکایە ژمارەی تەلەفۆنێکی دروست بنووسە (کەمترین ٨ ژمارە)';
+  if (c == 'ku')
+    return 'تکایە ژمارەی تەلەفۆنێکی دروست بنووسە (کەمترین ٨ ژمارە)';
   return 'Please enter a valid phone number (at least 8 digits)';
 }
 
@@ -254,8 +255,10 @@ String _resetSmsSent(BuildContext context, String phone) {
 
 String _checkSpamHint(BuildContext context) {
   final c = _lang(context);
-  if (c == 'ar') return 'إن لم تجد الرسالة، تحقق من مجلد البريد العشوائي. يُرسل الرابط فقط إذا وُجد حساب لهذا البريد.';
-  if (c == 'ku') return 'ئەگەر نەت بینی، پشکنینی سپام بکە. بەستەرەکە تەنها ئەگەر هەژمارێک بۆ ئەم ئیمەیڵە هەبێت نێردرێت.';
+  if (c == 'ar')
+    return 'إن لم تجد الرسالة، تحقق من مجلد البريد العشوائي. يُرسل الرابط فقط إذا وُجد حساب لهذا البريد.';
+  if (c == 'ku')
+    return 'ئەگەر نەت بینی، پشکنینی سپام بکە. بەستەرەکە تەنها ئەگەر هەژمارێک بۆ ئەم ئیمەیڵە هەبێت نێردرێت.';
   return "If you don't see it, check your spam or junk folder. The link is only sent if an account exists for this email.";
 }
 
@@ -292,8 +295,10 @@ String _registrationFailedMessage(BuildContext context) {
 /// User-facing message when reset email fails (no server/exception details).
 String _failedToSendResetEmailMessage(BuildContext context) {
   final c = _lang(context);
-  if (c == 'ar') return 'فشل إرسال رابط إعادة التعيين. تحقق من البريد وحاول لاحقاً.';
-  if (c == 'ku') return 'نەتوانرا ئیمەییلی ڕێکخستنەوە بنێردرێت. دووبارە هەوڵ بدەرەوە.';
+  if (c == 'ar')
+    return 'فشل إرسال رابط إعادة التعيين. تحقق من البريد وحاول لاحقاً.';
+  if (c == 'ku')
+    return 'نەتوانرا ئیمەییلی ڕێکخستنەوە بنێردرێت. دووبارە هەوڵ بدەرەوە.';
   return 'Failed to send reset link. Check your email and try again later.';
 }
 
@@ -480,6 +485,9 @@ class _RegisterPageState extends State<RegisterPage> {
   final _firstNameController = TextEditingController();
   final _lastNameController = TextEditingController();
   final _phoneController = TextEditingController();
+  final _dealershipNameController = TextEditingController();
+  final _dealershipPhoneController = TextEditingController();
+  final _dealershipLocationController = TextEditingController();
   bool _obscurePassword = true;
   bool _obscureConfirmPassword = true;
   bool _isLoading = false;
@@ -487,6 +495,7 @@ class _RegisterPageState extends State<RegisterPage> {
   String? _devOtp;
   bool _otpSent = false;
   String _authType = 'email'; // 'email' | 'phone'
+  bool _isDealer = false;
 
   @override
   void dispose() {
@@ -498,6 +507,9 @@ class _RegisterPageState extends State<RegisterPage> {
     _firstNameController.dispose();
     _lastNameController.dispose();
     _phoneController.dispose();
+    _dealershipNameController.dispose();
+    _dealershipPhoneController.dispose();
+    _dealershipLocationController.dispose();
     super.dispose();
   }
 
@@ -507,9 +519,7 @@ class _RegisterPageState extends State<RegisterPage> {
     if (!_formKey.currentState!.validate()) {
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('Please fix the highlighted fields'),
-        ),
+        const SnackBar(content: Text('Please fix the highlighted fields')),
       );
       return;
     }
@@ -527,6 +537,10 @@ class _RegisterPageState extends State<RegisterPage> {
           lastName: _lastNameController.text.trim(),
           email: _emailController.text.trim(),
           password: _hasPassword() ? _passwordController.text : null,
+          isDealer: _isDealer,
+          dealershipName: _dealershipNameController.text.trim(),
+          dealershipPhone: _dealershipPhoneController.text.trim(),
+          dealershipLocation: _dealershipLocationController.text.trim(),
         );
         // Load profile + connect websocket
         await authService.initialize();
@@ -545,8 +559,13 @@ class _RegisterPageState extends State<RegisterPage> {
           password: _passwordController.text,
           firstName: _firstNameController.text,
           lastName: _lastNameController.text,
-          phoneNumber:
-              _phoneController.text.isNotEmpty ? _phoneController.text : null,
+          phoneNumber: _phoneController.text.isNotEmpty
+              ? _phoneController.text
+              : null,
+          isDealer: _isDealer,
+          dealershipName: _dealershipNameController.text.trim(),
+          dealershipPhone: _dealershipPhoneController.text.trim(),
+          dealershipLocation: _dealershipLocationController.text.trim(),
         );
         if (!mounted) return;
         ScaffoldMessenger.of(context).showSnackBar(
@@ -564,7 +583,8 @@ class _RegisterPageState extends State<RegisterPage> {
         String message = _registrationFailedMessage(context);
         if (e is ApiException) {
           if (e.statusCode == 409) {
-            message = 'An account with this email already exists. Try logging in or use Forgot password.';
+            message =
+                'An account with this email already exists. Try logging in or use Forgot password.';
           } else if (kDebugMode) {
             message = e.message;
           }
@@ -600,6 +620,10 @@ class _RegisterPageState extends State<RegisterPage> {
         lastName: _lastNameController.text.trim(),
         email: _emailController.text.trim(),
         password: _hasPassword() ? _passwordController.text : null,
+        isDealer: _isDealer,
+        dealershipName: _dealershipNameController.text.trim(),
+        dealershipPhone: _dealershipPhoneController.text.trim(),
+        dealershipLocation: _dealershipLocationController.text.trim(),
       );
       if (!mounted) return;
       setState(() {
@@ -806,7 +830,9 @@ class _RegisterPageState extends State<RegisterPage> {
                     onPressed: _isSendingOtp ? null : _sendOtp,
                     icon: const Icon(Icons.sms),
                     label: Text(
-                      _isSendingOtp ? '...' : AppLocalizations.of(context)!.sendOtp,
+                      _isSendingOtp
+                          ? '...'
+                          : AppLocalizations.of(context)!.sendOtp,
                     ),
                   ),
                 ),
@@ -824,8 +850,12 @@ class _RegisterPageState extends State<RegisterPage> {
                     LengthLimitingTextInputFormatter(6),
                   ],
                   validator: (value) {
-                    if (_authType != 'phone') return null;
-                    if (!_otpSent) return AppLocalizations.of(context)!.sendCodeFirst;
+                    if (_authType != 'phone') {
+                      return null;
+                    }
+                    if (!_otpSent) {
+                      return AppLocalizations.of(context)!.sendCodeFirst;
+                    }
                     if (value == null || value.trim().isEmpty) {
                       return AppLocalizations.of(context)!.requiredField;
                     }
@@ -837,6 +867,75 @@ class _RegisterPageState extends State<RegisterPage> {
                 ),
               ],
               const SizedBox(height: 16),
+              SwitchListTile(
+                title: const Text('I am a dealership / dealer'),
+                subtitle: Text(
+                  _isDealer
+                      ? 'Dealer account request will be pending approval.'
+                      : 'Enable if you are creating an account for a dealership.',
+                ),
+                value: _isDealer,
+                onChanged: (v) => setState(() => _isDealer = v),
+              ),
+              if (_isDealer) ...[
+                const SizedBox(height: 8),
+                TextFormField(
+                  controller: _dealershipNameController,
+                  decoration: const InputDecoration(
+                    labelText: 'Dealership Name',
+                    prefixIcon: Icon(Icons.storefront_outlined),
+                    border: OutlineInputBorder(),
+                  ),
+                  validator: (value) {
+                    if (!_isDealer) {
+                      return null;
+                    }
+                    if (value == null || value.trim().isEmpty) {
+                      return 'Dealership name is required';
+                    }
+                    return null;
+                  },
+                ),
+                const SizedBox(height: 16),
+                TextFormField(
+                  controller: _dealershipPhoneController,
+                  decoration: const InputDecoration(
+                    labelText: 'Dealership Phone',
+                    prefixIcon: Icon(Icons.phone_outlined),
+                    border: OutlineInputBorder(),
+                  ),
+                  keyboardType: TextInputType.phone,
+                  validator: (value) {
+                    if (!_isDealer) {
+                      return null;
+                    }
+                    if (value == null || value.trim().isEmpty) {
+                      return 'Dealership phone is required';
+                    }
+                    return null;
+                  },
+                ),
+                const SizedBox(height: 16),
+                TextFormField(
+                  controller: _dealershipLocationController,
+                  decoration: const InputDecoration(
+                    labelText: 'Dealership Location',
+                    prefixIcon: Icon(Icons.location_on_outlined),
+                    border: OutlineInputBorder(),
+                  ),
+                  validator: (value) {
+                    if (!_isDealer) {
+                      return null;
+                    }
+                    if (value == null || value.trim().isEmpty) {
+                      return 'Dealership location is required';
+                    }
+                    return null;
+                  },
+                ),
+                const SizedBox(height: 16),
+              ],
+              const SizedBox(height: 8),
               TextFormField(
                 controller: _passwordController,
                 obscureText: _obscurePassword,
@@ -857,10 +956,13 @@ class _RegisterPageState extends State<RegisterPage> {
                 ),
                 validator: (value) {
                   // Optional password for phone OTP mode (passwordless auth).
-                  if (_authType == 'phone' && (value == null || value.isEmpty)) {
+                  if (_authType == 'phone' &&
+                      (value == null || value.isEmpty)) {
                     return null;
                   }
-                  if (value == null || value.isEmpty) return _pleaseEnterPassword(context);
+                  if (value == null || value.isEmpty) {
+                    return _pleaseEnterPassword(context);
+                  }
                   if (value.length < 8) {
                     return AppLocalizations.of(context)!.passwordMin8;
                   }
@@ -905,9 +1007,15 @@ class _RegisterPageState extends State<RegisterPage> {
                 validator: (value) {
                   final pw = _passwordController.text;
                   // In phone OTP mode, confirm is only required if password is provided.
-                  if (_authType == 'phone' && pw.trim().isEmpty) return null;
-                  if (value == null || value.isEmpty) return _pleaseConfirmPassword(context);
-                  if (value != pw) return _passwordsDoNotMatch(context);
+                  if (_authType == 'phone' && pw.trim().isEmpty) {
+                    return null;
+                  }
+                  if (value == null || value.isEmpty) {
+                    return _pleaseConfirmPassword(context);
+                  }
+                  if (value != pw) {
+                    return _passwordsDoNotMatch(context);
+                  }
                   return null;
                 },
               ),
@@ -952,6 +1060,7 @@ class _ForgotPasswordPageState extends State<ForgotPasswordPage> {
   final _phoneController = TextEditingController();
   bool _isLoading = false;
   bool _emailSent = false;
+
   /// `'email'` or `'phone'` — controls which identifier is sent to `/auth/forgot-password`.
   String _recoveryMethod = 'email';
 
@@ -970,10 +1079,7 @@ class _ForgotPasswordPageState extends State<ForgotPasswordPage> {
     try {
       final authService = Provider.of<AuthService>(context, listen: false);
       if (_recoveryMethod == 'phone') {
-        await authService.forgotPassword(
-          _phoneController.text,
-          isPhone: true,
-        );
+        await authService.forgotPassword(_phoneController.text, isPhone: true);
       } else {
         await authService.forgotPassword(_emailController.text);
       }
@@ -981,13 +1087,17 @@ class _ForgotPasswordPageState extends State<ForgotPasswordPage> {
       if (!mounted) return;
       setState(() => _emailSent = true);
     } catch (e) {
-      developer.log('Forgot password failed', name: 'ForgotPasswordPage', error: e);
+      developer.log(
+        'Forgot password failed',
+        name: 'ForgotPasswordPage',
+        error: e,
+      );
       if (mounted) {
         final message = kDebugMode && e is ApiException
             ? (e as ApiException).message
             : (_recoveryMethod == 'phone'
-                ? _failedToSendSmsResetMessage(context)
-                : _failedToSendResetEmailMessage(context));
+                  ? _failedToSendSmsResetMessage(context)
+                  : _failedToSendResetEmailMessage(context));
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
             content: Text(message),
@@ -1027,8 +1137,8 @@ class _ForgotPasswordPageState extends State<ForgotPasswordPage> {
               Text(
                 _emailSent
                     ? (_recoveryMethod == 'phone'
-                        ? _checkYourPhoneTitle(context)
-                        : _checkYourEmailTitle(context))
+                          ? _checkYourPhoneTitle(context)
+                          : _checkYourEmailTitle(context))
                     : _resetPasswordTitle(context),
                 style: Theme.of(context).textTheme.headlineMedium,
                 textAlign: TextAlign.center,
@@ -1037,11 +1147,11 @@ class _ForgotPasswordPageState extends State<ForgotPasswordPage> {
               Text(
                 _emailSent
                     ? (_recoveryMethod == 'phone'
-                        ? _resetSmsSent(context, _phoneController.text)
-                        : _resetEmailSent(context, _emailController.text))
+                          ? _resetSmsSent(context, _phoneController.text)
+                          : _resetEmailSent(context, _emailController.text))
                     : (_recoveryMethod == 'phone'
-                        ? _forgotPasswordIntroPhone(context)
-                        : _forgotPasswordIntroEmail(context)),
+                          ? _forgotPasswordIntroPhone(context)
+                          : _forgotPasswordIntroEmail(context)),
                 textAlign: TextAlign.center,
                 style: Theme.of(context).textTheme.bodyMedium,
               ),
@@ -1120,14 +1230,17 @@ class _ForgotPasswordPageState extends State<ForgotPasswordPage> {
                     ),
                     keyboardType: TextInputType.phone,
                     inputFormatters: [
-                      FilteringTextInputFormatter.allow(RegExp(r'[0-9+\s\-()]+')),
+                      FilteringTextInputFormatter.allow(
+                        RegExp(r'[0-9+\s\-()]+'),
+                      ),
                     ],
                     validator: (value) {
                       if (value == null || value.trim().isEmpty) {
                         return AppLocalizations.of(context)!.requiredField;
                       }
-                      final digits =
-                          RegExp(r'\d').allMatches(value).map((m) => m.group(0)!).join();
+                      final digits = RegExp(
+                        r'\d',
+                      ).allMatches(value).map((m) => m.group(0)!).join();
                       if (digits.length < 8) {
                         return _pleaseEnterValidPhone(context);
                       }

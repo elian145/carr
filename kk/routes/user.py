@@ -14,6 +14,14 @@ from ..time_utils import utcnow
 bp = Blueprint("user", __name__)
 
 
+def _to_bool(value) -> bool:
+    if isinstance(value, bool):
+        return value
+    if value is None:
+        return False
+    return str(value).strip().lower() in {"1", "true", "yes", "on"}
+
+
 @bp.route("/api/user/profile", methods=["GET"])
 @jwt_required()
 def get_profile():
@@ -50,11 +58,43 @@ def update_profile():
             current_user.last_name = data["last_name"]
         if "phone_number" in data:
             current_user.phone_number = data["phone_number"]
+        if "username" in data and data["username"] != current_user.username:
+            new_username = (data["username"] or "").strip()
+            if not new_username:
+                return jsonify({"message": "Username is required"}), 400
+            existing = User.query.filter_by(username=new_username).first()
+            if existing and existing.id != current_user.id:
+                return jsonify({"message": "Username already exists"}), 400
+            current_user.username = new_username
         if "email" in data and data["email"] != current_user.email:
             if User.query.filter_by(email=data["email"]).first():
                 return jsonify({"message": "Email already exists"}), 400
             current_user.email = data["email"]
             current_user.is_verified = False
+
+        # Dealer request flow: keep account_type as user until admin approval.
+        if _to_bool(data.get("is_dealer")):
+            dealership_name = (data.get("dealership_name") or "").strip()
+            dealership_phone = (data.get("dealership_phone") or "").strip()
+            dealership_location = (data.get("dealership_location") or "").strip()
+            if not dealership_name:
+                return jsonify({"message": "Dealership name is required for dealer accounts"}), 400
+            if not dealership_phone:
+                return jsonify({"message": "Dealership phone is required for dealer accounts"}), 400
+            if not dealership_location:
+                return jsonify({"message": "Dealership location is required for dealer accounts"}), 400
+            current_user.account_type = "user"
+            current_user.dealer_status = "pending"
+            current_user.dealership_name = dealership_name
+            current_user.dealership_phone = dealership_phone
+            current_user.dealership_location = dealership_location
+        elif "is_dealer" in data and not _to_bool(data.get("is_dealer")):
+            if (current_user.dealer_status or "none") == "none":
+                current_user.account_type = "user"
+                current_user.dealer_status = "none"
+                current_user.dealership_name = None
+                current_user.dealership_phone = None
+                current_user.dealership_location = None
 
         current_user.updated_at = utcnow()
         db.session.commit()

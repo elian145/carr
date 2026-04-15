@@ -53,7 +53,10 @@ class _ProfilePageState extends State<ProfilePage> {
     );
   }
 
-  Future<void> _sendEmailVerification(BuildContext context, AuthService auth) async {
+  Future<void> _sendEmailVerification(
+    BuildContext context,
+    AuthService auth,
+  ) async {
     try {
       await auth.sendEmailVerification();
       if (!context.mounted) return;
@@ -75,7 +78,11 @@ class _ProfilePageState extends State<ProfilePage> {
     }
   }
 
-  Future<void> _showPhoneVerifyDialog(BuildContext context, String phone, AuthService auth) async {
+  Future<void> _showPhoneVerifyDialog(
+    BuildContext context,
+    String phone,
+    AuthService auth,
+  ) async {
     final codeController = TextEditingController();
     bool codeSent = false;
     await showDialog<void>(
@@ -119,12 +126,21 @@ class _ProfilePageState extends State<ProfilePage> {
                         if (!ctx2.mounted) return;
                         setDialogState(() => codeSent = true);
                         ScaffoldMessenger.of(ctx2).showSnackBar(
-                          SnackBar(content: Text(AppLocalizations.of(ctx2)!.codeSentEnterAbove)),
+                          SnackBar(
+                            content: Text(
+                              AppLocalizations.of(ctx2)!.codeSentEnterAbove,
+                            ),
+                          ),
                         );
                       } catch (e) {
                         if (!ctx2.mounted) return;
                         ScaffoldMessenger.of(ctx2).showSnackBar(
-                          SnackBar(content: Text(e.toString().replaceFirst('Exception: ', '')), backgroundColor: Colors.red),
+                          SnackBar(
+                            content: Text(
+                              e.toString().replaceFirst('Exception: ', ''),
+                            ),
+                            backgroundColor: Colors.red,
+                          ),
                         );
                       }
                     },
@@ -135,7 +151,12 @@ class _ProfilePageState extends State<ProfilePage> {
                     final code = codeController.text.trim();
                     if (code.length != 6) {
                       ScaffoldMessenger.of(ctx2).showSnackBar(
-                        SnackBar(content: Text(AppLocalizations.of(ctx2)!.pleaseEnter6DigitCode), backgroundColor: Colors.orange),
+                        SnackBar(
+                          content: Text(
+                            AppLocalizations.of(ctx2)!.pleaseEnter6DigitCode,
+                          ),
+                          backgroundColor: Colors.orange,
+                        ),
                       );
                       return;
                     }
@@ -144,13 +165,23 @@ class _ProfilePageState extends State<ProfilePage> {
                       if (!ctx2.mounted) return;
                       Navigator.pop(ctx);
                       ScaffoldMessenger.of(ctx2).showSnackBar(
-                        SnackBar(content: Text(AppLocalizations.of(ctx2)!.phoneVerifiedSuccess), backgroundColor: Colors.green),
+                        SnackBar(
+                          content: Text(
+                            AppLocalizations.of(ctx2)!.phoneVerifiedSuccess,
+                          ),
+                          backgroundColor: Colors.green,
+                        ),
                       );
                       _refresh();
                     } catch (e) {
                       if (!ctx2.mounted) return;
                       ScaffoldMessenger.of(ctx2).showSnackBar(
-                        SnackBar(content: Text(e.toString().replaceFirst('Exception: ', '')), backgroundColor: Colors.red),
+                        SnackBar(
+                          content: Text(
+                            e.toString().replaceFirst('Exception: ', ''),
+                          ),
+                          backgroundColor: Colors.red,
+                        ),
                       );
                     }
                   },
@@ -214,12 +245,14 @@ class _ProfilePageState extends State<ProfilePage> {
     );
     if (passwordResult == null || !mounted) return;
     try {
-      await AuthService().deleteAccount(password: passwordResult.isEmpty ? null : passwordResult);
+      await AuthService().deleteAccount(
+        password: passwordResult.isEmpty ? null : passwordResult,
+      );
       if (!mounted) return;
       Navigator.pushNamedAndRemoveUntil(context, '/login', (route) => false);
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text(loc.accountDeletedSnackbar)),
-      );
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text(loc.accountDeletedSnackbar)));
     } catch (e) {
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
@@ -262,12 +295,17 @@ class _ProfilePageState extends State<ProfilePage> {
     final email = (user?['email'] ?? '').toString();
     final phone = (user?['phone_number'] ?? user?['phone'] ?? '').toString();
     final realEmail = email.isNotEmpty && !email.endsWith('@phone.local');
-    final primaryContact = realEmail ? email : (phone.isNotEmpty ? phone : email);
+    final primaryContact = realEmail
+        ? email
+        : (phone.isNotEmpty ? phone : email);
     final isVerified = user?['is_verified'] == true;
     final firstName = (user?['first_name'] ?? '').toString();
     final lastName = (user?['last_name'] ?? '').toString();
     final fullName = ('$firstName $lastName').trim();
     final pic = (user?['profile_picture'] ?? '').toString();
+    final accountType = (user?['account_type'] ?? 'user').toString();
+    final dealerStatus = (user?['dealer_status'] ?? 'none').toString();
+    final dealershipName = (user?['dealership_name'] ?? '').toString();
     final picUrl = buildMediaUrl(pic);
     final isAuthenticated = auth.isAuthenticated;
     final isLightShell = Theme.of(context).brightness == Brightness.light;
@@ -275,18 +313,15 @@ class _ProfilePageState extends State<ProfilePage> {
       borderRadius: BorderRadius.circular(12),
       side: isLightShell
           ? BorderSide(
-              color: Theme.of(context)
-                  .colorScheme
-                  .outline
-                  .withValues(alpha: 0.55),
+              color: Theme.of(
+                context,
+              ).colorScheme.outline.withValues(alpha: 0.55),
             )
           : BorderSide.none,
     );
 
     return Scaffold(
-      appBar: AppBar(
-        title: Text(loc?.profileTitle ?? 'Profile'),
-      ),
+      appBar: AppBar(title: Text(loc?.profileTitle ?? 'Profile')),
       body: Stack(
         children: [
           Container(
@@ -295,192 +330,151 @@ class _ProfilePageState extends State<ProfilePage> {
             ),
           ),
           RefreshIndicator(
-              color: Theme.of(context).colorScheme.primary,
-              onRefresh: _refresh,
-              child: ListView(
-                padding: const EdgeInsets.all(16),
-                children: [
-                  if (_error != null) ...[
-                    Container(
-                      padding: const EdgeInsets.all(12),
-                      decoration: BoxDecoration(
-                        color: Colors.orange.withOpacity(0.15),
-                        borderRadius: BorderRadius.circular(12),
-                        border: Border.all(color: Colors.orange.withOpacity(0.3)),
-                      ),
-                      child: Text(_error!),
+            color: Theme.of(context).colorScheme.primary,
+            onRefresh: _refresh,
+            child: ListView(
+              padding: const EdgeInsets.all(16),
+              children: [
+                if (_error != null) ...[
+                  Container(
+                    padding: const EdgeInsets.all(12),
+                    decoration: BoxDecoration(
+                      color: Colors.orange.withOpacity(0.15),
+                      borderRadius: BorderRadius.circular(12),
+                      border: Border.all(color: Colors.orange.withOpacity(0.3)),
                     ),
-                    const SizedBox(height: 12),
-                  ],
-                  if (!isAuthenticated) ...[
-                    Card(
-                      shape: profileCardShape,
-                      clipBehavior: Clip.antiAlias,
-                      child: Padding(
-                        padding: const EdgeInsets.all(16),
-                        child: Row(
-                          children: [
-                            CircleAvatar(
-                              radius: 22,
-                              backgroundColor: Colors.black12,
-                              child: Icon(
-                                Icons.person_outline,
-                                color: Theme.of(context).colorScheme.primary,
-                              ),
-                            ),
-                            const SizedBox(width: 12),
-                            Expanded(
-                              child: Column(
-                                crossAxisAlignment: CrossAxisAlignment.start,
-                                children: [
-                                  Text(
-                                    'Guest',
-                                    style: Theme.of(context)
-                                        .textTheme
-                                        .titleMedium
-                                        ?.copyWith(fontWeight: FontWeight.w700),
-                                  ),
-                                  const SizedBox(height: 2),
-                                  Text(
-                                    'Sign in to access your profile features.',
-                                    style:
-                                        Theme.of(context).textTheme.bodySmall,
-                                  ),
-                                ],
-                              ),
-                            ),
-                            const SizedBox(width: 8),
-                            FilledButton(
-                              onPressed: () =>
-                                  Navigator.pushNamed(context, '/login'),
-                              child: Text(loc?.loginAction ?? 'Log In'),
-                            ),
-                          ],
-                        ),
-                      ),
-                    ),
-                    const SizedBox(height: 12),
-                  ],
-                  if (isAuthenticated) ...[
-                    Card(
-                      shape: profileCardShape,
-                      clipBehavior: Clip.antiAlias,
-                      child: Padding(
-                        padding: const EdgeInsets.all(16),
-                        child: Row(
-                          children: [
-                            CircleAvatar(
-                              radius: 32,
-                              backgroundColor: Colors.black12,
-                              backgroundImage: picUrl.isNotEmpty
-                                  ? NetworkImage(picUrl)
-                                  : null,
-                              child: picUrl.isEmpty
-                                  ? const Icon(Icons.person, size: 32)
-                                  : null,
-                            ),
-                            const SizedBox(width: 14),
-                            Expanded(
-                              child: Column(
-                                crossAxisAlignment: CrossAxisAlignment.start,
-                                children: [
-                                  Text(
-                                    fullName.isEmpty ? username : fullName,
-                                    style: Theme.of(context)
-                                        .textTheme
-                                        .titleMedium
-                                        ?.copyWith(fontWeight: FontWeight.w700),
-                                  ),
-                                  if (username.isNotEmpty) ...[
-                                    const SizedBox(height: 2),
-                                    Text('@$username'),
-                                  ],
-                                  if (primaryContact.isNotEmpty) ...[
-                                    const SizedBox(height: 2),
-                                    Text(primaryContact),
-                                  ],
-                                  if (realEmail && phone.isNotEmpty) ...[
-                                    const SizedBox(height: 2),
-                                    Text(phone),
-                                  ],
-                                ],
-                              ),
-                            ),
-                          ],
-                        ),
-                      ),
-                    ),
-                    const SizedBox(height: 12),
-                    Card(
-                      shape: profileCardShape,
-                      clipBehavior: Clip.antiAlias,
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
+                    child: Text(_error!),
+                  ),
+                  const SizedBox(height: 12),
+                ],
+                if (!isAuthenticated) ...[
+                  Card(
+                    shape: profileCardShape,
+                    clipBehavior: Clip.antiAlias,
+                    child: Padding(
+                      padding: const EdgeInsets.all(16),
+                      child: Row(
                         children: [
-                          Padding(
-                            padding: const EdgeInsets.fromLTRB(16, 16, 16, 0),
-                            child: Text(
-                              loc?.personalInformationTitle ??
-                                  'Personal Information',
-                              style: Theme.of(context)
-                                  .textTheme
-                                  .titleMedium
-                                  ?.copyWith(fontWeight: FontWeight.w700),
+                          CircleAvatar(
+                            radius: 22,
+                            backgroundColor: Colors.black12,
+                            child: Icon(
+                              Icons.person_outline,
+                              color: Theme.of(context).colorScheme.primary,
                             ),
                           ),
-                          if (username.isNotEmpty)
-                            ListTile(
-                              leading: const Icon(Icons.person_outline),
-                              title: Text(loc?.usernameLabel ?? 'Username'),
-                              subtitle: Text('@$username'),
-                            ),
-                          if (realEmail)
-                            ListTile(
-                              leading: const Icon(Icons.email_outlined),
-                              title: Text(loc?.emailLabel ?? 'Email'),
-                              subtitle: Text(email),
-                            ),
-                          if (phone.isNotEmpty)
-                            ListTile(
-                              leading: const Icon(Icons.phone_outlined),
-                              title: Text(loc?.phoneLabel ?? 'Phone'),
-                              subtitle: Text(phone),
-                            ),
-                          if (!isVerified &&
-                              (realEmail || phone.isNotEmpty)) ...[
-                            if (email.isNotEmpty &&
-                                !email.endsWith('@phone.local'))
-                              ListTile(
-                                leading: const Icon(
-                                    Icons.mark_email_unread_outlined),
-                                title: Text(
-                                    loc?.verifyEmailAction ?? 'Verify email'),
-                                subtitle: Text(
-                                  loc?.sendVerificationLinkToEmail ??
-                                      'Send a verification link to your email',
+                          const SizedBox(width: 12),
+                          Expanded(
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Text(
+                                  'Guest',
+                                  style: Theme.of(context).textTheme.titleMedium
+                                      ?.copyWith(fontWeight: FontWeight.w700),
                                 ),
-                                onTap: () =>
-                                    _sendEmailVerification(context, auth),
-                              ),
-                            if (phone.isNotEmpty)
-                              ListTile(
-                                leading:
-                                    const Icon(Icons.phone_android_outlined),
-                                title: Text(
-                                    loc?.verifyPhoneAction ?? 'Verify phone'),
-                                subtitle: Text(
-                                  loc?.receiveCodeBySms ??
-                                      'Receive a code by SMS',
+                                const SizedBox(height: 2),
+                                Text(
+                                  'Sign in to access your profile features.',
+                                  style: Theme.of(context).textTheme.bodySmall,
                                 ),
-                                onTap: () => _showPhoneVerifyDialog(
-                                    context, phone, auth),
-                              ),
-                          ],
+                              ],
+                            ),
+                          ),
+                          const SizedBox(width: 8),
+                          FilledButton(
+                            onPressed: () =>
+                                Navigator.pushNamed(context, '/login'),
+                            child: Text(loc?.loginAction ?? 'Log In'),
+                          ),
                         ],
                       ),
                     ),
-                    const SizedBox(height: 12),
-                  ],
+                  ),
+                  const SizedBox(height: 12),
+                ],
+                if (isAuthenticated) ...[
+                  Card(
+                    shape: profileCardShape,
+                    clipBehavior: Clip.antiAlias,
+                    child: Padding(
+                      padding: const EdgeInsets.all(16),
+                      child: Row(
+                        children: [
+                          CircleAvatar(
+                            radius: 32,
+                            backgroundColor: Colors.black12,
+                            backgroundImage: picUrl.isNotEmpty
+                                ? NetworkImage(picUrl)
+                                : null,
+                            child: picUrl.isEmpty
+                                ? const Icon(Icons.person, size: 32)
+                                : null,
+                          ),
+                          const SizedBox(width: 14),
+                          Expanded(
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Text(
+                                  fullName.isEmpty ? username : fullName,
+                                  style: Theme.of(context).textTheme.titleMedium
+                                      ?.copyWith(fontWeight: FontWeight.w700),
+                                ),
+                                if (username.isNotEmpty) ...[
+                                  const SizedBox(height: 2),
+                                  Text('@$username'),
+                                ],
+                                if (primaryContact.isNotEmpty) ...[
+                                  const SizedBox(height: 2),
+                                  Text(primaryContact),
+                                ],
+                                if (realEmail && phone.isNotEmpty) ...[
+                                  const SizedBox(height: 2),
+                                  Text(phone),
+                                ],
+                                if (dealerStatus != 'none' ||
+                                    accountType == 'dealer') ...[
+                                  const SizedBox(height: 6),
+                                  Container(
+                                    padding: const EdgeInsets.symmetric(
+                                      horizontal: 8,
+                                      vertical: 4,
+                                    ),
+                                    decoration: BoxDecoration(
+                                      color:
+                                          dealerStatus == 'approved' ||
+                                              accountType == 'dealer'
+                                          ? Colors.green.withValues(alpha: 0.15)
+                                          : Colors.orange.withValues(
+                                              alpha: 0.15,
+                                            ),
+                                      borderRadius: BorderRadius.circular(999),
+                                    ),
+                                    child: Text(
+                                      dealerStatus == 'approved' ||
+                                              accountType == 'dealer'
+                                          ? 'Verified dealer'
+                                          : 'Dealer pending approval',
+                                      style: TextStyle(
+                                        fontWeight: FontWeight.w600,
+                                        color:
+                                            dealerStatus == 'approved' ||
+                                                accountType == 'dealer'
+                                            ? Colors.green[800]
+                                            : Colors.orange[800],
+                                      ),
+                                    ),
+                                  ),
+                                ],
+                              ],
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ),
+                  const SizedBox(height: 12),
                   Card(
                     shape: profileCardShape,
                     clipBehavior: Clip.antiAlias,
@@ -490,103 +484,174 @@ class _ProfilePageState extends State<ProfilePage> {
                         Padding(
                           padding: const EdgeInsets.fromLTRB(16, 16, 16, 0),
                           child: Text(
-                            loc?.accountActionsTitle ?? 'Account Actions',
-                            style: Theme.of(context)
-                                .textTheme
-                                .titleMedium
+                            loc?.personalInformationTitle ??
+                                'Personal Information',
+                            style: Theme.of(context).textTheme.titleMedium
                                 ?.copyWith(fontWeight: FontWeight.w700),
                           ),
                         ),
-                        ListTile(
-                          leading: const Icon(Icons.settings_outlined),
-                          title: Text(loc?.settingsTitle ?? 'Settings'),
-                          onTap: () =>
-                              Navigator.pushNamed(context, '/settings'),
-                        ),
-                        const Divider(height: 1),
-                        ListTile(
-                          leading: const Icon(Icons.edit_outlined),
-                          title: Text(loc?.editProfileAction ?? 'Edit profile'),
-                          onTap: () async {
-                            if (!isAuthenticated) {
-                              await _showAuthRequiredDialog(context);
-                              return;
-                            }
-                            final result = await Navigator.pushNamed(
-                              context,
-                              '/edit-profile',
-                            );
-                            if (!mounted) return;
-                            if (result == true) {
-                              await _refresh();
-                            }
-                          },
-                        ),
-                        const Divider(height: 1),
-                        ListTile(
-                          leading: const Icon(Icons.favorite_border),
-                          title: Text(loc?.favoritesTitle ?? 'Favorites'),
-                          onTap: () async {
-                            if (!isAuthenticated) {
-                              await _showAuthRequiredDialog(context);
-                              return;
-                            }
-                            Navigator.pushNamed(context, '/favorites');
-                          },
-                        ),
-                        const Divider(height: 1),
-                        ListTile(
-                          leading: const Icon(Icons.list_alt_outlined),
-                          title: Text(loc?.myListingsTitle ?? 'My listings'),
-                          onTap: () async {
-                            if (!isAuthenticated) {
-                              await _showAuthRequiredDialog(context);
-                              return;
-                            }
-                            Navigator.pushNamed(context, '/my_listings');
-                          },
-                        ),
-                        if (isAuthenticated) ...[
-                          const Divider(height: 1),
+                        if (username.isNotEmpty)
                           ListTile(
-                            leading: Icon(
-                              Icons.delete_forever_outlined,
-                              color: Theme.of(context).colorScheme.error,
-                            ),
-                            title: Text(
-                              loc?.deleteAccountTitle ?? 'Delete account',
-                              style: TextStyle(
-                                color: Theme.of(context).colorScheme.error,
-                                fontWeight: FontWeight.w500,
-                              ),
-                            ),
-                            onTap: () async {
-                              await _deleteAccountTapped();
-                            },
+                            leading: const Icon(Icons.person_outline),
+                            title: Text(loc?.usernameLabel ?? 'Username'),
+                            subtitle: Text('@$username'),
                           ),
+                        if (realEmail)
+                          ListTile(
+                            leading: const Icon(Icons.email_outlined),
+                            title: Text(loc?.emailLabel ?? 'Email'),
+                            subtitle: Text(email),
+                          ),
+                        if (phone.isNotEmpty)
+                          ListTile(
+                            leading: const Icon(Icons.phone_outlined),
+                            title: Text(loc?.phoneLabel ?? 'Phone'),
+                            subtitle: Text(phone),
+                          ),
+                        if (dealershipName.isNotEmpty)
+                          ListTile(
+                            leading: const Icon(Icons.storefront_outlined),
+                            title: const Text('Dealership'),
+                            subtitle: Text(dealershipName),
+                          ),
+                        if (!isVerified && (realEmail || phone.isNotEmpty)) ...[
+                          if (email.isNotEmpty &&
+                              !email.endsWith('@phone.local'))
+                            ListTile(
+                              leading: const Icon(
+                                Icons.mark_email_unread_outlined,
+                              ),
+                              title: Text(
+                                loc?.verifyEmailAction ?? 'Verify email',
+                              ),
+                              subtitle: Text(
+                                loc?.sendVerificationLinkToEmail ??
+                                    'Send a verification link to your email',
+                              ),
+                              onTap: () =>
+                                  _sendEmailVerification(context, auth),
+                            ),
+                          if (phone.isNotEmpty)
+                            ListTile(
+                              leading: const Icon(Icons.phone_android_outlined),
+                              title: Text(
+                                loc?.verifyPhoneAction ?? 'Verify phone',
+                              ),
+                              subtitle: Text(
+                                loc?.receiveCodeBySms ??
+                                    'Receive a code by SMS',
+                              ),
+                              onTap: () =>
+                                  _showPhoneVerifyDialog(context, phone, auth),
+                            ),
                         ],
                       ],
                     ),
                   ),
                   const SizedBox(height: 12),
-                  if (isAuthenticated)
-                    ElevatedButton.icon(
-                      onPressed: _loading
-                          ? null
-                          : () async {
-                              await AuthService().logout();
-                              if (!context.mounted) return;
-                              Navigator.pushReplacementNamed(context, '/login');
-                            },
-                      icon: const Icon(Icons.logout),
-                      label: Text(loc?.logout ?? 'Logout'),
-                    ),
                 ],
-              ),
+                Card(
+                  shape: profileCardShape,
+                  clipBehavior: Clip.antiAlias,
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Padding(
+                        padding: const EdgeInsets.fromLTRB(16, 16, 16, 0),
+                        child: Text(
+                          loc?.accountActionsTitle ?? 'Account Actions',
+                          style: Theme.of(context).textTheme.titleMedium
+                              ?.copyWith(fontWeight: FontWeight.w700),
+                        ),
+                      ),
+                      ListTile(
+                        leading: const Icon(Icons.settings_outlined),
+                        title: Text(loc?.settingsTitle ?? 'Settings'),
+                        onTap: () => Navigator.pushNamed(context, '/settings'),
+                      ),
+                      const Divider(height: 1),
+                      ListTile(
+                        leading: const Icon(Icons.edit_outlined),
+                        title: Text(loc?.editProfileAction ?? 'Edit profile'),
+                        onTap: () async {
+                          if (!isAuthenticated) {
+                            await _showAuthRequiredDialog(context);
+                            return;
+                          }
+                          final result = await Navigator.pushNamed(
+                            context,
+                            '/edit-profile',
+                          );
+                          if (!mounted) return;
+                          if (result == true) {
+                            await _refresh();
+                          }
+                        },
+                      ),
+                      const Divider(height: 1),
+                      ListTile(
+                        leading: const Icon(Icons.favorite_border),
+                        title: Text(loc?.favoritesTitle ?? 'Favorites'),
+                        onTap: () async {
+                          if (!isAuthenticated) {
+                            await _showAuthRequiredDialog(context);
+                            return;
+                          }
+                          Navigator.pushNamed(context, '/favorites');
+                        },
+                      ),
+                      const Divider(height: 1),
+                      ListTile(
+                        leading: const Icon(Icons.list_alt_outlined),
+                        title: Text(loc?.myListingsTitle ?? 'My listings'),
+                        onTap: () async {
+                          if (!isAuthenticated) {
+                            await _showAuthRequiredDialog(context);
+                            return;
+                          }
+                          Navigator.pushNamed(context, '/my_listings');
+                        },
+                      ),
+                      if (isAuthenticated) ...[
+                        const Divider(height: 1),
+                        ListTile(
+                          leading: Icon(
+                            Icons.delete_forever_outlined,
+                            color: Theme.of(context).colorScheme.error,
+                          ),
+                          title: Text(
+                            loc?.deleteAccountTitle ?? 'Delete account',
+                            style: TextStyle(
+                              color: Theme.of(context).colorScheme.error,
+                              fontWeight: FontWeight.w500,
+                            ),
+                          ),
+                          onTap: () async {
+                            await _deleteAccountTapped();
+                          },
+                        ),
+                      ],
+                    ],
+                  ),
+                ),
+                const SizedBox(height: 12),
+                if (isAuthenticated)
+                  ElevatedButton.icon(
+                    onPressed: _loading
+                        ? null
+                        : () async {
+                            await AuthService().logout();
+                            if (!context.mounted) return;
+                            Navigator.pushReplacementNamed(context, '/login');
+                          },
+                    icon: const Icon(Icons.logout),
+                    label: Text(loc?.logout ?? 'Logout'),
+                  ),
+              ],
             ),
+          ),
         ],
       ),
     );
   }
 }
-

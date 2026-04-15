@@ -18,7 +18,7 @@ from flask_jwt_extended import (
     get_jwt_identity,
     jwt_required,
 )
-from sqlalchemy import func
+from sqlalchemy import func, inspect
 from sqlalchemy.exc import IntegrityError
 
 from ..auth import (
@@ -97,6 +97,34 @@ def _normalize_phone(raw_phone: str) -> str:
     return digits
 
 
+def _to_bool(value) -> bool:
+    if isinstance(value, bool):
+        return value
+    if value is None:
+        return False
+    return str(value).strip().lower() in {"1", "true", "yes", "on"}
+
+
+def _apply_dealer_profile(
+    user: User,
+    *,
+    is_dealer_requested: bool,
+    dealership_name: str | None = None,
+    dealership_phone: str | None = None,
+    dealership_location: str | None = None,
+) -> None:
+    """Apply dealer profile request without auto-approving dealer role."""
+    if is_dealer_requested:
+        user.account_type = "user"
+        user.dealer_status = "pending"
+        user.dealership_name = (dealership_name or "").strip() or None
+        user.dealership_phone = (dealership_phone or "").strip() or None
+        user.dealership_location = (dealership_location or "").strip() or None
+    elif not getattr(user, "dealer_status", None):
+        user.account_type = "user"
+        user.dealer_status = "none"
+
+
 def _hash_phone_verification_code(phone_digits: str, code: str) -> str:
     # Bind the code to the phone number and SECRET_KEY.
     # This prevents storing OTPs in plaintext and prevents cross-phone reuse.
@@ -134,9 +162,22 @@ def _get_or_create_user_for_phone(
     last_name: str | None = None,
     email: str | None = None,
     password: str | None = None,
+    is_dealer_requested: bool = False,
+    dealership_name: str | None = None,
+    dealership_phone: str | None = None,
+    dealership_location: str | None = None,
 ) -> User:
     user = User.query.filter_by(phone_number=phone_digits).first()
     if user:
+        if is_dealer_requested and (getattr(user, "dealer_status", "none") in ("none", "", None)):
+            _apply_dealer_profile(
+                user,
+                is_dealer_requested=True,
+                dealership_name=dealership_name,
+                dealership_phone=dealership_phone,
+                dealership_location=dealership_location,
+            )
+            db.session.commit()
         return user
     u = (username or "").strip()
     e = (email or "").strip().lower()
@@ -181,6 +222,15 @@ def _get_or_create_user_for_phone(
         is_active=True,
         is_verified=False,
         public_id=secrets.token_hex(8),
+        account_type="user",
+        dealer_status="none",
+    )
+    _apply_dealer_profile(
+        user,
+        is_dealer_requested=is_dealer_requested,
+        dealership_name=dealership_name,
+        dealership_phone=dealership_phone,
+        dealership_location=dealership_location,
     )
     # Passwordless phone auth still needs a password hash in the current schema.
     pw = (password or "").strip()
@@ -331,11 +381,22 @@ def register_request():
         first_name = (data.get("first_name") or "User").strip()
         last_name = (data.get("last_name") or "Demo").strip()
         phone = (data.get("phone_number") or data.get("phone") or "").strip()
+        is_dealer_requested = _to_bool(data.get("is_dealer"))
+        dealership_name = (data.get("dealership_name") or "").strip()
+        dealership_phone = (data.get("dealership_phone") or "").strip()
+        dealership_location = (data.get("dealership_location") or "").strip()
 
         if not raw_email or not validate_email(raw_email):
             return jsonify({"message": "Valid email is required"}), 400
         if not raw_username:
             return jsonify({"message": "Username is required"}), 400
+        if is_dealer_requested:
+            if not dealership_name:
+                return jsonify({"message": "Dealership name is required for dealer accounts"}), 400
+            if not dealership_phone:
+                return jsonify({"message": "Dealership phone is required for dealer accounts"}), 400
+            if not dealership_location:
+                return jsonify({"message": "Dealership location is required for dealer accounts"}), 400
         is_valid, msg = validate_password(password)
         if not is_valid:
             return jsonify({"message": msg}), 400
@@ -381,6 +442,10 @@ def register_request():
             first_name=first_name,
             last_name=last_name,
             phone_number=phone or None,
+            is_dealer_requested=is_dealer_requested,
+            dealership_name=dealership_name or None,
+            dealership_phone=dealership_phone or None,
+            dealership_location=dealership_location or None,
             token=token,
             created_at=utcnow(),
             expires_at=utcnow() + timedelta(hours=24),
@@ -448,6 +513,15 @@ def register_confirm():
             is_active=True,
             is_verified=True,
             public_id=secrets.token_hex(8),
+            account_type="user",
+            dealer_status="none",
+        )
+        _apply_dealer_profile(
+            user,
+            is_dealer_requested=bool(getattr(pending, "is_dealer_requested", False)),
+            dealership_name=getattr(pending, "dealership_name", None),
+            dealership_phone=getattr(pending, "dealership_phone", None),
+            dealership_location=getattr(pending, "dealership_location", None),
         )
         user.password_hash = pending.password_hash
         try:
@@ -721,29 +795,59 @@ def delete_account():
             return jsonify({"message": "Incorrect password"}), 400
 
         user_id = current_user.id
+        bind = db.session.get_bind()
+        table_names = set()
+        try:
+            if bind is not None:
+                table_names = set(inspect(bind).get_table_names())
+        except Exception:
+            table_names = set()
 
-        # Remove many-to-many associations so FK constraints don't block user delete
+        # Remove many-to-many associations so FK constraints don't block user delete.
         current_user.favorites = []
         current_user.viewed_listings = []
 
-        # Delete messages where user is sender or receiver
-        Message.query.filter(
-            (Message.sender_id == user_id) | (Message.receiver_id == user_id),
-        ).delete(synchronize_session=False)
+        if "message" in table_names:
+            Message.query.filter(
+                (Message.sender_id == user_id) | (Message.receiver_id == user_id),
+            ).delete(synchronize_session=False)
 
-        # Delete token blacklist entries for this user
-        TokenBlacklist.query.filter_by(user_id=user_id).delete()
+        if "token_blacklist" in table_names:
+            TokenBlacklist.query.filter_by(user_id=user_id).delete()
 
-        # Delete password reset and email verification tokens
-        PasswordReset.query.filter_by(user_id=user_id).delete()
-        EmailVerification.query.filter_by(user_id=user_id).delete()
+        if "password_reset" in table_names:
+            PasswordReset.query.filter_by(user_id=user_id).delete()
+        if "email_verification" in table_names:
+            EmailVerification.query.filter_by(user_id=user_id).delete()
 
         log_user_action(current_user, "account_deleted")
 
-        db.session.delete(current_user)
-        db.session.commit()
+        try:
+            db.session.delete(current_user)
+            db.session.commit()
+            return jsonify({"message": "Account deleted successfully"}), 200
+        except Exception as hard_delete_error:
+            # Fallback: anonymize/deactivate account so the same phone can be re-used
+            # for new signup even if full hard delete fails due legacy constraints.
+            db.session.rollback()
+            suffix = secrets.token_hex(4)
+            from ..time_utils import utcnow
 
-        return jsonify({"message": "Account deleted successfully"}), 200
+            current_user.username = f"deleted_{suffix}"
+            current_user.phone_number = f"del_{int(time.time())}_{suffix}"[:20]
+            current_user.email = None
+            current_user.first_name = "Deleted"
+            current_user.last_name = "User"
+            current_user.is_active = False
+            current_user.is_verified = False
+            current_user.updated_at = utcnow()
+            db.session.commit()
+            current_app.logger.warning(
+                "Hard delete failed for user_id=%s; account anonymized instead: %s",
+                user_id,
+                str(hard_delete_error),
+            )
+            return jsonify({"message": "Account removed successfully"}), 200
     except Exception as e:
         db.session.rollback()
         current_app.logger.exception("delete_account failed: %s", e)
@@ -1232,9 +1336,20 @@ def phone_start():
         data = request.get_json(silent=True) or {}
         data = validate_input_sanitization(data)
         raw_phone = (data.get("phone_number") or data.get("phone") or "").strip()
+        is_dealer_requested = _to_bool(data.get("is_dealer"))
+        dealership_name = (data.get("dealership_name") or "").strip()
+        dealership_phone = (data.get("dealership_phone") or "").strip()
+        dealership_location = (data.get("dealership_location") or "").strip()
         phone_digits = _normalize_phone(raw_phone)
         if not phone_digits:
             return jsonify({"message": "Phone number is required"}), 400
+        if is_dealer_requested:
+            if not dealership_name:
+                return jsonify({"message": "Dealership name is required for dealer accounts"}), 400
+            if not dealership_phone:
+                return jsonify({"message": "Dealership phone is required for dealer accounts"}), 400
+            if not dealership_location:
+                return jsonify({"message": "Dealership location is required for dealer accounts"}), 400
 
         try:
             user = _get_or_create_user_for_phone(
@@ -1244,6 +1359,10 @@ def phone_start():
                 last_name=(data.get("last_name") or data.get("lastName") or None),
                 email=(data.get("email") or None),
                 password=(data.get("password") or None),
+                is_dealer_requested=is_dealer_requested,
+                dealership_name=dealership_name or None,
+                dealership_phone=dealership_phone or None,
+                dealership_location=dealership_location or None,
             )
         except ValueError as e:
             # Avoid leaking account existence details.
@@ -1304,9 +1423,20 @@ def phone_verify():
         data = validate_input_sanitization(data)
         raw_phone = (data.get("phone_number") or data.get("phone") or "").strip()
         code = str(data.get("code") or data.get("verification_code") or "").strip()
+        is_dealer_requested = _to_bool(data.get("is_dealer"))
+        dealership_name = (data.get("dealership_name") or "").strip()
+        dealership_phone = (data.get("dealership_phone") or "").strip()
+        dealership_location = (data.get("dealership_location") or "").strip()
         phone_digits = _normalize_phone(raw_phone)
         if not phone_digits or not code:
             return jsonify({"message": "Phone number and code are required"}), 400
+        if is_dealer_requested:
+            if not dealership_name:
+                return jsonify({"message": "Dealership name is required for dealer accounts"}), 400
+            if not dealership_phone:
+                return jsonify({"message": "Dealership phone is required for dealer accounts"}), 400
+            if not dealership_location:
+                return jsonify({"message": "Dealership location is required for dealer accounts"}), 400
         if len(code) != 6 or not code.isdigit():
             return jsonify({"message": "Invalid or expired verification code"}), 400
 
@@ -1318,6 +1448,10 @@ def phone_verify():
                 last_name=(data.get("last_name") or data.get("lastName") or None),
                 email=(data.get("email") or None),
                 password=(data.get("password") or None),
+                is_dealer_requested=is_dealer_requested,
+                dealership_name=dealership_name or None,
+                dealership_phone=dealership_phone or None,
+                dealership_location=dealership_location or None,
             )
         except ValueError as e:
             current_app.logger.info("phone_verify validation error: %s", str(e))
@@ -1382,6 +1516,10 @@ def compat_signup():
         first_name = (data.get("first_name") or "User").strip()
         last_name = (data.get("last_name") or "Demo").strip()
         otp_code = (data.get("otp_code") or "").strip()
+        is_dealer_requested = _to_bool(data.get("is_dealer"))
+        dealership_name = (data.get("dealership_name") or "").strip()
+        dealership_phone = (data.get("dealership_phone") or "").strip()
+        dealership_location = (data.get("dealership_location") or "").strip()
 
         phone_digits = _normalize_phone(raw_phone)
 
@@ -1392,6 +1530,13 @@ def compat_signup():
                 return jsonify({"message": "User not found. Request a new code."}), 404
             if not password:
                 return jsonify({"message": "Password is required"}), 400
+            if is_dealer_requested:
+                if not dealership_name:
+                    return jsonify({"message": "Dealership name is required for dealer accounts"}), 400
+                if not dealership_phone:
+                    return jsonify({"message": "Dealership phone is required for dealer accounts"}), 400
+                if not dealership_location:
+                    return jsonify({"message": "Dealership location is required for dealer accounts"}), 400
             is_valid, msg = validate_password(password)
             if not is_valid:
                 return jsonify({"message": msg}), 400
@@ -1419,6 +1564,13 @@ def compat_signup():
             user.last_name = last_name or user.last_name or ""
             user.set_password(password)
             user.is_verified = True
+            _apply_dealer_profile(
+                user,
+                is_dealer_requested=is_dealer_requested,
+                dealership_name=dealership_name or None,
+                dealership_phone=dealership_phone or None,
+                dealership_location=dealership_location or None,
+            )
             user.phone_verification_code_hash = None
             user.phone_verification_expires_at = None
             user.phone_verification_attempts = 0
@@ -1446,6 +1598,13 @@ def compat_signup():
         ).lower()
         if not password:
             return jsonify({"message": "Password is required"}), 400
+        if is_dealer_requested:
+            if not dealership_name:
+                return jsonify({"message": "Dealership name is required for dealer accounts"}), 400
+            if not dealership_phone:
+                return jsonify({"message": "Dealership phone is required for dealer accounts"}), 400
+            if not dealership_location:
+                return jsonify({"message": "Dealership location is required for dealer accounts"}), 400
         is_valid, message = validate_password(password)
         if not is_valid:
             return jsonify({"message": message}), 400
@@ -1479,6 +1638,15 @@ def compat_signup():
             email=email or None,
             is_active=True,
             public_id=secrets.token_hex(8),
+            account_type="user",
+            dealer_status="none",
+        )
+        _apply_dealer_profile(
+            user,
+            is_dealer_requested=is_dealer_requested,
+            dealership_name=dealership_name or None,
+            dealership_phone=dealership_phone or None,
+            dealership_location=dealership_location or None,
         )
         user.set_password(password)
         db.session.add(user)

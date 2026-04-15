@@ -46,6 +46,11 @@ class User(db.Model):
     phone_verification_locked_until = db.Column(db.DateTime, nullable=True)
     is_active = db.Column(db.Boolean, default=True)
     is_admin = db.Column(db.Boolean, default=False)
+    account_type = db.Column(db.String(20), nullable=False, default="user")  # user | dealer
+    dealer_status = db.Column(db.String(20), nullable=False, default="none")  # none | pending | approved | rejected
+    dealership_name = db.Column(db.String(120), nullable=True)
+    dealership_phone = db.Column(db.String(20), nullable=True)
+    dealership_location = db.Column(db.String(200), nullable=True)
     created_at = db.Column(db.DateTime, default=utcnow)
     updated_at = db.Column(db.DateTime, default=utcnow, onupdate=utcnow)
     last_login = db.Column(db.DateTime, nullable=True)
@@ -105,6 +110,11 @@ class User(db.Model):
             'profile_picture': self.profile_picture,
             'is_verified': self.is_verified,
             'is_active': self.is_active,
+            'account_type': self.account_type or "user",
+            'dealer_status': self.dealer_status or "none",
+            'dealership_name': self.dealership_name,
+            'dealership_phone': self.dealership_phone,
+            'dealership_location': self.dealership_location,
             'created_at': self.created_at.isoformat() if self.created_at else None,
             'last_login': self.last_login.isoformat() if self.last_login else None
         }
@@ -142,6 +152,10 @@ class PendingSignup(db.Model):
     first_name = db.Column(db.String(50), nullable=False)
     last_name = db.Column(db.String(50), nullable=False)
     phone_number = db.Column(db.String(20), nullable=True)
+    is_dealer_requested = db.Column(db.Boolean, default=False, nullable=False)
+    dealership_name = db.Column(db.String(120), nullable=True)
+    dealership_phone = db.Column(db.String(20), nullable=True)
+    dealership_location = db.Column(db.String(200), nullable=True)
     token = db.Column(db.String(64), unique=True, nullable=False, index=True)
     created_at = db.Column(db.DateTime, default=utcnow, nullable=False)
     expires_at = db.Column(db.DateTime, nullable=False)

@@ -67,6 +67,10 @@ class AuthService extends ChangeNotifier {
     required String firstName,
     required String lastName,
     String? phoneNumber,
+    bool isDealer = false,
+    String? dealershipName,
+    String? dealershipPhone,
+    String? dealershipLocation,
   }) async {
     _setLoading(true);
     try {
@@ -77,6 +81,10 @@ class AuthService extends ChangeNotifier {
         firstName: firstName,
         lastName: lastName,
         phoneNumber: phoneNumber,
+        isDealer: isDealer,
+        dealershipName: dealershipName,
+        dealershipPhone: dealershipPhone,
+        dealershipLocation: dealershipLocation,
       );
     } finally {
       _setLoading(false);
