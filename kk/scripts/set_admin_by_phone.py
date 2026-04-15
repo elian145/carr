@@ -1,14 +1,16 @@
 """
 Grant is_admin for a user by phone number (matches signup normalization quirks).
 
-Run from the project root (folder that contains `kk/`):
+Run from the project root (folder that contains `kk/`).
 
-  set DATABASE_URL=postgresql://...   # production / Render external URL
+PowerShell (use your **real** Render Postgres URL — not the words USER/HOST/PORT):
+
+  $env:DATABASE_URL = "postgresql://<user>:<password>@<host>:5432/<database>"
+  python kk/scripts/set_admin_by_phone.py 7505070706 --dry-run
   python kk/scripts/set_admin_by_phone.py 7505070706
 
-Or with a dry run:
-
-  python kk/scripts/set_admin_by_phone.py 7505070706 --dry-run
+Copy the URL from Render: **Database** → **Connections** → **External Database URL**
+(or Internal URL if you run the script from Render’s shell).
 """
 from __future__ import annotations
 
@@ -34,6 +36,33 @@ def _normalize_phone(raw_phone: str) -> str:
     return digits
 
 
+def _validate_database_url() -> bool:
+    """Fail fast if DATABASE_URL is set but invalid (e.g. doc placeholders). Unset = use app default (often local SQLite)."""
+    url = (os.environ.get("DATABASE_URL") or "").strip()
+    if not url:
+        return True
+    # Common copy-paste mistake from docs
+    if "USER:PASSWORD@" in url or "@HOST:" in url or ":PORT/" in url:
+        print(
+            "SET_ADMIN_BY_PHONE_ERR DATABASE_URL looks like a placeholder, not a real connection string.\n"
+            "  Replace USER, PASSWORD, HOST, PORT, and DATABASE with values from Render, or paste the full URL.",
+            file=sys.stderr,
+        )
+        return False
+    try:
+        from sqlalchemy.engine.url import make_url
+
+        make_url(url.replace("postgres://", "postgresql://", 1))
+    except Exception as e:
+        print(
+            f"SET_ADMIN_BY_PHONE_ERR DATABASE_URL is not a valid SQLAlchemy URL: {e}\n"
+            "  Example shape: postgresql://myuser:mypassword@dpg-xxxxx-a.region.render.com:5432/mydb",
+            file=sys.stderr,
+        )
+        return False
+    return True
+
+
 def _phone_match_variants(raw: str) -> set[str]:
     """Possible stored phone_number values for Iraqi-style numbers."""
     n = _normalize_phone(raw)
@@ -56,6 +85,9 @@ def main() -> int:
     root = _repo_root()
     if str(root) not in sys.path:
         sys.path.insert(0, str(root))
+
+    if not _validate_database_url():
+        return 2
 
     os.environ.setdefault("APP_ENV", "development")
 
