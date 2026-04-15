@@ -47,8 +47,21 @@ def upgrade() -> None:
                 batch_op.add_column(sa.Column("dealership_phone", sa.String(length=20), nullable=True))
             if "dealership_location" not in user_cols:
                 batch_op.add_column(sa.Column("dealership_location", sa.String(length=200), nullable=True))
-        op.execute("UPDATE user SET account_type = COALESCE(account_type, 'user')")
-        op.execute("UPDATE user SET dealer_status = COALESCE(dealer_status, 'none')")
+        user_table = sa.table(
+            "user",
+            sa.column("account_type", sa.String(length=20)),
+            sa.column("dealer_status", sa.String(length=20)),
+        )
+        op.execute(
+            user_table.update()
+            .where(user_table.c.account_type.is_(None))
+            .values(account_type="user")
+        )
+        op.execute(
+            user_table.update()
+            .where(user_table.c.dealer_status.is_(None))
+            .values(dealer_status="none")
+        )
 
     if _has_table(conn, "pending_signup"):
         pending_cols = _cols(conn, "pending_signup")
@@ -61,7 +74,15 @@ def upgrade() -> None:
                 batch_op.add_column(sa.Column("dealership_phone", sa.String(length=20), nullable=True))
             if "dealership_location" not in pending_cols:
                 batch_op.add_column(sa.Column("dealership_location", sa.String(length=200), nullable=True))
-        op.execute("UPDATE pending_signup SET is_dealer_requested = COALESCE(is_dealer_requested, 0)")
+        pending_table = sa.table(
+            "pending_signup",
+            sa.column("is_dealer_requested", sa.Boolean()),
+        )
+        op.execute(
+            pending_table.update()
+            .where(pending_table.c.is_dealer_requested.is_(None))
+            .values(is_dealer_requested=False)
+        )
 
 
 def downgrade() -> None:
