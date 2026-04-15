@@ -722,6 +722,84 @@ class _RegisterPageState extends State<RegisterPage> {
                   ),
                 ],
               ),
+              const SizedBox(height: 8),
+              Text(
+                'Account type',
+                style: Theme.of(context).textTheme.titleSmall?.copyWith(
+                      fontWeight: FontWeight.w600,
+                    ),
+              ),
+              const SizedBox(height: 4),
+              SwitchListTile(
+                contentPadding: EdgeInsets.zero,
+                title: const Text('I am registering as a dealership / dealer'),
+                subtitle: Text(
+                  _isDealer
+                      ? 'You will submit dealership details; approval is pending until reviewed.'
+                      : 'Leave off for a normal personal account.',
+                  style: Theme.of(context).textTheme.bodySmall,
+                ),
+                value: _isDealer,
+                onChanged: (v) => setState(() => _isDealer = v),
+              ),
+              if (_isDealer) ...[
+                const SizedBox(height: 4),
+                TextFormField(
+                  controller: _dealershipNameController,
+                  decoration: const InputDecoration(
+                    labelText: 'Dealership name',
+                    prefixIcon: Icon(Icons.storefront_outlined),
+                    border: OutlineInputBorder(),
+                  ),
+                  validator: (value) {
+                    if (!_isDealer) {
+                      return null;
+                    }
+                    if (value == null || value.trim().isEmpty) {
+                      return 'Dealership name is required';
+                    }
+                    return null;
+                  },
+                ),
+                const SizedBox(height: 12),
+                TextFormField(
+                  controller: _dealershipPhoneController,
+                  decoration: const InputDecoration(
+                    labelText: 'Dealership phone',
+                    prefixIcon: Icon(Icons.phone_outlined),
+                    border: OutlineInputBorder(),
+                  ),
+                  keyboardType: TextInputType.phone,
+                  validator: (value) {
+                    if (!_isDealer) {
+                      return null;
+                    }
+                    if (value == null || value.trim().isEmpty) {
+                      return 'Dealership phone is required';
+                    }
+                    return null;
+                  },
+                ),
+                const SizedBox(height: 12),
+                TextFormField(
+                  controller: _dealershipLocationController,
+                  decoration: const InputDecoration(
+                    labelText: 'Dealership location',
+                    prefixIcon: Icon(Icons.location_on_outlined),
+                    border: OutlineInputBorder(),
+                  ),
+                  validator: (value) {
+                    if (!_isDealer) {
+                      return null;
+                    }
+                    if (value == null || value.trim().isEmpty) {
+                      return 'Dealership location is required';
+                    }
+                    return null;
+                  },
+                ),
+                const SizedBox(height: 8),
+              ],
               const SizedBox(height: 16),
               Row(
                 children: [
@@ -865,75 +943,6 @@ class _RegisterPageState extends State<RegisterPage> {
                     return null;
                   },
                 ),
-              ],
-              const SizedBox(height: 16),
-              SwitchListTile(
-                title: const Text('I am a dealership / dealer'),
-                subtitle: Text(
-                  _isDealer
-                      ? 'Dealer account request will be pending approval.'
-                      : 'Enable if you are creating an account for a dealership.',
-                ),
-                value: _isDealer,
-                onChanged: (v) => setState(() => _isDealer = v),
-              ),
-              if (_isDealer) ...[
-                const SizedBox(height: 8),
-                TextFormField(
-                  controller: _dealershipNameController,
-                  decoration: const InputDecoration(
-                    labelText: 'Dealership Name',
-                    prefixIcon: Icon(Icons.storefront_outlined),
-                    border: OutlineInputBorder(),
-                  ),
-                  validator: (value) {
-                    if (!_isDealer) {
-                      return null;
-                    }
-                    if (value == null || value.trim().isEmpty) {
-                      return 'Dealership name is required';
-                    }
-                    return null;
-                  },
-                ),
-                const SizedBox(height: 16),
-                TextFormField(
-                  controller: _dealershipPhoneController,
-                  decoration: const InputDecoration(
-                    labelText: 'Dealership Phone',
-                    prefixIcon: Icon(Icons.phone_outlined),
-                    border: OutlineInputBorder(),
-                  ),
-                  keyboardType: TextInputType.phone,
-                  validator: (value) {
-                    if (!_isDealer) {
-                      return null;
-                    }
-                    if (value == null || value.trim().isEmpty) {
-                      return 'Dealership phone is required';
-                    }
-                    return null;
-                  },
-                ),
-                const SizedBox(height: 16),
-                TextFormField(
-                  controller: _dealershipLocationController,
-                  decoration: const InputDecoration(
-                    labelText: 'Dealership Location',
-                    prefixIcon: Icon(Icons.location_on_outlined),
-                    border: OutlineInputBorder(),
-                  ),
-                  validator: (value) {
-                    if (!_isDealer) {
-                      return null;
-                    }
-                    if (value == null || value.trim().isEmpty) {
-                      return 'Dealership location is required';
-                    }
-                    return null;
-                  },
-                ),
-                const SizedBox(height: 16),
               ],
               const SizedBox(height: 8),
               TextFormField(

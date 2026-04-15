@@ -433,40 +433,63 @@ class _ProfilePageState extends State<ProfilePage> {
                                   const SizedBox(height: 2),
                                   Text(phone),
                                 ],
-                                if (dealerStatus != 'none' ||
-                                    accountType == 'dealer') ...[
-                                  const SizedBox(height: 6),
-                                  Container(
-                                    padding: const EdgeInsets.symmetric(
-                                      horizontal: 8,
-                                      vertical: 4,
-                                    ),
-                                    decoration: BoxDecoration(
-                                      color:
-                                          dealerStatus == 'approved' ||
-                                              accountType == 'dealer'
-                                          ? Colors.green.withValues(alpha: 0.15)
-                                          : Colors.orange.withValues(
-                                              alpha: 0.15,
-                                            ),
-                                      borderRadius: BorderRadius.circular(999),
-                                    ),
-                                    child: Text(
-                                      dealerStatus == 'approved' ||
-                                              accountType == 'dealer'
-                                          ? 'Verified dealer'
-                                          : 'Dealer pending approval',
-                                      style: TextStyle(
-                                        fontWeight: FontWeight.w600,
-                                        color:
-                                            dealerStatus == 'approved' ||
-                                                accountType == 'dealer'
-                                            ? Colors.green[800]
-                                            : Colors.orange[800],
+                                Builder(
+                                  builder: (context) {
+                                    final isVerifiedDealer =
+                                        dealerStatus == 'approved' ||
+                                        accountType == 'dealer';
+                                    final isPending =
+                                        dealerStatus == 'pending';
+                                    final isRejected =
+                                        dealerStatus == 'rejected';
+                                    late final String label;
+                                    late final Color bg;
+                                    late final Color fg;
+                                    if (isVerifiedDealer) {
+                                      label = 'Verified dealer';
+                                      bg = Colors.green.withValues(alpha: 0.15);
+                                      fg = Colors.green.shade800;
+                                    } else if (isPending) {
+                                      label = 'Dealer application pending';
+                                      bg = Colors.orange.withValues(alpha: 0.15);
+                                      fg = Colors.orange.shade800;
+                                    } else if (isRejected) {
+                                      label = 'Dealer application declined';
+                                      bg = Colors.red.withValues(alpha: 0.12);
+                                      fg = Colors.red.shade800;
+                                    } else {
+                                      label = 'Personal account';
+                                      bg = Theme.of(context)
+                                          .colorScheme
+                                          .surfaceContainerHighest
+                                          .withValues(alpha: 0.6);
+                                      fg = Theme.of(context)
+                                          .colorScheme
+                                          .onSurfaceVariant;
+                                    }
+                                    return Padding(
+                                      padding: const EdgeInsets.only(top: 6),
+                                      child: Container(
+                                        padding: const EdgeInsets.symmetric(
+                                          horizontal: 8,
+                                          vertical: 4,
+                                        ),
+                                        decoration: BoxDecoration(
+                                          color: bg,
+                                          borderRadius:
+                                              BorderRadius.circular(999),
+                                        ),
+                                        child: Text(
+                                          label,
+                                          style: TextStyle(
+                                            fontWeight: FontWeight.w600,
+                                            color: fg,
+                                          ),
+                                        ),
                                       ),
-                                    ),
-                                  ),
-                                ],
+                                    );
+                                  },
+                                ),
                               ],
                             ),
                           ),
