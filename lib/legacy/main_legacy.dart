@@ -23407,9 +23407,13 @@ class _SignupPageState extends State<SignupPage> {
   final _phoneController = TextEditingController();
   final _passwordController = TextEditingController();
   final _otpController = TextEditingController();
+  final _dealershipNameController = TextEditingController();
+  final _dealershipPhoneController = TextEditingController();
+  final _dealershipLocationController = TextEditingController();
   bool _loading = false;
   bool _otpSent = false;
   String _authType = 'email'; // 'email' or 'phone'
+  bool _isDealer = false;
 
   @override
   void dispose() {
@@ -23418,6 +23422,9 @@ class _SignupPageState extends State<SignupPage> {
     _phoneController.dispose();
     _passwordController.dispose();
     _otpController.dispose();
+    _dealershipNameController.dispose();
+    _dealershipPhoneController.dispose();
+    _dealershipLocationController.dispose();
     super.dispose();
   }
 
@@ -23589,6 +23596,10 @@ class _SignupPageState extends State<SignupPage> {
           phoneNumber: _phoneController.text.trim().isEmpty
               ? null
               : _phoneController.text.trim(),
+          isDealer: _isDealer,
+          dealershipName: _dealershipNameController.text.trim(),
+          dealershipPhone: _dealershipPhoneController.text.trim(),
+          dealershipLocation: _dealershipLocationController.text.trim(),
         );
         if (!mounted) return;
         await showDialog(
@@ -23617,6 +23628,12 @@ class _SignupPageState extends State<SignupPage> {
         'username': username,
         'phone': '+964${_phoneController.text.trim()}',
         'otp_code': _otpController.text.trim(),
+        'is_dealer': _isDealer,
+        if (_isDealer) ...<String, dynamic>{
+          'dealership_name': _dealershipNameController.text.trim(),
+          'dealership_phone': _dealershipPhoneController.text.trim(),
+          'dealership_location': _dealershipLocationController.text.trim(),
+        },
       };
       final resp = await http
           .post(
@@ -23780,6 +23797,106 @@ class _SignupPageState extends State<SignupPage> {
                   ),
                 ],
               ),
+              SizedBox(height: 12),
+              Text(
+                'Account type',
+                style: TextStyle(
+                  fontSize: 16,
+                  fontWeight: FontWeight.w600,
+                  color: Colors.white,
+                ),
+              ),
+              SizedBox(height: 4),
+              SwitchListTile(
+                contentPadding: EdgeInsets.zero,
+                title: Text(
+                  'I am registering as a dealership / dealer',
+                  style: TextStyle(color: Colors.white),
+                ),
+                subtitle: Text(
+                  _isDealer
+                      ? 'Dealership details required; approval is pending until reviewed.'
+                      : 'Leave off for a normal personal account.',
+                  style: TextStyle(color: Colors.white70, fontSize: 13),
+                ),
+                value: _isDealer,
+                onChanged: (v) => setState(() => _isDealer = v),
+              ),
+              if (_isDealer) ...[
+                SizedBox(height: 8),
+                TextFormField(
+                  controller: _dealershipNameController,
+                  style: TextStyle(color: Colors.white),
+                  decoration: InputDecoration(
+                    labelText: 'Dealership name',
+                    labelStyle: TextStyle(color: Colors.white70),
+                    enabledBorder: UnderlineInputBorder(
+                      borderSide: BorderSide(color: Colors.white54),
+                    ),
+                    focusedBorder: UnderlineInputBorder(
+                      borderSide: BorderSide(color: Color(0xFFFF6B00)),
+                    ),
+                  ),
+                  validator: (v) {
+                    if (!_isDealer) {
+                      return null;
+                    }
+                    if (v == null || v.trim().isEmpty) {
+                      return 'Dealership name is required';
+                    }
+                    return null;
+                  },
+                ),
+                SizedBox(height: 12),
+                TextFormField(
+                  controller: _dealershipPhoneController,
+                  style: TextStyle(color: Colors.white),
+                  keyboardType: TextInputType.phone,
+                  decoration: InputDecoration(
+                    labelText: 'Dealership phone',
+                    labelStyle: TextStyle(color: Colors.white70),
+                    enabledBorder: UnderlineInputBorder(
+                      borderSide: BorderSide(color: Colors.white54),
+                    ),
+                    focusedBorder: UnderlineInputBorder(
+                      borderSide: BorderSide(color: Color(0xFFFF6B00)),
+                    ),
+                  ),
+                  validator: (v) {
+                    if (!_isDealer) {
+                      return null;
+                    }
+                    if (v == null || v.trim().isEmpty) {
+                      return 'Dealership phone is required';
+                    }
+                    return null;
+                  },
+                ),
+                SizedBox(height: 12),
+                TextFormField(
+                  controller: _dealershipLocationController,
+                  style: TextStyle(color: Colors.white),
+                  decoration: InputDecoration(
+                    labelText: 'Dealership location',
+                    labelStyle: TextStyle(color: Colors.white70),
+                    enabledBorder: UnderlineInputBorder(
+                      borderSide: BorderSide(color: Colors.white54),
+                    ),
+                    focusedBorder: UnderlineInputBorder(
+                      borderSide: BorderSide(color: Color(0xFFFF6B00)),
+                    ),
+                  ),
+                  validator: (v) {
+                    if (!_isDealer) {
+                      return null;
+                    }
+                    if (v == null || v.trim().isEmpty) {
+                      return 'Dealership location is required';
+                    }
+                    return null;
+                  },
+                ),
+              ],
               SizedBox(height: 16),
 
               // Conditional fields based on auth type
@@ -24365,6 +24482,58 @@ class _ProfilePageState extends State<ProfilePage> {
                         }(),
                         style: TextStyle(fontSize: 16, color: Colors.grey[600]),
                       ),
+                      SizedBox(height: 10),
+                      Builder(
+                        builder: (ctx) {
+                          final accountType =
+                              (me?['account_type'] ?? 'user').toString();
+                          final dealerStatus =
+                              (me?['dealer_status'] ?? 'none').toString();
+                          final isVerifiedDealer =
+                              dealerStatus == 'approved' ||
+                              accountType == 'dealer';
+                          final isPending = dealerStatus == 'pending';
+                          final isRejected = dealerStatus == 'rejected';
+                          late final String label;
+                          late final Color bg;
+                          late final Color fg;
+                          if (isVerifiedDealer) {
+                            label = 'Verified dealer';
+                            bg = Colors.green.withValues(alpha: 0.15);
+                            fg = Colors.green.shade800;
+                          } else if (isPending) {
+                            label = 'Dealer application pending';
+                            bg = Colors.orange.withValues(alpha: 0.15);
+                            fg = Colors.orange.shade800;
+                          } else if (isRejected) {
+                            label = 'Dealer application declined';
+                            bg = Colors.red.withValues(alpha: 0.12);
+                            fg = Colors.red.shade800;
+                          } else {
+                            label = 'Personal account';
+                            bg = Colors.grey.shade200;
+                            fg = Colors.grey.shade700;
+                          }
+                          return Container(
+                            padding: EdgeInsets.symmetric(
+                              horizontal: 10,
+                              vertical: 6,
+                            ),
+                            decoration: BoxDecoration(
+                              color: bg,
+                              borderRadius: BorderRadius.circular(999),
+                            ),
+                            child: Text(
+                              label,
+                              style: TextStyle(
+                                fontWeight: FontWeight.w600,
+                                color: fg,
+                                fontSize: 13,
+                              ),
+                            ),
+                          );
+                        },
+                      ),
                     ],
                   ),
                 ),
@@ -24427,6 +24596,14 @@ class _ProfilePageState extends State<ProfilePage> {
                           AppLocalizations.of(context)!.phoneLabel,
                           (me?['phone_number'] ?? me?['phone'] ?? '')
                               .toString(),
+                        ),
+                      ],
+                      if ((me?['dealership_name'] ?? '').toString().trim().isNotEmpty) ...[
+                        SizedBox(height: 12),
+                        _buildInfoRow(
+                          Icons.storefront_outlined,
+                          'Dealership',
+                          (me?['dealership_name'] ?? '').toString(),
                         ),
                       ],
                     ],
