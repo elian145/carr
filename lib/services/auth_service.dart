@@ -154,12 +154,15 @@ class AuthService extends ChangeNotifier {
     }
   }
 
-  // Forgot password
-  Future<Map<String, dynamic>> forgotPassword(String email) async {
+  // Forgot password (email or phone; SMS when [isPhone] is true)
+  Future<Map<String, dynamic>> forgotPassword(
+    String value, {
+    bool isPhone = false,
+  }) async {
     _setLoading(true);
 
     try {
-      final response = await ApiService.forgotPassword(email);
+      final response = await ApiService.forgotPassword(value, isPhone: isPhone);
       return response;
     } catch (e) {
       rethrow;

@@ -37,6 +37,28 @@ def _normalize_phone_otpiq(phone: str) -> str:
         return digits
     return digits
 
+def _normalize_phone_twilio(phone: str) -> str:
+    """Normalize to E.164-ish format for Twilio (best-effort)."""
+    raw = (phone or "").strip()
+    if not raw:
+        return ""
+    if raw.startswith("+"):
+        # Keep explicit E.164 input as-is.
+        return raw
+    digits = "".join(c for c in raw if c.isdigit())
+    if not digits:
+        return raw
+    # Iraq local mobile (11 digits like 07xxxxxxxxx) -> +9647xxxxxxxxx
+    if len(digits) == 11 and digits.startswith("0"):
+        return f"+964{digits[1:]}"
+    # Iraq intl without plus
+    if digits.startswith("964"):
+        return f"+{digits}"
+    # Generic fallback for international-looking numbers.
+    if 10 <= len(digits) <= 15:
+        return f"+{digits}"
+    return raw
+
 class SMSService:
     """SMS service for sending messages"""
     
@@ -85,13 +107,19 @@ class SMSService:
             
             client = Client(self.twilio_account_sid, self.twilio_auth_token)
             
+            normalized_to = _normalize_phone_twilio(phone_number)
             message = client.messages.create(
                 body=f"Your password reset code is: {reset_code}. This code expires in 1 hour.",
                 from_=self.twilio_phone_number,
-                to=phone_number
+                to=normalized_to
             )
             
-            logger.info(f"SMS sent successfully to {phone_number}, SID: {message.sid}")
+            logger.info(
+                "SMS sent successfully to %s (normalized=%s), SID: %s",
+                phone_number,
+                normalized_to,
+                message.sid,
+            )
             return True
             
         except ImportError:
@@ -187,13 +215,19 @@ class SMSService:
             
             client = Client(self.twilio_account_sid, self.twilio_auth_token)
             
+            normalized_to = _normalize_phone_twilio(phone_number)
             message = client.messages.create(
                 body=f"Your verification code is: {verification_code}. This code expires in 10 minutes.",
                 from_=self.twilio_phone_number,
-                to=phone_number
+                to=normalized_to
             )
             
-            logger.info(f"Verification SMS sent successfully to {phone_number}, SID: {message.sid}")
+            logger.info(
+                "Verification SMS sent successfully to %s (normalized=%s), SID: %s",
+                phone_number,
+                normalized_to,
+                message.sid,
+            )
             return True
             
         except ImportError:

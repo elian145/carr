@@ -956,10 +956,16 @@ def forgot_password():
 
         # Prefer SMS if we have a phone number on record.
         dest_phone = phone_digits or (getattr(user, "phone_number", None) or "")
+        sms_sent = False
         if dest_phone:
             from ..sms_service import send_password_reset_sms
 
-            send_password_reset_sms(dest_phone, token)
+            sms_sent = bool(send_password_reset_sms(dest_phone, token))
+            if not sms_sent:
+                current_app.logger.warning(
+                    "[FORGOT-PASSWORD] SMS send failed for phone=%s*** (provider config/number format?)",
+                    str(dest_phone)[:4],
+                )
 
         # Send password reset email when user has a real email (and mail is configured).
         user_email = (getattr(user, "email", None) or "").strip().lower()
@@ -970,6 +976,15 @@ def forgot_password():
                 "[FORGOT-PASSWORD] Not sending email: user has no real email (or placeholder @phone.local). "
                 "Set MAIL_USERNAME/MAIL_PASSWORD on Render and ensure the account has an email."
             )
+
+        # Dev convenience for local testing with SMS_PROVIDER=console.
+        # Never expose reset tokens in production.
+        env_name = (os.environ.get("APP_ENV") or os.environ.get("FLASK_ENV") or "").strip().lower()
+        sms_provider = (os.environ.get("SMS_PROVIDER") or "console").strip().lower()
+        if env_name in ("development", "testing") and sms_provider == "console" and dest_phone and sms_sent:
+            return jsonify(
+                {"message": "If the account exists, a reset code has been sent", "dev_code": token}
+            ), 200
 
         return jsonify({"message": "If the account exists, a reset code has been sent"}), 200
 

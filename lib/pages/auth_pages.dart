@@ -152,6 +152,42 @@ String _sendResetLink(BuildContext context) {
   return 'Send Reset Link';
 }
 
+String _sendSmsResetCode(BuildContext context) {
+  final c = _lang(context);
+  if (c == 'ar') return 'إرسال رمز إعادة التعيين';
+  if (c == 'ku') return 'ناردنی کۆدی ڕێکخستنەوە';
+  return 'Send reset code (SMS)';
+}
+
+String _forgotPasswordIntroEmail(BuildContext context) {
+  final c = _lang(context);
+  if (c == 'ar') {
+    return 'أدخل البريد الإلكتروني المرتبط بحسابك. سنرسل رمز إعادة التعيين.';
+  }
+  if (c == 'ku') {
+    return 'ئیمەیڵی هەژمارەکەت بنووسە. کۆدی ڕێکخستنەوە دەنێردرێت.';
+  }
+  return 'Enter the email address for your account. We will send a reset code.';
+}
+
+String _forgotPasswordIntroPhone(BuildContext context) {
+  final c = _lang(context);
+  if (c == 'ar') {
+    return 'أدخل رقم الهاتف المرتبط بحسابك. سنرسل رمز إعادة التعيين عبر رسالة نصية.';
+  }
+  if (c == 'ku') {
+    return 'ژمارەی تەلەفۆنەکەت بنووسە. کۆدەکە بە SMS دەنێردرێت.';
+  }
+  return 'Enter the phone number for your account. We will send a reset code by SMS.';
+}
+
+String _pleaseEnterValidPhone(BuildContext context) {
+  final c = _lang(context);
+  if (c == 'ar') return 'يرجى إدخال رقم هاتف صالح (8 أرقام على الأقل)';
+  if (c == 'ku') return 'تکایە ژمارەی تەلەفۆنێکی دروست بنووسە (کەمترین ٨ ژمارە)';
+  return 'Please enter a valid phone number (at least 8 digits)';
+}
+
 String _backToLogin(BuildContext context) {
   final c = _lang(context);
   if (c == 'ar') return 'العودة إلى تسجيل الدخول';
@@ -180,6 +216,13 @@ String _checkYourEmailTitle(BuildContext context) {
   return 'Check Your Email';
 }
 
+String _checkYourPhoneTitle(BuildContext context) {
+  final c = _lang(context);
+  if (c == 'ar') return 'تحقق من رسائلك النصية';
+  if (c == 'ku') return 'پەیامەکانی SMS بپشکنە';
+  return 'Check your messages';
+}
+
 String _resetPasswordTitle(BuildContext context) {
   final c = _lang(context);
   if (c == 'ar') return 'إعادة تعيين كلمة المرور';
@@ -198,11 +241,33 @@ String _resetEmailSent(BuildContext context, String email) {
   return "We've sent a password reset link to $email. Please check your email and follow the instructions.";
 }
 
+String _resetSmsSent(BuildContext context, String phone) {
+  final c = _lang(context);
+  if (c == 'ar') {
+    return 'إذا وُجد حساب لـ $phone، فقد أرسلنا رمز إعادة التعيين عبر رسالة نصية.';
+  }
+  if (c == 'ku') {
+    return 'ئەگەر هەژمارێک هەبێت بۆ $phone، کۆدی ڕێکخستنەوە بە SMS نێردرا.';
+  }
+  return 'If an account exists for $phone, we sent a password reset code by SMS.';
+}
+
 String _checkSpamHint(BuildContext context) {
   final c = _lang(context);
   if (c == 'ar') return 'إن لم تجد الرسالة، تحقق من مجلد البريد العشوائي. يُرسل الرابط فقط إذا وُجد حساب لهذا البريد.';
   if (c == 'ku') return 'ئەگەر نەت بینی، پشکنینی سپام بکە. بەستەرەکە تەنها ئەگەر هەژمارێک بۆ ئەم ئیمەیڵە هەبێت نێردرێت.';
   return "If you don't see it, check your spam or junk folder. The link is only sent if an account exists for this email.";
+}
+
+String _smsResetHint(BuildContext context) {
+  final c = _lang(context);
+  if (c == 'ar') {
+    return 'قد يستغرق وصول الرسالة دقيقة أو دقيقتين. يُرسل الرمز فقط إذا وُجد حساب لهذا الرقم.';
+  }
+  if (c == 'ku') {
+    return 'ڕەنگە SMS کەمێک دوابکەوێت. کۆدەکە تەنها ئەگەر هەژمارێک بۆ ئەم ژمارەیە هەبێت دەنێردرێت.';
+  }
+  return 'SMS may take a minute or two. A code is only sent if an account exists for this number.';
 }
 
 String _registrationSuccess(BuildContext context) {
@@ -230,6 +295,17 @@ String _failedToSendResetEmailMessage(BuildContext context) {
   if (c == 'ar') return 'فشل إرسال رابط إعادة التعيين. تحقق من البريد وحاول لاحقاً.';
   if (c == 'ku') return 'نەتوانرا ئیمەییلی ڕێکخستنەوە بنێردرێت. دووبارە هەوڵ بدەرەوە.';
   return 'Failed to send reset link. Check your email and try again later.';
+}
+
+String _failedToSendSmsResetMessage(BuildContext context) {
+  final c = _lang(context);
+  if (c == 'ar') {
+    return 'تعذر إرسال الرسالة النصية. تحقق من الرقم وحاول لاحقاً.';
+  }
+  if (c == 'ku') {
+    return 'نەتوانرا SMS بنێردرێت. ژمارەکە بپشکنە و دووبارە هەوڵ بدەرەوە.';
+  }
+  return 'Failed to send SMS. Check the number and try again later.';
 }
 
 class LoginPage extends StatefulWidget {
@@ -873,23 +949,34 @@ class ForgotPasswordPage extends StatefulWidget {
 class _ForgotPasswordPageState extends State<ForgotPasswordPage> {
   final _formKey = GlobalKey<FormState>();
   final _emailController = TextEditingController();
+  final _phoneController = TextEditingController();
   bool _isLoading = false;
   bool _emailSent = false;
+  /// `'email'` or `'phone'` — controls which identifier is sent to `/auth/forgot-password`.
+  String _recoveryMethod = 'email';
 
   @override
   void dispose() {
     _emailController.dispose();
+    _phoneController.dispose();
     super.dispose();
   }
 
-  Future<void> _sendResetEmail() async {
+  Future<void> _sendReset() async {
     if (!_formKey.currentState!.validate()) return;
 
     setState(() => _isLoading = true);
 
     try {
       final authService = Provider.of<AuthService>(context, listen: false);
-      await authService.forgotPassword(_emailController.text);
+      if (_recoveryMethod == 'phone') {
+        await authService.forgotPassword(
+          _phoneController.text,
+          isPhone: true,
+        );
+      } else {
+        await authService.forgotPassword(_emailController.text);
+      }
 
       if (!mounted) return;
       setState(() => _emailSent = true);
@@ -898,7 +985,9 @@ class _ForgotPasswordPageState extends State<ForgotPasswordPage> {
       if (mounted) {
         final message = kDebugMode && e is ApiException
             ? (e as ApiException).message
-            : _failedToSendResetEmailMessage(context);
+            : (_recoveryMethod == 'phone'
+                ? _failedToSendSmsResetMessage(context)
+                : _failedToSendResetEmailMessage(context));
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
             content: Text(message),
@@ -937,7 +1026,9 @@ class _ForgotPasswordPageState extends State<ForgotPasswordPage> {
               const SizedBox(height: 16),
               Text(
                 _emailSent
-                    ? _checkYourEmailTitle(context)
+                    ? (_recoveryMethod == 'phone'
+                        ? _checkYourPhoneTitle(context)
+                        : _checkYourEmailTitle(context))
                     : _resetPasswordTitle(context),
                 style: Theme.of(context).textTheme.headlineMedium,
                 textAlign: TextAlign.center,
@@ -945,47 +1036,114 @@ class _ForgotPasswordPageState extends State<ForgotPasswordPage> {
               const SizedBox(height: 16),
               Text(
                 _emailSent
-                    ? _resetEmailSent(context, _emailController.text)
-                    : AppLocalizations.of(context)!.sendCodeFirst,
+                    ? (_recoveryMethod == 'phone'
+                        ? _resetSmsSent(context, _phoneController.text)
+                        : _resetEmailSent(context, _emailController.text))
+                    : (_recoveryMethod == 'phone'
+                        ? _forgotPasswordIntroPhone(context)
+                        : _forgotPasswordIntroEmail(context)),
                 textAlign: TextAlign.center,
                 style: Theme.of(context).textTheme.bodyMedium,
               ),
               if (_emailSent) ...[
                 const SizedBox(height: 16),
                 Text(
-                  _checkSpamHint(context),
+                  _recoveryMethod == 'phone'
+                      ? _smsResetHint(context)
+                      : _checkSpamHint(context),
                   textAlign: TextAlign.center,
                   style: Theme.of(context).textTheme.bodySmall,
                 ),
               ],
               const SizedBox(height: 32),
               if (!_emailSent) ...[
-                TextFormField(
-                  controller: _emailController,
-                  decoration: InputDecoration(
-                    labelText: AppLocalizations.of(context)!.emailLabel,
-                    prefixIcon: const Icon(Icons.email),
-                    border: const OutlineInputBorder(),
-                  ),
-                  keyboardType: TextInputType.emailAddress,
-                  validator: (value) {
-                    if (value == null || value.isEmpty) {
-                      return AppLocalizations.of(context)!.emailLabel;
-                    }
-                    if (!RegExp(
-                      r'^[\w-\.]+@([\w-]+\.)+[\w-]{2,4}$',
-                    ).hasMatch(value)) {
-                      return _pleaseEnterValidEmail(context);
-                    }
-                    return null;
-                  },
+                Text(
+                  AppLocalizations.of(context)!.chooseAuthMethodTitle,
+                  style: Theme.of(context).textTheme.titleMedium,
                 ),
+                const SizedBox(height: 8),
+                Row(
+                  children: [
+                    Expanded(
+                      child: RadioListTile<String>(
+                        title: Text(AppLocalizations.of(context)!.emailLabel),
+                        value: 'email',
+                        groupValue: _recoveryMethod,
+                        onChanged: (v) {
+                          if (v == null) return;
+                          setState(() => _recoveryMethod = v);
+                        },
+                      ),
+                    ),
+                    Expanded(
+                      child: RadioListTile<String>(
+                        title: Text(AppLocalizations.of(context)!.phoneLabel),
+                        value: 'phone',
+                        groupValue: _recoveryMethod,
+                        onChanged: (v) {
+                          if (v == null) return;
+                          setState(() => _recoveryMethod = v);
+                        },
+                      ),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 8),
+                if (_recoveryMethod == 'email')
+                  TextFormField(
+                    controller: _emailController,
+                    decoration: InputDecoration(
+                      labelText: AppLocalizations.of(context)!.emailLabel,
+                      prefixIcon: const Icon(Icons.email),
+                      border: const OutlineInputBorder(),
+                    ),
+                    keyboardType: TextInputType.emailAddress,
+                    validator: (value) {
+                      if (value == null || value.isEmpty) {
+                        return AppLocalizations.of(context)!.emailLabel;
+                      }
+                      if (!RegExp(
+                        r'^[\w-\.]+@([\w-]+\.)+[\w-]{2,4}$',
+                      ).hasMatch(value)) {
+                        return _pleaseEnterValidEmail(context);
+                      }
+                      return null;
+                    },
+                  )
+                else
+                  TextFormField(
+                    controller: _phoneController,
+                    decoration: InputDecoration(
+                      labelText: AppLocalizations.of(context)!.phoneLabel,
+                      prefixIcon: const Icon(Icons.phone),
+                      border: const OutlineInputBorder(),
+                    ),
+                    keyboardType: TextInputType.phone,
+                    inputFormatters: [
+                      FilteringTextInputFormatter.allow(RegExp(r'[0-9+\s\-()]+')),
+                    ],
+                    validator: (value) {
+                      if (value == null || value.trim().isEmpty) {
+                        return AppLocalizations.of(context)!.requiredField;
+                      }
+                      final digits =
+                          RegExp(r'\d').allMatches(value).map((m) => m.group(0)!).join();
+                      if (digits.length < 8) {
+                        return _pleaseEnterValidPhone(context);
+                      }
+                      return null;
+                    },
+                  ),
                 const SizedBox(height: 24),
                 ElevatedButton(
-                  onPressed: _isLoading ? null : _sendResetEmail,
+                  onPressed: _isLoading ? null : _sendReset,
                   child: _isLoading
                       ? const CircularProgressIndicator()
-                      : Text(_sendResetLink(context)),
+                      : Text(
+                          _recoveryMethod == 'phone'
+                              ? _sendSmsResetCode(context)
+                              : _sendResetLink(context),
+                        ),
                 ),
               ] else ...[
                 ElevatedButton(

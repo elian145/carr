@@ -444,13 +444,25 @@ class ApiService {
     );
   }
 
-  static Future<Map<String, dynamic>> forgotPassword(String email) async {
+  /// Request a password reset. Use [isPhone] so the server can look up by phone
+  /// and send SMS (do not duplicate the email field with the same string as phone).
+  static Future<Map<String, dynamic>> forgotPassword(
+    String value, {
+    bool isPhone = false,
+  }) async {
+    final trimmed = value.trim();
+    final Map<String, dynamic> body;
+    if (isPhone) {
+      body = {'phone_number': trimmed};
+    } else {
+      // Backwards-compatible: backend historically mirrored email into phone_number.
+      body = {'email': trimmed, 'phone_number': trimmed};
+    }
     final response = await http
         .post(
           Uri.parse('$baseUrl/auth/forgot-password'),
           headers: _getHeaders(includeAuth: false),
-          // Backwards-compatible: backend historically used phone_number.
-          body: json.encode({'email': email, 'phone_number': email}),
+          body: json.encode(body),
         )
         .timeout(_defaultTimeout);
 
