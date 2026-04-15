@@ -262,7 +262,7 @@ class ApiService {
 
   // Authentication methods
   static Future<Map<String, dynamic>> registerEmailRequest({
-    required String username,
+    String? username,
     required String email,
     required String password,
     required String firstName,
@@ -273,12 +273,13 @@ class ApiService {
     String? dealershipPhone,
     String? dealershipLocation,
   }) async {
+    final u = (username ?? '').trim();
     final response = await http
         .post(
           Uri.parse('$baseUrl/auth/register-request'),
           headers: _getHeaders(includeAuth: false),
           body: json.encode({
-            'username': username,
+            if (!isDealer) 'username': u,
             'email': email,
             'password': password,
             'first_name': firstName,

@@ -306,6 +306,7 @@ class _ProfilePageState extends State<ProfilePage> {
     final accountType = (user?['account_type'] ?? 'user').toString();
     final dealerStatus = (user?['dealer_status'] ?? 'none').toString();
     final dealershipName = (user?['dealership_name'] ?? '').toString();
+    final isDealerAccount = accountType == 'dealer';
     final picUrl = buildMediaUrl(pic);
     final isAuthenticated = auth.isAuthenticated;
     final isLightShell = Theme.of(context).brightness == Brightness.light;
@@ -417,11 +418,21 @@ class _ProfilePageState extends State<ProfilePage> {
                               crossAxisAlignment: CrossAxisAlignment.start,
                               children: [
                                 Text(
-                                  fullName.isEmpty ? username : fullName,
+                                  () {
+                                    final dn = dealershipName.trim();
+                                    if (isDealerAccount && dn.isNotEmpty) {
+                                      return dn;
+                                    }
+                                    if (isDealerAccount && fullName.isNotEmpty) {
+                                      return fullName;
+                                    }
+                                    if (isDealerAccount) return 'Dealer';
+                                    return fullName.isEmpty ? username : fullName;
+                                  }(),
                                   style: Theme.of(context).textTheme.titleMedium
                                       ?.copyWith(fontWeight: FontWeight.w700),
                                 ),
-                                if (username.isNotEmpty) ...[
+                                if (username.isNotEmpty && !isDealerAccount) ...[
                                   const SizedBox(height: 2),
                                   Text('@$username'),
                                 ],
@@ -513,7 +524,7 @@ class _ProfilePageState extends State<ProfilePage> {
                                 ?.copyWith(fontWeight: FontWeight.w700),
                           ),
                         ),
-                        if (username.isNotEmpty)
+                        if (username.isNotEmpty && !isDealerAccount)
                           ListTile(
                             leading: const Icon(Icons.person_outline),
                             title: Text(loc?.usernameLabel ?? 'Username'),

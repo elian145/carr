@@ -412,11 +412,30 @@ class _CarDetailPageState extends State<CarDetailPage> {
 
     final bool isVerified =
         seller['is_verified'] == true || seller['verified'] == true;
-    final displayName = name.isNotEmpty
-        ? name
-        : (fullName.isNotEmpty
-              ? fullName
-              : (username.isNotEmpty ? username : 'Seller'));
+    final accountType = (seller['account_type'] ?? '').toString().trim();
+    final dealerStatus = (seller['dealer_status'] ?? '').toString().trim();
+    final dealershipName =
+        (seller['dealership_name'] ?? '').toString().trim();
+    final dealershipLocation =
+        (seller['dealership_location'] ?? '').toString().trim();
+    final isApprovedDealer =
+        accountType == 'dealer' && dealerStatus == 'approved';
+    final isDealerSeller = accountType == 'dealer';
+
+    final displayName = (isApprovedDealer && dealershipName.isNotEmpty)
+        ? dealershipName
+        : (name.isNotEmpty
+              ? name
+              : (fullName.isNotEmpty
+                    ? fullName
+                    : (isDealerSeller
+                          ? 'Dealer'
+                          : (username.isNotEmpty ? username : 'Seller'))));
+
+    final locationShown =
+        (isApprovedDealer && dealershipLocation.isNotEmpty)
+            ? dealershipLocation
+            : city;
 
     final initialsSource = displayName.trim();
     String initials = 'S';
@@ -468,7 +487,11 @@ class _CarDetailPageState extends State<CarDetailPage> {
 
     addRow(Icons.phone_outlined, loc?.phoneLabel ?? 'Phone', phone);
     addRow(Icons.email_outlined, loc?.emailLabel ?? 'Email', email);
-    addRow(Icons.location_on_outlined, loc?.locationLabel ?? 'Location', city);
+    addRow(
+      Icons.location_on_outlined,
+      loc?.locationLabel ?? 'Location',
+      locationShown,
+    );
     addRow(Icons.calendar_today_outlined, 'Member since', joined);
 
     return Container(
@@ -521,7 +544,7 @@ class _CarDetailPageState extends State<CarDetailPage> {
                         fontWeight: FontWeight.w700,
                       ),
                     ),
-                    if (username.isNotEmpty) ...[
+                    if (username.isNotEmpty && !isDealerSeller) ...[
                       const SizedBox(height: 2),
                       Text(
                         '@$username',
@@ -847,14 +870,23 @@ class _CarDetailPageState extends State<CarDetailPage> {
     if (seller != null) {
       final fullName =
           '${seller['first_name'] ?? ''} ${seller['last_name'] ?? ''}'.trim();
-      receiverName = (seller['name'] ?? seller['username'] ?? '')
-          .toString()
-          .trim();
-      if (receiverName.isEmpty && fullName.isNotEmpty) {
-        receiverName = fullName;
-      }
-      if (receiverName.isEmpty) {
-        receiverName = null;
+      final at = (seller['account_type'] ?? '').toString().trim();
+      final ds = (seller['dealer_status'] ?? '').toString().trim();
+      final dn = (seller['dealership_name'] ?? '').toString().trim();
+      if (at == 'dealer' && ds == 'approved' && dn.isNotEmpty) {
+        receiverName = dn;
+      } else if (at == 'dealer') {
+        receiverName = fullName.isNotEmpty ? fullName : 'Dealer';
+      } else {
+        receiverName = (seller['name'] ?? seller['username'] ?? '')
+            .toString()
+            .trim();
+        if (receiverName.isEmpty && fullName.isNotEmpty) {
+          receiverName = fullName;
+        }
+        if (receiverName.isEmpty) {
+          receiverName = null;
+        }
       }
     }
 

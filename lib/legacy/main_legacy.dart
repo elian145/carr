@@ -12184,12 +12184,21 @@ class _CarDetailsPageState extends State<CarDetailsPage> {
       }
       final fullName = '${m['first_name'] ?? ''} ${m['last_name'] ?? ''}'
           .trim();
-      receiverName = (m['name'] ?? m['username'] ?? '').toString().trim();
-      if (receiverName.isEmpty && fullName.isNotEmpty) {
-        receiverName = fullName;
-      }
-      if (receiverName.isEmpty) {
-        receiverName = null;
+      final at = (m['account_type'] ?? '').toString().trim();
+      final ds = (m['dealer_status'] ?? '').toString().trim();
+      final dn = (m['dealership_name'] ?? '').toString().trim();
+      if (at == 'dealer' && ds == 'approved' && dn.isNotEmpty) {
+        receiverName = dn;
+      } else if (at == 'dealer') {
+        receiverName = fullName.isNotEmpty ? fullName : 'Dealer';
+      } else {
+        receiverName = (m['name'] ?? m['username'] ?? '').toString().trim();
+        if (receiverName.isEmpty && fullName.isNotEmpty) {
+          receiverName = fullName;
+        }
+        if (receiverName.isEmpty) {
+          receiverName = null;
+        }
       }
     }
 
@@ -13175,11 +13184,30 @@ class _CarDetailsPageState extends State<CarDetailsPage> {
 
     final bool isVerified =
         seller['is_verified'] == true || seller['verified'] == true;
-    final String displayName = name.isNotEmpty
-        ? name
-        : (fullName.isNotEmpty
-              ? fullName
-              : (username.isNotEmpty ? username : 'Seller'));
+    final String accountType = (seller['account_type'] ?? '').toString().trim();
+    final String dealerStatus = (seller['dealer_status'] ?? '').toString().trim();
+    final String dealershipName =
+        (seller['dealership_name'] ?? '').toString().trim();
+    final String dealershipLocation =
+        (seller['dealership_location'] ?? '').toString().trim();
+    final bool isApprovedDealer =
+        accountType == 'dealer' && dealerStatus == 'approved';
+    final bool isDealerSeller = accountType == 'dealer';
+
+    final String displayName = (isApprovedDealer && dealershipName.isNotEmpty)
+        ? dealershipName
+        : (name.isNotEmpty
+              ? name
+              : (fullName.isNotEmpty
+                    ? fullName
+                    : (isDealerSeller
+                          ? 'Dealer'
+                          : (username.isNotEmpty ? username : 'Seller'))));
+
+    final String locationShown =
+        (isApprovedDealer && dealershipLocation.isNotEmpty)
+            ? dealershipLocation
+            : city;
 
     String initials = 'S';
     if (displayName.isNotEmpty) {
@@ -13277,7 +13305,7 @@ class _CarDetailsPageState extends State<CarDetailsPage> {
                             : Colors.white,
                       ),
                     ),
-                    if (username.isNotEmpty)
+                    if (username.isNotEmpty && !isDealerSeller)
                       Text(
                         '@$username',
                         style: TextStyle(
@@ -13318,7 +13346,7 @@ class _CarDetailsPageState extends State<CarDetailsPage> {
           ),
           detailRow(Icons.phone_outlined, 'Phone', phone),
           detailRow(Icons.email_outlined, 'Email', email),
-          detailRow(Icons.location_on_outlined, 'Location', city),
+          detailRow(Icons.location_on_outlined, 'Location', locationShown),
           detailRow(Icons.calendar_today_outlined, 'Member since', joined),
         ],
       ),
@@ -23432,6 +23460,30 @@ class _SignupPageState extends State<SignupPage> {
   }
 
   Future<void> _sendOtp() async {
+    if (_isDealer) {
+      final dn = _dealershipNameController.text.trim();
+      final dp = _dealershipPhoneController.text.trim();
+      final dl = _dealershipLocationController.text.trim();
+      if (dn.isEmpty || dp.isEmpty || dl.isEmpty) {
+        if (!mounted) return;
+        showDialog(
+          context: context,
+          builder: (_) => AlertDialog(
+            title: Text(AppLocalizations.of(context)!.errorTitle),
+            content: const Text(
+              'Please fill dealership name, phone, and location before sending the code.',
+            ),
+            actions: [
+              TextButton(
+                onPressed: () => Navigator.pop(context),
+                child: Text(AppLocalizations.of(context)!.okAction),
+              ),
+            ],
+          ),
+        );
+        return;
+      }
+    }
     final phone = _phoneController.text.trim();
     if (phone.isEmpty) {
       showDialog(
@@ -23454,10 +23506,19 @@ class _SignupPageState extends State<SignupPage> {
     });
     try {
       final url = Uri.parse('${getApiBase()}/api/auth/send_otp');
+      final Map<String, dynamic> otpBody = {
+        'phone': '+964$phone',
+        if (_isDealer) ...<String, dynamic>{
+          'is_dealer': true,
+          'dealership_name': _dealershipNameController.text.trim(),
+          'dealership_phone': _dealershipPhoneController.text.trim(),
+          'dealership_location': _dealershipLocationController.text.trim(),
+        },
+      };
       final resp = await http.post(
         url,
         headers: {'Content-Type': 'application/json'},
-        body: json.encode({'phone': '+964$phone'}),
+        body: json.encode(otpBody),
       );
       if (resp.statusCode == 200) {
         final data = json.decode(resp.body);
@@ -23565,7 +23626,7 @@ class _SignupPageState extends State<SignupPage> {
   Future<void> _signup() async {
     if (!_formKey.currentState!.validate()) return;
     final username = _usernameController.text.trim();
-    if (username.isEmpty) {
+    if (!_isDealer && username.isEmpty) {
       if (!mounted) return;
       showDialog(
         context: context,
@@ -23591,11 +23652,13 @@ class _SignupPageState extends State<SignupPage> {
       final authService = Provider.of<AuthService>(context, listen: false);
       if (_authType == 'email') {
         await authService.registerEmailWithVerification(
-          username: username,
+          username: _isDealer ? null : username,
           email: _emailController.text.trim(),
           password: _passwordController.text,
-          firstName: username,
-          lastName: '',
+          firstName: _isDealer
+              ? _dealershipNameController.text.trim()
+              : username,
+          lastName: _isDealer ? '' : '',
           phoneNumber: _phoneController.text.trim().isEmpty
               ? null
               : _phoneController.text.trim(),
@@ -23628,7 +23691,7 @@ class _SignupPageState extends State<SignupPage> {
       final Map<String, dynamic> requestBody = <String, dynamic>{
         'password': _passwordController.text,
         'auth_type': _authType,
-        'username': username,
+        if (!_isDealer) 'username': username,
         'phone': '+964${_phoneController.text.trim()}',
         'otp_code': _otpController.text.trim(),
         'is_dealer': _isDealer,
@@ -23665,7 +23728,10 @@ class _SignupPageState extends State<SignupPage> {
         }
         // No token: try login so we get tokens and profile
         try {
-          await authService.login(username, _passwordController.text);
+          final loginIdent = _authType == 'phone'
+              ? '+964${_phoneController.text.trim()}'
+              : username;
+          await authService.login(loginIdent, _passwordController.text);
           if (!mounted) return;
           Navigator.pushReplacementNamed(context, '/');
         } catch (_) {
@@ -23971,24 +24037,26 @@ class _SignupPageState extends State<SignupPage> {
                   ],
                 ),
               ],
-              SizedBox(height: 12),
-              TextFormField(
-                controller: _usernameController,
-                decoration: InputDecoration(
-                  labelText: AppLocalizations.of(context)!.usernameLabel,
-                  hintText: 'Choose a username',
+              if (!_isDealer) ...[
+                SizedBox(height: 12),
+                TextFormField(
+                  controller: _usernameController,
+                  decoration: InputDecoration(
+                    labelText: AppLocalizations.of(context)!.usernameLabel,
+                    hintText: 'Choose a username',
+                  ),
+                  validator: (v) {
+                    final value = (v ?? '').trim();
+                    if (value.isEmpty) {
+                      return '${AppLocalizations.of(context)!.usernameLabel} is required';
+                    }
+                    if (value.length < 3) {
+                      return 'Username must be at least 3 characters';
+                    }
+                    return null;
+                  },
                 ),
-                validator: (v) {
-                  final value = (v ?? '').trim();
-                  if (value.isEmpty) {
-                    return '${AppLocalizations.of(context)!.usernameLabel} is required';
-                  }
-                  if (value.length < 3) {
-                    return 'Username must be at least 3 characters';
-                  }
-                  return null;
-                },
-              ),
+              ],
               TextFormField(
                 controller: _passwordController,
                 obscureText: true,
@@ -24464,7 +24532,21 @@ class _ProfilePageState extends State<ProfilePage> {
                       ),
                       SizedBox(height: 16),
                       Text(
-                        me?['username']?.toString() ?? 'User',
+                        () {
+                          final at =
+                              (me?['account_type'] ?? 'user').toString().trim();
+                          final dn =
+                              (me?['dealership_name'] ?? '').toString().trim();
+                          final fn =
+                              (me?['first_name'] ?? '').toString().trim();
+                          final ln =
+                              (me?['last_name'] ?? '').toString().trim();
+                          final full = '$fn $ln'.trim();
+                          if (at == 'dealer' && dn.isNotEmpty) return dn;
+                          if (at == 'dealer' && full.isNotEmpty) return full;
+                          if (at == 'dealer') return 'Dealer';
+                          return me?['username']?.toString() ?? 'User';
+                        }(),
                         style: TextStyle(
                           fontSize: 24,
                           fontWeight: FontWeight.bold,
@@ -24570,11 +24652,14 @@ class _ProfilePageState extends State<ProfilePage> {
                         ),
                       ),
                       SizedBox(height: 20),
-                      _buildInfoRow(
-                        Icons.person_outline,
-                        AppLocalizations.of(context)!.usernameLabel,
-                        me?['username']?.toString() ?? '',
-                      ),
+                      if ((me?['account_type'] ?? 'user').toString() !=
+                          'dealer') ...[
+                        _buildInfoRow(
+                          Icons.person_outline,
+                          AppLocalizations.of(context)!.usernameLabel,
+                          me?['username']?.toString() ?? '',
+                        ),
+                      ],
                       if (() {
                         final e = me?['email']?.toString() ?? '';
                         return e.isNotEmpty && !e.endsWith('@phone.local');

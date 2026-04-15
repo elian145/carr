@@ -180,6 +180,8 @@ def _get_or_create_user_for_phone(
             db.session.commit()
         return user
     u = (username or "").strip()
+    if is_dealer_requested:
+        u = ""
     e = (email or "").strip().lower()
     fn = (first_name or "").strip()
     ln = (last_name or "").strip()
@@ -210,7 +212,8 @@ def _get_or_create_user_for_phone(
         if User.query.filter_by(username=u).first():
             raise ValueError("Username already exists")
     else:
-        u = _generate_unique_username("user")
+        prefix = "dealer" if is_dealer_requested else "user"
+        u = _generate_unique_username(prefix)
 
     # Create a minimal user; phone OTP verify will mark is_verified true.
     user = User(
@@ -388,7 +391,7 @@ def register_request():
 
         if not raw_email or not validate_email(raw_email):
             return jsonify({"message": "Valid email is required"}), 400
-        if not raw_username:
+        if not is_dealer_requested and not raw_username:
             return jsonify({"message": "Username is required"}), 400
         if is_dealer_requested:
             if not dealership_name:
@@ -413,8 +416,15 @@ def register_request():
             db.session.rollback()
         if User.query.filter(func.lower(User.email) == email_lower).first():
             return jsonify({"message": "Account already exists. Please log in."}), 409
-        if User.query.filter(func.lower(User.username) == raw_username.lower()).first():
-            return jsonify({"message": "Username already exists"}), 400
+
+        if is_dealer_requested:
+            pending_username = _generate_unique_username("dealer")
+            while User.query.filter(func.lower(User.username) == pending_username.lower()).first():
+                pending_username = _generate_unique_username("dealer")
+        else:
+            pending_username = raw_username
+            if User.query.filter(func.lower(User.username) == pending_username.lower()).first():
+                return jsonify({"message": "Username already exists"}), 400
 
         # Clear previous pending signups for this email.
         PendingSignup.query.filter(
@@ -424,7 +434,7 @@ def register_request():
 
         # Hash password once for pending record using User helper.
         tmp_user = User(
-            username=raw_username or f"user_{secrets.token_hex(3)}",
+            username=pending_username or f"user_{secrets.token_hex(3)}",
             phone_number="0000000000",
             first_name=first_name,
             last_name=last_name,
@@ -437,7 +447,7 @@ def register_request():
         token = secrets.token_urlsafe(32)
         pending = PendingSignup(
             email=raw_email,
-            username=raw_username,
+            username=pending_username,
             password_hash=pw_hash,
             first_name=first_name,
             last_name=last_name,
@@ -1264,11 +1274,29 @@ def send_phone_verification():
         if not phone_digits:
             return jsonify({"message": "Phone number is required"}), 400
 
+        is_dealer_requested = _to_bool(data.get("is_dealer"))
+        dealership_name = (data.get("dealership_name") or "").strip()
+        dealership_phone = (data.get("dealership_phone") or "").strip()
+        dealership_location = (data.get("dealership_location") or "").strip()
+        if is_dealer_requested:
+            if not dealership_name:
+                return jsonify({"message": "Dealership name is required for dealer accounts"}), 400
+            if not dealership_phone:
+                return jsonify({"message": "Dealership phone is required for dealer accounts"}), 400
+            if not dealership_location:
+                return jsonify({"message": "Dealership location is required for dealer accounts"}), 400
+
         # For legacy signup flow: get or create user so we can send OTP to any phone.
         user = User.query.filter_by(phone_number=phone_digits).first()
         if not user:
             try:
-                user = _get_or_create_user_for_phone(phone_digits)
+                user = _get_or_create_user_for_phone(
+                    phone_digits,
+                    is_dealer_requested=is_dealer_requested,
+                    dealership_name=dealership_name or None,
+                    dealership_phone=dealership_phone or None,
+                    dealership_location=dealership_location or None,
+                )
             except ValueError as e:
                 return jsonify({"message": str(e)}), 400
             except IntegrityError:
@@ -1554,12 +1582,25 @@ def compat_signup():
             expected = _hash_phone_verification_code(phone_digits, otp_code)
             if not hmac.compare_digest(code_hash, expected):
                 return jsonify({"message": "Invalid or expired verification code"}), 400
-            username = (raw_username or getattr(user, "username", "") or f"user_{secrets.token_hex(3)}").strip().lower()
-            if username and username != (getattr(user, "username") or ""):
-                existing = User.query.filter(func.lower(User.username) == username.lower()).first()
-                if existing and existing.id != user.id:
-                    return jsonify({"message": "Username already exists"}), 400
-                user.username = username
+            if is_dealer_requested:
+                new_u = _generate_unique_username("dealer")
+                for _ in range(12):
+                    existing = User.query.filter(func.lower(User.username) == new_u.lower()).first()
+                    if existing is None or existing.id == user.id:
+                        break
+                    new_u = _generate_unique_username("dealer")
+                user.username = new_u
+            else:
+                username = (
+                    raw_username
+                    or getattr(user, "username", "")
+                    or f"user_{secrets.token_hex(3)}"
+                ).strip().lower()
+                if username and username != (getattr(user, "username") or ""):
+                    existing = User.query.filter(func.lower(User.username) == username.lower()).first()
+                    if existing and existing.id != user.id:
+                        return jsonify({"message": "Username already exists"}), 400
+                    user.username = username
             user.first_name = first_name or user.first_name or "User"
             user.last_name = last_name or user.last_name or ""
             user.set_password(password)
@@ -1590,12 +1631,17 @@ def compat_signup():
 
         if not phone_digits:
             phone_digits = f"070{secrets.randbelow(10**8):08d}"
-        username = (
-            raw_username
-            or (email.split("@")[0] if email and "@" in email else "")
-            or phone_digits
-            or f"user_{secrets.token_hex(3)}"
-        ).lower()
+        if is_dealer_requested:
+            username = _generate_unique_username("dealer")
+            while User.query.filter(func.lower(User.username) == username.lower()).first():
+                username = _generate_unique_username("dealer")
+        else:
+            username = (
+                raw_username
+                or (email.split("@")[0] if email and "@" in email else "")
+                or phone_digits
+                or f"user_{secrets.token_hex(3)}"
+            ).lower()
         if not password:
             return jsonify({"message": "Password is required"}), 400
         if is_dealer_requested:

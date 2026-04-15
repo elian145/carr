@@ -61,7 +61,7 @@ class AuthService extends ChangeNotifier {
 
   // Start email-based registration (no account yet – user must confirm via email link)
   Future<void> registerEmailWithVerification({
-    required String username,
+    String? username,
     required String email,
     required String password,
     required String firstName,
@@ -75,7 +75,7 @@ class AuthService extends ChangeNotifier {
     _setLoading(true);
     try {
       await ApiService.registerEmailRequest(
-        username: username,
+        username: username?.trim(),
         email: email,
         password: password,
         firstName: firstName,

@@ -532,7 +532,7 @@ class _RegisterPageState extends State<RegisterPage> {
         final res = await ApiService.phoneVerify(
           phoneNumber: _phoneController.text.trim(),
           code: _otpController.text.trim(),
-          username: _usernameController.text.trim(),
+          username: _isDealer ? null : _usernameController.text.trim(),
           firstName: _firstNameController.text.trim(),
           lastName: _lastNameController.text.trim(),
           email: _emailController.text.trim(),
@@ -554,7 +554,7 @@ class _RegisterPageState extends State<RegisterPage> {
         Navigator.pushReplacementNamed(context, '/');
       } else {
         await authService.registerEmailWithVerification(
-          username: _usernameController.text,
+          username: _isDealer ? null : _usernameController.text,
           email: _emailController.text,
           password: _passwordController.text,
           firstName: _firstNameController.text,
@@ -615,7 +615,7 @@ class _RegisterPageState extends State<RegisterPage> {
     try {
       final resp = await ApiService.phoneStart(
         phoneNumber: _phoneController.text.trim(),
-        username: _usernameController.text.trim(),
+        username: _isDealer ? null : _usernameController.text.trim(),
         firstName: _firstNameController.text.trim(),
         lastName: _lastNameController.text.trim(),
         email: _emailController.text.trim(),
@@ -836,24 +836,26 @@ class _RegisterPageState extends State<RegisterPage> {
                   ),
                 ],
               ),
-              const SizedBox(height: 16),
-              TextFormField(
-                controller: _usernameController,
-                decoration: InputDecoration(
-                  labelText: AppLocalizations.of(context)!.usernameLabel,
-                  prefixIcon: const Icon(Icons.person),
-                  border: const OutlineInputBorder(),
+              if (!_isDealer) ...[
+                const SizedBox(height: 16),
+                TextFormField(
+                  controller: _usernameController,
+                  decoration: InputDecoration(
+                    labelText: AppLocalizations.of(context)!.usernameLabel,
+                    prefixIcon: const Icon(Icons.person),
+                    border: const OutlineInputBorder(),
+                  ),
+                  validator: (value) {
+                    if (value == null || value.isEmpty) {
+                      return AppLocalizations.of(context)!.requiredField;
+                    }
+                    if (value.length < 3) {
+                      return _usernameMustBeAtLeast3(context);
+                    }
+                    return null;
+                  },
                 ),
-                validator: (value) {
-                  if (value == null || value.isEmpty) {
-                    return AppLocalizations.of(context)!.requiredField;
-                  }
-                  if (value.length < 3) {
-                    return _usernameMustBeAtLeast3(context);
-                  }
-                  return null;
-                },
-              ),
+              ],
               const SizedBox(height: 16),
               TextFormField(
                 controller: _emailController,
