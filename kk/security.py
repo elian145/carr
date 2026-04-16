@@ -249,6 +249,13 @@ def validate_file_upload_security(file, allowed_extensions=None, max_size_mb=10)
             return len(h) >= 4 and h[:4] == b"\x1a\x45\xdf\xa3"
 
         ok = True
+        is_any_known_image = (
+            _is_jpeg(header)
+            or _is_png(header)
+            or _is_gif(header)
+            or _is_webp(header)
+            or _is_heic_or_heif(header)
+        )
         if ext in ("jpg", "jpeg"):
             ok = _is_jpeg(header)
         elif ext == "png":
@@ -267,6 +274,12 @@ def validate_file_upload_security(file, allowed_extensions=None, max_size_mb=10)
             ok = _is_avi(header)
         elif ext in ("mkv", "webm"):
             ok = _is_ebml(header)
+
+        # Mobile/OS pipelines sometimes transcode images but keep the original
+        # file extension (e.g. HEIC -> JPEG bytes). Accept any known image
+        # binary for image extensions while still rejecting non-image payloads.
+        if not ok and ext in ("jpg", "jpeg", "png", "gif", "webp", "heic", "heif"):
+            ok = is_any_known_image
 
         if not ok:
             return False, "File content does not match its extension"
