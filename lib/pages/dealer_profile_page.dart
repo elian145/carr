@@ -138,6 +138,28 @@ class _DealerProfilePageState extends State<DealerProfilePage> {
     }
   }
 
+  Future<void> _emailDealer(String rawEmail) async {
+    final addr = rawEmail.trim();
+    if (addr.isEmpty) return;
+    final uri = Uri(scheme: 'mailto', path: addr);
+
+    bool launched = await launchUrl(
+      uri,
+      mode: LaunchMode.externalApplication,
+    ).catchError((_) => false);
+    if (!launched) {
+      launched = await launchUrl(
+        uri,
+        mode: LaunchMode.platformDefault,
+      ).catchError((_) => false);
+    }
+    if (!launched && mounted) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Could not open email app')),
+      );
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     final auth = context.watch<AuthService>();
@@ -274,12 +296,36 @@ class _DealerProfilePageState extends State<DealerProfilePage> {
                             const SizedBox(height: 12),
                             _infoRow(Icons.location_on_outlined, 'Location', location),
                             if (email.isNotEmpty)
-                              _infoRow(Icons.email_outlined, 'Email', email),
+                              Padding(
+                                padding: const EdgeInsets.only(top: 8),
+                                child: SizedBox(
+                                  width: double.infinity,
+                                  child: OutlinedButton.icon(
+                                    onPressed: () => _emailDealer(email),
+                                    icon: const Icon(Icons.email_outlined),
+                                    label: Text(
+                                      email,
+                                      maxLines: 1,
+                                      overflow: TextOverflow.ellipsis,
+                                    ),
+                                  ),
+                                ),
+                              ),
                             if (phone.isNotEmpty)
-                              InkWell(
-                                borderRadius: BorderRadius.circular(8),
-                                onTap: () => _callDealer(phone),
-                                child: _infoRow(Icons.phone_outlined, 'Phone', phone),
+                              Padding(
+                                padding: const EdgeInsets.only(top: 8),
+                                child: SizedBox(
+                                  width: double.infinity,
+                                  child: FilledButton.icon(
+                                    onPressed: () => _callDealer(phone),
+                                    icon: const Icon(Icons.phone_outlined),
+                                    label: Text(
+                                      phone,
+                                      maxLines: 1,
+                                      overflow: TextOverflow.ellipsis,
+                                    ),
+                                  ),
+                                ),
                               ),
                             if (description.isNotEmpty) ...[
                               const SizedBox(height: 12),
