@@ -594,6 +594,17 @@ class ApiService {
     return await _makeAuthenticatedRequest('GET', '/auth/me');
   }
 
+  static Future<Map<String, dynamic>> getDealerProfile(String dealerPublicId) async {
+    final id = Uri.encodeComponent(dealerPublicId.trim());
+    final response = await http
+        .get(
+          Uri.parse('$baseUrl/dealers/$id'),
+          headers: _getHeaders(includeAuth: false),
+        )
+        .timeout(_defaultTimeout);
+    return _handleResponse(response);
+  }
+
   /// Admin: users with `dealer_status == pending` (requires `is_admin` JWT).
   static Future<Map<String, dynamic>> adminDealersPending() async {
     return await _makeAuthenticatedRequest('GET', '/admin/dealers/pending');

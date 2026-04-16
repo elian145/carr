@@ -5,9 +5,10 @@ from datetime import datetime
 
 from flask import Blueprint, jsonify, request, current_app
 from flask_jwt_extended import jwt_required
+from sqlalchemy.orm import selectinload
 
 from ..auth import get_current_user, log_user_action, validate_user_input
-from ..models import User, db
+from ..models import Car, User, db
 from ..security import generate_secure_filename, validate_file_upload
 from ..time_utils import utcnow
 
@@ -144,4 +145,48 @@ def upload_profile_picture():
 
     except Exception:
         return jsonify({"message": "Failed to upload profile picture"}), 500
+
+
+@bp.route("/api/dealers/<dealer_public_id>", methods=["GET"])
+def dealer_profile(dealer_public_id: str):
+    """Public dealer profile + active listings for dealer page."""
+    try:
+        pid = (dealer_public_id or "").strip()
+        if not pid:
+            return jsonify({"message": "Dealer id is required"}), 400
+
+        dealer = User.query.filter_by(public_id=pid).first()
+        if not dealer:
+            return jsonify({"message": "Dealer not found"}), 404
+
+        if (dealer.account_type or "").strip().lower() != "dealer":
+            return jsonify({"message": "This seller is not a dealer"}), 400
+
+        listings = (
+            Car.query.filter_by(seller_id=dealer.id, is_active=True)
+            .options(selectinload(Car.images), selectinload(Car.videos))
+            .order_by(Car.is_featured.desc(), Car.created_at.desc())
+            .all()
+        )
+
+        listing_dicts = []
+        for car in listings:
+            item = car.to_dict()
+            if not item.get("image_url"):
+                imgs = item.get("images") or []
+                if isinstance(imgs, list) and imgs:
+                    first = imgs[0] or {}
+                    if isinstance(first, dict):
+                        item["image_url"] = first.get("image_url")
+            listing_dicts.append(item)
+
+        stats = {
+            "total_listings": len(listing_dicts),
+            "featured_listings": sum(1 for c in listing_dicts if c.get("is_featured") is True),
+        }
+
+        return jsonify({"dealer": dealer.to_dict(), "listings": listing_dicts, "stats": stats}), 200
+    except Exception as e:
+        current_app.logger.exception("dealer_profile failed: %s", e)
+        return jsonify({"message": "Failed to load dealer profile"}), 500
 

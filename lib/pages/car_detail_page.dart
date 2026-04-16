@@ -615,8 +615,9 @@ class _CarDetailPageState extends State<CarDetailPage> {
     if (car['seating'] != null &&
         (car['seating'] is int || car['seating'] is String)) {
       final n = car['seating'].toString().trim();
-      if (n.isNotEmpty && n != '0')
+      if (n.isNotEmpty && n != '0') {
         rows.add(MapEntry(loc?.seating ?? 'Seating', n));
+      }
     }
     if (rows.isEmpty) return const SizedBox.shrink();
     return Column(
@@ -858,6 +859,17 @@ class _CarDetailPageState extends State<CarDetailPage> {
         'Hi, I am interested in "$title". What is the price for this listing?';
 
     final seller = (car['seller'] is Map) ? (car['seller'] as Map) : null;
+    final sellerAccountType =
+        seller == null ? '' : (seller['account_type'] ?? '').toString().trim();
+    final sellerDealerStatus =
+        seller == null ? '' : (seller['dealer_status'] ?? '').toString().trim();
+    final sellerIsDealer =
+        sellerAccountType == 'dealer' && sellerDealerStatus == 'approved';
+    final sellerPublicId = seller == null
+        ? ''
+        : (seller['id'] ?? seller['user_id'] ?? '')
+            .toString()
+            .trim();
     final receiverId = seller == null
         ? null
         : (seller['id'] ??
@@ -1024,7 +1036,28 @@ class _CarDetailPageState extends State<CarDetailPage> {
         ),
         if (seller != null) ...[
           const SizedBox(height: 16),
-          _buildSellerInfoSection(seller),
+          Material(
+            color: Colors.transparent,
+            child: InkWell(
+              borderRadius: BorderRadius.circular(12),
+              onTap: (sellerIsDealer && sellerPublicId.isNotEmpty)
+                  ? () => Navigator.pushNamed(
+                        context,
+                        '/dealer/profile',
+                        arguments: {'dealerPublicId': sellerPublicId},
+                      )
+                  : null,
+              child: _buildSellerInfoSection(seller),
+            ),
+          ),
+          if (sellerIsDealer && sellerPublicId.isNotEmpty)
+            Padding(
+              padding: const EdgeInsets.only(top: 8),
+              child: Text(
+                'Tap seller info to open dealership page',
+                style: Theme.of(context).textTheme.bodySmall,
+              ),
+            ),
           const SizedBox(height: 16),
         ],
         if ((car['description'] ?? '').toString().trim().isNotEmpty) ...[

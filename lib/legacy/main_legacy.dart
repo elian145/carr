@@ -48,6 +48,7 @@ import '../pages/chat_pages.dart' as carzo_chat;
 import '../pages/reset_password_page.dart';
 import '../pages/verify_email_page.dart';
 import '../pages/admin_dealers_page.dart';
+import '../pages/dealer_profile_page.dart';
 import '../features/comparison/state/car_comparison_store.dart';
 import '../data/car_catalog.dart';
 import '../data/car_name_translations.dart';
@@ -3146,6 +3147,22 @@ class MyApp extends StatelessWidget {
                     auth_pages.ForgotPasswordPage(),
                 '/admin/dealers': (context) =>
                     AuthGuard(child: AdminDealersPage()),
+                '/dealer/profile': (context) {
+                  final args =
+                      ModalRoute.of(context)?.settings.arguments
+                          as Map<String, dynamic>?;
+                  final dealerPublicId =
+                      (args?['dealerPublicId'] ?? '').toString().trim();
+                  if (dealerPublicId.isEmpty) {
+                    return Scaffold(
+                      appBar: AppBar(title: const Text('Navigation error')),
+                      body: const Center(
+                        child: Text('Missing dealer id'),
+                      ),
+                    );
+                  }
+                  return DealerProfilePage(dealerPublicId: dealerPublicId);
+                },
               },
             ),
           ),
@@ -13193,6 +13210,10 @@ class _CarDetailsPageState extends State<CarDetailsPage> {
     final bool isApprovedDealer =
         accountType == 'dealer' && dealerStatus == 'approved';
     final bool isDealerSeller = accountType == 'dealer';
+    final String dealerPublicId =
+        (seller['id'] ?? seller['user_id'] ?? '').toString().trim();
+    final bool canOpenDealerPage =
+        isApprovedDealer && dealerPublicId.isNotEmpty;
 
     final String displayName = (isApprovedDealer && dealershipName.isNotEmpty)
         ? dealershipName
@@ -13255,100 +13276,128 @@ class _CarDetailsPageState extends State<CarDetailsPage> {
       );
     }
 
-    return Container(
-      width: double.infinity,
-      margin: const EdgeInsets.only(top: 12),
-      padding: const EdgeInsets.all(12),
-      decoration: BoxDecoration(
-        color: isLight ? Colors.white : const Color(0xFF1A120E),
+    return Material(
+      color: Colors.transparent,
+      child: InkWell(
         borderRadius: BorderRadius.circular(14),
-        border: Border.all(
-          color: isLight ? const Color(0x1A000000) : const Color(0x33FF6B00),
-        ),
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Row(
+        onTap: canOpenDealerPage
+            ? () => Navigator.pushNamed(
+                  context,
+                  '/dealer/profile',
+                  arguments: {'dealerPublicId': dealerPublicId},
+                )
+            : null,
+        child: Container(
+          width: double.infinity,
+          margin: const EdgeInsets.only(top: 12),
+          padding: const EdgeInsets.all(12),
+          decoration: BoxDecoration(
+            color: isLight ? Colors.white : const Color(0xFF1A120E),
+            borderRadius: BorderRadius.circular(14),
+            border: Border.all(
+              color: isLight ? const Color(0x1A000000) : const Color(0x33FF6B00),
+            ),
+          ),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              CircleAvatar(
-                radius: 22,
-                backgroundColor: const Color(0x26FF6B00),
-                backgroundImage: avatarUrl.isNotEmpty
-                    ? NetworkImage(avatarUrl)
-                    : null,
-                child: avatarUrl.isEmpty
-                    ? Text(
-                        initials,
-                        style: const TextStyle(
-                          color: Color(0xFFFF6B00),
-                          fontSize: 16,
-                          fontWeight: FontWeight.w700,
+              Row(
+                children: [
+                  CircleAvatar(
+                    radius: 22,
+                    backgroundColor: const Color(0x26FF6B00),
+                    backgroundImage: avatarUrl.isNotEmpty
+                        ? NetworkImage(avatarUrl)
+                        : null,
+                    child: avatarUrl.isEmpty
+                        ? Text(
+                            initials,
+                            style: const TextStyle(
+                              color: Color(0xFFFF6B00),
+                              fontSize: 16,
+                              fontWeight: FontWeight.w700,
+                            ),
+                          )
+                        : null,
+                  ),
+                  const SizedBox(width: 10),
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          displayName,
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                          style: TextStyle(
+                            fontSize: 15,
+                            fontWeight: FontWeight.w700,
+                            color: isLight
+                                ? AppThemes.darkHomeShellBackground
+                                : Colors.white,
+                          ),
                         ),
-                      )
-                    : null,
-              ),
-              const SizedBox(width: 10),
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      displayName,
-                      maxLines: 1,
-                      overflow: TextOverflow.ellipsis,
-                      style: TextStyle(
-                        fontSize: 15,
-                        fontWeight: FontWeight.w700,
-                        color: isLight
-                            ? AppThemes.darkHomeShellBackground
-                            : Colors.white,
+                        if (username.isNotEmpty && !isDealerSeller)
+                          Text(
+                            '@$username',
+                            style: TextStyle(
+                              fontSize: 12,
+                              color: isLight ? Colors.black54 : Colors.white60,
+                            ),
+                          ),
+                      ],
+                    ),
+                  ),
+                  if (isVerified)
+                    Container(
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 8,
+                        vertical: 4,
+                      ),
+                      decoration: BoxDecoration(
+                        color: const Color(0x1A4CAF50),
+                        borderRadius: BorderRadius.circular(999),
+                      ),
+                      child: const Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          Icon(
+                            Icons.verified,
+                            color: Color(0xFF4CAF50),
+                            size: 13,
+                          ),
+                          SizedBox(width: 4),
+                          Text(
+                            'Verified',
+                            style: TextStyle(
+                              fontSize: 11,
+                              color: Color(0xFF4CAF50),
+                              fontWeight: FontWeight.w600,
+                            ),
+                          ),
+                        ],
                       ),
                     ),
-                    if (username.isNotEmpty && !isDealerSeller)
-                      Text(
-                        '@$username',
-                        style: TextStyle(
-                          fontSize: 12,
-                          color: isLight ? Colors.black54 : Colors.white60,
-                        ),
-                      ),
-                  ],
-                ),
+                ],
               ),
-              if (isVerified)
-                Container(
-                  padding: const EdgeInsets.symmetric(
-                    horizontal: 8,
-                    vertical: 4,
-                  ),
-                  decoration: BoxDecoration(
-                    color: const Color(0x1A4CAF50),
-                    borderRadius: BorderRadius.circular(999),
-                  ),
-                  child: const Row(
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      Icon(Icons.verified, color: Color(0xFF4CAF50), size: 13),
-                      SizedBox(width: 4),
-                      Text(
-                        'Verified',
-                        style: TextStyle(
-                          fontSize: 11,
-                          color: Color(0xFF4CAF50),
-                          fontWeight: FontWeight.w600,
-                        ),
-                      ),
-                    ],
+              detailRow(Icons.phone_outlined, 'Phone', phone),
+              detailRow(Icons.email_outlined, 'Email', email),
+              detailRow(Icons.location_on_outlined, 'Location', locationShown),
+              detailRow(Icons.calendar_today_outlined, 'Member since', joined),
+              if (canOpenDealerPage)
+                Padding(
+                  padding: const EdgeInsets.only(top: 10),
+                  child: Text(
+                    'Tap to open dealership page',
+                    style: TextStyle(
+                      fontSize: 12,
+                      color: isLight ? Colors.black54 : Colors.white60,
+                    ),
                   ),
                 ),
             ],
           ),
-          detailRow(Icons.phone_outlined, 'Phone', phone),
-          detailRow(Icons.email_outlined, 'Email', email),
-          detailRow(Icons.location_on_outlined, 'Location', locationShown),
-          detailRow(Icons.calendar_today_outlined, 'Member since', joined),
-        ],
+        ),
       ),
     );
   }
