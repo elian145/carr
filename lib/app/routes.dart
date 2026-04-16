@@ -17,6 +17,7 @@ import '../pages/my_listings_page.dart' as mine;
 import '../pages/comparison_page.dart' as comparison;
 import '../pages/admin_dealers_page.dart';
 import '../pages/dealer_profile_page.dart';
+import '../pages/edit_dealer_page.dart';
 
 class _RouteArgsErrorPage extends StatelessWidget {
   final String routeName;
@@ -89,6 +90,7 @@ Map<String, WidgetBuilder> buildAppRoutes() {
     '/comparison': (context) => const comparison.ComparisonPage(),
     '/analytics': (context) => AnalyticsPage(),
     '/admin/dealers': (context) => const AdminDealersPage(),
+    '/dealer/edit': (context) => const EditDealerPage(),
     '/dealer/profile': (context) {
       final args = argsMap(context);
       final dealerPublicId = (args?['dealerPublicId'] ?? '').toString().trim();

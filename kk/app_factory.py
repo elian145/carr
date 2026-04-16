@@ -392,6 +392,7 @@ def create_app():
     os.makedirs(os.path.join(app.config["UPLOAD_FOLDER"], "car_photos"), exist_ok=True)
     os.makedirs(os.path.join(app.config["UPLOAD_FOLDER"], "car_videos"), exist_ok=True)
     os.makedirs(os.path.join(app.config["UPLOAD_FOLDER"], "profile_pictures"), exist_ok=True)
+    os.makedirs(os.path.join(app.config["UPLOAD_FOLDER"], "dealer_covers"), exist_ok=True)
 
     init_jwt_callbacks(jwt)
     register_blueprints(app)

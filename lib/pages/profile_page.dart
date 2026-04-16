@@ -622,6 +622,26 @@ class _ProfilePageState extends State<ProfilePage> {
                           }
                         },
                       ),
+                      if (isAuthenticated && accountType == 'dealer') ...[
+                        const Divider(height: 1),
+                        ListTile(
+                          leading: const Icon(Icons.storefront_outlined),
+                          title: const Text('Edit dealer page'),
+                          subtitle: const Text(
+                            'Update dealership name, logo, phone and location',
+                          ),
+                          onTap: () async {
+                            final result = await Navigator.pushNamed(
+                              context,
+                              '/dealer/edit',
+                            );
+                            if (!mounted) return;
+                            if (result == true) {
+                              await _refresh();
+                            }
+                          },
+                        ),
+                      ],
                       const Divider(height: 1),
                       ListTile(
                         leading: const Icon(Icons.favorite_border),

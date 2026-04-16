@@ -10,6 +10,7 @@ from sqlalchemy.orm import selectinload
 from ..auth import get_current_user, log_user_action, validate_user_input
 from ..models import Car, User, db
 from ..security import generate_secure_filename, validate_file_upload
+from ..security import validate_input_sanitization
 from ..time_utils import utcnow
 
 bp = Blueprint("user", __name__)
@@ -147,6 +148,51 @@ def upload_profile_picture():
         return jsonify({"message": "Failed to upload profile picture"}), 500
 
 
+@bp.route("/api/user/upload-dealer-cover", methods=["POST"])
+@jwt_required()
+def upload_dealer_cover():
+    """Upload dealership cover image shown at top of dealer page."""
+    try:
+        current_user = get_current_user()
+        if not current_user:
+            return jsonify({"message": "User not found"}), 404
+        if (current_user.account_type or "").strip().lower() != "dealer":
+            return jsonify({"message": "Only dealers can upload a dealership cover"}), 403
+
+        if "file" not in request.files:
+            return jsonify({"message": "No file provided"}), 400
+
+        file = request.files["file"]
+        is_valid, message = validate_file_upload(
+            file, max_size_mb=8, allowed_extensions=current_app.config["ALLOWED_EXTENSIONS"]
+        )
+        if not is_valid:
+            return jsonify({"message": message}), 400
+
+        filename = generate_secure_filename(file.filename)
+        upload_folder = current_app.config["UPLOAD_FOLDER"]
+        file_path = os.path.join(upload_folder, "dealer_covers", filename)
+        file.save(file_path)
+
+        current_user.dealership_cover_picture = f"uploads/dealer_covers/{filename}"
+        current_user.updated_at = utcnow()
+        db.session.commit()
+        log_user_action(current_user, "dealer_cover_upload")
+
+        return (
+            jsonify(
+                {
+                    "message": "Dealer cover uploaded successfully",
+                    "dealership_cover_picture": current_user.dealership_cover_picture,
+                }
+            ),
+            200,
+        )
+    except Exception as e:
+        current_app.logger.exception("upload_dealer_cover failed: %s", e)
+        return jsonify({"message": "Failed to upload dealer cover"}), 500
+
+
 @bp.route("/api/dealers/<dealer_public_id>", methods=["GET"])
 def dealer_profile(dealer_public_id: str):
     """Public dealer profile + active listings for dealer page."""
@@ -189,4 +235,48 @@ def dealer_profile(dealer_public_id: str):
     except Exception as e:
         current_app.logger.exception("dealer_profile failed: %s", e)
         return jsonify({"message": "Failed to load dealer profile"}), 500
+
+
+@bp.route("/api/user/dealer-profile", methods=["PUT"])
+@jwt_required()
+def update_dealer_profile():
+    """Dealer-owned editable fields for the public dealer page."""
+    try:
+        current_user = get_current_user()
+        if not current_user:
+            return jsonify({"message": "User not found"}), 404
+
+        if (current_user.account_type or "").strip().lower() != "dealer":
+            return jsonify({"message": "Only dealers can edit dealer page"}), 403
+
+        data = request.get_json(silent=True) or {}
+        data = validate_input_sanitization(data)
+
+        if "dealership_name" in data:
+            v = (data.get("dealership_name") or "").strip()
+            if not v:
+                return jsonify({"message": "Dealership name is required"}), 400
+            current_user.dealership_name = v
+
+        if "dealership_phone" in data:
+            v = (data.get("dealership_phone") or "").strip()
+            if not v:
+                return jsonify({"message": "Dealership phone is required"}), 400
+            current_user.dealership_phone = v
+
+        if "dealership_location" in data:
+            v = (data.get("dealership_location") or "").strip()
+            if not v:
+                return jsonify({"message": "Dealership location is required"}), 400
+            current_user.dealership_location = v
+
+        current_user.updated_at = utcnow()
+        db.session.commit()
+        log_user_action(current_user, "dealer_profile_update")
+
+        return jsonify({"message": "Dealer page updated", "user": current_user.to_dict(include_private=True)}), 200
+    except Exception as e:
+        db.session.rollback()
+        current_app.logger.exception("update_dealer_profile failed: %s", e)
+        return jsonify({"message": "Failed to update dealer page"}), 500
 

@@ -1,7 +1,12 @@
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
 
+import '../legacy/main_legacy.dart'
+    show buildGlobalCarCard, mapListingToGlobalCarCardData;
+import '../services/auth_service.dart';
 import '../services/api_service.dart';
 import '../shared/media/media_url.dart';
+import 'edit_dealer_page.dart';
 
 class DealerProfilePage extends StatefulWidget {
   final String dealerPublicId;
@@ -73,20 +78,6 @@ class _DealerProfilePageState extends State<DealerProfilePage> {
     return '';
   }
 
-  String _cardImage(Map<String, dynamic> listing) {
-    final direct = (listing['image_url'] ?? '').toString().trim();
-    if (direct.isNotEmpty) return buildMediaUrl(direct);
-    final images = listing['images'];
-    if (images is List && images.isNotEmpty) {
-      final first = images.first;
-      if (first is Map) {
-        final v = (first['image_url'] ?? '').toString().trim();
-        if (v.isNotEmpty) return buildMediaUrl(v);
-      }
-    }
-    return '';
-  }
-
   Widget _infoRow(IconData icon, String label, String value) {
     if (value.trim().isEmpty) return const SizedBox.shrink();
     return Padding(
@@ -110,6 +101,7 @@ class _DealerProfilePageState extends State<DealerProfilePage> {
 
   @override
   Widget build(BuildContext context) {
+    final auth = context.watch<AuthService>();
     final dealer = _dealer;
     final dealershipName = (dealer?['dealership_name'] ?? '').toString().trim();
     final firstName = (dealer?['first_name'] ?? '').toString().trim();
@@ -119,7 +111,10 @@ class _DealerProfilePageState extends State<DealerProfilePage> {
         ? dealershipName
         : (fallbackName.isNotEmpty ? fallbackName : 'Dealer');
     final logoUrl = buildMediaUrl((dealer?['profile_picture'] ?? '').toString().trim());
-    final coverUrl = _firstListingImage();
+    final coverUrl = buildMediaUrl(
+      (dealer?['dealership_cover_picture'] ?? '').toString().trim(),
+    );
+    final bannerUrl = coverUrl.isNotEmpty ? coverUrl : _firstListingImage();
     final location = (dealer?['dealership_location'] ?? dealer?['location'] ?? '')
         .toString()
         .trim();
@@ -129,6 +124,10 @@ class _DealerProfilePageState extends State<DealerProfilePage> {
     final createdAt = (dealer?['created_at'] ?? '').toString().trim();
     final totalListings = (_stats['total_listings'] ?? _listings.length).toString();
     final featuredListings = (_stats['featured_listings'] ?? 0).toString();
+    final currentUserPublicId =
+        (auth.currentUser?['id'] ?? '').toString().trim();
+    final isDealerOwner =
+        auth.isAuthenticated && currentUserPublicId == widget.dealerPublicId;
 
     return Scaffold(
       appBar: AppBar(title: const Text('Dealer')),
@@ -147,11 +146,11 @@ class _DealerProfilePageState extends State<DealerProfilePage> {
                   )
                 : ListView(
                     children: [
-                      if (coverUrl.isNotEmpty)
+                      if (bannerUrl.isNotEmpty)
                         SizedBox(
                           height: 180,
                           child: Image.network(
-                            coverUrl,
+                            bannerUrl,
                             fit: BoxFit.cover,
                             errorBuilder: (context, error, stackTrace) =>
                                 Container(color: Colors.black12),
@@ -205,6 +204,24 @@ class _DealerProfilePageState extends State<DealerProfilePage> {
                                 ),
                               ],
                             ),
+                            if (isDealerOwner) ...[
+                              const SizedBox(height: 10),
+                              OutlinedButton.icon(
+                                onPressed: () async {
+                                  final changed = await Navigator.push<bool>(
+                                    context,
+                                    MaterialPageRoute(
+                                      builder: (_) => const EditDealerPage(),
+                                    ),
+                                  );
+                                  if (changed == true) {
+                                    await _load();
+                                  }
+                                },
+                                icon: const Icon(Icons.edit_outlined),
+                                label: const Text('Edit dealer page'),
+                              ),
+                            ],
                             const SizedBox(height: 12),
                             _infoRow(Icons.location_on_outlined, 'Location', location),
                             _infoRow(Icons.phone_outlined, 'Phone', phone),
@@ -229,85 +246,23 @@ class _DealerProfilePageState extends State<DealerProfilePage> {
                           child: Text('No active listings right now.'),
                         )
                       else
-                        ListView.separated(
+                        GridView.builder(
                           shrinkWrap: true,
                           physics: const NeverScrollableScrollPhysics(),
                           padding: const EdgeInsets.fromLTRB(12, 0, 12, 16),
+                          gridDelegate:
+                              const SliverGridDelegateWithFixedCrossAxisCount(
+                            crossAxisCount: 2,
+                            childAspectRatio: 0.62,
+                            crossAxisSpacing: 8,
+                            mainAxisSpacing: 8,
+                          ),
                           itemCount: _listings.length,
-                          separatorBuilder: (context, _) =>
-                              const SizedBox(height: 10),
                           itemBuilder: (context, index) {
                             final item = _listings[index];
-                            final id = (item['id'] ?? '').toString().trim();
-                            final title = (item['title'] ??
-                                    '${item['brand'] ?? ''} ${item['model'] ?? ''} ${item['year'] ?? ''}')
-                                .toString()
-                                .trim();
-                            final price = (item['price'] ?? '').toString().trim();
-                            final currency = (item['currency'] ?? '').toString().trim();
-                            final carLocation = (item['location'] ?? item['city'] ?? '')
-                                .toString()
-                                .trim();
-                            final img = _cardImage(item);
-                            return InkWell(
-                              borderRadius: BorderRadius.circular(12),
-                              onTap: id.isEmpty
-                                  ? null
-                                  : () => Navigator.pushNamed(
-                                        context,
-                                        '/car_detail',
-                                        arguments: {'carId': id},
-                                      ),
-                              child: Container(
-                                decoration: BoxDecoration(
-                                  border: Border.all(
-                                    color: Theme.of(context).dividerColor.withValues(alpha: 0.3),
-                                  ),
-                                  borderRadius: BorderRadius.circular(12),
-                                ),
-                                child: Row(
-                                  children: [
-                                    ClipRRect(
-                                      borderRadius: const BorderRadius.horizontal(
-                                        left: Radius.circular(12),
-                                      ),
-                                      child: SizedBox(
-                                        width: 110,
-                                        height: 90,
-                                        child: img.isEmpty
-                                            ? Container(color: Colors.black12)
-                                            : Image.network(img, fit: BoxFit.cover),
-                                      ),
-                                    ),
-                                    Expanded(
-                                      child: Padding(
-                                        padding: const EdgeInsets.all(10),
-                                        child: Column(
-                                          crossAxisAlignment: CrossAxisAlignment.start,
-                                          children: [
-                                            Text(
-                                              title.isNotEmpty ? title : 'Listing',
-                                              maxLines: 2,
-                                              overflow: TextOverflow.ellipsis,
-                                              style: const TextStyle(fontWeight: FontWeight.w700),
-                                            ),
-                                            const SizedBox(height: 6),
-                                            Text([price, currency].where((e) => e.isNotEmpty).join(' ')),
-                                            if (carLocation.isNotEmpty)
-                                              Text(
-                                                carLocation,
-                                                maxLines: 1,
-                                                overflow: TextOverflow.ellipsis,
-                                                style: Theme.of(context).textTheme.bodySmall,
-                                              ),
-                                          ],
-                                        ),
-                                      ),
-                                    ),
-                                  ],
-                                ),
-                              ),
-                            );
+                            final mapped =
+                                mapListingToGlobalCarCardData(context, item);
+                            return buildGlobalCarCard(context, mapped);
                           },
                         ),
                     ],

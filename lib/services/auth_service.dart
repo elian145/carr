@@ -281,6 +281,22 @@ class AuthService extends ChangeNotifier {
     }
   }
 
+  Future<Map<String, dynamic>> updateDealerProfile(
+    Map<String, dynamic> dealerData,
+  ) async {
+    _setLoading(true);
+    try {
+      final response = await ApiService.updateDealerProfile(dealerData);
+      if (response['user'] != null && response['user'] is Map<String, dynamic>) {
+        _currentUser = response['user'];
+        notifyListeners();
+      }
+      return response;
+    } finally {
+      _setLoading(false);
+    }
+  }
+
   // Upload profile picture
   Future<Map<String, dynamic>> uploadProfilePicture(dynamic imageFile) async {
     _setLoading(true);
@@ -294,6 +310,23 @@ class AuthService extends ChangeNotifier {
         notifyListeners();
       }
 
+      return response;
+    } catch (e) {
+      rethrow;
+    } finally {
+      _setLoading(false);
+    }
+  }
+
+  Future<Map<String, dynamic>> uploadDealerCoverPicture(dynamic imageFile) async {
+    _setLoading(true);
+    try {
+      final response = await ApiService.uploadDealerCoverPicture(imageFile);
+      if (_currentUser != null && response['dealership_cover_picture'] != null) {
+        _currentUser!['dealership_cover_picture'] =
+            response['dealership_cover_picture'];
+        notifyListeners();
+      }
       return response;
     } catch (e) {
       rethrow;

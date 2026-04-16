@@ -605,6 +605,16 @@ class ApiService {
     return _handleResponse(response);
   }
 
+  static Future<Map<String, dynamic>> updateDealerProfile(
+    Map<String, dynamic> dealerData,
+  ) async {
+    return await _makeAuthenticatedRequest(
+      'PUT',
+      '/user/dealer-profile',
+      body: dealerData,
+    );
+  }
+
   /// Admin: users with `dealer_status == pending` (requires `is_admin` JWT).
   static Future<Map<String, dynamic>> adminDealersPending() async {
     return await _makeAuthenticatedRequest('GET', '/admin/dealers/pending');
@@ -657,6 +667,33 @@ class ApiService {
     }
 
     // Add file
+    request.files.add(
+      await http.MultipartFile.fromPath('file', imageFile.path),
+    );
+
+    final response = await request.send().timeout(_uploadTimeout);
+    final responseBody = await response.stream.bytesToString();
+
+    if (response.statusCode >= 200 && response.statusCode < 300) {
+      return json.decode(responseBody);
+    } else {
+      final error = json.decode(responseBody);
+      throw Exception(error['message'] ?? 'Upload failed');
+    }
+  }
+
+  static Future<Map<String, dynamic>> uploadDealerCoverPicture(
+    XFile imageFile,
+  ) async {
+    final request = http.MultipartRequest(
+      'POST',
+      Uri.parse('$baseUrl/user/upload-dealer-cover'),
+    );
+
+    if (_accessToken != null) {
+      request.headers['Authorization'] = 'Bearer $_accessToken';
+    }
+
     request.files.add(
       await http.MultipartFile.fromPath('file', imageFile.path),
     );

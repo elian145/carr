@@ -49,6 +49,7 @@ import '../pages/reset_password_page.dart';
 import '../pages/verify_email_page.dart';
 import '../pages/admin_dealers_page.dart';
 import '../pages/dealer_profile_page.dart';
+import '../pages/edit_dealer_page.dart';
 import '../features/comparison/state/car_comparison_store.dart';
 import '../data/car_catalog.dart';
 import '../data/car_name_translations.dart';
@@ -3147,6 +3148,8 @@ class MyApp extends StatelessWidget {
                     auth_pages.ForgotPasswordPage(),
                 '/admin/dealers': (context) =>
                     AuthGuard(child: AdminDealersPage()),
+                '/dealer/edit': (context) =>
+                    AuthGuard(child: EditDealerPage()),
                 '/dealer/profile': (context) {
                   final args =
                       ModalRoute.of(context)?.settings.arguments
@@ -24875,6 +24878,27 @@ class _ProfilePageState extends State<ProfilePage> {
                         }
                       },
                     ),
+                    if ((me?['account_type'] ?? 'user').toString() == 'dealer') ...[
+                      SizedBox(height: 12),
+                      _buildActionButton(
+                        Icons.storefront_outlined,
+                        'Edit dealer page',
+                        () async {
+                          if (ApiService.accessToken == null ||
+                              ApiService.accessToken!.isEmpty) {
+                            _showAuthRequiredDialog(context);
+                            return;
+                          }
+                          final result = await Navigator.pushNamed(
+                            context,
+                            '/dealer/edit',
+                          );
+                          if (result == true) {
+                            _loadMe();
+                          }
+                        },
+                      ),
+                    ],
                     SizedBox(height: 12),
                     _buildActionButton(
                       Icons.contact_mail_outlined,
