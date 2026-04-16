@@ -421,6 +421,7 @@ class _CarDetailPageState extends State<CarDetailPage> {
     final isApprovedDealer =
         accountType == 'dealer' && dealerStatus == 'approved';
     final isDealerSeller = accountType == 'dealer';
+    final sellerTypeLabel = isDealerSeller ? 'Dealership' : 'Private seller';
 
     final displayName = (isApprovedDealer && dealershipName.isNotEmpty)
         ? dealershipName
@@ -485,14 +486,18 @@ class _CarDetailPageState extends State<CarDetailPage> {
       );
     }
 
-    addRow(Icons.phone_outlined, loc?.phoneLabel ?? 'Phone', phone);
-    addRow(Icons.email_outlined, loc?.emailLabel ?? 'Email', email);
-    addRow(
-      Icons.location_on_outlined,
-      loc?.locationLabel ?? 'Location',
-      locationShown,
-    );
-    addRow(Icons.calendar_today_outlined, 'Member since', joined);
+    // Show direct contact details only for dealers.
+    if (isDealerSeller) {
+      addRow(Icons.phone_outlined, loc?.phoneLabel ?? 'Phone', phone);
+      addRow(Icons.email_outlined, loc?.emailLabel ?? 'Email', email);
+    }
+    if (isDealerSeller) {
+      addRow(
+        Icons.location_on_outlined,
+        loc?.locationLabel ?? 'Location',
+        locationShown,
+      );
+    }
 
     return Container(
       width: double.infinity,
@@ -536,6 +541,16 @@ class _CarDetailPageState extends State<CarDetailPage> {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
+                    Text(
+                      sellerTypeLabel,
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                      style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                        color: Theme.of(context).colorScheme.onSurfaceVariant,
+                        fontWeight: FontWeight.w600,
+                      ),
+                    ),
+                    const SizedBox(height: 2),
                     Text(
                       displayName,
                       maxLines: 1,

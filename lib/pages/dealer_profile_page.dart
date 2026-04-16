@@ -122,6 +122,7 @@ class _DealerProfilePageState extends State<DealerProfilePage> {
     final phone = (dealer?['dealership_phone'] ?? dealer?['phone_number'] ?? '')
         .toString()
         .trim();
+    final email = (dealer?['email'] ?? '').toString().trim();
     final createdAt = (dealer?['created_at'] ?? '').toString().trim();
     final totalListings = (_stats['total_listings'] ?? _listings.length).toString();
     final featuredListings = (_stats['featured_listings'] ?? 0).toString();
@@ -234,8 +235,9 @@ class _DealerProfilePageState extends State<DealerProfilePage> {
                             ],
                             const SizedBox(height: 12),
                             _infoRow(Icons.location_on_outlined, 'Location', location),
+                            if (email.isNotEmpty)
+                              _infoRow(Icons.email_outlined, 'Email', email),
                             _infoRow(Icons.phone_outlined, 'Phone', phone),
-                            _infoRow(Icons.calendar_today_outlined, 'Member since', createdAt),
                           ],
                         ),
                       ),

@@ -13213,6 +13213,7 @@ class _CarDetailsPageState extends State<CarDetailsPage> {
     final bool isApprovedDealer =
         accountType == 'dealer' && dealerStatus == 'approved';
     final bool isDealerSeller = accountType == 'dealer';
+    final String sellerTypeLabel = isDealerSeller ? 'Dealership' : 'Private seller';
     final String dealerPublicId =
         (seller['id'] ?? seller['user_id'] ?? '').toString().trim();
     final bool canOpenDealerPage =
@@ -13329,6 +13330,17 @@ class _CarDetailsPageState extends State<CarDetailsPage> {
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
                         Text(
+                          sellerTypeLabel,
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                          style: TextStyle(
+                            fontSize: 12,
+                            fontWeight: FontWeight.w600,
+                            color: isLight ? Colors.black54 : Colors.white60,
+                          ),
+                        ),
+                        const SizedBox(height: 2),
+                        Text(
                           displayName,
                           maxLines: 1,
                           overflow: TextOverflow.ellipsis,
@@ -13383,10 +13395,12 @@ class _CarDetailsPageState extends State<CarDetailsPage> {
                     ),
                 ],
               ),
-              detailRow(Icons.phone_outlined, 'Phone', phone),
-              detailRow(Icons.email_outlined, 'Email', email),
-              detailRow(Icons.location_on_outlined, 'Location', locationShown),
-              detailRow(Icons.calendar_today_outlined, 'Member since', joined),
+              if (isDealerSeller) ...[
+                detailRow(Icons.phone_outlined, 'Phone', phone),
+                detailRow(Icons.email_outlined, 'Email', email),
+              ],
+              if (isDealerSeller)
+                detailRow(Icons.location_on_outlined, 'Location', locationShown),
               if (canOpenDealerPage)
                 Padding(
                   padding: const EdgeInsets.only(top: 10),
