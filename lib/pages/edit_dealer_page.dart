@@ -19,6 +19,7 @@ class _EditDealerPageState extends State<EditDealerPage> {
   final _name = TextEditingController();
   final _phone = TextEditingController();
   final _location = TextEditingController();
+  final _description = TextEditingController();
   XFile? _logo;
   XFile? _cover;
   bool _saving = false;
@@ -32,6 +33,7 @@ class _EditDealerPageState extends State<EditDealerPage> {
     _name.text = (me?['dealership_name'] ?? '').toString();
     _phone.text = (me?['dealership_phone'] ?? '').toString();
     _location.text = (me?['dealership_location'] ?? '').toString();
+    _description.text = (me?['dealership_description'] ?? '').toString();
     _currentLogo = (me?['profile_picture'] ?? '').toString().trim();
     _currentCover = (me?['dealership_cover_picture'] ?? '').toString().trim();
   }
@@ -41,6 +43,7 @@ class _EditDealerPageState extends State<EditDealerPage> {
     _name.dispose();
     _phone.dispose();
     _location.dispose();
+    _description.dispose();
     super.dispose();
   }
 
@@ -77,6 +80,7 @@ class _EditDealerPageState extends State<EditDealerPage> {
         'dealership_name': _name.text.trim(),
         'dealership_phone': _phone.text.trim(),
         'dealership_location': _location.text.trim(),
+        'dealership_description': _description.text.trim(),
       });
       if (_logo != null) {
         await auth.uploadProfilePicture(_logo!);
@@ -197,6 +201,18 @@ class _EditDealerPageState extends State<EditDealerPage> {
               validator: (v) => (v == null || v.trim().isEmpty)
                   ? 'Dealership location is required'
                   : null,
+            ),
+            const SizedBox(height: 12),
+            TextFormField(
+              controller: _description,
+              minLines: 3,
+              maxLines: 6,
+              maxLength: 1000,
+              decoration: const InputDecoration(
+                labelText: 'Dealership description',
+                hintText: 'Tell buyers about your dealership',
+                border: OutlineInputBorder(),
+              ),
             ),
             const SizedBox(height: 20),
             FilledButton.icon(

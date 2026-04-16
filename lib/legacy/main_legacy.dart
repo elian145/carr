@@ -13210,6 +13210,10 @@ class _CarDetailsPageState extends State<CarDetailsPage> {
         (seller['dealership_name'] ?? '').toString().trim();
     final String dealershipLocation =
         (seller['dealership_location'] ?? '').toString().trim();
+    final String dealershipDescription =
+        (seller['dealership_description'] ?? seller['dealer_description'] ?? '')
+            .toString()
+            .trim();
     final bool isApprovedDealer =
         accountType == 'dealer' && dealerStatus == 'approved';
     final bool isDealerSeller = accountType == 'dealer';
@@ -13363,7 +13367,7 @@ class _CarDetailsPageState extends State<CarDetailsPage> {
                       ],
                     ),
                   ),
-                  if (isVerified)
+                  if (isDealerSeller && isVerified)
                     Container(
                       padding: const EdgeInsets.symmetric(
                         horizontal: 8,
@@ -13401,6 +13405,8 @@ class _CarDetailsPageState extends State<CarDetailsPage> {
               ],
               if (isDealerSeller)
                 detailRow(Icons.location_on_outlined, 'Location', locationShown),
+              if (isDealerSeller)
+                detailRow(Icons.notes_outlined, 'Description', dealershipDescription),
               if (canOpenDealerPage)
                 Padding(
                   padding: const EdgeInsets.only(top: 10),

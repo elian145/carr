@@ -418,6 +418,11 @@ class _CarDetailPageState extends State<CarDetailPage> {
         (seller['dealership_name'] ?? '').toString().trim();
     final dealershipLocation =
         (seller['dealership_location'] ?? '').toString().trim();
+    final dealershipDescription = _firstNonEmptyFromMap(seller, [
+      'dealership_description',
+      'dealer_description',
+      'description',
+    ]);
     final isApprovedDealer =
         accountType == 'dealer' && dealerStatus == 'approved';
     final isDealerSeller = accountType == 'dealer';
@@ -497,6 +502,11 @@ class _CarDetailPageState extends State<CarDetailPage> {
         loc?.locationLabel ?? 'Location',
         locationShown,
       );
+      addRow(
+        Icons.notes_outlined,
+        'Description',
+        dealershipDescription,
+      );
     }
 
     return Container(
@@ -571,7 +581,7 @@ class _CarDetailPageState extends State<CarDetailPage> {
                   ],
                 ),
               ),
-              if (isVerified)
+              if (isDealerSeller && isVerified)
                 Container(
                   padding: const EdgeInsets.symmetric(
                     horizontal: 8,

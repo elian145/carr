@@ -123,7 +123,7 @@ class _DealerProfilePageState extends State<DealerProfilePage> {
         .toString()
         .trim();
     final email = (dealer?['email'] ?? '').toString().trim();
-    final createdAt = (dealer?['created_at'] ?? '').toString().trim();
+    final description = (dealer?['dealership_description'] ?? '').toString().trim();
     final totalListings = (_stats['total_listings'] ?? _listings.length).toString();
     final featuredListings = (_stats['featured_listings'] ?? 0).toString();
     final currentUserPublicId =
@@ -238,6 +238,21 @@ class _DealerProfilePageState extends State<DealerProfilePage> {
                             if (email.isNotEmpty)
                               _infoRow(Icons.email_outlined, 'Email', email),
                             _infoRow(Icons.phone_outlined, 'Phone', phone),
+                            if (description.isNotEmpty) ...[
+                              const SizedBox(height: 12),
+                              Text(
+                                'About dealership',
+                                style: Theme.of(context)
+                                    .textTheme
+                                    .titleSmall
+                                    ?.copyWith(fontWeight: FontWeight.w700),
+                              ),
+                              const SizedBox(height: 6),
+                              Text(
+                                description,
+                                style: Theme.of(context).textTheme.bodyMedium,
+                              ),
+                            ],
                           ],
                         ),
                       ),

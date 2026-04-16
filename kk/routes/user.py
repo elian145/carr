@@ -352,6 +352,10 @@ def update_dealer_profile():
                 return jsonify({"message": "Dealership location is required"}), 400
             current_user.dealership_location = v
 
+        if "dealership_description" in data:
+            v = (data.get("dealership_description") or "").strip()
+            current_user.dealership_description = v or None
+
         current_user.updated_at = utcnow()
         db.session.commit()
         log_user_action(current_user, "dealer_profile_update")
