@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
+import 'package:url_launcher/url_launcher.dart';
 
 import '../legacy/main_legacy.dart'
     show buildGlobalCarCard, mapListingToGlobalCarCardData;
@@ -98,6 +99,43 @@ class _DealerProfilePageState extends State<DealerProfilePage> {
         ],
       ),
     );
+  }
+
+  String _normalizeTel(String raw) {
+    final s = raw.trim();
+    if (s.isEmpty) return '';
+    final buf = StringBuffer();
+    for (var i = 0; i < s.length; i++) {
+      final c = s[i];
+      if (c == '+' && buf.isEmpty) {
+        buf.write(c);
+      } else if (RegExp(r'[0-9]').hasMatch(c)) {
+        buf.write(c);
+      }
+    }
+    return buf.toString();
+  }
+
+  Future<void> _callDealer(String rawPhone) async {
+    final phone = _normalizeTel(rawPhone);
+    if (phone.isEmpty) return;
+    final uri = Uri.parse('tel:$phone');
+
+    bool launched = await launchUrl(
+      uri,
+      mode: LaunchMode.externalApplication,
+    ).catchError((_) => false);
+    if (!launched) {
+      launched = await launchUrl(
+        uri,
+        mode: LaunchMode.platformDefault,
+      ).catchError((_) => false);
+    }
+    if (!launched && mounted) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Could not start a call')),
+      );
+    }
   }
 
   @override
@@ -237,7 +275,12 @@ class _DealerProfilePageState extends State<DealerProfilePage> {
                             _infoRow(Icons.location_on_outlined, 'Location', location),
                             if (email.isNotEmpty)
                               _infoRow(Icons.email_outlined, 'Email', email),
-                            _infoRow(Icons.phone_outlined, 'Phone', phone),
+                            if (phone.isNotEmpty)
+                              InkWell(
+                                borderRadius: BorderRadius.circular(8),
+                                onTap: () => _callDealer(phone),
+                                child: _infoRow(Icons.phone_outlined, 'Phone', phone),
+                              ),
                             if (description.isNotEmpty) ...[
                               const SizedBox(height: 12),
                               Text(
