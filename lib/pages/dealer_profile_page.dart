@@ -6,6 +6,7 @@ import '../legacy/main_legacy.dart'
 import '../services/auth_service.dart';
 import '../services/api_service.dart';
 import '../shared/media/media_url.dart';
+import '../theme_provider.dart';
 import 'edit_dealer_page.dart';
 
 class DealerProfilePage extends StatefulWidget {
@@ -128,24 +129,33 @@ class _DealerProfilePageState extends State<DealerProfilePage> {
         (auth.currentUser?['id'] ?? '').toString().trim();
     final isDealerOwner =
         auth.isAuthenticated && currentUserPublicId == widget.dealerPublicId;
+    final isLightShell = Theme.of(context).brightness == Brightness.light;
 
     return Scaffold(
       appBar: AppBar(title: const Text('Dealer')),
-      body: RefreshIndicator(
-        onRefresh: _load,
-        child: _loading
-            ? const Center(child: CircularProgressIndicator())
-            : _error != null
-                ? ListView(
-                    padding: const EdgeInsets.all(16),
-                    children: [
-                      Text(_error!, style: const TextStyle(color: Colors.red)),
-                      const SizedBox(height: 12),
-                      FilledButton(onPressed: _load, child: const Text('Retry')),
-                    ],
-                  )
-                : ListView(
-                    children: [
+      backgroundColor: isLightShell ? AppThemes.lightAppBackground : null,
+      body: Stack(
+        children: [
+          Container(
+            decoration: AppThemes.shellBackgroundDecoration(
+              Theme.of(context).brightness,
+            ),
+          ),
+          RefreshIndicator(
+            onRefresh: _load,
+            child: _loading
+                ? const Center(child: CircularProgressIndicator())
+                : _error != null
+                    ? ListView(
+                        padding: const EdgeInsets.all(16),
+                        children: [
+                          Text(_error!, style: const TextStyle(color: Colors.red)),
+                          const SizedBox(height: 12),
+                          FilledButton(onPressed: _load, child: const Text('Retry')),
+                        ],
+                      )
+                    : ListView(
+                        children: [
                       if (bannerUrl.isNotEmpty)
                         SizedBox(
                           height: 180,
@@ -253,6 +263,7 @@ class _DealerProfilePageState extends State<DealerProfilePage> {
                           gridDelegate:
                               const SliverGridDelegateWithFixedCrossAxisCount(
                             crossAxisCount: 2,
+                            // Match global card layout used on home/favorites.
                             childAspectRatio: 0.62,
                             crossAxisSpacing: 8,
                             mainAxisSpacing: 8,
@@ -262,11 +273,26 @@ class _DealerProfilePageState extends State<DealerProfilePage> {
                             final item = _listings[index];
                             final mapped =
                                 mapListingToGlobalCarCardData(context, item);
-                            return buildGlobalCarCard(context, mapped);
+                            return LayoutBuilder(
+                              builder: (context, constraints) {
+                                final card =
+                                    buildGlobalCarCard(context, mapped);
+                                return FittedBox(
+                                  fit: BoxFit.scaleDown,
+                                  alignment: Alignment.topCenter,
+                                  child: SizedBox(
+                                    width: constraints.maxWidth,
+                                    child: card,
+                                  ),
+                                );
+                              },
+                            );
                           },
                         ),
                     ],
                   ),
+          ),
+        ],
       ),
     );
   }
