@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import os
 from datetime import datetime
+import secrets
 
 from flask import Blueprint, jsonify, request, current_app
 from flask_jwt_extended import jwt_required
@@ -12,6 +13,7 @@ from ..models import Car, User, db
 from ..security import generate_secure_filename, validate_file_upload
 from ..security import validate_input_sanitization
 from ..time_utils import utcnow
+from .media import _r2_configured, _r2_client, _r2_public_base
 
 bp = Blueprint("user", __name__)
 
@@ -130,13 +132,53 @@ def upload_profile_picture():
         if not is_valid:
             return jsonify({"message": message}), 400
 
-        filename = generate_secure_filename(file.filename)
-        upload_folder = current_app.config["UPLOAD_FOLDER"]
-        file_path = os.path.join(upload_folder, "profile_pictures", filename)
+        # Prefer Cloudflare R2 when configured; otherwise fall back to local uploads/
+        profile_url = None
+        try:
+            if _r2_configured() and _r2_public_base():
+                public_base = _r2_public_base()
+                client = _r2_client()
+                bucket = current_app.config["R2_BUCKET_NAME"]
 
-        file.save(file_path)
+                raw_name = (file.filename or "avatar.jpg").strip()
+                ext = os.path.splitext(raw_name)[1].lower() or ".jpg"
+                if ext not in {".jpg", ".jpeg", ".png", ".webp", ".gif", ".heic", ".heif"}:
+                    ext = ".jpg"
+                key = f"profile_pictures/{secrets.token_hex(16)}{ext}"
 
-        current_user.profile_picture = f"uploads/profile_pictures/{filename}"
+                try:
+                    file.stream.seek(0)
+                except Exception:
+                    try:
+                        file.seek(0)
+                    except Exception:
+                        pass
+                body = file.read()
+                if not body:
+                    return jsonify({"message": "Empty file body"}), 400
+
+                client.put_object(
+                    Bucket=bucket,
+                    Key=key,
+                    Body=body,
+                    ContentType=file.mimetype or "image/jpeg",
+                )
+                profile_url = f"{public_base}/{key}"
+        except Exception as e:
+            current_app.logger.exception("R2 profile picture upload failed, falling back to local: %s", e)
+
+        if not profile_url:
+            filename = generate_secure_filename(file.filename)
+            upload_folder = current_app.config["UPLOAD_FOLDER"]
+            file_path = os.path.join(upload_folder, "profile_pictures", filename)
+            try:
+                os.makedirs(os.path.dirname(file_path), exist_ok=True)
+            except Exception:
+                pass
+            file.save(file_path)
+            profile_url = f"uploads/profile_pictures/{filename}"
+
+        current_user.profile_picture = profile_url
         current_user.updated_at = utcnow()
         db.session.commit()
 
@@ -169,12 +211,52 @@ def upload_dealer_cover():
         if not is_valid:
             return jsonify({"message": message}), 400
 
-        filename = generate_secure_filename(file.filename)
-        upload_folder = current_app.config["UPLOAD_FOLDER"]
-        file_path = os.path.join(upload_folder, "dealer_covers", filename)
-        file.save(file_path)
+        cover_url = None
+        try:
+            if _r2_configured() and _r2_public_base():
+                public_base = _r2_public_base()
+                client = _r2_client()
+                bucket = current_app.config["R2_BUCKET_NAME"]
 
-        current_user.dealership_cover_picture = f"uploads/dealer_covers/{filename}"
+                raw_name = (file.filename or "cover.jpg").strip()
+                ext = os.path.splitext(raw_name)[1].lower() or ".jpg"
+                if ext not in {".jpg", ".jpeg", ".png", ".webp", ".gif", ".heic", ".heif"}:
+                    ext = ".jpg"
+                key = f"dealer_covers/{secrets.token_hex(16)}{ext}"
+
+                try:
+                    file.stream.seek(0)
+                except Exception:
+                    try:
+                        file.seek(0)
+                    except Exception:
+                        pass
+                body = file.read()
+                if not body:
+                    return jsonify({"message": "Empty file body"}), 400
+
+                client.put_object(
+                    Bucket=bucket,
+                    Key=key,
+                    Body=body,
+                    ContentType=file.mimetype or "image/jpeg",
+                )
+                cover_url = f"{public_base}/{key}"
+        except Exception as e:
+            current_app.logger.exception("R2 dealer cover upload failed, falling back to local: %s", e)
+
+        if not cover_url:
+            filename = generate_secure_filename(file.filename)
+            upload_folder = current_app.config["UPLOAD_FOLDER"]
+            file_path = os.path.join(upload_folder, "dealer_covers", filename)
+            try:
+                os.makedirs(os.path.dirname(file_path), exist_ok=True)
+            except Exception:
+                pass
+            file.save(file_path)
+            cover_url = f"uploads/dealer_covers/{filename}"
+
+        current_user.dealership_cover_picture = cover_url
         current_user.updated_at = utcnow()
         db.session.commit()
         log_user_action(current_user, "dealer_cover_upload")
