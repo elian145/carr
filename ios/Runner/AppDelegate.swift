@@ -17,13 +17,11 @@ import GoogleMaps
     // Google Maps iOS SDK — call before any map view is created (Debug uses Info-Debug.plist).
     let googleMapsApiKeyRaw = Bundle.main.object(forInfoDictionaryKey: "GMSApiKey") as? String ?? ""
     let googleMapsApiKey = googleMapsApiKeyRaw.trimmingCharacters(in: .whitespacesAndNewlines)
-    let looksValid =
-      googleMapsApiKey.count >= 30 &&
-      !googleMapsApiKey.uppercased().hasPrefix("YOUR_GOOGLE_MAP")
-
-    if looksValid {
-      GMSServices.provideAPIKey(googleMapsApiKey)
-    }
+    // The SDK can terminate the process if a GMSMapView is created without provideAPIKey being called.
+    // Call it unconditionally with a sentinel when missing to keep the app alive and surface a clear
+    // "invalid key" signal in logs rather than a hard crash.
+    let effectiveKey = googleMapsApiKey.isEmpty ? "MISSING_GOOGLE_MAPS_IOS_KEY" : googleMapsApiKey
+    GMSServices.provideAPIKey(effectiveKey)
 
     GeneratedPluginRegistrant.register(with: self)
     return super.application(application, didFinishLaunchingWithOptions: launchOptions)

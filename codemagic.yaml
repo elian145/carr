@@ -13,6 +13,9 @@ workflows:
         # Render server: https://carr-5hrm.onrender.com
         API_BASE: "https://carr-5hrm.onrender.com"
         FORCE_SKIP_BLUR: "false"
+      # Configure these in Codemagic UI (Environment variables / Secure):
+      # - IOS_GOOGLE_MAPS_API_KEY  (iOS Maps SDK key, restricted to bundle id com.carzo.app)
+      # - ANDROID_GOOGLE_MAPS_API_KEY (Android Maps SDK key, restricted by package + SHA-1)
     cache:
       cache_paths:
         - "$FLUTTER_ROOT/.pub-cache"
@@ -34,6 +37,17 @@ workflows:
             /usr/libexec/PlistBuddy -c "Delete :$key" ios/Runner/Runner.entitlements 2>/dev/null || true
           done
           /usr/libexec/PlistBuddy -c 'Delete :UIBackgroundModes' ios/Runner/Info.plist 2>/dev/null || true
+      - name: Inject iOS Google Maps key (CI)
+        script: |
+          if [ -n "$IOS_GOOGLE_MAPS_API_KEY" ]; then
+            echo "Injecting GMSApiKey into Info.plist and Info-Debug.plist"
+            /usr/libexec/PlistBuddy -c "Set :GMSApiKey $IOS_GOOGLE_MAPS_API_KEY" ios/Runner/Info.plist 2>/dev/null || \
+            /usr/libexec/PlistBuddy -c "Add :GMSApiKey string $IOS_GOOGLE_MAPS_API_KEY" ios/Runner/Info.plist 2>/dev/null || true
+            /usr/libexec/PlistBuddy -c "Set :GMSApiKey $IOS_GOOGLE_MAPS_API_KEY" ios/Runner/Info-Debug.plist 2>/dev/null || \
+            /usr/libexec/PlistBuddy -c "Add :GMSApiKey string $IOS_GOOGLE_MAPS_API_KEY" ios/Runner/Info-Debug.plist 2>/dev/null || true
+          else
+            echo "IOS_GOOGLE_MAPS_API_KEY not set; maps will fail/blank on iOS builds."
+          fi
       - name: Analyze + tests
         script: |
           flutter analyze
@@ -101,6 +115,20 @@ workflows:
     scripts:
       - name: Flutter pub get
         script: flutter pub get
+      - name: Inject Android Google Maps key (CI)
+        script: |
+          if [ -n "$ANDROID_GOOGLE_MAPS_API_KEY" ]; then
+            echo "Injecting GOOGLE_MAPS_API_KEY into android/local.properties"
+            touch android/local.properties
+            if grep -q "^GOOGLE_MAPS_API_KEY=" android/local.properties; then
+              sed -i.bak "s/^GOOGLE_MAPS_API_KEY=.*/GOOGLE_MAPS_API_KEY=$ANDROID_GOOGLE_MAPS_API_KEY/" android/local.properties
+            else
+              echo "" >> android/local.properties
+              echo "GOOGLE_MAPS_API_KEY=$ANDROID_GOOGLE_MAPS_API_KEY" >> android/local.properties
+            fi
+          else
+            echo "ANDROID_GOOGLE_MAPS_API_KEY not set; maps will fail/blank on Android builds."
+          fi
       - name: Analyze
         script: flutter analyze
       - name: Tests
@@ -134,6 +162,20 @@ workflows:
     scripts:
       - name: Flutter pub get
         script: flutter pub get
+      - name: Inject Android Google Maps key (CI)
+        script: |
+          if [ -n "$ANDROID_GOOGLE_MAPS_API_KEY" ]; then
+            echo "Injecting GOOGLE_MAPS_API_KEY into android/local.properties"
+            touch android/local.properties
+            if grep -q "^GOOGLE_MAPS_API_KEY=" android/local.properties; then
+              sed -i.bak "s/^GOOGLE_MAPS_API_KEY=.*/GOOGLE_MAPS_API_KEY=$ANDROID_GOOGLE_MAPS_API_KEY/" android/local.properties
+            else
+              echo "" >> android/local.properties
+              echo "GOOGLE_MAPS_API_KEY=$ANDROID_GOOGLE_MAPS_API_KEY" >> android/local.properties
+            fi
+          else
+            echo "ANDROID_GOOGLE_MAPS_API_KEY not set; maps will fail/blank on Android builds."
+          fi
       - name: Write Android signing files (optional)
         script: |
           if [ -n "$CM_KEYSTORE" ]; then
