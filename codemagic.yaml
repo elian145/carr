@@ -46,16 +46,13 @@ workflows:
             /usr/libexec/PlistBuddy -c "Set :GMSApiKey $IOS_GOOGLE_MAPS_API_KEY" ios/Runner/Info-Debug.plist 2>/dev/null || \
             /usr/libexec/PlistBuddy -c "Add :GMSApiKey string $IOS_GOOGLE_MAPS_API_KEY" ios/Runner/Info-Debug.plist 2>/dev/null || true
             # Diagnostics (do not print the key)
-            python3 - <<'PY'
-import plistlib
-from pathlib import Path
-def summarize(p):
-    d = plistlib.loads(Path(p).read_bytes())
-    k = (d.get("GMSApiKey") or "").strip()
-    print(f"[Diag] {p} GMSApiKey_present={bool(k)} len={len(k)} startsWithAIza={k.startswith('AIza')} placeholder={k.startswith('YOUR_GOOGLE_MAP')}")
-summarize("ios/Runner/Info.plist")
-summarize("ios/Runner/Info-Debug.plist")
-PY
+            python3 -c 'import plistlib; from pathlib import Path; \
+def summarize(p): \
+  d = plistlib.loads(Path(p).read_bytes()); \
+  k = (d.get("GMSApiKey") or "").strip(); \
+  print(f"[Diag] {p} GMSApiKey_present={bool(k)} len={len(k)} startsWithAIza={k.startswith(\"AIza\")} placeholder={k.startswith(\"YOUR_GOOGLE_MAP\")}"); \
+summarize("ios/Runner/Info.plist"); \
+summarize("ios/Runner/Info-Debug.plist")'
           else
             echo "IOS_GOOGLE_MAPS_API_KEY not set; maps will fail/blank on iOS builds."
           fi
