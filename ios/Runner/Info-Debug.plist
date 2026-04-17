@@ -64,7 +64,7 @@
 	<string>Microphone access is needed for video capture when adding listings.</string>
 	<!-- Same as Info.plist: Debug builds use this file (INFOPLIST_FILE), not Info.plist. -->
 	<key>GMSApiKey</key>
-	<string>AIzaSyCmjFWMGloWg2sz07OCRC8_7p-Mx8kgS7c</string>
+	<string>YOUR_GOOGLE_MAPS_IOS_KEY</string>
 
 	<!-- Debug only: allow HTTP to local dev backends on LAN/emulator. -->
 	<key>NSAppTransportSecurity</key>
