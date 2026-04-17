@@ -9,6 +9,11 @@ const _channel = MethodChannel('com.example.car_listing_app/google_maps_config')
 /// after the first frame, and caching false would show the fallback forever until restart.
 bool _iosSdkConfiguredPositiveCache = false;
 
+/// Clears the positive cache so the next probe hits the native channel again (e.g. after app resume).
+void resetIosGoogleMapsSdkConfiguredCache() {
+  _iosSdkConfiguredPositiveCache = false;
+}
+
 bool _coerceChannelBool(dynamic v) {
   if (v == true) return true;
   if (v == false || v == null) return false;

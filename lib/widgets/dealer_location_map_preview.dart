@@ -7,7 +7,7 @@ import 'package:google_maps_flutter/google_maps_flutter.dart';
 import '../shared/maps/ios_google_maps_config.dart';
 
 /// Read-only mini map with a transparent tap layer to open external maps.
-class DealerLocationMapPreview extends StatelessWidget {
+class DealerLocationMapPreview extends StatefulWidget {
   const DealerLocationMapPreview({
     super.key,
     required this.latitude,
@@ -21,15 +21,43 @@ class DealerLocationMapPreview extends StatelessWidget {
   final VoidCallback onOpenInGoogleMaps;
   final double height;
 
+  @override
+  State<DealerLocationMapPreview> createState() => _DealerLocationMapPreviewState();
+}
+
+class _DealerLocationMapPreviewState extends State<DealerLocationMapPreview>
+    with WidgetsBindingObserver {
+  int _iosProbeGeneration = 0;
+
+  @override
+  void initState() {
+    super.initState();
+    WidgetsBinding.instance.addObserver(this);
+  }
+
+  @override
+  void dispose() {
+    WidgetsBinding.instance.removeObserver(this);
+    super.dispose();
+  }
+
+  @override
+  void didChangeAppLifecycleState(AppLifecycleState state) {
+    if (state == AppLifecycleState.resumed && Platform.isIOS) {
+      resetIosGoogleMapsSdkConfiguredCache();
+      setState(() => _iosProbeGeneration++);
+    }
+  }
+
   Widget _fallbackNoSdk(BuildContext context) {
     return Material(
       color: Theme.of(context).colorScheme.surfaceContainerHighest,
       borderRadius: BorderRadius.circular(12),
       child: InkWell(
         borderRadius: BorderRadius.circular(12),
-        onTap: onOpenInGoogleMaps,
+        onTap: widget.onOpenInGoogleMaps,
         child: SizedBox(
-          height: height,
+          height: widget.height,
           width: double.infinity,
           child: Center(
             child: Column(
@@ -44,15 +72,15 @@ class DealerLocationMapPreview extends StatelessWidget {
                 const Text('Open in Google Maps'),
                 const SizedBox(height: 4),
                 Text(
-                  '${latitude.toStringAsFixed(5)}, ${longitude.toStringAsFixed(5)}',
+                  '${widget.latitude.toStringAsFixed(5)}, ${widget.longitude.toStringAsFixed(5)}',
                   style: Theme.of(context).textTheme.bodySmall,
                 ),
                 const SizedBox(height: 8),
                 Padding(
                   padding: const EdgeInsets.symmetric(horizontal: 16),
                   child: Text(
-                    'Add your iOS Maps key to GMSApiKey in Info-Debug.plist '
-                    '(Debug runs) and Info.plist (Release). Then rebuild.',
+                    'If the map does not load: fully quit the app, run flutter clean, '
+                    'rebuild, and ensure GMSApiKey is set in Info-Debug.plist (Debug).',
                     textAlign: TextAlign.center,
                     style: Theme.of(context).textTheme.bodySmall,
                   ),
@@ -66,13 +94,13 @@ class DealerLocationMapPreview extends StatelessWidget {
   }
 
   Widget _googleMapStack(BuildContext context) {
-    final target = LatLng(latitude, longitude);
+    final target = LatLng(widget.latitude, widget.longitude);
     final lite = !kIsWeb && Platform.isAndroid;
 
     return ClipRRect(
       borderRadius: BorderRadius.circular(12),
       child: SizedBox(
-        height: height,
+        height: widget.height,
         width: double.infinity,
         child: Stack(
           fit: StackFit.expand,
@@ -97,7 +125,7 @@ class DealerLocationMapPreview extends StatelessWidget {
             Material(
               color: Colors.black.withOpacity(0.03),
               child: InkWell(
-                onTap: onOpenInGoogleMaps,
+                onTap: widget.onOpenInGoogleMaps,
                 child: const Center(
                   child: DecoratedBox(
                     decoration: BoxDecoration(
@@ -133,11 +161,12 @@ class DealerLocationMapPreview extends StatelessWidget {
 
     if (Platform.isIOS) {
       return FutureBuilder<bool>(
+        key: ValueKey<int>(_iosProbeGeneration),
         future: isIosGoogleMapsSdkConfigured(),
         builder: (context, snapshot) {
           if (snapshot.connectionState != ConnectionState.done) {
             return SizedBox(
-              height: height,
+              height: widget.height,
               child: const Center(child: CircularProgressIndicator()),
             );
           }
