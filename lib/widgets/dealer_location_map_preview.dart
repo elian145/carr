@@ -51,7 +51,8 @@ class DealerLocationMapPreview extends StatelessWidget {
                 Padding(
                   padding: const EdgeInsets.symmetric(horizontal: 16),
                   child: Text(
-                    'Add a valid GMSApiKey in Info.plist to show the map preview here.',
+                    'Add your iOS Maps key to GMSApiKey in Info-Debug.plist '
+                    '(Debug runs) and Info.plist (Release). Then rebuild.',
                     textAlign: TextAlign.center,
                     style: Theme.of(context).textTheme.bodySmall,
                   ),
