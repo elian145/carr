@@ -15,14 +15,48 @@ import GoogleMaps
        let options = FirebaseOptions(contentsOfFile: filePath) {
       FirebaseApp.configure(options: options)
     }
-    // Google Maps SDK (same API key project as Android is fine; iOS key restrictions differ).
-    if let raw = Bundle.main.object(forInfoDictionaryKey: "GMSApiKey") as? String {
-      let key = raw.trimmingCharacters(in: .whitespacesAndNewlines)
-      if !key.isEmpty && !key.hasPrefix("YOUR_GOOGLE_MAPS") {
-        GMSServices.provideAPIKey(key)
+
+    // Google Maps iOS SDK: must call provideAPIKey before any GMSMapView is created.
+    // If the key is missing or still a placeholder, skip initialization — Flutter will
+    // avoid embedding GoogleMap (otherwise the process is killed).
+    let googleMapsApiKeyRaw = Bundle.main.object(forInfoDictionaryKey: "GMSApiKey") as? String ?? ""
+    let googleMapsApiKey = googleMapsApiKeyRaw.trimmingCharacters(in: .whitespacesAndNewlines)
+    let iosMapsSdkConfigured =
+      googleMapsApiKey.count >= 30 &&
+      !googleMapsApiKey.uppercased().hasPrefix("YOUR_GOOGLE_MAP")
+
+    if iosMapsSdkConfigured {
+      GMSServices.provideAPIKey(googleMapsApiKey)
+    }
+
+    GeneratedPluginRegistrant.register(with: self)
+    let launched = super.application(application, didFinishLaunchingWithOptions: launchOptions)
+
+    func registerMapsConfigChannel(on controller: FlutterViewController) {
+      let channel = FlutterMethodChannel(
+        name: "com.example.car_listing_app/google_maps_config",
+        binaryMessenger: controller.binaryMessenger)
+      channel.setMethodCallHandler { call, result in
+        if call.method == "isIosGoogleMapsSdkConfigured" {
+          result(iosMapsSdkConfigured)
+        } else {
+          result(FlutterMethodNotImplemented)
+        }
       }
     }
-    GeneratedPluginRegistrant.register(with: self)
-    return super.application(application, didFinishLaunchingWithOptions: launchOptions)
+
+    if let controller = window?.rootViewController as? FlutterViewController {
+      registerMapsConfigChannel(on: controller)
+    } else {
+      DispatchQueue.main.async { [weak self] in
+        guard let self = self,
+              let controller = self.window?.rootViewController as? FlutterViewController else {
+          return
+        }
+        registerMapsConfigChannel(on: controller)
+      }
+    }
+
+    return launched
   }
 }

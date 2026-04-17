@@ -4,6 +4,8 @@ import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:google_maps_flutter/google_maps_flutter.dart';
 
+import '../shared/maps/ios_google_maps_config.dart';
+
 /// Read-only mini map with a transparent tap layer to open external maps.
 class DealerLocationMapPreview extends StatelessWidget {
   const DealerLocationMapPreview({
@@ -19,42 +21,50 @@ class DealerLocationMapPreview extends StatelessWidget {
   final VoidCallback onOpenInGoogleMaps;
   final double height;
 
-  @override
-  Widget build(BuildContext context) {
-    if (kIsWeb) {
-      return Material(
-        color: Theme.of(context).colorScheme.surfaceContainerHighest,
+  Widget _fallbackNoSdk(BuildContext context) {
+    return Material(
+      color: Theme.of(context).colorScheme.surfaceContainerHighest,
+      borderRadius: BorderRadius.circular(12),
+      child: InkWell(
         borderRadius: BorderRadius.circular(12),
-        child: InkWell(
-          borderRadius: BorderRadius.circular(12),
-          onTap: onOpenInGoogleMaps,
-          child: SizedBox(
-            height: height,
-            width: double.infinity,
-            child: Center(
-              child: Column(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  Icon(
-                    Icons.map_outlined,
-                    size: 40,
-                    color: Theme.of(context).colorScheme.primary,
-                  ),
-                  const SizedBox(height: 8),
-                  const Text('Open in Google Maps'),
-                  const SizedBox(height: 4),
-                  Text(
-                    '${latitude.toStringAsFixed(5)}, ${longitude.toStringAsFixed(5)}',
+        onTap: onOpenInGoogleMaps,
+        child: SizedBox(
+          height: height,
+          width: double.infinity,
+          child: Center(
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Icon(
+                  Icons.map_outlined,
+                  size: 40,
+                  color: Theme.of(context).colorScheme.primary,
+                ),
+                const SizedBox(height: 8),
+                const Text('Open in Google Maps'),
+                const SizedBox(height: 4),
+                Text(
+                  '${latitude.toStringAsFixed(5)}, ${longitude.toStringAsFixed(5)}',
+                  style: Theme.of(context).textTheme.bodySmall,
+                ),
+                const SizedBox(height: 8),
+                Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: 16),
+                  child: Text(
+                    'Add a valid GMSApiKey in Info.plist to show the map preview here.',
+                    textAlign: TextAlign.center,
                     style: Theme.of(context).textTheme.bodySmall,
                   ),
-                ],
-              ),
+                ),
+              ],
             ),
           ),
         ),
-      );
-    }
+      ),
+    );
+  }
 
+  Widget _googleMapStack(BuildContext context) {
     final target = LatLng(latitude, longitude);
     final lite = !kIsWeb && Platform.isAndroid;
 
@@ -112,5 +122,32 @@ class DealerLocationMapPreview extends StatelessWidget {
         ),
       ),
     );
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    if (kIsWeb) {
+      return _fallbackNoSdk(context);
+    }
+
+    if (Platform.isIOS) {
+      return FutureBuilder<bool>(
+        future: isIosGoogleMapsSdkConfigured(),
+        builder: (context, snapshot) {
+          if (snapshot.connectionState != ConnectionState.done) {
+            return SizedBox(
+              height: height,
+              child: const Center(child: CircularProgressIndicator()),
+            );
+          }
+          if (snapshot.data != true) {
+            return _fallbackNoSdk(context);
+          }
+          return _googleMapStack(context);
+        },
+      );
+    }
+
+    return _googleMapStack(context);
   }
 }
