@@ -8,6 +8,13 @@ plugins {
 
 import java.util.Properties
 
+val localProperties = Properties()
+val localPropertiesFile = rootProject.file("local.properties")
+if (localPropertiesFile.exists()) {
+    localPropertiesFile.inputStream().use { localProperties.load(it) }
+}
+val googleMapsApiKey = localProperties.getProperty("GOOGLE_MAPS_API_KEY")?.trim().orEmpty()
+
 android {
     namespace = "com.example.car_listing_app"
     compileSdk = flutter.compileSdkVersion
@@ -32,6 +39,7 @@ android {
         targetSdk = flutter.targetSdkVersion
         versionCode = flutter.versionCode
         versionName = flutter.versionName
+        manifestPlaceholders["GOOGLE_MAPS_API_KEY"] = googleMapsApiKey
     }
 
     // Signing setup:

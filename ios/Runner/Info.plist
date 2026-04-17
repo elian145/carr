@@ -62,6 +62,8 @@
 	<string>We need permission to save car photos.</string>
 	<key>NSMicrophoneUsageDescription</key>
 	<string>Microphone access is needed for video capture when adding listings.</string>
+	<key>GMSApiKey</key>
+	<string>YOUR_GOOGLE_MAPS_IOS_KEY</string>
 	<!-- Release/Profile: ATS default (HTTPS only). Debug uses Info-Debug.plist. -->
 	<key>NSAppTransportSecurity</key>
 	<dict>

@@ -356,6 +356,23 @@ def update_dealer_profile():
             v = (data.get("dealership_description") or "").strip()
             current_user.dealership_description = v or None
 
+        if "dealership_latitude" in data and "dealership_longitude" in data:
+            raw_lat = data.get("dealership_latitude")
+            raw_lng = data.get("dealership_longitude")
+            if raw_lat is None and raw_lng is None:
+                current_user.dealership_latitude = None
+                current_user.dealership_longitude = None
+            else:
+                try:
+                    lat = float(raw_lat)
+                    lng = float(raw_lng)
+                except (TypeError, ValueError):
+                    return jsonify({"message": "Invalid dealership map coordinates"}), 400
+                if not (-90.0 <= lat <= 90.0) or not (-180.0 <= lng <= 180.0):
+                    return jsonify({"message": "Map coordinates are out of range"}), 400
+                current_user.dealership_latitude = lat
+                current_user.dealership_longitude = lng
+
         current_user.updated_at = utcnow()
         db.session.commit()
         log_user_action(current_user, "dealer_profile_update")

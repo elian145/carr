@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:provider/provider.dart';
 import 'package:url_launcher/url_launcher.dart';
 
@@ -6,8 +7,11 @@ import '../legacy/main_legacy.dart'
     show buildGlobalCarCard, mapListingToGlobalCarCardData;
 import '../services/auth_service.dart';
 import '../services/api_service.dart';
+import '../shared/maps/dealer_map_coords.dart';
+import '../shared/maps/open_google_maps.dart';
 import '../shared/media/media_url.dart';
 import '../theme_provider.dart';
+import '../widgets/dealer_location_map_preview.dart';
 import 'edit_dealer_page.dart';
 
 class DealerProfilePage extends StatefulWidget {
@@ -160,6 +164,29 @@ class _DealerProfilePageState extends State<DealerProfilePage> {
     }
   }
 
+  void _copyToClipboard(String text, String snackbarMessage) {
+    final t = text.trim();
+    if (t.isEmpty) return;
+    Clipboard.setData(ClipboardData(text: t));
+    if (!mounted) return;
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(content: Text(snackbarMessage)),
+    );
+  }
+
+  Future<void> _openDealerOnGoogleMaps(
+    double lat,
+    double lng,
+    String label,
+  ) async {
+    final ok = await openGoogleMapsAt(lat, lng, label: label);
+    if (!ok && mounted) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Could not open Google Maps')),
+      );
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     final auth = context.watch<AuthService>();
@@ -179,6 +206,8 @@ class _DealerProfilePageState extends State<DealerProfilePage> {
     final location = (dealer?['dealership_location'] ?? dealer?['location'] ?? '')
         .toString()
         .trim();
+    final double? mapLat = parseDealerCoord(dealer?['dealership_latitude']);
+    final double? mapLng = parseDealerCoord(dealer?['dealership_longitude']);
     final phone = (dealer?['dealership_phone'] ?? dealer?['phone_number'] ?? '')
         .toString()
         .trim();
@@ -295,18 +324,39 @@ class _DealerProfilePageState extends State<DealerProfilePage> {
                             ],
                             const SizedBox(height: 12),
                             _infoRow(Icons.location_on_outlined, 'Location', location),
+                            if (mapLat != null &&
+                                mapLng != null &&
+                                isValidDealerLatLng(mapLat, mapLng)) ...[
+                              const SizedBox(height: 10),
+                              DealerLocationMapPreview(
+                                latitude: mapLat,
+                                longitude: mapLng,
+                                onOpenInGoogleMaps: () => _openDealerOnGoogleMaps(
+                                  mapLat,
+                                  mapLng,
+                                  displayName,
+                                ),
+                              ),
+                            ],
                             if (email.isNotEmpty)
                               Padding(
                                 padding: const EdgeInsets.only(top: 8),
-                                child: SizedBox(
-                                  width: double.infinity,
-                                  child: OutlinedButton.icon(
-                                    onPressed: () => _emailDealer(email),
-                                    icon: const Icon(Icons.email_outlined),
-                                    label: Text(
-                                      email,
-                                      maxLines: 1,
-                                      overflow: TextOverflow.ellipsis,
+                                child: Tooltip(
+                                  message: 'Tap to send email • Hold to copy',
+                                  child: SizedBox(
+                                    width: double.infinity,
+                                    child: OutlinedButton.icon(
+                                      onPressed: () => _emailDealer(email),
+                                      onLongPress: () => _copyToClipboard(
+                                        email,
+                                        'Email copied to clipboard',
+                                      ),
+                                      icon: const Icon(Icons.email_outlined),
+                                      label: Text(
+                                        email,
+                                        maxLines: 1,
+                                        overflow: TextOverflow.ellipsis,
+                                      ),
                                     ),
                                   ),
                                 ),
@@ -314,15 +364,22 @@ class _DealerProfilePageState extends State<DealerProfilePage> {
                             if (phone.isNotEmpty)
                               Padding(
                                 padding: const EdgeInsets.only(top: 8),
-                                child: SizedBox(
-                                  width: double.infinity,
-                                  child: FilledButton.icon(
-                                    onPressed: () => _callDealer(phone),
-                                    icon: const Icon(Icons.phone_outlined),
-                                    label: Text(
-                                      phone,
-                                      maxLines: 1,
-                                      overflow: TextOverflow.ellipsis,
+                                child: Tooltip(
+                                  message: 'Tap to call • Hold to copy',
+                                  child: SizedBox(
+                                    width: double.infinity,
+                                    child: FilledButton.icon(
+                                      onPressed: () => _callDealer(phone),
+                                      onLongPress: () => _copyToClipboard(
+                                        phone,
+                                        'Phone number copied to clipboard',
+                                      ),
+                                      icon: const Icon(Icons.phone_outlined),
+                                      label: Text(
+                                        phone,
+                                        maxLines: 1,
+                                        overflow: TextOverflow.ellipsis,
+                                      ),
                                     ),
                                   ),
                                 ),

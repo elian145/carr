@@ -53,6 +53,8 @@ class User(db.Model):
     dealership_location = db.Column(db.String(200), nullable=True)
     dealership_description = db.Column(db.Text, nullable=True)
     dealership_cover_picture = db.Column(db.String(200), nullable=True)
+    dealership_latitude = db.Column(db.Float, nullable=True)
+    dealership_longitude = db.Column(db.Float, nullable=True)
     created_at = db.Column(db.DateTime, default=utcnow)
     updated_at = db.Column(db.DateTime, default=utcnow, onupdate=utcnow)
     last_login = db.Column(db.DateTime, nullable=True)
@@ -119,6 +121,8 @@ class User(db.Model):
             'dealership_location': self.dealership_location,
             'dealership_description': self.dealership_description,
             'dealership_cover_picture': self.dealership_cover_picture,
+            'dealership_latitude': self.dealership_latitude,
+            'dealership_longitude': self.dealership_longitude,
             'created_at': self.created_at.isoformat() if self.created_at else None,
             'last_login': self.last_login.isoformat() if self.last_login else None
         }

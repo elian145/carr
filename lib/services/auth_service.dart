@@ -288,7 +288,7 @@ class AuthService extends ChangeNotifier {
     try {
       final response = await ApiService.updateDealerProfile(dealerData);
       if (response['user'] != null && response['user'] is Map<String, dynamic>) {
-        _currentUser = response['user'];
+        _currentUser = Map<String, dynamic>.from(response['user'] as Map);
         notifyListeners();
       }
       return response;
