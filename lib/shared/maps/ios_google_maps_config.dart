@@ -5,28 +5,42 @@ import 'package:flutter/services.dart';
 
 const _channel = MethodChannel('com.example.car_listing_app/google_maps_config');
 
-bool? _iosSdkConfiguredCache;
+/// Only cache a positive result. Never cache `false`: the native channel may register
+/// after the first frame, and caching false would show the fallback forever until restart.
+bool _iosSdkConfiguredPositiveCache = false;
+
+bool _coerceChannelBool(dynamic v) {
+  if (v == true) return true;
+  if (v == false || v == null) return false;
+  if (v is num) return v != 0;
+  final s = v.toString().toLowerCase();
+  return s == 'true' || s == '1' || s == 'yes';
+}
 
 /// Whether the native iOS Maps SDK was initialized with a real-looking API key.
 /// When false, do not embed [GoogleMap] on iOS (it hard-crashes without [GMSServices provideAPIKey]).
-Future<bool> isIosGoogleMapsSdkConfigured() async {
+Future<bool> isIosGoogleMapsSdkConfigured({bool forceRefresh = false}) async {
   if (kIsWeb || !Platform.isIOS) return true;
-  final cached = _iosSdkConfiguredCache;
-  if (cached != null) return cached;
-  // Channel is registered after the Flutter engine attaches; retry briefly to avoid a false negative.
-  for (var attempt = 0; attempt < 10; attempt++) {
+  if (forceRefresh) {
+    _iosSdkConfiguredPositiveCache = false;
+  }
+  if (_iosSdkConfiguredPositiveCache) return true;
+
+  // Channel is registered after the Flutter engine attaches; retry to avoid a false negative.
+  for (var attempt = 0; attempt < 25; attempt++) {
     try {
-      final dynamic v = await _channel.invokeMethod('isIosGoogleMapsSdkConfigured');
-      final ok = v == true;
-      _iosSdkConfiguredCache = ok;
+      final dynamic v = await _channel.invokeMethod<dynamic>('isIosGoogleMapsSdkConfigured');
+      final ok = _coerceChannelBool(v);
+      if (ok) {
+        _iosSdkConfiguredPositiveCache = true;
+      }
       return ok;
     } on MissingPluginException {
-      await Future<void>.delayed(const Duration(milliseconds: 80));
+      await Future<void>.delayed(const Duration(milliseconds: 100));
     } catch (_) {
-      _iosSdkConfiguredCache = false;
-      return false;
+      // Transient errors: do not cache failure; caller can retry (e.g. new FutureBuilder).
+      await Future<void>.delayed(const Duration(milliseconds: 100));
     }
   }
-  _iosSdkConfiguredCache = false;
   return false;
 }

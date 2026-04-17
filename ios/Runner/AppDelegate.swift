@@ -38,7 +38,8 @@ import GoogleMaps
         binaryMessenger: controller.binaryMessenger)
       channel.setMethodCallHandler { call, result in
         if call.method == "isIosGoogleMapsSdkConfigured" {
-          result(iosMapsSdkConfigured)
+          // Use NSNumber so the Flutter standard codec always yields a bool on the Dart side.
+          result(NSNumber(value: iosMapsSdkConfigured))
         } else {
           result(FlutterMethodNotImplemented)
         }
@@ -55,6 +56,14 @@ import GoogleMaps
         }
         registerMapsConfigChannel(on: controller)
       }
+    }
+    // Window can attach slightly after super.application; register again so Dart never misses the channel.
+    DispatchQueue.main.asyncAfter(deadline: .now() + 0.25) { [weak self] in
+      guard let self = self,
+            let controller = self.window?.rootViewController as? FlutterViewController else {
+        return
+      }
+      registerMapsConfigChannel(on: controller)
     }
 
     return launched
