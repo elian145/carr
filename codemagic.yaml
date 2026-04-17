@@ -8,6 +8,8 @@ workflows:
       flutter: stable
       xcode: latest
       cocoapods: default
+      groups:
+        - a
       vars:
         # IMPORTANT: Do NOT include /api in API_BASE. The app adds /api itself.
         # Render server: https://carr-5hrm.onrender.com
@@ -119,6 +121,8 @@ workflows:
     instance_type: linux_x2
     environment:
       flutter: stable
+      groups:
+        - a
       vars:
         FLAVOR: dev
         # Debug builds may use HTTP for local development.
@@ -160,6 +164,8 @@ workflows:
     instance_type: linux_x2
     environment:
       flutter: stable
+      groups:
+        - a
       vars:
         FLAVOR: prod
         # IMPORTANT: Do NOT include /api in API_BASE. The app adds /api itself.
