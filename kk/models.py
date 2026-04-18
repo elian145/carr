@@ -55,6 +55,8 @@ class User(db.Model):
     dealership_cover_picture = db.Column(db.String(200), nullable=True)
     dealership_latitude = db.Column(db.Float, nullable=True)
     dealership_longitude = db.Column(db.Float, nullable=True)
+    # JSON map: { "mon": "9:00 AM - 6:00 PM", ... }
+    dealership_opening_hours = db.Column(db.JSON, nullable=True)
     created_at = db.Column(db.DateTime, default=utcnow)
     updated_at = db.Column(db.DateTime, default=utcnow, onupdate=utcnow)
     last_login = db.Column(db.DateTime, nullable=True)
@@ -123,6 +125,7 @@ class User(db.Model):
             'dealership_cover_picture': self.dealership_cover_picture,
             'dealership_latitude': self.dealership_latitude,
             'dealership_longitude': self.dealership_longitude,
+            'dealership_opening_hours': self.dealership_opening_hours,
             'created_at': self.created_at.isoformat() if self.created_at else None,
             'last_login': self.last_login.isoformat() if self.last_login else None
         }

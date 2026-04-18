@@ -1,3 +1,5 @@
+import 'dart:convert';
+
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:provider/provider.dart';
@@ -186,6 +188,152 @@ class _DealerProfilePageState extends State<DealerProfilePage> {
     }
   }
 
+  Map<String, String> _openingHoursFromAnySource(
+    Map<String, dynamic>? dealer,
+    List<Map<String, dynamic>> listings,
+    Map<String, dynamic>? currentUser,
+    bool isDealerOwner,
+  ) {
+    dynamic raw;
+    if (dealer != null) {
+      raw = dealer['dealership_opening_hours'] ??
+          dealer['opening_hours'] ??
+          dealer['dealership_hours'];
+    }
+    // Fallback: sometimes the seller blob inside listings has more fields.
+    if (raw is! Map && listings.isNotEmpty) {
+      final seller = listings.first['seller'];
+      if (seller is Map) {
+        raw = seller['dealership_opening_hours'] ??
+            seller['opening_hours'] ??
+            seller['dealership_hours'];
+      }
+    }
+    // Fallback for owner: use locally refreshed /auth/me payload.
+    if (raw is! Map && isDealerOwner && currentUser != null) {
+      raw = currentUser['dealership_opening_hours'] ??
+          currentUser['opening_hours'] ??
+          currentUser['dealership_hours'];
+    }
+    if (raw is String) {
+      try {
+        final decoded = jsonDecode(raw);
+        if (decoded is Map) raw = decoded;
+      } catch (_) {}
+    }
+    if (raw is! Map) return const {};
+
+    final m = <String, String>{};
+    for (final entry in raw.entries) {
+      final key = (entry.key ?? '').toString().trim().toLowerCase();
+      final val = (entry.value ?? '').toString().trim();
+      if (key.isEmpty) continue;
+      if (val.isEmpty) continue;
+      m[key] = val;
+    }
+    return m;
+  }
+
+  Widget _openingHoursTable(Map<String, String> hours) {
+    const rows = <({String label, String key})>[
+      (label: 'Monday', key: 'mon'),
+      (label: 'Tuesday', key: 'tue'),
+      (label: 'Wednesday', key: 'wed'),
+      (label: 'Thursday', key: 'thu'),
+      (label: 'Friday', key: 'fri'),
+      (label: 'Saturday', key: 'sat'),
+      (label: 'Sunday', key: 'sun'),
+    ];
+
+    final allEmpty = rows.every((r) => (hours[r.key] ?? '').trim().isEmpty);
+    final borderColor = Theme.of(context)
+        .colorScheme
+        .outline
+        .withValues(alpha: Theme.of(context).brightness == Brightness.light ? 0.35 : 0.55);
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        const SizedBox(height: 12),
+        Text(
+          'Opening hours',
+          style: Theme.of(context)
+              .textTheme
+              .titleSmall
+              ?.copyWith(fontWeight: FontWeight.w700),
+        ),
+        const SizedBox(height: 8),
+        Container(
+          width: double.infinity,
+          decoration: BoxDecoration(
+            border: Border.all(color: borderColor),
+            borderRadius: BorderRadius.circular(12),
+          ),
+          child: ClipRRect(
+            borderRadius: BorderRadius.circular(12),
+            child: Table(
+              columnWidths: const {
+                0: FlexColumnWidth(1),
+                1: FlexColumnWidth(2),
+              },
+              defaultVerticalAlignment: TableCellVerticalAlignment.middle,
+              border: TableBorder(
+                horizontalInside: BorderSide(color: borderColor, width: 1),
+              ),
+              children: [
+                TableRow(
+                  decoration: BoxDecoration(
+                    color: Theme.of(context)
+                        .colorScheme
+                        .surfaceContainerHighest
+                        .withValues(alpha: 0.55),
+                  ),
+                  children: const [
+                    Padding(
+                      padding: EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+                      child: Text(
+                        'Day',
+                        style: TextStyle(fontWeight: FontWeight.w700),
+                      ),
+                    ),
+                    Padding(
+                      padding: EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+                      child: Text(
+                        'Hours',
+                        style: TextStyle(fontWeight: FontWeight.w700),
+                      ),
+                    ),
+                  ],
+                ),
+                for (final r in rows)
+                  TableRow(
+                    children: [
+                      Padding(
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 12,
+                          vertical: 10,
+                        ),
+                        child: Text(r.label),
+                      ),
+                      Padding(
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 12,
+                          vertical: 10,
+                        ),
+                        child: Text(
+                          allEmpty ? 'Not provided' : (hours[r.key] ?? '—'),
+                        ),
+                      ),
+                    ],
+                  ),
+              ],
+            ),
+          ),
+        ),
+      ],
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     final auth = context.watch<AuthService>();
@@ -218,6 +366,12 @@ class _DealerProfilePageState extends State<DealerProfilePage> {
         (auth.currentUser?['id'] ?? '').toString().trim();
     final isDealerOwner =
         auth.isAuthenticated && currentUserPublicId == widget.dealerPublicId;
+    final openingHours = _openingHoursFromAnySource(
+      dealer,
+      _listings,
+      auth.currentUser,
+      isDealerOwner,
+    );
     final isLightShell = Theme.of(context).brightness == Brightness.light;
 
     return Scaffold(
@@ -322,7 +476,34 @@ class _DealerProfilePageState extends State<DealerProfilePage> {
                               ),
                             ],
                             const SizedBox(height: 12),
-                            _infoRow(Icons.location_on_outlined, 'Location', location),
+                            if (phone.isNotEmpty)
+                              Padding(
+                                padding: const EdgeInsets.only(top: 8),
+                                child: Tooltip(
+                                  message: 'Tap to call • Hold to copy',
+                                  child: SizedBox(
+                                    width: double.infinity,
+                                    child: FilledButton.icon(
+                                      onPressed: () => _callDealer(phone),
+                                      onLongPress: () => _copyToClipboard(
+                                        phone,
+                                        'Phone number copied to clipboard',
+                                      ),
+                                      icon: const Icon(Icons.phone_outlined),
+                                      label: Text(
+                                        phone,
+                                        maxLines: 1,
+                                        overflow: TextOverflow.ellipsis,
+                                      ),
+                                    ),
+                                  ),
+                                ),
+                              ),
+                            _infoRow(
+                              Icons.location_on_outlined,
+                              'Location',
+                              location,
+                            ),
                             if (mapLat != null &&
                                 mapLng != null &&
                                 isValidDealerLatLng(mapLat, mapLng)) ...[
@@ -359,29 +540,7 @@ class _DealerProfilePageState extends State<DealerProfilePage> {
                                   ),
                                 ),
                               ),
-                            if (phone.isNotEmpty)
-                              Padding(
-                                padding: const EdgeInsets.only(top: 8),
-                                child: Tooltip(
-                                  message: 'Tap to call • Hold to copy',
-                                  child: SizedBox(
-                                    width: double.infinity,
-                                    child: FilledButton.icon(
-                                      onPressed: () => _callDealer(phone),
-                                      onLongPress: () => _copyToClipboard(
-                                        phone,
-                                        'Phone number copied to clipboard',
-                                      ),
-                                      icon: const Icon(Icons.phone_outlined),
-                                      label: Text(
-                                        phone,
-                                        maxLines: 1,
-                                        overflow: TextOverflow.ellipsis,
-                                      ),
-                                    ),
-                                  ),
-                                ),
-                              ),
+                            _openingHoursTable(openingHours),
                             if (description.isNotEmpty) ...[
                               const SizedBox(height: 12),
                               Text(

@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import json
 import os
 from datetime import datetime
 import secrets
@@ -355,6 +356,35 @@ def update_dealer_profile():
         if "dealership_description" in data:
             v = (data.get("dealership_description") or "").strip()
             current_user.dealership_description = v or None
+
+        if "dealership_opening_hours" in data or "opening_hours" in data:
+            raw = data.get("dealership_opening_hours", None)
+            if raw is None and "opening_hours" in data:
+                raw = data.get("opening_hours")
+            if raw is None:
+                current_user.dealership_opening_hours = None
+            elif isinstance(raw, str):
+                # Accept JSON-encoded strings for compatibility with some clients/dialects.
+                try:
+                    parsed = json.loads(raw)
+                except Exception:
+                    parsed = None
+                if not isinstance(parsed, dict):
+                    return jsonify({"message": "Invalid opening hours format"}), 400
+                raw = parsed
+            elif not isinstance(raw, dict):
+                return jsonify({"message": "Invalid opening hours format"}), 400
+            else:
+                allowed = {"mon", "tue", "wed", "thu", "fri", "sat", "sun"}
+                cleaned: dict[str, str] = {}
+                for k, v in raw.items():
+                    key = (str(k) or "").strip().lower()
+                    if key not in allowed:
+                        continue
+                    val = ("" if v is None else str(v)).strip()
+                    if val:
+                        cleaned[key] = val
+                current_user.dealership_opening_hours = cleaned or None
 
         if "dealership_latitude" in data and "dealership_longitude" in data:
             raw_lat = data.get("dealership_latitude")
