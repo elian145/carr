@@ -177,9 +177,8 @@ class _DealerProfilePageState extends State<DealerProfilePage> {
   Future<void> _openDealerOnGoogleMaps(
     double lat,
     double lng,
-    String label,
   ) async {
-    final ok = await openGoogleMapsAt(lat, lng, label: label);
+    final ok = await openGoogleMapsAt(lat, lng);
     if (!ok && mounted) {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(content: Text('Could not open Google Maps')),
@@ -334,7 +333,6 @@ class _DealerProfilePageState extends State<DealerProfilePage> {
                                 onOpenInGoogleMaps: () => _openDealerOnGoogleMaps(
                                   mapLat,
                                   mapLng,
-                                  displayName,
                                 ),
                               ),
                             ],
