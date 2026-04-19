@@ -392,7 +392,8 @@ def update_dealer_profile():
                 pass
             current_user.dealership_phone = phones[0]
 
-        if "dealership_phone" in data:
+        # Legacy single-field update. Do NOT overwrite an explicit phones list.
+        if "dealership_phone" in data and "dealership_phones" not in data:
             v = (data.get("dealership_phone") or "").strip()
             if not v:
                 return jsonify({"message": "Dealership phone is required"}), 400
