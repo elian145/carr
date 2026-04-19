@@ -7497,7 +7497,7 @@ class _HomePageState extends State<HomePage> {
                                                               moreFiltersOnSurface,
                                                           fontWeight:
                                                               FontWeight.bold,
-                                                          fontSize: 16,
+                                                          fontSize: 18,
                                                         ),
                                                       ),
                                                       SizedBox(height: 12),
@@ -7932,7 +7932,7 @@ class _HomePageState extends State<HomePage> {
                                                               moreFiltersOnSurface,
                                                           fontWeight:
                                                               FontWeight.bold,
-                                                          fontSize: 16,
+                                                          fontSize: 18,
                                                         ),
                                                       ),
                                                       SizedBox(height: 12),
@@ -8371,7 +8371,7 @@ class _HomePageState extends State<HomePage> {
                                                               moreFiltersOnSurface,
                                                           fontWeight:
                                                               FontWeight.bold,
-                                                          fontSize: 16,
+                                                          fontSize: 18,
                                                         ),
                                                       ),
                                                       SizedBox(height: 12),
@@ -8834,6 +8834,7 @@ class _HomePageState extends State<HomePage> {
                                                           labelStyle: TextStyle(
                                                             color:
                                                                 moreFiltersOnSurface,
+                                                            fontSize: 16,
                                                           ),
                                                           border: OutlineInputBorder(
                                                             borderRadius:
@@ -8910,6 +8911,7 @@ class _HomePageState extends State<HomePage> {
                                                             labelStyle: TextStyle(
                                                               color:
                                                                   moreFiltersOnSurface,
+                                                              fontSize: 16,
                                                             ),
                                                             border: OutlineInputBorder(
                                                               borderRadius:
@@ -8985,6 +8987,7 @@ class _HomePageState extends State<HomePage> {
                                                           labelStyle: TextStyle(
                                                             color:
                                                                 moreFiltersOnSurface,
+                                                            fontSize: 16,
                                                           ),
                                                           border: OutlineInputBorder(
                                                             borderRadius:
@@ -9046,6 +9049,7 @@ class _HomePageState extends State<HomePage> {
                                                           labelStyle: TextStyle(
                                                             color:
                                                                 moreFiltersOnSurface,
+                                                            fontSize: 16,
                                                           ),
                                                           border: OutlineInputBorder(
                                                             borderRadius:
@@ -9117,6 +9121,7 @@ class _HomePageState extends State<HomePage> {
                                                           labelStyle: TextStyle(
                                                             color:
                                                                 moreFiltersOnSurface,
+                                                            fontSize: 16,
                                                           ),
                                                           border: OutlineInputBorder(
                                                             borderRadius:
@@ -9202,6 +9207,7 @@ class _HomePageState extends State<HomePage> {
                                                           labelStyle: TextStyle(
                                                             color:
                                                                 moreFiltersOnSurface,
+                                                            fontSize: 16,
                                                           ),
                                                           border: OutlineInputBorder(
                                                             borderRadius:
@@ -9576,6 +9582,7 @@ class _HomePageState extends State<HomePage> {
                                                           labelStyle: TextStyle(
                                                             color:
                                                                 moreFiltersOnSurface,
+                                                            fontSize: 16,
                                                           ),
                                                           border: OutlineInputBorder(
                                                             borderRadius:
@@ -9881,6 +9888,7 @@ class _HomePageState extends State<HomePage> {
                                                           labelStyle: TextStyle(
                                                             color:
                                                                 moreFiltersOnSurface,
+                                                            fontSize: 16,
                                                           ),
                                                           border: OutlineInputBorder(
                                                             borderRadius:
@@ -9953,6 +9961,7 @@ class _HomePageState extends State<HomePage> {
                                                           labelStyle: TextStyle(
                                                             color:
                                                                 moreFiltersOnSurface,
+                                                            fontSize: 16,
                                                           ),
                                                           border: OutlineInputBorder(
                                                             borderRadius:
@@ -10017,6 +10026,7 @@ class _HomePageState extends State<HomePage> {
                                                           labelStyle: TextStyle(
                                                             color:
                                                                 moreFiltersOnSurface,
+                                                            fontSize: 16,
                                                           ),
                                                           border: OutlineInputBorder(
                                                             borderRadius:
@@ -10090,6 +10100,7 @@ class _HomePageState extends State<HomePage> {
                                                           labelStyle: TextStyle(
                                                             color:
                                                                 moreFiltersOnSurface,
+                                                            fontSize: 16,
                                                           ),
                                                           border: OutlineInputBorder(
                                                             borderRadius:
@@ -10335,6 +10346,7 @@ class _HomePageState extends State<HomePage> {
                                                           labelStyle: TextStyle(
                                                             color:
                                                                 moreFiltersOnSurface,
+                                                            fontSize: 16,
                                                           ),
                                                           border: OutlineInputBorder(
                                                             borderRadius:

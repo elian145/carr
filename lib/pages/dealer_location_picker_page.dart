@@ -1,5 +1,6 @@
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
+import 'package:google_places_autocomplete/google_places_autocomplete.dart';
 import 'package:google_maps_flutter/google_maps_flutter.dart';
 
 import '../shared/maps/dealer_map_coords.dart';
@@ -24,6 +25,16 @@ class DealerLocationPickerPage extends StatefulWidget {
 
 class _DealerLocationPickerPageState extends State<DealerLocationPickerPage> {
   late LatLng _markerPosition;
+  GoogleMapController? _mapController;
+  final _searchController = TextEditingController();
+  final _searchFocusNode = FocusNode();
+  bool _searching = false;
+  GooglePlacesAutocomplete? _places;
+  List<Prediction> _predictions = const [];
+  bool _placesReady = false;
+  String? _placesInitError;
+  String _lastQuery = '';
+  String _lastExplicitSearchQuery = '';
 
   @override
   void initState() {
@@ -37,6 +48,72 @@ class _DealerLocationPickerPageState extends State<DealerLocationPickerPage> {
     } else {
       _markerPosition = _kDefaultMapCenter;
     }
+
+    _initPlaces();
+
+    _searchController.addListener(() {
+      final q = _searchController.text.trim();
+      if (q == _lastQuery) return;
+      _lastQuery = q;
+      if (!mounted) return;
+      if (q.isEmpty) {
+        setState(() => _predictions = const []);
+        return;
+      }
+      if (_placesReady) {
+        _places!.getPredictions(q);
+      } else {
+        // Still initializing (or failed): just clear stale results.
+        setState(() => _predictions = const []);
+      }
+    });
+  }
+
+  void _initPlaces() {
+    _places?.dispose();
+    _placesReady = false;
+    _placesInitError = null;
+    _predictions = const [];
+    _searching = false;
+
+    final places = GooglePlacesAutocomplete(
+      predictionsListener: (predictions) {
+        if (!mounted) return;
+        setState(() => _predictions = predictions);
+      },
+      loadingListener: (isLoading) {
+        if (!mounted) return;
+        setState(() => _searching = isLoading);
+      },
+    );
+    _places = places;
+
+    places.initialize().then((_) {
+      if (!mounted) return;
+      setState(() {
+        _placesReady = true;
+        _placesInitError = null;
+      });
+      final q = _searchController.text.trim();
+      if (q.isNotEmpty) {
+        places.getPredictions(q);
+      }
+    }).catchError((e) {
+      if (!mounted) return;
+      setState(() {
+        _placesReady = false;
+        _placesInitError = e.toString();
+      });
+    });
+  }
+
+  @override
+  void dispose() {
+    _mapController?.dispose();
+    _searchController.dispose();
+    _searchFocusNode.dispose();
+    _places?.dispose();
+    super.dispose();
   }
 
   Set<Marker> get _markers => {
@@ -49,9 +126,84 @@ class _DealerLocationPickerPageState extends State<DealerLocationPickerPage> {
       };
 
   Future<void> _onMapCreated(GoogleMapController c) async {
+    _mapController = c;
     await c.animateCamera(
       CameraUpdate.newLatLngZoom(_markerPosition, 15),
     );
+  }
+
+  Future<void> _searchPlace({bool openKeyboard = false}) async {
+    final query = _searchController.text.trim();
+    if (query.isEmpty) {
+      setState(() => _predictions = const []);
+      return;
+    }
+    if (openKeyboard) {
+      _searchFocusNode.requestFocus();
+    }
+    if (!_placesReady) {
+      if (!mounted) return;
+      final msg = _placesInitError == null
+          ? 'Search is still loading. Please try again in a moment.'
+          : 'Search unavailable: ${_placesInitError!}';
+      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(msg)));
+      return;
+    }
+    _lastExplicitSearchQuery = query;
+    _places!.getPredictions(query);
+
+    // If Places returns nothing (common when Places API isn't enabled or billing is off),
+    // show a helpful hint after a short delay.
+    Future<void>.delayed(const Duration(milliseconds: 1100)).then((_) {
+      if (!mounted) return;
+      if (_searchController.text.trim() != _lastExplicitSearchQuery) return;
+      if (_searching) return;
+      if (_predictions.isNotEmpty) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text(
+            'No results. If this keeps happening, enable the Places API for your key (and ensure billing / restrictions allow Places).',
+          ),
+          backgroundColor: Colors.orange,
+        ),
+      );
+    });
+  }
+
+  Future<void> _pickPrediction(Prediction p) async {
+    final placeId = p.placeId;
+    if (placeId == null || placeId.isEmpty) return;
+    if (!_placesReady) return;
+
+    setState(() => _searching = true);
+    try {
+      final details = await _places!.getPlaceDetails(placeId);
+      final lat = details?.location?.lat;
+      final lng = details?.location?.lng;
+      if (!mounted) return;
+      if (lat == null || lng == null) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Could not get place coordinates.')),
+        );
+        setState(() => _searching = false);
+        return;
+      }
+
+      final pos = LatLng(lat, lng);
+      setState(() {
+        _markerPosition = pos;
+        _predictions = const [];
+        _searching = false;
+      });
+      _searchFocusNode.unfocus();
+      _mapController?.animateCamera(CameraUpdate.newLatLngZoom(pos, 15));
+    } catch (e) {
+      if (!mounted) return;
+      setState(() => _searching = false);
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Search failed: $e')),
+      );
+    }
   }
 
   void _confirmFromMap() {
@@ -90,16 +242,161 @@ class _DealerLocationPickerPageState extends State<DealerLocationPickerPage> {
           ),
         ],
       ),
-      body: GoogleMap(
-        initialCameraPosition: CameraPosition(
-          target: _markerPosition,
-          zoom: 15,
-        ),
-        markers: _markers,
-        onMapCreated: _onMapCreated,
-        onTap: (p) => setState(() => _markerPosition = p),
-        myLocationButtonEnabled: false,
-        zoomControlsEnabled: true,
+      body: Stack(
+        children: [
+          GoogleMap(
+            initialCameraPosition: CameraPosition(
+              target: _markerPosition,
+              zoom: 15,
+            ),
+            markers: _markers,
+            onMapCreated: _onMapCreated,
+            onTap: (p) => setState(() => _markerPosition = p),
+            myLocationButtonEnabled: false,
+            zoomControlsEnabled: true,
+          ),
+          SafeArea(
+            child: Padding(
+              padding: const EdgeInsets.fromLTRB(12, 12, 12, 0),
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Material(
+                    elevation: 2,
+                    borderRadius: BorderRadius.circular(14),
+                    clipBehavior: Clip.antiAlias,
+                    color: Theme.of(context).colorScheme.surface,
+                    child: Padding(
+                      padding: const EdgeInsets.fromLTRB(12, 6, 12, 6),
+                      child: Row(
+                        children: [
+                          const Icon(Icons.search_outlined),
+                          const SizedBox(width: 10),
+                          Expanded(
+                            child: TextField(
+                              controller: _searchController,
+                              focusNode: _searchFocusNode,
+                              textInputAction: TextInputAction.search,
+                              onSubmitted: (_) => _searchPlace(),
+                              decoration: const InputDecoration(
+                                hintText: 'Search in Google Maps',
+                                border: InputBorder.none,
+                              ),
+                            ),
+                          ),
+                          if (_searchController.text.trim().isNotEmpty)
+                            IconButton(
+                              tooltip: 'Clear',
+                              onPressed: () {
+                                _searchController.clear();
+                                setState(() => _predictions = const []);
+                              },
+                              icon: const Icon(Icons.close),
+                            ),
+                          FilledButton(
+                            onPressed: (_searching || !_placesReady)
+                                ? null
+                                : () => _searchPlace(),
+                            child: _searching
+                                ? const SizedBox(
+                                    width: 16,
+                                    height: 16,
+                                    child: CircularProgressIndicator(
+                                      strokeWidth: 2,
+                                    ),
+                                  )
+                                : Text(_placesReady ? 'Search' : 'Loading'),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ),
+                  if (!_placesReady) ...[
+                    const SizedBox(height: 8),
+                    Material(
+                      elevation: 2,
+                      borderRadius: BorderRadius.circular(14),
+                      clipBehavior: Clip.antiAlias,
+                      color: Theme.of(context).colorScheme.surface,
+                      child: Padding(
+                        padding: const EdgeInsets.fromLTRB(12, 10, 12, 10),
+                        child: Row(
+                          children: [
+                            if (_placesInitError == null) ...[
+                              const SizedBox(
+                                width: 16,
+                                height: 16,
+                                child: CircularProgressIndicator(strokeWidth: 2),
+                              ),
+                              const SizedBox(width: 10),
+                              const Expanded(
+                                child: Text('Loading Google Maps search...'),
+                              ),
+                            ] else ...[
+                              const Icon(Icons.warning_amber_rounded),
+                              const SizedBox(width: 10),
+                              Expanded(
+                                child: Text(
+                                  'Search unavailable. Check Places API + billing/key restrictions.',
+                                  style: Theme.of(context).textTheme.bodySmall,
+                                ),
+                              ),
+                              TextButton(
+                                onPressed: _initPlaces,
+                                child: const Text('Retry'),
+                              ),
+                            ],
+                          ],
+                        ),
+                      ),
+                    ),
+                  ],
+                  if (_predictions.isNotEmpty) ...[
+                    const SizedBox(height: 8),
+                    Material(
+                      elevation: 3,
+                      borderRadius: BorderRadius.circular(14),
+                      clipBehavior: Clip.antiAlias,
+                      color: Theme.of(context).colorScheme.surface,
+                      child: ConstrainedBox(
+                        constraints: const BoxConstraints(maxHeight: 260),
+                        child: ListView.separated(
+                          shrinkWrap: true,
+                          padding: EdgeInsets.zero,
+                          itemCount: _predictions.length,
+                          separatorBuilder: (context, index) =>
+                              const Divider(height: 1),
+                          itemBuilder: (context, i) {
+                            final p = _predictions[i];
+                            return ListTile(
+                              leading:
+                                  const Icon(Icons.place_outlined, size: 22),
+                              title: Text(
+                                (p.title ?? '').trim().isEmpty
+                                    ? (p.description ?? 'Result')
+                                    : p.title!,
+                                maxLines: 2,
+                                overflow: TextOverflow.ellipsis,
+                              ),
+                              subtitle: (p.description ?? '').trim().isEmpty
+                                  ? null
+                                  : Text(
+                                      p.description!,
+                                      maxLines: 2,
+                                      overflow: TextOverflow.ellipsis,
+                                    ),
+                              onTap: () => _pickPrediction(p),
+                            );
+                          },
+                        ),
+                      ),
+                    ),
+                  ],
+                ],
+              ),
+            ),
+          ),
+        ],
       ),
       floatingActionButton: FloatingActionButton.extended(
         onPressed: _confirmFromMap,

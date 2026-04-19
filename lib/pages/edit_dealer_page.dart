@@ -9,7 +9,10 @@ import 'package:provider/provider.dart';
 
 import '../services/auth_service.dart';
 import '../shared/maps/dealer_map_coords.dart';
+import '../shared/maps/open_google_maps.dart';
 import '../shared/media/media_url.dart';
+import '../theme_provider.dart';
+import '../widgets/dealer_location_map_preview.dart';
 import 'dealer_location_picker_page.dart';
 
 class EditDealerPage extends StatefulWidget {
@@ -43,6 +46,7 @@ class _EditDealerPageState extends State<EditDealerPage> {
   final _description = TextEditingController();
   final _coordLat = TextEditingController();
   final _coordLng = TextEditingController();
+  final GlobalKey _mapPreviewKey = GlobalKey();
   XFile? _logo;
   XFile? _cover;
   bool _saving = false;
@@ -51,17 +55,115 @@ class _EditDealerPageState extends State<EditDealerPage> {
   double? _pickLat;
   double? _pickLng;
   late final Map<String, _DayHours> _openingHours;
+  late final Map<String, ExpansionTileController> _openingHoursTileControllers;
+  late final Map<String, GlobalKey> _openingHoursTileKeys;
   static const int _maxPhones = 5;
 
   static const List<({String key, String label})> _days = [
+    (key: 'sun', label: 'Sunday'),
     (key: 'mon', label: 'Monday'),
     (key: 'tue', label: 'Tuesday'),
     (key: 'wed', label: 'Wednesday'),
     (key: 'thu', label: 'Thursday'),
     (key: 'fri', label: 'Friday'),
     (key: 'sat', label: 'Saturday'),
-    (key: 'sun', label: 'Sunday'),
   ];
+
+  RoundedRectangleBorder _pageCardShape(Brightness brightness) {
+    final isLightShell = brightness == Brightness.light;
+    return RoundedRectangleBorder(
+      borderRadius: BorderRadius.circular(14),
+      side: isLightShell
+          ? BorderSide(
+              color: Theme.of(context).colorScheme.outline.withValues(alpha: 0.45),
+            )
+          : BorderSide.none,
+    );
+  }
+
+  Widget _sectionTitle({
+    required IconData icon,
+    required String title,
+    String? subtitle,
+    Widget? trailing,
+  }) {
+    return Row(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Container(
+          width: 34,
+          height: 34,
+          decoration: BoxDecoration(
+            color: Theme.of(context)
+                .colorScheme
+                .surfaceContainerHighest
+                .withValues(alpha: 0.65),
+            borderRadius: BorderRadius.circular(10),
+          ),
+          child: Icon(icon, size: 18),
+        ),
+        const SizedBox(width: 12),
+        Expanded(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                title,
+                style: Theme.of(context)
+                    .textTheme
+                    .titleSmall
+                    ?.copyWith(fontWeight: FontWeight.w800),
+              ),
+              if (subtitle != null && subtitle.trim().isNotEmpty) ...[
+                const SizedBox(height: 2),
+                Text(
+                  subtitle,
+                  style: Theme.of(context).textTheme.bodySmall,
+                ),
+              ],
+            ],
+          ),
+        ),
+        if (trailing != null) ...[
+          const SizedBox(width: 8),
+          trailing,
+        ],
+      ],
+    );
+  }
+
+  String _daySummaryText(String dayKey) {
+    final day = _openingHours[dayKey]!;
+    if (!day.enabled) return 'Closed';
+    if (day.is24h) return '24 hours';
+    if (day.open != null && day.close != null) {
+      return _formatRange(day.open!, day.close!);
+    }
+    final legacy = (day.legacyText ?? '').trim();
+    if (legacy.isNotEmpty) return legacy;
+    if (day.open != null && day.close == null) {
+      return 'From ${_formatTime(day.open!)}';
+    }
+    if (day.open == null && day.close != null) {
+      return 'To ${_formatTime(day.close!)}';
+    }
+    return 'Select time';
+  }
+
+  void _openOpeningHoursDayEditor(String dayKey) {
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      _openingHoursTileControllers[dayKey]?.expand();
+      final ctx = _openingHoursTileKeys[dayKey]?.currentContext;
+      if (ctx != null) {
+        Scrollable.ensureVisible(
+          ctx,
+          duration: const Duration(milliseconds: 220),
+          curve: Curves.easeOut,
+          alignment: 0.15,
+        );
+      }
+    });
+  }
 
   _DayHours _parseDayHours(String raw) {
     final s = raw.trim();
@@ -207,6 +309,12 @@ class _EditDealerPageState extends State<EditDealerPage> {
     _openingHours = {
       for (final d in _days) d.key: _DayHours(enabled: false, is24h: false),
     };
+    _openingHoursTileControllers = {
+      for (final d in _days) d.key: ExpansionTileController(),
+    };
+    _openingHoursTileKeys = {
+      for (final d in _days) d.key: GlobalKey(),
+    };
     final me = context.read<AuthService>().currentUser;
     _name.text = (me?['dealership_name'] ?? '').toString();
     final initialPhones = <String>[];
@@ -290,6 +398,17 @@ class _EditDealerPageState extends State<EditDealerPage> {
       _coordLat.text = lat.toString();
       _coordLng.text = lng.toString();
     });
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      final ctx = _mapPreviewKey.currentContext;
+      if (ctx != null) {
+        Scrollable.ensureVisible(
+          ctx,
+          duration: const Duration(milliseconds: 220),
+          curve: Curves.easeOut,
+          alignment: 0.2,
+        );
+      }
+    });
   }
 
   void _clearMapPin() {
@@ -299,6 +418,30 @@ class _EditDealerPageState extends State<EditDealerPage> {
       _coordLat.clear();
       _coordLng.clear();
     });
+  }
+
+  ({double lat, double lng})? _effectivePinForPreview() {
+    if (kIsWeb) {
+      final lat = double.tryParse(_coordLat.text.trim());
+      final lng = double.tryParse(_coordLng.text.trim());
+      if (lat == null || lng == null) return null;
+      if (!isValidDealerLatLng(lat, lng)) return null;
+      return (lat: lat, lng: lng);
+    }
+    final lat = _pickLat;
+    final lng = _pickLng;
+    if (lat == null || lng == null) return null;
+    if (!isValidDealerLatLng(lat, lng)) return null;
+    return (lat: lat, lng: lng);
+  }
+
+  Future<void> _openPinInGoogleMaps(double lat, double lng) async {
+    final ok = await openGoogleMapsAt(lat, lng).catchError((_) => false);
+    if (!ok && mounted) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Could not open Google Maps')),
+      );
+    }
   }
 
   Future<void> _pickLogo() async {
@@ -437,287 +580,333 @@ class _EditDealerPageState extends State<EditDealerPage> {
   Widget build(BuildContext context) {
     final logoUrl = buildMediaUrl((_currentLogo ?? '').trim());
     final coverUrl = buildMediaUrl((_currentCover ?? '').trim());
+    final brightness = Theme.of(context).brightness;
+    final cardShape = _pageCardShape(brightness);
+    final isLightShell = brightness == Brightness.light;
+
     return Scaffold(
       appBar: AppBar(title: const Text('Edit dealer page')),
-      body: Form(
-        key: _formKey,
-        child: ListView(
-          padding: const EdgeInsets.all(16),
-          children: [
-            Row(
+      backgroundColor: isLightShell ? AppThemes.lightAppBackground : null,
+      bottomNavigationBar: SafeArea(
+        top: false,
+        child: Padding(
+          padding: const EdgeInsets.fromLTRB(16, 10, 16, 16),
+          child: FilledButton.icon(
+            onPressed: _saving ? null : _save,
+            icon: _saving
+                ? const SizedBox(
+                    width: 16,
+                    height: 16,
+                    child: CircularProgressIndicator(strokeWidth: 2),
+                  )
+                : const Icon(Icons.save_outlined),
+            label: Text(_saving ? 'Saving...' : 'Save changes'),
+          ),
+        ),
+      ),
+      body: Stack(
+        children: [
+          Container(
+            decoration: AppThemes.shellBackgroundDecoration(
+              Theme.of(context).brightness,
+            ),
+          ),
+          Form(
+            key: _formKey,
+            child: ListView(
+              padding: const EdgeInsets.fromLTRB(16, 16, 16, 110),
               children: [
-                CircleAvatar(
-                  radius: 34,
-                  backgroundImage: _logo != null
-                      ? null
-                      : (logoUrl.isNotEmpty ? NetworkImage(logoUrl) : null),
-                  child: _logo == null && logoUrl.isEmpty
-                      ? const Icon(Icons.storefront_outlined, size: 30)
-                      : null,
-                ),
-                const SizedBox(width: 12),
-                OutlinedButton.icon(
-                  onPressed: _saving ? null : _pickLogo,
-                  icon: const Icon(Icons.image_outlined),
-                  label: Text(_logo == null ? 'Change logo' : 'Logo selected'),
-                ),
-              ],
-            ),
-            const SizedBox(height: 12),
-            Text(
-              'Dealership cover image (shown at top of dealer page)',
-              style: Theme.of(context).textTheme.bodySmall,
-            ),
-            const SizedBox(height: 8),
-            SizedBox(
-              height: 140,
-              child: ClipRRect(
-                borderRadius: BorderRadius.circular(12),
-                child: _cover != null
-                    ? Image.file(
-                        File(_cover!.path),
-                        fit: BoxFit.cover,
-                        errorBuilder: (context, error, stackTrace) =>
-                            Container(color: Colors.black12),
-                      )
-                    : (coverUrl.isNotEmpty
-                        ? Image.network(
-                            coverUrl,
-                            fit: BoxFit.cover,
-                            errorBuilder: (context, error, stackTrace) =>
-                                Container(color: Colors.black12),
-                          )
-                        : Container(color: Colors.black12)),
-              ),
-            ),
-            const SizedBox(height: 8),
-            Align(
-              alignment: Alignment.centerLeft,
-              child: OutlinedButton.icon(
-                onPressed: _saving ? null : _pickCover,
-                icon: const Icon(Icons.photo_outlined),
-                label: Text(
-                  _cover == null ? 'Choose cover image' : 'Cover selected',
-                ),
-              ),
-            ),
-            const SizedBox(height: 20),
-            TextFormField(
-              controller: _name,
-              decoration: const InputDecoration(
-                labelText: 'Dealership name',
-                border: OutlineInputBorder(),
-              ),
-              validator: (v) => (v == null || v.trim().isEmpty)
-                  ? 'Dealership name is required'
-                  : null,
-            ),
-            const SizedBox(height: 12),
-            Row(
-              children: [
-                Expanded(
-                  child: Text(
-                    'Dealership phone numbers',
-                    style: Theme.of(context).textTheme.titleSmall?.copyWith(
-                          fontWeight: FontWeight.w700,
+                Card(
+                  shape: cardShape,
+                  clipBehavior: Clip.antiAlias,
+                  child: Padding(
+                    padding: const EdgeInsets.all(16),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        _sectionTitle(
+                          icon: Icons.photo_outlined,
+                          title: 'Branding',
+                          subtitle: 'Logo and cover image shown on your dealer page.',
                         ),
-                  ),
-                ),
-                OutlinedButton.icon(
-                  onPressed: (_saving || _phones.length >= _maxPhones)
-                      ? null
-                      : () => setState(() => _phones.add(TextEditingController())),
-                  icon: const Icon(Icons.add),
-                  label: const Text('Add'),
-                ),
-              ],
-            ),
-            const SizedBox(height: 10),
-            for (var i = 0; i < _phones.length; i++) ...[
-              Row(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Expanded(
-                    child: TextFormField(
-                      controller: _phones[i],
-                      keyboardType: TextInputType.phone,
-                      decoration: InputDecoration(
-                        labelText: i == 0 ? 'Primary phone' : 'Phone ${i + 1}',
-                        border: const OutlineInputBorder(),
-                      ),
-                      validator: i == 0
-                          ? (v) => (v == null || v.trim().isEmpty)
-                              ? 'At least one phone is required'
-                              : null
-                          : null,
-                    ),
-                  ),
-                  if (i > 0) ...[
-                    const SizedBox(width: 8),
-                    Padding(
-                      padding: const EdgeInsets.only(top: 6),
-                      child: IconButton(
-                        tooltip: 'Remove',
-                        onPressed: _saving
-                            ? null
-                            : () {
-                                final c = _phones.removeAt(i);
-                                c.dispose();
-                                setState(() {});
-                              },
-                        icon: const Icon(Icons.close),
-                      ),
-                    ),
-                  ],
-                ],
-              ),
-              const SizedBox(height: 12),
-            ],
-            TextFormField(
-              controller: _location,
-              decoration: const InputDecoration(
-                labelText: 'Dealership location',
-                border: OutlineInputBorder(),
-              ),
-              validator: (v) => (v == null || v.trim().isEmpty)
-                  ? 'Dealership location is required'
-                  : null,
-            ),
-            const SizedBox(height: 16),
-            Text(
-              'Opening hours',
-              style: Theme.of(context).textTheme.titleSmall?.copyWith(
-                    fontWeight: FontWeight.w700,
-                  ),
-            ),
-            const SizedBox(height: 6),
-            Text(
-              'Set each day as closed or pick a time range.',
-              style: Theme.of(context).textTheme.bodySmall,
-            ),
-            const SizedBox(height: 10),
-            Container(
-              decoration: BoxDecoration(
-                border: Border.all(
-                  color: Theme.of(context)
-                      .colorScheme
-                      .outline
-                      .withValues(alpha: 0.35),
-                ),
-                borderRadius: BorderRadius.circular(12),
-              ),
-              child: Column(
-                children: [
-                  for (var i = 0; i < _days.length; i++) ...[
-                    if (i > 0) const Divider(height: 1),
-                    Builder(
-                      builder: (context) {
-                        final d = _days[i];
-                        final day = _openingHours[d.key]!;
-                        final rangeText = day.is24h
-                            ? '24 hours'
-                            : (day.open != null && day.close != null)
-                                ? _formatRange(day.open!, day.close!)
-                                : (day.open != null && day.close == null)
-                                    ? 'From ${_formatTime(day.open!)} (pick To)'
-                                    : (day.open == null && day.close != null)
-                                        ? 'To ${_formatTime(day.close!)} (pick From)'
-                                : ((day.legacyText ?? '').trim().isNotEmpty
-                                    ? day.legacyText!.trim()
-                                    : 'Select time');
-
-                        return Padding(
-                          padding: const EdgeInsets.symmetric(
-                            horizontal: 12,
-                            vertical: 10,
+                        const SizedBox(height: 12),
+                        SizedBox(
+                          height: 150,
+                          child: ClipRRect(
+                            borderRadius: BorderRadius.circular(14),
+                            child: _cover != null
+                                ? Image.file(
+                                    File(_cover!.path),
+                                    fit: BoxFit.cover,
+                                    errorBuilder: (context, error, stackTrace) =>
+                                        Container(color: Colors.black12),
+                                  )
+                                : (coverUrl.isNotEmpty
+                                    ? Image.network(
+                                        coverUrl,
+                                        fit: BoxFit.cover,
+                                        errorBuilder:
+                                            (context, error, stackTrace) =>
+                                                Container(color: Colors.black12),
+                                      )
+                                    : Container(
+                                        color: Theme.of(context)
+                                            .colorScheme
+                                            .surfaceContainerHighest
+                                            .withValues(alpha: 0.55),
+                                        child: Center(
+                                          child: Icon(
+                                            Icons.image_outlined,
+                                            color: Theme.of(context)
+                                                .colorScheme
+                                                .onSurfaceVariant,
+                                          ),
+                                        ),
+                                      )),
                           ),
-                          child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              Row(
+                        ),
+                        const SizedBox(height: 10),
+                        Row(
+                          children: [
+                            CircleAvatar(
+                              radius: 26,
+                              backgroundColor: Theme.of(context)
+                                  .colorScheme
+                                  .surfaceContainerHighest,
+                              backgroundImage: _logo != null
+                                  ? null
+                                  : (logoUrl.isNotEmpty ? NetworkImage(logoUrl) : null),
+                              child: _logo == null && logoUrl.isEmpty
+                                  ? const Icon(Icons.storefront_outlined)
+                                  : null,
+                            ),
+                            const SizedBox(width: 12),
+                            Expanded(
+                              child: Row(
                                 children: [
                                   Expanded(
-                                    child: Text(
-                                      d.label,
-                                      style: Theme.of(context)
-                                          .textTheme
-                                          .bodyMedium
-                                          ?.copyWith(fontWeight: FontWeight.w600),
+                                    child: OutlinedButton.icon(
+                                      onPressed: _saving ? null : _pickLogo,
+                                      icon: const Icon(Icons.image_outlined),
+                                      label: Text(
+                                        _logo == null ? 'Change logo' : 'Logo selected',
+                                      ),
                                     ),
                                   ),
-                                  Text(
-                                    day.enabled ? 'Open' : 'Closed',
-                                    style: Theme.of(context).textTheme.bodySmall,
-                                  ),
-                                  const SizedBox(width: 8),
-                                  Switch(
-                                    value: day.enabled,
-                                    onChanged: _saving
-                                        ? null
-                                        : (v) {
-                                            setState(() {
-                                              day.enabled = v;
-                                              if (!v) {
-                                                day.is24h = false;
-                                                day.open = null;
-                                                day.close = null;
-                                                day.legacyText = null;
-                                              }
-                                            });
-                                          },
+                                  const SizedBox(width: 10),
+                                  Expanded(
+                                    child: OutlinedButton.icon(
+                                      onPressed: _saving ? null : _pickCover,
+                                      icon: const Icon(Icons.photo_outlined),
+                                      label: Text(
+                                        _cover == null
+                                            ? 'Change cover'
+                                            : 'Cover selected',
+                                      ),
+                                    ),
                                   ),
                                 ],
                               ),
-                              if (day.enabled) ...[
-                                Row(
+                            ),
+                          ],
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
+                const SizedBox(height: 12),
+                Card(
+                  shape: cardShape,
+                  clipBehavior: Clip.antiAlias,
+                  child: Padding(
+                    padding: const EdgeInsets.all(16),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        _sectionTitle(
+                          icon: Icons.storefront_outlined,
+                          title: 'Dealership details',
+                          subtitle: 'What buyers see on your dealer page.',
+                        ),
+                        const SizedBox(height: 12),
+                        TextFormField(
+                          controller: _name,
+                          decoration: const InputDecoration(
+                            labelText: 'Dealership name',
+                            prefixIcon: Icon(Icons.badge_outlined),
+                          ),
+                          validator: (v) => (v == null || v.trim().isEmpty)
+                              ? 'Dealership name is required'
+                              : null,
+                          textInputAction: TextInputAction.next,
+                        ),
+                        const SizedBox(height: 12),
+                        TextFormField(
+                          controller: _location,
+                          decoration: const InputDecoration(
+                            labelText: 'Dealership location',
+                            prefixIcon: Icon(Icons.location_on_outlined),
+                          ),
+                          validator: (v) => (v == null || v.trim().isEmpty)
+                              ? 'Dealership location is required'
+                              : null,
+                          textInputAction: TextInputAction.next,
+                        ),
+                        const SizedBox(height: 12),
+                        TextFormField(
+                          controller: _description,
+                          minLines: 3,
+                          maxLines: 6,
+                          maxLength: 1000,
+                          decoration: const InputDecoration(
+                            labelText: 'Description',
+                            hintText: 'Tell buyers about your dealership',
+                            prefixIcon: Icon(Icons.notes_outlined),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
+                const SizedBox(height: 12),
+                Card(
+                  shape: cardShape,
+                  clipBehavior: Clip.antiAlias,
+                  child: Padding(
+                    padding: const EdgeInsets.all(16),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        _sectionTitle(
+                          icon: Icons.phone_outlined,
+                          title: 'Contact numbers',
+                          subtitle: 'Add up to $_maxPhones phone numbers.',
+                          trailing: OutlinedButton.icon(
+                            onPressed: (_saving || _phones.length >= _maxPhones)
+                                ? null
+                                : () => setState(
+                                      () => _phones.add(TextEditingController()),
+                                    ),
+                            icon: const Icon(Icons.add),
+                            label: const Text('Add'),
+                          ),
+                        ),
+                        const SizedBox(height: 12),
+                        for (var i = 0; i < _phones.length; i++) ...[
+                          Row(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Expanded(
+                                child: TextFormField(
+                                  controller: _phones[i],
+                                  keyboardType: TextInputType.phone,
+                                  decoration: InputDecoration(
+                                    labelText: i == 0
+                                        ? 'Primary phone'
+                                        : 'Phone ${i + 1}',
+                                    prefixIcon: const Icon(Icons.phone_outlined),
+                                  ),
+                                  validator: i == 0
+                                      ? (v) => (v == null || v.trim().isEmpty)
+                                          ? 'At least one phone is required'
+                                          : null
+                                      : null,
+                                ),
+                              ),
+                              if (i > 0) ...[
+                                const SizedBox(width: 8),
+                                Padding(
+                                  padding: const EdgeInsets.only(top: 6),
+                                  child: IconButton(
+                                    tooltip: 'Remove',
+                                    onPressed: _saving
+                                        ? null
+                                        : () {
+                                            final c = _phones.removeAt(i);
+                                            c.dispose();
+                                            setState(() {});
+                                          },
+                                    icon: const Icon(Icons.close),
+                                  ),
+                                ),
+                              ],
+                            ],
+                          ),
+                          if (i != _phones.length - 1) const SizedBox(height: 12),
+                        ],
+                      ],
+                    ),
+                  ),
+                ),
+                const SizedBox(height: 12),
+                Card(
+                  shape: cardShape,
+                  clipBehavior: Clip.antiAlias,
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Padding(
+                        padding: const EdgeInsets.fromLTRB(16, 16, 16, 8),
+                        child: _sectionTitle(
+                          icon: Icons.schedule_outlined,
+                          title: 'Opening hours',
+                          subtitle: 'Start week is Sunday. Tap a day to edit.',
+                        ),
+                      ),
+                      const Divider(height: 1),
+                      for (var i = 0; i < _days.length; i++) ...[
+                        if (i > 0) const Divider(height: 1),
+                        Builder(
+                          builder: (context) {
+                            final d = _days[i];
+                            final day = _openingHours[d.key]!;
+                            return Theme(
+                              data: Theme.of(context).copyWith(
+                                dividerColor: Colors.transparent,
+                              ),
+                              child: ExpansionTile(
+                                key: _openingHoursTileKeys[d.key],
+                                controller: _openingHoursTileControllers[d.key],
+                                tilePadding:
+                                    const EdgeInsets.symmetric(horizontal: 16),
+                                childrenPadding:
+                                    const EdgeInsets.fromLTRB(16, 0, 16, 12),
+                                title: Text(
+                                  d.label,
+                                  style: Theme.of(context)
+                                      .textTheme
+                                      .bodyLarge
+                                      ?.copyWith(fontWeight: FontWeight.w700),
+                                ),
+                                subtitle: Text(_daySummaryText(d.key)),
+                                trailing: Row(
+                                  mainAxisSize: MainAxisSize.min,
                                   children: [
-                                    Expanded(
-                                      child: OutlinedButton(
-                                        onPressed: _saving
-                                            ? null
-                                            : () async {
-                                                setState(() {
+                                    Switch(
+                                      value: day.enabled,
+                                      onChanged: _saving
+                                          ? null
+                                          : (v) {
+                                              setState(() {
+                                                day.enabled = v;
+                                                if (!v) {
                                                   day.is24h = false;
+                                                  day.open = null;
+                                                  day.close = null;
                                                   day.legacyText = null;
-                                                });
-                                                final picked = await _pickTimeWheel(
-                                                  title: '${d.label} opens at',
-                                                  initial: day.open ?? const TimeOfDay(hour: 9, minute: 0),
-                                                );
-                                                if (!mounted || picked == null) return;
-                                                setState(() => day.open = picked);
-                                              },
-                                        child: Text(
-                                          day.open == null ? 'From' : _formatTime(day.open!),
-                                        ),
-                                      ),
+                                                  _openingHoursTileControllers[d.key]
+                                                      ?.collapse();
+                                                }
+                                              });
+                                              if (v) {
+                                                _openOpeningHoursDayEditor(d.key);
+                                              }
+                                            },
                                     ),
-                                    const SizedBox(width: 10),
-                                    Expanded(
-                                      child: OutlinedButton(
-                                        onPressed: _saving
-                                            ? null
-                                            : () async {
-                                                setState(() {
-                                                  day.is24h = false;
-                                                  day.legacyText = null;
-                                                });
-                                                final picked = await _pickTimeWheel(
-                                                  title: '${d.label} closes at',
-                                                  initial: day.close ?? const TimeOfDay(hour: 18, minute: 0),
-                                                );
-                                                if (!mounted || picked == null) return;
-                                                setState(() => day.close = picked);
-                                              },
-                                        child: Text(
-                                          day.close == null ? 'To' : _formatTime(day.close!),
-                                        ),
-                                      ),
-                                    ),
-                                    const SizedBox(width: 10),
+                                    const SizedBox(width: 4),
                                     PopupMenuButton<String>(
                                       enabled: !_saving,
-                                      onSelected: (value) async {
+                                      onSelected: (value) {
                                         if (value == '24h') {
                                           setState(() {
                                             day.enabled = true;
@@ -747,130 +936,249 @@ class _EditDealerPageState extends State<EditDealerPage> {
                                         ),
                                       ],
                                       child: const Padding(
-                                        padding: EdgeInsets.symmetric(horizontal: 2),
+                                        padding:
+                                            EdgeInsets.symmetric(horizontal: 2),
                                         child: Icon(Icons.more_vert),
                                       ),
                                     ),
                                   ],
                                 ),
-                                const SizedBox(height: 6),
-                                Text(
-                                  rangeText,
-                                  style: Theme.of(context).textTheme.bodySmall,
+                                children: [
+                                  if (!day.enabled)
+                                    Text(
+                                      'This day is set to closed.',
+                                      style:
+                                          Theme.of(context).textTheme.bodySmall,
+                                    )
+                                  else if (day.is24h)
+                                    Text(
+                                      'Open 24 hours.',
+                                      style:
+                                          Theme.of(context).textTheme.bodySmall,
+                                    )
+                                  else
+                                    Row(
+                                      children: [
+                                        Expanded(
+                                          child: OutlinedButton(
+                                            onPressed: _saving
+                                                ? null
+                                                : () async {
+                                                    setState(() {
+                                                      day.is24h = false;
+                                                      day.legacyText = null;
+                                                    });
+                                                    final picked =
+                                                        await _pickTimeWheel(
+                                                      title:
+                                                          '${d.label} opens at',
+                                                      initial: day.open ??
+                                                          const TimeOfDay(
+                                                            hour: 9,
+                                                            minute: 0,
+                                                          ),
+                                                    );
+                                                    if (!mounted ||
+                                                        picked == null) {
+                                                      return;
+                                                    }
+                                                    setState(
+                                                      () => day.open = picked,
+                                                    );
+                                                  },
+                                            child: Text(
+                                              day.open == null
+                                                  ? 'From'
+                                                  : _formatTime(day.open!),
+                                            ),
+                                          ),
+                                        ),
+                                        const SizedBox(width: 10),
+                                        Expanded(
+                                          child: OutlinedButton(
+                                            onPressed: _saving
+                                                ? null
+                                                : () async {
+                                                    setState(() {
+                                                      day.is24h = false;
+                                                      day.legacyText = null;
+                                                    });
+                                                    final picked =
+                                                        await _pickTimeWheel(
+                                                      title:
+                                                          '${d.label} closes at',
+                                                      initial: day.close ??
+                                                          const TimeOfDay(
+                                                            hour: 18,
+                                                            minute: 0,
+                                                          ),
+                                                    );
+                                                    if (!mounted ||
+                                                        picked == null) {
+                                                      return;
+                                                    }
+                                                    setState(
+                                                      () => day.close = picked,
+                                                    );
+                                                  },
+                                            child: Text(
+                                              day.close == null
+                                                  ? 'To'
+                                                  : _formatTime(day.close!),
+                                            ),
+                                          ),
+                                        ),
+                                      ],
+                                    ),
+                                ],
+                              ),
+                            );
+                          },
+                        ),
+                      ],
+                    ],
+                  ),
+                ),
+                const SizedBox(height: 12),
+                Card(
+                  shape: cardShape,
+                  clipBehavior: Clip.antiAlias,
+                  child: Padding(
+                    padding: const EdgeInsets.all(16),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        _sectionTitle(
+                          icon: Icons.map_outlined,
+                          title: 'Map location',
+                          subtitle: kIsWeb
+                              ? 'Optional: paste coordinates from Google Maps.'
+                              : 'Optional: drop a pin so buyers can open this spot in Google Maps.',
+                        ),
+                        const SizedBox(height: 12),
+                        if (!kIsWeb) ...[
+                          Row(
+                            children: [
+                              Expanded(
+                                child: OutlinedButton.icon(
+                                  onPressed: _saving ? null : _openMapPicker,
+                                  icon: const Icon(Icons.map_outlined),
+                                  label: Text(
+                                    _pickLat != null
+                                        ? 'Update map pin'
+                                        : 'Set map pin',
+                                  ),
+                                ),
+                              ),
+                              if (_pickLat != null && _pickLng != null) ...[
+                                const SizedBox(width: 8),
+                                TextButton(
+                                  onPressed: _saving ? null : _clearMapPin,
+                                  child: const Text('Clear'),
                                 ),
                               ],
                             ],
                           ),
-                        );
-                      },
+                          Builder(
+                            builder: (context) {
+                              final pin = _effectivePinForPreview();
+                              if (pin == null) return const SizedBox.shrink();
+                              return Padding(
+                                padding: const EdgeInsets.only(top: 12),
+                                child: Column(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  children: [
+                                    Text(
+                                      '${pin.lat.toStringAsFixed(6)}, ${pin.lng.toStringAsFixed(6)}',
+                                      style:
+                                          Theme.of(context).textTheme.bodySmall,
+                                    ),
+                                    const SizedBox(height: 10),
+                                    KeyedSubtree(
+                                      key: _mapPreviewKey,
+                                      child: DealerLocationMapPreview(
+                                        latitude: pin.lat,
+                                        longitude: pin.lng,
+                                        height: 170,
+                                        onOpenInGoogleMaps: () =>
+                                            _openPinInGoogleMaps(
+                                          pin.lat,
+                                          pin.lng,
+                                        ),
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                              );
+                            },
+                          ),
+                        ] else ...[
+                          Row(
+                            children: [
+                              Expanded(
+                                child: TextFormField(
+                                  controller: _coordLat,
+                                  keyboardType:
+                                      const TextInputType.numberWithOptions(
+                                    decimal: true,
+                                    signed: true,
+                                  ),
+                                  decoration: const InputDecoration(
+                                    labelText: 'Latitude',
+                                    prefixIcon: Icon(Icons.my_location_outlined),
+                                  ),
+                                  onChanged: (_) => setState(() {}),
+                                ),
+                              ),
+                              const SizedBox(width: 8),
+                              Expanded(
+                                child: TextFormField(
+                                  controller: _coordLng,
+                                  keyboardType:
+                                      const TextInputType.numberWithOptions(
+                                    decimal: true,
+                                    signed: true,
+                                  ),
+                                  decoration: const InputDecoration(
+                                    labelText: 'Longitude',
+                                    prefixIcon:
+                                        Icon(Icons.my_location_outlined),
+                                  ),
+                                  onChanged: (_) => setState(() {}),
+                                ),
+                              ),
+                            ],
+                          ),
+                          Builder(
+                            builder: (context) {
+                              final pin = _effectivePinForPreview();
+                              if (pin == null) return const SizedBox.shrink();
+                              return Padding(
+                                padding: const EdgeInsets.only(top: 12),
+                                child: KeyedSubtree(
+                                  key: _mapPreviewKey,
+                                  child: DealerLocationMapPreview(
+                                    latitude: pin.lat,
+                                    longitude: pin.lng,
+                                    height: 170,
+                                    onOpenInGoogleMaps: () => _openPinInGoogleMaps(
+                                      pin.lat,
+                                      pin.lng,
+                                    ),
+                                  ),
+                                ),
+                              );
+                            },
+                          ),
+                        ],
+                      ],
                     ),
-                  ],
-                ],
-              ),
-            ),
-            const SizedBox(height: 12),
-            Text(
-              'Exact location on map',
-              style: Theme.of(context).textTheme.titleSmall?.copyWith(
-                    fontWeight: FontWeight.w700,
-                  ),
-            ),
-            const SizedBox(height: 6),
-            Text(
-              kIsWeb
-                  ? 'Optional: paste latitude and longitude from Google Maps (Share → coordinates).'
-                  : 'Optional: drop a pin so buyers can open this spot in Google Maps.',
-              style: Theme.of(context).textTheme.bodySmall,
-            ),
-            const SizedBox(height: 8),
-            if (!kIsWeb) ...[
-              Row(
-                children: [
-                  Expanded(
-                    child: OutlinedButton.icon(
-                      onPressed: _saving ? null : _openMapPicker,
-                      icon: const Icon(Icons.map_outlined),
-                      label: Text(
-                        _pickLat != null ? 'Update map pin' : 'Set map pin',
-                      ),
-                    ),
-                  ),
-                  if (_pickLat != null && _pickLng != null) ...[
-                    const SizedBox(width: 8),
-                    TextButton(
-                      onPressed: _saving ? null : _clearMapPin,
-                      child: const Text('Clear'),
-                    ),
-                  ],
-                ],
-              ),
-              if (_pickLat != null && _pickLng != null)
-                Padding(
-                  padding: const EdgeInsets.only(top: 6),
-                  child: Text(
-                    '${_pickLat!.toStringAsFixed(6)}, ${_pickLng!.toStringAsFixed(6)}',
-                    style: Theme.of(context).textTheme.bodySmall,
                   ),
                 ),
-            ] else ...[
-              Row(
-                children: [
-                  Expanded(
-                    child: TextFormField(
-                      controller: _coordLat,
-                      keyboardType: const TextInputType.numberWithOptions(
-                        decimal: true,
-                        signed: true,
-                      ),
-                      decoration: const InputDecoration(
-                        labelText: 'Latitude',
-                        border: OutlineInputBorder(),
-                      ),
-                    ),
-                  ),
-                  const SizedBox(width: 8),
-                  Expanded(
-                    child: TextFormField(
-                      controller: _coordLng,
-                      keyboardType: const TextInputType.numberWithOptions(
-                        decimal: true,
-                        signed: true,
-                      ),
-                      decoration: const InputDecoration(
-                        labelText: 'Longitude',
-                        border: OutlineInputBorder(),
-                      ),
-                    ),
-                  ),
-                ],
-              ),
-            ],
-            const SizedBox(height: 12),
-            TextFormField(
-              controller: _description,
-              minLines: 3,
-              maxLines: 6,
-              maxLength: 1000,
-              decoration: const InputDecoration(
-                labelText: 'Dealership description',
-                hintText: 'Tell buyers about your dealership',
-                border: OutlineInputBorder(),
-              ),
+              ],
             ),
-            const SizedBox(height: 20),
-            FilledButton.icon(
-              onPressed: _saving ? null : _save,
-              icon: _saving
-                  ? const SizedBox(
-                      width: 16,
-                      height: 16,
-                      child: CircularProgressIndicator(strokeWidth: 2),
-                    )
-                  : const Icon(Icons.save_outlined),
-              label: Text(_saving ? 'Saving...' : 'Save dealer page'),
-            ),
-          ],
-        ),
+          ),
+        ],
       ),
     );
   }

@@ -25,6 +25,7 @@ class DealerProfilePage extends StatefulWidget {
 }
 
 class _DealerProfilePageState extends State<DealerProfilePage> {
+  _DealerSection _section = _DealerSection.listings;
   bool _loading = true;
   String? _error;
   Map<String, dynamic>? _dealer;
@@ -254,13 +255,13 @@ class _DealerProfilePageState extends State<DealerProfilePage> {
 
   Widget _openingHoursTable(Map<String, String> hours) {
     const rows = <({String label, String key})>[
+      (label: 'Sunday', key: 'sun'),
       (label: 'Monday', key: 'mon'),
       (label: 'Tuesday', key: 'tue'),
       (label: 'Wednesday', key: 'wed'),
       (label: 'Thursday', key: 'thu'),
       (label: 'Friday', key: 'fri'),
       (label: 'Saturday', key: 'sat'),
-      (label: 'Sunday', key: 'sun'),
     ];
 
     final allEmpty = rows.every((r) => (hours[r.key] ?? '').trim().isEmpty);
@@ -471,6 +472,13 @@ class _DealerProfilePageState extends State<DealerProfilePage> {
                                             ?.copyWith(fontWeight: FontWeight.w800),
                                       ),
                                       const SizedBox(height: 4),
+                                      if (description.isNotEmpty)
+                                        Text(
+                                          description,
+                                          style: Theme.of(context).textTheme.bodySmall,
+                                          maxLines: 3,
+                                          overflow: TextOverflow.ellipsis,
+                                        ),
                                     ],
                                   ),
                                 ),
@@ -495,6 +503,25 @@ class _DealerProfilePageState extends State<DealerProfilePage> {
                               ),
                             ],
                             const SizedBox(height: 12),
+                            SegmentedButton<_DealerSection>(
+                              segments: const [
+                                ButtonSegment(
+                                  value: _DealerSection.listings,
+                                  label: Text('Listings'),
+                                ),
+                                ButtonSegment(
+                                  value: _DealerSection.about,
+                                  label: Text('About'),
+                                ),
+                              ],
+                              selected: {_section},
+                              onSelectionChanged: (s) {
+                                if (s.isEmpty) return;
+                                setState(() => _section = s.first);
+                              },
+                            ),
+                            const SizedBox(height: 12),
+                            if (_section == _DealerSection.about) ...[
                             if (phones.isNotEmpty)
                               Padding(
                                 padding: const EdgeInsets.only(top: 8),
@@ -573,64 +600,52 @@ class _DealerProfilePageState extends State<DealerProfilePage> {
                                 ),
                               ),
                             _openingHoursTable(openingHours),
-                            if (description.isNotEmpty) ...[
-                              const SizedBox(height: 12),
-                              Text(
-                                'About dealership',
-                                style: Theme.of(context)
-                                    .textTheme
-                                    .titleSmall
-                                    ?.copyWith(fontWeight: FontWeight.w700),
-                              ),
-                              const SizedBox(height: 6),
-                              Text(
-                                description,
-                                style: Theme.of(context).textTheme.bodyMedium,
-                              ),
                             ],
                           ],
                         ),
                       ),
-                      const Divider(height: 1),
-                      if (_listings.isEmpty)
-                        const Padding(
-                          padding: EdgeInsets.symmetric(horizontal: 16),
-                          child: Text('No active vehicles right now.'),
-                        )
-                      else
-                        GridView.builder(
-                          shrinkWrap: true,
-                          physics: const NeverScrollableScrollPhysics(),
-                          padding: const EdgeInsets.fromLTRB(12, 0, 12, 16),
-                          gridDelegate:
-                              const SliverGridDelegateWithFixedCrossAxisCount(
-                            crossAxisCount: 2,
-                            // Match global card layout used on home/favorites.
-                            childAspectRatio: 0.62,
-                            crossAxisSpacing: 8,
-                            mainAxisSpacing: 8,
+                      if (_section == _DealerSection.listings) ...[
+                        const Divider(height: 1),
+                        if (_listings.isEmpty)
+                          const Padding(
+                            padding: EdgeInsets.symmetric(horizontal: 16),
+                            child: Text('No active vehicles right now.'),
+                          )
+                        else
+                          GridView.builder(
+                            shrinkWrap: true,
+                            physics: const NeverScrollableScrollPhysics(),
+                            padding: const EdgeInsets.fromLTRB(12, 12, 12, 16),
+                            gridDelegate:
+                                const SliverGridDelegateWithFixedCrossAxisCount(
+                              crossAxisCount: 2,
+                              // Match global card layout used on home/favorites.
+                              childAspectRatio: 0.62,
+                              crossAxisSpacing: 8,
+                              mainAxisSpacing: 8,
+                            ),
+                            itemCount: _listings.length,
+                            itemBuilder: (context, index) {
+                              final item = _listings[index];
+                              final mapped =
+                                  mapListingToGlobalCarCardData(context, item);
+                              return LayoutBuilder(
+                                builder: (context, constraints) {
+                                  final card =
+                                      buildGlobalCarCard(context, mapped);
+                                  return FittedBox(
+                                    fit: BoxFit.scaleDown,
+                                    alignment: Alignment.topCenter,
+                                    child: SizedBox(
+                                      width: constraints.maxWidth,
+                                      child: card,
+                                    ),
+                                  );
+                                },
+                              );
+                            },
                           ),
-                          itemCount: _listings.length,
-                          itemBuilder: (context, index) {
-                            final item = _listings[index];
-                            final mapped =
-                                mapListingToGlobalCarCardData(context, item);
-                            return LayoutBuilder(
-                              builder: (context, constraints) {
-                                final card =
-                                    buildGlobalCarCard(context, mapped);
-                                return FittedBox(
-                                  fit: BoxFit.scaleDown,
-                                  alignment: Alignment.topCenter,
-                                  child: SizedBox(
-                                    width: constraints.maxWidth,
-                                    child: card,
-                                  ),
-                                );
-                              },
-                            );
-                          },
-                        ),
+                      ],
                     ],
                   ),
           ),
@@ -639,4 +654,6 @@ class _DealerProfilePageState extends State<DealerProfilePage> {
     );
   }
 }
+
+enum _DealerSection { about, listings }
 
