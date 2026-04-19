@@ -38,7 +38,7 @@ class _DayHours {
 class _EditDealerPageState extends State<EditDealerPage> {
   final _formKey = GlobalKey<FormState>();
   final _name = TextEditingController();
-  final _phone = TextEditingController();
+  final List<TextEditingController> _phones = [];
   final _location = TextEditingController();
   final _description = TextEditingController();
   final _coordLat = TextEditingController();
@@ -51,6 +51,7 @@ class _EditDealerPageState extends State<EditDealerPage> {
   double? _pickLat;
   double? _pickLng;
   late final Map<String, _DayHours> _openingHours;
+  static const int _maxPhones = 5;
 
   static const List<({String key, String label})> _days = [
     (key: 'mon', label: 'Monday'),
@@ -208,7 +209,22 @@ class _EditDealerPageState extends State<EditDealerPage> {
     };
     final me = context.read<AuthService>().currentUser;
     _name.text = (me?['dealership_name'] ?? '').toString();
-    _phone.text = (me?['dealership_phone'] ?? '').toString();
+    final initialPhones = <String>[];
+    final rawPhones = me?['dealership_phones'];
+    if (rawPhones is List) {
+      for (final x in rawPhones) {
+        final s = (x ?? '').toString().trim();
+        if (s.isNotEmpty) initialPhones.add(s);
+      }
+    }
+    final legacySingle = (me?['dealership_phone'] ?? '').toString().trim();
+    if (initialPhones.isEmpty && legacySingle.isNotEmpty) {
+      initialPhones.add(legacySingle);
+    }
+    if (initialPhones.isEmpty) initialPhones.add('');
+    _phones
+      ..clear()
+      ..addAll(initialPhones.map((p) => TextEditingController(text: p)));
     _location.text = (me?['dealership_location'] ?? '').toString();
     _description.text = (me?['dealership_description'] ?? '').toString();
     final rawHours = me?['dealership_opening_hours'];
@@ -243,7 +259,9 @@ class _EditDealerPageState extends State<EditDealerPage> {
   @override
   void dispose() {
     _name.dispose();
-    _phone.dispose();
+    for (final c in _phones) {
+      c.dispose();
+    }
     _location.dispose();
     _description.dispose();
     _coordLat.dispose();
@@ -309,6 +327,18 @@ class _EditDealerPageState extends State<EditDealerPage> {
 
   Future<void> _save() async {
     if (!_formKey.currentState!.validate()) return;
+
+    final phones = _phones
+        .map((c) => c.text.trim())
+        .where((s) => s.isNotEmpty)
+        .toList();
+    if (phones.isEmpty) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Please enter at least one phone number.')),
+      );
+      return;
+    }
 
     // Validate hours: if a day is enabled and not 24h, require both From and To.
     for (final d in _days) {
@@ -376,7 +406,8 @@ class _EditDealerPageState extends State<EditDealerPage> {
       }
       await auth.updateDealerProfile({
         'dealership_name': _name.text.trim(),
-        'dealership_phone': _phone.text.trim(),
+        'dealership_phone': phones.first,
+        'dealership_phones': phones,
         'dealership_location': _location.text.trim(),
         'dealership_description': _description.text.trim(),
         'dealership_opening_hours': openingHours,
@@ -482,17 +513,66 @@ class _EditDealerPageState extends State<EditDealerPage> {
                   : null,
             ),
             const SizedBox(height: 12),
-            TextFormField(
-              controller: _phone,
-              decoration: const InputDecoration(
-                labelText: 'Dealership phone',
-                border: OutlineInputBorder(),
-              ),
-              validator: (v) => (v == null || v.trim().isEmpty)
-                  ? 'Dealership phone is required'
-                  : null,
+            Row(
+              children: [
+                Expanded(
+                  child: Text(
+                    'Dealership phone numbers',
+                    style: Theme.of(context).textTheme.titleSmall?.copyWith(
+                          fontWeight: FontWeight.w700,
+                        ),
+                  ),
+                ),
+                OutlinedButton.icon(
+                  onPressed: (_saving || _phones.length >= _maxPhones)
+                      ? null
+                      : () => setState(() => _phones.add(TextEditingController())),
+                  icon: const Icon(Icons.add),
+                  label: const Text('Add'),
+                ),
+              ],
             ),
-            const SizedBox(height: 12),
+            const SizedBox(height: 10),
+            for (var i = 0; i < _phones.length; i++) ...[
+              Row(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Expanded(
+                    child: TextFormField(
+                      controller: _phones[i],
+                      keyboardType: TextInputType.phone,
+                      decoration: InputDecoration(
+                        labelText: i == 0 ? 'Primary phone' : 'Phone ${i + 1}',
+                        border: const OutlineInputBorder(),
+                      ),
+                      validator: i == 0
+                          ? (v) => (v == null || v.trim().isEmpty)
+                              ? 'At least one phone is required'
+                              : null
+                          : null,
+                    ),
+                  ),
+                  if (i > 0) ...[
+                    const SizedBox(width: 8),
+                    Padding(
+                      padding: const EdgeInsets.only(top: 6),
+                      child: IconButton(
+                        tooltip: 'Remove',
+                        onPressed: _saving
+                            ? null
+                            : () {
+                                final c = _phones.removeAt(i);
+                                c.dispose();
+                                setState(() {});
+                              },
+                        icon: const Icon(Icons.close),
+                      ),
+                    ),
+                  ],
+                ],
+              ),
+              const SizedBox(height: 12),
+            ],
             TextFormField(
               controller: _location,
               decoration: const InputDecoration(

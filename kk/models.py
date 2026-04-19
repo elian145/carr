@@ -50,6 +50,9 @@ class User(db.Model):
     dealer_status = db.Column(db.String(20), nullable=False, default="none")  # none | pending | approved | rejected
     dealership_name = db.Column(db.String(120), nullable=True)
     dealership_phone = db.Column(db.String(20), nullable=True)
+    # JSON list: ["+9647....", "0750....", ...]
+    # Keep `dealership_phone` as a single primary number for backwards compatibility.
+    dealership_phones = db.Column(db.JSON, nullable=True)
     dealership_location = db.Column(db.String(200), nullable=True)
     dealership_description = db.Column(db.Text, nullable=True)
     dealership_cover_picture = db.Column(db.String(200), nullable=True)
@@ -107,6 +110,14 @@ class User(db.Model):
     
     def to_dict(self, include_private=False):
         """Convert user to dictionary"""
+        phones = getattr(self, "dealership_phones", None)
+        if isinstance(phones, list):
+            phones_out = [str(x).strip() for x in phones if str(x).strip()]
+        else:
+            phones_out = []
+        if not phones_out and self.dealership_phone:
+            phones_out = [str(self.dealership_phone).strip()]
+
         data = {
             'id': self.public_id,
             'username': self.username,
@@ -120,6 +131,7 @@ class User(db.Model):
             'dealer_status': self.dealer_status or "none",
             'dealership_name': self.dealership_name,
             'dealership_phone': self.dealership_phone,
+            'dealership_phones': phones_out,
             'dealership_location': self.dealership_location,
             'dealership_description': self.dealership_description,
             'dealership_cover_picture': self.dealership_cover_picture,

@@ -144,6 +144,24 @@ class _DealerProfilePageState extends State<DealerProfilePage> {
     }
   }
 
+  List<String> _phonesFromAnySource(Map<String, dynamic>? dealer) {
+    final out = <String>[];
+    final raw = dealer?['dealership_phones'];
+    if (raw is List) {
+      for (final x in raw) {
+        final s = (x ?? '').toString().trim();
+        if (s.isNotEmpty) out.add(s);
+      }
+    }
+    final legacy = (dealer?['dealership_phone'] ?? dealer?['phone_number'] ?? '')
+        .toString()
+        .trim();
+    if (out.isEmpty && legacy.isNotEmpty) out.add(legacy);
+    // De-dupe (preserve order)
+    final seen = <String>{};
+    return out.where((p) => seen.add(p)).toList();
+  }
+
   Future<void> _emailDealer(String rawEmail) async {
     final addr = rawEmail.trim();
     if (addr.isEmpty) return;
@@ -321,7 +339,16 @@ class _DealerProfilePageState extends State<DealerProfilePage> {
                           vertical: 10,
                         ),
                         child: Text(
-                          allEmpty ? 'Not provided' : (hours[r.key] ?? '—'),
+                          () {
+                            if (allEmpty) return 'Not provided';
+                            final v = (hours[r.key] ?? '').trim();
+                            if (v.isEmpty) return 'Closed';
+                            if (v.toLowerCase() == 'closed' ||
+                                v.toLowerCase() == 'close') {
+                              return 'Closed';
+                            }
+                            return v;
+                          }(),
                         ),
                       ),
                     ],
@@ -355,13 +382,9 @@ class _DealerProfilePageState extends State<DealerProfilePage> {
         .trim();
     final double? mapLat = parseDealerCoord(dealer?['dealership_latitude']);
     final double? mapLng = parseDealerCoord(dealer?['dealership_longitude']);
-    final phone = (dealer?['dealership_phone'] ?? dealer?['phone_number'] ?? '')
-        .toString()
-        .trim();
+    final phones = _phonesFromAnySource(dealer);
     final email = (dealer?['email'] ?? '').toString().trim();
     final description = (dealer?['dealership_description'] ?? '').toString().trim();
-    final totalListings = (_stats['total_listings'] ?? _listings.length).toString();
-    final featuredListings = (_stats['featured_listings'] ?? 0).toString();
     final currentUserPublicId =
         (auth.currentUser?['id'] ?? '').toString().trim();
     final isDealerOwner =
@@ -448,10 +471,6 @@ class _DealerProfilePageState extends State<DealerProfilePage> {
                                             ?.copyWith(fontWeight: FontWeight.w800),
                                       ),
                                       const SizedBox(height: 4),
-                                      Text(
-                                        'Listings: $totalListings  •  Featured: $featuredListings',
-                                        style: Theme.of(context).textTheme.bodySmall,
-                                      ),
                                     ],
                                   ),
                                 ),
@@ -476,27 +495,60 @@ class _DealerProfilePageState extends State<DealerProfilePage> {
                               ),
                             ],
                             const SizedBox(height: 12),
-                            if (phone.isNotEmpty)
+                            if (phones.isNotEmpty)
                               Padding(
                                 padding: const EdgeInsets.only(top: 8),
-                                child: Tooltip(
-                                  message: 'Tap to call • Hold to copy',
-                                  child: SizedBox(
-                                    width: double.infinity,
-                                    child: FilledButton.icon(
-                                      onPressed: () => _callDealer(phone),
-                                      onLongPress: () => _copyToClipboard(
-                                        phone,
-                                        'Phone number copied to clipboard',
+                                child: Column(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  children: [
+                                    for (var i = 0; i < phones.length; i++)
+                                      Padding(
+                                        padding: EdgeInsets.only(top: i == 0 ? 0 : 8),
+                                        child: Tooltip(
+                                          message: 'Tap to call • Hold to copy',
+                                          child: SizedBox(
+                                            width: double.infinity,
+                                            child: i == 0
+                                                ? FilledButton.icon(
+                                                    onPressed: () =>
+                                                        _callDealer(phones[i]),
+                                                    onLongPress: () =>
+                                                        _copyToClipboard(
+                                                      phones[i],
+                                                      'Phone number copied to clipboard',
+                                                    ),
+                                                    icon: const Icon(
+                                                      Icons.phone_outlined,
+                                                    ),
+                                                    label: Text(
+                                                      phones[i],
+                                                      maxLines: 1,
+                                                      overflow:
+                                                          TextOverflow.ellipsis,
+                                                    ),
+                                                  )
+                                                : OutlinedButton.icon(
+                                                    onPressed: () =>
+                                                        _callDealer(phones[i]),
+                                                    onLongPress: () =>
+                                                        _copyToClipboard(
+                                                      phones[i],
+                                                      'Phone number copied to clipboard',
+                                                    ),
+                                                    icon: const Icon(
+                                                      Icons.phone_outlined,
+                                                    ),
+                                                    label: Text(
+                                                      phones[i],
+                                                      maxLines: 1,
+                                                      overflow:
+                                                          TextOverflow.ellipsis,
+                                                    ),
+                                                  ),
+                                          ),
+                                        ),
                                       ),
-                                      icon: const Icon(Icons.phone_outlined),
-                                      label: Text(
-                                        phone,
-                                        maxLines: 1,
-                                        overflow: TextOverflow.ellipsis,
-                                      ),
-                                    ),
-                                  ),
+                                  ],
                                 ),
                               ),
                             _infoRow(
@@ -560,20 +612,10 @@ class _DealerProfilePageState extends State<DealerProfilePage> {
                         ),
                       ),
                       const Divider(height: 1),
-                      Padding(
-                        padding: const EdgeInsets.all(16),
-                        child: Text(
-                          'Listings',
-                          style: Theme.of(context)
-                              .textTheme
-                              .titleMedium
-                              ?.copyWith(fontWeight: FontWeight.w700),
-                        ),
-                      ),
                       if (_listings.isEmpty)
                         const Padding(
                           padding: EdgeInsets.symmetric(horizontal: 16),
-                          child: Text('No active listings right now.'),
+                          child: Text('No active vehicles right now.'),
                         )
                       else
                         GridView.builder(

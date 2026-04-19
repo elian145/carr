@@ -27,6 +27,35 @@ def _to_bool(value) -> bool:
     return str(value).strip().lower() in {"1", "true", "yes", "on"}
 
 
+def _clean_phone_list(value) -> list[str]:
+    """
+    Accepts list/tuple/set of phones or a single string; returns cleaned list.
+    This is intentionally lenient (phone formats vary by country).
+    """
+    if value is None:
+        return []
+    items = []
+    if isinstance(value, (list, tuple, set)):
+        items = list(value)
+    else:
+        items = [value]
+    out: list[str] = []
+    for x in items:
+        s = ("" if x is None else str(x)).strip()
+        if not s:
+            continue
+        out.append(s)
+    # Deduplicate while preserving order
+    seen = set()
+    deduped: list[str] = []
+    for p in out:
+        if p in seen:
+            continue
+        seen.add(p)
+        deduped.append(p)
+    return deduped
+
+
 @bp.route("/api/user/profile", methods=["GET"])
 @jwt_required()
 def get_profile():
@@ -80,7 +109,8 @@ def update_profile():
         # Dealer request flow: keep account_type as user until admin approval.
         if _to_bool(data.get("is_dealer")):
             dealership_name = (data.get("dealership_name") or "").strip()
-            dealership_phone = (data.get("dealership_phone") or "").strip()
+            phones = _clean_phone_list(data.get("dealership_phones"))
+            dealership_phone = (phones[0] if phones else (data.get("dealership_phone") or "")).strip()
             dealership_location = (data.get("dealership_location") or "").strip()
             if not dealership_name:
                 return jsonify({"message": "Dealership name is required for dealer accounts"}), 400
@@ -92,6 +122,11 @@ def update_profile():
             current_user.dealer_status = "pending"
             current_user.dealership_name = dealership_name
             current_user.dealership_phone = dealership_phone
+            try:
+                current_user.dealership_phones = phones or ([dealership_phone] if dealership_phone else None)
+            except Exception:
+                # Older schemas may not have this column; ignore in that case.
+                pass
             current_user.dealership_location = dealership_location
         elif "is_dealer" in data and not _to_bool(data.get("is_dealer")):
             if (current_user.dealer_status or "none") == "none":
@@ -99,6 +134,10 @@ def update_profile():
                 current_user.dealer_status = "none"
                 current_user.dealership_name = None
                 current_user.dealership_phone = None
+                try:
+                    current_user.dealership_phones = None
+                except Exception:
+                    pass
                 current_user.dealership_location = None
 
         current_user.updated_at = utcnow()
@@ -341,11 +380,28 @@ def update_dealer_profile():
                 return jsonify({"message": "Dealership name is required"}), 400
             current_user.dealership_name = v
 
+        # Accept list of phone numbers (preferred) while keeping dealership_phone in sync.
+        if "dealership_phones" in data:
+            phones = _clean_phone_list(data.get("dealership_phones"))
+            if not phones:
+                return jsonify({"message": "At least one dealership phone is required"}), 400
+            try:
+                current_user.dealership_phones = phones
+            except Exception:
+                # If column doesn't exist, fall back to single phone.
+                pass
+            current_user.dealership_phone = phones[0]
+
         if "dealership_phone" in data:
             v = (data.get("dealership_phone") or "").strip()
             if not v:
                 return jsonify({"message": "Dealership phone is required"}), 400
             current_user.dealership_phone = v
+            # Keep list in sync when caller only sends the legacy field.
+            try:
+                current_user.dealership_phones = _clean_phone_list([v])
+            except Exception:
+                pass
 
         if "dealership_location" in data:
             v = (data.get("dealership_location") or "").strip()
