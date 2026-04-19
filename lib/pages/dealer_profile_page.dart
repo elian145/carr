@@ -508,43 +508,23 @@ class _DealerProfilePageState extends State<DealerProfilePage> {
                                           message: 'Tap to call • Hold to copy',
                                           child: SizedBox(
                                             width: double.infinity,
-                                            child: i == 0
-                                                ? FilledButton.icon(
-                                                    onPressed: () =>
-                                                        _callDealer(phones[i]),
-                                                    onLongPress: () =>
-                                                        _copyToClipboard(
-                                                      phones[i],
-                                                      'Phone number copied to clipboard',
-                                                    ),
-                                                    icon: const Icon(
-                                                      Icons.phone_outlined,
-                                                    ),
-                                                    label: Text(
-                                                      phones[i],
-                                                      maxLines: 1,
-                                                      overflow:
-                                                          TextOverflow.ellipsis,
-                                                    ),
-                                                  )
-                                                : OutlinedButton.icon(
-                                                    onPressed: () =>
-                                                        _callDealer(phones[i]),
-                                                    onLongPress: () =>
-                                                        _copyToClipboard(
-                                                      phones[i],
-                                                      'Phone number copied to clipboard',
-                                                    ),
-                                                    icon: const Icon(
-                                                      Icons.phone_outlined,
-                                                    ),
-                                                    label: Text(
-                                                      phones[i],
-                                                      maxLines: 1,
-                                                      overflow:
-                                                          TextOverflow.ellipsis,
-                                                    ),
-                                                  ),
+                                            child: FilledButton.icon(
+                                              onPressed: () =>
+                                                  _callDealer(phones[i]),
+                                              onLongPress: () =>
+                                                  _copyToClipboard(
+                                                phones[i],
+                                                'Phone number copied to clipboard',
+                                              ),
+                                              icon: const Icon(
+                                                Icons.phone_outlined,
+                                              ),
+                                              label: Text(
+                                                phones[i],
+                                                maxLines: 1,
+                                                overflow: TextOverflow.ellipsis,
+                                              ),
+                                            ),
                                           ),
                                         ),
                                       ),
