@@ -1359,10 +1359,18 @@ Widget _buildGlobalCarCardInnerText(
   required String cityLine,
   required Color dividerLineColor,
   required Color metaTextColor,
+  bool pinBottomMeta = false,
 }) {
+  const double titleFontSize = 15;
+  const double titleLineHeight = 1.1;
+  const int titleMaxLines = 2;
+  final double reservedTitleHeight =
+      titleFontSize * titleLineHeight * titleMaxLines;
+  final bool hasTrim = trimLine.isNotEmpty;
+
   return Column(
     crossAxisAlignment: CrossAxisAlignment.stretch,
-    mainAxisSize: MainAxisSize.min,
+    mainAxisSize: pinBottomMeta ? MainAxisSize.max : MainAxisSize.min,
     children: [
       Row(
         crossAxisAlignment: CrossAxisAlignment.center,
@@ -1403,26 +1411,36 @@ Widget _buildGlobalCarCardInnerText(
           Expanded(
             child: Align(
               alignment: Alignment.centerLeft,
-              child: Text(
-                _localizedCarTitleForCard(context, car),
-                style: TextStyle(
-                  fontWeight: FontWeight.bold,
-                  color: Color(0xFFFF6B00),
-                  fontSize: 15,
-                  height: 1.1,
+              child: SizedBox(
+                height: reservedTitleHeight,
+                child: Align(
+                  alignment: Alignment.centerLeft,
+                  child: Text(
+                    _localizedCarTitleForCard(context, car),
+                    style: const TextStyle(
+                      fontWeight: FontWeight.bold,
+                      color: Color(0xFFFF6B00),
+                      fontSize: titleFontSize,
+                      height: titleLineHeight,
+                    ),
+                    maxLines: titleMaxLines,
+                    overflow: TextOverflow.ellipsis,
+                  ),
                 ),
-                maxLines: 2,
-                overflow: TextOverflow.ellipsis,
               ),
             ),
           ),
         ],
       ),
-      if (trimLine.isNotEmpty) ...[
-        SizedBox(height: 10),
-        Text(
+      const SizedBox(height: 10),
+      Visibility(
+        visible: hasTrim,
+        maintainAnimation: true,
+        maintainSize: true,
+        maintainState: true,
+        child: Text(
           trimLine,
-          style: TextStyle(
+          style: const TextStyle(
             fontWeight: FontWeight.bold,
             color: Color(0xFFFF6B00),
             fontSize: 15,
@@ -1431,12 +1449,16 @@ Widget _buildGlobalCarCardInnerText(
           maxLines: 1,
           overflow: TextOverflow.ellipsis,
         ),
-        SizedBox(height: 6),
-        Divider(height: 1, thickness: 1, color: dividerLineColor),
-        SizedBox(height: 6),
-      ] else ...[
-        SizedBox(height: 6),
-      ],
+      ),
+      const SizedBox(height: 6),
+      Visibility(
+        visible: hasTrim,
+        maintainAnimation: true,
+        maintainSize: true,
+        maintainState: true,
+        child: Divider(height: 1, thickness: 1, color: dividerLineColor),
+      ),
+      const SizedBox(height: 6),
       Row(
         crossAxisAlignment: CrossAxisAlignment.center,
         children: [
@@ -1475,8 +1497,9 @@ Widget _buildGlobalCarCardInnerText(
           ],
         ],
       ),
+      if (pinBottomMeta) const Spacer(),
       if (mileageDisplay.isNotEmpty || cityLine.isNotEmpty) ...[
-        SizedBox(height: 10),
+        const SizedBox(height: 10),
         Row(
           crossAxisAlignment: CrossAxisAlignment.end,
           children: [
@@ -1708,7 +1731,7 @@ Widget buildGlobalCarCard(BuildContext context, Map car, {bool listLayout = fals
                 )
               : Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
-                  mainAxisSize: MainAxisSize.min,
+                  mainAxisSize: MainAxisSize.max,
                   children: [
                     // Quick Sell Banner (conditional height)
                     if (car['is_quick_sell'] == true ||
@@ -1763,18 +1786,21 @@ Widget buildGlobalCarCard(BuildContext context, Map car, {bool listLayout = fals
                       ),
                     ),
                     // Content section (year/mileage + city below price — in flow, no overlap)
-                    Padding(
-                      padding: listingCardTextPadding,
-                      child: _buildGlobalCarCardInnerText(
-                        context,
-                        car,
-                        brandId: brandId,
-                        trimLine: trimLine,
-                        yearDisplay: yearDisplay,
-                        mileageDisplay: mileageDisplay,
-                        cityLine: cityLine,
-                        dividerLineColor: dividerLineColor,
-                        metaTextColor: metaTextColor,
+                    Expanded(
+                      child: Padding(
+                        padding: listingCardTextPadding,
+                        child: _buildGlobalCarCardInnerText(
+                          context,
+                          car,
+                          brandId: brandId,
+                          trimLine: trimLine,
+                          yearDisplay: yearDisplay,
+                          mileageDisplay: mileageDisplay,
+                          cityLine: cityLine,
+                          dividerLineColor: dividerLineColor,
+                          metaTextColor: metaTextColor,
+                          pinBottomMeta: true,
+                        ),
                       ),
                     ),
                   ],
@@ -13897,15 +13923,20 @@ Widget buildCarListingSpecsGrid(
       ),
       child: LayoutBuilder(
         builder: (context, constraints) {
+          final double labelFontSize =
+              (constraints.maxWidth * 0.13).clamp(9.0, 11.0);
+          final double valueFontSize =
+              (constraints.maxWidth * 0.18).clamp(12.0, 16.0);
+
           final labelStyle = TextStyle(
-            fontSize: constraints.maxWidth * 0.13,
+            fontSize: labelFontSize,
             color: Colors.black87,
             fontWeight: FontWeight.w700,
             letterSpacing: 0.3,
             height: 1.05,
           );
           final valueStyle = TextStyle(
-            fontSize: constraints.maxWidth * 0.18,
+            fontSize: valueFontSize,
             height: 1.0,
             color: Colors.black,
             fontWeight: FontWeight.w800,
@@ -13915,27 +13946,24 @@ Widget buildCarListingSpecsGrid(
             crossAxisAlignment: CrossAxisAlignment.center,
             children: [
               Expanded(
-                flex: 5,
+                flex: 6,
                 child: Row(
                   mainAxisAlignment: MainAxisAlignment.center,
                   crossAxisAlignment: CrossAxisAlignment.center,
                   children: [
                     Icon(
                       item.icon,
-                      size: constraints.maxWidth * 0.14,
+                      size: constraints.maxWidth * 0.13,
                       color: Colors.black87,
                     ),
-                    SizedBox(width: constraints.maxWidth * 0.04),
-                    Flexible(
-                      child: FittedBox(
-                        alignment: Alignment.center,
-                        fit: BoxFit.scaleDown,
-                        child: Text(
-                          item.label,
-                          maxLines: 1,
-                          textAlign: TextAlign.center,
-                          style: labelStyle,
-                        ),
+                    SizedBox(width: constraints.maxWidth * 0.03),
+                    Expanded(
+                      child: Text(
+                        item.label,
+                        maxLines: 2,
+                        textAlign: TextAlign.center,
+                        softWrap: true,
+                        style: labelStyle,
                       ),
                     ),
                   ],
@@ -13943,7 +13971,7 @@ Widget buildCarListingSpecsGrid(
               ),
               Padding(
                 padding: EdgeInsets.symmetric(
-                  vertical: math.max(4.0, constraints.maxHeight * 0.03),
+                  vertical: math.max(3.0, constraints.maxHeight * 0.02),
                   horizontal: 6,
                 ),
                 child: Divider(
@@ -13953,17 +13981,14 @@ Widget buildCarListingSpecsGrid(
                 ),
               ),
               Expanded(
-                flex: 6,
+                flex: 5,
                 child: Center(
-                  child: FittedBox(
-                    alignment: Alignment.center,
-                    fit: BoxFit.scaleDown,
-                    child: Text(
-                      item.value!,
-                      maxLines: 1,
-                      textAlign: TextAlign.center,
-                      style: valueStyle,
-                    ),
+                  child: Text(
+                    item.value!,
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                    textAlign: TextAlign.center,
+                    style: valueStyle,
                   ),
                 ),
               ),
@@ -14038,12 +14063,14 @@ Widget buildCarListingSpecsGrid(
       value: engineCardVal,
     ),
     _SpecItem(
-      icon: Icons.layers,
-      label: AppLocalizations.of(context)!.trimLabel,
-      value: _orDash(
-        _translateValueGlobal(context, pickNE(car, ['trim'])) ??
-            pickNE(car, ['trim']),
-      ),
+      icon: Icons.public,
+      label: AppLocalizations.of(context)!.regionSpecsLabel,
+      value: _orDash(() {
+        final raw = pickNE(car, ['region_specs', 'regionSpecs']) ?? '';
+        final c = raw.toString().trim().toLowerCase();
+        if (!isValidCarRegionSpecCode(c)) return '';
+        return carRegionSpecDisplayLabel(c);
+      }()),
     ),
     _SpecItem(
       icon: Icons.settings,
@@ -14059,10 +14086,33 @@ Widget buildCarListingSpecsGrid(
 
   final List<Widget> details = [
     detailRowSpec(
+      icon: Icons.layers,
+      label: AppLocalizations.of(context)!.trimLabel,
+      value: _orDash(
+        _translateValueGlobal(context, pickNE(car, ['trim'])) ??
+            pickNE(car, ['trim']),
+      ),
+    ),
+    detailRowSpec(
       icon: Icons.check_circle,
       label: AppLocalizations.of(context)!.detail_condition,
       value: _orDash(
         _translateValueGlobal(context, pickNE(car, ['condition'])),
+      ),
+    ),
+    detailRowSpec(
+      icon: Icons.assignment_turned_in,
+      label: AppLocalizations.of(context)!.titleStatus,
+      value: titleStatusVal,
+    ),
+    detailRowSpec(
+      icon: Icons.drive_eta,
+      label: AppLocalizations.of(context)!.detail_drive,
+      value: _orDash(
+        _translateValueGlobal(
+          context,
+          pickNE(car, ['drive_type', 'driveType', 'drivetrain', 'drive']),
+        ),
       ),
     ),
     detailRowSpec(
@@ -14076,34 +14126,9 @@ Widget buildCarListingSpecsGrid(
       ),
     ),
     detailRowSpec(
-      icon: Icons.assignment_turned_in,
-      label: AppLocalizations.of(context)!.titleStatus,
-      value: titleStatusVal,
-    ),
-    detailRowSpec(
       icon: Icons.color_lens,
       label: AppLocalizations.of(context)!.detail_color,
       value: _orDash(_translateValueGlobal(context, pickNE(car, ['color']))),
-    ),
-    detailRowSpec(
-      icon: Icons.drive_eta,
-      label: AppLocalizations.of(context)!.detail_drive,
-      value: _orDash(
-        _translateValueGlobal(
-          context,
-          pickNE(car, ['drive_type', 'driveType', 'drivetrain', 'drive']),
-        ),
-      ),
-    ),
-    detailRowSpec(
-      icon: Icons.public,
-      label: AppLocalizations.of(context)!.regionSpecsLabel,
-      value: _orDash(() {
-        final raw = pickNE(car, ['region_specs', 'regionSpecs']) ?? '';
-        final c = raw.toString().trim().toLowerCase();
-        if (!isValidCarRegionSpecCode(c)) return '';
-        return carRegionSpecDisplayLabel(c);
-      }()),
     ),
     detailRowSpec(
       icon: Icons.airline_seat_recline_normal,
@@ -19514,19 +19539,18 @@ class _ListingPreviewWidgetState extends State<ListingPreviewWidget> {
     ];
     final List<Widget> details = [
       _detailRow(
+        icon: Icons.layers,
+        label: loc.trimLabel,
+        value:
+            _translateValueGlobal(context, _getFirstNonEmpty(data, ['trim'])) ??
+            _getFirstNonEmpty(data, ['trim']),
+      ),
+      _detailRow(
         icon: Icons.check_circle,
         label: loc.detail_condition,
         value: _translateValueGlobal(
           context,
           _getFirstNonEmpty(data, ['condition']),
-        ),
-      ),
-      _detailRow(
-        icon: Icons.directions_car_filled,
-        label: loc.detail_body,
-        value: _translateValueGlobal(
-          context,
-          _getFirstNonEmpty(data, ['body_type', 'bodyType', 'body']),
         ),
       ),
       _detailRow(
@@ -19546,14 +19570,6 @@ class _ListingPreviewWidgetState extends State<ListingPreviewWidget> {
             : null,
       ),
       _detailRow(
-        icon: Icons.color_lens,
-        label: loc.detail_color,
-        value: _translateValueGlobal(
-          context,
-          _getFirstNonEmpty(data, ['color']),
-        ),
-      ),
-      _detailRow(
         icon: Icons.drive_eta,
         label: loc.detail_drive,
         value: _translateValueGlobal(
@@ -19564,6 +19580,22 @@ class _ListingPreviewWidgetState extends State<ListingPreviewWidget> {
             'drivetrain',
             'drive',
           ]),
+        ),
+      ),
+      _detailRow(
+        icon: Icons.directions_car_filled,
+        label: loc.detail_body,
+        value: _translateValueGlobal(
+          context,
+          _getFirstNonEmpty(data, ['body_type', 'bodyType', 'body']),
+        ),
+      ),
+      _detailRow(
+        icon: Icons.color_lens,
+        label: loc.detail_color,
+        value: _translateValueGlobal(
+          context,
+          _getFirstNonEmpty(data, ['color']),
         ),
       ),
       _detailRow(

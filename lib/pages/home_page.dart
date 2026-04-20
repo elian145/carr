@@ -252,49 +252,66 @@ class _HomePageState extends State<HomePage> {
                                 aspectRatio: 16 / 10,
                                 child: _carImage(car),
                               ),
-                              Padding(
-                                padding: const EdgeInsets.all(10),
-                                child: Column(
-                                  crossAxisAlignment: CrossAxisAlignment.start,
-                                  children: [
-                                    Text(
-                                      carTitle.isEmpty ? (loc?.carLabel ?? 'Car') : carTitle,
-                                      maxLines: 2,
-                                      overflow: TextOverflow.ellipsis,
-                                      style: TextStyle(
-                                        fontWeight: FontWeight.w600,
-                                        color: isLight
-                                            ? const Color(0xFFFF6B00)
-                                            : Theme.of(context).colorScheme.onSurface,
-                                      ),
-                                    ),
-                                    const SizedBox(height: 6),
-                                    Text(
-                                      price.isEmpty ? '' : price,
-                                      maxLines: 1,
-                                      overflow: TextOverflow.ellipsis,
-                                      style: TextStyle(
-                                        fontWeight: FontWeight.w600,
-                                        color: isLight
-                                            ? const Color(0xFFFF6B00)
-                                            : Theme.of(context).colorScheme.onSurface,
-                                      ),
-                                    ),
-                                    const SizedBox(height: 4),
-                                    Text(
-                                      [year, location].where((s) => s.isNotEmpty).join(' • '),
-                                      maxLines: 1,
-                                      overflow: TextOverflow.ellipsis,
-                                      style: Theme.of(context)
-                                          .textTheme
-                                          .bodySmall
-                                          ?.copyWith(
-                                            color: isLight
-                                                ? Colors.white70
-                                                : null,
+                              Expanded(
+                                child: Padding(
+                                  padding: const EdgeInsets.all(10),
+                                  child: Column(
+                                    crossAxisAlignment: CrossAxisAlignment.start,
+                                    children: [
+                                      // Reserve space so short titles don't collapse the card body.
+                                      SizedBox(
+                                        height: 34, // ~2 lines at 15px font size and 1.1 height
+                                        child: Align(
+                                          alignment: Alignment.centerLeft,
+                                          child: Text(
+                                            carTitle.isEmpty
+                                                ? (loc?.carLabel ?? 'Car')
+                                                : carTitle,
+                                            maxLines: 2,
+                                            overflow: TextOverflow.ellipsis,
+                                            style: TextStyle(
+                                              fontWeight: FontWeight.w600,
+                                              color: isLight
+                                                  ? const Color(0xFFFF6B00)
+                                                  : Theme.of(context)
+                                                      .colorScheme
+                                                      .onSurface,
+                                              fontSize: 15,
+                                              height: 1.1,
+                                            ),
                                           ),
-                                    ),
-                                  ],
+                                        ),
+                                      ),
+                                      const SizedBox(height: 6),
+                                      Text(
+                                        price.isEmpty ? '' : price,
+                                        maxLines: 1,
+                                        overflow: TextOverflow.ellipsis,
+                                        style: TextStyle(
+                                          fontWeight: FontWeight.w600,
+                                          color: isLight
+                                              ? const Color(0xFFFF6B00)
+                                              : Theme.of(context)
+                                                  .colorScheme
+                                                  .onSurface,
+                                        ),
+                                      ),
+                                      const Spacer(),
+                                      Text(
+                                        [year, location]
+                                            .where((s) => s.isNotEmpty)
+                                            .join(' • '),
+                                        maxLines: 1,
+                                        overflow: TextOverflow.ellipsis,
+                                        style: Theme.of(context)
+                                            .textTheme
+                                            .bodySmall
+                                            ?.copyWith(
+                                              color: isLight ? Colors.white70 : null,
+                                            ),
+                                      ),
+                                    ],
+                                  ),
                                 ),
                               ),
                             ],
