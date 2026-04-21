@@ -296,6 +296,7 @@ class _HomePageState extends State<HomePage> {
                                               : Theme.of(context)
                                                   .colorScheme
                                                   .onSurface,
+                                          fontSize: 14,
                                         ),
                                       ),
                                       const Spacer(),
