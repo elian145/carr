@@ -5,6 +5,7 @@ import 'package:http/http.dart' as http;
 import 'dart:convert';
 import 'dart:developer' as developer;
 import 'package:google_fonts/google_fonts.dart';
+import 'package:auto_size_text/auto_size_text.dart';
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 import 'package:url_launcher/url_launcher.dart';
@@ -1422,9 +1423,9 @@ Widget _buildGlobalCarCardInnerText(
                     height: reservedTitleHeight,
                     child: Align(
                       alignment: Alignment.centerLeft,
-                      child: Text(
+                      child: AutoSizeText(
                         _localizedCarTitleForCard(context, car),
-                        textScaler: const TextScaler.linear(1.0),
+                        textScaleFactor: 1.0,
                         style: TextStyle(
                           fontWeight: FontWeight.bold,
                           color: Color(0xFFFF6B00),
@@ -1432,9 +1433,10 @@ Widget _buildGlobalCarCardInnerText(
                           height: titleLineHeight,
                         ),
                         maxLines: titleMaxLines,
-                        overflow: TextOverflow.ellipsis,
+                        minFontSize: 11,
+                        stepGranularity: 0.5,
+                        overflow: TextOverflow.clip,
                         softWrap: true,
-                        textWidthBasis: TextWidthBasis.parent,
                       ),
                     ),
                   ),
@@ -1460,7 +1462,7 @@ Widget _buildGlobalCarCardInnerText(
             height: 1.1,
           ),
           maxLines: 1,
-          overflow: TextOverflow.ellipsis,
+          overflow: TextOverflow.clip,
         ),
       ),
       const SizedBox(height: 6),
@@ -13971,14 +13973,16 @@ Widget buildCarListingSpecsGrid(
                     ),
                     SizedBox(width: constraints.maxWidth * 0.03),
                     Expanded(
-                      child: Text(
+                      child: AutoSizeText(
                         item.label,
                         maxLines: 1,
-                        overflow: TextOverflow.ellipsis,
                         textAlign: TextAlign.center,
                         softWrap: false,
-                        textScaler: const TextScaler.linear(1.0),
+                        textScaleFactor: 1.0,
                         style: labelStyle,
+                        minFontSize: 7,
+                        stepGranularity: 0.5,
+                        overflow: TextOverflow.clip,
                       ),
                     ),
                   ],
@@ -13998,13 +14002,15 @@ Widget buildCarListingSpecsGrid(
               Expanded(
                 flex: 5,
                 child: Center(
-                  child: Text(
+                  child: AutoSizeText(
                     item.value!,
                     maxLines: 1,
-                    overflow: TextOverflow.ellipsis,
                     textAlign: TextAlign.center,
-                    textScaler: const TextScaler.linear(1.0),
+                    textScaleFactor: 1.0,
                     style: valueStyle,
+                    minFontSize: 10,
+                    stepGranularity: 0.5,
+                    overflow: TextOverflow.clip,
                   ),
                 ),
               ),
@@ -19394,12 +19400,11 @@ class _ListingPreviewWidgetState extends State<ListingPreviewWidget> {
               Icon(item.icon, size: 16, color: Colors.black87),
               SizedBox(width: 6),
               Flexible(
-                child: Text(
+                child: AutoSizeText(
                   item.label,
                   maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
                   textAlign: TextAlign.center,
-                  textScaler: const TextScaler.linear(1.0),
+                  textScaleFactor: 1.0,
                   style: TextStyle(
                     fontSize: 11,
                     color: Colors.black,
@@ -19407,6 +19412,9 @@ class _ListingPreviewWidgetState extends State<ListingPreviewWidget> {
                     letterSpacing: 0.2,
                     height: 1.1,
                   ),
+                  minFontSize: 7,
+                  stepGranularity: 0.5,
+                  overflow: TextOverflow.clip,
                 ),
               ),
             ],
@@ -19419,18 +19427,20 @@ class _ListingPreviewWidgetState extends State<ListingPreviewWidget> {
               color: Colors.black.withOpacity(0.22),
             ),
           ),
-          Text(
+          AutoSizeText(
             item.value!,
             maxLines: 2,
-            overflow: TextOverflow.ellipsis,
             textAlign: TextAlign.center,
-            textScaler: const TextScaler.linear(1.0),
+            textScaleFactor: 1.0,
             style: TextStyle(
               fontSize: 15,
               height: 1.15,
               color: Colors.black,
               fontWeight: FontWeight.w700,
             ),
+            minFontSize: 10,
+            stepGranularity: 0.5,
+            overflow: TextOverflow.clip,
           ),
         ],
       ),

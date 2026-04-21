@@ -64,6 +64,7 @@ dependencies:
   google_maps_flutter: ^2.10.1
   geocoding: ^4.0.0
   google_places_autocomplete: ^1.0.0
+  auto_size_text: ^3.0.0
 
 dev_dependencies:
   flutter_test:
