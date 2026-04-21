@@ -1372,65 +1372,74 @@ Widget _buildGlobalCarCardInnerText(
     crossAxisAlignment: CrossAxisAlignment.stretch,
     mainAxisSize: pinBottomMeta ? MainAxisSize.max : MainAxisSize.min,
     children: [
-      Row(
-        crossAxisAlignment: CrossAxisAlignment.center,
-        children: [
-          if (car['brand'] != null && car['brand'].toString().isNotEmpty)
-            SizedBox(
-              width: 28,
-              height: 28,
-              child: Container(
-                width: 28,
-                height: 28,
-                padding: EdgeInsets.all(4),
-                decoration: BoxDecoration(
-                  color: Colors.white,
-                  borderRadius: BorderRadius.circular(8),
-                  border: null,
-                ),
-                child: CachedNetworkImage(
-                  imageUrl:
-                      '${getApiBase()}/static/images/brands/$brandId.png',
-                  placeholder: (context, url) => SizedBox(
-                    width: 24,
-                    height: 24,
-                    child: CircularProgressIndicator(
-                      strokeWidth: 2,
+      LayoutBuilder(
+        builder: (context, constraints) {
+          final double maxW = constraints.maxWidth;
+          final double logoSize = maxW < 140 ? 24 : 28;
+          final double logoInner = logoSize - 4;
+          final double gap = maxW < 140 ? 6 : 8;
+
+          return Row(
+            crossAxisAlignment: CrossAxisAlignment.center,
+            children: [
+              if (car['brand'] != null && car['brand'].toString().isNotEmpty)
+                SizedBox(
+                  width: logoSize,
+                  height: logoSize,
+                  child: Container(
+                    width: logoSize,
+                    height: logoSize,
+                    padding: const EdgeInsets.all(4),
+                    decoration: BoxDecoration(
+                      color: Colors.white,
+                      borderRadius: BorderRadius.circular(8),
+                      border: null,
+                    ),
+                    child: CachedNetworkImage(
+                      imageUrl:
+                          '${getApiBase()}/static/images/brands/$brandId.png',
+                      placeholder: (context, url) => SizedBox(
+                        width: logoInner,
+                        height: logoInner,
+                        child: const CircularProgressIndicator(strokeWidth: 2),
+                      ),
+                      errorWidget: (context, url, error) => const Icon(
+                        Icons.directions_car,
+                        size: 20,
+                        color: Color(0xFFFF6B00),
+                      ),
+                      fit: BoxFit.contain,
                     ),
                   ),
-                  errorWidget: (context, url, error) => Icon(
-                    Icons.directions_car,
-                    size: 20,
-                    color: Color(0xFFFF6B00),
-                  ),
-                  fit: BoxFit.contain,
                 ),
-              ),
-            ),
-          SizedBox(width: 8),
-          Expanded(
-            child: Align(
-              alignment: Alignment.centerLeft,
-              child: SizedBox(
-                height: reservedTitleHeight,
+              SizedBox(width: gap),
+              Expanded(
                 child: Align(
                   alignment: Alignment.centerLeft,
-                  child: Text(
-                    _localizedCarTitleForCard(context, car),
-                    style: const TextStyle(
-                      fontWeight: FontWeight.bold,
-                      color: Color(0xFFFF6B00),
-                      fontSize: titleFontSize,
-                      height: titleLineHeight,
+                  child: SizedBox(
+                    height: reservedTitleHeight,
+                    child: Align(
+                      alignment: Alignment.centerLeft,
+                      child: Text(
+                        _localizedCarTitleForCard(context, car),
+                        style: const TextStyle(
+                          fontWeight: FontWeight.bold,
+                          color: Color(0xFFFF6B00),
+                          fontSize: titleFontSize,
+                          height: titleLineHeight,
+                        ),
+                        maxLines: titleMaxLines,
+                        overflow: TextOverflow.ellipsis,
+                        softWrap: true,
+                        textWidthBasis: TextWidthBasis.parent,
+                      ),
                     ),
-                    maxLines: titleMaxLines,
-                    overflow: TextOverflow.ellipsis,
                   ),
                 ),
               ),
-            ),
-          ),
-        ],
+            ],
+          );
+        },
       ),
       const SizedBox(height: 10),
       Visibility(
@@ -13960,9 +13969,10 @@ Widget buildCarListingSpecsGrid(
                     Expanded(
                       child: Text(
                         item.label,
-                        maxLines: 2,
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
                         textAlign: TextAlign.center,
-                        softWrap: true,
+                        softWrap: false,
                         style: labelStyle,
                       ),
                     ),
@@ -19380,7 +19390,7 @@ class _ListingPreviewWidgetState extends State<ListingPreviewWidget> {
               Flexible(
                 child: Text(
                   item.label,
-                  maxLines: 2,
+                  maxLines: 1,
                   overflow: TextOverflow.ellipsis,
                   textAlign: TextAlign.center,
                   style: TextStyle(
