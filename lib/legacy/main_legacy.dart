@@ -1375,9 +1375,11 @@ Widget _buildGlobalCarCardInnerText(
       LayoutBuilder(
         builder: (context, constraints) {
           final double maxW = constraints.maxWidth;
-          final double logoSize = maxW < 140 ? 24 : 28;
+          final double logoSize = maxW < 150 ? 22 : (maxW < 175 ? 24 : 28);
           final double logoInner = logoSize - 4;
-          final double gap = maxW < 140 ? 6 : 8;
+          final double gap = maxW < 150 ? 6 : 8;
+          final double effectiveTitleFontSize =
+              maxW < 150 ? 14 : titleFontSize;
 
           return Row(
             crossAxisAlignment: CrossAxisAlignment.center,
@@ -1422,10 +1424,11 @@ Widget _buildGlobalCarCardInnerText(
                       alignment: Alignment.centerLeft,
                       child: Text(
                         _localizedCarTitleForCard(context, car),
-                        style: const TextStyle(
+                        textScaler: const TextScaler.linear(1.0),
+                        style: TextStyle(
                           fontWeight: FontWeight.bold,
                           color: Color(0xFFFF6B00),
-                          fontSize: titleFontSize,
+                          fontSize: effectiveTitleFontSize,
                           height: titleLineHeight,
                         ),
                         maxLines: titleMaxLines,
@@ -1449,6 +1452,7 @@ Widget _buildGlobalCarCardInnerText(
         maintainState: true,
         child: Text(
           trimLine,
+          textScaler: const TextScaler.linear(1.0),
           style: const TextStyle(
             fontWeight: FontWeight.bold,
             color: Color(0xFFFF6B00),
@@ -13973,6 +13977,7 @@ Widget buildCarListingSpecsGrid(
                         overflow: TextOverflow.ellipsis,
                         textAlign: TextAlign.center,
                         softWrap: false,
+                        textScaler: const TextScaler.linear(1.0),
                         style: labelStyle,
                       ),
                     ),
@@ -13998,6 +14003,7 @@ Widget buildCarListingSpecsGrid(
                     maxLines: 1,
                     overflow: TextOverflow.ellipsis,
                     textAlign: TextAlign.center,
+                    textScaler: const TextScaler.linear(1.0),
                     style: valueStyle,
                   ),
                 ),
@@ -19393,6 +19399,7 @@ class _ListingPreviewWidgetState extends State<ListingPreviewWidget> {
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,
                   textAlign: TextAlign.center,
+                  textScaler: const TextScaler.linear(1.0),
                   style: TextStyle(
                     fontSize: 11,
                     color: Colors.black,
@@ -19417,6 +19424,7 @@ class _ListingPreviewWidgetState extends State<ListingPreviewWidget> {
             maxLines: 2,
             overflow: TextOverflow.ellipsis,
             textAlign: TextAlign.center,
+            textScaler: const TextScaler.linear(1.0),
             style: TextStyle(
               fontSize: 15,
               height: 1.15,
