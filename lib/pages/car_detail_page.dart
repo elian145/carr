@@ -11,6 +11,7 @@ import '../services/analytics_service.dart';
 import '../services/api_service.dart';
 import '../services/config.dart';
 import '../shared/media/media_url.dart';
+import '../shared/text/pretty_title_case.dart';
 
 class CarDetailPage extends StatefulWidget {
   final String carId;
@@ -870,12 +871,13 @@ class _CarDetailPageState extends State<CarDetailPage> {
       );
     }
 
-    final title = (car['title'] ?? '').toString().trim().isNotEmpty
+    final titleRaw = (car['title'] ?? '').toString().trim().isNotEmpty
         ? (car['title'] ?? '').toString()
         : '${car['brand'] ?? ''} ${car['model'] ?? ''} ${car['year'] ?? ''}'
               .trim();
-    final brandStr = (car['brand'] ?? '').toString().trim();
-    final modelStr = (car['model'] ?? '').toString().trim();
+    final title = prettyTitleCase(titleRaw);
+    final brandStr = prettyTitleCase((car['brand'] ?? '').toString().trim());
+    final modelStr = prettyTitleCase((car['model'] ?? '').toString().trim());
 
     final price = (car['price'] ?? '').toString();
     final currency = (car['currency'] ?? '').toString();

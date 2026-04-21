@@ -5,6 +5,7 @@ import '../l10n/app_localizations.dart';
 import '../theme_provider.dart';
 import '../services/api_service.dart';
 import '../services/auth_service.dart';
+import '../shared/text/pretty_title_case.dart';
 
 class MyListingsPage extends StatefulWidget {
   const MyListingsPage({super.key});
@@ -290,9 +291,10 @@ class _MyListingsPageState extends State<MyListingsPage> {
                     }
                     final car = _cars[index];
                     final id = (car['id'] ?? car['public_id'] ?? '').toString();
-                    final title = (car['title'] ?? '${car['brand'] ?? ''} ${car['model'] ?? ''}')
+                    final titleRaw = (car['title'] ?? '${car['brand'] ?? ''} ${car['model'] ?? ''}')
                         .toString()
                         .trim();
+                    final title = prettyTitleCase(titleRaw);
                     final price = (car['price'] ?? '').toString();
                     final location = (car['location'] ?? '').toString();
 

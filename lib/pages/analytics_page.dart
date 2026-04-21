@@ -10,6 +10,7 @@ import '../services/analytics_service.dart';
 // Intentionally avoid importing shared card or helpers; this page uses its own duplicated implementations
 import '../globals.dart';
 import '../theme_provider.dart';
+import '../shared/text/pretty_title_case.dart';
 
 class AnalyticsPage extends StatefulWidget {
   const AnalyticsPage({super.key});
@@ -545,11 +546,12 @@ class _AnalyticsPageState extends State<AnalyticsPage> {
       displayTitle = apiTitle;
     } else {
       final String base = [
-        if (brand.isNotEmpty) brand.toLowerCase(),
-        if (model.isNotEmpty) model,
+        if (brand.isNotEmpty) prettyTitleCase(brand),
+        if (model.isNotEmpty) prettyTitleCase(model),
       ].join(' ');
       displayTitle = yearStr.isNotEmpty ? '$base ($yearStr)' : base;
     }
+    displayTitle = prettyTitleCase(displayTitle);
 
     final num? mileageNum = listing.mileage;
     final String mileageFormatted = mileageNum == null

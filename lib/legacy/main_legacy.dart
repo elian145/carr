@@ -23,6 +23,7 @@ import '../services/analytics_service.dart';
 import '../services/api_service.dart';
 import '../services/auth_service.dart';
 import '../shared/auth/token_store.dart';
+import '../shared/text/pretty_title_case.dart';
 import '../state/locale_controller.dart' as app_state;
 import '../globals.dart';
 import '../pages/analytics_page.dart';
@@ -1234,7 +1235,8 @@ String _localizedCarTitleForCard(BuildContext context, Map car) {
     context,
     Map<String, dynamic>.from(car),
   );
-  return title.isEmpty ? (car['title']?.toString() ?? '') : title;
+  final raw = title.isEmpty ? (car['title']?.toString() ?? '') : title;
+  return prettyTitleCase(raw);
 }
 
 /// Trim line for listing cards (under brand+model, above price). Empty if none / base.
@@ -1259,11 +1261,12 @@ Map<String, dynamic> mapListingToGlobalCarCardData(
     displayTitle = apiTitle;
   } else {
     final String base = [
-      if (brand.isNotEmpty) brand.toLowerCase(),
-      if (model.isNotEmpty) model,
+      if (brand.isNotEmpty) prettyTitleCase(brand),
+      if (model.isNotEmpty) prettyTitleCase(model),
     ].join(' ');
     displayTitle = yearStr.isNotEmpty ? ('$base ($yearStr)') : base;
   }
+  displayTitle = prettyTitleCase(displayTitle);
 
   final num? mileageNum = () {
     final v = listing['mileage'];
@@ -11944,7 +11947,8 @@ class _CarDetailsPageState extends State<CarDetailsPage> {
     }
     if (year.isNotEmpty) parts.add(year);
     final title = parts.join(' ').trim();
-    return title.isNotEmpty ? title : ((car!['title'] ?? '').toString().trim());
+    final raw = title.isNotEmpty ? title : ((car!['title'] ?? '').toString().trim());
+    return prettyTitleCase(raw);
   }
 
   String _displayBrandName(BuildContext context) {
@@ -11954,8 +11958,8 @@ class _CarDetailsPageState extends State<CarDetailsPage> {
       context,
       brand.isEmpty ? null : brand,
     );
-    if (locBrand.isNotEmpty) return locBrand;
-    return (car!['title'] ?? '').toString().trim();
+    if (locBrand.isNotEmpty) return prettyTitleCase(locBrand);
+    return prettyTitleCase(brand.isNotEmpty ? brand : (car!['title'] ?? '').toString().trim());
   }
 
   String _displayModelName(BuildContext context) {
@@ -11968,7 +11972,8 @@ class _CarDetailsPageState extends State<CarDetailsPage> {
       brand.isEmpty ? null : brand,
       model.isEmpty ? null : model,
     );
-    return locModel;
+    final raw = locModel.isNotEmpty ? locModel : model;
+    return prettyTitleCase(raw);
   }
 
   Future<void> _loadFavoriteStatus() async {
@@ -12928,7 +12933,7 @@ class _CarDetailsPageState extends State<CarDetailsPage> {
                                     child: Text(
                                       _displayBrandName(context),
                                       style: TextStyle(
-                                        fontSize: 19,
+                                        fontSize: 18,
                                         fontWeight: FontWeight.bold,
                                         color: isLightShell
                                             ? AppThemes.darkHomeShellBackground

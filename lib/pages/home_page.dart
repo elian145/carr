@@ -4,6 +4,7 @@ import '../l10n/app_localizations.dart';
 import '../theme_provider.dart';
 import '../services/api_service.dart';
 import '../shared/media/media_url.dart';
+import '../shared/text/pretty_title_case.dart';
 
 class HomePage extends StatefulWidget {
   const HomePage({super.key});
@@ -212,9 +213,10 @@ class _HomePageState extends State<HomePage> {
 
                       final car = _cars[index];
                       final carId = (car['id'] ?? car['public_id'] ?? '').toString();
-                      final carTitle = (car['title'] ?? '${car['brand'] ?? ''} ${car['model'] ?? ''}')
+                      final carTitleRaw = (car['title'] ?? '${car['brand'] ?? ''} ${car['model'] ?? ''}')
                           .toString()
                           .trim();
+                      final carTitle = prettyTitleCase(carTitleRaw);
                       final price = (car['price'] ?? '').toString();
                       final location = (car['location'] ?? '').toString();
                       final year = (car['year'] ?? '').toString();
