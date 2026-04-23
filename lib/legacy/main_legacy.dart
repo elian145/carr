@@ -6828,95 +6828,94 @@ class _HomePageState extends State<HomePage> {
                                 children: [
                                   Icon(Icons.search, color: Color(0xFFFF6B00)),
                                   SizedBox(width: 8),
-                                  GestureDetector(
-                                    onTap: () => _showSearchDialog(context),
-                                    child: Text(
-                                      AppLocalizations.of(
-                                        context,
-                                      )!.homeSearchHeading,
-                                      style: GoogleFonts.orbitron(
-                                        color: Color(0xFFFF6B00),
-                                        fontWeight: FontWeight.bold,
-                                        fontSize: 20,
+                                  Expanded(
+                                    child: GestureDetector(
+                                      onTap: () => _showSearchDialog(context),
+                                      child: Text(
+                                        AppLocalizations.of(
+                                          context,
+                                        )!.homeSearchHeading,
+                                        style: GoogleFonts.orbitron(
+                                          color: Color(0xFFFF6B00),
+                                          fontWeight: FontWeight.bold,
+                                          fontSize: 20,
+                                        ),
+                                        overflow: TextOverflow.ellipsis,
+                                        maxLines: 1,
                                       ),
                                     ),
+                                  ),
+                                  const SizedBox(width: 10),
+                                  LayoutBuilder(
+                                    builder: (context, c) {
+                                      final w = c.maxWidth;
+                                      final ddW = w < 380 ? 120.0 : 150.0;
+                                      return SizedBox(
+                                        width: ddW,
+                                        height: 34,
+                                        child: DropdownButtonFormField<String>(
+                                          isDense: true,
+                                          isExpanded: true,
+                                          style: GoogleFonts.orbitron(
+                                            fontSize: 12,
+                                            color: Colors.white,
+                                            fontWeight: FontWeight.bold,
+                                          ),
+                                          value: (selectedCity != null &&
+                                                  cities.contains(selectedCity))
+                                              ? selectedCity
+                                              : 'Any',
+                                          decoration: InputDecoration(
+                                            labelText: AppLocalizations.of(context)!.cityLabel,
+                                            floatingLabelBehavior:
+                                                FloatingLabelBehavior.never,
+                                            labelStyle: GoogleFonts.orbitron(
+                                              color: Colors.white70,
+                                              fontSize: 11,
+                                              fontWeight: FontWeight.bold,
+                                            ),
+                                            filled: true,
+                                            fillColor: Colors.black.withOpacity(0.10),
+                                            border: OutlineInputBorder(
+                                              borderRadius: BorderRadius.circular(10),
+                                            ),
+                                            contentPadding:
+                                                const EdgeInsets.symmetric(
+                                              horizontal: 8,
+                                              vertical: 6,
+                                            ),
+                                          ),
+                                          items: cities
+                                              .map(
+                                                (c) => DropdownMenuItem(
+                                                  value: c,
+                                                  child: Text(
+                                                    c == 'Any'
+                                                        ? AppLocalizations.of(context)!.any
+                                                        : (_translateValueGlobal(context, c) ??
+                                                            c),
+                                                    maxLines: 1,
+                                                    overflow: TextOverflow.ellipsis,
+                                                  ),
+                                                ),
+                                              )
+                                              .toList(),
+                                          onChanged: (value) {
+                                            setState(() {
+                                              selectedCity =
+                                                  (value == null || value == 'Any')
+                                                      ? null
+                                                      : value;
+                                            });
+                                            onFilterChanged();
+                                          },
+                                        ),
+                                      );
+                                    },
                                   ),
                                 ],
                               ),
                               SizedBox(height: 16),
-                              // City sits above Trim (without moving Trim down)
-                              Row(
-                                children: [
-                                  const Expanded(child: SizedBox.shrink()),
-                                  const SizedBox(width: 8),
-                                  const Expanded(child: SizedBox.shrink()),
-                                  const SizedBox(width: 8),
-                                  Expanded(
-                                    child: SizedBox(
-                                      height: 38,
-                                      child: DropdownButtonFormField<String>(
-                                        isDense: true,
-                                        isExpanded: true,
-                                        style: GoogleFonts.orbitron(
-                                          fontSize: 12,
-                                          color: Colors.white,
-                                          fontWeight: FontWeight.bold,
-                                        ),
-                                        value: (selectedCity != null &&
-                                                cities.contains(selectedCity))
-                                            ? selectedCity
-                                            : 'Any',
-                                        decoration: InputDecoration(
-                                          labelText:
-                                              AppLocalizations.of(context)!.cityLabel,
-                                          floatingLabelBehavior:
-                                              FloatingLabelBehavior.never,
-                                          labelStyle: GoogleFonts.orbitron(
-                                            color: Colors.white70,
-                                            fontSize: 11,
-                                            fontWeight: FontWeight.bold,
-                                          ),
-                                          filled: true,
-                                          fillColor: Colors.black.withOpacity(0.10),
-                                          border: OutlineInputBorder(
-                                            borderRadius: BorderRadius.circular(10),
-                                          ),
-                                          contentPadding:
-                                              const EdgeInsets.symmetric(
-                                            horizontal: 8,
-                                            vertical: 8,
-                                          ),
-                                        ),
-                                        items: cities
-                                            .map(
-                                              (c) => DropdownMenuItem(
-                                                value: c,
-                                                child: Text(
-                                                  c == 'Any'
-                                                      ? AppLocalizations.of(context)!.any
-                                                      : (_translateValueGlobal(context, c) ??
-                                                          c),
-                                                  maxLines: 1,
-                                                  overflow: TextOverflow.ellipsis,
-                                                ),
-                                              ),
-                                            )
-                                            .toList(),
-                                        onChanged: (value) {
-                                          setState(() {
-                                            selectedCity =
-                                                (value == null || value == 'Any')
-                                                    ? null
-                                                    : value;
-                                          });
-                                          onFilterChanged();
-                                        },
-                                      ),
-                                    ),
-                                  ),
-                                ],
-                              ),
-                              SizedBox(height: 8),
                               Row(
                                 children: [
                                   // Brand selector styled like a form field for symmetry
