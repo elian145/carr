@@ -23,6 +23,8 @@ _ALLOWED_REGION_SPECS = frozenset(
     {"us", "gcc", "iraq", "canada", "eu", "cn", "korea", "ru", "iran"}
 )
 
+_ALLOWED_PLATE_TYPES = frozenset({"private", "temporary", "commercial", "taxi"})
+
 # Best-effort anonymous view cooldown (in-memory, per process)
 _anon_view_cache: dict[tuple[str, int], float] = {}
 _ANON_VIEW_COOLDOWN_S = 600.0  # 10 minutes
@@ -206,6 +208,9 @@ def get_cars():
         title_status = (request.args.get("title_status") or "").strip().lower() or None
         region_specs_raw = (request.args.get("region_specs") or "").strip().lower()
         region_specs = region_specs_raw if region_specs_raw in _ALLOWED_REGION_SPECS else None
+        plate_type_raw = (request.args.get("plate_type") or request.args.get("plateType") or "").strip().lower()
+        plate_type = plate_type_raw if plate_type_raw in _ALLOWED_PLATE_TYPES else None
+        plate_city = (request.args.get("plate_city") or request.args.get("plateCity") or "").strip() or None
 
         query = (
             Car.query.filter_by(is_active=True)
@@ -260,6 +265,10 @@ def get_cars():
             query = query.filter(Car.title_status == title_status)
         if region_specs:
             query = query.filter(Car.region_specs == region_specs)
+        if plate_type:
+            query = query.filter(Car.plate_type == plate_type)
+        if plate_city:
+            query = query.filter(Car.plate_city.ilike(f"%{plate_city}%"))
 
         sort_by = (request.args.get("sort_by") or "").strip().lower()
         if sort_by == "newest":
@@ -529,6 +538,10 @@ def create_car():
             region_specs_raw if region_specs_raw in _ALLOWED_REGION_SPECS else None
         )
 
+        plate_type_raw = _s(raw.get("plate_type") or raw.get("plateType"), "").lower()
+        plate_type_val = plate_type_raw if plate_type_raw in _ALLOWED_PLATE_TYPES else None
+        plate_city_val = _s(raw.get("plate_city") or raw.get("plateCity"), None) or None
+
         if not brand or not model:
             return jsonify({"message": "Validation failed", "errors": {"brand/model": "required"}}), 400
 
@@ -560,6 +573,8 @@ def create_car():
             engine_size=engine_size_val,
             cylinder_count=cylinder_count_val,
             region_specs=region_specs_val,
+            plate_type=plate_type_val,
+            plate_city=plate_city_val,
         )
 
         db.session.add(car)
@@ -608,6 +623,8 @@ def update_car(car_id: str):
             "region_specs",
             "title_status",
             "damaged_parts",
+            "plate_type",
+            "plate_city",
         ]
         for field in updatable_fields:
             if field in data:
@@ -615,6 +632,9 @@ def update_car(car_id: str):
                 if field == "region_specs":
                     rs = (str(val or "").strip().lower())
                     val = rs if rs in _ALLOWED_REGION_SPECS else None
+                if field == "plate_type":
+                    pt = (str(val or "").strip().lower())
+                    val = pt if pt in _ALLOWED_PLATE_TYPES else None
                 if field == "engine_size" and val is not None:
                     try:
                         val = float(val)

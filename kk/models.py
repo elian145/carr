@@ -225,6 +225,9 @@ class Car(db.Model):
     cylinder_count = db.Column(db.Integer, nullable=True)
     # Market / homologation region (e.g. us, gcc, eu); see app filter `region_specs`.
     region_specs = db.Column(db.String(20), nullable=True, index=True)
+    # License plate metadata (optional)
+    plate_type = db.Column(db.String(20), nullable=True, index=True)
+    plate_city = db.Column(db.String(50), nullable=True, index=True)
     
     # Status and metadata
     is_active = db.Column(db.Boolean, default=True, index=True)
@@ -279,6 +282,10 @@ class Car(db.Model):
             'cylinder_count': getattr(self, "cylinder_count", None),
             'cylinders': getattr(self, "cylinder_count", None),  # alias for app
             'region_specs': getattr(self, "region_specs", None),
+            'plate_type': getattr(self, "plate_type", None),
+            'plateType': getattr(self, "plate_type", None),
+            'plate_city': getattr(self, "plate_city", None),
+            'plateCity': getattr(self, "plate_city", None),
             'is_active': self.is_active,
             'is_featured': self.is_featured,
             'views_count': self.views_count,
