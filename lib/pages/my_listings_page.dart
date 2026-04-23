@@ -6,6 +6,9 @@ import '../theme_provider.dart';
 import '../services/api_service.dart';
 import '../services/auth_service.dart';
 import '../shared/text/pretty_title_case.dart';
+import '../shared/prefs/listing_layout_prefs.dart';
+import '../legacy/main_legacy.dart'
+    show buildGlobalCarCard, mapListingToGlobalCarCardData;
 
 class MyListingsPage extends StatefulWidget {
   const MyListingsPage({super.key});
@@ -28,6 +31,8 @@ class _MyListingsPageState extends State<MyListingsPage> {
   @override
   void initState() {
     super.initState();
+    // Keep consistent layout (grid vs list) with the rest of the app.
+    ListingLayoutPrefs.load();
     _controller.addListener(() {
       if (_loading || _loadingMore || !_hasNext) return;
       final pos = _controller.position;
@@ -271,56 +276,91 @@ class _MyListingsPageState extends State<MyListingsPage> {
                     ),
                   ],
                 )
-              : ListView.separated(
-                  controller: _controller,
-                  padding: const EdgeInsets.all(12),
-                  itemCount: _cars.length + (_hasNext ? 1 : 0),
-                  separatorBuilder: (context, index) => const SizedBox(height: 8),
-                  itemBuilder: (context, index) {
-                    if (index >= _cars.length) {
-                      return const Padding(
-                        padding: EdgeInsets.all(12),
-                        child: Center(
-                          child: SizedBox(
-                            width: 20,
-                            height: 20,
-                            child: CircularProgressIndicator(strokeWidth: 2),
-                          ),
-                        ),
-                      );
-                    }
-                    final car = _cars[index];
-                    final id = (car['id'] ?? car['public_id'] ?? '').toString();
-                    final titleRaw = (car['title'] ?? '${car['brand'] ?? ''} ${car['model'] ?? ''}')
-                        .toString()
-                        .trim();
-                    final title = prettyTitleCase(titleRaw);
-                    final price = (car['price'] ?? '').toString();
-                    final location = (car['location'] ?? '').toString();
-
-                    return Card(
-                      child: ListTile(
-                        title: Text(title.isEmpty ? (loc?.listingTitle ?? 'Listing') : title),
-                        subtitle: Text([price, location].where((s) => s.isNotEmpty).join(' • ')),
-                        onTap: () {
-                          if (id.isEmpty) return;
-                          Navigator.pushNamed(
-                            context,
-                            '/car_detail',
-                            arguments: {'carId': id},
-                          );
-                        },
-                        trailing: PopupMenuButton<String>(
-                          onSelected: (v) {
-                            if (v == 'edit') _editListing(car);
-                            if (v == 'delete') _deleteListing(id);
-                          },
-                          itemBuilder: (context) => [
-                            PopupMenuItem(value: 'edit', child: Text(loc?.editAction ?? 'Edit')),
-                            PopupMenuItem(value: 'delete', child: Text(loc?.deleteAction ?? 'Delete')),
-                          ],
-                        ),
+              : ValueListenableBuilder<int>(
+                  valueListenable: ListingLayoutPrefs.columns,
+                  builder: (context, cols, _) {
+                    final listingColumns = (cols == 1) ? 1 : 2;
+                    return GridView.builder(
+                      controller: _controller,
+                      padding: EdgeInsets.fromLTRB(
+                        listingColumns == 1 ? 4 : 12,
+                        12,
+                        listingColumns == 1 ? 4 : 12,
+                        12,
                       ),
+                      gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
+                        crossAxisCount: listingColumns,
+                        childAspectRatio: listingColumns == 2 ? 0.62 : 2.78,
+                        crossAxisSpacing: 8,
+                        mainAxisSpacing: 8,
+                      ),
+                      itemCount: _cars.length + (_hasNext ? 1 : 0),
+                      itemBuilder: (context, index) {
+                        if (index >= _cars.length) {
+                          return const Center(
+                            child: Padding(
+                              padding: EdgeInsets.all(12),
+                              child: SizedBox(
+                                width: 20,
+                                height: 20,
+                                child: CircularProgressIndicator(strokeWidth: 2),
+                              ),
+                            ),
+                          );
+                        }
+
+                        final car = _cars[index];
+                        final id =
+                            (car['id'] ?? car['public_id'] ?? '').toString();
+
+                        final mapped =
+                            mapListingToGlobalCarCardData(context, car);
+                        final card = buildGlobalCarCard(
+                          context,
+                          mapped,
+                          listLayout: listingColumns == 1,
+                        );
+
+                        return Stack(
+                          clipBehavior: Clip.none,
+                          children: [
+                            card,
+                            Positioned(
+                              top: 6,
+                              right: 6,
+                              child: Material(
+                                color: Colors.black54,
+                                shape: const CircleBorder(),
+                                child: PopupMenuButton<String>(
+                                  tooltip: 'More',
+                                  onSelected: (v) {
+                                    if (v == 'edit') _editListing(car);
+                                    if (v == 'delete') _deleteListing(id);
+                                  },
+                                  itemBuilder: (context) => [
+                                    PopupMenuItem(
+                                      value: 'edit',
+                                      child: Text(loc?.editAction ?? 'Edit'),
+                                    ),
+                                    PopupMenuItem(
+                                      value: 'delete',
+                                      child: Text(loc?.deleteAction ?? 'Delete'),
+                                    ),
+                                  ],
+                                  icon: const Padding(
+                                    padding: EdgeInsets.all(6),
+                                    child: Icon(
+                                      Icons.more_vert,
+                                      color: Colors.white,
+                                      size: 22,
+                                    ),
+                                  ),
+                                ),
+                              ),
+                            ),
+                          ],
+                        );
+                      },
                     );
                   },
                 ),

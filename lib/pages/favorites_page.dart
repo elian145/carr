@@ -6,6 +6,7 @@ import '../legacy/main_legacy.dart'
     show buildGlobalCarCard, mapListingToGlobalCarCardData;
 import '../services/api_service.dart';
 import '../services/auth_service.dart';
+import '../shared/prefs/listing_layout_prefs.dart';
 import '../theme_provider.dart';
 
 class FavoritesPage extends StatefulWidget {
@@ -23,6 +24,8 @@ class _FavoritesPageState extends State<FavoritesPage> {
   @override
   void initState() {
     super.initState();
+    // Keep consistent layout (grid vs list) with the rest of the app.
+    ListingLayoutPrefs.load();
     WidgetsBinding.instance.addPostFrameCallback((_) => _fetch());
   }
 
@@ -154,57 +157,65 @@ class _FavoritesPageState extends State<FavoritesPage> {
                                 ),
                               ],
                             )
-                          : GridView.builder(
-                              physics: const AlwaysScrollableScrollPhysics(),
-                              padding: const EdgeInsets.all(8),
-                              gridDelegate:
-                                  const SliverGridDelegateWithFixedCrossAxisCount(
-                                crossAxisCount: 2,
-                                childAspectRatio: 0.62,
-                                crossAxisSpacing: 8,
-                                mainAxisSpacing: 8,
-                              ),
-                              itemCount: _cars.length,
-                              itemBuilder: (context, index) {
-                                final carMap =
-                                    Map<String, dynamic>.from(_cars[index]);
-                                final card = buildGlobalCarCard(
-                                  context,
-                                  mapListingToGlobalCarCardData(
-                                    context,
-                                    carMap,
+                          : ValueListenableBuilder<int>(
+                              valueListenable: ListingLayoutPrefs.columns,
+                              builder: (context, cols, _) {
+                                final listingColumns = (cols == 1) ? 1 : 2;
+                                return GridView.builder(
+                                  physics: const AlwaysScrollableScrollPhysics(),
+                                  padding: const EdgeInsets.all(8),
+                                  gridDelegate:
+                                      SliverGridDelegateWithFixedCrossAxisCount(
+                                    crossAxisCount: listingColumns,
+                                    childAspectRatio:
+                                        listingColumns == 2 ? 0.62 : 2.78,
+                                    crossAxisSpacing: 8,
+                                    mainAxisSpacing: 8,
                                   ),
-                                );
-                                final carId = (carMap['public_id'] ??
-                                        carMap['id'] ??
-                                        '')
-                                    .toString();
-                                if (carId.isEmpty) return card;
-                                return Stack(
-                                  clipBehavior: Clip.none,
-                                  children: [
-                                    card,
-                                    Positioned(
-                                      top: 6,
-                                      right: 6,
-                                      child: Material(
-                                        color: Colors.black54,
-                                        shape: const CircleBorder(),
-                                        child: InkWell(
-                                          customBorder: const CircleBorder(),
-                                          onTap: () => _toggleFavorite(carId),
-                                          child: const Padding(
-                                            padding: EdgeInsets.all(6),
-                                            child: Icon(
-                                              Icons.favorite,
-                                              color: Color(0xFFFF6B00),
-                                              size: 22,
+                                  itemCount: _cars.length,
+                                  itemBuilder: (context, index) {
+                                    final carMap =
+                                        Map<String, dynamic>.from(_cars[index]);
+                                    final card = buildGlobalCarCard(
+                                      context,
+                                      mapListingToGlobalCarCardData(
+                                        context,
+                                        carMap,
+                                      ),
+                                      listLayout: listingColumns == 1,
+                                    );
+                                    final carId = (carMap['public_id'] ??
+                                            carMap['id'] ??
+                                            '')
+                                        .toString();
+                                    if (carId.isEmpty) return card;
+                                    return Stack(
+                                      clipBehavior: Clip.none,
+                                      children: [
+                                        card,
+                                        Positioned(
+                                          top: 6,
+                                          right: 6,
+                                          child: Material(
+                                            color: Colors.black54,
+                                            shape: const CircleBorder(),
+                                            child: InkWell(
+                                              customBorder: const CircleBorder(),
+                                              onTap: () => _toggleFavorite(carId),
+                                              child: const Padding(
+                                                padding: EdgeInsets.all(6),
+                                                child: Icon(
+                                                  Icons.favorite,
+                                                  color: Color(0xFFFF6B00),
+                                                  size: 22,
+                                                ),
+                                              ),
                                             ),
                                           ),
                                         ),
-                                      ),
-                                    ),
-                                  ],
+                                      ],
+                                    );
+                                  },
                                 );
                               },
                             ),

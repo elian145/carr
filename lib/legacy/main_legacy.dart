@@ -24,6 +24,7 @@ import '../services/api_service.dart';
 import '../services/auth_service.dart';
 import '../shared/auth/token_store.dart';
 import '../shared/text/pretty_title_case.dart';
+import '../shared/prefs/listing_layout_prefs.dart';
 import '../state/locale_controller.dart' as app_state;
 import '../globals.dart';
 import '../pages/analytics_page.dart';
@@ -3473,8 +3474,16 @@ class _WhiteKeyedImageState extends State<_WhiteKeyedImage> {
           );
         }
         if (snap.hasError) {
-          // Fallback to SVG if PNG missing or decode fails
-          return SvgPicture.asset(widget.svgFallbackPath, fit: BoxFit.contain);
+          // If the white-key decode fails (or the asset is missing), fall back to
+          // the original asset, and finally to a Material icon.
+          return Image.asset(
+            widget.assetPath,
+            fit: BoxFit.contain,
+            errorBuilder: (context, error, stack) => const Icon(
+              Icons.directions_car,
+              color: Color(0xFF707070),
+            ),
+          );
         }
         return const SizedBox.shrink();
       },
@@ -3705,6 +3714,8 @@ class _HomePageState extends State<HomePage> {
   String? selectedSeating;
   String? selectedEngineSize;
   String? selectedCity;
+  String? selectedPlateType;
+  String? selectedPlateCity;
   String? selectedTitleStatus;
   String? selectedDamagedParts;
   String? contactPhone;
@@ -4003,6 +4014,8 @@ class _HomePageState extends State<HomePage> {
     selectedSeating = null;
     selectedEngineSize = null;
     selectedCity = null;
+    selectedPlateType = null;
+    selectedPlateCity = null;
     selectedTitleStatus = null;
     selectedDamagedParts = null;
     contactPhone = null;
@@ -4031,6 +4044,8 @@ class _HomePageState extends State<HomePage> {
       selectedSeating = null;
       selectedEngineSize = null;
       selectedCity = null;
+      selectedPlateType = null;
+      selectedPlateCity = null;
       selectedTitleStatus = null;
       selectedDamagedParts = null;
       _moreFiltersDialogFieldGeneration++;
@@ -4085,6 +4100,8 @@ class _HomePageState extends State<HomePage> {
         selectedSeating = map['seating'];
         selectedEngineSize = map['engine_size'];
         selectedCity = map['city'];
+        selectedPlateType = map['plate_type'];
+        selectedPlateCity = map['plate_city'];
         selectedTitleStatus = map['title_status'];
         selectedDamagedParts = map['damaged_parts'];
         selectedSortBy = map['sort_by'];
@@ -4116,6 +4133,8 @@ class _HomePageState extends State<HomePage> {
         'seating': selectedSeating,
         'engine_size': selectedEngineSize,
         'city': selectedCity,
+        'plate_type': selectedPlateType,
+        'plate_city': selectedPlateCity,
         'title_status': selectedTitleStatus,
         'damaged_parts': selectedDamagedParts,
         'sort_by': selectedSortBy,
@@ -4709,6 +4728,13 @@ class _HomePageState extends State<HomePage> {
     _minMileageController = TextEditingController();
     _maxMileageController = TextEditingController();
     _engineSizeController = TextEditingController();
+    // Restore last chosen layout (grid vs list) across pages.
+    ListingLayoutPrefs.load().then((cols) {
+      if (!mounted) return;
+      setState(() {
+        listingColumns = cols;
+      });
+    });
     // Only clear filters, but preserve cached car data for better reliability
     _clearFiltersOnly();
     _resetAllFiltersInMemory();
@@ -5368,6 +5394,16 @@ class _HomePageState extends State<HomePage> {
     // Location and other filters
     if (selectedCity != null && selectedCity!.isNotEmpty) {
       filters['city'] = selectedCity!;
+    }
+    if (selectedPlateType != null &&
+        selectedPlateType!.isNotEmpty &&
+        selectedPlateType != 'Any') {
+      filters['plate_type'] = selectedPlateType!.toLowerCase();
+    }
+    if (selectedPlateCity != null &&
+        selectedPlateCity!.isNotEmpty &&
+        selectedPlateCity != 'Any') {
+      filters['plate_city'] = selectedPlateCity!;
     }
 
     // Only include sort if requested and valid
@@ -6232,6 +6268,12 @@ class _HomePageState extends State<HomePage> {
         case 'city':
           selectedCity = null;
           break;
+        case 'plateType':
+          selectedPlateType = null;
+          break;
+        case 'plateCity':
+          selectedPlateCity = null;
+          break;
         case 'sortBy':
           selectedSortBy = null;
           break;
@@ -6549,6 +6591,36 @@ class _HomePageState extends State<HomePage> {
           'city',
           Icons.location_city,
           Colors.teal,
+        ),
+      );
+    }
+
+    // Plate type filter
+    if (selectedPlateType != null &&
+        selectedPlateType!.isNotEmpty &&
+        selectedPlateType!.toLowerCase() != 'any') {
+      chips.add(
+        _buildFilterChip(
+          'Plate type',
+          prettyTitleCase(selectedPlateType!),
+          'plateType',
+          Icons.confirmation_number_outlined,
+          const Color(0xFFFF6B00),
+        ),
+      );
+    }
+
+    // Plate city filter
+    if (selectedPlateCity != null &&
+        selectedPlateCity!.isNotEmpty &&
+        selectedPlateCity!.toLowerCase() != 'any') {
+      chips.add(
+        _buildFilterChip(
+          'Plate city',
+          _translateValueGlobal(context, selectedPlateCity) ?? selectedPlateCity!,
+          'plateCity',
+          Icons.location_on_outlined,
+          const Color(0xFFFF6B00),
         ),
       );
     }
@@ -10437,6 +10509,133 @@ class _HomePageState extends State<HomePage> {
                                                           _persistFilters();
                                                         },
                                                       ),
+                                                      const SizedBox(height: 12),
+                                                      DropdownButtonFormField<
+                                                        String
+                                                      >(
+                                                        initialValue:
+                                                            selectedPlateType ??
+                                                            '',
+                                                        decoration: InputDecoration(
+                                                          labelText: 'Plate type',
+                                                          filled: true,
+                                                          fillColor:
+                                                              moreFiltersFieldFill,
+                                                          labelStyle: TextStyle(
+                                                            color:
+                                                                moreFiltersOnSurface,
+                                                            fontSize: 16,
+                                                          ),
+                                                          border: OutlineInputBorder(
+                                                            borderRadius:
+                                                                BorderRadius.circular(
+                                                                  12,
+                                                                ),
+                                                          ),
+                                                        ),
+                                                        items: const [
+                                                          DropdownMenuItem(
+                                                            value: '',
+                                                            child: Text('Any'),
+                                                          ),
+                                                          DropdownMenuItem(
+                                                            value: 'private',
+                                                            child: Text('Private'),
+                                                          ),
+                                                          DropdownMenuItem(
+                                                            value: 'temporary',
+                                                            child: Text('Temporary'),
+                                                          ),
+                                                          DropdownMenuItem(
+                                                            value: 'commercial',
+                                                            child: Text('Commercial'),
+                                                          ),
+                                                          DropdownMenuItem(
+                                                            value: 'taxi',
+                                                            child: Text('Taxi'),
+                                                          ),
+                                                        ],
+                                                        onChanged: (value) {
+                                                          setState(() {
+                                                            selectedPlateType =
+                                                                (value == null ||
+                                                                        value
+                                                                            .isEmpty)
+                                                                ? null
+                                                                : value;
+                                                          });
+                                                          _persistFilters();
+                                                        },
+                                                      ),
+                                                      const SizedBox(height: 12),
+                                                      DropdownButtonFormField<
+                                                        String
+                                                      >(
+                                                        initialValue:
+                                                            selectedPlateCity ??
+                                                            '',
+                                                        decoration: InputDecoration(
+                                                          labelText: 'Plate city',
+                                                          filled: true,
+                                                          fillColor:
+                                                              moreFiltersFieldFill,
+                                                          labelStyle: TextStyle(
+                                                            color:
+                                                                moreFiltersOnSurface,
+                                                            fontSize: 16,
+                                                          ),
+                                                          border: OutlineInputBorder(
+                                                            borderRadius:
+                                                                BorderRadius.circular(
+                                                                  12,
+                                                                ),
+                                                          ),
+                                                        ),
+                                                        items: [
+                                                          DropdownMenuItem(
+                                                            value: '',
+                                                            child: Text(
+                                                              AppLocalizations.of(
+                                                                context,
+                                                              )!.any,
+                                                              style: TextStyle(
+                                                                color:
+                                                                    moreFiltersAnyOrange,
+                                                              ),
+                                                            ),
+                                                          ),
+                                                          ...cities
+                                                              .where(
+                                                                (c) =>
+                                                                    c.toLowerCase() !=
+                                                                    'any',
+                                                              )
+                                                              .map(
+                                                                (c) =>
+                                                                    DropdownMenuItem(
+                                                                  value: c,
+                                                                  child: Text(
+                                                                    _translateValueGlobal(
+                                                                          context,
+                                                                          c,
+                                                                        ) ??
+                                                                        c,
+                                                                  ),
+                                                                ),
+                                                              ),
+                                                        ],
+                                                        onChanged: (value) {
+                                                          setState(() {
+                                                            selectedPlateCity =
+                                                                (value == null ||
+                                                                        value
+                                                                            .isEmpty)
+                                                                ? null
+                                                                : value;
+                                                          });
+                                                          _persistFilters();
+                                                        },
+                                                      ),
                                                     ],
                                                   ),
                                                 ),
@@ -10627,6 +10826,7 @@ class _HomePageState extends State<HomePage> {
                                 setState(() {
                                   listingColumns = index == 0 ? 1 : 2;
                                 });
+                                ListingLayoutPrefs.setColumns(listingColumns);
                               },
                               children: const [
                                 Icon(Icons.view_agenda),
@@ -11264,6 +11464,24 @@ class _SavedSearchesPageState extends State<SavedSearchesPage> {
         _buildFilterChip(context, l.cityLabel, tr(filters['city'].toString())),
       );
     }
+    if (filters['plate_type'] != null) {
+      chips.add(
+        _buildFilterChip(
+          context,
+          'Plate type',
+          prettyTitleCase(filters['plate_type'].toString()),
+        ),
+      );
+    }
+    if (filters['plate_city'] != null) {
+      chips.add(
+        _buildFilterChip(
+          context,
+          'Plate city',
+          tr(filters['plate_city'].toString()),
+        ),
+      );
+    }
     if (filters['min_price'] != null || filters['max_price'] != null) {
       final priceRange =
           '${filters['min_price'] ?? '0'} - ${filters['max_price'] ?? '∞'}';
@@ -11502,6 +11720,8 @@ class _SavedSearchesPageState extends State<SavedSearchesPage> {
         widget.parentState!.selectedSeating = filters['seating'];
         widget.parentState!.selectedEngineSize = filters['engine_size'];
         widget.parentState!.selectedCity = filters['city'];
+        widget.parentState!.selectedPlateType = filters['plate_type'];
+        widget.parentState!.selectedPlateCity = filters['plate_city'];
         widget.parentState!.selectedTitleStatus = filters['title_status'];
         widget.parentState!.selectedDamagedParts = filters['damaged_parts'];
         widget.parentState!.selectedSortBy = filters['sort_by'];
@@ -11838,20 +12058,29 @@ class _SavedSearchesPageState extends State<SavedSearchesPage> {
 String _getBodyTypeAsset(String bodyType) {
   // First try dynamic map built from assets
   if (bodyType.toLowerCase() == 'any') {
-    return 'assets/body_types_clean/default.svg';
+    // No dedicated "default" asset; use a safe built-in icon.
+    return 'assets/body_types_png/sedan.png';
   }
 
   // Try direct label match from dynamic map
   // We store labels in title case keys (e.g., 'Mini Truck'), so we normalize here
-  String normalizeTitle(String s) => s
-      .replaceAll('_', ' ')
-      .split(' ')
-      .map(
-        (w) => w.isEmpty
-            ? w
-            : (w[0].toUpperCase() + (w.length > 1 ? w.substring(1) : '')),
-      )
-      .join(' ');
+  String normalizeTitle(String s) {
+    final words = s
+        .replaceAll(RegExp(r'[_\\-]+'), ' ')
+        .trim()
+        .split(RegExp(r'\\s+'));
+    return words
+        .map((w) {
+          if (w.isEmpty) return w;
+          final lettersOnly = w.replaceAll(RegExp(r'[^a-zA-Z]'), '');
+          // Preserve short acronyms like "ATV" / "UTV".
+          if (lettersOnly.isNotEmpty && lettersOnly.length <= 3) {
+            return w.toUpperCase();
+          }
+          return w[0].toUpperCase() + (w.length > 1 ? w.substring(1) : '');
+        })
+        .join(' ');
+  }
 
   final String titleKey = normalizeTitle(bodyType);
   if (globalBodyTypeAssetMap.containsKey(titleKey)) {
@@ -11859,48 +12088,62 @@ String _getBodyTypeAsset(String bodyType) {
   }
 
   // Fallback to known static mappings for common names
-  switch (bodyType.toLowerCase()) {
+  final normalized = bodyType
+      .toLowerCase()
+      .replaceAll(RegExp(r'[_\\-]+'), ' ')
+      .trim();
+
+  switch (normalized) {
     case 'micro':
-      return 'assets/body_types_clean/micro.svg';
+      return 'assets/body_types_png/micro.png';
     case 'cuv':
-      return 'assets/body_types_clean/cuv.svg';
+      return 'assets/body_types_png/cuv.png';
     case 'sedan':
-      return 'assets/body_types_clean/sedan.svg';
+      return 'assets/body_types_png/sedan.png';
     case 'suv':
-      return 'assets/body_types_clean/suv.svg';
+      return 'assets/body_types_png/suv.png';
     case 'hatchback':
-      return 'assets/body_types_clean/hatchback.svg';
+      return 'assets/body_types_png/hatchback.png';
     case 'coupe':
-      return 'assets/body_types_clean/coupe.svg';
+      return 'assets/body_types_png/coupe.png';
     case 'wagon':
-      return 'assets/body_types_clean/wagon.svg';
+    case 'station wagon':
+    case 'estate':
+      // No dedicated wagon asset; use hatchback as closest match.
+      return 'assets/body_types_png/hatchback.png';
     case 'pickup':
-      return 'assets/body_types_clean/pickup.svg';
+      return 'assets/body_types_png/pickup.png';
     case 'roadster':
-      return 'assets/body_types_clean/roadster.svg';
+      return 'assets/body_types_png/roadster.png';
     case 'truck':
-      return 'assets/body_types_clean/truck.svg';
+      return 'assets/body_types_png/truck.png';
     case 'minitruck':
-      return 'assets/body_types_clean/minitruck.svg';
+    case 'mini truck':
+      return 'assets/body_types_png/minitruck.png';
     case 'bigtruck':
     case 'big truck':
-      return 'assets/body_types_clean/bigtruck.svg';
+      return 'assets/body_types_png/bigtruck.png';
     case 'van':
-      return 'assets/body_types_clean/van.svg';
+      return 'assets/body_types_png/van.png';
     case 'minivan':
-      return 'assets/body_types_clean/minivan.svg';
+    case 'mini van':
+    case 'mpv':
+      // No dedicated minivan asset; use van icon.
+      return 'assets/body_types_png/van.png';
     case 'supercar':
-      return 'assets/body_types_clean/supercar.svg';
+      return 'assets/body_types_png/supercar.png';
     case 'cabriolet':
-      return 'assets/body_types_clean/cabriolet.svg';
+    case 'convertible':
+    case 'cabrio':
+      return 'assets/body_types_png/cabriolet.png';
     case 'motorcycle':
-      return 'assets/body_types_clean/motorcycle.svg';
+      return 'assets/body_types_png/motorcycle.png';
     case 'utv':
-      return 'assets/body_types_clean/utv.svg';
+      return 'assets/body_types_png/UTV.png';
     case 'atv':
-      return 'assets/body_types_clean/atv.svg';
+      return 'assets/body_types_png/ATV.png';
     default:
-      return 'assets/body_types_clean/default.svg';
+      return 'assets/body_types_png/sedan.png';
   }
 }
 
@@ -11921,7 +12164,17 @@ class _CarDetailsPageState extends State<CarDetailsPage> {
   bool loadingSimilar = false;
   bool loadingRelated = false;
   final PageController _imagePageController = PageController();
+  final PageController _similarSnapController = PageController();
+  final PageController _relatedSnapController = PageController();
   int _currentImageIndex = 0;
+  int _listingColumnsPref = 2;
+
+  void _onListingLayoutChanged() {
+    if (!mounted) return;
+    setState(() {
+      _listingColumnsPref = ListingLayoutPrefs.columns.value;
+    });
+  }
 
   String _displayCarTitle(BuildContext context) {
     if (car == null) return '';
@@ -12153,12 +12406,20 @@ class _CarDetailsPageState extends State<CarDetailsPage> {
   @override
   void initState() {
     super.initState();
+    _listingColumnsPref = ListingLayoutPrefs.columns.value;
+    ListingLayoutPrefs.load();
+    ListingLayoutPrefs.columns.addListener(_onListingLayoutChanged);
     _loadCar();
   }
 
   @override
   void dispose() {
+    try {
+      ListingLayoutPrefs.columns.removeListener(_onListingLayoutChanged);
+    } catch (_) {}
     _imagePageController.dispose();
+    _similarSnapController.dispose();
+    _relatedSnapController.dispose();
     super.dispose();
   }
 
@@ -12499,9 +12760,9 @@ class _CarDetailsPageState extends State<CarDetailsPage> {
 
   Future<void> _loadSimilarAndRelated() async {
     if (car == null) return;
-    final String? brand = car!['brand']?.toString();
-    final String? model = car!['model']?.toString();
-    if (brand == null || brand.isEmpty) return;
+    final String brand = (car!['brand'] ?? '').toString().trim();
+    final String model = (car!['model'] ?? '').toString().trim();
+    if (brand.isEmpty) return;
     if (!mounted) return;
     setState(() {
       loadingSimilar = true;
@@ -12532,103 +12793,104 @@ class _CarDetailsPageState extends State<CarDetailsPage> {
           }
         }
       } catch (_) {}
+      List<Map<String, dynamic>> toCarList(dynamic decoded) {
+        final dynamic raw = (decoded is Map)
+            ? (decoded['cars'] ?? decoded['data'] ?? decoded['list'] ?? decoded)
+            : decoded;
+        final List<dynamic> list = raw is List ? raw : const <dynamic>[];
+        return list
+            .whereType<Map>()
+            .map((m) => Map<String, dynamic>.from(m.cast<String, dynamic>()))
+            .toList();
+      }
+
+      final currentIds = <String>{
+        widget.carId.toString(),
+        (car!['id'] ?? '').toString(),
+        (car!['public_id'] ?? '').toString(),
+      }..removeWhere((e) => e.trim().isEmpty);
+
       // Similar: strictly same brand + model
-      if (model != null && model.isNotEmpty) {
-        final simUrl = Uri(
-          scheme: 'http',
-          host: '10.0.2.2',
-          port: 5000,
-          path: '/cars',
-          queryParameters: {
-            'brand': brand,
-            'model': model,
-            // ensure newest first handled by API default
-          },
+      if (model.isNotEmpty) {
+        final simData = await ApiService.getCars(
+          page: 1,
+          perPage: 20,
+          brand: brand,
+          model: model,
         );
-        final simResp = await http
-            .get(simUrl)
-            .timeout(const Duration(seconds: 15));
-        if (simResp.statusCode == 200 && mounted) {
-          final simData = json.decode(simResp.body);
-          if (simData is List) {
-            final list = simData
-                .cast<dynamic>()
-                .map<Map<String, dynamic>>((e) => Map<String, dynamic>.from(e))
-                .where((e) => e['id']?.toString() != widget.carId.toString())
-                .toList();
-            if (mounted)
-              setState(() {
-                similarCars = list.take(12).toList();
-              });
-            unawaited(sp.setString(simKey, json.encode(similarCars)));
-          }
-        }
+        final list = toCarList(simData)
+            .where((e) {
+              final id = (e['public_id'] ?? e['id'] ?? '').toString();
+              return id.isEmpty || !currentIds.contains(id);
+            })
+            .take(12)
+            .toList();
+        if (mounted) setState(() => similarCars = list);
+        unawaited(sp.setString(simKey, json.encode(similarCars)));
       } else {
-        if (mounted)
-          setState(() {
-            similarCars = [];
-          });
+        if (mounted) setState(() => similarCars = []);
       }
 
       // Related: same brand and matching key attributes ("same filters")
       // Build a query around the viewed car's attributes: price/year ranges, transmission, fuel, condition, city
-      final Map<String, String> qp = {'brand': brand};
       // Price band: +/- 15%
       final num? priceNum = (car!['price'] is num)
           ? (car!['price'] as num)
           : num.tryParse((car!['price'] ?? '').toString());
+      double? priceMin;
+      double? priceMax;
       if (priceNum != null && priceNum > 0) {
-        final double minP = (priceNum * 0.85).floorToDouble();
-        final double maxP = (priceNum * 1.15).ceilToDouble();
-        qp['min_price'] = minP.toStringAsFixed(0);
-        qp['max_price'] = maxP.toStringAsFixed(0);
+        priceMin = (priceNum * 0.85).floorToDouble();
+        priceMax = (priceNum * 1.15).ceilToDouble();
       }
       // Year band: +/- 2 years
       final int? yearNum = (car!['year'] is int)
           ? (car!['year'] as int)
           : int.tryParse((car!['year'] ?? '').toString());
+      int? yearMin;
+      int? yearMax;
       if (yearNum != null && yearNum > 0) {
-        qp['min_year'] = (yearNum - 2).toString();
-        qp['max_year'] = (yearNum + 2).toString();
+        yearMin = yearNum - 2;
+        yearMax = yearNum + 2;
       }
-      // Transmission, fuel, condition, city
-      void addIfPresent(String key) {
-        final val = car![key]?.toString();
-        if (val != null && val.isNotEmpty) qp[key] = val;
-      }
-
-      addIfPresent('transmission');
-      addIfPresent('fuel_type');
-      addIfPresent('condition');
-      addIfPresent('city');
-
-      final relUrl = Uri(
-        scheme: 'http',
-        host: '10.0.2.2',
-        port: 5000,
-        path: '/cars',
-        queryParameters: qp,
+      final relData = await ApiService.getCars(
+        page: 1,
+        perPage: 20,
+        brand: brand,
+        yearMin: yearMin,
+        yearMax: yearMax,
+        priceMin: priceMin,
+        priceMax: priceMax,
+        location: (car!['city'] ?? car!['location'] ?? '').toString().trim().isEmpty
+            ? null
+            : (car!['city'] ?? car!['location']).toString().trim(),
+        condition: (car!['condition'] ?? '').toString().trim().isEmpty
+            ? null
+            : (car!['condition'] ?? '').toString().trim(),
+        bodyType: (car!['body_type'] ?? car!['bodyType'] ?? '').toString().trim().isEmpty
+            ? null
+            : (car!['body_type'] ?? car!['bodyType']).toString().trim(),
+        transmission: (car!['transmission'] ?? '').toString().trim().isEmpty
+            ? null
+            : (car!['transmission'] ?? '').toString().trim(),
+        driveType: (car!['drive_type'] ?? car!['driveType'] ?? '').toString().trim().isEmpty
+            ? null
+            : (car!['drive_type'] ?? car!['driveType']).toString().trim(),
+        engineType: (car!['engine_type'] ?? car!['engineType'] ?? '').toString().trim().isEmpty
+            ? null
+            : (car!['engine_type'] ?? car!['engineType']).toString().trim(),
       );
-      final relResp = await http
-          .get(relUrl)
-          .timeout(const Duration(seconds: 15));
-      if (relResp.statusCode == 200 && mounted) {
-        final relData = json.decode(relResp.body);
-        if (relData is List) {
-          final list = relData
-              .cast<dynamic>()
-              .map<Map<String, dynamic>>((e) => Map<String, dynamic>.from(e))
-              .where((e) => e['id']?.toString() != widget.carId.toString())
-              .toList();
-          if (mounted)
-            setState(() {
-              relatedCars = list.take(12).toList();
-            });
-          unawaited(sp.setString(relKey, json.encode(relatedCars)));
-        }
-      }
-    } catch (_) {
-      // ignore network errors for these sections
+      final list = toCarList(relData)
+          .where((e) {
+            final id = (e['public_id'] ?? e['id'] ?? '').toString();
+            return id.isEmpty || !currentIds.contains(id);
+          })
+          .take(12)
+          .toList();
+      if (mounted) setState(() => relatedCars = list);
+      unawaited(sp.setString(relKey, json.encode(relatedCars)));
+    } catch (e) {
+      _debugLog('Failed to load similar/related: $e');
     } finally {
       if (mounted) {
         setState(() {
@@ -12841,87 +13103,6 @@ class _CarDetailsPageState extends State<CarDetailsPage> {
                                 ],
                               ),
                             ),
-                          // City label above title (+ relative listing age on the right)
-                          Builder(
-                            builder: (context) {
-                              final cityDetail =
-                                  (_getFirstNonEmpty(car!, [
-                                            'city',
-                                            'location',
-                                          ]) ??
-                                          '')
-                                      .trim();
-                              final cityLabelStyle = TextStyle(
-                                fontSize: 13,
-                                fontWeight: FontWeight.w700,
-                                color: isLightShell
-                                    ? const Color(0xFF757575)
-                                    : Colors.white70,
-                              );
-                              final uploadedDetail = _listingUploadedAgo(
-                                context,
-                                car!,
-                              );
-                              if (cityDetail.isEmpty &&
-                                  uploadedDetail.isEmpty) {
-                                return const SizedBox.shrink();
-                              }
-                              return Column(
-                                crossAxisAlignment: CrossAxisAlignment.stretch,
-                                children: [
-                                  Row(
-                                    crossAxisAlignment:
-                                        CrossAxisAlignment.center,
-                                    children: [
-                                      Expanded(
-                                        child: cityDetail.isEmpty
-                                            ? const SizedBox.shrink()
-                                            : Row(
-                                                mainAxisSize: MainAxisSize.min,
-                                                children: [
-                                                  Icon(
-                                                    Icons.location_city,
-                                                    size: 14,
-                                                    color: isLightShell
-                                                        ? const Color(
-                                                            0xFF757575,
-                                                          )
-                                                        : Colors.white70,
-                                                  ),
-                                                  SizedBox(width: 6),
-                                                  Flexible(
-                                                    child: Text(
-                                                      '${AppLocalizations.of(context)!.cityLabel}: '
-                                                      '${_translateValueGlobal(context, _getFirstNonEmpty(car!, ['city', 'location'])) ?? _getFirstNonEmpty(car!, ['city', 'location'])}',
-                                                      style: cityLabelStyle,
-                                                      maxLines: 1,
-                                                      overflow:
-                                                          TextOverflow.ellipsis,
-                                                    ),
-                                                  ),
-                                                ],
-                                              ),
-                                      ),
-                                      if (uploadedDetail.isNotEmpty) ...[
-                                        if (cityDetail.isNotEmpty)
-                                          const SizedBox(width: 8),
-                                        Text(
-                                          uploadedDetail,
-                                          style: cityLabelStyle.copyWith(
-                                            fontWeight: FontWeight.w600,
-                                            fontSize: 12,
-                                          ),
-                                          maxLines: 1,
-                                          overflow: TextOverflow.ellipsis,
-                                        ),
-                                      ],
-                                    ],
-                                  ),
-                                  SizedBox(height: 8),
-                                ],
-                              );
-                            },
-                          ),
                           // Brand full width; price aligns with model line (same row as model)
                           Column(
                             crossAxisAlignment: CrossAxisAlignment.start,
@@ -13000,7 +13181,88 @@ class _CarDetailsPageState extends State<CarDetailsPage> {
                               ],
                             ],
                           ),
-                          SizedBox(height: 16),
+                          // City + listing age under model/price
+                          Builder(
+                            builder: (context) {
+                              final cityDetail =
+                                  (_getFirstNonEmpty(car!, [
+                                            'city',
+                                            'location',
+                                          ]) ??
+                                          '')
+                                      .trim();
+                              final cityLabelStyle = TextStyle(
+                                fontSize: 13,
+                                fontWeight: FontWeight.w700,
+                                color: isLightShell
+                                    ? const Color(0xFF757575)
+                                    : Colors.white70,
+                              );
+                              final uploadedDetail = _listingUploadedAgo(
+                                context,
+                                car!,
+                              );
+                              if (cityDetail.isEmpty &&
+                                  uploadedDetail.isEmpty) {
+                                return const SizedBox.shrink();
+                              }
+                              return Column(
+                                crossAxisAlignment: CrossAxisAlignment.stretch,
+                                children: [
+                                  const SizedBox(height: 10),
+                                  Row(
+                                    crossAxisAlignment:
+                                        CrossAxisAlignment.center,
+                                    children: [
+                                      Expanded(
+                                        child: cityDetail.isEmpty
+                                            ? const SizedBox.shrink()
+                                            : Row(
+                                                mainAxisSize: MainAxisSize.min,
+                                                children: [
+                                                  Icon(
+                                                    Icons.location_city,
+                                                    size: 14,
+                                                    color: isLightShell
+                                                        ? const Color(
+                                                            0xFF757575,
+                                                          )
+                                                        : Colors.white70,
+                                                  ),
+                                                  const SizedBox(width: 6),
+                                                  Flexible(
+                                                    child: Text(
+                                                      '${AppLocalizations.of(context)!.cityLabel}: '
+                                                      '${_translateValueGlobal(context, _getFirstNonEmpty(car!, ['city', 'location'])) ?? _getFirstNonEmpty(car!, ['city', 'location'])}',
+                                                      style: cityLabelStyle,
+                                                      maxLines: 1,
+                                                      overflow:
+                                                          TextOverflow.ellipsis,
+                                                    ),
+                                                  ),
+                                                ],
+                                              ),
+                                      ),
+                                      if (uploadedDetail.isNotEmpty) ...[
+                                        if (cityDetail.isNotEmpty)
+                                          const SizedBox(width: 8),
+                                        Text(
+                                          uploadedDetail,
+                                          style: cityLabelStyle.copyWith(
+                                            fontWeight: FontWeight.w600,
+                                            fontSize: 12,
+                                          ),
+                                          maxLines: 1,
+                                          overflow: TextOverflow.ellipsis,
+                                        ),
+                                      ],
+                                    ],
+                                  ),
+                                ],
+                              );
+                            },
+                          ),
+                          const SizedBox(height: 16),
 
                           Divider(
                             height: 1,
@@ -13245,7 +13507,10 @@ class _CarDetailsPageState extends State<CarDetailsPage> {
                               ),
                             ),
                             SizedBox(height: 12),
-                            _buildHorizontalList(similarCars),
+                            _buildHorizontalList(
+                              similarCars,
+                              snapController: _similarSnapController,
+                            ),
                             SizedBox(height: 28),
                           ] else if (loadingSimilar) ...[
                             Text(
@@ -13277,7 +13542,10 @@ class _CarDetailsPageState extends State<CarDetailsPage> {
                               ),
                             ),
                             SizedBox(height: 12),
-                            _buildHorizontalList(relatedCars),
+                            _buildHorizontalList(
+                              relatedCars,
+                              snapController: _relatedSnapController,
+                            ),
                           ] else if (loadingRelated) ...[
                             Text(
                               AppLocalizations.of(context)!.relatedListings,
@@ -13724,16 +13992,69 @@ class _CarDetailsPageState extends State<CarDetailsPage> {
     );
   }
 
-  Widget _buildHorizontalList(List<Map<String, dynamic>> items) {
+  Widget _buildHorizontalList(
+    List<Map<String, dynamic>> items, {
+    required PageController snapController,
+  }) {
+    // When the user selects "one listing per row" (list layout),
+    // render similar/related as a horizontal swipe list of full-width rows.
+    if (_listingColumnsPref == 1) {
+      return LayoutBuilder(
+        builder: (context, constraints) {
+          final double viewportW = constraints.maxWidth;
+          final double itemW = (viewportW.isFinite && viewportW > 0)
+              ? viewportW
+              : MediaQuery.of(context).size.width;
+          final double h = (itemW.isFinite && itemW > 0) ? (itemW / 2.78) : 140;
+
+          return SizedBox(
+            height: h,
+            child: PageView.builder(
+              controller: snapController,
+              physics: const PageScrollPhysics(),
+              pageSnapping: true,
+              itemCount: items.length,
+              itemBuilder: (context, index) {
+                final item = Map<String, dynamic>.from(items[index]);
+                final normalized = mapListingToGlobalCarCardData(context, item);
+                return Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: 2),
+                  child: SizedBox(
+                    width: itemW,
+                    height: h,
+                    child: buildGlobalCarCard(
+                      context,
+                      normalized,
+                      listLayout: true,
+                    ),
+                  ),
+                );
+              },
+            ),
+          );
+        },
+      );
+    }
+
+    // Default: keep the horizontal carousel in grid-card style.
     return SizedBox(
-      height: 220,
+      height: 320,
       child: ListView.separated(
+        padding: const EdgeInsets.symmetric(horizontal: 2),
         scrollDirection: Axis.horizontal,
         itemCount: items.length,
         separatorBuilder: (_, __) => SizedBox(width: 12),
         itemBuilder: (context, index) {
-          final item = items[index];
-          return _buildSmallCarCard(item);
+          final item = Map<String, dynamic>.from(items[index]);
+          final normalized = mapListingToGlobalCarCardData(context, item);
+          return SizedBox(
+            width: 200,
+            child: AspectRatio(
+              // Match Home grid card aspect ratio so layout doesn't overflow.
+              aspectRatio: 0.72,
+              child: buildGlobalCarCard(context, normalized),
+            ),
+          );
         },
       ),
     );
@@ -14166,6 +14487,24 @@ Widget buildCarListingSpecsGrid(
           pickNE(car, ['seating', 'seats', 'seatCount']) ?? '',
         ),
       ),
+    ),
+    detailRowSpec(
+      icon: Icons.confirmation_number_outlined,
+      label: 'Plate type',
+      value: _orDash(() {
+        final raw = pickNE(car, ['plate_type', 'plateType'])?.trim();
+        if (raw == null || raw.isEmpty) return null;
+        return prettyTitleCase(raw);
+      }()),
+    ),
+    detailRowSpec(
+      icon: Icons.location_on_outlined,
+      label: 'Plate city',
+      value: _orDash(() {
+        final raw = pickNE(car, ['plate_city', 'plateCity'])?.trim();
+        if (raw == null || raw.isEmpty) return null;
+        return _translateValueGlobal(context, raw) ?? raw;
+      }()),
     ),
   ];
 
@@ -17931,6 +18270,8 @@ class _SellStep3PageState extends State<SellStep3Page> {
   final _formKey = GlobalKey<FormState>();
   String? selectedPrice;
   String? selectedCity;
+  String? selectedPlateType;
+  String? selectedPlateCity;
   String? contactPhone;
   bool isQuickSell = false;
   bool isPriceManualInput = false;
@@ -17994,6 +18335,8 @@ class _SellStep3PageState extends State<SellStep3Page> {
   void _resetStep3() {
     selectedPrice = null;
     selectedCity = null;
+    selectedPlateType = null;
+    selectedPlateCity = null;
     contactPhone = null;
     isQuickSell = false;
     selectedCurrency = 'USD';
@@ -18048,6 +18391,34 @@ class _SellStep3PageState extends State<SellStep3Page> {
     'Fallujah',
     'Tikrit',
     'Samarra',
+  ];
+
+  final List<String> _plateTypeOptions = const [
+    'private',
+    'temporary',
+    'commercial',
+    'taxi',
+  ];
+
+  // "All the cities we have" (keep in sync with Home filters list).
+  final List<String> _plateCities = const [
+    'Baghdad',
+    'Basra',
+    'Erbil',
+    'Najaf',
+    'Karbala',
+    'Kirkuk',
+    'Mosul',
+    'Sulaymaniyah',
+    'Dohuk',
+    'Anbar',
+    'Halabja',
+    'Diyala',
+    'Diyarbakir',
+    'Maysan',
+    'Muthanna',
+    'Dhi Qar',
+    'Salaheldeen',
   ];
 
   Future<String?> _pickFromList(String title, List<String> options) async {
@@ -18422,6 +18793,47 @@ class _SellStep3PageState extends State<SellStep3Page> {
             ),
             SizedBox(height: 16),
 
+            // Plate Type (Optional)
+            GestureDetector(
+              onTap: () async {
+                _dismissKeyboard();
+                final choice = await _pickFromList(
+                  'Plate type',
+                  _plateTypeOptions.map(prettyTitleCase).toList(),
+                );
+                if (choice != null) {
+                  setState(() {
+                    selectedPlateType = choice.toLowerCase();
+                  });
+                }
+              },
+              child: buildFancySelector(
+                context,
+                icon: Icons.confirmation_number_outlined,
+                label: 'Plate type',
+                value: selectedPlateType == null
+                    ? null
+                    : prettyTitleCase(selectedPlateType!),
+              ),
+            ),
+            SizedBox(height: 16),
+
+            // Plate City (Optional)
+            GestureDetector(
+              onTap: () async {
+                _dismissKeyboard();
+                final choice = await _pickFromList('Plate city', _plateCities);
+                if (choice != null) setState(() => selectedPlateCity = choice);
+              },
+              child: buildFancySelector(
+                context,
+                icon: Icons.location_on_outlined,
+                label: 'Plate city',
+                value: selectedPlateCity,
+              ),
+            ),
+            SizedBox(height: 16),
+
             // Contact Phone
             TextFormField(
               onTap: () => _dismissKeyboard(),
@@ -18572,6 +18984,8 @@ class _SellStep3PageState extends State<SellStep3Page> {
                         if (parentState != null) {
                           parentState.carData['price'] = selectedPrice;
                           parentState.carData['city'] = selectedCity;
+                          parentState.carData['plate_type'] = selectedPlateType;
+                          parentState.carData['plate_city'] = selectedPlateCity;
                           parentState.carData['contact_phone'] = contactPhone;
                           parentState.carData['is_quick_sell'] = isQuickSell;
                           parentState._goToNextStep();
@@ -20142,80 +20556,6 @@ class _SellReviewCarDetailScrollViewState
                         ],
                       ),
                     ),
-                  Builder(
-                    builder: (context) {
-                      String? pickCity(List<String> keys) {
-                        for (final k in keys) {
-                          final v = car[k]?.toString().trim();
-                          if (v != null && v.isNotEmpty) return v;
-                        }
-                        return null;
-                      }
-
-                      final cityDetail = (pickCity(['city', 'location']) ?? '')
-                          .trim();
-                      final cityLabelStyle = TextStyle(
-                        fontSize: 13,
-                        fontWeight: FontWeight.w700,
-                        color: isLightShell
-                            ? const Color(0xFF757575)
-                            : Colors.white70,
-                      );
-                      final uploadedDetail = _listingUploadedAgo(context, car);
-                      if (cityDetail.isEmpty && uploadedDetail.isEmpty) {
-                        return const SizedBox.shrink();
-                      }
-                      return Column(
-                        crossAxisAlignment: CrossAxisAlignment.stretch,
-                        children: [
-                          Row(
-                            crossAxisAlignment: CrossAxisAlignment.center,
-                            children: [
-                              Expanded(
-                                child: cityDetail.isEmpty
-                                    ? const SizedBox.shrink()
-                                    : Row(
-                                        mainAxisSize: MainAxisSize.min,
-                                        children: [
-                                          Icon(
-                                            Icons.location_city,
-                                            size: 14,
-                                            color: isLightShell
-                                                ? const Color(0xFF757575)
-                                                : Colors.white70,
-                                          ),
-                                          const SizedBox(width: 6),
-                                          Flexible(
-                                            child: Text(
-                                              '${AppLocalizations.of(context)!.cityLabel}: ${_translateValueGlobal(context, pickCity(['city', 'location'])) ?? pickCity(['city', 'location'])}',
-                                              style: cityLabelStyle,
-                                              maxLines: 1,
-                                              overflow: TextOverflow.ellipsis,
-                                            ),
-                                          ),
-                                        ],
-                                      ),
-                              ),
-                              if (uploadedDetail.isNotEmpty) ...[
-                                if (cityDetail.isNotEmpty)
-                                  const SizedBox(width: 8),
-                                Text(
-                                  uploadedDetail,
-                                  style: cityLabelStyle.copyWith(
-                                    fontWeight: FontWeight.w600,
-                                    fontSize: 12,
-                                  ),
-                                  maxLines: 1,
-                                  overflow: TextOverflow.ellipsis,
-                                ),
-                              ],
-                            ],
-                          ),
-                          const SizedBox(height: 8),
-                        ],
-                      );
-                    },
-                  ),
                   Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
@@ -20285,6 +20625,78 @@ class _SellReviewCarDetailScrollViewState
                         ),
                       ],
                     ],
+                  ),
+                  // Match Home listing card: city / uploaded info goes below title + price.
+                  Builder(
+                    builder: (context) {
+                      String? pickCity(List<String> keys) {
+                        for (final k in keys) {
+                          final v = car[k]?.toString().trim();
+                          if (v != null && v.isNotEmpty) return v;
+                        }
+                        return null;
+                      }
+
+                      final cityDetail = (pickCity(['city', 'location']) ?? '')
+                          .trim();
+                      final uploadedDetail = _listingUploadedAgo(context, car);
+                      if (cityDetail.isEmpty && uploadedDetail.isEmpty) {
+                        return const SizedBox.shrink();
+                      }
+                      final cityLabelStyle = TextStyle(
+                        fontSize: 13,
+                        fontWeight: FontWeight.w700,
+                        color: isLightShell
+                            ? const Color(0xFF757575)
+                            : Colors.white70,
+                      );
+                      return Padding(
+                        padding: const EdgeInsets.only(top: 10),
+                        child: Row(
+                          crossAxisAlignment: CrossAxisAlignment.center,
+                          children: [
+                            Expanded(
+                              child: cityDetail.isEmpty
+                                  ? const SizedBox.shrink()
+                                  : Row(
+                                      mainAxisSize: MainAxisSize.min,
+                                      children: [
+                                        Icon(
+                                          Icons.location_city,
+                                          size: 14,
+                                          color: isLightShell
+                                              ? const Color(0xFF757575)
+                                              : Colors.white70,
+                                        ),
+                                        const SizedBox(width: 6),
+                                        Flexible(
+                                          child: Text(
+                                            '${AppLocalizations.of(context)!.cityLabel}: ${_translateValueGlobal(context, pickCity(['city', 'location'])) ?? pickCity(['city', 'location'])}',
+                                            style: cityLabelStyle,
+                                            maxLines: 1,
+                                            overflow: TextOverflow.ellipsis,
+                                          ),
+                                        ),
+                                      ],
+                                    ),
+                            ),
+                            if (uploadedDetail.isNotEmpty) ...[
+                              if (cityDetail.isNotEmpty)
+                                const SizedBox(width: 8),
+                              Text(
+                                uploadedDetail,
+                                style: cityLabelStyle.copyWith(
+                                  fontWeight: FontWeight.w600,
+                                  fontSize: 12,
+                                ),
+                                maxLines: 1,
+                                overflow: TextOverflow.ellipsis,
+                              ),
+                            ],
+                          ],
+                        ),
+                      );
+                    },
                   ),
                   const SizedBox(height: 16),
                   Divider(
@@ -20619,6 +21031,8 @@ class _SellStep5PageState extends State<SellStep5Page> {
     );
     final price = int.tryParse(carData['price']?.toString() ?? '');
     final city = (carData['city']?.toString() ?? 'Baghdad').toLowerCase();
+    final plateType = (carData['plate_type']?.toString() ?? '').trim().toLowerCase();
+    final plateCity = (carData['plate_city']?.toString() ?? '').trim().toLowerCase();
     final title = '$brand $model $trim'.trim();
 
     // Normalize payload to match backend expectations
@@ -20662,6 +21076,8 @@ class _SellStep5PageState extends State<SellStep5Page> {
       'engine_size': engineSize,
       'location': location,
       'city': city,
+      'plate_type': plateType.isNotEmpty ? plateType : null,
+      'plate_city': plateCity.isNotEmpty ? plateCity : null,
       'contact_phone': (carData['contact_phone']?.toString() ?? '').trim(),
       'is_quick_sell': carData['is_quick_sell'] ?? false,
     }..removeWhere((k, v) => v == null || (v is String && v.trim().isEmpty));
@@ -23301,6 +23717,7 @@ class _FavoritesPageState extends State<FavoritesPage> {
   @override
   void initState() {
     super.initState();
+    ListingLayoutPrefs.load();
     // Delay loading until after first frame so that inherited widgets
     // like Localizations are available when _loadFavorites runs.
     WidgetsBinding.instance.addPostFrameCallback((_) => _loadFavorites());
@@ -23458,50 +23875,57 @@ class _FavoritesPageState extends State<FavoritesPage> {
             RefreshIndicator(
               color: Theme.of(context).colorScheme.primary,
               onRefresh: _loadFavorites,
-              child: GridView.builder(
-                physics: const AlwaysScrollableScrollPhysics(),
-                padding: const EdgeInsets.all(8),
-                gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-                  crossAxisCount: 2,
-                  crossAxisSpacing: 8,
-                  mainAxisSpacing: 8,
-                  childAspectRatio: 0.62,
-                ),
-                itemCount: _favorites.length,
-                itemBuilder: (context, index) {
-                  final carMap = Map<String, dynamic>.from(_favorites[index]);
-                  final card = buildGlobalCarCard(
-                    context,
-                    mapListingToGlobalCarCardData(context, carMap),
-                  );
-                  final String carId =
-                      (carMap['public_id'] ?? carMap['id'] ?? '').toString();
-                  if (carId.isEmpty) return card;
-                  return Stack(
-                    clipBehavior: Clip.none,
-                    children: [
-                      card,
-                      Positioned(
-                        top: 6,
-                        right: 6,
-                        child: Material(
-                          color: Colors.black54,
-                          shape: const CircleBorder(),
-                          child: InkWell(
-                            customBorder: const CircleBorder(),
-                            onTap: () => _toggleFavorite(carId),
-                            child: const Padding(
-                              padding: EdgeInsets.all(6),
-                              child: Icon(
-                                Icons.favorite,
-                                color: Color(0xFFFF6B00),
-                                size: 22,
+              child: ValueListenableBuilder<int>(
+                valueListenable: ListingLayoutPrefs.columns,
+                builder: (context, cols, _) {
+                  final listingColumns = (cols == 1) ? 1 : 2;
+                  return GridView.builder(
+                    physics: const AlwaysScrollableScrollPhysics(),
+                    padding: const EdgeInsets.all(8),
+                    gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
+                      crossAxisCount: listingColumns,
+                      crossAxisSpacing: 8,
+                      mainAxisSpacing: 8,
+                      childAspectRatio: listingColumns == 2 ? 0.62 : 2.78,
+                    ),
+                    itemCount: _favorites.length,
+                    itemBuilder: (context, index) {
+                      final carMap = Map<String, dynamic>.from(_favorites[index]);
+                      final card = buildGlobalCarCard(
+                        context,
+                        mapListingToGlobalCarCardData(context, carMap),
+                        listLayout: listingColumns == 1,
+                      );
+                      final String carId =
+                          (carMap['public_id'] ?? carMap['id'] ?? '').toString();
+                      if (carId.isEmpty) return card;
+                      return Stack(
+                        clipBehavior: Clip.none,
+                        children: [
+                          card,
+                          Positioned(
+                            top: 6,
+                            right: 6,
+                            child: Material(
+                              color: Colors.black54,
+                              shape: const CircleBorder(),
+                              child: InkWell(
+                                customBorder: const CircleBorder(),
+                                onTap: () => _toggleFavorite(carId),
+                                child: const Padding(
+                                  padding: EdgeInsets.all(6),
+                                  child: Icon(
+                                    Icons.favorite,
+                                    color: Color(0xFFFF6B00),
+                                    size: 22,
+                                  ),
+                                ),
                               ),
                             ),
                           ),
-                        ),
-                      ),
-                    ],
+                        ],
+                      );
+                    },
                   );
                 },
               ),
@@ -25751,6 +26175,7 @@ class _MyListingsPageState extends State<MyListingsPage> {
   @override
   void initState() {
     super.initState();
+    ListingLayoutPrefs.load();
     _loadMyListings();
   }
 
@@ -26037,18 +26462,33 @@ class _MyListingsPageState extends State<MyListingsPage> {
         ),
         SizedBox(height: 0),
         Expanded(
-          child: GridView.builder(
-            padding: EdgeInsets.all(8),
-            gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
-              crossAxisCount: 2,
-              crossAxisSpacing: 8,
-              mainAxisSpacing: 8,
-              childAspectRatio: 0.62,
-            ),
-            itemCount: myListings.length,
-            itemBuilder: (context, index) {
-              final listing = myListings[index];
-              return _buildListingCard(listing);
+          child: ValueListenableBuilder<int>(
+            valueListenable: ListingLayoutPrefs.columns,
+            builder: (context, cols, _) {
+              final listingColumns = (cols == 1) ? 1 : 2;
+              return GridView.builder(
+                padding: EdgeInsets.fromLTRB(
+                  listingColumns == 1 ? 4 : 8,
+                  8,
+                  listingColumns == 1 ? 4 : 8,
+                  8,
+                ),
+                gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
+                  crossAxisCount: listingColumns,
+                  crossAxisSpacing: 8,
+                  mainAxisSpacing: 8,
+                  childAspectRatio: listingColumns == 2 ? 0.62 : 2.78,
+                ),
+                itemCount: myListings.length,
+                itemBuilder: (context, index) {
+                  final listing = myListings[index];
+                  return buildGlobalCarCard(
+                    context,
+                    mapListingToGlobalCarCardData(context, listing),
+                    listLayout: listingColumns == 1,
+                  );
+                },
+              );
             },
           ),
         ),
@@ -26056,10 +26496,4 @@ class _MyListingsPageState extends State<MyListingsPage> {
     );
   }
 
-  Widget _buildListingCard(Map<String, dynamic> listing) {
-    return buildGlobalCarCard(
-      context,
-      mapListingToGlobalCarCardData(context, listing),
-    );
-  }
 }
