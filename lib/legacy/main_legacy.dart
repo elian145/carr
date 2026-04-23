@@ -21031,8 +21031,11 @@ class _SellStep5PageState extends State<SellStep5Page> {
     );
     final price = int.tryParse(carData['price']?.toString() ?? '');
     final city = (carData['city']?.toString() ?? 'Baghdad').toLowerCase();
-    final plateType = (carData['plate_type']?.toString() ?? '').trim().toLowerCase();
-    final plateCity = (carData['plate_city']?.toString() ?? '').trim().toLowerCase();
+    final plateType =
+        (carData['plate_type']?.toString() ?? '').trim().toLowerCase();
+    // Keep city casing as selected in UI; some backends validate against
+    // a specific list and may reject lowercased values silently.
+    final plateCity = (carData['plate_city']?.toString() ?? '').trim();
     final title = '$brand $model $trim'.trim();
 
     // Normalize payload to match backend expectations
@@ -21077,7 +21080,10 @@ class _SellStep5PageState extends State<SellStep5Page> {
       'location': location,
       'city': city,
       'plate_type': plateType.isNotEmpty ? plateType : null,
+      // Send both snake_case and camelCase so either backend schema accepts it.
+      'plateType': plateType.isNotEmpty ? plateType : null,
       'plate_city': plateCity.isNotEmpty ? plateCity : null,
+      'plateCity': plateCity.isNotEmpty ? plateCity : null,
       'contact_phone': (carData['contact_phone']?.toString() ?? '').trim(),
       'is_quick_sell': carData['is_quick_sell'] ?? false,
     }..removeWhere((k, v) => v == null || (v is String && v.trim().isEmpty));
