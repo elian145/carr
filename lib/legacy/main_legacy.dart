@@ -1526,14 +1526,18 @@ Widget _buildGlobalCarCardInnerText(
             Expanded(
               flex: 1,
               child: mileageDisplay.isNotEmpty
-                  ? Text(
+                  ? AutoSizeText(
                       mileageDisplay,
+                      textScaleFactor: 1.0,
                       style: TextStyle(
                         color: metaTextColor,
                         fontSize: 13,
                       ),
                       maxLines: 1,
-                      overflow: TextOverflow.ellipsis,
+                      minFontSize: 8,
+                      stepGranularity: 0.5,
+                      overflow: TextOverflow.clip,
+                      softWrap: false,
                     )
                   : const SizedBox.shrink(),
             ),
@@ -1545,7 +1549,8 @@ Widget _buildGlobalCarCardInnerText(
                   child: Align(
                     alignment: AlignmentDirectional.centerEnd,
                     child: Row(
-                      mainAxisSize: MainAxisSize.min,
+                      mainAxisSize: MainAxisSize.max,
+                      mainAxisAlignment: MainAxisAlignment.end,
                       children: [
                         Icon(
                           Icons.location_city,
@@ -1554,16 +1559,19 @@ Widget _buildGlobalCarCardInnerText(
                         ),
                         const SizedBox(width: 3),
                         Flexible(
-                          child: Text(
+                          child: AutoSizeText(
                             cityLine,
+                            textScaleFactor: 1.0,
                             style: TextStyle(
                               color: metaTextColor,
                               fontSize: 13,
                             ),
-                            // Cards are height-constrained; prioritize fitting in one line by
-                            // giving city more horizontal space (see flex above).
-                            maxLines: 1,
+                            // Prefer shrinking/wrapping over ellipsis so city always shows.
+                            maxLines: 2,
+                            minFontSize: 8,
+                            stepGranularity: 0.5,
                             overflow: TextOverflow.clip,
+                            softWrap: true,
                             textAlign: TextAlign.end,
                           ),
                         ),
