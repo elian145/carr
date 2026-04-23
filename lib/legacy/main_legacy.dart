@@ -1524,7 +1524,7 @@ Widget _buildGlobalCarCardInnerText(
           crossAxisAlignment: CrossAxisAlignment.end,
           children: [
             Expanded(
-              flex: 2,
+              flex: 3,
               child: mileageDisplay.isNotEmpty
                   ? FittedBox(
                       fit: BoxFit.scaleDown,
@@ -1545,7 +1545,7 @@ Widget _buildGlobalCarCardInnerText(
             ),
             if (cityLine.isNotEmpty)
               Expanded(
-                flex: 1,
+                flex: 2,
                 child: Padding(
                   padding: const EdgeInsetsDirectional.only(start: 6),
                   child: Align(
@@ -1569,7 +1569,7 @@ Widget _buildGlobalCarCardInnerText(
                               textScaler: const TextScaler.linear(1.0),
                               style: TextStyle(
                                 color: metaTextColor,
-                                fontSize: 12,
+                                fontSize: 13,
                               ),
                               maxLines: 1,
                               overflow: TextOverflow.clip,
