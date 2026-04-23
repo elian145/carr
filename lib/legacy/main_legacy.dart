@@ -15152,8 +15152,9 @@ class _SellStep1PageState extends State<SellStep1Page> {
     parent.carData['body_type'] = sellFlowBodyLabel(f.bodyType);
     parent.carData['drive_type'] = sellFlowDriveLabel(f.driveType);
     if (f.engineSizeLiters != null && f.engineSizeLiters! > 0) {
-      // Persist as numeric liters string; UI can add units/suffixes when needed.
-      parent.carData['engine_size'] = f.engineSizeLiters!.toStringAsFixed(1);
+      // Keep suffix (T/D/TD) for display, while the API submit parses leading liters.
+      parent.carData['engine_size'] =
+          '${f.engineSizeLiters!.toStringAsFixed(1)}${f.displacementSuffix}';
     }
     if (f.cylinderCount != null && f.cylinderCount! > 0) {
       parent.carData['cylinder_count'] = '${f.cylinderCount}';
@@ -16437,16 +16438,45 @@ class _SellStep2PageState extends State<SellStep2Page> {
         final lit = OnlineSpecVariant.parseLeadingEngineLiters(es);
         if (lit == null || lit <= 0.001) {
           es = null;
-        } else {
-          // Normalize catalog/online labels like "2.0 T" to "2.0" so the UI
-          // stays in picker mode instead of switching to manual input.
-          es = lit.toStringAsFixed(1);
         }
       }
       if (es != null && es.isNotEmpty) {
-        selectedEngineSize = es;
-        isEngineSizeManualInput = false;
-        _engineSizeController.text = es;
+        // Prefer staying in picker mode by snapping to an available option
+        // based on leading liters (preserves suffix labels like "T").
+        final available = getAvailableEngineSizes()
+            .where((e) => e != 'Any')
+            .map((e) => e.trim())
+            .toList();
+        String? resolved = available.contains(es) ? es : null;
+        final lit = OnlineSpecVariant.parseLeadingEngineLiters(es);
+        if (resolved == null && lit != null) {
+          for (final opt in available) {
+            final oL = OnlineSpecVariant.parseLeadingEngineLiters(opt);
+            if (oL != null && (oL - lit).abs() < 0.06) {
+              resolved = opt;
+              break;
+            }
+          }
+        }
+
+        if (resolved != null && resolved.isNotEmpty) {
+          selectedEngineSize = resolved;
+          isEngineSizeManualInput = false;
+          _engineSizeController.text =
+              (OnlineSpecVariant.parseLeadingEngineLiters(resolved)
+                      ?.toStringAsFixed(1) ??
+                  '');
+        } else {
+          // Unknown label; fall back to manual input.
+          isEngineSizeManualInput = true;
+          _engineSizeController.text =
+              (OnlineSpecVariant.parseLeadingEngineLiters(es)
+                      ?.toStringAsFixed(1) ??
+                  es);
+          selectedEngineSize = _engineSizeController.text.trim().isEmpty
+              ? es
+              : _engineSizeController.text.trim();
+        }
       }
     });
   }
@@ -16863,8 +16893,9 @@ class _SellStep2PageState extends State<SellStep2Page> {
 
   void _applyOnlineVariantToSellStep2(OnlineSpecVariant v) {
     if (v.engineSizeLiters != null && !isEngineSizeManualInput) {
-      // Keep engine size as a numeric liters label; suffix is display-only.
-      selectedEngineSize = v.engineSizeLiters!.toStringAsFixed(1);
+      // Keep suffix (T/D/TD) for display; submit parses leading liters.
+      selectedEngineSize =
+          '${v.engineSizeLiters!.toStringAsFixed(1)}${v.displacementSuffix}';
     }
     if (v.cylinderCount != null) {
       selectedCylinderCount = '${v.cylinderCount}';
