@@ -15152,8 +15152,8 @@ class _SellStep1PageState extends State<SellStep1Page> {
     parent.carData['body_type'] = sellFlowBodyLabel(f.bodyType);
     parent.carData['drive_type'] = sellFlowDriveLabel(f.driveType);
     if (f.engineSizeLiters != null && f.engineSizeLiters! > 0) {
-      parent.carData['engine_size'] =
-          '${f.engineSizeLiters!.toStringAsFixed(1)}${f.displacementSuffix}';
+      // Persist as numeric liters string; UI can add units/suffixes when needed.
+      parent.carData['engine_size'] = f.engineSizeLiters!.toStringAsFixed(1);
     }
     if (f.cylinderCount != null && f.cylinderCount! > 0) {
       parent.carData['cylinder_count'] = '${f.cylinderCount}';
@@ -16435,19 +16435,18 @@ class _SellStep2PageState extends State<SellStep2Page> {
       }
       if (es != null && es.isNotEmpty) {
         final lit = OnlineSpecVariant.parseLeadingEngineLiters(es);
-        if (lit != null && lit <= 0.001) {
+        if (lit == null || lit <= 0.001) {
           es = null;
+        } else {
+          // Normalize catalog/online labels like "2.0 T" to "2.0" so the UI
+          // stays in picker mode instead of switching to manual input.
+          es = lit.toStringAsFixed(1);
         }
       }
       if (es != null && es.isNotEmpty) {
-        if (engineSizes.contains(es)) {
-          selectedEngineSize = es;
-          isEngineSizeManualInput = false;
-        } else {
-          isEngineSizeManualInput = true;
-          _engineSizeController.text = es;
-          selectedEngineSize = es;
-        }
+        selectedEngineSize = es;
+        isEngineSizeManualInput = false;
+        _engineSizeController.text = es;
       }
     });
   }
@@ -16864,8 +16863,8 @@ class _SellStep2PageState extends State<SellStep2Page> {
 
   void _applyOnlineVariantToSellStep2(OnlineSpecVariant v) {
     if (v.engineSizeLiters != null && !isEngineSizeManualInput) {
-      selectedEngineSize =
-          '${v.engineSizeLiters!.toStringAsFixed(1)}${v.displacementSuffix}';
+      // Keep engine size as a numeric liters label; suffix is display-only.
+      selectedEngineSize = v.engineSizeLiters!.toStringAsFixed(1);
     }
     if (v.cylinderCount != null) {
       selectedCylinderCount = '${v.cylinderCount}';
