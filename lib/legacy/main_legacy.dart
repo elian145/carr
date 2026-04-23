@@ -6844,6 +6844,79 @@ class _HomePageState extends State<HomePage> {
                                 ],
                               ),
                               SizedBox(height: 16),
+                              // City sits above Trim (without moving Trim down)
+                              Row(
+                                children: [
+                                  const Expanded(child: SizedBox.shrink()),
+                                  const SizedBox(width: 8),
+                                  const Expanded(child: SizedBox.shrink()),
+                                  const SizedBox(width: 8),
+                                  Expanded(
+                                    child: SizedBox(
+                                      height: 38,
+                                      child: DropdownButtonFormField<String>(
+                                        isDense: true,
+                                        isExpanded: true,
+                                        style: GoogleFonts.orbitron(
+                                          fontSize: 12,
+                                          color: Colors.white,
+                                          fontWeight: FontWeight.bold,
+                                        ),
+                                        value: (selectedCity != null &&
+                                                cities.contains(selectedCity))
+                                            ? selectedCity
+                                            : 'Any',
+                                        decoration: InputDecoration(
+                                          labelText:
+                                              AppLocalizations.of(context)!.cityLabel,
+                                          floatingLabelBehavior:
+                                              FloatingLabelBehavior.never,
+                                          labelStyle: GoogleFonts.orbitron(
+                                            color: Colors.white70,
+                                            fontSize: 11,
+                                            fontWeight: FontWeight.bold,
+                                          ),
+                                          filled: true,
+                                          fillColor: Colors.black.withOpacity(0.10),
+                                          border: OutlineInputBorder(
+                                            borderRadius: BorderRadius.circular(10),
+                                          ),
+                                          contentPadding:
+                                              const EdgeInsets.symmetric(
+                                            horizontal: 8,
+                                            vertical: 8,
+                                          ),
+                                        ),
+                                        items: cities
+                                            .map(
+                                              (c) => DropdownMenuItem(
+                                                value: c,
+                                                child: Text(
+                                                  c == 'Any'
+                                                      ? AppLocalizations.of(context)!.any
+                                                      : (_translateValueGlobal(context, c) ??
+                                                          c),
+                                                  maxLines: 1,
+                                                  overflow: TextOverflow.ellipsis,
+                                                ),
+                                              ),
+                                            )
+                                            .toList(),
+                                        onChanged: (value) {
+                                          setState(() {
+                                            selectedCity =
+                                                (value == null || value == 'Any')
+                                                    ? null
+                                                    : value;
+                                          });
+                                          onFilterChanged();
+                                        },
+                                      ),
+                                    ),
+                                  ),
+                                ],
+                              ),
+                              SizedBox(height: 8),
                               Row(
                                 children: [
                                   // Brand selector styled like a form field for symmetry
@@ -7270,172 +7343,82 @@ class _HomePageState extends State<HomePage> {
                                     ),
                                   ),
                                   SizedBox(width: 8),
-                                  // City (small) + Trim
+                                  // Trim Dropdown
                                   Expanded(
-                                    child: Column(
-                                      mainAxisSize: MainAxisSize.min,
-                                      children: [
-                                        SizedBox(
-                                          height: 38,
-                                          child: DropdownButtonFormField<String>(
-                                            isDense: true,
-                                            isExpanded: true,
+                                    child: DropdownButtonFormField<String>(
+                                      isDense: true,
+                                      style: GoogleFonts.orbitron(
+                                        fontSize: 14,
+                                        color: Colors.white,
+                                        fontWeight: FontWeight.bold,
+                                      ),
+                                      initialValue:
+                                          selectedTrim != null &&
+                                              (selectedTrim!.isEmpty ||
+                                                  (selectedBrand != null &&
+                                                      selectedModel != null &&
+                                                      trimsByBrandModel[selectedBrand] !=
+                                                          null &&
+                                                      trimsByBrandModel[selectedBrand]![selectedModel] !=
+                                                          null &&
+                                                      trimsByBrandModel[selectedBrand]![selectedModel]!
+                                                          .contains(selectedTrim)))
+                                          ? selectedTrim
+                                          : null,
+                                      decoration: InputDecoration(
+                                        labelText:
+                                            AppLocalizations.of(context)!.trimLabel,
+                                        labelStyle: GoogleFonts.orbitron(
+                                          color: Colors.white,
+                                          fontSize: 15,
+                                          fontWeight: FontWeight.bold,
+                                        ),
+                                        filled: true,
+                                        fillColor: Colors.black.withOpacity(0.15),
+                                        border: OutlineInputBorder(
+                                          borderRadius: BorderRadius.circular(12),
+                                        ),
+                                        contentPadding: const EdgeInsets.symmetric(
+                                          horizontal: 6,
+                                          vertical: 6,
+                                        ),
+                                      ),
+                                      items: [
+                                        DropdownMenuItem(
+                                          value: '',
+                                          child: Text(
+                                            AppLocalizations.of(context)!.any,
                                             style: GoogleFonts.orbitron(
-                                              fontSize: 12,
-                                              color: Colors.white,
-                                              fontWeight: FontWeight.bold,
+                                              color: Colors.grey,
+                                              fontSize: 14,
                                             ),
-                                            value: (selectedCity != null &&
-                                                    cities.contains(selectedCity))
-                                                ? selectedCity
-                                                : 'Any',
-                                            decoration: InputDecoration(
-                                              labelText:
-                                                  AppLocalizations.of(context)!.cityLabel,
-                                              floatingLabelBehavior:
-                                                  FloatingLabelBehavior.never,
-                                              labelStyle: GoogleFonts.orbitron(
-                                                color: Colors.white70,
-                                                fontSize: 11,
-                                                fontWeight: FontWeight.bold,
-                                              ),
-                                              filled: true,
-                                              fillColor:
-                                                  Colors.black.withOpacity(0.10),
-                                              border: OutlineInputBorder(
-                                                borderRadius:
-                                                    BorderRadius.circular(10),
-                                              ),
-                                              contentPadding:
-                                                  const EdgeInsets.symmetric(
-                                                horizontal: 8,
-                                                vertical: 8,
-                                              ),
-                                            ),
-                                            items: cities
-                                                .map(
-                                                  (c) => DropdownMenuItem(
-                                                    value: c,
-                                                    child: Text(
-                                                      c == 'Any'
-                                                          ? AppLocalizations.of(
-                                                                context,
-                                                              )!
-                                                              .any
-                                                          : (_translateValueGlobal(
-                                                                context,
-                                                                c,
-                                                              ) ??
-                                                              c),
-                                                      maxLines: 1,
-                                                      overflow:
-                                                          TextOverflow.ellipsis,
-                                                    ),
-                                                  ),
-                                                )
-                                                .toList(),
-                                            onChanged: (value) {
-                                              setState(() {
-                                                selectedCity = (value == null ||
-                                                        value == 'Any')
-                                                    ? null
-                                                    : value;
-                                              });
-                                              onFilterChanged();
-                                            },
                                           ),
                                         ),
-                                        const SizedBox(height: 8),
-                                        DropdownButtonFormField<String>(
-                                          isDense: true,
-                                          style: GoogleFonts.orbitron(
-                                            fontSize: 14,
-                                            color: Colors.white,
-                                            fontWeight: FontWeight.bold,
-                                          ),
-                                          initialValue: selectedTrim != null &&
-                                                  (selectedTrim!.isEmpty ||
-                                                      (selectedBrand != null &&
-                                                          selectedModel !=
-                                                              null &&
-                                                          trimsByBrandModel[
-                                                                      selectedBrand] !=
-                                                                  null &&
-                                                          trimsByBrandModel[
-                                                                      selectedBrand]![
-                                                                  selectedModel] !=
-                                                              null &&
-                                                          trimsByBrandModel[
-                                                                      selectedBrand]![
-                                                                  selectedModel]!
-                                                              .contains(
-                                                                selectedTrim,
-                                                              )))
-                                              ? selectedTrim
-                                              : null,
-                                          decoration: InputDecoration(
-                                            labelText:
-                                                AppLocalizations.of(context)!.trimLabel,
-                                            labelStyle: GoogleFonts.orbitron(
-                                              color: Colors.white,
-                                              fontSize: 15,
-                                              fontWeight: FontWeight.bold,
-                                            ),
-                                            filled: true,
-                                            fillColor:
-                                                Colors.black.withOpacity(0.15),
-                                            border: OutlineInputBorder(
-                                              borderRadius:
-                                                  BorderRadius.circular(12),
-                                            ),
-                                            contentPadding:
-                                                const EdgeInsets.symmetric(
-                                              horizontal: 6,
-                                              vertical: 6,
-                                            ),
-                                          ),
-                                          items: [
-                                            DropdownMenuItem(
-                                              value: '',
-                                              child: Text(
-                                                AppLocalizations.of(context)!.any,
-                                                style: GoogleFonts.orbitron(
-                                                  color: Colors.grey,
-                                                  fontSize: 14,
+                                        if (selectedBrand != null &&
+                                            selectedModel != null &&
+                                            trimsByBrandModel[selectedBrand] != null &&
+                                            trimsByBrandModel[selectedBrand]![selectedModel] !=
+                                                null)
+                                          ...trimsByBrandModel[selectedBrand]![selectedModel]!
+                                              .map(
+                                                (t) => DropdownMenuItem(
+                                                  value: t,
+                                                  child: Text(
+                                                    t,
+                                                    style: GoogleFonts.orbitron(
+                                                      fontSize: 14,
+                                                    ),
+                                                  ),
                                                 ),
                                               ),
-                                            ),
-                                            if (selectedBrand != null &&
-                                                selectedModel != null &&
-                                                trimsByBrandModel[selectedBrand] !=
-                                                    null &&
-                                                trimsByBrandModel[selectedBrand]![
-                                                        selectedModel] !=
-                                                    null)
-                                              ...trimsByBrandModel[selectedBrand]![
-                                                      selectedModel]!
-                                                  .map(
-                                                    (t) => DropdownMenuItem(
-                                                      value: t,
-                                                      child: Text(
-                                                        t,
-                                                        style: GoogleFonts.orbitron(
-                                                          fontSize: 14,
-                                                        ),
-                                                      ),
-                                                    ),
-                                                  ),
-                                          ],
-                                          onChanged: (value) {
-                                            setState(() {
-                                              selectedTrim =
-                                                  value == '' ? null : value;
-                                              clearFiltersOnVehicleChange();
-                                            });
-                                            onFilterChanged();
-                                          },
-                                        ),
                                       ],
+                                      onChanged: (value) {
+                                        setState(() {
+                                          selectedTrim = value == '' ? null : value;
+                                          clearFiltersOnVehicleChange();
+                                        });
+                                        onFilterChanged();
+                                      },
                                     ),
                                   ),
                                 ],
