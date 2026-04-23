@@ -1524,26 +1524,28 @@ Widget _buildGlobalCarCardInnerText(
           crossAxisAlignment: CrossAxisAlignment.end,
           children: [
             Expanded(
-              flex: 1,
+              flex: 2,
               child: mileageDisplay.isNotEmpty
-                  ? AutoSizeText(
-                      mileageDisplay,
-                      textScaleFactor: 1.0,
-                      style: TextStyle(
-                        color: metaTextColor,
-                        fontSize: 13,
+                  ? FittedBox(
+                      fit: BoxFit.scaleDown,
+                      alignment: AlignmentDirectional.centerStart,
+                      child: Text(
+                        mileageDisplay,
+                        textScaler: const TextScaler.linear(1.0),
+                        style: TextStyle(
+                          color: metaTextColor,
+                          fontSize: 13,
+                        ),
+                        maxLines: 1,
+                        overflow: TextOverflow.clip,
+                        softWrap: false,
                       ),
-                      maxLines: 1,
-                      minFontSize: 8,
-                      stepGranularity: 0.5,
-                      overflow: TextOverflow.clip,
-                      softWrap: false,
                     )
                   : const SizedBox.shrink(),
             ),
             if (cityLine.isNotEmpty)
               Expanded(
-                flex: 2,
+                flex: 1,
                 child: Padding(
                   padding: const EdgeInsetsDirectional.only(start: 6),
                   child: Align(
@@ -1559,20 +1561,21 @@ Widget _buildGlobalCarCardInnerText(
                         ),
                         const SizedBox(width: 3),
                         Flexible(
-                          child: AutoSizeText(
-                            cityLine,
-                            textScaleFactor: 1.0,
-                            style: TextStyle(
-                              color: metaTextColor,
-                              fontSize: 13,
+                          child: FittedBox(
+                            fit: BoxFit.scaleDown,
+                            alignment: AlignmentDirectional.centerEnd,
+                            child: Text(
+                              cityLine,
+                              textScaler: const TextScaler.linear(1.0),
+                              style: TextStyle(
+                                color: metaTextColor,
+                                fontSize: 12,
+                              ),
+                              maxLines: 1,
+                              overflow: TextOverflow.clip,
+                              softWrap: false,
+                              textAlign: TextAlign.end,
                             ),
-                            // Prefer shrinking/wrapping over ellipsis so city always shows.
-                            maxLines: 2,
-                            minFontSize: 8,
-                            stepGranularity: 0.5,
-                            overflow: TextOverflow.clip,
-                            softWrap: true,
-                            textAlign: TextAlign.end,
                           ),
                         ),
                       ],
