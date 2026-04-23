@@ -1526,20 +1526,18 @@ Widget _buildGlobalCarCardInnerText(
             Expanded(
               flex: 3,
               child: mileageDisplay.isNotEmpty
-                  ? FittedBox(
-                      fit: BoxFit.scaleDown,
-                      alignment: AlignmentDirectional.centerStart,
-                      child: Text(
-                        mileageDisplay,
-                        textScaler: const TextScaler.linear(1.0),
-                        style: TextStyle(
-                          color: metaTextColor,
-                          fontSize: 13,
-                        ),
-                        maxLines: 1,
-                        overflow: TextOverflow.clip,
-                        softWrap: false,
+                  ? AutoSizeText(
+                      mileageDisplay,
+                      textScaleFactor: 1.0,
+                      style: TextStyle(
+                        color: metaTextColor,
+                        fontSize: 13,
                       ),
+                      maxLines: 1,
+                      minFontSize: 10,
+                      stepGranularity: 0.5,
+                      overflow: TextOverflow.clip,
+                      softWrap: false,
                     )
                   : const SizedBox.shrink(),
             ),
@@ -1561,21 +1559,20 @@ Widget _buildGlobalCarCardInnerText(
                         ),
                         const SizedBox(width: 3),
                         Flexible(
-                          child: FittedBox(
-                            fit: BoxFit.scaleDown,
-                            alignment: AlignmentDirectional.centerEnd,
-                            child: Text(
-                              cityLine,
-                              textScaler: const TextScaler.linear(1.0),
-                              style: TextStyle(
-                                color: metaTextColor,
-                                fontSize: 13,
-                              ),
-                              maxLines: 1,
-                              overflow: TextOverflow.clip,
-                              softWrap: false,
-                              textAlign: TextAlign.end,
+                          child: AutoSizeText(
+                            cityLine,
+                            textScaleFactor: 1.0,
+                            style: TextStyle(
+                              color: metaTextColor,
+                              fontSize: 13,
                             ),
+                            // Prefer wrapping over extreme shrinking so it's readable.
+                            maxLines: 2,
+                            minFontSize: 10,
+                            stepGranularity: 0.5,
+                            overflow: TextOverflow.clip,
+                            softWrap: true,
+                            textAlign: TextAlign.end,
                           ),
                         ),
                       ],
