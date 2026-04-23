@@ -21,6 +21,16 @@ class _FavoritesPageState extends State<FavoritesPage> {
   String? _error;
   List<Map<String, dynamic>> _cars = <Map<String, dynamic>>[];
 
+  int _favoritedAtMs(Map<String, dynamic> m) {
+    final raw = (m['favorited_at'] ?? m['favoritedAt'])?.toString().trim();
+    if (raw == null || raw.isEmpty) return -1;
+    try {
+      return DateTime.parse(raw).millisecondsSinceEpoch;
+    } catch (_) {
+      return -1;
+    }
+  }
+
   @override
   void initState() {
     super.initState();
@@ -42,6 +52,7 @@ class _FavoritesPageState extends State<FavoritesPage> {
           .whereType<Map>()
           .map((m) => Map<String, dynamic>.from(m.cast<String, dynamic>()))
           .toList();
+      cars.sort((a, b) => _favoritedAtMs(b).compareTo(_favoritedAtMs(a)));
       if (!mounted) return;
       setState(() {
         _cars = cars;

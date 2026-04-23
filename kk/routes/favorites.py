@@ -4,7 +4,7 @@ from flask import Blueprint, jsonify, request
 from flask_jwt_extended import jwt_required
 
 from ..auth import get_current_user, log_user_action
-from ..models import Car, db
+from ..models import Car, db, user_favorites
 
 bp = Blueprint("favorites", __name__)
 
@@ -21,8 +21,27 @@ def get_favorites():
         page = request.args.get("page", 1, type=int)
         per_page = request.args.get("per_page", 20, type=int)
 
-        pagination = current_user.favorites.paginate(page=page, per_page=per_page, error_out=False)
-        cars = [car.to_dict() for car in pagination.items]
+        # Order by "favorited at" so newest favorites appear first.
+        q = (
+            db.session.query(
+                Car,
+                user_favorites.c.created_at.label("favorited_at"),
+            )
+            .join(user_favorites, user_favorites.c.car_id == Car.id)
+            .filter(user_favorites.c.user_id == current_user.id)
+            .order_by(user_favorites.c.created_at.desc())
+        )
+        pagination = q.paginate(page=page, per_page=per_page, error_out=False)
+
+        cars = []
+        for car, fav_at in pagination.items:
+            d = car.to_dict()
+            if fav_at is not None:
+                try:
+                    d["favorited_at"] = fav_at.isoformat()
+                except Exception:
+                    d["favorited_at"] = str(fav_at)
+            cars.append(d)
 
         return (
             jsonify(

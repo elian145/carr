@@ -4,6 +4,7 @@ import 'package:share_plus/share_plus.dart';
 
 import '../features/comparison/state/car_comparison_store.dart';
 import '../l10n/app_localizations.dart';
+import '../theme_provider.dart';
 
 class ComparisonPage extends StatelessWidget {
   const ComparisonPage({super.key});
@@ -53,30 +54,45 @@ class ComparisonPage extends StatelessWidget {
     final loc = AppLocalizations.of(context);
     final store = context.watch<CarComparisonStore>();
     final cars = store.comparisonCars;
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final lightModeInk = AppThemes.darkHomeShellBackground;
+    final lightModeBackground = AppThemes.lightAppBackground;
 
     if (cars.isEmpty) {
       return Scaffold(
+        backgroundColor: isDark ? null : lightModeBackground,
         appBar: AppBar(title: Text(loc?.comparisonTitle ?? 'Comparison')),
         body: Center(
-          child: Padding(
-            padding: const EdgeInsets.all(16),
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                const Icon(Icons.compare_arrows, size: 72, color: Colors.black26),
-                const SizedBox(height: 12),
-                Text(loc?.noCarsSelected ?? 'No cars selected'),
-                const SizedBox(height: 8),
-                Text(
-                  loc?.comparisonEmptyHint ?? 'Add cars to comparison from listings.',
-                  textAlign: TextAlign.center,
+          child: DefaultTextStyle.merge(
+            style: TextStyle(color: isDark ? null : lightModeInk),
+            child: IconTheme.merge(
+              data: IconThemeData(color: isDark ? null : lightModeInk),
+              child: Padding(
+                padding: const EdgeInsets.all(16),
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Icon(
+                      Icons.compare_arrows,
+                      size: 72,
+                      color: isDark ? null : lightModeInk.withOpacity(0.25),
+                    ),
+                    const SizedBox(height: 12),
+                    Text(loc?.noCarsSelected ?? 'No cars selected'),
+                    const SizedBox(height: 8),
+                    Text(
+                      loc?.comparisonEmptyHint ??
+                          'Add cars to comparison from listings.',
+                      textAlign: TextAlign.center,
+                    ),
+                    const SizedBox(height: 16),
+                    ElevatedButton(
+                      onPressed: () => Navigator.pushReplacementNamed(context, '/'),
+                      child: Text(loc?.navHome ?? 'Home'),
+                    ),
+                  ],
                 ),
-                const SizedBox(height: 16),
-                ElevatedButton(
-                  onPressed: () => Navigator.pushReplacementNamed(context, '/'),
-                  child: Text(loc?.navHome ?? 'Home'),
-                ),
-              ],
+              ),
             ),
           ),
         ),
@@ -98,6 +114,7 @@ class ComparisonPage extends StatelessWidget {
     ];
 
     return Scaffold(
+      backgroundColor: isDark ? null : lightModeBackground,
       appBar: AppBar(
         title: Text(loc?.comparisonTitle ?? 'Comparison'),
         actions: [
@@ -125,49 +142,60 @@ class ComparisonPage extends StatelessWidget {
           ),
         ],
       ),
-      body: SingleChildScrollView(
-        scrollDirection: Axis.horizontal,
-        child: SingleChildScrollView(
-          padding: const EdgeInsets.all(12),
-          child: DataTable(
-            columns: [
-              DataColumn(label: Text(loc?.comparisonSpecLabel ?? 'Spec')),
-              ...cars.map((c) {
-                final title = _val(c, 'title');
-                final id = _val(c, 'id');
-                return DataColumn(
-                  label: Row(
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      SizedBox(
-                        width: 140,
-                        child: Text(
-                          title.isEmpty ? id : title,
-                          maxLines: 2,
-                          overflow: TextOverflow.ellipsis,
-                        ),
+      body: DefaultTextStyle.merge(
+        style: TextStyle(color: isDark ? null : lightModeInk),
+        child: IconTheme.merge(
+          data: IconThemeData(color: isDark ? null : lightModeInk),
+          child: SingleChildScrollView(
+            scrollDirection: Axis.horizontal,
+            child: SingleChildScrollView(
+              padding: const EdgeInsets.all(12),
+              child: DataTable(
+                headingTextStyle: TextStyle(
+                  color: isDark ? null : lightModeInk,
+                  fontWeight: FontWeight.w700,
+                ),
+                dataTextStyle: TextStyle(color: isDark ? null : lightModeInk),
+                columns: [
+                  DataColumn(label: Text(loc?.comparisonSpecLabel ?? 'Spec')),
+                  ...cars.map((c) {
+                    final title = _val(c, 'title');
+                    final id = _val(c, 'id');
+                    return DataColumn(
+                      label: Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          SizedBox(
+                            width: 140,
+                            child: Text(
+                              title.isEmpty ? id : title,
+                              maxLines: 2,
+                              overflow: TextOverflow.ellipsis,
+                            ),
+                          ),
+                          const SizedBox(width: 6),
+                          IconButton(
+                            tooltip: loc?.removeAction ?? 'Remove',
+                            onPressed: () => store.removeCarFromComparison(id),
+                            icon: const Icon(Icons.close, size: 18),
+                          ),
+                        ],
                       ),
-                      const SizedBox(width: 6),
-                      IconButton(
-                        tooltip: loc?.removeAction ?? 'Remove',
-                        onPressed: () => store.removeCarFromComparison(id),
-                        icon: const Icon(Icons.close, size: 18),
-                      ),
-                    ],
-                  ),
-                );
-              }),
-            ],
-            rows: specs.map((spec) {
-              final label = spec['label']!;
-              final key = spec['key']!;
-              return DataRow(
-                cells: [
-                  DataCell(Text(label)),
-                  ...cars.map((c) => DataCell(Text(_displayCell(c, key)))),
+                    );
+                  }),
                 ],
-              );
-            }).toList(),
+                rows: specs.map((spec) {
+                  final label = spec['label']!;
+                  final key = spec['key']!;
+                  return DataRow(
+                    cells: [
+                      DataCell(Text(label)),
+                      ...cars.map((c) => DataCell(Text(_displayCell(c, key)))),
+                    ],
+                  );
+                }).toList(),
+              ),
+            ),
           ),
         ),
       ),

@@ -1422,14 +1422,15 @@ Widget _buildGlobalCarCardInnerText(
               SizedBox(width: gap),
               Expanded(
                 child: Align(
-                  alignment: Alignment.centerLeft,
+                  alignment: AlignmentDirectional.centerStart,
                   child: SizedBox(
                     height: reservedTitleHeight,
                     child: Align(
-                      alignment: Alignment.centerLeft,
+                      alignment: AlignmentDirectional.centerStart,
                       child: AutoSizeText(
                         _localizedCarTitleForCard(context, car),
                         textScaleFactor: 1.0,
+                        textAlign: TextAlign.start,
                         style: TextStyle(
                           fontWeight: FontWeight.bold,
                           color: Color(0xFFFF6B00),
@@ -1499,7 +1500,7 @@ Widget _buildGlobalCarCardInnerText(
             const SizedBox(width: 8),
             Expanded(
               child: Align(
-                alignment: Alignment.centerRight,
+                alignment: AlignmentDirectional.centerEnd,
                 child: Text(
                   _formatCurrencyGlobal(context, car['price']),
                   style: TextStyle(
@@ -1523,6 +1524,7 @@ Widget _buildGlobalCarCardInnerText(
           crossAxisAlignment: CrossAxisAlignment.end,
           children: [
             Expanded(
+              flex: 1,
               child: mileageDisplay.isNotEmpty
                   ? Text(
                       mileageDisplay,
@@ -1537,19 +1539,20 @@ Widget _buildGlobalCarCardInnerText(
             ),
             if (cityLine.isNotEmpty)
               Expanded(
+                flex: 2,
                 child: Padding(
-                  padding: const EdgeInsets.only(left: 8),
+                  padding: const EdgeInsetsDirectional.only(start: 6),
                   child: Align(
-                    alignment: Alignment.centerRight,
+                    alignment: AlignmentDirectional.centerEnd,
                     child: Row(
                       mainAxisSize: MainAxisSize.min,
                       children: [
                         Icon(
                           Icons.location_city,
-                          size: 14,
+                          size: 13,
                           color: metaTextColor,
                         ),
-                        const SizedBox(width: 4),
+                        const SizedBox(width: 3),
                         Flexible(
                           child: Text(
                             cityLine,
@@ -1557,8 +1560,10 @@ Widget _buildGlobalCarCardInnerText(
                               color: metaTextColor,
                               fontSize: 13,
                             ),
+                            // Cards are height-constrained; prioritize fitting in one line by
+                            // giving city more horizontal space (see flex above).
                             maxLines: 1,
-                            overflow: TextOverflow.ellipsis,
+                            overflow: TextOverflow.clip,
                             textAlign: TextAlign.end,
                           ),
                         ),
@@ -13235,9 +13240,9 @@ class _CarDetailsPageState extends State<CarDetailsPage> {
                                                       '${AppLocalizations.of(context)!.cityLabel}: '
                                                       '${_translateValueGlobal(context, _getFirstNonEmpty(car!, ['city', 'location'])) ?? _getFirstNonEmpty(car!, ['city', 'location'])}',
                                                       style: cityLabelStyle,
-                                                      maxLines: 1,
-                                                      overflow:
-                                                          TextOverflow.ellipsis,
+                                                      // Allow long cities like "Sulaymaniyah" to show fully.
+                                                      maxLines: 2,
+                                                      overflow: TextOverflow.clip,
                                                     ),
                                                   ),
                                                 ],
@@ -14358,12 +14363,37 @@ Widget buildCarListingSpecsGrid(
 
   final String? engineSizePrimary = pickNE(car, [
     'engine_size',
+    'engine_size_liters',
+    'engine_size_l',
     'engineSize',
+    'engineSizeLiters',
     'engine',
-  ]);
-  final String engineCardVal = engineSizePrimary != null
-      ? '${_localizeDigitsGlobal(context, engineSizePrimary.toString())}${AppLocalizations.of(context)!.unit_liter_suffix}'
-      : '—';
+  ]) ??
+      () {
+        final dynamic specsRaw = car['specs'] ?? car['spec'] ?? car['details'];
+        if (specsRaw is Map) {
+          final specs = Map<String, dynamic>.from(specsRaw as Map);
+          return pickNE(specs, [
+            'engine_size',
+            'engine_size_liters',
+            'engine_size_l',
+            'engineSize',
+            'engineSizeLiters',
+            'engine',
+          ]);
+        }
+        return null;
+      }();
+  final String engineCardVal = () {
+    final raw = engineSizePrimary?.toString().trim() ?? '';
+    if (raw.isEmpty) return '—';
+    final eng = OnlineSpecVariant.parseLeadingEngineLiters(raw) ??
+        double.tryParse(raw);
+    if (eng != null && eng > 0) {
+      return '${_localizeDigitsGlobal(context, eng.toStringAsFixed(1))}${AppLocalizations.of(context)!.unit_liter_suffix}';
+    }
+    return _localizeDigitsGlobal(context, raw);
+  }();
 
   final String? cylRawPrimary = pickNE(car, [
     'cylinder_count',
@@ -18110,9 +18140,11 @@ class _SellStep2PageState extends State<SellStep2Page> {
                         final String engineForStep = isEngineSizeManualInput
                             ? _engineSizeController.text.trim()
                             : (selectedEngineSize ?? '').trim();
-                        final double? engineLiters = double.tryParse(
-                          engineForStep,
-                        );
+                        final double? engineLiters =
+                            OnlineSpecVariant.parseLeadingEngineLiters(
+                                  engineForStep,
+                                ) ??
+                                double.tryParse(engineForStep);
                         final bool engineOk =
                             engineForStep.isNotEmpty &&
                             engineLiters != null &&
@@ -20673,8 +20705,9 @@ class _SellReviewCarDetailScrollViewState
                                           child: Text(
                                             '${AppLocalizations.of(context)!.cityLabel}: ${_translateValueGlobal(context, pickCity(['city', 'location'])) ?? pickCity(['city', 'location'])}',
                                             style: cityLabelStyle,
-                                            maxLines: 1,
-                                            overflow: TextOverflow.ellipsis,
+                                            // Allow long cities like "Sulaymaniyah" to show fully.
+                                            maxLines: 2,
+                                            overflow: TextOverflow.clip,
                                           ),
                                         ),
                                       ],
@@ -21026,9 +21059,9 @@ class _SellStep5PageState extends State<SellStep5Page> {
     final cylinderCount = int.tryParse(
       carData['cylinder_count']?.toString() ?? '',
     );
-    final engineSize = double.tryParse(
-      carData['engine_size']?.toString() ?? '',
-    );
+    final String engineSizeRaw = (carData['engine_size']?.toString() ?? '').trim();
+    final engineSize = OnlineSpecVariant.parseLeadingEngineLiters(engineSizeRaw) ??
+        double.tryParse(engineSizeRaw);
     final price = int.tryParse(carData['price']?.toString() ?? '');
     final city = (carData['city']?.toString() ?? 'Baghdad').toLowerCase();
     final plateType =
@@ -21327,7 +21360,9 @@ class CarComparisonPage extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final pageIsDark = Theme.of(context).brightness == Brightness.dark;
     return Scaffold(
+      backgroundColor: pageIsDark ? null : AppThemes.lightAppBackground,
       appBar: AppBar(
         title: Text(AppLocalizations.of(context)!.specificationsLabel),
         elevation: 0,
@@ -21383,9 +21418,9 @@ class CarComparisonPage extends StatelessWidget {
       body: Stack(
         children: [
           Container(
-            decoration: AppThemes.shellBackgroundDecoration(
-              Theme.of(context).brightness,
-            ),
+            decoration: pageIsDark
+                ? AppThemes.shellBackgroundDecoration(Brightness.dark)
+                : const BoxDecoration(color: AppThemes.lightAppBackground),
           ),
           Consumer<CarComparisonStore>(
             builder: (context, comparisonStore, child) {
@@ -21393,6 +21428,8 @@ class CarComparisonPage extends StatelessWidget {
               final double columnWidth = 260.0;
               final isDark = Theme.of(context).brightness == Brightness.dark;
               final cs = Theme.of(context).colorScheme;
+              final lightInk = AppThemes.darkHomeShellBackground;
+              final lightInkMuted = lightInk.withOpacity(0.72);
 
               if (cars.isEmpty) {
                 return Center(
@@ -21412,7 +21449,7 @@ class CarComparisonPage extends StatelessWidget {
                         style: TextStyle(
                           fontSize: 20,
                           fontWeight: FontWeight.bold,
-                          color: isDark ? Colors.white70 : cs.onSurface,
+                          color: isDark ? Colors.white70 : lightInk,
                         ),
                       ),
                       SizedBox(height: 8),
@@ -21420,7 +21457,7 @@ class CarComparisonPage extends StatelessWidget {
                         AppLocalizations.of(context)!.tapToSelectBrand,
                         style: TextStyle(
                           fontSize: 16,
-                          color: isDark ? Colors.white54 : cs.onSurfaceVariant,
+                          color: isDark ? Colors.white54 : lightInkMuted,
                         ),
                         textAlign: TextAlign.center,
                       ),
@@ -21454,7 +21491,7 @@ class CarComparisonPage extends StatelessWidget {
                     decoration: BoxDecoration(
                       color: isDark
                           ? Colors.white.withOpacity(0.06)
-                          : cs.surfaceContainer,
+                          : AppThemes.lightAppBackground,
                       borderRadius: BorderRadius.circular(16),
                       border: Border.all(
                         color: isDark ? Colors.white10 : cs.outlineVariant,
@@ -21479,7 +21516,7 @@ class CarComparisonPage extends StatelessWidget {
                                 style: TextStyle(
                                   fontSize: 18,
                                   fontWeight: FontWeight.bold,
-                                  color: isDark ? Colors.white : cs.onSurface,
+                                  color: isDark ? Colors.white : lightInk,
                                 ),
                               ),
                               Text(
@@ -21488,7 +21525,7 @@ class CarComparisonPage extends StatelessWidget {
                                   fontSize: 12,
                                   color: isDark
                                       ? Colors.white70
-                                      : cs.onSurfaceVariant,
+                                      : lightInkMuted,
                                 ),
                               ),
                               SizedBox(height: 8),
@@ -21503,7 +21540,7 @@ class CarComparisonPage extends StatelessWidget {
                                       ),
                                       foregroundColor: isDark
                                           ? Colors.white
-                                          : cs.onSurface,
+                                          : lightInk,
                                       padding: EdgeInsets.symmetric(
                                         horizontal: 12,
                                         vertical: 8,
@@ -21535,7 +21572,7 @@ class CarComparisonPage extends StatelessWidget {
                                       ),
                                       foregroundColor: isDark
                                           ? Colors.white
-                                          : cs.onSurface,
+                                          : lightInk,
                                       padding: EdgeInsets.symmetric(
                                         horizontal: 12,
                                         vertical: 8,
@@ -21563,7 +21600,7 @@ class CarComparisonPage extends StatelessWidget {
                                       Icons.delete_outline,
                                       color: isDark
                                           ? Colors.white70
-                                          : cs.onSurfaceVariant,
+                                          : lightInkMuted,
                                       size: 18,
                                     ),
                                     label: Text(_clearAllTextGlobal(context)),
@@ -21611,7 +21648,7 @@ class CarComparisonPage extends StatelessWidget {
                         decoration: BoxDecoration(
                           color: isDark
                               ? Colors.white.withOpacity(0.06)
-                              : cs.surfaceContainer,
+                              : AppThemes.lightAppBackground,
                           borderRadius: BorderRadius.circular(16),
                           boxShadow: [
                             BoxShadow(
@@ -21631,7 +21668,10 @@ class CarComparisonPage extends StatelessWidget {
                                 vertical: 16,
                               ),
                               decoration: BoxDecoration(
-                                color: Color(0xFFFF6B00).withOpacity(0.12),
+                                // Keep the orange accent in light mode, but soften it.
+                                color: Color(0xFFFF6B00).withOpacity(
+                                  isDark ? 0.12 : 0.10,
+                                ),
                                 borderRadius: BorderRadius.vertical(
                                   top: Radius.circular(16),
                                 ),
@@ -21683,7 +21723,9 @@ class CarComparisonPage extends StatelessWidget {
                                                         fontWeight:
                                                             FontWeight.bold,
                                                         fontSize: 14,
-                                                        color: Colors.white,
+                                                        color: isDark
+                                                            ? Colors.white
+                                                            : lightInk,
                                                       ),
                                                       textAlign:
                                                           TextAlign.center,
@@ -21778,7 +21820,9 @@ class CarComparisonPage extends StatelessWidget {
                                                         fontWeight:
                                                             FontWeight.bold,
                                                         fontSize: 14,
-                                                        color: Colors.white,
+                                                        color: isDark
+                                                            ? Colors.white
+                                                            : lightInk,
                                                       ),
                                                       textAlign:
                                                           TextAlign.center,
@@ -21890,7 +21934,9 @@ class CarComparisonPage extends StatelessWidget {
                                                           fontWeight:
                                                               FontWeight.bold,
                                                           fontSize: 14,
-                                                          color: Colors.white,
+                                                          color: isDark
+                                                              ? Colors.white
+                                                              : lightInk,
                                                         ),
                                                         textAlign:
                                                             TextAlign.center,
@@ -21997,6 +22043,10 @@ class CarComparisonPage extends StatelessWidget {
     double columnWidth,
     double labelWidth,
   ) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final cs = Theme.of(context).colorScheme;
+    final lightInk = AppThemes.darkHomeShellBackground;
+    final lightInkMuted = lightInk.withOpacity(0.72);
     final sections = [
       {
         'title': AppLocalizations.of(context)!.brandLabel,
@@ -22139,8 +22189,10 @@ class CarComparisonPage extends StatelessWidget {
           padding: EdgeInsets.symmetric(horizontal: 16, vertical: 10),
           margin: EdgeInsets.only(top: s == 0 ? 0 : 16),
           decoration: BoxDecoration(
-            color: Color(0xFFFF6B00).withOpacity(0.12),
+            // Keep the orange accent in light mode, but soften it.
+            color: Color(0xFFFF6B00).withOpacity(isDark ? 0.12 : 0.10),
             borderRadius: BorderRadius.circular(12),
+            border: isDark ? null : Border.all(color: cs.outlineVariant),
           ),
           child: Row(
             children: [
@@ -22156,7 +22208,7 @@ class CarComparisonPage extends StatelessWidget {
               Text(
                 section['title'].toString(),
                 style: TextStyle(
-                  color: Colors.white,
+                  color: isDark ? Colors.white : lightInk,
                   fontWeight: FontWeight.bold,
                 ),
               ),
@@ -22174,9 +22226,15 @@ class CarComparisonPage extends StatelessWidget {
             padding: EdgeInsets.symmetric(vertical: 12, horizontal: 16),
             decoration: BoxDecoration(
               color: isOdd
-                  ? Colors.white.withOpacity(0.02)
+                  ? (isDark
+                      ? Colors.white.withOpacity(0.02)
+                      : Colors.black.withOpacity(0.02))
                   : Colors.transparent,
-              border: Border(bottom: BorderSide(color: Colors.white12)),
+              border: Border(
+                bottom: BorderSide(
+                  color: isDark ? Colors.white12 : cs.outlineVariant,
+                ),
+              ),
             ),
             child: Row(
               mainAxisAlignment: cars.length == 2
@@ -22196,13 +22254,13 @@ class CarComparisonPage extends StatelessWidget {
                         if (rows[i]['icon'] is IconData)
                           Icon(
                             rows[i]['icon'] as IconData,
-                            color: Colors.white54,
+                            color: isDark ? Colors.white54 : lightInkMuted,
                             size: 16,
                           )
                         else
                           Icon(
                             Icons.label_outline,
-                            color: Colors.white54,
+                            color: isDark ? Colors.white54 : lightInkMuted,
                             size: 16,
                           ),
                         SizedBox(width: 8),
@@ -22211,7 +22269,7 @@ class CarComparisonPage extends StatelessWidget {
                             property['label']!.toString(),
                             style: TextStyle(
                               fontWeight: FontWeight.w600,
-                              color: Colors.white70,
+                              color: isDark ? Colors.white70 : lightInkMuted,
                             ),
                             maxLines: 1,
                             overflow: TextOverflow.ellipsis,
@@ -22233,13 +22291,13 @@ class CarComparisonPage extends StatelessWidget {
                         if (rows[i]['icon'] is IconData)
                           Icon(
                             rows[i]['icon'] as IconData,
-                            color: Colors.white54,
+                            color: isDark ? Colors.white54 : lightInkMuted,
                             size: 16,
                           )
                         else
                           Icon(
                             Icons.label_outline,
-                            color: Colors.white54,
+                            color: isDark ? Colors.white54 : lightInkMuted,
                             size: 16,
                           ),
                         SizedBox(width: 8),
@@ -22248,7 +22306,7 @@ class CarComparisonPage extends StatelessWidget {
                             property['label']!.toString(),
                             style: TextStyle(
                               fontWeight: FontWeight.w600,
-                              color: Colors.white70,
+                              color: isDark ? Colors.white70 : lightInkMuted,
                             ),
                             maxLines: 1,
                             overflow: TextOverflow.ellipsis,
@@ -22314,9 +22372,13 @@ class CarComparisonPage extends StatelessWidget {
         ),
       );
     }
+    final isDark = Theme.of(context).brightness == Brightness.dark;
     return Text(
       text,
-      style: TextStyle(color: Colors.white, fontWeight: FontWeight.w600),
+      style: TextStyle(
+        color: isDark ? Colors.white : AppThemes.darkHomeShellBackground,
+        fontWeight: FontWeight.w600,
+      ),
       textAlign: TextAlign.center,
     );
   }
@@ -23431,7 +23493,10 @@ Widget build(BuildContext context) {
                   final titleStatus = (selectedTitleStatus ?? 'clean').toLowerCase();
                   final damagedParts = titleStatus == 'damaged' ? int.tryParse(selectedDamagedParts ?? '') : null;
                   final cylinderCount = int.tryParse(selectedCylinderCount ?? '');
-                  final engineSize = double.tryParse(selectedEngineSize ?? '');
+                  final engineSize = OnlineSpecVariant.parseLeadingEngineLiters(
+                        selectedEngineSize ?? '',
+                      ) ??
+                      double.tryParse(selectedEngineSize ?? '');
                   final price = int.tryParse(selectedMinPrice ?? '');
                   final city = (selectedCity ?? 'Baghdad').toLowerCase();
                   final title = '$brand $model $trim'.trim();
@@ -23720,6 +23785,16 @@ class _FavoritesPageState extends State<FavoritesPage> {
   String? _error;
   bool _loginRequired = false;
 
+  int _favoritedAtMs(Map<String, dynamic> m) {
+    final raw = (m['favorited_at'] ?? m['favoritedAt'])?.toString().trim();
+    if (raw == null || raw.isEmpty) return -1;
+    try {
+      return DateTime.parse(raw).millisecondsSinceEpoch;
+    } catch (_) {
+      return -1;
+    }
+  }
+
   @override
   void initState() {
     super.initState();
@@ -23753,6 +23828,9 @@ class _FavoritesPageState extends State<FavoritesPage> {
           if (data is List) {
             setState(() {
               _favorites = data.cast<Map<String, dynamic>>();
+              _favorites.sort(
+                (a, b) => _favoritedAtMs(b).compareTo(_favoritedAtMs(a)),
+              );
               _loading = false;
             });
           }
@@ -23774,6 +23852,9 @@ class _FavoritesPageState extends State<FavoritesPage> {
         if (data is List) {
           setState(() {
             _favorites = data.cast<Map<String, dynamic>>();
+            _favorites.sort(
+              (a, b) => _favoritedAtMs(b).compareTo(_favoritedAtMs(a)),
+            );
           });
           unawaited(sp.setString(cacheKey, json.encode(_favorites)));
         }

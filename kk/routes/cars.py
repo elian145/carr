@@ -495,6 +495,31 @@ def create_car():
             except Exception:
                 return default
 
+        def _leading_float(val):
+            """Parse float values like '2.0', '2.0 T', '2.0L' (leading token)."""
+            if val is None:
+                return None
+            if isinstance(val, (int, float)):
+                try:
+                    return float(val)
+                except Exception:
+                    return None
+            s = str(val).strip()
+            if not s:
+                return None
+            try:
+                return float(s)
+            except Exception:
+                import re
+
+                m = re.match(r"^(\d+(?:\.\d+)?)", s)
+                if not m:
+                    return None
+                try:
+                    return float(m.group(1))
+                except Exception:
+                    return None
+
         brand = _s(raw.get("brand"), "unknown")
         model = _s(raw.get("model"), "")
         year = _i(raw.get("year"), 0)
@@ -525,12 +550,12 @@ def create_car():
             if damaged_parts_val is not None and damaged_parts_val < 1:
                 damaged_parts_val = None
         engine_size = raw.get("engine_size")
-        engine_size_val = _f(engine_size, 0.0) if engine_size not in (None, "") else None
+        engine_size_val = _leading_float(engine_size) if engine_size not in (None, "") else None
         cylinder_count_raw = raw.get("cylinder_count")
         cylinder_count_val = _i(cylinder_count_raw, 0) if cylinder_count_raw not in (None, "") else None
         if cylinder_count_val == 0:
             cylinder_count_val = None
-        if engine_size_val == 0.0:
+        if engine_size_val is not None and engine_size_val <= 0.0:
             engine_size_val = None
 
         region_specs_raw = _s(raw.get("region_specs"), "").lower()
@@ -636,10 +661,7 @@ def update_car(car_id: str):
                     pt = (str(val or "").strip().lower())
                     val = pt if pt in _ALLOWED_PLATE_TYPES else None
                 if field == "engine_size" and val is not None:
-                    try:
-                        val = float(val)
-                    except (TypeError, ValueError):
-                        val = None
+                    val = _leading_float(val)
                 if field == "cylinder_count" and val is not None:
                     try:
                         val = int(val)
