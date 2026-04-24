@@ -1527,7 +1527,7 @@ Widget _buildGlobalCarCardInnerText(
           crossAxisAlignment: CrossAxisAlignment.center,
           children: [
             Expanded(
-              flex: 3,
+              flex: 2,
               child: Align(
                 alignment: AlignmentDirectional.centerStart,
                 child: mileageDisplay.isNotEmpty
@@ -1549,9 +1549,9 @@ Widget _buildGlobalCarCardInnerText(
             ),
             if (cityLine.isNotEmpty)
               Expanded(
-                flex: 3,
+                flex: 4,
                 child: Padding(
-                  padding: const EdgeInsetsDirectional.only(start: 6),
+                  padding: const EdgeInsetsDirectional.only(start: 4),
                   child: Align(
                     alignment: AlignmentDirectional.centerEnd,
                     child: Row(
@@ -1565,21 +1565,18 @@ Widget _buildGlobalCarCardInnerText(
                           color: metaTextColor,
                         ),
                         const SizedBox(width: 4),
-                        Flexible(
-                          child: AutoSizeText(
+                        Expanded(
+                          child: Text(
                             cityLine,
-                            textScaleFactor: 1.0,
+                            maxLines: 1,
+                            softWrap: false,
+                            // Keep the *end* visible: when space is tight, clip the start.
+                            overflow: TextOverflow.clip,
+                            textAlign: TextAlign.end,
                             style: TextStyle(
                               color: metaTextColor,
                               fontSize: 13,
                             ),
-                            // Keep city on one line (no mid-word wrapping); shrink a bit if needed.
-                            maxLines: 1,
-                            minFontSize: 10,
-                            stepGranularity: 0.5,
-                            overflow: TextOverflow.clip,
-                            softWrap: false,
-                            textAlign: TextAlign.end,
                           ),
                         ),
                       ],
@@ -6906,7 +6903,7 @@ class _HomePageState extends State<HomePage> {
                                   Icon(Icons.search, color: Color(0xFFFF6B00)),
                                   SizedBox(width: 8),
                                   Expanded(
-                                    flex: 2,
+                                    flex: 1,
                                     child: GestureDetector(
                                       onTap: () => _showSearchDialog(context),
                                       child: Text(
@@ -6923,14 +6920,14 @@ class _HomePageState extends State<HomePage> {
                                       ),
                                     ),
                                   ),
-                                  const SizedBox(width: 10),
+                                  const SizedBox(width: 4),
                                   Expanded(
-                                    flex: 1,
+                                    flex: 2,
                                     child: Align(
                                       alignment: Alignment.centerRight,
                                       child: ConstrainedBox(
                                         constraints:
-                                            const BoxConstraints(maxWidth: 220),
+                                            const BoxConstraints(maxWidth: 400),
                                         child: SizedBox(
                                           height: 34,
                                           child: Builder(
@@ -6968,7 +6965,7 @@ class _HomePageState extends State<HomePage> {
                                                       'All cities',
                                                       style:
                                                           GoogleFonts.orbitron(
-                                                        fontSize: 12,
+                                                        fontSize: 14,
                                                         color: Colors.white,
                                                         fontWeight:
                                                             FontWeight.bold,
@@ -6987,7 +6984,7 @@ class _HomePageState extends State<HomePage> {
                                                                 c),
                                                             style: GoogleFonts
                                                                 .orbitron(
-                                                              fontSize: 12,
+                                                              fontSize: 14,
                                                               color:
                                                                   Colors.white,
                                                               fontWeight:
@@ -6998,40 +6995,36 @@ class _HomePageState extends State<HomePage> {
                                                         ),
                                                       ),
                                                 ],
-                                                child: Container(
-                                                  alignment:
-                                                      Alignment.centerRight,
-                                                  padding:
-                                                      const EdgeInsets.symmetric(
-                                                    horizontal: 8,
-                                                    vertical: 6,
+                                                child: Padding(
+                                                  padding: const EdgeInsets.only(
+                                                    left: 0,
+                                                    top: 6,
+                                                    bottom: 6,
+                                                    right: 8,
                                                   ),
                                                   child: Row(
-                                                    mainAxisAlignment:
-                                                        MainAxisAlignment.end,
+                                                    mainAxisSize:
+                                                        MainAxisSize.min,
                                                     children: [
                                                       const Icon(
                                                         Icons.location_city,
                                                         size: 16,
-                                                        color:
-                                                            Color(0xFFFF6B00),
+                                                        color: Color(
+                                                          0xFFFF6B00,
+                                                        ),
                                                       ),
-                                                      const SizedBox(width: 6),
-                                                      Expanded(
-                                                        child: FittedBox(
-                                                          fit: BoxFit.scaleDown,
-                                                          alignment: Alignment.centerRight,
-                                                          child: Text(
-                                                            display,
-                                                            maxLines: 1,
-                                                            softWrap: false,
-                                                            overflow: TextOverflow.visible,
-                                                            style: GoogleFonts.orbitron(
-                                                              fontSize: 12,
-                                                              color: Colors.white,
-                                                              fontWeight: FontWeight.bold,
-                                                            ),
-                                                          ),
+                                                      const SizedBox(width: 4),
+                                                      Text(
+                                                        display,
+                                                        maxLines: 1,
+                                                        softWrap: false,
+                                                        overflow: TextOverflow.visible,
+                                                        style:
+                                                            GoogleFonts.orbitron(
+                                                          fontSize: 14,
+                                                          color: Colors.white,
+                                                          fontWeight:
+                                                              FontWeight.bold,
                                                         ),
                                                       ),
                                                     ],
