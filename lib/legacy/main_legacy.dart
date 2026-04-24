@@ -22335,7 +22335,7 @@ class CarComparisonPage extends StatelessWidget {
                 )
               else
                 Icon(Icons.toc, color: Color(0xFFFF6B00), size: 18),
-              SizedBox(width: 8),
+              SizedBox(width: 4),
               Text(
                 section['title'].toString(),
                 style: TextStyle(
