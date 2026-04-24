@@ -22391,8 +22391,14 @@ class CarComparisonPage extends StatelessWidget {
                             color: isDark ? Colors.white54 : lightInkMuted,
                             size: 16,
                           ),
-                          const SizedBox(width: 4),
-                          Flexible(
+                          const SizedBox(width: 2),
+                          ConstrainedBox(
+                            constraints: BoxConstraints(
+                              maxWidth: (labelWidth - 16 - 2).clamp(
+                                48.0,
+                                labelWidth,
+                              ),
+                            ),
                             child: AutoSizeText(
                               property['label']!.toString(),
                               textScaleFactor: 1.0,
@@ -22406,7 +22412,9 @@ class CarComparisonPage extends StatelessWidget {
                               stepGranularity: 0.5,
                               overflow: TextOverflow.clip,
                               softWrap: true,
-                              textAlign: TextAlign.center,
+                              // Start-align so the text stays close to the icon
+                              // (instead of centering inside extra width).
+                              textAlign: TextAlign.start,
                             ),
                           ),
                         ],
@@ -22432,8 +22440,14 @@ class CarComparisonPage extends StatelessWidget {
                             color: isDark ? Colors.white54 : lightInkMuted,
                             size: 16,
                           ),
-                          const SizedBox(width: 4),
-                          Flexible(
+                          const SizedBox(width: 2),
+                          ConstrainedBox(
+                            constraints: BoxConstraints(
+                              maxWidth: (labelWidth - 16 - 2).clamp(
+                                48.0,
+                                labelWidth,
+                              ),
+                            ),
                             child: AutoSizeText(
                               property['label']!.toString(),
                               textScaleFactor: 1.0,
@@ -22447,7 +22461,7 @@ class CarComparisonPage extends StatelessWidget {
                               stepGranularity: 0.5,
                               overflow: TextOverflow.clip,
                               softWrap: true,
-                              textAlign: TextAlign.center,
+                              textAlign: TextAlign.start,
                             ),
                           ),
                         ],
