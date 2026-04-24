@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:auto_size_text/auto_size_text.dart';
 import 'package:provider/provider.dart';
 import 'package:share_plus/share_plus.dart';
 
@@ -113,6 +114,9 @@ class ComparisonPage extends StatelessWidget {
       {'label': 'Location', 'key': 'location'},
     ];
 
+    const double specColW = 140;
+    const double carColW = 180;
+
     return Scaffold(
       backgroundColor: isDark ? null : lightModeBackground,
       appBar: AppBar(
@@ -151,13 +155,28 @@ class ComparisonPage extends StatelessWidget {
             child: SingleChildScrollView(
               padding: const EdgeInsets.all(12),
               child: DataTable(
+                headingRowHeight: 76,
+                dataRowMinHeight: 52,
+                dataRowMaxHeight: 120,
+                columnSpacing: 18,
                 headingTextStyle: TextStyle(
                   color: isDark ? null : lightModeInk,
                   fontWeight: FontWeight.w700,
                 ),
                 dataTextStyle: TextStyle(color: isDark ? null : lightModeInk),
                 columns: [
-                  DataColumn(label: Text(loc?.comparisonSpecLabel ?? 'Spec')),
+                  DataColumn(
+                    label: SizedBox(
+                      width: specColW,
+                      child: AutoSizeText(
+                        loc?.comparisonSpecLabel ?? 'Spec',
+                        maxLines: 2,
+                        minFontSize: 10,
+                        stepGranularity: 0.5,
+                        overflow: TextOverflow.clip,
+                      ),
+                    ),
+                  ),
                   ...cars.map((c) {
                     final title = _val(c, 'title');
                     final id = _val(c, 'id');
@@ -166,11 +185,13 @@ class ComparisonPage extends StatelessWidget {
                         mainAxisSize: MainAxisSize.min,
                         children: [
                           SizedBox(
-                            width: 140,
-                            child: Text(
+                            width: carColW,
+                            child: AutoSizeText(
                               title.isEmpty ? id : title,
-                              maxLines: 2,
-                              overflow: TextOverflow.ellipsis,
+                              maxLines: 3,
+                              minFontSize: 9,
+                              stepGranularity: 0.5,
+                              overflow: TextOverflow.clip,
                             ),
                           ),
                           const SizedBox(width: 6),
@@ -189,8 +210,32 @@ class ComparisonPage extends StatelessWidget {
                   final key = spec['key']!;
                   return DataRow(
                     cells: [
-                      DataCell(Text(label)),
-                      ...cars.map((c) => DataCell(Text(_displayCell(c, key)))),
+                      DataCell(
+                        SizedBox(
+                          width: specColW,
+                          child: AutoSizeText(
+                            label,
+                            maxLines: 2,
+                            minFontSize: 10,
+                            stepGranularity: 0.5,
+                            overflow: TextOverflow.clip,
+                          ),
+                        ),
+                      ),
+                      ...cars.map(
+                        (c) => DataCell(
+                          SizedBox(
+                            width: carColW,
+                            child: AutoSizeText(
+                              _displayCell(c, key),
+                              maxLines: 3,
+                              minFontSize: 10,
+                              stepGranularity: 0.5,
+                              overflow: TextOverflow.clip,
+                            ),
+                          ),
+                        ),
+                      ),
                     ],
                   );
                 }).toList(),
