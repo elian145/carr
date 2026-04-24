@@ -22394,7 +22394,7 @@ class CarComparisonPage extends StatelessWidget {
                           const SizedBox(width: 4),
                           ConstrainedBox(
                             constraints: BoxConstraints(
-                              maxWidth: (labelWidth - 16 - 2).clamp(
+                              maxWidth: (labelWidth - 16 - 4).clamp(
                                 48.0,
                                 labelWidth,
                               ),
@@ -22443,7 +22443,7 @@ class CarComparisonPage extends StatelessWidget {
                           const SizedBox(width: 4),
                           ConstrainedBox(
                             constraints: BoxConstraints(
-                              maxWidth: (labelWidth - 16 - 2).clamp(
+                              maxWidth: (labelWidth - 16 - 4).clamp(
                                 48.0,
                                 labelWidth,
                               ),
