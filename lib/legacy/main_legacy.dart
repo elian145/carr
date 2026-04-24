@@ -1564,7 +1564,7 @@ Widget _buildGlobalCarCardInnerText(
                           size: 12,
                           color: metaTextColor,
                         ),
-                        const SizedBox(width: 2),
+                        const SizedBox(width: 4),
                         Flexible(
                           child: AutoSizeText(
                             cityLine,
@@ -22335,7 +22335,7 @@ class CarComparisonPage extends StatelessWidget {
                 )
               else
                 Icon(Icons.toc, color: Color(0xFFFF6B00), size: 18),
-              SizedBox(width: 4),
+              SizedBox(width: 8),
               Text(
                 section['title'].toString(),
                 style: TextStyle(
@@ -22352,8 +22352,6 @@ class CarComparisonPage extends StatelessWidget {
       for (int i = 0; i < rows.length; i++) {
         final property = Map<String, dynamic>.from(rows[i] as Map);
         final bool isOdd = i % 2 == 1;
-        final bool isRtl =
-            Directionality.of(context) == ui.TextDirection.rtl;
         out.add(
           Container(
             padding: EdgeInsets.symmetric(vertical: 12, horizontal: 16),
@@ -22382,46 +22380,45 @@ class CarComparisonPage extends StatelessWidget {
                   SizedBox(
                     width: labelWidth,
                     child: Center(
-                      child: () {
-                        final icon = Icon(
-                          (rows[i]['icon'] is IconData)
-                              ? (rows[i]['icon'] as IconData)
-                              : Icons.label_outline,
-                          color: isDark ? Colors.white54 : lightInkMuted,
-                          size: 16,
-                        );
-                        const gap = SizedBox(width: 1);
-                        final label = ConstrainedBox(
-                          constraints: BoxConstraints(
-                            maxWidth: (labelWidth - 16 - 1).clamp(
-                              48.0,
-                              labelWidth,
+                      child: Row(
+                        mainAxisSize: MainAxisSize.min,
+                        crossAxisAlignment: CrossAxisAlignment.center,
+                        children: [
+                          Icon(
+                            (rows[i]['icon'] is IconData)
+                                ? (rows[i]['icon'] as IconData)
+                                : Icons.label_outline,
+                            color: isDark ? Colors.white54 : lightInkMuted,
+                            size: 16,
+                          ),
+                          const SizedBox(width: 4),
+                          ConstrainedBox(
+                            constraints: BoxConstraints(
+                              maxWidth: (labelWidth - 16 - 2).clamp(
+                                48.0,
+                                labelWidth,
+                              ),
+                            ),
+                            child: AutoSizeText(
+                              property['label']!.toString(),
+                              textScaleFactor: 1.0,
+                              style: TextStyle(
+                                fontWeight: FontWeight.w600,
+                                color: isDark ? Colors.white70 : lightInkMuted,
+                                height: 1.15,
+                              ),
+                              maxLines: 2,
+                              minFontSize: 8,
+                              stepGranularity: 0.5,
+                              overflow: TextOverflow.clip,
+                              softWrap: true,
+                              // Start-align so the text stays close to the icon
+                              // (instead of centering inside extra width).
+                              textAlign: TextAlign.start,
                             ),
                           ),
-                          child: AutoSizeText(
-                            property['label']!.toString(),
-                            textScaleFactor: 1.0,
-                            style: TextStyle(
-                              fontWeight: FontWeight.w600,
-                              color: isDark ? Colors.white70 : lightInkMuted,
-                              height: 1.15,
-                            ),
-                            maxLines: 2,
-                            minFontSize: 8,
-                            stepGranularity: 0.5,
-                            overflow: TextOverflow.clip,
-                            softWrap: true,
-                            textAlign: TextAlign.center,
-                          ),
-                        );
-                        return Row(
-                          mainAxisSize: MainAxisSize.min,
-                          crossAxisAlignment: CrossAxisAlignment.center,
-                          children: isRtl
-                              ? <Widget>[label, gap, icon]
-                              : <Widget>[icon, gap, label],
-                        );
-                      }(),
+                        ],
+                      ),
                     ),
                   ),
                   SizedBox(
@@ -22432,46 +22429,43 @@ class CarComparisonPage extends StatelessWidget {
                   SizedBox(
                     width: labelWidth,
                     child: Center(
-                      child: () {
-                        final icon = Icon(
-                          (rows[i]['icon'] is IconData)
-                              ? (rows[i]['icon'] as IconData)
-                              : Icons.label_outline,
-                          color: isDark ? Colors.white54 : lightInkMuted,
-                          size: 16,
-                        );
-                        const gap = SizedBox(width: 1);
-                        final label = ConstrainedBox(
-                          constraints: BoxConstraints(
-                            maxWidth: (labelWidth - 16 - 1).clamp(
-                              48.0,
-                              labelWidth,
+                      child: Row(
+                        mainAxisSize: MainAxisSize.min,
+                        crossAxisAlignment: CrossAxisAlignment.center,
+                        children: [
+                          Icon(
+                            (rows[i]['icon'] is IconData)
+                                ? (rows[i]['icon'] as IconData)
+                                : Icons.label_outline,
+                            color: isDark ? Colors.white54 : lightInkMuted,
+                            size: 16,
+                          ),
+                          const SizedBox(width: 4),
+                          ConstrainedBox(
+                            constraints: BoxConstraints(
+                              maxWidth: (labelWidth - 16 - 2).clamp(
+                                48.0,
+                                labelWidth,
+                              ),
+                            ),
+                            child: AutoSizeText(
+                              property['label']!.toString(),
+                              textScaleFactor: 1.0,
+                              style: TextStyle(
+                                fontWeight: FontWeight.w600,
+                                color: isDark ? Colors.white70 : lightInkMuted,
+                                height: 1.15,
+                              ),
+                              maxLines: 2,
+                              minFontSize: 8,
+                              stepGranularity: 0.5,
+                              overflow: TextOverflow.clip,
+                              softWrap: true,
+                              textAlign: TextAlign.start,
                             ),
                           ),
-                          child: AutoSizeText(
-                            property['label']!.toString(),
-                            textScaleFactor: 1.0,
-                            style: TextStyle(
-                              fontWeight: FontWeight.w600,
-                              color: isDark ? Colors.white70 : lightInkMuted,
-                              height: 1.15,
-                            ),
-                            maxLines: 2,
-                            minFontSize: 8,
-                            stepGranularity: 0.5,
-                            overflow: TextOverflow.clip,
-                            softWrap: true,
-                            textAlign: TextAlign.center,
-                          ),
-                        );
-                        return Row(
-                          mainAxisSize: MainAxisSize.min,
-                          crossAxisAlignment: CrossAxisAlignment.center,
-                          children: isRtl
-                              ? <Widget>[label, gap, icon]
-                              : <Widget>[icon, gap, label],
-                        );
-                      }(),
+                        ],
+                      ),
                     ),
                   ),
                   Expanded(
