@@ -6906,6 +6906,7 @@ class _HomePageState extends State<HomePage> {
                                   Icon(Icons.search, color: Color(0xFFFF6B00)),
                                   SizedBox(width: 8),
                                   Expanded(
+                                    flex: 2,
                                     child: GestureDetector(
                                       onTap: () => _showSearchDialog(context),
                                       child: Text(
@@ -6923,72 +6924,125 @@ class _HomePageState extends State<HomePage> {
                                     ),
                                   ),
                                   const SizedBox(width: 10),
-                                  LayoutBuilder(
-                                    builder: (context, c) {
-                                      final w = c.maxWidth;
-                                      final ddW = w < 380 ? 120.0 : 150.0;
-                                      return SizedBox(
-                                        width: ddW,
-                                        height: 34,
-                                        child: DropdownButtonFormField<String>(
-                                          isDense: true,
-                                          isExpanded: true,
-                                          style: GoogleFonts.orbitron(
-                                            fontSize: 12,
-                                            color: Colors.white,
-                                            fontWeight: FontWeight.bold,
-                                          ),
-                                          value: (selectedCity != null &&
-                                                  cities.contains(selectedCity))
-                                              ? selectedCity
-                                              : 'Any',
-                                          decoration: InputDecoration(
-                                            labelText: AppLocalizations.of(context)!.cityLabel,
-                                            floatingLabelBehavior:
-                                                FloatingLabelBehavior.never,
-                                            labelStyle: GoogleFonts.orbitron(
-                                              color: Colors.white70,
-                                              fontSize: 11,
-                                              fontWeight: FontWeight.bold,
-                                            ),
-                                            filled: true,
-                                            fillColor: Colors.black.withOpacity(0.10),
-                                            border: OutlineInputBorder(
-                                              borderRadius: BorderRadius.circular(10),
-                                            ),
-                                            contentPadding:
-                                                const EdgeInsets.symmetric(
-                                              horizontal: 8,
-                                              vertical: 6,
-                                            ),
-                                          ),
-                                          items: cities
-                                              .map(
-                                                (c) => DropdownMenuItem(
-                                                  value: c,
-                                                  child: Text(
-                                                    c == 'Any'
-                                                        ? AppLocalizations.of(context)!.any
-                                                        : (_translateValueGlobal(context, c) ??
-                                                            c),
-                                                    maxLines: 1,
-                                                    overflow: TextOverflow.ellipsis,
+                                  Expanded(
+                                    flex: 1,
+                                    child: Align(
+                                      alignment: Alignment.centerRight,
+                                      child: ConstrainedBox(
+                                        constraints:
+                                            const BoxConstraints(maxWidth: 220),
+                                        child: SizedBox(
+                                          height: 34,
+                                          child: Builder(
+                                            builder: (context) {
+                                              const allKey = '__all_cities__';
+                                              final isAll = (selectedCity == null ||
+                                                  selectedCity!.trim().isEmpty ||
+                                                  selectedCity == 'Any');
+                                              final display = isAll
+                                                  ? 'All cities'
+                                                  : (_translateValueGlobal(
+                                                          context, selectedCity) ??
+                                                      selectedCity!);
+
+                                              return PopupMenuButton<String>(
+                                                tooltip: '',
+                                                position:
+                                                    PopupMenuPosition.under,
+                                                offset: const Offset(0, 6),
+                                                color: Colors.grey[900]
+                                                    ?.withOpacity(0.98),
+                                                splashRadius: 18,
+                                                onSelected: (value) {
+                                                  setState(() {
+                                                    selectedCity = value == allKey
+                                                        ? null
+                                                        : value;
+                                                  });
+                                                  onFilterChanged();
+                                                },
+                                                itemBuilder: (context) => [
+                                                  PopupMenuItem<String>(
+                                                    value: allKey,
+                                                    child: Text(
+                                                      'All cities',
+                                                      style:
+                                                          GoogleFonts.orbitron(
+                                                        fontSize: 12,
+                                                        color: Colors.white,
+                                                        fontWeight:
+                                                            FontWeight.bold,
+                                                      ),
+                                                    ),
+                                                  ),
+                                                  ...cities
+                                                      .where((x) => x != 'Any')
+                                                      .map(
+                                                        (c) =>
+                                                            PopupMenuItem<String>(
+                                                          value: c,
+                                                          child: Text(
+                                                            (_translateValueGlobal(
+                                                                    context, c) ??
+                                                                c),
+                                                            style: GoogleFonts
+                                                                .orbitron(
+                                                              fontSize: 12,
+                                                              color:
+                                                                  Colors.white,
+                                                              fontWeight:
+                                                                  FontWeight
+                                                                      .bold,
+                                                            ),
+                                                          ),
+                                                        ),
+                                                      ),
+                                                ],
+                                                child: Container(
+                                                  alignment:
+                                                      Alignment.centerRight,
+                                                  padding:
+                                                      const EdgeInsets.symmetric(
+                                                    horizontal: 8,
+                                                    vertical: 6,
+                                                  ),
+                                                  child: Row(
+                                                    mainAxisAlignment:
+                                                        MainAxisAlignment.end,
+                                                    children: [
+                                                      const Icon(
+                                                        Icons.location_city,
+                                                        size: 16,
+                                                        color:
+                                                            Color(0xFFFF6B00),
+                                                      ),
+                                                      const SizedBox(width: 6),
+                                                      Expanded(
+                                                        child: FittedBox(
+                                                          fit: BoxFit.scaleDown,
+                                                          alignment: Alignment.centerRight,
+                                                          child: Text(
+                                                            display,
+                                                            maxLines: 1,
+                                                            softWrap: false,
+                                                            overflow: TextOverflow.visible,
+                                                            style: GoogleFonts.orbitron(
+                                                              fontSize: 12,
+                                                              color: Colors.white,
+                                                              fontWeight: FontWeight.bold,
+                                                            ),
+                                                          ),
+                                                        ),
+                                                      ),
+                                                    ],
                                                   ),
                                                 ),
-                                              )
-                                              .toList(),
-                                          onChanged: (value) {
-                                            setState(() {
-                                              selectedCity =
-                                                  (value == null || value == 'Any')
-                                                      ? null
-                                                      : value;
-                                            });
-                                            onFilterChanged();
-                                          },
+                                              );
+                                            },
+                                          ),
                                         ),
-                                      );
-                                    },
+                                      ),
+                                    ),
                                   ),
                                 ],
                               ),
