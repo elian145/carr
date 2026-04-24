@@ -1366,11 +1366,14 @@ Widget _buildGlobalCarCardInnerText(
   required Color metaTextColor,
   bool pinBottomMeta = false,
 }) {
-  const double titleFontSize = 15;
+  // Keep the title box height stable (prevents card overflows), but render the
+  // brand+model text larger so it has stronger hierarchy than trim.
+  const double _titleBoxFontSize = 15;
+  const double titleFontSize = 17;
   const double titleLineHeight = 1.1;
   const int titleMaxLines = 2;
   final double reservedTitleHeight =
-      titleFontSize * titleLineHeight * titleMaxLines;
+      _titleBoxFontSize * titleLineHeight * titleMaxLines;
   final bool hasTrim = trimLine.isNotEmpty;
 
   return Column(
@@ -1384,7 +1387,7 @@ Widget _buildGlobalCarCardInnerText(
           final double logoInner = logoSize - 4;
           final double gap = maxW < 150 ? 6 : 8;
           final double effectiveTitleFontSize =
-              maxW < 150 ? 14 : titleFontSize;
+              maxW < 150 ? 15 : (maxW < 175 ? 16 : titleFontSize);
 
           return Row(
             crossAxisAlignment: CrossAxisAlignment.center,
@@ -1438,7 +1441,7 @@ Widget _buildGlobalCarCardInnerText(
                           height: titleLineHeight,
                         ),
                         maxLines: titleMaxLines,
-                        minFontSize: 11,
+                        minFontSize: 12,
                         stepGranularity: 0.5,
                         overflow: TextOverflow.clip,
                         softWrap: true,
