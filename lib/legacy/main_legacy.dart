@@ -1521,25 +1521,28 @@ Widget _buildGlobalCarCardInnerText(
       if (mileageDisplay.isNotEmpty || cityLine.isNotEmpty) ...[
         const SizedBox(height: 10),
         Row(
-          crossAxisAlignment: CrossAxisAlignment.end,
+          crossAxisAlignment: CrossAxisAlignment.center,
           children: [
             Expanded(
               flex: 3,
-              child: mileageDisplay.isNotEmpty
-                  ? AutoSizeText(
-                      mileageDisplay,
-                      textScaleFactor: 1.0,
-                      style: TextStyle(
-                        color: metaTextColor,
-                        fontSize: 13,
-                      ),
-                      maxLines: 1,
-                      minFontSize: 10,
-                      stepGranularity: 0.5,
-                      overflow: TextOverflow.clip,
-                      softWrap: false,
-                    )
-                  : const SizedBox.shrink(),
+              child: Align(
+                alignment: AlignmentDirectional.centerStart,
+                child: mileageDisplay.isNotEmpty
+                    ? AutoSizeText(
+                        mileageDisplay,
+                        textScaleFactor: 1.0,
+                        style: TextStyle(
+                          color: metaTextColor,
+                          fontSize: 13,
+                        ),
+                        maxLines: 1,
+                        minFontSize: 10,
+                        stepGranularity: 0.5,
+                        overflow: TextOverflow.clip,
+                        softWrap: false,
+                      )
+                    : const SizedBox.shrink(),
+              ),
             ),
             if (cityLine.isNotEmpty)
               Expanded(
@@ -1551,6 +1554,7 @@ Widget _buildGlobalCarCardInnerText(
                     child: Row(
                       mainAxisSize: MainAxisSize.max,
                       mainAxisAlignment: MainAxisAlignment.end,
+                      crossAxisAlignment: CrossAxisAlignment.center,
                       children: [
                         Icon(
                           Icons.location_city,
