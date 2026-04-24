@@ -1497,7 +1497,7 @@ Widget _buildGlobalCarCardInnerText(
             ),
           ),
           if (yearDisplay.isNotEmpty) ...[
-            const SizedBox(width: 8),
+            const SizedBox(width: 4),
             Expanded(
               child: Align(
                 alignment: AlignmentDirectional.centerEnd,
@@ -1519,7 +1519,7 @@ Widget _buildGlobalCarCardInnerText(
       ),
       if (pinBottomMeta) const Spacer(),
       if (mileageDisplay.isNotEmpty || cityLine.isNotEmpty) ...[
-        const SizedBox(height: 10),
+        const SizedBox(height: 6),
         Row(
           crossAxisAlignment: CrossAxisAlignment.center,
           children: [
@@ -1548,7 +1548,7 @@ Widget _buildGlobalCarCardInnerText(
               Expanded(
                 flex: 3,
                 child: Padding(
-                  padding: const EdgeInsetsDirectional.only(start: 6),
+                  padding: const EdgeInsetsDirectional.only(start: 4),
                   child: Align(
                     alignment: AlignmentDirectional.centerEnd,
                     child: Row(
