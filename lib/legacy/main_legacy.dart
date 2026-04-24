@@ -22384,6 +22384,9 @@ class CarComparisonPage extends StatelessWidget {
                         mainAxisSize: MainAxisSize.min,
                         crossAxisAlignment: CrossAxisAlignment.center,
                         children: [
+                          final bool isDamagedParts =
+                              (property['key']?.toString() ?? '') ==
+                              'damaged_parts';
                           Icon(
                             (rows[i]['icon'] is IconData)
                                 ? (rows[i]['icon'] as IconData)
@@ -22391,10 +22394,12 @@ class CarComparisonPage extends StatelessWidget {
                             color: isDark ? Colors.white54 : lightInkMuted,
                             size: 16,
                           ),
-                          const SizedBox(width: 4),
+                          SizedBox(width: isDamagedParts ? 2 : 4),
                           ConstrainedBox(
                             constraints: BoxConstraints(
-                              maxWidth: (labelWidth - 16 - 4).clamp(
+                              maxWidth:
+                                  (labelWidth - 16 - (isDamagedParts ? 2 : 4))
+                                      .clamp(
                                 48.0,
                                 labelWidth,
                               ),
@@ -22407,7 +22412,8 @@ class CarComparisonPage extends StatelessWidget {
                                 color: isDark ? Colors.white70 : lightInkMuted,
                                 height: 1.15,
                               ),
-                              textAlign: TextAlign.center,
+                              textAlign:
+                                  isDamagedParts ? TextAlign.start : TextAlign.center,
                               maxLines: 2,
                               minFontSize: 8,
                               stepGranularity: 0.5,
@@ -22431,6 +22437,9 @@ class CarComparisonPage extends StatelessWidget {
                         mainAxisSize: MainAxisSize.min,
                         crossAxisAlignment: CrossAxisAlignment.center,
                         children: [
+                          final bool isDamagedParts =
+                              (property['key']?.toString() ?? '') ==
+                              'damaged_parts';
                           Icon(
                             (rows[i]['icon'] is IconData)
                                 ? (rows[i]['icon'] as IconData)
@@ -22438,10 +22447,12 @@ class CarComparisonPage extends StatelessWidget {
                             color: isDark ? Colors.white54 : lightInkMuted,
                             size: 16,
                           ),
-                          const SizedBox(width: 4),
+                          SizedBox(width: isDamagedParts ? 2 : 4),
                           ConstrainedBox(
                             constraints: BoxConstraints(
-                              maxWidth: (labelWidth - 16 - 4).clamp(
+                              maxWidth:
+                                  (labelWidth - 16 - (isDamagedParts ? 2 : 4))
+                                      .clamp(
                                 48.0,
                                 labelWidth,
                               ),
@@ -22454,7 +22465,8 @@ class CarComparisonPage extends StatelessWidget {
                                 color: isDark ? Colors.white70 : lightInkMuted,
                                 height: 1.15,
                               ),
-                              textAlign: TextAlign.center,
+                              textAlign:
+                                  isDamagedParts ? TextAlign.start : TextAlign.center,
                               maxLines: 2,
                               minFontSize: 8,
                               stepGranularity: 0.5,
