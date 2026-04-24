@@ -22380,46 +22380,36 @@ class CarComparisonPage extends StatelessWidget {
                   SizedBox(
                     width: labelWidth,
                     child: Center(
-                      child: ConstrainedBox(
-                        constraints: BoxConstraints(maxWidth: labelWidth),
-                        child: Wrap(
-                          alignment: WrapAlignment.center,
-                          crossAxisAlignment: WrapCrossAlignment.center,
-                          spacing: 6,
-                          runSpacing: 2,
+                      child: AutoSizeText.rich(
+                        TextSpan(
                           children: [
-                            Icon(
-                              (rows[i]['icon'] is IconData)
-                                  ? (rows[i]['icon'] as IconData)
-                                  : Icons.label_outline,
-                              color: isDark ? Colors.white54 : lightInkMuted,
-                              size: 16,
-                            ),
-                            ConstrainedBox(
-                              constraints: BoxConstraints(
-                                maxWidth: (labelWidth - 16 - 6).clamp(
-                                  40.0,
-                                  labelWidth,
-                                ),
-                              ),
-                              child: AutoSizeText(
-                                property['label']!.toString(),
-                                textScaleFactor: 1.0,
-                                style: TextStyle(
-                                  fontWeight: FontWeight.w600,
-                                  color: isDark ? Colors.white70 : lightInkMuted,
-                                  height: 1.15,
-                                ),
-                                maxLines: 2,
-                                minFontSize: 8,
-                                stepGranularity: 0.5,
-                                overflow: TextOverflow.clip,
-                                softWrap: true,
-                                textAlign: TextAlign.center,
+                            WidgetSpan(
+                              alignment: PlaceholderAlignment.middle,
+                              child: Icon(
+                                (rows[i]['icon'] is IconData)
+                                    ? (rows[i]['icon'] as IconData)
+                                    : Icons.label_outline,
+                                color:
+                                    isDark ? Colors.white54 : lightInkMuted,
+                                size: 16,
                               ),
                             ),
+                            const WidgetSpan(child: SizedBox(width: 4)),
+                            TextSpan(text: property['label']!.toString()),
                           ],
                         ),
+                        textScaleFactor: 1.0,
+                        style: TextStyle(
+                          fontWeight: FontWeight.w600,
+                          color: isDark ? Colors.white70 : lightInkMuted,
+                          height: 1.15,
+                        ),
+                        maxLines: 2,
+                        minFontSize: 8,
+                        stepGranularity: 0.5,
+                        overflow: TextOverflow.clip,
+                        softWrap: true,
+                        textAlign: TextAlign.center,
                       ),
                     ),
                   ),
@@ -22431,46 +22421,36 @@ class CarComparisonPage extends StatelessWidget {
                   SizedBox(
                     width: labelWidth,
                     child: Center(
-                      child: ConstrainedBox(
-                        constraints: BoxConstraints(maxWidth: labelWidth),
-                        child: Wrap(
-                          alignment: WrapAlignment.center,
-                          crossAxisAlignment: WrapCrossAlignment.center,
-                          spacing: 6,
-                          runSpacing: 2,
+                      child: AutoSizeText.rich(
+                        TextSpan(
                           children: [
-                            Icon(
-                              (rows[i]['icon'] is IconData)
-                                  ? (rows[i]['icon'] as IconData)
-                                  : Icons.label_outline,
-                              color: isDark ? Colors.white54 : lightInkMuted,
-                              size: 16,
-                            ),
-                            ConstrainedBox(
-                              constraints: BoxConstraints(
-                                maxWidth: (labelWidth - 16 - 6).clamp(
-                                  40.0,
-                                  labelWidth,
-                                ),
-                              ),
-                              child: AutoSizeText(
-                                property['label']!.toString(),
-                                textScaleFactor: 1.0,
-                                style: TextStyle(
-                                  fontWeight: FontWeight.w600,
-                                  color: isDark ? Colors.white70 : lightInkMuted,
-                                  height: 1.15,
-                                ),
-                                maxLines: 2,
-                                minFontSize: 8,
-                                stepGranularity: 0.5,
-                                overflow: TextOverflow.clip,
-                                softWrap: true,
-                                textAlign: TextAlign.center,
+                            WidgetSpan(
+                              alignment: PlaceholderAlignment.middle,
+                              child: Icon(
+                                (rows[i]['icon'] is IconData)
+                                    ? (rows[i]['icon'] as IconData)
+                                    : Icons.label_outline,
+                                color:
+                                    isDark ? Colors.white54 : lightInkMuted,
+                                size: 16,
                               ),
                             ),
+                            const WidgetSpan(child: SizedBox(width: 4)),
+                            TextSpan(text: property['label']!.toString()),
                           ],
                         ),
+                        textScaleFactor: 1.0,
+                        style: TextStyle(
+                          fontWeight: FontWeight.w600,
+                          color: isDark ? Colors.white70 : lightInkMuted,
+                          height: 1.15,
+                        ),
+                        maxLines: 2,
+                        minFontSize: 8,
+                        stepGranularity: 0.5,
+                        overflow: TextOverflow.clip,
+                        softWrap: true,
+                        textAlign: TextAlign.center,
                       ),
                     ),
                   ),
