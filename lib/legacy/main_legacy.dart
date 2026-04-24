@@ -22380,48 +22380,54 @@ class CarComparisonPage extends StatelessWidget {
                   SizedBox(
                     width: labelWidth,
                     child: Center(
-                      child: Row(
-                        mainAxisSize: MainAxisSize.min,
-                        crossAxisAlignment: CrossAxisAlignment.center,
-                        children: [
+                      child: Builder(
+                        builder: (context) {
                           final bool isDamagedParts =
                               (property['key']?.toString() ?? '') ==
                               'damaged_parts';
-                          Icon(
-                            (rows[i]['icon'] is IconData)
-                                ? (rows[i]['icon'] as IconData)
-                                : Icons.label_outline,
-                            color: isDark ? Colors.white54 : lightInkMuted,
-                            size: 16,
-                          ),
-                          SizedBox(width: isDamagedParts ? 2 : 4),
-                          ConstrainedBox(
-                            constraints: BoxConstraints(
-                              maxWidth:
-                                  (labelWidth - 16 - (isDamagedParts ? 2 : 4))
-                                      .clamp(
-                                48.0,
-                                labelWidth,
+                          final double gap = isDamagedParts ? 2 : 4;
+                          return Row(
+                            mainAxisSize: MainAxisSize.min,
+                            crossAxisAlignment: CrossAxisAlignment.center,
+                            children: [
+                              Icon(
+                                (rows[i]['icon'] is IconData)
+                                    ? (rows[i]['icon'] as IconData)
+                                    : Icons.label_outline,
+                                color: isDark ? Colors.white54 : lightInkMuted,
+                                size: 16,
                               ),
-                            ),
-                            child: AutoSizeText(
-                              property['label']!.toString(),
-                              textScaleFactor: 1.0,
-                              style: TextStyle(
-                                fontWeight: FontWeight.w600,
-                                color: isDark ? Colors.white70 : lightInkMuted,
-                                height: 1.15,
+                              SizedBox(width: gap),
+                              ConstrainedBox(
+                                constraints: BoxConstraints(
+                                  maxWidth: (labelWidth - 16 - gap).clamp(
+                                    48.0,
+                                    labelWidth,
+                                  ),
+                                ),
+                                child: AutoSizeText(
+                                  property['label']!.toString(),
+                                  textScaleFactor: 1.0,
+                                  style: TextStyle(
+                                    fontWeight: FontWeight.w600,
+                                    color: isDark
+                                        ? Colors.white70
+                                        : lightInkMuted,
+                                    height: 1.15,
+                                  ),
+                                  textAlign: isDamagedParts
+                                      ? TextAlign.start
+                                      : TextAlign.center,
+                                  maxLines: 2,
+                                  minFontSize: 8,
+                                  stepGranularity: 0.5,
+                                  overflow: TextOverflow.clip,
+                                  softWrap: true,
+                                ),
                               ),
-                              textAlign:
-                                  isDamagedParts ? TextAlign.start : TextAlign.center,
-                              maxLines: 2,
-                              minFontSize: 8,
-                              stepGranularity: 0.5,
-                              overflow: TextOverflow.clip,
-                              softWrap: true,
-                            ),
-                          ),
-                        ],
+                            ],
+                          );
+                        },
                       ),
                     ),
                   ),
@@ -22433,48 +22439,54 @@ class CarComparisonPage extends StatelessWidget {
                   SizedBox(
                     width: labelWidth,
                     child: Center(
-                      child: Row(
-                        mainAxisSize: MainAxisSize.min,
-                        crossAxisAlignment: CrossAxisAlignment.center,
-                        children: [
+                      child: Builder(
+                        builder: (context) {
                           final bool isDamagedParts =
                               (property['key']?.toString() ?? '') ==
                               'damaged_parts';
-                          Icon(
-                            (rows[i]['icon'] is IconData)
-                                ? (rows[i]['icon'] as IconData)
-                                : Icons.label_outline,
-                            color: isDark ? Colors.white54 : lightInkMuted,
-                            size: 16,
-                          ),
-                          SizedBox(width: isDamagedParts ? 2 : 4),
-                          ConstrainedBox(
-                            constraints: BoxConstraints(
-                              maxWidth:
-                                  (labelWidth - 16 - (isDamagedParts ? 2 : 4))
-                                      .clamp(
-                                48.0,
-                                labelWidth,
+                          final double gap = isDamagedParts ? 2 : 4;
+                          return Row(
+                            mainAxisSize: MainAxisSize.min,
+                            crossAxisAlignment: CrossAxisAlignment.center,
+                            children: [
+                              Icon(
+                                (rows[i]['icon'] is IconData)
+                                    ? (rows[i]['icon'] as IconData)
+                                    : Icons.label_outline,
+                                color: isDark ? Colors.white54 : lightInkMuted,
+                                size: 16,
                               ),
-                            ),
-                            child: AutoSizeText(
-                              property['label']!.toString(),
-                              textScaleFactor: 1.0,
-                              style: TextStyle(
-                                fontWeight: FontWeight.w600,
-                                color: isDark ? Colors.white70 : lightInkMuted,
-                                height: 1.15,
+                              SizedBox(width: gap),
+                              ConstrainedBox(
+                                constraints: BoxConstraints(
+                                  maxWidth: (labelWidth - 16 - gap).clamp(
+                                    48.0,
+                                    labelWidth,
+                                  ),
+                                ),
+                                child: AutoSizeText(
+                                  property['label']!.toString(),
+                                  textScaleFactor: 1.0,
+                                  style: TextStyle(
+                                    fontWeight: FontWeight.w600,
+                                    color: isDark
+                                        ? Colors.white70
+                                        : lightInkMuted,
+                                    height: 1.15,
+                                  ),
+                                  textAlign: isDamagedParts
+                                      ? TextAlign.start
+                                      : TextAlign.center,
+                                  maxLines: 2,
+                                  minFontSize: 8,
+                                  stepGranularity: 0.5,
+                                  overflow: TextOverflow.clip,
+                                  softWrap: true,
+                                ),
                               ),
-                              textAlign:
-                                  isDamagedParts ? TextAlign.start : TextAlign.center,
-                              maxLines: 2,
-                              minFontSize: 8,
-                              stepGranularity: 0.5,
-                              overflow: TextOverflow.clip,
-                              softWrap: true,
-                            ),
-                          ),
-                        ],
+                            ],
+                          );
+                        },
                       ),
                     ),
                   ),
