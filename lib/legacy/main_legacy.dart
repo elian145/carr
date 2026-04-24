@@ -22392,13 +22392,7 @@ class CarComparisonPage extends StatelessWidget {
                             size: 16,
                           ),
                           const SizedBox(width: 4),
-                          ConstrainedBox(
-                            constraints: BoxConstraints(
-                              maxWidth: (labelWidth - 16 - 4).clamp(
-                                40.0,
-                                labelWidth,
-                              ),
-                            ),
+                          Flexible(
                             child: AutoSizeText(
                               property['label']!.toString(),
                               textScaleFactor: 1.0,
@@ -22439,13 +22433,7 @@ class CarComparisonPage extends StatelessWidget {
                             size: 16,
                           ),
                           const SizedBox(width: 4),
-                          ConstrainedBox(
-                            constraints: BoxConstraints(
-                              maxWidth: (labelWidth - 16 - 4).clamp(
-                                40.0,
-                                labelWidth,
-                              ),
-                            ),
+                          Flexible(
                             child: AutoSizeText(
                               property['label']!.toString(),
                               textScaleFactor: 1.0,
