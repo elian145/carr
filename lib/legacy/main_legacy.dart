@@ -1638,7 +1638,8 @@ Widget buildGlobalCarCard(BuildContext context, Map car, {bool listLayout = fals
   final bool showVideoCountBadge =
       car['videos'] != null && (car['videos'] as List).isNotEmpty;
   final EdgeInsets listingCardTextPadding = listLayout
-      ? const EdgeInsets.fromLTRB(8, 12, 8, 3)
+      // Horizontal cards: keep top tighter so title sits higher; keep a bit of bottom room.
+      ? const EdgeInsets.fromLTRB(8, 8, 8, 6)
       : const EdgeInsets.fromLTRB(12, 8, 12, 10);
 
   return Container(
@@ -1741,11 +1742,11 @@ Widget buildGlobalCarCard(BuildContext context, Map car, {bool listLayout = fals
                           ),
                           Expanded(
                             flex: 6,
-                            child: SingleChildScrollView(
-                              physics: const ClampingScrollPhysics(),
+                            child: Padding(
                               padding: listingCardTextPadding,
                               child: SizedBox(
                                 width: double.infinity,
+                                height: double.infinity,
                                 child: _buildGlobalCarCardInnerText(
                                   context,
                                   car,
@@ -1756,6 +1757,7 @@ Widget buildGlobalCarCard(BuildContext context, Map car, {bool listLayout = fals
                                   cityLine: cityLine,
                                   dividerLineColor: dividerLineColor,
                                   metaTextColor: metaTextColor,
+                                  pinBottomMeta: true,
                                 ),
                               ),
                             ),
