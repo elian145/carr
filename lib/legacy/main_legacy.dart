@@ -1904,9 +1904,20 @@ Widget _buildGlobalCardImageCarousel(BuildContext context, Map car) {
   }
 
   int currentIndex = 0;
+  const int _kMaxVisibleDots = 6;
+  int dotWindowStart = 0;
+  bool dotWindowForward = true;
 
   return StatefulBuilder(
     builder: (context, setState) {
+      int computeDotStart(int index) {
+        final int visible =
+            urls.length < _kMaxVisibleDots ? urls.length : _kMaxVisibleDots;
+        if (visible <= 0 || urls.length <= visible) return 0;
+        final int maxStart = (urls.length - visible).clamp(0, urls.length);
+        return (index - (visible - 1)).clamp(0, maxStart);
+      }
+
       return Stack(
         fit: StackFit.expand,
         children: [
@@ -1919,7 +1930,16 @@ Widget _buildGlobalCardImageCarousel(BuildContext context, Map car) {
               );
             },
             child: PageView.builder(
-              onPageChanged: (i) => setState(() => currentIndex = i),
+              onPageChanged: (i) {
+                setState(() {
+                  currentIndex = i;
+                  final nextStart = computeDotStart(i);
+                  if (nextStart != dotWindowStart) {
+                    dotWindowForward = nextStart > dotWindowStart;
+                    dotWindowStart = nextStart;
+                  }
+                });
+              },
               itemCount: urls.length,
               itemBuilder: (context, i) {
                 final url = urls[i];
@@ -1933,25 +1953,73 @@ Widget _buildGlobalCardImageCarousel(BuildContext context, Map car) {
               left: 0,
               right: 0,
               child: Center(
-                child: SingleChildScrollView(
-                  scrollDirection: Axis.horizontal,
-                  child: Row(
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    children: List.generate(urls.length, (i) {
-                      final active = i == currentIndex;
-                      return AnimatedContainer(
-                        duration: Duration(milliseconds: 200),
-                        margin: EdgeInsets.symmetric(horizontal: 3),
-                        width: active ? 8 : 6,
-                        height: active ? 8 : 6,
-                        decoration: BoxDecoration(
-                          color: active ? Colors.white : Colors.white70,
-                          shape: BoxShape.circle,
+                child: () {
+                  final int visible = urls.length < _kMaxVisibleDots
+                      ? urls.length
+                      : _kMaxVisibleDots;
+                  if (visible <= 1) return const SizedBox.shrink();
+
+                  Widget buildDotRow(int startIndex) {
+                    return Row(
+                      key: ValueKey<int>(startIndex),
+                      mainAxisSize: MainAxisSize.min,
+                      children: List.generate(visible, (j) {
+                        final i = startIndex + j;
+                        final active = i == currentIndex;
+                        return AnimatedContainer(
+                          duration: const Duration(milliseconds: 180),
+                          margin: const EdgeInsets.symmetric(horizontal: 3),
+                          width: active ? 8 : 6,
+                          height: active ? 8 : 6,
+                          decoration: BoxDecoration(
+                            color: active ? Colors.white : Colors.white70,
+                            shape: BoxShape.circle,
+                          ),
+                        );
+                      }),
+                    );
+                  }
+
+                  final start = dotWindowStart.clamp(
+                    0,
+                    (urls.length - visible).clamp(0, urls.length),
+                  );
+
+                  return AnimatedSwitcher(
+                    duration: const Duration(milliseconds: 180),
+                    switchInCurve: Curves.easeOutCubic,
+                    switchOutCurve: Curves.easeInCubic,
+                    layoutBuilder: (currentChild, previousChildren) {
+                      return Stack(
+                        alignment: Alignment.center,
+                        children: [
+                          ...previousChildren,
+                          if (currentChild != null) currentChild,
+                        ],
+                      );
+                    },
+                    transitionBuilder: (child, animation) {
+                      final beginX = dotWindowForward ? 1.0 : -1.0;
+                      final slide = Tween<Offset>(
+                        begin: Offset(beginX, 0),
+                        end: Offset.zero,
+                      ).animate(animation);
+                      final fade = Tween<double>(begin: 0, end: 1).animate(
+                        CurvedAnimation(
+                          parent: animation,
+                          curve: Curves.easeOut,
                         ),
                       );
-                    }),
-                  ),
-                ),
+                      return ClipRect(
+                        child: SlideTransition(
+                          position: slide,
+                          child: FadeTransition(opacity: fade, child: child),
+                        ),
+                      );
+                    },
+                    child: buildDotRow(start),
+                  );
+                }(),
               ),
             ),
         ],
