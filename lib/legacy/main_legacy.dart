@@ -22379,40 +22379,46 @@ class CarComparisonPage extends StatelessWidget {
                   ),
                   SizedBox(
                     width: labelWidth,
-                    child: Row(
-                      mainAxisAlignment: MainAxisAlignment.center,
-                      children: [
-                        if (rows[i]['icon'] is IconData)
-                          Icon(
-                            rows[i]['icon'] as IconData,
-                            color: isDark ? Colors.white54 : lightInkMuted,
-                            size: 16,
-                          )
-                        else
-                          Icon(
-                            Icons.label_outline,
-                            color: isDark ? Colors.white54 : lightInkMuted,
-                            size: 16,
-                          ),
-                        SizedBox(width: 8),
-                        Flexible(
-                          child: AutoSizeText(
-                            property['label']!.toString(),
-                            textScaleFactor: 1.0,
-                            style: TextStyle(
-                              fontWeight: FontWeight.w600,
-                              color: isDark ? Colors.white70 : lightInkMuted,
-                              height: 1.15,
+                    child: SizedBox(
+                      height: 44,
+                      child: Center(
+                        child: Row(
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          crossAxisAlignment: CrossAxisAlignment.center,
+                          children: [
+                            if (rows[i]['icon'] is IconData)
+                              Icon(
+                                rows[i]['icon'] as IconData,
+                                color: isDark ? Colors.white54 : lightInkMuted,
+                                size: 16,
+                              )
+                            else
+                              Icon(
+                                Icons.label_outline,
+                                color: isDark ? Colors.white54 : lightInkMuted,
+                                size: 16,
+                              ),
+                            const SizedBox(width: 8),
+                            Flexible(
+                              child: AutoSizeText(
+                                property['label']!.toString(),
+                                textScaleFactor: 1.0,
+                                style: TextStyle(
+                                  fontWeight: FontWeight.w600,
+                                  color: isDark ? Colors.white70 : lightInkMuted,
+                                  height: 1.15,
+                                ),
+                                maxLines: 2,
+                                minFontSize: 8,
+                                stepGranularity: 0.5,
+                                overflow: TextOverflow.clip,
+                                softWrap: true,
+                                textAlign: TextAlign.center,
+                              ),
                             ),
-                            maxLines: 2,
-                            minFontSize: 8,
-                            stepGranularity: 0.5,
-                            overflow: TextOverflow.clip,
-                            softWrap: true,
-                            textAlign: TextAlign.center,
-                          ),
+                          ],
                         ),
-                      ],
+                      ),
                     ),
                   ),
                   SizedBox(
@@ -22422,38 +22428,44 @@ class CarComparisonPage extends StatelessWidget {
                 ] else ...[
                   SizedBox(
                     width: labelWidth,
-                    child: Row(
-                      children: [
-                        if (rows[i]['icon'] is IconData)
-                          Icon(
-                            rows[i]['icon'] as IconData,
-                            color: isDark ? Colors.white54 : lightInkMuted,
-                            size: 16,
-                          )
-                        else
-                          Icon(
-                            Icons.label_outline,
-                            color: isDark ? Colors.white54 : lightInkMuted,
-                            size: 16,
-                          ),
-                        SizedBox(width: 8),
-                        Expanded(
-                          child: AutoSizeText(
-                            property['label']!.toString(),
-                            textScaleFactor: 1.0,
-                            style: TextStyle(
-                              fontWeight: FontWeight.w600,
-                              color: isDark ? Colors.white70 : lightInkMuted,
-                              height: 1.15,
+                    child: SizedBox(
+                      height: 44,
+                      child: Center(
+                        child: Row(
+                          crossAxisAlignment: CrossAxisAlignment.center,
+                          children: [
+                            if (rows[i]['icon'] is IconData)
+                              Icon(
+                                rows[i]['icon'] as IconData,
+                                color: isDark ? Colors.white54 : lightInkMuted,
+                                size: 16,
+                              )
+                            else
+                              Icon(
+                                Icons.label_outline,
+                                color: isDark ? Colors.white54 : lightInkMuted,
+                                size: 16,
+                              ),
+                            const SizedBox(width: 8),
+                            Expanded(
+                              child: AutoSizeText(
+                                property['label']!.toString(),
+                                textScaleFactor: 1.0,
+                                style: TextStyle(
+                                  fontWeight: FontWeight.w600,
+                                  color: isDark ? Colors.white70 : lightInkMuted,
+                                  height: 1.15,
+                                ),
+                                maxLines: 2,
+                                minFontSize: 8,
+                                stepGranularity: 0.5,
+                                overflow: TextOverflow.clip,
+                                softWrap: true,
+                              ),
                             ),
-                            maxLines: 2,
-                            minFontSize: 8,
-                            stepGranularity: 0.5,
-                            overflow: TextOverflow.clip,
-                            softWrap: true,
-                          ),
+                          ],
                         ),
-                      ],
+                      ),
                     ),
                   ),
                   Expanded(
