@@ -22353,7 +22353,7 @@ class CarComparisonPage extends StatelessWidget {
         final property = Map<String, dynamic>.from(rows[i] as Map);
         final bool isOdd = i % 2 == 1;
         final bool isRtl =
-            Directionality.of(context) == TextDirection.rtl;
+            Directionality.of(context) == ui.TextDirection.rtl;
         out.add(
           Container(
             padding: EdgeInsets.symmetric(vertical: 12, horizontal: 16),
