@@ -10919,7 +10919,7 @@ class _HomePageState extends State<HomePage> {
                           // One column: horizontal row — wider vs tall to match strip layout.
                           // One column: horizontal card. Larger ratio => shorter cell height
                           // so the text column is not left with a tall empty band under the last row.
-                          childAspectRatio: listingColumns == 2 ? 0.62 : 2.78,
+                          childAspectRatio: listingColumns == 2 ? 0.58 : 2.78,
                           crossAxisSpacing: 8,
                           mainAxisSpacing: 8,
                         ),
@@ -24008,7 +24008,7 @@ class _FavoritesPageState extends State<FavoritesPage> {
                       crossAxisCount: listingColumns,
                       crossAxisSpacing: 8,
                       mainAxisSpacing: 8,
-                      childAspectRatio: listingColumns == 2 ? 0.62 : 2.78,
+                      childAspectRatio: listingColumns == 2 ? 0.58 : 2.78,
                     ),
                     itemCount: _favorites.length,
                     itemBuilder: (context, index) {
@@ -26599,7 +26599,7 @@ class _MyListingsPageState extends State<MyListingsPage> {
                   crossAxisCount: listingColumns,
                   crossAxisSpacing: 8,
                   mainAxisSpacing: 8,
-                  childAspectRatio: listingColumns == 2 ? 0.62 : 2.78,
+                  childAspectRatio: listingColumns == 2 ? 0.58 : 2.78,
                 ),
                 itemCount: myListings.length,
                 itemBuilder: (context, index) {
