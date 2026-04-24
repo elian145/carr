@@ -21755,7 +21755,7 @@ class CarComparisonPage extends StatelessWidget {
                       final double imageSize = isTwoCars
                           ? ((columnWidth - 16).clamp(88.0, 120.0)).toDouble()
                           : 120.0;
-                      final double headerTitleHeight = 36.0;
+                      final double headerTitleHeight = 52.0;
                       final double headerPriceHeight = 22.0;
 
                       final table = Container(
@@ -21831,8 +21831,10 @@ class CarComparisonPage extends StatelessWidget {
                                                 SizedBox(
                                                   height: headerTitleHeight,
                                                   child: Center(
-                                                    child: Text(
-                                                      cars[0]['title'] ?? '',
+                                                    child: AutoSizeText(
+                                                      (cars[0]['title'] ?? '')
+                                                          .toString(),
+                                                      textScaleFactor: 1.0,
                                                       style: TextStyle(
                                                         fontWeight:
                                                             FontWeight.bold,
@@ -21840,12 +21842,16 @@ class CarComparisonPage extends StatelessWidget {
                                                         color: isDark
                                                             ? Colors.white
                                                             : lightInk,
+                                                        height: 1.15,
                                                       ),
                                                       textAlign:
                                                           TextAlign.center,
-                                                      maxLines: 1,
+                                                      maxLines: 2,
+                                                      minFontSize: 9,
+                                                      stepGranularity: 0.5,
                                                       overflow:
-                                                          TextOverflow.ellipsis,
+                                                          TextOverflow.clip,
+                                                      softWrap: true,
                                                     ),
                                                   ),
                                                 ),
@@ -21928,8 +21934,10 @@ class CarComparisonPage extends StatelessWidget {
                                                 SizedBox(
                                                   height: headerTitleHeight,
                                                   child: Center(
-                                                    child: Text(
-                                                      cars[1]['title'] ?? '',
+                                                    child: AutoSizeText(
+                                                      (cars[1]['title'] ?? '')
+                                                          .toString(),
+                                                      textScaleFactor: 1.0,
                                                       style: TextStyle(
                                                         fontWeight:
                                                             FontWeight.bold,
@@ -21937,12 +21945,16 @@ class CarComparisonPage extends StatelessWidget {
                                                         color: isDark
                                                             ? Colors.white
                                                             : lightInk,
+                                                        height: 1.15,
                                                       ),
                                                       textAlign:
                                                           TextAlign.center,
-                                                      maxLines: 1,
+                                                      maxLines: 2,
+                                                      minFontSize: 9,
+                                                      stepGranularity: 0.5,
                                                       overflow:
-                                                          TextOverflow.ellipsis,
+                                                          TextOverflow.clip,
+                                                      softWrap: true,
                                                     ),
                                                   ),
                                                 ),
@@ -22028,7 +22040,7 @@ class CarComparisonPage extends StatelessWidget {
                                                   SizedBox(
                                                     height: headerTitleHeight,
                                                     child: Center(
-                                                      child: Text(
+                                                      child: AutoSizeText(
                                                         [
                                                               _localizedCarTitleForCard(
                                                                 context,
@@ -22044,6 +22056,7 @@ class CarComparisonPage extends StatelessWidget {
                                                                   s.isNotEmpty,
                                                             )
                                                             .join(' '),
+                                                        textScaleFactor: 1.0,
                                                         style: TextStyle(
                                                           fontWeight:
                                                               FontWeight.bold,
@@ -22051,12 +22064,16 @@ class CarComparisonPage extends StatelessWidget {
                                                           color: isDark
                                                               ? Colors.white
                                                               : lightInk,
+                                                          height: 1.15,
                                                         ),
                                                         textAlign:
                                                             TextAlign.center,
-                                                        maxLines: 1,
-                                                        overflow: TextOverflow
-                                                            .ellipsis,
+                                                        maxLines: 2,
+                                                        minFontSize: 9,
+                                                        stepGranularity: 0.5,
+                                                        overflow:
+                                                            TextOverflow.clip,
+                                                        softWrap: true,
                                                       ),
                                                     ),
                                                   ),
@@ -22379,14 +22396,19 @@ class CarComparisonPage extends StatelessWidget {
                           ),
                         SizedBox(width: 8),
                         Flexible(
-                          child: Text(
+                          child: AutoSizeText(
                             property['label']!.toString(),
+                            textScaleFactor: 1.0,
                             style: TextStyle(
                               fontWeight: FontWeight.w600,
                               color: isDark ? Colors.white70 : lightInkMuted,
+                              height: 1.15,
                             ),
-                            maxLines: 1,
-                            overflow: TextOverflow.ellipsis,
+                            maxLines: 2,
+                            minFontSize: 8,
+                            stepGranularity: 0.5,
+                            overflow: TextOverflow.clip,
+                            softWrap: true,
                             textAlign: TextAlign.center,
                           ),
                         ),
@@ -22416,14 +22438,19 @@ class CarComparisonPage extends StatelessWidget {
                           ),
                         SizedBox(width: 8),
                         Expanded(
-                          child: Text(
+                          child: AutoSizeText(
                             property['label']!.toString(),
+                            textScaleFactor: 1.0,
                             style: TextStyle(
                               fontWeight: FontWeight.w600,
                               color: isDark ? Colors.white70 : lightInkMuted,
+                              height: 1.15,
                             ),
-                            maxLines: 1,
-                            overflow: TextOverflow.ellipsis,
+                            maxLines: 2,
+                            minFontSize: 8,
+                            stepGranularity: 0.5,
+                            overflow: TextOverflow.clip,
+                            softWrap: true,
                           ),
                         ),
                       ],
