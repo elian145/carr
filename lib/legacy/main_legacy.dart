@@ -1543,7 +1543,7 @@ Widget _buildGlobalCarCardInnerText(
             ),
             if (cityLine.isNotEmpty)
               Expanded(
-                flex: 2,
+                flex: 3,
                 child: Padding(
                   padding: const EdgeInsetsDirectional.only(start: 6),
                   child: Align(
@@ -1554,10 +1554,10 @@ Widget _buildGlobalCarCardInnerText(
                       children: [
                         Icon(
                           Icons.location_city,
-                          size: 13,
+                          size: 12,
                           color: metaTextColor,
                         ),
-                        const SizedBox(width: 3),
+                        const SizedBox(width: 2),
                         Flexible(
                           child: AutoSizeText(
                             cityLine,
@@ -1566,12 +1566,12 @@ Widget _buildGlobalCarCardInnerText(
                               color: metaTextColor,
                               fontSize: 13,
                             ),
-                            // Prefer wrapping over extreme shrinking so it's readable.
-                            maxLines: 2,
+                            // Keep city on one line (no mid-word wrapping); shrink a bit if needed.
+                            maxLines: 1,
                             minFontSize: 10,
                             stepGranularity: 0.5,
                             overflow: TextOverflow.clip,
-                            softWrap: true,
+                            softWrap: false,
                             textAlign: TextAlign.end,
                           ),
                         ),
