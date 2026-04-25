@@ -1527,59 +1527,73 @@ Widget _buildGlobalCarCardInnerText(
           crossAxisAlignment: CrossAxisAlignment.center,
           children: [
             Expanded(
-              flex: 2,
+              flex: 1,
               child: Align(
                 alignment: AlignmentDirectional.centerStart,
                 child: mileageDisplay.isNotEmpty
-                    ? AutoSizeText(
-                        mileageDisplay,
-                        textScaleFactor: 1.0,
-                        style: TextStyle(
-                          color: metaTextColor,
-                          fontSize: 13,
+                    ? FittedBox(
+                        fit: BoxFit.scaleDown,
+                        alignment: AlignmentDirectional.centerStart,
+                        child: Text(
+                          mileageDisplay,
+                          maxLines: 1,
+                          softWrap: false,
+                          overflow: TextOverflow.visible,
+                          style: TextStyle(
+                            color: metaTextColor,
+                            fontSize: 13,
+                          ),
                         ),
-                        maxLines: 1,
-                        minFontSize: 10,
-                        stepGranularity: 0.5,
-                        overflow: TextOverflow.clip,
-                        softWrap: false,
                       )
                     : const SizedBox.shrink(),
               ),
             ),
+            if (mileageDisplay.isNotEmpty && cityLine.isNotEmpty) ...[
+              Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 8),
+                child: Center(
+                  child: Container(
+                    width: 1,
+                    height: 12,
+                    color: metaTextColor.withOpacity(0.35),
+                  ),
+                ),
+              ),
+            ],
             if (cityLine.isNotEmpty)
               Expanded(
-                flex: 4,
+                flex: 1,
                 child: Padding(
-                  padding: const EdgeInsetsDirectional.only(start: 4),
+                  padding: EdgeInsets.zero,
                   child: Align(
                     alignment: AlignmentDirectional.centerEnd,
-                    child: Row(
-                      mainAxisSize: MainAxisSize.max,
-                      mainAxisAlignment: MainAxisAlignment.end,
-                      crossAxisAlignment: CrossAxisAlignment.center,
-                      children: [
-                        Icon(
-                          Icons.location_city,
-                          size: 12,
-                          color: metaTextColor,
-                        ),
-                        const SizedBox(width: 4),
-                        Expanded(
-                          child: Text(
+                    child: FittedBox(
+                      fit: BoxFit.scaleDown,
+                      alignment: AlignmentDirectional.centerEnd,
+                      child: Row(
+                        mainAxisSize: MainAxisSize.min,
+                        mainAxisAlignment: MainAxisAlignment.end,
+                        crossAxisAlignment: CrossAxisAlignment.center,
+                        children: [
+                          Icon(
+                            Icons.location_city,
+                            size: 12,
+                            color: metaTextColor,
+                          ),
+                          const SizedBox(width: 4),
+                          Text(
                             cityLine,
                             maxLines: 1,
                             softWrap: false,
-                            // Keep the *end* visible: when space is tight, clip the start.
-                            overflow: TextOverflow.clip,
+                            overflow: TextOverflow.visible,
                             textAlign: TextAlign.end,
                             style: TextStyle(
                               color: metaTextColor,
                               fontSize: 13,
                             ),
                           ),
-                        ),
-                      ],
+                        ],
+                      ),
                     ),
                   ),
                 ),
