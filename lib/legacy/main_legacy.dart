@@ -6912,146 +6912,181 @@ class _HomePageState extends State<HomePage> {
                           child: Column(
                             crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
-                              Row(
-                                children: [
-                                  Icon(Icons.search, color: Color(0xFFFF6B00)),
-                                  SizedBox(width: 8),
-                                  Expanded(
-                                    flex: 1,
-                                    child: GestureDetector(
-                                      onTap: () => _showSearchDialog(context),
-                                      child: Text(
-                                        AppLocalizations.of(
-                                          context,
-                                        )!.homeSearchHeading,
-                                        style: GoogleFonts.orbitron(
-                                          color: Color(0xFFFF6B00),
-                                          fontWeight: FontWeight.bold,
-                                          fontSize: 20,
-                                        ),
-                                        overflow: TextOverflow.ellipsis,
-                                        maxLines: 1,
-                                      ),
-                                    ),
-                                  ),
-                                  const SizedBox(width: 4),
-                                  Expanded(
-                                    flex: 2,
-                                    child: Align(
-                                      alignment: Alignment.centerRight,
-                                      child: ConstrainedBox(
-                                        constraints:
-                                            const BoxConstraints(maxWidth: 400),
-                                        child: SizedBox(
-                                          height: 34,
-                                          child: Builder(
-                                            builder: (context) {
-                                              const allKey = '__all_cities__';
-                                              final isAll = (selectedCity == null ||
-                                                  selectedCity!.trim().isEmpty ||
-                                                  selectedCity == 'Any');
-                                              final display = isAll
-                                                  ? 'All cities'
-                                                  : (_translateValueGlobal(
-                                                          context, selectedCity) ??
-                                                      selectedCity!);
+                              Builder(
+                                builder: (context) {
+                                  final loc = AppLocalizations.of(context)!;
+                                  const allKey = '__all_cities__';
+                                  final isAll = (selectedCity == null ||
+                                      selectedCity!.trim().isEmpty ||
+                                      selectedCity == 'Any');
+                                  final display = isAll
+                                      ? loc.allCities
+                                      : (_translateValueGlobal(
+                                              context, selectedCity) ??
+                                          selectedCity!);
 
-                                              return PopupMenuButton<String>(
-                                                tooltip: '',
-                                                position:
-                                                    PopupMenuPosition.under,
-                                                offset: const Offset(0, 6),
-                                                color: Colors.grey[900]
-                                                    ?.withOpacity(0.98),
-                                                splashRadius: 18,
-                                                onSelected: (value) {
-                                                  setState(() {
-                                                    selectedCity = value == allKey
-                                                        ? null
-                                                        : value;
-                                                  });
-                                                  onFilterChanged();
-                                                },
-                                                itemBuilder: (context) => [
-                                                  PopupMenuItem<String>(
-                                                    value: allKey,
-                                                    child: Text(
-                                                      'All cities',
-                                                      style:
-                                                          GoogleFonts.orbitron(
-                                                        fontSize: 14,
-                                                        color: Colors.white,
-                                                        fontWeight:
-                                                            FontWeight.bold,
+                                  Widget cityIconLabel() {
+                                    return FittedBox(
+                                      fit: BoxFit.scaleDown,
+                                      alignment: AlignmentDirectional.centerEnd,
+                                      child: Row(
+                                        // Keep icon+text visually consistent in RTL/LTR.
+                                        textDirection: ui.TextDirection.ltr,
+                                        mainAxisSize: MainAxisSize.min,
+                                        children: [
+                                          const Icon(
+                                            Icons.location_city,
+                                            size: 16,
+                                            color: Color(0xFFFF6B00),
+                                          ),
+                                          const SizedBox(width: 4),
+                                          Text(
+                                            display,
+                                            maxLines: 1,
+                                            softWrap: false,
+                                            overflow: TextOverflow.visible,
+                                            style: GoogleFonts.orbitron(
+                                              fontSize: 14,
+                                              color: Colors.white,
+                                              fontWeight: FontWeight.bold,
+                                            ),
+                                          ),
+                                        ],
+                                      ),
+                                    );
+                                  }
+
+                                  return LayoutBuilder(
+                                    builder: (context, c) {
+                                      final maxW = c.maxWidth;
+                                      final cityMaxW = (maxW * 0.46)
+                                          .clamp(140.0, 240.0);
+                                      return Row(
+                                        children: [
+                                          Expanded(
+                                            child: GestureDetector(
+                                              onTap: () =>
+                                                  _showSearchDialog(context),
+                                              child: Align(
+                                                // RTL: pins to the right; LTR: pins to the left.
+                                                alignment: AlignmentDirectional.centerStart,
+                                                child: Row(
+                                                  // Keep icon+text visually consistent in RTL/LTR.
+                                                  textDirection: ui.TextDirection.ltr,
+                                                  mainAxisSize: MainAxisSize.min,
+                                                  children: [
+                                                    const Icon(
+                                                      Icons.search,
+                                                      color: Color(0xFFFF6B00),
+                                                    ),
+                                                    const SizedBox(width: 8),
+                                                    Flexible(
+                                                      child: Text(
+                                                        loc.homeSearchHeading,
+                                                        maxLines: 1,
+                                                        overflow:
+                                                            TextOverflow.ellipsis,
+                                                        style: GoogleFonts.orbitron(
+                                                          color: const Color(
+                                                            0xFFFF6B00,
+                                                          ),
+                                                          fontWeight:
+                                                              FontWeight.bold,
+                                                          fontSize: 20,
+                                                        ),
                                                       ),
                                                     ),
-                                                  ),
-                                                  ...cities
-                                                      .where((x) => x != 'Any')
-                                                      .map(
-                                                        (c) =>
-                                                            PopupMenuItem<String>(
-                                                          value: c,
-                                                          child: Text(
-                                                            (_translateValueGlobal(
-                                                                    context, c) ??
-                                                                c),
-                                                            style: GoogleFonts
-                                                                .orbitron(
-                                                              fontSize: 14,
-                                                              color:
-                                                                  Colors.white,
-                                                              fontWeight:
-                                                                  FontWeight
-                                                                      .bold,
-                                                            ),
-                                                          ),
-                                                        ),
-                                                      ),
-                                                ],
-                                                child: Padding(
-                                                  padding: const EdgeInsets.only(
-                                                    left: 0,
-                                                    top: 6,
-                                                    bottom: 6,
-                                                    right: 8,
-                                                  ),
-                                                  child: Row(
-                                                    mainAxisSize:
-                                                        MainAxisSize.min,
-                                                    children: [
-                                                      const Icon(
-                                                        Icons.location_city,
-                                                        size: 16,
-                                                        color: Color(
-                                                          0xFFFF6B00,
-                                                        ),
-                                                      ),
-                                                      const SizedBox(width: 4),
-                                                      Text(
-                                                        display,
-                                                        maxLines: 1,
-                                                        softWrap: false,
-                                                        overflow: TextOverflow.visible,
-                                                        style:
-                                                            GoogleFonts.orbitron(
+                                                  ],
+                                                ),
+                                              ),
+                                            ),
+                                          ),
+                                          const SizedBox(width: 10),
+                                          ConstrainedBox(
+                                            constraints: BoxConstraints(
+                                              maxWidth: cityMaxW,
+                                            ),
+                                            child: SizedBox(
+                                              height: 34,
+                                              child: Align(
+                                                alignment: AlignmentDirectional
+                                                    .centerEnd,
+                                                child: PopupMenuButton<String>(
+                                                  tooltip: '',
+                                                  position:
+                                                      PopupMenuPosition.under,
+                                                  offset: const Offset(0, 6),
+                                                  color: Colors.grey[900]
+                                                      ?.withOpacity(0.98),
+                                                  splashRadius: 18,
+                                                  onSelected: (value) {
+                                                    setState(() {
+                                                      selectedCity =
+                                                          value == allKey
+                                                              ? null
+                                                              : value;
+                                                    });
+                                                    onFilterChanged();
+                                                  },
+                                                  itemBuilder: (context) => [
+                                                    PopupMenuItem<String>(
+                                                      value: allKey,
+                                                      child: Text(
+                                                        loc.allCities,
+                                                        style: GoogleFonts
+                                                            .orbitron(
                                                           fontSize: 14,
                                                           color: Colors.white,
                                                           fontWeight:
                                                               FontWeight.bold,
                                                         ),
                                                       ),
-                                                    ],
+                                                    ),
+                                                    ...cities
+                                                        .where(
+                                                          (x) => x != 'Any',
+                                                        )
+                                                        .map(
+                                                          (c) =>
+                                                              PopupMenuItem<
+                                                                  String>(
+                                                            value: c,
+                                                            child: Text(
+                                                              (_translateValueGlobal(
+                                                                      context, c) ??
+                                                                  c),
+                                                              style: GoogleFonts
+                                                                  .orbitron(
+                                                                fontSize: 14,
+                                                                color:
+                                                                    Colors.white,
+                                                                fontWeight:
+                                                                    FontWeight
+                                                                        .bold,
+                                                              ),
+                                                            ),
+                                                          ),
+                                                        ),
+                                                  ],
+                                                  child: Padding(
+                                                    padding: const EdgeInsetsDirectional
+                                                        .only(
+                                                      start: 0,
+                                                      top: 6,
+                                                      bottom: 6,
+                                                      end: 8,
+                                                    ),
+                                                    child: cityIconLabel(),
                                                   ),
                                                 ),
-                                              );
-                                            },
+                                              ),
+                                            ),
                                           ),
-                                        ),
-                                      ),
-                                    ),
-                                  ),
-                                ],
+                                        ],
+                                      );
+                                    },
+                                  );
+                                },
                               ),
                               SizedBox(height: 16),
                               Row(
@@ -7307,8 +7342,8 @@ class _HomePageState extends State<HomePage> {
                                             ),
                                           ),
                                           contentPadding: EdgeInsets.symmetric(
-                                            horizontal: 12,
-                                            vertical: 14,
+                                            horizontal: 10,
+                                            vertical: 12,
                                           ),
                                         ),
                                         child: Row(
@@ -7357,7 +7392,7 @@ class _HomePageState extends State<HomePage> {
                                                 size: 20,
                                                 color: Color(0xFFFF6B00),
                                               ),
-                                            SizedBox(width: 8),
+                                            SizedBox(width: 6),
                                             Expanded(
                                               child: Text(
                                                 selectedBrand == null ||
@@ -7379,6 +7414,8 @@ class _HomePageState extends State<HomePage> {
                                                   color: Colors.white,
                                                   fontWeight: FontWeight.bold,
                                                 ),
+                                                maxLines: 1,
+                                                softWrap: false,
                                                 overflow: TextOverflow.ellipsis,
                                               ),
                                             ),
@@ -7387,11 +7424,12 @@ class _HomePageState extends State<HomePage> {
                                       ),
                                     ),
                                   ),
-                                  SizedBox(width: 8),
+                                  SizedBox(width: 6),
                                   // Model Dropdown
                                   Expanded(
                                     child: DropdownButtonFormField<String>(
                                       isDense: true,
+                                      isExpanded: true,
                                       style: GoogleFonts.orbitron(
                                         fontSize: 14,
                                         color: Colors.white,
@@ -7437,6 +7475,8 @@ class _HomePageState extends State<HomePage> {
                                           value: '',
                                           child: Text(
                                             AppLocalizations.of(context)!.any,
+                                            maxLines: 1,
+                                            overflow: TextOverflow.ellipsis,
                                             style: GoogleFonts.orbitron(
                                               color: Colors.grey,
                                               fontSize: 14,
@@ -7460,6 +7500,8 @@ class _HomePageState extends State<HomePage> {
                                                         m,
                                                       )
                                                     : m,
+                                                maxLines: 1,
+                                                overflow: TextOverflow.ellipsis,
                                                 style: GoogleFonts.orbitron(
                                                   fontSize: 14,
                                                 ),
@@ -7479,11 +7521,12 @@ class _HomePageState extends State<HomePage> {
                                       },
                                     ),
                                   ),
-                                  SizedBox(width: 8),
+                                  SizedBox(width: 6),
                                   // Trim Dropdown
                                   Expanded(
                                     child: DropdownButtonFormField<String>(
                                       isDense: true,
+                                      isExpanded: true,
                                       style: GoogleFonts.orbitron(
                                         fontSize: 14,
                                         color: Colors.white,
@@ -7525,6 +7568,8 @@ class _HomePageState extends State<HomePage> {
                                           value: '',
                                           child: Text(
                                             AppLocalizations.of(context)!.any,
+                                            maxLines: 1,
+                                            overflow: TextOverflow.ellipsis,
                                             style: GoogleFonts.orbitron(
                                               color: Colors.grey,
                                               fontSize: 14,
@@ -7542,6 +7587,8 @@ class _HomePageState extends State<HomePage> {
                                                   value: t,
                                                   child: Text(
                                                     t,
+                                                    maxLines: 1,
+                                                    overflow: TextOverflow.ellipsis,
                                                     style: GoogleFonts.orbitron(
                                                       fontSize: 14,
                                                     ),
@@ -13160,33 +13207,70 @@ class _CarDetailsPageState extends State<CarDetailsPage> {
                             child: IgnorePointer(
                               ignoring: true,
                               child: Center(
-                                child: SingleChildScrollView(
-                                  scrollDirection: Axis.horizontal,
-                                  physics: BouncingScrollPhysics(),
-                                  child: Row(
-                                    mainAxisAlignment: MainAxisAlignment.center,
-                                    children: List.generate(_heroMediaCount, (
-                                      i,
-                                    ) {
-                                      final bool active =
-                                          i == _currentImageIndex;
-                                      return AnimatedContainer(
-                                        duration: Duration(milliseconds: 200),
-                                        margin: EdgeInsets.symmetric(
-                                          horizontal: 4,
-                                        ),
-                                        width: active ? 10 : 6,
-                                        height: active ? 10 : 6,
-                                        decoration: BoxDecoration(
-                                          color: active
-                                              ? Colors.white
-                                              : Colors.white70,
-                                          shape: BoxShape.circle,
+                                child: () {
+                                  const int kMaxVisible = 6;
+                                  final int total = _heroMediaCount;
+                                  final int visible =
+                                      total < kMaxVisible ? total : kMaxVisible;
+                                  if (visible <= 1) return const SizedBox.shrink();
+
+                                  int computeDotStart(int index) {
+                                    if (total <= visible) return 0;
+                                    final int maxStart =
+                                        (total - visible).clamp(0, total);
+                                    return (index - (visible - 1))
+                                        .clamp(0, maxStart);
+                                  }
+
+                                  final int start =
+                                      computeDotStart(_currentImageIndex);
+
+                                  Widget buildDotRow(int startIndex) {
+                                    return Row(
+                                      key: ValueKey<int>(startIndex),
+                                      mainAxisSize: MainAxisSize.min,
+                                      children: List.generate(visible, (j) {
+                                        final i = startIndex + j;
+                                        final active = i == _currentImageIndex;
+                                        return AnimatedContainer(
+                                          duration:
+                                              const Duration(milliseconds: 180),
+                                          margin: const EdgeInsets.symmetric(
+                                            horizontal: 3,
+                                          ),
+                                          width: active ? 10 : 6,
+                                          height: active ? 10 : 6,
+                                          decoration: BoxDecoration(
+                                            color: active
+                                                ? Colors.white
+                                                : Colors.white70,
+                                            shape: BoxShape.circle,
+                                          ),
+                                        );
+                                      }),
+                                    );
+                                  }
+
+                                  return AnimatedSwitcher(
+                                    duration: const Duration(milliseconds: 180),
+                                    switchInCurve: Curves.easeOutCubic,
+                                    switchOutCurve: Curves.easeInCubic,
+                                    transitionBuilder: (child, anim) {
+                                      final offset = Tween<Offset>(
+                                        begin: Offset(start == 0 ? 0.12 : -0.12, 0),
+                                        end: Offset.zero,
+                                      ).animate(anim);
+                                      return FadeTransition(
+                                        opacity: anim,
+                                        child: SlideTransition(
+                                          position: offset,
+                                          child: child,
                                         ),
                                       );
-                                    }),
-                                  ),
-                                ),
+                                    },
+                                    child: buildDotRow(start),
+                                  );
+                                }(),
                               ),
                             ),
                           ),
@@ -14438,30 +14522,37 @@ Widget buildCarListingSpecsGrid(
             children: [
               Expanded(
                 flex: 6,
-                child: Row(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  crossAxisAlignment: CrossAxisAlignment.center,
-                  children: [
-                    Icon(
-                      item.icon,
-                      size: constraints.maxWidth * 0.13,
-                      color: Colors.black87,
-                    ),
-                    SizedBox(width: constraints.maxWidth * 0.03),
-                    Expanded(
-                      child: AutoSizeText(
-                        item.label,
-                        maxLines: 1,
-                        textAlign: TextAlign.center,
-                        softWrap: false,
-                        textScaleFactor: 1.0,
-                        style: labelStyle,
-                        minFontSize: 7,
-                        stepGranularity: 0.5,
-                        overflow: TextOverflow.clip,
+                child: Center(
+                  child: Row(
+                    mainAxisSize: MainAxisSize.min,
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    crossAxisAlignment: CrossAxisAlignment.center,
+                    children: [
+                      Icon(
+                        item.icon,
+                        size: constraints.maxWidth * 0.13,
+                        color: Colors.black87,
                       ),
-                    ),
-                  ],
+                      const SizedBox(width: 4),
+                      ConstrainedBox(
+                        constraints: BoxConstraints(
+                          maxWidth:
+                              constraints.maxWidth - (constraints.maxWidth * 0.13) - 4,
+                        ),
+                        child: AutoSizeText(
+                          item.label,
+                          maxLines: 1,
+                          textAlign: TextAlign.center,
+                          softWrap: false,
+                          textScaleFactor: 1.0,
+                          style: labelStyle,
+                          minFontSize: 7,
+                          stepGranularity: 0.5,
+                          overflow: TextOverflow.clip,
+                        ),
+                      ),
+                    ],
+                  ),
                 ),
               ),
               Padding(

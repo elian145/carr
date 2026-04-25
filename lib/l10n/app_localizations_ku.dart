@@ -114,6 +114,9 @@ class AppLocalizationsKu extends AppLocalizations {
   String get cityLabel => 'شار';
 
   @override
+  String get allCities => 'هەموو شارەکان';
+
+  @override
   String get applyFilters => 'پێوەکراوەکان جێبەجێ بکە';
 
   @override

@@ -310,6 +310,12 @@ abstract class AppLocalizations {
   /// **'City'**
   String get cityLabel;
 
+  /// No description provided for @allCities.
+  ///
+  /// In en, this message translates to:
+  /// **'All cities'**
+  String get allCities;
+
   /// No description provided for @applyFilters.
   ///
   /// In en, this message translates to:

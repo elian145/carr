@@ -114,6 +114,9 @@ class AppLocalizationsEn extends AppLocalizations {
   String get cityLabel => 'City';
 
   @override
+  String get allCities => 'All cities';
+
+  @override
   String get applyFilters => 'Apply Filters';
 
   @override

@@ -114,6 +114,9 @@ class AppLocalizationsAr extends AppLocalizations {
   String get cityLabel => 'المدينة';
 
   @override
+  String get allCities => 'كل المدن';
+
+  @override
   String get applyFilters => 'تطبيق الفلاتر';
 
   @override

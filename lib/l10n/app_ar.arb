@@ -35,6 +35,7 @@
   "fuelTypeLabel": "نوع الوقود",
   "bodyTypeLabel": "نوع الهيكل",
   "cityLabel": "المدينة",
+  "allCities": "كل المدن",
   "applyFilters": "تطبيق الفلاتر",
   "clearFilters": "مسح الفلاتر",
   "submit": "إرسال",
