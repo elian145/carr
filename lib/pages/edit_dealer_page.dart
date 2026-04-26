@@ -39,6 +39,7 @@ class _DayHours {
 }
 
 class _EditDealerPageState extends State<EditDealerPage> {
+  static const Color _accent = Color(0xFFFF6B00);
   final _formKey = GlobalKey<FormState>();
   final _name = TextEditingController();
   final List<TextEditingController> _phones = [];
@@ -69,15 +70,76 @@ class _EditDealerPageState extends State<EditDealerPage> {
     (key: 'sat', label: 'Saturday'),
   ];
 
+  TextStyle _fieldTextStyle(bool isLightShell) {
+    return TextStyle(
+      color: isLightShell ? Colors.black87 : Colors.white,
+      fontWeight: FontWeight.w600,
+    );
+  }
+
+  InputDecoration _fieldDecoration(
+    bool isLightShell, {
+    required String label,
+    String? hint,
+    IconData? icon,
+  }) {
+    final fill = isLightShell
+        ? Theme.of(context).colorScheme.surfaceContainerHighest
+        : Colors.black.withValues(alpha: 0.18);
+    final enabledBorder = OutlineInputBorder(
+      borderRadius: BorderRadius.circular(14),
+      borderSide: BorderSide(
+        color: isLightShell ? Colors.grey.shade300 : Colors.white12,
+        width: 1.2,
+      ),
+    );
+    return InputDecoration(
+      labelText: label,
+      hintText: hint,
+      labelStyle: const TextStyle(
+        color: _accent,
+        fontWeight: FontWeight.w800,
+      ),
+      floatingLabelStyle: const TextStyle(
+        color: _accent,
+        fontWeight: FontWeight.w900,
+      ),
+      filled: true,
+      fillColor: fill,
+      prefixIcon: icon == null
+          ? null
+          : Icon(
+              icon,
+              color: isLightShell ? Colors.grey.shade700 : Colors.white70,
+            ),
+      contentPadding: const EdgeInsets.symmetric(horizontal: 14, vertical: 14),
+      enabledBorder: enabledBorder,
+      border: enabledBorder,
+      focusedBorder: OutlineInputBorder(
+        borderRadius: BorderRadius.circular(14),
+        borderSide: const BorderSide(color: _accent, width: 2),
+      ),
+    );
+  }
+
+  ButtonStyle _outlineAccentStyle() {
+    return OutlinedButton.styleFrom(
+      foregroundColor: _accent,
+      side: const BorderSide(color: _accent, width: 1.5),
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+    );
+  }
+
   RoundedRectangleBorder _pageCardShape(Brightness brightness) {
     final isLightShell = brightness == Brightness.light;
     return RoundedRectangleBorder(
-      borderRadius: BorderRadius.circular(14),
-      side: isLightShell
-          ? BorderSide(
-              color: Theme.of(context).colorScheme.outline.withValues(alpha: 0.45),
-            )
-          : BorderSide.none,
+      borderRadius: BorderRadius.circular(18),
+      side: BorderSide(
+        color: isLightShell
+            ? Theme.of(context).colorScheme.outline.withValues(alpha: 0.35)
+            : Colors.white12,
+      ),
     );
   }
 
@@ -94,13 +156,10 @@ class _EditDealerPageState extends State<EditDealerPage> {
           width: 34,
           height: 34,
           decoration: BoxDecoration(
-            color: Theme.of(context)
-                .colorScheme
-                .surfaceContainerHighest
-                .withValues(alpha: 0.65),
+            color: _accent.withValues(alpha: 0.14),
             borderRadius: BorderRadius.circular(10),
           ),
-          child: Icon(icon, size: 18),
+          child: Icon(icon, size: 18, color: _accent),
         ),
         const SizedBox(width: 12),
         Expanded(
@@ -583,9 +642,21 @@ class _EditDealerPageState extends State<EditDealerPage> {
     final brightness = Theme.of(context).brightness;
     final cardShape = _pageCardShape(brightness);
     final isLightShell = brightness == Brightness.light;
+    final dividerColor = isLightShell ? Colors.grey.shade200 : Colors.white12;
+    final cardFill = isLightShell
+        ? Colors.white
+        : Color.alphaBlend(
+            Colors.white.withOpacity(0.06),
+            AppThemes.darkHomeShellBackground,
+          );
 
     return Scaffold(
-      appBar: AppBar(title: const Text('Edit dealer page')),
+      appBar: AppBar(
+        title: const Text('Edit dealer'),
+        backgroundColor: _accent,
+        foregroundColor: Colors.white,
+        elevation: 0,
+      ),
       backgroundColor: isLightShell ? AppThemes.lightAppBackground : null,
       bottomNavigationBar: SafeArea(
         top: false,
@@ -593,11 +664,22 @@ class _EditDealerPageState extends State<EditDealerPage> {
           padding: const EdgeInsets.fromLTRB(16, 10, 16, 16),
           child: FilledButton.icon(
             onPressed: _saving ? null : _save,
+            style: FilledButton.styleFrom(
+              backgroundColor: _accent,
+              foregroundColor: Colors.white,
+              padding: const EdgeInsets.symmetric(vertical: 14),
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(14),
+              ),
+            ),
             icon: _saving
                 ? const SizedBox(
                     width: 16,
                     height: 16,
-                    child: CircularProgressIndicator(strokeWidth: 2),
+                    child: CircularProgressIndicator(
+                      strokeWidth: 2,
+                      valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
+                    ),
                   )
                 : const Icon(Icons.save_outlined),
             label: Text(_saving ? 'Saving...' : 'Save changes'),
@@ -617,6 +699,9 @@ class _EditDealerPageState extends State<EditDealerPage> {
               padding: const EdgeInsets.fromLTRB(16, 16, 16, 110),
               children: [
                 Card(
+                  color: cardFill,
+                  shadowColor: Colors.black54,
+                  elevation: isLightShell ? 6 : 10,
                   shape: cardShape,
                   clipBehavior: Clip.antiAlias,
                   child: Padding(
@@ -687,6 +772,7 @@ class _EditDealerPageState extends State<EditDealerPage> {
                                   Expanded(
                                     child: OutlinedButton.icon(
                                       onPressed: _saving ? null : _pickLogo,
+                                      style: _outlineAccentStyle(),
                                       icon: const Icon(Icons.image_outlined),
                                       label: Text(
                                         _logo == null ? 'Change logo' : 'Logo selected',
@@ -697,6 +783,7 @@ class _EditDealerPageState extends State<EditDealerPage> {
                                   Expanded(
                                     child: OutlinedButton.icon(
                                       onPressed: _saving ? null : _pickCover,
+                                      style: _outlineAccentStyle(),
                                       icon: const Icon(Icons.photo_outlined),
                                       label: Text(
                                         _cover == null
@@ -716,6 +803,9 @@ class _EditDealerPageState extends State<EditDealerPage> {
                 ),
                 const SizedBox(height: 12),
                 Card(
+                  color: cardFill,
+                  shadowColor: Colors.black54,
+                  elevation: isLightShell ? 6 : 10,
                   shape: cardShape,
                   clipBehavior: Clip.antiAlias,
                   child: Padding(
@@ -731,9 +821,11 @@ class _EditDealerPageState extends State<EditDealerPage> {
                         const SizedBox(height: 12),
                         TextFormField(
                           controller: _name,
-                          decoration: const InputDecoration(
-                            labelText: 'Dealership name',
-                            prefixIcon: Icon(Icons.badge_outlined),
+                          style: _fieldTextStyle(isLightShell),
+                          decoration: _fieldDecoration(
+                            isLightShell,
+                            label: 'Dealership name',
+                            icon: Icons.badge_outlined,
                           ),
                           validator: (v) => (v == null || v.trim().isEmpty)
                               ? 'Dealership name is required'
@@ -743,9 +835,11 @@ class _EditDealerPageState extends State<EditDealerPage> {
                         const SizedBox(height: 12),
                         TextFormField(
                           controller: _location,
-                          decoration: const InputDecoration(
-                            labelText: 'Dealership location',
-                            prefixIcon: Icon(Icons.location_on_outlined),
+                          style: _fieldTextStyle(isLightShell),
+                          decoration: _fieldDecoration(
+                            isLightShell,
+                            label: 'Dealership location',
+                            icon: Icons.location_on_outlined,
                           ),
                           validator: (v) => (v == null || v.trim().isEmpty)
                               ? 'Dealership location is required'
@@ -758,10 +852,12 @@ class _EditDealerPageState extends State<EditDealerPage> {
                           minLines: 3,
                           maxLines: 6,
                           maxLength: 1000,
-                          decoration: const InputDecoration(
-                            labelText: 'Description',
-                            hintText: 'Tell buyers about your dealership',
-                            prefixIcon: Icon(Icons.notes_outlined),
+                          style: _fieldTextStyle(isLightShell),
+                          decoration: _fieldDecoration(
+                            isLightShell,
+                            label: 'Description',
+                            hint: 'Tell buyers about your dealership',
+                            icon: Icons.notes_outlined,
                           ),
                         ),
                       ],
@@ -770,6 +866,9 @@ class _EditDealerPageState extends State<EditDealerPage> {
                 ),
                 const SizedBox(height: 12),
                 Card(
+                  color: cardFill,
+                  shadowColor: Colors.black54,
+                  elevation: isLightShell ? 6 : 10,
                   shape: cardShape,
                   clipBehavior: Clip.antiAlias,
                   child: Padding(
@@ -787,6 +886,7 @@ class _EditDealerPageState extends State<EditDealerPage> {
                                 : () => setState(
                                       () => _phones.add(TextEditingController()),
                                     ),
+                            style: _outlineAccentStyle(),
                             icon: const Icon(Icons.add),
                             label: const Text('Add'),
                           ),
@@ -800,11 +900,13 @@ class _EditDealerPageState extends State<EditDealerPage> {
                                 child: TextFormField(
                                   controller: _phones[i],
                                   keyboardType: TextInputType.phone,
-                                  decoration: InputDecoration(
-                                    labelText: i == 0
+                                  style: _fieldTextStyle(isLightShell),
+                                  decoration: _fieldDecoration(
+                                    isLightShell,
+                                    label: i == 0
                                         ? 'Primary phone'
                                         : 'Phone ${i + 1}',
-                                    prefixIcon: const Icon(Icons.phone_outlined),
+                                    icon: Icons.phone_outlined,
                                   ),
                                   validator: i == 0
                                       ? (v) => (v == null || v.trim().isEmpty)
@@ -840,6 +942,9 @@ class _EditDealerPageState extends State<EditDealerPage> {
                 ),
                 const SizedBox(height: 12),
                 Card(
+                  color: cardFill,
+                  shadowColor: Colors.black54,
+                  elevation: isLightShell ? 6 : 10,
                   shape: cardShape,
                   clipBehavior: Clip.antiAlias,
                   child: Column(
@@ -853,9 +958,9 @@ class _EditDealerPageState extends State<EditDealerPage> {
                           subtitle: 'Start week is Sunday. Tap a day to edit.',
                         ),
                       ),
-                      const Divider(height: 1),
+                      Divider(height: 1, color: dividerColor),
                       for (var i = 0; i < _days.length; i++) ...[
-                        if (i > 0) const Divider(height: 1),
+                        if (i > 0) Divider(height: 1, color: dividerColor),
                         Builder(
                           builder: (context) {
                             final d = _days[i];
@@ -986,6 +1091,7 @@ class _EditDealerPageState extends State<EditDealerPage> {
                                                       () => day.open = picked,
                                                     );
                                                   },
+                                            style: _outlineAccentStyle(),
                                             child: Text(
                                               day.open == null
                                                   ? 'From'
@@ -1021,6 +1127,7 @@ class _EditDealerPageState extends State<EditDealerPage> {
                                                       () => day.close = picked,
                                                     );
                                                   },
+                                            style: _outlineAccentStyle(),
                                             child: Text(
                                               day.close == null
                                                   ? 'To'
@@ -1041,6 +1148,9 @@ class _EditDealerPageState extends State<EditDealerPage> {
                 ),
                 const SizedBox(height: 12),
                 Card(
+                  color: cardFill,
+                  shadowColor: Colors.black54,
+                  elevation: isLightShell ? 6 : 10,
                   shape: cardShape,
                   clipBehavior: Clip.antiAlias,
                   child: Padding(
@@ -1062,6 +1172,7 @@ class _EditDealerPageState extends State<EditDealerPage> {
                               Expanded(
                                 child: OutlinedButton.icon(
                                   onPressed: _saving ? null : _openMapPicker,
+                                  style: _outlineAccentStyle(),
                                   icon: const Icon(Icons.map_outlined),
                                   label: Text(
                                     _pickLat != null
@@ -1074,6 +1185,9 @@ class _EditDealerPageState extends State<EditDealerPage> {
                                 const SizedBox(width: 8),
                                 TextButton(
                                   onPressed: _saving ? null : _clearMapPin,
+                                  style: TextButton.styleFrom(
+                                    foregroundColor: _accent,
+                                  ),
                                   child: const Text('Clear'),
                                 ),
                               ],
@@ -1123,9 +1237,11 @@ class _EditDealerPageState extends State<EditDealerPage> {
                                     decimal: true,
                                     signed: true,
                                   ),
-                                  decoration: const InputDecoration(
-                                    labelText: 'Latitude',
-                                    prefixIcon: Icon(Icons.my_location_outlined),
+                                  style: _fieldTextStyle(isLightShell),
+                                  decoration: _fieldDecoration(
+                                    isLightShell,
+                                    label: 'Latitude',
+                                    icon: Icons.my_location_outlined,
                                   ),
                                   onChanged: (_) => setState(() {}),
                                 ),
@@ -1139,10 +1255,11 @@ class _EditDealerPageState extends State<EditDealerPage> {
                                     decimal: true,
                                     signed: true,
                                   ),
-                                  decoration: const InputDecoration(
-                                    labelText: 'Longitude',
-                                    prefixIcon:
-                                        Icon(Icons.my_location_outlined),
+                                  style: _fieldTextStyle(isLightShell),
+                                  decoration: _fieldDecoration(
+                                    isLightShell,
+                                    label: 'Longitude',
+                                    icon: Icons.my_location_outlined,
                                   ),
                                   onChanged: (_) => setState(() {}),
                                 ),

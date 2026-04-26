@@ -22,6 +22,7 @@ import 'package:share_plus/share_plus.dart';
 import '../services/analytics_service.dart';
 import '../services/api_service.dart';
 import '../services/auth_service.dart';
+import '../models/analytics_model.dart';
 import '../shared/auth/token_store.dart';
 import '../shared/text/pretty_title_case.dart';
 import '../shared/prefs/listing_layout_prefs.dart';
@@ -6792,41 +6793,35 @@ class _HomePageState extends State<HomePage> {
           AppLocalizations.of(context)!.appTitle,
           style: TextStyle(fontSize: 18),
         ),
+        titleSpacing: NavigationToolbar.kMiddleSpacing,
         actions: [
-          IconButton(
-            tooltip: AppLocalizations.of(context)!.savedSearchesTitle,
-            onPressed: () => Navigator.push(
-              context,
-              MaterialPageRoute(
-                builder: (_) => SavedSearchesPage(parentState: this),
-              ),
+          Padding(
+            padding: const EdgeInsetsDirectional.only(
+              end: NavigationToolbar.kMiddleSpacing,
             ),
-            icon: Icon(Icons.bookmarks_outlined),
-          ),
-          OutlinedButton.icon(
-            onPressed: () {
-              Navigator.push(
-                context,
-                MaterialPageRoute(
-                  builder: (context) => AuthGuard(child: SellCarPage()),
+            child: OutlinedButton.icon(
+              onPressed: () {
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                    builder: (context) => AuthGuard(child: SellCarPage()),
+                  ),
+                );
+              },
+              icon: Icon(Icons.add, color: Colors.white),
+              label: Text(
+                AppLocalizations.of(context)!.sellButton,
+                style: TextStyle(color: Colors.white),
+              ),
+              style: OutlinedButton.styleFrom(
+                side: BorderSide(color: Colors.white70),
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(8),
                 ),
-              );
-            },
-            icon: Icon(Icons.add, color: Colors.white),
-            label: Text(
-              AppLocalizations.of(context)!.sellButton,
-              style: TextStyle(color: Colors.white),
-            ),
-            style: OutlinedButton.styleFrom(
-              side: BorderSide(color: Colors.white70),
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(8),
+                padding: EdgeInsets.symmetric(horizontal: 12),
               ),
-              padding: EdgeInsets.symmetric(horizontal: 12),
             ),
           ),
-          const ThemeToggleWidget(),
-          buildLanguageMenu(),
         ],
       ),
       // Pull-to-refresh is already provided inside the main content via internal scrollables
@@ -14756,20 +14751,21 @@ Widget buildCarListingSpecsGrid(
     ),
     detailRowSpec(
       icon: Icons.confirmation_number_outlined,
-      label: 'Plate type',
+      label: 'Plate',
       value: _orDash(() {
-        final raw = pickNE(car, ['plate_type', 'plateType'])?.trim();
-        if (raw == null || raw.isEmpty) return null;
-        return prettyTitleCase(raw);
-      }()),
-    ),
-    detailRowSpec(
-      icon: Icons.location_on_outlined,
-      label: 'Plate city',
-      value: _orDash(() {
-        final raw = pickNE(car, ['plate_city', 'plateCity'])?.trim();
-        if (raw == null || raw.isEmpty) return null;
-        return _translateValueGlobal(context, raw) ?? raw;
+        final rawCity = pickNE(car, ['plate_city', 'plateCity'])?.trim();
+        final rawType = pickNE(car, ['plate_type', 'plateType'])?.trim();
+
+        final String? city = (rawCity == null || rawCity.isEmpty)
+            ? null
+            : (_translateValueGlobal(context, rawCity) ?? rawCity);
+        final String? type = (rawType == null || rawType.isEmpty)
+            ? null
+            : prettyTitleCase(rawType);
+
+        if (city == null && type == null) return null;
+        if (city != null && type != null) return '$city/$type';
+        return city ?? type;
       }()),
     ),
   ];
@@ -25908,19 +25904,6 @@ class _ProfilePageState extends State<ProfilePage> {
                         Navigator.pushNamed(context, '/settings');
                       },
                     ),
-                    SizedBox(height: 12),
-                    _buildActionButton(
-                      Icons.analytics_outlined,
-                      AppLocalizations.of(context)!.analyticsTitle,
-                      () {
-                        if (ApiService.accessToken == null ||
-                            ApiService.accessToken!.isEmpty) {
-                          _showAuthRequiredDialog(context);
-                          return;
-                        }
-                        Navigator.pushNamed(context, '/analytics');
-                      },
-                    ),
                     if (me?['is_admin'] == true) ...[
                       SizedBox(height: 12),
                       _buildActionButton(
@@ -26532,11 +26515,23 @@ class SettingsPage extends StatefulWidget {
 
 class _SettingsPageState extends State<SettingsPage> {
   bool _pushEnabled = true;
+  final GlobalKey<PopupMenuButtonState<String?>> _languageMenuKey =
+      GlobalKey<PopupMenuButtonState<String?>>();
 
   @override
   void initState() {
     super.initState();
     _load();
+  }
+
+  Future<void> _setLocale(String? code) async {
+    if (code == null) {
+      await LocaleController.setLocale(null);
+    } else {
+      await LocaleController.setLocale(Locale(code));
+    }
+    if (!mounted) return;
+    setState(() {});
   }
 
   Future<void> _load() async {
@@ -26568,17 +26563,221 @@ class _SettingsPageState extends State<SettingsPage> {
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(title: Text(AppLocalizations.of(context)!.settingsTitle)),
-      body: ListView(
-        children: [
-          SwitchListTile(
-            title: Text(AppLocalizations.of(context)!.settingsEnablePush),
-            value: _pushEnabled,
-            onChanged: _togglePush,
+    final loc = AppLocalizations.of(context)!;
+    final theme = context.watch<ThemeProvider>();
+    final currentLocale = LocaleController.currentLocale.value?.languageCode;
+    final isLightShell = Theme.of(context).brightness == Brightness.light;
+
+    final tileFill = isLightShell
+        ? Colors.white
+        : Color.alphaBlend(
+            Colors.white.withOpacity(0.06),
+            AppThemes.darkHomeShellBackground,
+          );
+    final tileBorder = isLightShell ? Colors.grey.shade200 : Colors.white12;
+    final titleColor = isLightShell ? Colors.grey.shade900 : Colors.white;
+    final subtitleColor = isLightShell ? Colors.grey.shade600 : Colors.white70;
+    final dividerColor = isLightShell ? Colors.grey.shade200 : Colors.white12;
+
+    String localeLabel(String? code) {
+      if (code == null) return loc.settingsSystem;
+      switch (code) {
+        case 'en':
+          return 'English';
+        case 'ar':
+          return 'العربية';
+        case 'ku':
+          return 'کوردی';
+        default:
+          return code;
+      }
+    }
+
+    Widget rowTile({
+      required IconData icon,
+      required String title,
+      String? subtitle,
+      Widget? trailing,
+      VoidCallback? onTap,
+    }) {
+      return InkWell(
+        borderRadius: BorderRadius.circular(14),
+        onTap: onTap,
+        child: Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+          child: Row(
+            children: [
+              Container(
+                width: 40,
+                height: 40,
+                decoration: BoxDecoration(
+                  color: const Color(0xFFFF6B00).withOpacity(0.12),
+                  borderRadius: BorderRadius.circular(12),
+                ),
+                child: Icon(icon, color: const Color(0xFFFF6B00), size: 22),
+              ),
+              const SizedBox(width: 12),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      title,
+                      style: GoogleFonts.orbitron(
+                        fontSize: 14,
+                        fontWeight: FontWeight.w700,
+                        color: titleColor,
+                      ),
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                    ),
+                    if (subtitle != null && subtitle.trim().isNotEmpty) ...[
+                      const SizedBox(height: 4),
+                      Text(
+                        subtitle,
+                        style: TextStyle(
+                          fontSize: 12,
+                          color: subtitleColor,
+                          fontWeight: FontWeight.w500,
+                        ),
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                      ),
+                    ],
+                  ],
+                ),
+              ),
+              if (trailing != null) trailing,
+            ],
           ),
-        ],
+        ),
+      );
+    }
+
+    Widget settingsCard(List<Widget> children) {
+      return Container(
+        decoration: BoxDecoration(
+          color: tileFill,
+          borderRadius: BorderRadius.circular(18),
+          border: Border.all(color: tileBorder),
+          boxShadow: [
+            BoxShadow(
+              color: Colors.black.withOpacity(isLightShell ? 0.05 : 0.20),
+              blurRadius: 14,
+              offset: const Offset(0, 8),
+            ),
+          ],
+        ),
+        child: ClipRRect(
+          borderRadius: BorderRadius.circular(18),
+          child: Column(children: children),
+        ),
+      );
+    }
+
+    final bodyChild = ListView(
+      padding: const EdgeInsets.fromLTRB(16, 16, 16, 20),
+      children: [
+        settingsCard(
+          [
+            rowTile(
+              icon: Icons.language,
+              title: loc.settingsLanguageTitle,
+              subtitle: localeLabel(currentLocale),
+              trailing: PopupMenuButton<String?>(
+                key: _languageMenuKey,
+                tooltip: '',
+                position: PopupMenuPosition.under,
+                onSelected: (v) => _setLocale(v),
+                itemBuilder: (context) => [
+                  PopupMenuItem<String?>(
+                    value: null,
+                    child: Text(loc.settingsSystem),
+                  ),
+                  const PopupMenuItem<String?>(
+                    value: 'en',
+                    child: Text('English'),
+                  ),
+                  const PopupMenuItem<String?>(
+                    value: 'ar',
+                    child: Text('العربية'),
+                  ),
+                  const PopupMenuItem<String?>(
+                    value: 'ku',
+                    child: Text('کوردی'),
+                  ),
+                ],
+                icon: Icon(
+                  Icons.expand_more,
+                  color: isLightShell ? Colors.grey.shade700 : Colors.white70,
+                ),
+              ),
+              onTap: () => _languageMenuKey.currentState?.showButtonMenu(),
+            ),
+            Divider(height: 1, color: dividerColor),
+            rowTile(
+              icon: theme.isDarkMode ? Icons.dark_mode : Icons.light_mode,
+              title: loc.settingsThemeTitle,
+              subtitle: theme.themeMode == ThemeMode.system
+                  ? loc.settingsSystem
+                  : theme.themeMode == ThemeMode.dark
+                      ? loc.settingsDark
+                      : loc.settingsLight,
+              trailing: Icon(
+                theme.isDarkMode ? Icons.light_mode : Icons.dark_mode,
+                color: isLightShell ? Colors.grey.shade700 : Colors.white70,
+              ),
+              onTap: theme.toggleTheme,
+            ),
+            Divider(height: 1, color: dividerColor),
+            rowTile(
+              icon: Icons.bookmark_outline,
+              title: loc.savedSearchesTitle,
+              subtitle: loc.savedSearchesHint,
+              trailing: Icon(
+                Icons.chevron_right,
+                color: isLightShell ? Colors.grey.shade700 : Colors.white70,
+              ),
+              onTap: () {
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(builder: (_) => const SavedSearchesPage()),
+                );
+              },
+            ),
+            Divider(height: 1, color: dividerColor),
+            rowTile(
+              icon: Icons.notifications_active_outlined,
+              title: loc.settingsEnablePush,
+              subtitle: _pushEnabled ? loc.enabledLabel : loc.disabledLabel,
+              trailing: Switch.adaptive(
+                value: _pushEnabled,
+                activeColor: const Color(0xFFFF6B00),
+                onChanged: _togglePush,
+              ),
+              onTap: () => _togglePush(!_pushEnabled),
+            ),
+          ],
+        ),
+      ],
+    );
+
+    return Scaffold(
+      backgroundColor: isLightShell ? Colors.white : null,
+      appBar: AppBar(
+        title: Text(loc.settingsTitle),
+        backgroundColor: const Color(0xFFFF6B00),
+        foregroundColor: Colors.white,
+        elevation: 0,
       ),
+      body: isLightShell
+          ? bodyChild
+          : Container(
+              decoration: AppThemes.shellBackgroundDecoration(
+                Theme.of(context).brightness,
+              ),
+              child: bodyChild,
+            ),
     );
   }
 }
@@ -26593,6 +26792,271 @@ class _MyListingsPageState extends State<MyListingsPage> {
     super.initState();
     ListingLayoutPrefs.load();
     _loadMyListings();
+  }
+
+  Future<ListingAnalytics> _fetchListingAnalytics(
+    String listingId,
+    Map<String, dynamic> listing,
+  ) async {
+    try {
+      final a = await AnalyticsService.getListingAnalytics(listingId);
+      if (a.listingId.toString().isNotEmpty) return a;
+    } catch (_) {
+      // fall through
+    }
+
+    // Fallback: try list endpoint (may be backed by /my_listings).
+    try {
+      final all = await AnalyticsService.getUserListingsAnalytics();
+      for (final a in all) {
+        if (a.listingId.toString() == listingId) return a;
+      }
+    } catch (_) {
+      // fall through
+    }
+
+    int parseInt(dynamic v, {int fallback = 0}) {
+      if (v == null) return fallback;
+      if (v is int) return v;
+      if (v is double) return v.toInt();
+      return int.tryParse(v.toString()) ?? fallback;
+    }
+
+    double parseDouble(dynamic v, {double fallback = 0}) {
+      if (v == null) return fallback;
+      if (v is double) return v;
+      if (v is int) return v.toDouble();
+      return double.tryParse(v.toString()) ?? fallback;
+    }
+
+    return ListingAnalytics(
+      listingId: listingId,
+      title: (listing['title'] ?? '').toString(),
+      brand: (listing['brand'] ?? '').toString(),
+      model: (listing['model'] ?? '').toString(),
+      year: parseInt(listing['year']),
+      price: parseDouble(listing['price']),
+      imageUrl: null,
+      mileage: null,
+      city: (listing['city'] ?? listing['location'])?.toString(),
+      views: 0,
+      messages: 0,
+      calls: 0,
+      shares: 0,
+      favorites: 0,
+      createdAt: DateTime.now(),
+      lastUpdated: DateTime.now(),
+    );
+  }
+
+  void _showListingAnalyticsPopup(Map<String, dynamic> listing, String listingId) {
+    if (listingId.isEmpty) return;
+    final loc = AppLocalizations.of(context)!;
+    final future = _fetchListingAnalytics(listingId, listing);
+
+    showDialog<void>(
+      context: context,
+      builder: (context) {
+        return AlertDialog(
+          title: Text(loc.analyticsTitle),
+          content: SizedBox(
+            width: 360,
+            child: FutureBuilder<ListingAnalytics>(
+              future: future,
+              builder: (context, snapshot) {
+                if (snapshot.connectionState != ConnectionState.done) {
+                  return const Padding(
+                    padding: EdgeInsets.symmetric(vertical: 18),
+                    child: Center(child: CircularProgressIndicator()),
+                  );
+                }
+                if (snapshot.hasError) {
+                  return Text(snapshot.error.toString());
+                }
+                final a = snapshot.data;
+                if (a == null) return const Text('No analytics available.');
+
+                Widget metricRow(IconData icon, String label, String value) {
+                  return Padding(
+                    padding: const EdgeInsets.symmetric(vertical: 6),
+                    child: Row(
+                      children: [
+                        Icon(icon, size: 18, color: const Color(0xFFFF6B00)),
+                        const SizedBox(width: 10),
+                        Expanded(
+                          child: Text(
+                            label,
+                            style: Theme.of(context).textTheme.bodyMedium,
+                          ),
+                        ),
+                        Text(
+                          value,
+                          style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                                fontWeight: FontWeight.w700,
+                              ),
+                        ),
+                      ],
+                    ),
+                  );
+                }
+
+                final resolvedTitle = (a.title).trim().isNotEmpty
+                    ? prettyTitleCase(a.title)
+                    : prettyTitleCase(a.carTitle);
+
+                return Column(
+                  mainAxisSize: MainAxisSize.min,
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      resolvedTitle,
+                      style: Theme.of(context).textTheme.titleSmall?.copyWith(
+                            fontWeight: FontWeight.w700,
+                          ),
+                      maxLines: 2,
+                      overflow: TextOverflow.ellipsis,
+                    ),
+                    const SizedBox(height: 12),
+                    metricRow(
+                      Icons.visibility_outlined,
+                      loc.viewsLabel,
+                      '${a.views}',
+                    ),
+                    metricRow(
+                      Icons.message_outlined,
+                      loc.messagesLabel,
+                      '${a.messages}',
+                    ),
+                    metricRow(
+                      Icons.phone_outlined,
+                      loc.callsLabel,
+                      '${a.calls}',
+                    ),
+                    metricRow(
+                      Icons.share_outlined,
+                      loc.sharesLabel,
+                      '${a.shares}',
+                    ),
+                    metricRow(
+                      Icons.favorite_outline,
+                      loc.favoritesLabel,
+                      '${a.favorites}',
+                    ),
+                  ],
+                );
+              },
+            ),
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(context),
+              child: Text(loc.cancelAction),
+            ),
+          ],
+        );
+      },
+    );
+  }
+
+  void _showOverallAnalyticsPopup() {
+    final loc = AppLocalizations.of(context)!;
+    final future = AnalyticsService.getAnalyticsSummary();
+
+    showDialog<void>(
+      context: context,
+      builder: (context) {
+        return AlertDialog(
+          title: Text(loc.analyticsOverview),
+          content: SizedBox(
+            width: 360,
+            child: FutureBuilder<AnalyticsSummary>(
+              future: future,
+              builder: (context, snapshot) {
+                if (snapshot.connectionState != ConnectionState.done) {
+                  return const Padding(
+                    padding: EdgeInsets.symmetric(vertical: 18),
+                    child: Center(child: CircularProgressIndicator()),
+                  );
+                }
+                if (snapshot.hasError) {
+                  return Text(snapshot.error.toString());
+                }
+                final s = snapshot.data;
+                if (s == null) return const Text('No analytics available.');
+
+                Widget metricRow(IconData icon, String label, String value) {
+                  return Padding(
+                    padding: const EdgeInsets.symmetric(vertical: 6),
+                    child: Row(
+                      children: [
+                        Icon(icon, size: 18, color: const Color(0xFFFF6B00)),
+                        const SizedBox(width: 10),
+                        Expanded(
+                          child: Text(
+                            label,
+                            style: Theme.of(context).textTheme.bodyMedium,
+                          ),
+                        ),
+                        Text(
+                          value,
+                          style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                                fontWeight: FontWeight.w700,
+                              ),
+                        ),
+                      ],
+                    ),
+                  );
+                }
+
+                return Column(
+                  mainAxisSize: MainAxisSize.min,
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    metricRow(
+                      Icons.directions_car_outlined,
+                      loc.listingsLabel,
+                      '${s.totalListings}',
+                    ),
+                    const SizedBox(height: 8),
+                    metricRow(
+                      Icons.visibility_outlined,
+                      loc.viewsLabel,
+                      '${s.totalViews}',
+                    ),
+                    metricRow(
+                      Icons.message_outlined,
+                      loc.messagesLabel,
+                      '${s.totalMessages}',
+                    ),
+                    metricRow(
+                      Icons.phone_outlined,
+                      loc.callsLabel,
+                      '${s.totalCalls}',
+                    ),
+                    metricRow(
+                      Icons.share_outlined,
+                      loc.sharesLabel,
+                      '${s.totalShares}',
+                    ),
+                    metricRow(
+                      Icons.favorite_outline,
+                      loc.favoritesLabel,
+                      '${s.totalFavorites}',
+                    ),
+                  ],
+                );
+              },
+            ),
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(context),
+              child: Text(loc.cancelAction),
+            ),
+          ],
+        );
+      },
+    );
   }
 
   Future<void> _loadMyListings() async {
@@ -26876,6 +27340,25 @@ class _MyListingsPageState extends State<MyListingsPage> {
             ),
           ),
         ),
+        Padding(
+          padding: const EdgeInsets.fromLTRB(16, 0, 16, 12),
+          child: SizedBox(
+            width: double.infinity,
+            child: OutlinedButton.icon(
+              onPressed: _showOverallAnalyticsPopup,
+              icon: const Icon(Icons.analytics_outlined),
+              label: const Text('Overall analytics'),
+              style: OutlinedButton.styleFrom(
+                foregroundColor: const Color(0xFFFF6B00),
+                side: const BorderSide(color: Color(0xFFFF6B00), width: 1.5),
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(10),
+                ),
+                padding: const EdgeInsets.symmetric(vertical: 12),
+              ),
+            ),
+          ),
+        ),
         SizedBox(height: 0),
         Expanded(
           child: ValueListenableBuilder<int>(
@@ -26900,10 +27383,51 @@ class _MyListingsPageState extends State<MyListingsPage> {
                 itemCount: myListings.length,
                 itemBuilder: (context, index) {
                   final listing = myListings[index];
-                  return buildGlobalCarCard(
+                  final id =
+                      (listing['id'] ?? listing['public_id'] ?? '').toString();
+                  final mapped = mapListingToGlobalCarCardData(context, listing);
+                  final card = buildGlobalCarCard(
                     context,
-                    mapListingToGlobalCarCardData(context, listing),
+                    mapped,
                     listLayout: listingColumns == 1,
+                  );
+
+                  return Stack(
+                    clipBehavior: Clip.none,
+                    children: [
+                      card,
+                      if (id.isNotEmpty)
+                        Positioned(
+                          top: 6,
+                          left: 6,
+                          child: Material(
+                            color: const Color(0xFFFF6B00),
+                            borderRadius: BorderRadius.circular(6),
+                            child: InkWell(
+                              borderRadius: BorderRadius.circular(6),
+                              onTap: () => _showListingAnalyticsPopup(
+                                listing,
+                                id,
+                              ),
+                              child: Padding(
+                                padding: const EdgeInsets.symmetric(
+                                  horizontal: 10,
+                                  vertical: 6,
+                                ),
+                                child: Text(
+                                  AppLocalizations.of(context)!.analyticsTitle,
+                                  style: const TextStyle(
+                                    color: Colors.white,
+                                    fontWeight: FontWeight.w800,
+                                    fontSize: 12,
+                                    letterSpacing: 0.2,
+                                  ),
+                                ),
+                              ),
+                            ),
+                          ),
+                        ),
+                    ],
                   );
                 },
               );

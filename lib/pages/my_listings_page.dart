@@ -5,6 +5,8 @@ import '../l10n/app_localizations.dart';
 import '../theme_provider.dart';
 import '../services/api_service.dart';
 import '../services/auth_service.dart';
+import '../services/analytics_service.dart';
+import '../models/analytics_model.dart';
 import '../shared/text/pretty_title_case.dart';
 import '../shared/prefs/listing_layout_prefs.dart';
 import '../legacy/main_legacy.dart'
@@ -253,6 +255,167 @@ class _MyListingsPageState extends State<MyListingsPage> {
     }
   }
 
+  Future<ListingAnalytics> _fetchListingAnalytics(
+    String listingId,
+    Map<String, dynamic> car,
+  ) async {
+    try {
+      final a = await AnalyticsService.getListingAnalytics(listingId);
+      if (a.listingId.toString().isNotEmpty) return a;
+      // If backend returned an empty id (unlikely), fall back to defaults.
+    } catch (_) {
+      // Fall through to fallback below.
+    }
+
+    // Fallback: try to find it within the user's listings analytics list.
+    try {
+      final all = await AnalyticsService.getUserListingsAnalytics();
+      for (final a in all) {
+        if (a.listingId.toString() == listingId) return a;
+      }
+    } catch (_) {
+      // Ignore; we'll still show a dialog with safe defaults.
+    }
+
+    int parseInt(dynamic v, {int fallback = 0}) {
+      if (v == null) return fallback;
+      if (v is int) return v;
+      if (v is double) return v.toInt();
+      return int.tryParse(v.toString()) ?? fallback;
+    }
+
+    double parseDouble(dynamic v, {double fallback = 0}) {
+      if (v == null) return fallback;
+      if (v is double) return v;
+      if (v is int) return v.toDouble();
+      return double.tryParse(v.toString()) ?? fallback;
+    }
+
+    return ListingAnalytics(
+      listingId: listingId,
+      title: (car['title'] ?? '').toString(),
+      brand: (car['brand'] ?? '').toString(),
+      model: (car['model'] ?? '').toString(),
+      year: parseInt(car['year']),
+      price: parseDouble(car['price']),
+      imageUrl: null,
+      mileage: null,
+      city: (car['city'] ?? car['location'])?.toString(),
+      views: 0,
+      messages: 0,
+      calls: 0,
+      shares: 0,
+      favorites: 0,
+      createdAt: DateTime.now(),
+      lastUpdated: DateTime.now(),
+    );
+  }
+
+  void _showListingAnalyticsPopup(
+    Map<String, dynamic> car,
+    String listingId,
+  ) {
+    final loc = AppLocalizations.of(context);
+    if (listingId.isEmpty) return;
+
+    final future = _fetchListingAnalytics(listingId, car);
+
+    showDialog<void>(
+      context: context,
+      builder: (context) {
+        return AlertDialog(
+          title: Text(loc?.analyticsTitle ?? 'Analytics'),
+          content: SizedBox(
+            width: 360,
+            child: FutureBuilder<ListingAnalytics>(
+              future: future,
+              builder: (context, snapshot) {
+                if (snapshot.connectionState != ConnectionState.done) {
+                  return const Padding(
+                    padding: EdgeInsets.symmetric(vertical: 18),
+                    child: Center(child: CircularProgressIndicator()),
+                  );
+                }
+                if (snapshot.hasError) {
+                  return Text(snapshot.error.toString());
+                }
+                final a = snapshot.data;
+                if (a == null) return const Text('No analytics available.');
+
+                Widget metricRow(
+                  IconData icon,
+                  String label,
+                  String value,
+                ) {
+                  return Padding(
+                    padding: const EdgeInsets.symmetric(vertical: 6),
+                    child: Row(
+                      children: [
+                        Icon(icon, size: 18, color: const Color(0xFFFF6B00)),
+                        const SizedBox(width: 10),
+                        Expanded(
+                          child: Text(
+                            label,
+                            style: Theme.of(context).textTheme.bodyMedium,
+                          ),
+                        ),
+                        Text(
+                          value,
+                          style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                                fontWeight: FontWeight.w700,
+                              ),
+                        ),
+                      ],
+                    ),
+                  );
+                }
+
+                final title = (a.title).trim().isNotEmpty
+                    ? prettyTitleCase(a.title)
+                    : prettyTitleCase(a.carTitle);
+
+                return Column(
+                  mainAxisSize: MainAxisSize.min,
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      title,
+                      style: Theme.of(context).textTheme.titleSmall?.copyWith(
+                            fontWeight: FontWeight.w700,
+                          ),
+                      maxLines: 2,
+                      overflow: TextOverflow.ellipsis,
+                    ),
+                    const SizedBox(height: 12),
+                    metricRow(Icons.visibility_outlined, 'Views', '${a.views}'),
+                    metricRow(
+                      Icons.message_outlined,
+                      'Messages',
+                      '${a.messages}',
+                    ),
+                    metricRow(Icons.phone_outlined, 'Calls', '${a.calls}'),
+                    metricRow(Icons.share_outlined, 'Shares', '${a.shares}'),
+                    metricRow(
+                      Icons.favorite_outline,
+                      'Favorites',
+                      '${a.favorites}',
+                    ),
+                  ],
+                );
+              },
+            ),
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(context),
+              child: Text(loc?.cancelAction ?? 'Close'),
+            ),
+          ],
+        );
+      },
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     final loc = AppLocalizations.of(context);
@@ -325,6 +488,37 @@ class _MyListingsPageState extends State<MyListingsPage> {
                           clipBehavior: Clip.none,
                           children: [
                             card,
+                            if (id.isNotEmpty)
+                              Positioned(
+                                top: 6,
+                                left: 6,
+                                child: Material(
+                                  color: const Color(0xFFFF6B00),
+                                  borderRadius: BorderRadius.circular(6),
+                                  child: InkWell(
+                                    borderRadius: BorderRadius.circular(6),
+                                    onTap: () => _showListingAnalyticsPopup(
+                                      car,
+                                      id,
+                                    ),
+                                    child: Padding(
+                                      padding: const EdgeInsets.symmetric(
+                                        horizontal: 10,
+                                        vertical: 6,
+                                      ),
+                                      child: Text(
+                                        loc?.analyticsTitle ?? 'Analytics',
+                                        style: const TextStyle(
+                                          color: Colors.white,
+                                          fontWeight: FontWeight.w800,
+                                          fontSize: 12,
+                                          letterSpacing: 0.2,
+                                        ),
+                                      ),
+                                    ),
+                                  ),
+                                ),
+                              ),
                             Positioned(
                               top: 6,
                               right: 6,
