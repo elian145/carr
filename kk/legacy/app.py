@@ -2461,7 +2461,8 @@ def api_create_car():
             mileage=_as_int(data.get('mileage')),
             condition=str(data.get('condition') or 'used').lower(),
             transmission=str(data.get('transmission') or 'automatic').lower(),
-            fuel_type=str((data.get('engine_type') or data.get('fuel_type') or 'gasoline')).lower(),
+            # Prefer explicit fuel_type; engine_type is a legacy client alias.
+            fuel_type=str((data.get('fuel_type') or data.get('engine_type') or 'gasoline')).lower(),
             color=str(data.get('color') or 'black').lower(),
             body_type=str(data.get('body_type') or 'sedan').lower(),
             seating=_as_int(data.get('seating') or 5, 5),

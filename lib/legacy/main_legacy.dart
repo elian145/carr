@@ -61,6 +61,7 @@ import '../services/car_spec_index.dart';
 import '../models/online_spec_variant.dart';
 import '../widgets/in_app_video_screen.dart';
 import '../widgets/network_video_thumbnail.dart';
+import '../widgets/edge_swipe_back.dart';
 
 const List<String> _kOnlineSpecOptionKeys = [
   '_online_opts_transmission',
@@ -3333,6 +3334,10 @@ class MyApp extends StatelessWidget {
             child: MaterialApp(
               navigatorKey: _appNavigatorKey,
               title: 'CARZO',
+              builder: (context, child) => EdgeSwipeBack(
+                navigatorKey: _appNavigatorKey,
+                child: child ?? const SizedBox.shrink(),
+              ),
               locale: locale,
               supportedLocales: const [
                 Locale('en'),
@@ -21341,12 +21346,12 @@ class _SellStep5PageState extends State<SellStep5Page> {
     final dynamic priceValue = priceStr.isEmpty
         ? null
         : (int.tryParse(priceStr) ?? double.tryParse(priceStr) ?? price);
-    final String engineType =
-        (carData['engine_type']?.toString() ??
-                carData['fuel_type']?.toString() ??
-                fuelType ??
-                '')
-            .toString();
+    // Keep `engine_type` and `fuel_type` independent. Some older backends treated
+    // these as aliases, but overwriting `fuel_type` with `engine_type` can flip
+    // the user's selection (e.g. Gasoline → Diesel).
+    // In this sell flow, "engine type" uses the same vocabulary as fuel type.
+    // Keep them in sync to avoid mismatches across backend variants / UI surfaces.
+    final String engineType = fuelType;
     final String location = (carData['location']?.toString() ?? city)
         .toString();
 
@@ -21360,9 +21365,9 @@ class _SellStep5PageState extends State<SellStep5Page> {
       'mileage': mileage,
       'condition': condition,
       'transmission': transmission,
-      // send both keys so either backend variant accepts the field
+      // Send both keys so either backend variant accepts the fields.
       'engine_type': engineType.isNotEmpty ? engineType : null,
-      'fuel_type': engineType.isNotEmpty ? engineType : null,
+      'fuel_type': fuelType.isNotEmpty ? fuelType : null,
       'color': color,
       'body_type': bodyType,
       'seating': seating,
