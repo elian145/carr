@@ -4,6 +4,7 @@ import 'package:http/http.dart' as http;
 import 'package:image_picker/image_picker.dart';
 import 'config.dart';
 import '../shared/auth/token_store.dart';
+import '../shared/phone/phone_normalizer.dart';
 
 class ApiException implements Exception {
   final int statusCode;
@@ -101,6 +102,39 @@ class ApiService {
     final String body = response.body;
     if (code >= 200 && code < 300) {
       return body.isNotEmpty ? json.decode(body) : <String, dynamic>{};
+    }
+    if (code == 429) {
+      String message = 'Too many requests. Please try again later.';
+      int? retryAfterSeconds;
+
+      try {
+        final Map<String, dynamic> err = body.isNotEmpty
+            ? json.decode(body)
+            : <String, dynamic>{};
+        final msg = (err['message'] ?? err['error'] ?? '').toString().trim();
+        if (msg.isNotEmpty) {
+          message = msg;
+        }
+        final retryAfter = err['retry_after'];
+        if (retryAfter is int) {
+          retryAfterSeconds = retryAfter;
+        } else if (retryAfter is num) {
+          retryAfterSeconds = retryAfter.toInt();
+        }
+      } catch (_) {}
+
+      final retryHeader = response.headers['retry-after'];
+      if (retryAfterSeconds == null && retryHeader != null) {
+        retryAfterSeconds = int.tryParse(retryHeader.trim());
+      }
+
+      if (retryAfterSeconds != null && retryAfterSeconds > 0) {
+        final minutes = (retryAfterSeconds / 60).ceil();
+        message =
+            '$message Please try again in $minutes minute${minutes == 1 ? '' : 's'}.';
+      }
+
+      throw ApiException(statusCode: code, message: message);
     }
     try {
       final Map<String, dynamic> err = body.isNotEmpty
@@ -274,6 +308,9 @@ class ApiService {
     String? dealershipLocation,
   }) async {
     final u = (username ?? '').trim();
+    final normalizedPhone = (phoneNumber != null && phoneNumber.trim().isNotEmpty)
+        ? normalizePhoneNumber(phoneNumber)
+        : null;
     final response = await http
         .post(
           Uri.parse('$baseUrl/auth/register-request'),
@@ -284,8 +321,8 @@ class ApiService {
             'password': password,
             'first_name': firstName,
             'last_name': lastName,
-            if (phoneNumber != null && phoneNumber.trim().isNotEmpty)
-              'phone_number': phoneNumber.trim(),
+            if (normalizedPhone != null && normalizedPhone.isNotEmpty)
+              'phone_number': normalizedPhone,
             'is_dealer': isDealer,
             if (isDealer &&
                 dealershipName != null &&
@@ -369,12 +406,13 @@ class ApiService {
     String? dealershipPhone,
     String? dealershipLocation,
   }) async {
+    final normalizedPhone = normalizePhoneNumber(phoneNumber);
     final response = await http
         .post(
           Uri.parse('$baseUrl/auth/phone/start'),
           headers: _getHeaders(includeAuth: false),
           body: json.encode({
-            'phone_number': phoneNumber,
+            'phone_number': normalizedPhone,
             if ((username ?? '').trim().isNotEmpty) 'username': username,
             if ((firstName ?? '').trim().isNotEmpty) 'first_name': firstName,
             if ((lastName ?? '').trim().isNotEmpty) 'last_name': lastName,
@@ -406,12 +444,13 @@ class ApiService {
     String? dealershipPhone,
     String? dealershipLocation,
   }) async {
+    final normalizedPhone = normalizePhoneNumber(phoneNumber);
     final response = await http
         .post(
           Uri.parse('$baseUrl/auth/phone/verify'),
           headers: _getHeaders(includeAuth: false),
           body: json.encode({
-            'phone_number': phoneNumber,
+            'phone_number': normalizedPhone,
             'code': code,
             if ((username ?? '').trim().isNotEmpty) 'username': username,
             if ((firstName ?? '').trim().isNotEmpty) 'first_name': firstName,
@@ -488,7 +527,7 @@ class ApiService {
     final trimmed = value.trim();
     final Map<String, dynamic> body;
     if (isPhone) {
-      body = {'phone_number': trimmed};
+      body = {'phone_number': normalizePhoneNumber(trimmed)};
     } else {
       // Backwards-compatible: backend historically mirrored email into phone_number.
       body = {'email': trimmed, 'phone_number': trimmed};
@@ -543,13 +582,14 @@ class ApiService {
   static Future<Map<String, dynamic>> sendPhoneVerificationCode(
     String phoneNumber,
   ) async {
+    final normalizedPhone = normalizePhoneNumber(phoneNumber);
     final apiRoot = baseUrl.endsWith('/api') ? baseUrl : '$baseUrl/api';
     final url = '$apiRoot/auth/send-verification';
     final response = await http
         .post(
           Uri.parse(url),
           headers: _getHeaders(includeAuth: false),
-          body: json.encode({'phone_number': phoneNumber}),
+          body: json.encode({'phone_number': normalizedPhone}),
         )
         .timeout(_defaultTimeout);
     if (response.statusCode == 404) {
@@ -567,6 +607,7 @@ class ApiService {
     String phoneNumber,
     String code,
   ) async {
+    final normalizedPhone = normalizePhoneNumber(phoneNumber);
     final apiRoot = baseUrl.endsWith('/api') ? baseUrl : '$baseUrl/api';
     final url = '$apiRoot/auth/verify-phone';
     final response = await http
@@ -574,7 +615,7 @@ class ApiService {
           Uri.parse(url),
           headers: _getHeaders(includeAuth: false),
           body: json.encode({
-            'phone_number': phoneNumber,
+            'phone_number': normalizedPhone,
             'verification_code': code,
           }),
         )

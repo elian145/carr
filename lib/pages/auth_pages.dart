@@ -184,8 +184,9 @@ String _forgotPasswordIntroPhone(BuildContext context) {
 String _pleaseEnterValidPhone(BuildContext context) {
   final c = _lang(context);
   if (c == 'ar') return 'يرجى إدخال رقم هاتف صالح (8 أرقام على الأقل)';
-  if (c == 'ku')
+  if (c == 'ku') {
     return 'تکایە ژمارەی تەلەفۆنێکی دروست بنووسە (کەمترین ٨ ژمارە)';
+  }
   return 'Please enter a valid phone number (at least 8 digits)';
 }
 
@@ -255,10 +256,12 @@ String _resetSmsSent(BuildContext context, String phone) {
 
 String _checkSpamHint(BuildContext context) {
   final c = _lang(context);
-  if (c == 'ar')
+  if (c == 'ar') {
     return 'إن لم تجد الرسالة، تحقق من مجلد البريد العشوائي. يُرسل الرابط فقط إذا وُجد حساب لهذا البريد.';
-  if (c == 'ku')
+  }
+  if (c == 'ku') {
     return 'ئەگەر نەت بینی، پشکنینی سپام بکە. بەستەرەکە تەنها ئەگەر هەژمارێک بۆ ئەم ئیمەیڵە هەبێت نێردرێت.';
+  }
   return "If you don't see it, check your spam or junk folder. The link is only sent if an account exists for this email.";
 }
 
@@ -295,10 +298,12 @@ String _registrationFailedMessage(BuildContext context) {
 /// User-facing message when reset email fails (no server/exception details).
 String _failedToSendResetEmailMessage(BuildContext context) {
   final c = _lang(context);
-  if (c == 'ar')
+  if (c == 'ar') {
     return 'فشل إرسال رابط إعادة التعيين. تحقق من البريد وحاول لاحقاً.';
-  if (c == 'ku')
+  }
+  if (c == 'ku') {
     return 'نەتوانرا ئیمەییلی ڕێکخستنەوە بنێردرێت. دووبارە هەوڵ بدەرەوە.';
+  }
   return 'Failed to send reset link. Check your email and try again later.';
 }
 
@@ -311,6 +316,17 @@ String _failedToSendSmsResetMessage(BuildContext context) {
     return 'نەتوانرا SMS بنێردرێت. ژمارەکە بپشکنە و دووبارە هەوڵ بدەرەوە.';
   }
   return 'Failed to send SMS. Check the number and try again later.';
+}
+
+String _resetRateLimitedMessage(BuildContext context) {
+  final c = _lang(context);
+  if (c == 'ar') {
+    return 'تم إرسال طلبات كثيرة جدًا. يرجى الانتظار قليلاً ثم المحاولة مرة أخرى.';
+  }
+  if (c == 'ku') {
+    return 'زۆر داواکاری نێردراوە. تکایە چەند خولەکێک چاوەڕێ بکە و دووبارە هەوڵبدە.';
+  }
+  return 'Too many reset attempts. Please wait a little and try again.';
 }
 
 class LoginPage extends StatefulWidget {
@@ -1090,7 +1106,10 @@ class _ForgotPasswordPageState extends State<ForgotPasswordPage> {
     try {
       final authService = Provider.of<AuthService>(context, listen: false);
       if (_recoveryMethod == 'phone') {
-        await authService.forgotPassword(_phoneController.text, isPhone: true);
+        await authService.forgotPassword(
+          _phoneController.text,
+          isPhone: true,
+        );
       } else {
         await authService.forgotPassword(_emailController.text);
       }
@@ -1104,11 +1123,13 @@ class _ForgotPasswordPageState extends State<ForgotPasswordPage> {
         error: e,
       );
       if (mounted) {
-        final message = kDebugMode && e is ApiException
-            ? (e as ApiException).message
-            : (_recoveryMethod == 'phone'
-                  ? _failedToSendSmsResetMessage(context)
-                  : _failedToSendResetEmailMessage(context));
+        final message = e is ApiException && e.statusCode == 429
+            ? _resetRateLimitedMessage(context)
+            : (kDebugMode && e is ApiException
+                  ? e.message
+                  : (_recoveryMethod == 'phone'
+                        ? _failedToSendSmsResetMessage(context)
+                        : _failedToSendResetEmailMessage(context)));
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
             content: Text(message),
@@ -1236,6 +1257,7 @@ class _ForgotPasswordPageState extends State<ForgotPasswordPage> {
                     controller: _phoneController,
                     decoration: InputDecoration(
                       labelText: AppLocalizations.of(context)!.phoneLabel,
+                      hintText: AppLocalizations.of(context)!.useInternationalFormat,
                       prefixIcon: const Icon(Icons.phone),
                       border: const OutlineInputBorder(),
                     ),
