@@ -745,6 +745,97 @@ TextStyle _sellFlowManualFieldTextStyle(BuildContext context) =>
     ? const TextStyle(color: Colors.white)
     : TextStyle(color: Colors.grey[900]!);
 
+Widget buildFloatingBottomNav(
+  BuildContext context, {
+  required int currentIndex,
+  required ValueChanged<int> onTap,
+}) {
+  final brightness = Theme.of(context).brightness;
+  final isLight = brightness == Brightness.light;
+  final unselectedItemColor = isLight
+      ? const Color(0xFF666666)
+      : const Color(0xD9FFFFFF);
+
+  return Padding(
+    padding: const EdgeInsets.fromLTRB(12, 0, 12, 10),
+    child: SafeArea(
+      top: false,
+      child: Container(
+        decoration: BoxDecoration(
+          borderRadius: BorderRadius.circular(999),
+          border: Border.all(
+            color: isLight
+                ? Colors.white.withOpacity(0.14)
+                : Colors.white.withOpacity(0.08),
+            width: 1,
+          ),
+          boxShadow: [
+            BoxShadow(
+              color: Colors.black.withOpacity(isLight ? 0.08 : 0.14),
+              blurRadius: 24,
+              offset: const Offset(0, 10),
+            ),
+          ],
+        ),
+        child: ClipRRect(
+          borderRadius: BorderRadius.circular(999),
+          child: BackdropFilter(
+            filter: ui.ImageFilter.blur(sigmaX: 30, sigmaY: 30),
+            child: Theme(
+              data: Theme.of(context).copyWith(
+                canvasColor: Colors.transparent,
+                splashColor: Colors.transparent,
+                highlightColor: Colors.transparent,
+                bottomNavigationBarTheme: const BottomNavigationBarThemeData(
+                  backgroundColor: Colors.transparent,
+                  elevation: 0,
+                ),
+              ),
+              child: BottomNavigationBar(
+                type: BottomNavigationBarType.fixed,
+                backgroundColor: Colors.transparent,
+                elevation: 0,
+                selectedItemColor: const Color(0xFFFF6B00),
+                unselectedItemColor: unselectedItemColor,
+                selectedLabelStyle: const TextStyle(
+                  fontWeight: FontWeight.w700,
+                  letterSpacing: 0.15,
+                ),
+                unselectedLabelStyle: const TextStyle(
+                  fontWeight: FontWeight.w600,
+                  letterSpacing: 0.1,
+                ),
+                showSelectedLabels: true,
+                showUnselectedLabels: true,
+                currentIndex: currentIndex,
+                onTap: onTap,
+                items: [
+                  BottomNavigationBarItem(
+                    icon: Icon(Icons.home),
+                    label: AppLocalizations.of(context)!.navHome,
+                  ),
+                  BottomNavigationBarItem(
+                    icon: Icon(Icons.favorite),
+                    label: AppLocalizations.of(context)!.navSaved,
+                  ),
+                  BottomNavigationBarItem(
+                    icon: Icon(Icons.sell),
+                    label: AppLocalizations.of(context)!.sellTitle,
+                  ),
+                  BottomNavigationBarItem(
+                    icon: Icon(Icons.person),
+                    label: AppLocalizations.of(context)!.navProfile,
+                  ),
+                ],
+              ),
+            ),
+          ),
+        ),
+      ),
+    ),
+  );
+}
+
 // Fancy selector tile used in Sell page pickers
 Widget buildFancySelector(
   BuildContext context, {
@@ -6793,6 +6884,7 @@ class _HomePageState extends State<HomePage> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
+      extendBody: true,
       appBar: AppBar(
         title: Text(
           AppLocalizations.of(context)!.appTitle,
@@ -6830,15 +6922,8 @@ class _HomePageState extends State<HomePage> {
         ],
       ),
       // Pull-to-refresh is already provided inside the main content via internal scrollables
-      bottomNavigationBar: BottomNavigationBar(
-        type: BottomNavigationBarType.fixed,
-        backgroundColor: AppThemes.bottomNavChrome(
-          Theme.of(context).brightness,
-        ).backgroundColor,
-        selectedItemColor: Color(0xFFFF6B00),
-        unselectedItemColor: AppThemes.bottomNavChrome(
-          Theme.of(context).brightness,
-        ).unselectedItemColor,
+      bottomNavigationBar: buildFloatingBottomNav(
+        context,
         currentIndex: 0,
         onTap: (idx) {
           switch (idx) {
@@ -6856,28 +6941,10 @@ class _HomePageState extends State<HomePage> {
               break;
           }
         },
-        items: [
-          BottomNavigationBarItem(
-            icon: Icon(Icons.home),
-            label: AppLocalizations.of(context)!.navHome,
-          ),
-          BottomNavigationBarItem(
-            icon: Icon(Icons.favorite),
-            label: AppLocalizations.of(context)!.navSaved,
-          ),
-          BottomNavigationBarItem(
-            icon: Icon(Icons.sell),
-            label: AppLocalizations.of(context)!.sellTitle,
-          ),
-          BottomNavigationBarItem(
-            icon: Icon(Icons.person),
-            label: AppLocalizations.of(context)!.navProfile,
-          ),
-        ],
       ),
       body: SafeArea(
         top: false,
-        bottom: true,
+        bottom: false,
         child: Stack(
           children: [
             Container(
@@ -23982,15 +24049,9 @@ Widget build(BuildContext context) {
         ),
       ),
       */
-    bottomNavigationBar: BottomNavigationBar(
-      type: BottomNavigationBarType.fixed,
-      backgroundColor: AppThemes.bottomNavChrome(
-        Theme.of(context).brightness,
-      ).backgroundColor,
-      selectedItemColor: Color(0xFFFF6B00),
-      unselectedItemColor: AppThemes.bottomNavChrome(
-        Theme.of(context).brightness,
-      ).unselectedItemColor,
+    extendBody: true,
+    bottomNavigationBar: buildFloatingBottomNav(
+      context,
       currentIndex: 0,
       onTap: (idx) {
         switch (idx) {
@@ -24013,24 +24074,6 @@ Widget build(BuildContext context) {
             break;
         }
       },
-      items: [
-        BottomNavigationBarItem(
-          icon: Icon(Icons.home),
-          label: AppLocalizations.of(context)!.navHome,
-        ),
-        BottomNavigationBarItem(
-          icon: Icon(Icons.favorite),
-          label: AppLocalizations.of(context)!.navSaved,
-        ),
-        BottomNavigationBarItem(
-          icon: Icon(Icons.sell),
-          label: AppLocalizations.of(context)!.sellTitle,
-        ),
-        BottomNavigationBarItem(
-          icon: Icon(Icons.person),
-          label: AppLocalizations.of(context)!.navProfile,
-        ),
-      ],
     ),
   );
 }
@@ -24349,15 +24392,9 @@ class _FavoritesPageState extends State<FavoritesPage> {
             ),
         ],
       ),
-      bottomNavigationBar: BottomNavigationBar(
-        type: BottomNavigationBarType.fixed,
-        backgroundColor: AppThemes.bottomNavChrome(
-          Theme.of(context).brightness,
-        ).backgroundColor,
-        selectedItemColor: Color(0xFFFF6B00),
-        unselectedItemColor: AppThemes.bottomNavChrome(
-          Theme.of(context).brightness,
-        ).unselectedItemColor,
+      extendBody: true,
+      bottomNavigationBar: buildFloatingBottomNav(
+        context,
         currentIndex: 1,
         onTap: (idx) {
           switch (idx) {
@@ -24375,24 +24412,6 @@ class _FavoritesPageState extends State<FavoritesPage> {
               break;
           }
         },
-        items: [
-          BottomNavigationBarItem(
-            icon: Icon(Icons.home),
-            label: AppLocalizations.of(context)!.navHome,
-          ),
-          BottomNavigationBarItem(
-            icon: Icon(Icons.favorite),
-            label: AppLocalizations.of(context)!.navSaved,
-          ),
-          BottomNavigationBarItem(
-            icon: Icon(Icons.sell),
-            label: AppLocalizations.of(context)!.sellTitle,
-          ),
-          BottomNavigationBarItem(
-            icon: Icon(Icons.person),
-            label: AppLocalizations.of(context)!.navProfile,
-          ),
-        ],
       ),
     );
   }
@@ -24522,15 +24541,9 @@ class _LoginPageState extends State<LoginPage> {
           ),
         ),
       ),
-      bottomNavigationBar: BottomNavigationBar(
-        type: BottomNavigationBarType.fixed,
-        backgroundColor: AppThemes.bottomNavChrome(
-          Theme.of(context).brightness,
-        ).backgroundColor,
-        selectedItemColor: Color(0xFFFF6B00),
-        unselectedItemColor: AppThemes.bottomNavChrome(
-          Theme.of(context).brightness,
-        ).unselectedItemColor,
+      extendBody: true,
+      bottomNavigationBar: buildFloatingBottomNav(
+        context,
         currentIndex: 3,
         onTap: (idx) {
           switch (idx) {
@@ -24548,24 +24561,6 @@ class _LoginPageState extends State<LoginPage> {
               break;
           }
         },
-        items: [
-          BottomNavigationBarItem(
-            icon: Icon(Icons.home),
-            label: AppLocalizations.of(context)!.navHome,
-          ),
-          BottomNavigationBarItem(
-            icon: Icon(Icons.favorite),
-            label: AppLocalizations.of(context)!.navSaved,
-          ),
-          BottomNavigationBarItem(
-            icon: Icon(Icons.sell),
-            label: AppLocalizations.of(context)!.sellTitle,
-          ),
-          BottomNavigationBarItem(
-            icon: Icon(Icons.person),
-            label: AppLocalizations.of(context)!.navProfile,
-          ),
-        ],
       ),
     );
   }
@@ -24955,6 +24950,43 @@ class _SignupPageState extends State<SignupPage> {
 
   @override
   Widget build(BuildContext context) {
+    final isLightShell = Theme.of(context).brightness == Brightness.light;
+    final textColor = isLightShell ? Colors.black87 : Colors.white;
+    final mutedTextColor = isLightShell ? Colors.black54 : Colors.white70;
+    final fillColor = isLightShell ? Colors.grey.shade100 : Colors.white10;
+    final borderColor = isLightShell ? Colors.grey.shade400 : Colors.white54;
+
+    InputDecoration authDecoration({
+      required String labelText,
+      String? hintText,
+      Widget? prefixIcon,
+      String? prefixText,
+    }) {
+      return InputDecoration(
+        labelText: labelText,
+        hintText: hintText,
+        prefixIcon: prefixIcon,
+        prefixText: prefixText,
+        filled: true,
+        fillColor: fillColor,
+        labelStyle: TextStyle(color: mutedTextColor),
+        hintStyle: TextStyle(color: mutedTextColor),
+        prefixStyle: TextStyle(
+          color: Color(0xFFFF6B00),
+          fontWeight: FontWeight.bold,
+          fontSize: 16,
+        ),
+        enabledBorder: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(8),
+          borderSide: BorderSide(color: borderColor),
+        ),
+        focusedBorder: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(8),
+          borderSide: const BorderSide(color: Color(0xFFFF6B00), width: 2),
+        ),
+      );
+    }
+
     return Scaffold(
       appBar: AppBar(title: Text(AppLocalizations.of(context)!.signupTitle)),
       body: Padding(
@@ -24969,7 +25001,7 @@ class _SignupPageState extends State<SignupPage> {
                 style: TextStyle(
                   fontSize: 16,
                   fontWeight: FontWeight.w600,
-                  color: Colors.white,
+                  color: textColor,
                 ),
               ),
               SizedBox(height: 8),
@@ -24979,7 +25011,7 @@ class _SignupPageState extends State<SignupPage> {
                     child: RadioListTile<String>(
                       title: Text(
                         'Email',
-                        style: TextStyle(color: Colors.white),
+                        style: TextStyle(color: textColor),
                       ),
                       value: 'email',
                       groupValue: _authType,
@@ -24991,13 +25023,15 @@ class _SignupPageState extends State<SignupPage> {
                         });
                       },
                       activeColor: Color(0xFFFF6B00),
+                      contentPadding: EdgeInsets.zero,
+                      dense: true,
                     ),
                   ),
                   Expanded(
                     child: RadioListTile<String>(
                       title: Text(
                         'Phone',
-                        style: TextStyle(color: Colors.white),
+                        style: TextStyle(color: textColor),
                       ),
                       value: 'phone',
                       groupValue: _authType,
@@ -25009,6 +25043,8 @@ class _SignupPageState extends State<SignupPage> {
                         });
                       },
                       activeColor: Color(0xFFFF6B00),
+                      contentPadding: EdgeInsets.zero,
+                      dense: true,
                     ),
                   ),
                 ],
@@ -25019,7 +25055,7 @@ class _SignupPageState extends State<SignupPage> {
                 style: TextStyle(
                   fontSize: 16,
                   fontWeight: FontWeight.w600,
-                  color: Colors.white,
+                  color: textColor,
                 ),
               ),
               SizedBox(height: 4),
@@ -25027,13 +25063,13 @@ class _SignupPageState extends State<SignupPage> {
                 contentPadding: EdgeInsets.zero,
                 title: Text(
                   'I am registering as a dealership / dealer',
-                  style: TextStyle(color: Colors.white),
+                  style: TextStyle(color: textColor),
                 ),
                 subtitle: Text(
                   _isDealer
                       ? 'Dealership details required; approval is pending until reviewed.'
                       : 'Leave off for a normal personal account.',
-                  style: TextStyle(color: Colors.white70, fontSize: 13),
+                  style: TextStyle(color: mutedTextColor, fontSize: 13),
                 ),
                 value: _isDealer,
                 onChanged: (v) => setState(() => _isDealer = v),
@@ -25042,17 +25078,8 @@ class _SignupPageState extends State<SignupPage> {
                 SizedBox(height: 8),
                 TextFormField(
                   controller: _dealershipNameController,
-                  style: TextStyle(color: Colors.white),
-                  decoration: InputDecoration(
-                    labelText: 'Dealership name',
-                    labelStyle: TextStyle(color: Colors.white70),
-                    enabledBorder: UnderlineInputBorder(
-                      borderSide: BorderSide(color: Colors.white54),
-                    ),
-                    focusedBorder: UnderlineInputBorder(
-                      borderSide: BorderSide(color: Color(0xFFFF6B00)),
-                    ),
-                  ),
+                  style: TextStyle(color: textColor),
+                  decoration: authDecoration(labelText: 'Dealership name'),
                   validator: (v) {
                     if (!_isDealer) {
                       return null;
@@ -25066,18 +25093,9 @@ class _SignupPageState extends State<SignupPage> {
                 SizedBox(height: 12),
                 TextFormField(
                   controller: _dealershipPhoneController,
-                  style: TextStyle(color: Colors.white),
+                  style: TextStyle(color: textColor),
                   keyboardType: TextInputType.phone,
-                  decoration: InputDecoration(
-                    labelText: 'Dealership phone',
-                    labelStyle: TextStyle(color: Colors.white70),
-                    enabledBorder: UnderlineInputBorder(
-                      borderSide: BorderSide(color: Colors.white54),
-                    ),
-                    focusedBorder: UnderlineInputBorder(
-                      borderSide: BorderSide(color: Color(0xFFFF6B00)),
-                    ),
-                  ),
+                  decoration: authDecoration(labelText: 'Dealership phone'),
                   validator: (v) {
                     if (!_isDealer) {
                       return null;
@@ -25091,17 +25109,8 @@ class _SignupPageState extends State<SignupPage> {
                 SizedBox(height: 12),
                 TextFormField(
                   controller: _dealershipLocationController,
-                  style: TextStyle(color: Colors.white),
-                  decoration: InputDecoration(
-                    labelText: 'Dealership location',
-                    labelStyle: TextStyle(color: Colors.white70),
-                    enabledBorder: UnderlineInputBorder(
-                      borderSide: BorderSide(color: Colors.white54),
-                    ),
-                    focusedBorder: UnderlineInputBorder(
-                      borderSide: BorderSide(color: Color(0xFFFF6B00)),
-                    ),
-                  ),
+                  style: TextStyle(color: textColor),
+                  decoration: authDecoration(labelText: 'Dealership location'),
                   validator: (v) {
                     if (!_isDealer) {
                       return null;
@@ -25119,8 +25128,9 @@ class _SignupPageState extends State<SignupPage> {
               if (_authType == 'email') ...[
                 TextFormField(
                   controller: _emailController,
+                  style: TextStyle(color: textColor),
                   keyboardType: TextInputType.emailAddress,
-                  decoration: InputDecoration(
+                  decoration: authDecoration(
                     labelText: 'Email Address',
                     hintText: 'Enter your email address',
                   ),
@@ -25139,16 +25149,12 @@ class _SignupPageState extends State<SignupPage> {
               ] else ...[
                 TextFormField(
                   controller: _phoneController,
+                  style: TextStyle(color: textColor),
                   keyboardType: TextInputType.phone,
-                  decoration: InputDecoration(
+                  decoration: authDecoration(
                     labelText: AppLocalizations.of(context)!.enterPhoneNumber,
                     hintText: '7XX XXX XXXX',
                     prefixText: '+964 ',
-                    prefixStyle: TextStyle(
-                      color: Color(0xFFFF6B00),
-                      fontWeight: FontWeight.bold,
-                      fontSize: 16,
-                    ),
                   ),
                   inputFormatters: [
                     services.FilteringTextInputFormatter.allow(
@@ -25166,7 +25172,8 @@ class _SignupPageState extends State<SignupPage> {
                     Expanded(
                       child: TextFormField(
                         controller: _otpController,
-                        decoration: InputDecoration(
+                        style: TextStyle(color: textColor),
+                        decoration: authDecoration(
                           labelText: AppLocalizations.of(context)!.sendCode,
                         ),
                         validator: (v) => (!_otpSent)
@@ -25188,7 +25195,8 @@ class _SignupPageState extends State<SignupPage> {
                 SizedBox(height: 12),
                 TextFormField(
                   controller: _usernameController,
-                  decoration: InputDecoration(
+                  style: TextStyle(color: textColor),
+                  decoration: authDecoration(
                     labelText: AppLocalizations.of(context)!.usernameLabel,
                     hintText: 'Choose a username',
                   ),
@@ -25204,10 +25212,12 @@ class _SignupPageState extends State<SignupPage> {
                   },
                 ),
               ],
+              SizedBox(height: 12),
               TextFormField(
                 controller: _passwordController,
+                style: TextStyle(color: textColor),
                 obscureText: true,
-                decoration: InputDecoration(
+                decoration: authDecoration(
                   labelText: AppLocalizations.of(context)!.passwordLabel,
                 ),
                 validator: (v) {
@@ -25252,15 +25262,9 @@ class _SignupPageState extends State<SignupPage> {
           ),
         ),
       ),
-      bottomNavigationBar: BottomNavigationBar(
-        type: BottomNavigationBarType.fixed,
-        backgroundColor: AppThemes.bottomNavChrome(
-          Theme.of(context).brightness,
-        ).backgroundColor,
-        selectedItemColor: Color(0xFFFF6B00),
-        unselectedItemColor: AppThemes.bottomNavChrome(
-          Theme.of(context).brightness,
-        ).unselectedItemColor,
+      extendBody: true,
+      bottomNavigationBar: buildFloatingBottomNav(
+        context,
         currentIndex: 3,
         onTap: (idx) {
           switch (idx) {
@@ -25283,24 +25287,6 @@ class _SignupPageState extends State<SignupPage> {
               break;
           }
         },
-        items: [
-          BottomNavigationBarItem(
-            icon: Icon(Icons.home),
-            label: AppLocalizations.of(context)!.navHome,
-          ),
-          BottomNavigationBarItem(
-            icon: Icon(Icons.favorite),
-            label: AppLocalizations.of(context)!.navSaved,
-          ),
-          BottomNavigationBarItem(
-            icon: Icon(Icons.sell),
-            label: AppLocalizations.of(context)!.sellTitle,
-          ),
-          BottomNavigationBarItem(
-            icon: Icon(Icons.person),
-            label: AppLocalizations.of(context)!.navProfile,
-          ),
-        ],
       ),
     );
   }
@@ -26302,15 +26288,9 @@ class _ProfilePageState extends State<ProfilePage> {
               ],
             )
           : _buildLoggedInState(context),
-      bottomNavigationBar: BottomNavigationBar(
-        type: BottomNavigationBarType.fixed,
-        backgroundColor: AppThemes.bottomNavChrome(
-          Theme.of(context).brightness,
-        ).backgroundColor,
-        selectedItemColor: Color(0xFFFF6B00),
-        unselectedItemColor: AppThemes.bottomNavChrome(
-          Theme.of(context).brightness,
-        ).unselectedItemColor,
+      extendBody: true,
+      bottomNavigationBar: buildFloatingBottomNav(
+        context,
         currentIndex: 3,
         onTap: (idx) {
           switch (idx) {
@@ -26333,24 +26313,6 @@ class _ProfilePageState extends State<ProfilePage> {
               break;
           }
         },
-        items: [
-          BottomNavigationBarItem(
-            icon: Icon(Icons.home),
-            label: AppLocalizations.of(context)!.navHome,
-          ),
-          BottomNavigationBarItem(
-            icon: Icon(Icons.favorite),
-            label: AppLocalizations.of(context)!.navSaved,
-          ),
-          BottomNavigationBarItem(
-            icon: Icon(Icons.sell),
-            label: AppLocalizations.of(context)!.sellTitle,
-          ),
-          BottomNavigationBarItem(
-            icon: Icon(Icons.person),
-            label: AppLocalizations.of(context)!.navProfile,
-          ),
-        ],
       ),
     );
   }
@@ -26373,15 +26335,9 @@ class _PaymentHistoryPageState extends State<PaymentHistoryPage> {
       body: Center(
         child: Text(AppLocalizations.of(context)!.paymentHistoryTitle),
       ),
-      bottomNavigationBar: BottomNavigationBar(
-        type: BottomNavigationBarType.fixed,
-        backgroundColor: AppThemes.bottomNavChrome(
-          Theme.of(context).brightness,
-        ).backgroundColor,
-        selectedItemColor: Color(0xFFFF6B00),
-        unselectedItemColor: AppThemes.bottomNavChrome(
-          Theme.of(context).brightness,
-        ).unselectedItemColor,
+      extendBody: true,
+      bottomNavigationBar: buildFloatingBottomNav(
+        context,
         currentIndex: 0,
         onTap: (idx) {
           switch (idx) {
@@ -26399,24 +26355,6 @@ class _PaymentHistoryPageState extends State<PaymentHistoryPage> {
               break;
           }
         },
-        items: [
-          BottomNavigationBarItem(
-            icon: Icon(Icons.home),
-            label: AppLocalizations.of(context)!.navHome,
-          ),
-          BottomNavigationBarItem(
-            icon: Icon(Icons.favorite),
-            label: AppLocalizations.of(context)!.navSaved,
-          ),
-          BottomNavigationBarItem(
-            icon: Icon(Icons.sell),
-            label: AppLocalizations.of(context)!.sellTitle,
-          ),
-          BottomNavigationBarItem(
-            icon: Icon(Icons.person),
-            label: AppLocalizations.of(context)!.navProfile,
-          ),
-        ],
       ),
     );
   }
@@ -27148,15 +27086,9 @@ class _MyListingsPageState extends State<MyListingsPage> {
               ),
               child: bodyChild,
             ),
-      bottomNavigationBar: BottomNavigationBar(
-        type: BottomNavigationBarType.fixed,
-        backgroundColor: AppThemes.bottomNavChrome(
-          Theme.of(context).brightness,
-        ).backgroundColor,
-        selectedItemColor: Color(0xFFFF6B00),
-        unselectedItemColor: AppThemes.bottomNavChrome(
-          Theme.of(context).brightness,
-        ).unselectedItemColor,
+      extendBody: true,
+      bottomNavigationBar: buildFloatingBottomNav(
+        context,
         currentIndex: 3,
         onTap: (idx) {
           switch (idx) {
@@ -27179,24 +27111,6 @@ class _MyListingsPageState extends State<MyListingsPage> {
               break;
           }
         },
-        items: [
-          BottomNavigationBarItem(
-            icon: Icon(Icons.home),
-            label: AppLocalizations.of(context)!.navHome,
-          ),
-          BottomNavigationBarItem(
-            icon: Icon(Icons.favorite),
-            label: AppLocalizations.of(context)!.navSaved,
-          ),
-          BottomNavigationBarItem(
-            icon: Icon(Icons.sell),
-            label: AppLocalizations.of(context)!.sellTitle,
-          ),
-          BottomNavigationBarItem(
-            icon: Icon(Icons.person),
-            label: AppLocalizations.of(context)!.navProfile,
-          ),
-        ],
       ),
     );
   }
