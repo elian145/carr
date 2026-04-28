@@ -2764,6 +2764,23 @@ class _SearchDialogState extends State<_SearchDialog> {
   List<Map<String, String>> _filteredModels = [];
   bool _isSearchingBrands = true;
 
+  ButtonStyle _searchModeButtonStyle({required bool selected}) {
+    final backgroundColor = selected
+        ? const Color(0xFFFF6B00)
+        : Colors.white.withOpacity(0.12);
+    final foregroundColor = selected ? Colors.white : Colors.white70;
+    return ElevatedButton.styleFrom(
+      backgroundColor: backgroundColor,
+      foregroundColor: foregroundColor,
+      disabledBackgroundColor: backgroundColor,
+      disabledForegroundColor: foregroundColor,
+      padding: const EdgeInsets.symmetric(vertical: 14),
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(12),
+      ),
+    );
+  }
+
   @override
   void initState() {
     super.initState();
@@ -2873,26 +2890,22 @@ class _SearchDialogState extends State<_SearchDialog> {
                 Expanded(
                   child: ElevatedButton(
                     onPressed: _isSearchingBrands ? null : _toggleSearchMode,
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: _isSearchingBrands
-                          ? Color(0xFFFF6B00)
-                          : Colors.grey[700],
-                      foregroundColor: Colors.white,
+                    style: _searchModeButtonStyle(selected: _isSearchingBrands),
+                    child: const Text(
+                      'Search by Brand',
+                      style: TextStyle(fontWeight: FontWeight.w700),
                     ),
-                    child: Text('Search by Brand'),
                   ),
                 ),
                 SizedBox(width: 10),
                 Expanded(
                   child: ElevatedButton(
                     onPressed: _isSearchingBrands ? _toggleSearchMode : null,
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: !_isSearchingBrands
-                          ? Color(0xFFFF6B00)
-                          : Colors.grey[700],
-                      foregroundColor: Colors.white,
+                    style: _searchModeButtonStyle(selected: !_isSearchingBrands),
+                    child: const Text(
+                      'Search by Model',
+                      style: TextStyle(fontWeight: FontWeight.w700),
                     ),
-                    child: Text('Search by Model'),
                   ),
                 ),
               ],
