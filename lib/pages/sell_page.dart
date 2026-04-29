@@ -1,3 +1,5 @@
+import 'dart:async';
+import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:provider/provider.dart';
@@ -9,6 +11,7 @@ import '../services/api_service.dart';
 import '../services/auth_service.dart';
 import '../services/car_spec_index.dart';
 import '../models/online_spec_variant.dart';
+import '../shared/prefs/sell_listing_draft_prefs.dart';
 
 class SellPage extends StatefulWidget {
   const SellPage({super.key});
@@ -57,6 +60,12 @@ class _SellPageState extends State<SellPage> {
   bool _submitting = false;
   String? _error;
   String? _stage;
+  Timer? _draftSaveTimer;
+  bool _restoringDraft = false;
+  bool _draftLoaded = false;
+  bool _draftExists = false;
+  bool _draftIsComplete = false;
+  String? _draftOwnerKey;
 
   /// When the bundled catalog provides 2+ distinct values, the matching field becomes a dropdown
   /// limited to these options (cleared when applying catalog specs).
@@ -77,7 +86,17 @@ class _SellPageState extends State<SellPage> {
   @override
   void initState() {
     super.initState();
+    _draftOwnerKey = _buildDraftOwnerKey();
     _year.addListener(_onListingYearChanged);
+    _mileage.addListener(_onDraftFieldChanged);
+    _price.addListener(_onDraftFieldChanged);
+    _location.addListener(_onDraftFieldChanged);
+    _description.addListener(_onDraftFieldChanged);
+    _engineSizeCtl.addListener(_onDraftFieldChanged);
+    _cylinderCtl.addListener(_onDraftFieldChanged);
+    _fuelEconomyCtl.addListener(_onDraftFieldChanged);
+    _seatingCtl.addListener(_onDraftFieldChanged);
+    unawaited(_restoreDraft());
     CarSpecIndex.loadWithResult().then((r) {
       if (!mounted) return;
       setState(() {
@@ -91,7 +110,17 @@ class _SellPageState extends State<SellPage> {
 
   @override
   void dispose() {
+    _draftSaveTimer?.cancel();
+    unawaited(_saveDraft(immediate: true));
     _year.removeListener(_onListingYearChanged);
+    _mileage.removeListener(_onDraftFieldChanged);
+    _price.removeListener(_onDraftFieldChanged);
+    _location.removeListener(_onDraftFieldChanged);
+    _description.removeListener(_onDraftFieldChanged);
+    _engineSizeCtl.removeListener(_onDraftFieldChanged);
+    _cylinderCtl.removeListener(_onDraftFieldChanged);
+    _fuelEconomyCtl.removeListener(_onDraftFieldChanged);
+    _seatingCtl.removeListener(_onDraftFieldChanged);
     _year.dispose();
     _mileage.dispose();
     _price.dispose();
@@ -123,6 +152,246 @@ class _SellPageState extends State<SellPage> {
     _cylinderCtl.clear();
     _fuelEconomyCtl.clear();
     _seatingCtl.clear();
+  }
+
+  String _buildDraftOwnerKey() {
+    final user = AuthService().currentUser;
+    final raw = (user?['public_id'] ??
+            user?['id'] ??
+            user?['username'] ??
+            user?['email'] ??
+            'guest')
+        .toString()
+        .trim();
+    return raw.isEmpty ? 'guest' : raw;
+  }
+
+  void _onDraftFieldChanged() {
+    _scheduleDraftSave();
+  }
+
+  bool _hasMeaningfulDraftContent() {
+    if (_selectedBrand?.trim().isNotEmpty == true) return true;
+    if (_selectedModel?.trim().isNotEmpty == true) return true;
+    if (_selectedTrim?.trim().isNotEmpty == true) return true;
+    if (_year.text.trim().isNotEmpty) return true;
+    if (_mileage.text.trim().isNotEmpty) return true;
+    if (_price.text.trim().isNotEmpty) return true;
+    if (_location.text.trim().isNotEmpty) return true;
+    if (_description.text.trim().isNotEmpty) return true;
+    if (_engineSizeCtl.text.trim().isNotEmpty) return true;
+    if (_cylinderCtl.text.trim().isNotEmpty) return true;
+    if (_fuelEconomyCtl.text.trim().isNotEmpty) return true;
+    if (_seatingCtl.text.trim().isNotEmpty) return true;
+    if (_engineType != 'gasoline') return true;
+    if (_fuelType != 'gasoline') return true;
+    if (_transmission != 'automatic') return true;
+    if (_driveType != 'fwd') return true;
+    if (_condition != 'used') return true;
+    if (_bodyType != 'sedan') return true;
+    if (_currency != 'USD') return true;
+    return _images.isNotEmpty || _videos.isNotEmpty;
+  }
+
+  bool _isListingComplete() {
+    final brand = _selectedBrand?.trim() ?? '';
+    final model = _selectedModel?.trim() ?? '';
+    final trim = _selectedTrim?.trim() ?? '';
+    final year = int.tryParse(_year.text.trim());
+    final mileage = int.tryParse(_mileage.text.trim());
+    final price = double.tryParse(_price.text.trim());
+    final location = _location.text.trim();
+    return brand.isNotEmpty &&
+        model.isNotEmpty &&
+        trim.isNotEmpty &&
+        year != null &&
+        year >= 1980 &&
+        year <= DateTime.now().year + 1 &&
+        mileage != null &&
+        mileage >= 0 &&
+        price != null &&
+        price > 0 &&
+        location.isNotEmpty;
+  }
+
+  Map<String, dynamic> _buildDraftData() {
+    return <String, dynamic>{
+      'brand': _selectedBrand,
+      'model': _selectedModel,
+      'trim': _selectedTrim,
+      'year': _year.text.trim(),
+      'mileage': _mileage.text.trim(),
+      'price': _price.text.trim(),
+      'currency': _currency,
+      'location': _location.text.trim(),
+      'description': _description.text.trim(),
+      'engine_type': _engineType,
+      'fuel_type': _fuelType,
+      'transmission': _transmission,
+      'drive_type': _driveType,
+      'condition': _condition,
+      'body_type': _bodyType,
+      'engine_size': _engineSizeCtl.text.trim(),
+      'cylinder_count': _cylinderCtl.text.trim(),
+      'fuel_economy': _fuelEconomyCtl.text.trim(),
+      'seating': _seatingCtl.text.trim(),
+      'dataset_model_id': _datasetModelId,
+      'catalog_year': _catalogYear,
+      'image_paths': _images.map((file) => file.path).toList(),
+      'video_paths': _videos.map((file) => file.path).toList(),
+      'complete': _isListingComplete(),
+      'updated_at': DateTime.now().toIso8601String(),
+    };
+  }
+
+  void _scheduleDraftSave({bool immediate = false}) {
+    if (_restoringDraft || _submitting) return;
+    _draftSaveTimer?.cancel();
+    final delay = immediate ? Duration.zero : const Duration(milliseconds: 350);
+    _draftSaveTimer = Timer(delay, () {
+      if (!mounted || _restoringDraft || _submitting) return;
+      unawaited(_saveDraft());
+    });
+  }
+
+  Future<void> _saveDraft({bool immediate = false}) async {
+    if (_restoringDraft || _submitting) return;
+    final owner = _draftOwnerKey ??= _buildDraftOwnerKey();
+    final hasContent = _hasMeaningfulDraftContent();
+    if (!hasContent) {
+      await SellListingDraftPrefs.clear(owner);
+      if (mounted) {
+        setState(() {
+          _draftExists = false;
+          _draftIsComplete = false;
+          _draftLoaded = true;
+        });
+      }
+      return;
+    }
+
+    final draft = _buildDraftData();
+    await SellListingDraftPrefs.save(owner, draft);
+    if (!mounted) return;
+    setState(() {
+      _draftExists = true;
+      _draftIsComplete = draft['complete'] == true;
+      _draftLoaded = true;
+    });
+  }
+
+  Future<void> _restoreDraft() async {
+    final owner = _draftOwnerKey ??= _buildDraftOwnerKey();
+    final draft = await SellListingDraftPrefs.load(owner);
+    if (!mounted) return;
+    if (draft == null) {
+      setState(() {
+        _draftLoaded = true;
+        _draftExists = false;
+        _draftIsComplete = false;
+      });
+      return;
+    }
+
+    _restoringDraft = true;
+    try {
+      final imagePaths = (draft['image_paths'] is List)
+          ? (draft['image_paths'] as List)
+              .map((e) => e.toString())
+              .where((path) => path.trim().isNotEmpty && File(path).existsSync())
+              .toList()
+          : <String>[];
+      final videoPaths = (draft['video_paths'] is List)
+          ? (draft['video_paths'] as List)
+              .map((e) => e.toString())
+              .where((path) => path.trim().isNotEmpty && File(path).existsSync())
+              .toList()
+          : <String>[];
+
+      setState(() {
+        _selectedBrand = (draft['brand'] ?? '').toString().trim().isEmpty
+            ? null
+            : draft['brand'].toString().trim();
+        _selectedModel = (draft['model'] ?? '').toString().trim().isEmpty
+            ? null
+            : draft['model'].toString().trim();
+        _selectedTrim = (draft['trim'] ?? '').toString().trim().isEmpty
+            ? null
+            : draft['trim'].toString().trim();
+        _year.text = (draft['year'] ?? '').toString();
+        _mileage.text = (draft['mileage'] ?? '').toString();
+        _price.text = (draft['price'] ?? '').toString();
+        _currency = (draft['currency'] ?? 'USD').toString();
+        _location.text = (draft['location'] ?? '').toString();
+        _description.text = (draft['description'] ?? '').toString();
+        _engineType = (draft['engine_type'] ?? 'gasoline').toString();
+        _fuelType = (draft['fuel_type'] ?? 'gasoline').toString();
+        _transmission = (draft['transmission'] ?? 'automatic').toString();
+        _driveType = (draft['drive_type'] ?? 'fwd').toString();
+        _condition = (draft['condition'] ?? 'used').toString();
+        _bodyType = (draft['body_type'] ?? 'sedan').toString();
+        _engineSizeCtl.text = (draft['engine_size'] ?? '').toString();
+        _cylinderCtl.text = (draft['cylinder_count'] ?? '').toString();
+        _fuelEconomyCtl.text = (draft['fuel_economy'] ?? '').toString();
+        _seatingCtl.text = (draft['seating'] ?? '').toString();
+        _catalogYear = int.tryParse((draft['catalog_year'] ?? '').toString());
+        _datasetModelId = int.tryParse((draft['dataset_model_id'] ?? '').toString());
+        _images
+          ..clear()
+          ..addAll(imagePaths.map((path) => XFile(path)));
+        _videos
+          ..clear()
+          ..addAll(videoPaths.map((path) => XFile(path)));
+        _draftExists = true;
+        _draftIsComplete = draft['complete'] == true || _isListingComplete();
+        _draftLoaded = true;
+      });
+      _scheduleRefreshDataset();
+    } finally {
+      _restoringDraft = false;
+    }
+  }
+
+  Future<void> _discardDraft() async {
+    final owner = _draftOwnerKey ??= _buildDraftOwnerKey();
+    _draftSaveTimer?.cancel();
+    _restoringDraft = true;
+    try {
+      await SellListingDraftPrefs.clear(owner);
+      if (!mounted) return;
+      setState(() {
+        _selectedBrand = null;
+        _selectedModel = null;
+        _selectedTrim = null;
+        _datasetModelId = null;
+        _catalogYear = null;
+        _year.clear();
+        _mileage.clear();
+        _price.clear();
+        _location.clear();
+        _description.clear();
+        _engineSizeCtl.clear();
+        _cylinderCtl.clear();
+        _fuelEconomyCtl.clear();
+        _seatingCtl.clear();
+        _engineType = 'gasoline';
+        _fuelType = 'gasoline';
+        _transmission = 'automatic';
+        _driveType = 'fwd';
+        _condition = 'used';
+        _bodyType = 'sedan';
+        _currency = 'USD';
+        _images.clear();
+        _videos.clear();
+        _clearOnlineSpecOptionLists();
+        _draftExists = false;
+        _draftIsComplete = false;
+        _draftLoaded = true;
+      });
+    } finally {
+      _restoringDraft = false;
+      _scheduleRefreshDataset();
+    }
   }
 
   void _refreshDatasetPicker() {
@@ -327,6 +596,7 @@ class _SellPageState extends State<SellPage> {
     ScaffoldMessenger.of(context).showSnackBar(
       const SnackBar(content: Text('Applied specs from catalog')),
     );
+    _scheduleDraftSave();
   }
 
   void _scheduleRefreshDataset() {
@@ -337,6 +607,7 @@ class _SellPageState extends State<SellPage> {
 
   void _onListingYearChanged() {
     _scheduleRefreshDataset();
+    _scheduleDraftSave();
   }
 
   Future<void> _pickImages() async {
@@ -352,6 +623,7 @@ class _SellPageState extends State<SellPage> {
       setState(() {
         _images.addAll(picked);
       });
+      _scheduleDraftSave();
     } catch (e) {
       if (!mounted) return;
       setState(() => _error = e.toString());
@@ -369,6 +641,7 @@ class _SellPageState extends State<SellPage> {
       setState(() {
         _videos.add(picked);
       });
+      _scheduleDraftSave();
     } catch (e) {
       if (!mounted) return;
       setState(() => _error = e.toString());
@@ -493,6 +766,7 @@ class _SellPageState extends State<SellPage> {
       }
 
       if (!mounted) return;
+      await SellListingDraftPrefs.clear(_draftOwnerKey ?? _buildDraftOwnerKey());
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(content: Text(loc?.listingCreated ?? 'Listing created')),
       );
@@ -755,6 +1029,7 @@ class _SellPageState extends State<SellPage> {
                   if (y == null) return;
                   setState(() => _catalogYear = y);
                   _scheduleRefreshDataset();
+                  _scheduleDraftSave();
                 },
               ),
             ],
@@ -994,16 +1269,19 @@ class _SellPageState extends State<SellPage> {
             : null,
       ),
       items: items,
-      onChanged: (v) => setState(() {
-        final nv = v ?? _engineType;
-        _engineType = nv;
-        _fuelType = nv;
-        _syncCorrelatedFromOnlineVariants(
-          {'engt', 'fuel'},
-          engineType: nv,
-          fuelType: nv,
-        );
-      }),
+      onChanged: (v) {
+        setState(() {
+          final nv = v ?? _engineType;
+          _engineType = nv;
+          _fuelType = nv;
+          _syncCorrelatedFromOnlineVariants(
+            {'engt', 'fuel'},
+            engineType: nv,
+            fuelType: nv,
+          );
+        });
+        _scheduleDraftSave();
+      },
     );
   }
 
@@ -1041,13 +1319,16 @@ class _SellPageState extends State<SellPage> {
             : null,
       ),
       items: items,
-      onChanged: (v) => setState(() {
-        _transmission = v ?? _transmission;
-        _syncCorrelatedFromOnlineVariants(
-          {'tr'},
-          transmission: _transmission,
-        );
-      }),
+      onChanged: (v) {
+        setState(() {
+          _transmission = v ?? _transmission;
+          _syncCorrelatedFromOnlineVariants(
+            {'tr'},
+            transmission: _transmission,
+          );
+        });
+        _scheduleDraftSave();
+      },
     );
   }
 
@@ -1084,13 +1365,16 @@ class _SellPageState extends State<SellPage> {
             : null,
       ),
       items: items,
-      onChanged: (v) => setState(() {
-        _driveType = v ?? _driveType;
-        _syncCorrelatedFromOnlineVariants(
-          {'drv'},
-          drivetrain: _driveType,
-        );
-      }),
+      onChanged: (v) {
+        setState(() {
+          _driveType = v ?? _driveType;
+          _syncCorrelatedFromOnlineVariants(
+            {'drv'},
+            drivetrain: _driveType,
+          );
+        });
+        _scheduleDraftSave();
+      },
     );
   }
 
@@ -1129,13 +1413,16 @@ class _SellPageState extends State<SellPage> {
             : null,
       ),
       items: items,
-      onChanged: (v) => setState(() {
-        _bodyType = v ?? _bodyType;
-        _syncCorrelatedFromOnlineVariants(
-          {'body'},
-          bodyType: _bodyType,
-        );
-      }),
+      onChanged: (v) {
+        setState(() {
+          _bodyType = v ?? _bodyType;
+          _syncCorrelatedFromOnlineVariants(
+            {'body'},
+            bodyType: _bodyType,
+          );
+        });
+        _scheduleDraftSave();
+      },
     );
   }
 
@@ -1169,6 +1456,7 @@ class _SellPageState extends State<SellPage> {
               engineLiters: lit,
             );
           });
+          _scheduleDraftSave();
         },
       );
     }
@@ -1211,6 +1499,7 @@ class _SellPageState extends State<SellPage> {
               cylinders: x,
             );
           });
+          _scheduleDraftSave();
         },
       );
     }
@@ -1258,6 +1547,7 @@ class _SellPageState extends State<SellPage> {
               fuelEconomy: x,
             );
           });
+          _scheduleDraftSave();
         },
       );
     }
@@ -1299,6 +1589,7 @@ class _SellPageState extends State<SellPage> {
               seating: x,
             );
           });
+          _scheduleDraftSave();
         },
       );
     }
@@ -1370,6 +1661,65 @@ class _SellPageState extends State<SellPage> {
                 ),
                 const SizedBox(height: 12),
               ],
+              if (_draftLoaded && _draftExists) ...[
+                Card(
+                  color: Theme.of(context)
+                      .colorScheme
+                      .primary
+                      .withValues(alpha: 0.08),
+                  child: Padding(
+                    padding: const EdgeInsets.all(12),
+                    child: Row(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Icon(
+                          _draftIsComplete
+                              ? Icons.bookmark_added_outlined
+                              : Icons.drafts_outlined,
+                          color: Theme.of(context).colorScheme.primary,
+                        ),
+                        const SizedBox(width: 10),
+                        Expanded(
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Text(
+                                _draftIsComplete
+                                    ? 'Draft saved on this device'
+                                    : 'Incomplete listing saved as draft',
+                                style: Theme.of(context)
+                                    .textTheme
+                                    .titleSmall
+                                    ?.copyWith(fontWeight: FontWeight.w700),
+                              ),
+                              const SizedBox(height: 4),
+                              Text(
+                                _draftIsComplete
+                                    ? 'You can finish and publish it anytime.'
+                                    : 'Complete the remaining required fields and publish when ready.',
+                                style: Theme.of(context).textTheme.bodySmall,
+                              ),
+                              const SizedBox(height: 8),
+                              Wrap(
+                                spacing: 8,
+                                runSpacing: 8,
+                                children: [
+                                  TextButton.icon(
+                                    onPressed: _discardDraft,
+                                    icon: const Icon(Icons.delete_outline),
+                                    label: const Text('Discard draft'),
+                                  ),
+                                ],
+                              ),
+                            ],
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
+                const SizedBox(height: 12),
+              ],
               DropdownButtonFormField<String>(
                 value: _selectedBrand,
                 decoration: InputDecoration(labelText: loc?.brandLabel ?? 'Brand'),
@@ -1387,6 +1737,7 @@ class _SellPageState extends State<SellPage> {
                     _clearCatalogExtraFields();
                   });
                   _scheduleRefreshDataset();
+                  _scheduleDraftSave();
                 },
                 validator: (v) =>
                     (v ?? '').trim().isEmpty ? (loc?.requiredField ?? 'Required') : null,
@@ -1410,6 +1761,7 @@ class _SellPageState extends State<SellPage> {
                           _clearCatalogExtraFields();
                         });
                         _scheduleRefreshDataset();
+                        _scheduleDraftSave();
                       },
                 validator: (v) =>
                     (v ?? '').trim().isEmpty ? (loc?.requiredField ?? 'Required') : null,
@@ -1431,6 +1783,7 @@ class _SellPageState extends State<SellPage> {
                           _catalogYear = null;
                         });
                         _scheduleRefreshDataset();
+                        _scheduleDraftSave();
                       },
                 validator: (v) =>
                     (v ?? '').trim().isEmpty ? (loc?.requiredField ?? 'Required') : null,
@@ -1505,6 +1858,7 @@ class _SellPageState extends State<SellPage> {
                       onChanged: (v) {
                         if (v == null) return;
                         setState(() => _currency = v);
+                        _scheduleDraftSave();
                       },
                     ),
                   ),
@@ -1534,7 +1888,10 @@ class _SellPageState extends State<SellPage> {
                   DropdownMenuItem(value: 'new', child: Text('New')),
                   DropdownMenuItem(value: 'used', child: Text('Used')),
                 ],
-                onChanged: (v) => setState(() => _condition = v ?? _condition),
+                onChanged: (v) {
+                  setState(() => _condition = v ?? _condition);
+                  _scheduleDraftSave();
+                },
               ),
               const SizedBox(height: 10),
               _bodyTypeField(loc),
