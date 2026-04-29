@@ -379,6 +379,22 @@ class _CarDetailPageState extends State<CarDetailPage> {
     return '$y-$m-$d';
   }
 
+  void _showDescriptionDialog(String description) {
+    showDialog<void>(
+      context: context,
+      builder: (dialogContext) => AlertDialog(
+        title: Text(AppLocalizations.of(context)?.descriptionTitle ?? 'Description'),
+        content: SingleChildScrollView(child: Text(description)),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(dialogContext),
+            child: const Text('Close'),
+          ),
+        ],
+      ),
+    );
+  }
+
   Widget _buildSellerInfoSection(Map<dynamic, dynamic>? seller) {
     if (seller == null) return const SizedBox.shrink();
 
@@ -1095,7 +1111,71 @@ class _CarDetailPageState extends State<CarDetailPage> {
             ).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.w700),
           ),
           const SizedBox(height: 8),
-          Text((car['description'] ?? '').toString()),
+          Material(
+            color: Colors.transparent,
+            child: InkWell(
+              borderRadius: BorderRadius.circular(14),
+              onTap: () => _showDescriptionDialog(
+                (car['description'] ?? '').toString(),
+              ),
+              child: Container(
+                width: double.infinity,
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 14,
+                  vertical: 14,
+                ),
+                decoration: BoxDecoration(
+                  color: Theme.of(context).colorScheme.surfaceContainerHighest
+                      .withOpacity(0.55),
+                  borderRadius: BorderRadius.circular(14),
+                  border: Border.all(
+                    color: const Color(0xFFFF6B00).withOpacity(0.28),
+                  ),
+                  boxShadow: [
+                    BoxShadow(
+                      color: Colors.black.withOpacity(
+                        isLightShell ? 0.04 : 0.16,
+                      ),
+                      blurRadius: 12,
+                      offset: const Offset(0, 4),
+                    ),
+                  ],
+                ),
+                child: Row(
+                  children: [
+                    Container(
+                      padding: const EdgeInsets.all(8),
+                      decoration: BoxDecoration(
+                        color: const Color(0xFFFF6B00),
+                        borderRadius: BorderRadius.circular(10),
+                      ),
+                      child: const Icon(
+                        Icons.description_outlined,
+                        size: 18,
+                        color: Colors.black,
+                      ),
+                    ),
+                    const SizedBox(width: 12),
+                    Expanded(
+                      child: Text(
+                        'View description',
+                        style: Theme.of(context).textTheme.titleSmall?.copyWith(
+                              fontWeight: FontWeight.w700,
+                              color: isLightShell
+                                  ? AppThemes.darkHomeShellBackground
+                                  : Colors.white,
+                            ),
+                      ),
+                    ),
+                    const Icon(
+                      Icons.chevron_right,
+                      color: Color(0xFFFF6B00),
+                    ),
+                  ],
+                ),
+              ),
+            ),
+          ),
           const SizedBox(height: 16),
         ],
         if (_loadingSimilar || _similar.isNotEmpty) ...[

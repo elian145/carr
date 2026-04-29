@@ -13211,10 +13211,7 @@ class _CarDetailsPageState extends State<CarDetailsPage> {
                       fit: StackFit.expand,
                       children: [
                         ClipRRect(
-                          borderRadius: BorderRadius.only(
-                            bottomLeft: Radius.circular(24),
-                            bottomRight: Radius.circular(24),
-                          ),
+                          borderRadius: BorderRadius.zero,
                           child: GestureDetector(
                             onTap: () {
                               if (_heroMediaCount == 0) return;
@@ -14514,32 +14511,50 @@ Widget buildCarListingSpecsGrid(
     required IconData icon,
     required String label,
     required String? value,
+    Widget? valueWidget,
+    VoidCallback? onTap,
   }) {
-    if (value == null || value.isEmpty) return SizedBox.shrink();
+    if (valueWidget == null && (value == null || value.isEmpty)) {
+      return SizedBox.shrink();
+    }
     final isLight = Theme.of(context).brightness == Brightness.light;
-    return Container(
+    final content = Container(
       margin: EdgeInsets.only(bottom: 8),
       padding: EdgeInsets.symmetric(horizontal: 12, vertical: 10),
       decoration: BoxDecoration(
-        color: isLight
-            ? const Color(0xFFF3F3F3)
-            : Colors.white.withOpacity(0.06),
+        color: onTap != null
+            ? (isLight ? const Color(0xFFFFF2E8) : Colors.white.withOpacity(0.09))
+            : (isLight ? const Color(0xFFF3F3F3) : Colors.white.withOpacity(0.06)),
         borderRadius: BorderRadius.circular(12),
         border: Border.all(
-          color: isLight ? const Color(0xFFE0E0E0) : Colors.white12,
+          color: onTap != null
+              ? const Color(0xFFFF6B00).withOpacity(isLight ? 0.34 : 0.42)
+              : (isLight ? const Color(0xFFE0E0E0) : Colors.white12),
+          width: onTap != null ? 1.2 : 1,
         ),
+        boxShadow: onTap != null
+            ? [
+                BoxShadow(
+                  color: Colors.black.withOpacity(isLight ? 0.04 : 0.18),
+                  blurRadius: 10,
+                  offset: const Offset(0, 4),
+                ),
+              ]
+            : const [],
       ),
       child: Row(
         children: [
           Container(
-            padding: EdgeInsets.all(8),
+            padding: const EdgeInsets.all(8),
             decoration: BoxDecoration(
-              color: Color(0xFFFF6B00),
+              color: onTap != null
+                  ? const Color(0xFFFF6B00)
+                  : const Color(0xFFFF6B00),
               borderRadius: BorderRadius.circular(10),
             ),
             child: Icon(icon, size: 18, color: Colors.black),
           ),
-          SizedBox(width: 12),
+          const SizedBox(width: 12),
           Expanded(
             child: Text(
               label,
@@ -14550,21 +14565,56 @@ Widget buildCarListingSpecsGrid(
               ),
             ),
           ),
-          Container(
-            padding: EdgeInsets.symmetric(horizontal: 10, vertical: 6),
-            decoration: BoxDecoration(
-              color: Color(0xFFFF6B00),
-              borderRadius: BorderRadius.circular(999),
-            ),
-            child: Text(
-              value,
-              style: TextStyle(
-                color: Colors.black,
-                fontWeight: FontWeight.w800,
+          if (valueWidget != null)
+            valueWidget
+          else if (onTap != null)
+            Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Container(
+                  padding:
+                      const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+                  decoration: BoxDecoration(
+                    color: const Color(0xFFFF6B00),
+                    borderRadius: BorderRadius.circular(999),
+                  ),
+                  child: Text(
+                    value!,
+                    style: const TextStyle(
+                      color: Colors.black,
+                      fontWeight: FontWeight.w800,
+                    ),
+                  ),
+                ),
+                const SizedBox(width: 8),
+                const Icon(Icons.chevron_right, color: Color(0xFFFF6B00)),
+              ],
+            )
+          else
+            Container(
+              padding: EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+              decoration: BoxDecoration(
+                color: Color(0xFFFF6B00),
+                borderRadius: BorderRadius.circular(999),
+              ),
+              child: Text(
+                value!,
+                style: TextStyle(
+                  color: Colors.black,
+                  fontWeight: FontWeight.w800,
+                ),
               ),
             ),
-          ),
         ],
+      ),
+    );
+    if (onTap == null) return content;
+    return Material(
+      color: Colors.transparent,
+      child: InkWell(
+        borderRadius: BorderRadius.circular(12),
+        onTap: onTap,
+        child: content,
       ),
     );
   }
@@ -14854,6 +14904,31 @@ Widget buildCarListingSpecsGrid(
       }()),
     ),
   ];
+  final description = pickNE(car, ['description'])?.trim() ?? '';
+  if (description.isNotEmpty) {
+    details.add(
+      detailRowSpec(
+        icon: Icons.description_outlined,
+        label: 'Description',
+        value: 'View description',
+        onTap: () {
+          showDialog<void>(
+            context: context,
+            builder: (dialogContext) => AlertDialog(
+              title: const Text('Description'),
+              content: SingleChildScrollView(child: Text(description)),
+              actions: [
+                TextButton(
+                  onPressed: () => Navigator.pop(dialogContext),
+                  child: const Text('Close'),
+                ),
+              ],
+            ),
+          );
+        },
+      ),
+    );
+  }
 
   final isLightSpecs = Theme.of(context).brightness == Brightness.light;
   // Width-based row height: tighter than childAspectRatio 1.5 so the outer
@@ -18661,6 +18736,8 @@ class _SellStep3PageState extends State<SellStep3Page> {
 
   // Controller for price input
   late TextEditingController _priceController;
+  final TextEditingController _descriptionController =
+      TextEditingController();
 
   // Currency conversion method
   String _convertCurrency(
@@ -18701,6 +18778,7 @@ class _SellStep3PageState extends State<SellStep3Page> {
   void initState() {
     super.initState();
     _priceController = TextEditingController();
+    _descriptionController.text = '';
     _resetStep3();
   }
 
@@ -18708,6 +18786,7 @@ class _SellStep3PageState extends State<SellStep3Page> {
   void dispose() {
     _priceFocusNode.dispose();
     _priceController.dispose();
+    _descriptionController.dispose();
     super.dispose();
   }
 
@@ -18717,6 +18796,7 @@ class _SellStep3PageState extends State<SellStep3Page> {
     selectedPlateType = null;
     selectedPlateCity = null;
     contactPhone = null;
+    _descriptionController.clear();
     isQuickSell = false;
     selectedCurrency = 'USD';
     _priceController.clear();
@@ -19253,6 +19333,33 @@ class _SellStep3PageState extends State<SellStep3Page> {
             ),
             SizedBox(height: 24),
 
+            // Listing Description (Optional)
+            TextFormField(
+              onTap: () => _dismissKeyboard(),
+              controller: _descriptionController,
+              minLines: 3,
+              maxLines: 6,
+              decoration: InputDecoration(
+                labelText: 'Description (optional)',
+                hintText:
+                    'Add details about the car, condition, features, or notes',
+                filled: true,
+                fillColor: _sellFlowManualFieldFill(context),
+                labelStyle: _sellFlowManualFieldLabelStyle(context),
+                hintStyle: _sellFlowManualFieldHintStyle(context),
+                prefixIcon: const Icon(
+                  Icons.description_outlined,
+                  color: Color(0xFFFF6B00),
+                ),
+                border: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(12),
+                ),
+                alignLabelWithHint: true,
+              ),
+              style: _sellFlowManualFieldTextStyle(context),
+            ),
+            SizedBox(height: 24),
+
             // Quick Sell Option
             Container(
               padding: EdgeInsets.all(16),
@@ -19366,6 +19473,8 @@ class _SellStep3PageState extends State<SellStep3Page> {
                           parentState.carData['plate_type'] = selectedPlateType;
                           parentState.carData['plate_city'] = selectedPlateCity;
                           parentState.carData['contact_phone'] = contactPhone;
+                          parentState.carData['description'] =
+                              _descriptionController.text.trim();
                           parentState.carData['is_quick_sell'] = isQuickSell;
                           parentState._goToNextStep();
                         }
@@ -20790,10 +20899,7 @@ class _SellReviewCarDetailScrollViewState
           child: SizedBox(
             height: 300,
             child: ClipRRect(
-              borderRadius: const BorderRadius.only(
-                bottomLeft: Radius.circular(24),
-                bottomRight: Radius.circular(24),
-              ),
+              borderRadius: BorderRadius.zero,
               child: Stack(
                 fit: StackFit.expand,
                 children: [
@@ -21465,6 +21571,7 @@ class _SellStep5PageState extends State<SellStep5Page> {
       'plate_city': plateCity.isNotEmpty ? plateCity : null,
       'plateCity': plateCity.isNotEmpty ? plateCity : null,
       'contact_phone': (carData['contact_phone']?.toString() ?? '').trim(),
+      'description': (carData['description']?.toString() ?? '').trim(),
       'is_quick_sell': carData['is_quick_sell'] ?? false,
     }..removeWhere((k, v) => v == null || (v is String && v.trim().isEmpty));
 
