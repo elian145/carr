@@ -6897,7 +6897,6 @@ class _HomePageState extends State<HomePage> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      extendBody: true,
       appBar: AppBar(
         title: Text(
           AppLocalizations.of(context)!.appTitle,
@@ -6935,6 +6934,7 @@ class _HomePageState extends State<HomePage> {
         ],
       ),
       // Pull-to-refresh is already provided inside the main content via internal scrollables
+      extendBody: true,
       bottomNavigationBar: buildFloatingBottomNav(
         context,
         currentIndex: 0,
@@ -24352,7 +24352,7 @@ class _FavoritesPageState extends State<FavoritesPage> {
                   final listingColumns = (cols == 1) ? 1 : 2;
                   return GridView.builder(
                     physics: const AlwaysScrollableScrollPhysics(),
-                    padding: const EdgeInsets.all(8),
+                    padding: const EdgeInsets.fromLTRB(8, 8, 8, 110),
                     gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
                       crossAxisCount: listingColumns,
                       crossAxisSpacing: 8,
@@ -24501,8 +24501,8 @@ class _LoginPageState extends State<LoginPage> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(title: Text(AppLocalizations.of(context)!.loginTitle)),
-      body: Padding(
-        padding: const EdgeInsets.all(16.0),
+      body: SingleChildScrollView(
+        padding: const EdgeInsets.fromLTRB(16, 16, 16, 110),
         child: Form(
           key: _formKey,
           child: Column(
@@ -25007,6 +25007,7 @@ class _SignupPageState extends State<SignupPage> {
         child: Form(
           key: _formKey,
           child: ListView(
+            padding: const EdgeInsets.only(bottom: 110),
             children: [
               // Authentication Type Selection
               Text(
@@ -25559,7 +25560,7 @@ class _ProfilePageState extends State<ProfilePage> {
       children: [
         Container(decoration: _shellDecoration(context)),
         SingleChildScrollView(
-          padding: EdgeInsets.fromLTRB(20, 20, 20, 20),
+          padding: const EdgeInsets.fromLTRB(20, 20, 20, 110),
           child: Column(
             children: [
               if (!isLoggedIn) ...[
@@ -26632,7 +26633,7 @@ class _SettingsPageState extends State<SettingsPage> {
     }
 
     final bodyChild = ListView(
-      padding: const EdgeInsets.fromLTRB(16, 16, 16, 20),
+      padding: const EdgeInsets.fromLTRB(16, 16, 16, 110),
       children: [
         settingsCard(
           [
@@ -26727,12 +26728,18 @@ class _SettingsPageState extends State<SettingsPage> {
         elevation: 0,
       ),
       body: isLightShell
-          ? bodyChild
+          ? Padding(
+              padding: const EdgeInsets.only(bottom: 110),
+              child: bodyChild,
+            )
           : Container(
               decoration: AppThemes.shellBackgroundDecoration(
                 Theme.of(context).brightness,
               ),
-              child: bodyChild,
+              child: Padding(
+                padding: const EdgeInsets.only(bottom: 110),
+                child: bodyChild,
+              ),
             ),
     );
   }
@@ -27092,12 +27099,18 @@ class _MyListingsPageState extends State<MyListingsPage> {
         ],
       ),
       body: isLightShell
-          ? bodyChild
+          ? Padding(
+              padding: const EdgeInsets.only(bottom: 110),
+              child: bodyChild,
+            )
           : Container(
               decoration: AppThemes.shellBackgroundDecoration(
                 Theme.of(context).brightness,
               ),
-              child: bodyChild,
+              child: Padding(
+                padding: const EdgeInsets.only(bottom: 110),
+                child: bodyChild,
+              ),
             ),
       extendBody: true,
       bottomNavigationBar: buildFloatingBottomNav(
@@ -27371,3 +27384,4 @@ class _MyListingsPageState extends State<MyListingsPage> {
   }
 
 }
+
