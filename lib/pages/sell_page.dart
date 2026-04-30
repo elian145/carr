@@ -65,6 +65,7 @@ class _SellPageState extends State<SellPage> {
   bool _draftLoaded = false;
   bool _draftExists = false;
   bool _draftIsComplete = false;
+  Map<String, dynamic>? _draftPreviewData;
   String? _draftOwnerKey;
 
   /// When the bundled catalog provides 2+ distinct values, the matching field becomes a dropdown
@@ -96,7 +97,7 @@ class _SellPageState extends State<SellPage> {
     _cylinderCtl.addListener(_onDraftFieldChanged);
     _fuelEconomyCtl.addListener(_onDraftFieldChanged);
     _seatingCtl.addListener(_onDraftFieldChanged);
-    unawaited(_restoreDraft());
+    unawaited(_loadDraftPreview());
     CarSpecIndex.loadWithResult().then((r) {
       if (!mounted) return;
       setState(() {
@@ -168,6 +169,64 @@ class _SellPageState extends State<SellPage> {
 
   void _onDraftFieldChanged() {
     _scheduleDraftSave();
+  }
+
+  String _draftTitle(Map<String, dynamic> data) {
+    final brand = (data['brand'] ?? '').toString().trim();
+    final model = (data['model'] ?? '').toString().trim();
+    final trim = (data['trim'] ?? '').toString().trim();
+    final year = (data['year'] ?? '').toString().trim();
+    final title = [brand, model].where((v) => v.isNotEmpty).join(' ');
+    final suffix = [trim, year].where((v) => v.isNotEmpty).join(' • ');
+    if (title.isEmpty && suffix.isEmpty) return 'Untitled draft';
+    if (title.isEmpty) return suffix;
+    if (suffix.isEmpty) return title;
+    return '$title • $suffix';
+  }
+
+  bool _hasMeaningfulDraftData(Map<String, dynamic> data) {
+    return (data['brand'] ?? '').toString().trim().isNotEmpty ||
+        (data['model'] ?? '').toString().trim().isNotEmpty ||
+        (data['trim'] ?? '').toString().trim().isNotEmpty ||
+        (data['year'] ?? '').toString().trim().isNotEmpty ||
+        (data['mileage'] ?? '').toString().trim().isNotEmpty ||
+        (data['price'] ?? '').toString().trim().isNotEmpty ||
+        (data['location'] ?? '').toString().trim().isNotEmpty ||
+        (data['description'] ?? '').toString().trim().isNotEmpty ||
+        (data['engine_size'] ?? '').toString().trim().isNotEmpty ||
+        (data['cylinder_count'] ?? '').toString().trim().isNotEmpty ||
+        (data['fuel_economy'] ?? '').toString().trim().isNotEmpty ||
+        (data['seating'] ?? '').toString().trim().isNotEmpty ||
+        (data['image_paths'] is List && (data['image_paths'] as List).isNotEmpty) ||
+        (data['video_paths'] is List && (data['video_paths'] as List).isNotEmpty) ||
+        (data['engine_type'] ?? 'gasoline') != 'gasoline' ||
+        (data['fuel_type'] ?? 'gasoline') != 'gasoline' ||
+        (data['transmission'] ?? 'automatic') != 'automatic' ||
+        (data['drive_type'] ?? 'fwd') != 'fwd' ||
+        (data['condition'] ?? 'used') != 'used' ||
+        (data['body_type'] ?? 'sedan') != 'sedan' ||
+        (data['currency'] ?? 'USD') != 'USD';
+  }
+
+  Future<void> _loadDraftPreview() async {
+    final owner = _draftOwnerKey ??= _buildDraftOwnerKey();
+    final draft = await SellListingDraftPrefs.load(owner);
+    if (!mounted) return;
+    if (draft == null || !_hasMeaningfulDraftData(draft)) {
+      setState(() {
+        _draftLoaded = true;
+        _draftExists = false;
+        _draftIsComplete = false;
+        _draftPreviewData = null;
+      });
+      return;
+    }
+    setState(() {
+      _draftLoaded = true;
+      _draftExists = true;
+      _draftIsComplete = draft['complete'] == true;
+      _draftPreviewData = draft;
+    });
   }
 
   bool _hasMeaningfulDraftContent() {
@@ -277,6 +336,7 @@ class _SellPageState extends State<SellPage> {
       _draftExists = true;
       _draftIsComplete = draft['complete'] == true;
       _draftLoaded = true;
+      _draftPreviewData = draft;
     });
   }
 
@@ -308,32 +368,92 @@ class _SellPageState extends State<SellPage> {
               .toList()
           : <String>[];
 
+      final loadedDraft = <String, dynamic>{
+        'brand': (draft['brand'] ?? '').toString().trim(),
+        'model': (draft['model'] ?? '').toString().trim(),
+        'trim': (draft['trim'] ?? '').toString().trim(),
+        'year': (draft['year'] ?? '').toString().trim(),
+        'mileage': (draft['mileage'] ?? '').toString().trim(),
+        'price': (draft['price'] ?? '').toString().trim(),
+        'currency': (draft['currency'] ?? 'USD').toString(),
+        'location': (draft['location'] ?? '').toString().trim(),
+        'description': (draft['description'] ?? '').toString().trim(),
+        'engine_type': (draft['engine_type'] ?? 'gasoline').toString(),
+        'fuel_type': (draft['fuel_type'] ?? 'gasoline').toString(),
+        'transmission': (draft['transmission'] ?? 'automatic').toString(),
+        'drive_type': (draft['drive_type'] ?? 'fwd').toString(),
+        'condition': (draft['condition'] ?? 'used').toString(),
+        'body_type': (draft['body_type'] ?? 'sedan').toString(),
+        'engine_size': (draft['engine_size'] ?? '').toString().trim(),
+        'cylinder_count': (draft['cylinder_count'] ?? '').toString().trim(),
+        'fuel_economy': (draft['fuel_economy'] ?? '').toString().trim(),
+        'seating': (draft['seating'] ?? '').toString().trim(),
+        'image_paths': imagePaths,
+        'video_paths': videoPaths,
+      };
+      final hasMeaningfulContent = loadedDraft.entries.any((entry) {
+        final value = entry.value;
+        if (value is String) return value.trim().isNotEmpty;
+        if (value is List) return value.isNotEmpty;
+        return value != null;
+      }) && (loadedDraft['brand'].toString().isNotEmpty ||
+          loadedDraft['model'].toString().isNotEmpty ||
+          loadedDraft['trim'].toString().isNotEmpty ||
+          loadedDraft['year'].toString().isNotEmpty ||
+          loadedDraft['mileage'].toString().isNotEmpty ||
+          loadedDraft['price'].toString().isNotEmpty ||
+          loadedDraft['location'].toString().isNotEmpty ||
+          loadedDraft['description'].toString().isNotEmpty ||
+          loadedDraft['engine_size'].toString().isNotEmpty ||
+          loadedDraft['cylinder_count'].toString().isNotEmpty ||
+          loadedDraft['fuel_economy'].toString().isNotEmpty ||
+          loadedDraft['seating'].toString().isNotEmpty ||
+          imagePaths.isNotEmpty ||
+          videoPaths.isNotEmpty ||
+          loadedDraft['engine_type'] != 'gasoline' ||
+          loadedDraft['fuel_type'] != 'gasoline' ||
+          loadedDraft['transmission'] != 'automatic' ||
+          loadedDraft['drive_type'] != 'fwd' ||
+          loadedDraft['condition'] != 'used' ||
+          loadedDraft['body_type'] != 'sedan' ||
+          loadedDraft['currency'] != 'USD');
+      if (!hasMeaningfulContent) {
+        await SellListingDraftPrefs.clear(owner);
+        if (!mounted) return;
+        setState(() {
+          _draftLoaded = true;
+          _draftExists = false;
+          _draftIsComplete = false;
+        });
+        return;
+      }
+
       setState(() {
-        _selectedBrand = (draft['brand'] ?? '').toString().trim().isEmpty
+        _selectedBrand = loadedDraft['brand'].toString().isEmpty
             ? null
-            : draft['brand'].toString().trim();
-        _selectedModel = (draft['model'] ?? '').toString().trim().isEmpty
+            : loadedDraft['brand'].toString().trim();
+        _selectedModel = loadedDraft['model'].toString().isEmpty
             ? null
-            : draft['model'].toString().trim();
-        _selectedTrim = (draft['trim'] ?? '').toString().trim().isEmpty
+            : loadedDraft['model'].toString().trim();
+        _selectedTrim = loadedDraft['trim'].toString().isEmpty
             ? null
-            : draft['trim'].toString().trim();
-        _year.text = (draft['year'] ?? '').toString();
-        _mileage.text = (draft['mileage'] ?? '').toString();
-        _price.text = (draft['price'] ?? '').toString();
-        _currency = (draft['currency'] ?? 'USD').toString();
-        _location.text = (draft['location'] ?? '').toString();
-        _description.text = (draft['description'] ?? '').toString();
-        _engineType = (draft['engine_type'] ?? 'gasoline').toString();
-        _fuelType = (draft['fuel_type'] ?? 'gasoline').toString();
-        _transmission = (draft['transmission'] ?? 'automatic').toString();
-        _driveType = (draft['drive_type'] ?? 'fwd').toString();
-        _condition = (draft['condition'] ?? 'used').toString();
-        _bodyType = (draft['body_type'] ?? 'sedan').toString();
-        _engineSizeCtl.text = (draft['engine_size'] ?? '').toString();
-        _cylinderCtl.text = (draft['cylinder_count'] ?? '').toString();
-        _fuelEconomyCtl.text = (draft['fuel_economy'] ?? '').toString();
-        _seatingCtl.text = (draft['seating'] ?? '').toString();
+            : loadedDraft['trim'].toString().trim();
+        _year.text = loadedDraft['year'];
+        _mileage.text = loadedDraft['mileage'];
+        _price.text = loadedDraft['price'];
+        _currency = loadedDraft['currency'];
+        _location.text = loadedDraft['location'];
+        _description.text = loadedDraft['description'];
+        _engineType = loadedDraft['engine_type'];
+        _fuelType = loadedDraft['fuel_type'];
+        _transmission = loadedDraft['transmission'];
+        _driveType = loadedDraft['drive_type'];
+        _condition = loadedDraft['condition'];
+        _bodyType = loadedDraft['body_type'];
+        _engineSizeCtl.text = loadedDraft['engine_size'];
+        _cylinderCtl.text = loadedDraft['cylinder_count'];
+        _fuelEconomyCtl.text = loadedDraft['fuel_economy'];
+        _seatingCtl.text = loadedDraft['seating'];
         _catalogYear = int.tryParse((draft['catalog_year'] ?? '').toString());
         _datasetModelId = int.tryParse((draft['dataset_model_id'] ?? '').toString());
         _images
@@ -345,11 +465,16 @@ class _SellPageState extends State<SellPage> {
         _draftExists = true;
         _draftIsComplete = draft['complete'] == true || _isListingComplete();
         _draftLoaded = true;
+        _draftPreviewData = draft;
       });
       _scheduleRefreshDataset();
     } finally {
       _restoringDraft = false;
     }
+  }
+
+  Future<void> _resumeDraft() async {
+    await _restoreDraft();
   }
 
   Future<void> _discardDraft() async {
@@ -1684,9 +1809,7 @@ class _SellPageState extends State<SellPage> {
                             crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
                               Text(
-                                _draftIsComplete
-                                    ? 'Draft saved on this device'
-                                    : 'Incomplete listing saved as draft',
+                                'Draft in progress',
                                 style: Theme.of(context)
                                     .textTheme
                                     .titleSmall
@@ -1694,9 +1817,14 @@ class _SellPageState extends State<SellPage> {
                               ),
                               const SizedBox(height: 4),
                               Text(
-                                _draftIsComplete
-                                    ? 'You can finish and publish it anytime.'
-                                    : 'Complete the remaining required fields and publish when ready.',
+                                _draftTitle(_draftPreviewData ?? _buildDraftData()),
+                                style: Theme.of(context).textTheme.bodySmall,
+                                maxLines: 2,
+                                overflow: TextOverflow.ellipsis,
+                              ),
+                              const SizedBox(height: 4),
+                              Text(
+                                'Continue here to finish the listing, or discard it if you want to start over.',
                                 style: Theme.of(context).textTheme.bodySmall,
                               ),
                               const SizedBox(height: 8),
@@ -1708,6 +1836,11 @@ class _SellPageState extends State<SellPage> {
                                     onPressed: _discardDraft,
                                     icon: const Icon(Icons.delete_outline),
                                     label: const Text('Discard draft'),
+                                  ),
+                                  TextButton.icon(
+                                    onPressed: () => unawaited(_resumeDraft()),
+                                    icon: const Icon(Icons.play_arrow),
+                                    label: const Text('Continue'),
                                   ),
                                 ],
                               ),

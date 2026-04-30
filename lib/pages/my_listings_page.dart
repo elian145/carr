@@ -1,5 +1,8 @@
+import 'dart:convert';
+
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 import '../l10n/app_localizations.dart';
 import '../theme_provider.dart';
@@ -20,6 +23,7 @@ class MyListingsPage extends StatefulWidget {
 }
 
 class _MyListingsPageState extends State<MyListingsPage> {
+  static const String _draftSnapshotKey = 'legacy_sell_draft_snapshot_v1';
   final ScrollController _controller = ScrollController();
 
   bool _loading = true;
@@ -27,6 +31,8 @@ class _MyListingsPageState extends State<MyListingsPage> {
   bool _hasNext = true;
   int _page = 1;
   String? _error;
+  bool _loadingDraft = true;
+  Map<String, dynamic>? _draftSnapshot;
 
   final List<Map<String, dynamic>> _cars = <Map<String, dynamic>>[];
 
@@ -35,6 +41,7 @@ class _MyListingsPageState extends State<MyListingsPage> {
     super.initState();
     // Keep consistent layout (grid vs list) with the rest of the app.
     ListingLayoutPrefs.load();
+    _loadDraftSnapshot();
     _controller.addListener(() {
       if (_loading || _loadingMore || !_hasNext) return;
       final pos = _controller.position;
@@ -113,6 +120,188 @@ class _MyListingsPageState extends State<MyListingsPage> {
     if (_loadingMore || !_hasNext) return;
     _page += 1;
     await _fetch(refresh: false);
+  }
+
+  Future<void> _loadDraftSnapshot() async {
+    try {
+      final sp = await SharedPreferences.getInstance();
+      final raw = sp.getString(_draftSnapshotKey);
+      if (raw == null || raw.trim().isEmpty) {
+        if (!mounted) return;
+        setState(() {
+          _draftSnapshot = null;
+          _loadingDraft = false;
+        });
+        return;
+      }
+      final decoded = json.decode(raw);
+      if (decoded is! Map) {
+        if (!mounted) return;
+        setState(() {
+          _draftSnapshot = null;
+          _loadingDraft = false;
+        });
+        return;
+      }
+      final map = Map<String, dynamic>.from(decoded.cast<String, dynamic>());
+      final rawCarData = map['carData'];
+      final carData = rawCarData is Map
+          ? Map<String, dynamic>.from(rawCarData.cast<String, dynamic>())
+          : <String, dynamic>{};
+      final hasMeaningfulContent = carData.values.any((value) {
+        if (value == null) return false;
+        if (value is String) return value.trim().isNotEmpty;
+        if (value is num) return value != 0;
+        if (value is bool) return value;
+        if (value is Iterable) return value.isNotEmpty;
+        if (value is Map) return value.isNotEmpty;
+        return value.toString().trim().isNotEmpty;
+      });
+      if (!mounted) return;
+      if (!hasMeaningfulContent) {
+        await sp.remove(_draftSnapshotKey);
+        await sp.remove('legacy_sell_draft_current_step_v1');
+        await sp.remove('legacy_sell_draft_step1_v1');
+        await sp.remove('legacy_sell_draft_step2_v1');
+        await sp.remove('legacy_sell_draft_step3_v1');
+        await sp.remove('legacy_sell_draft_step4_v1');
+        setState(() {
+          _draftSnapshot = null;
+          _loadingDraft = false;
+        });
+        return;
+      }
+      setState(() {
+        _draftSnapshot = <String, dynamic>{
+          'currentStep': int.tryParse(map['currentStep']?.toString() ?? '') ?? 0,
+          'carData': carData,
+        };
+        _loadingDraft = false;
+      });
+    } catch (_) {
+      if (!mounted) return;
+      setState(() {
+        _draftSnapshot = null;
+        _loadingDraft = false;
+      });
+    }
+  }
+
+  Future<void> _discardDraft() async {
+    final sp = await SharedPreferences.getInstance();
+    await sp.remove(_draftSnapshotKey);
+    await sp.remove('legacy_sell_draft_current_step_v1');
+    await sp.remove('legacy_sell_draft_step1_v1');
+    await sp.remove('legacy_sell_draft_step2_v1');
+    await sp.remove('legacy_sell_draft_step3_v1');
+    await sp.remove('legacy_sell_draft_step4_v1');
+    if (!mounted) return;
+    setState(() {
+      _draftSnapshot = null;
+    });
+  }
+
+  void _resumeDraft() {
+    Navigator.pushNamed(context, '/sell');
+  }
+
+  String _draftTitle(Map<String, dynamic> carData) {
+    final brand = (carData['brand'] ?? '').toString().trim();
+    final model = (carData['model'] ?? '').toString().trim();
+    final trim = (carData['trim'] ?? '').toString().trim();
+    final year = (carData['year'] ?? '').toString().trim();
+    final title = [brand, model].where((v) => v.isNotEmpty).join(' ');
+    final suffix = [trim, year].where((v) => v.isNotEmpty).join(' • ');
+    if (title.isEmpty && suffix.isEmpty) return 'Untitled draft';
+    if (title.isEmpty) return suffix;
+    if (suffix.isEmpty) return title;
+    return '$title • $suffix';
+  }
+
+  Widget _buildDraftCard() {
+    final snapshot = _draftSnapshot;
+    if (snapshot == null) return const SizedBox.shrink();
+    final carData = snapshot['carData'] is Map
+        ? Map<String, dynamic>.from((snapshot['carData'] as Map).cast<String, dynamic>())
+        : <String, dynamic>{};
+    final currentStep = int.tryParse(snapshot['currentStep']?.toString() ?? '') ?? 0;
+    const labels = [
+      'Step 1: Basic info',
+      'Step 2: Details',
+      'Step 3: Pricing',
+      'Step 4: Photos',
+      'Step 5: Review',
+    ];
+    final label = labels[currentStep.clamp(0, 4).toInt()];
+
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(16, 16, 16, 8),
+      child: Container(
+        decoration: BoxDecoration(
+          color: Colors.orange.withOpacity(0.08),
+          borderRadius: BorderRadius.circular(16),
+          border: Border.all(color: Colors.orange.withOpacity(0.24)),
+        ),
+        child: Padding(
+          padding: const EdgeInsets.all(14),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Row(
+                children: [
+                  const Icon(Icons.drafts_outlined, color: Color(0xFFFF6B00)),
+                  const SizedBox(width: 10),
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          'Draft in progress',
+                          style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                                fontWeight: FontWeight.w700,
+                              ),
+                        ),
+                        const SizedBox(height: 2),
+                        Text(label, style: Theme.of(context).textTheme.bodySmall),
+                      ],
+                    ),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 12),
+              Text(
+                _draftTitle(carData),
+                style: Theme.of(context).textTheme.titleSmall?.copyWith(
+                      fontWeight: FontWeight.w700,
+                    ),
+                maxLines: 2,
+                overflow: TextOverflow.ellipsis,
+              ),
+              const SizedBox(height: 12),
+              Row(
+                children: [
+                  Expanded(
+                    child: OutlinedButton.icon(
+                      onPressed: _discardDraft,
+                      icon: const Icon(Icons.delete_outline),
+                      label: const Text('Discard draft'),
+                    ),
+                  ),
+                  const SizedBox(width: 10),
+                  Expanded(
+                    child: ElevatedButton.icon(
+                      onPressed: _resumeDraft,
+                      icon: const Icon(Icons.play_arrow),
+                      label: const Text('Continue'),
+                    ),
+                  ),
+                ],
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
   }
 
   Future<void> _deleteListing(String carId) async {
@@ -443,118 +632,163 @@ class _MyListingsPageState extends State<MyListingsPage> {
                   valueListenable: ListingLayoutPrefs.columns,
                   builder: (context, cols, _) {
                     final listingColumns = (cols == 1) ? 1 : 2;
-                    return GridView.builder(
-                      controller: _controller,
-                      padding: EdgeInsets.fromLTRB(
-                        listingColumns == 1 ? 4 : 12,
-                        12,
-                        listingColumns == 1 ? 4 : 12,
-                        12,
-                      ),
-                      gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
-                        crossAxisCount: listingColumns,
-                        childAspectRatio: listingColumns == 2 ? 0.62 : 2.78,
-                        crossAxisSpacing: 8,
-                        mainAxisSpacing: 8,
-                      ),
-                      itemCount: _cars.length + (_hasNext ? 1 : 0),
-                      itemBuilder: (context, index) {
-                        if (index >= _cars.length) {
-                          return const Center(
-                            child: Padding(
-                              padding: EdgeInsets.all(12),
-                              child: SizedBox(
-                                width: 20,
-                                height: 20,
-                                child: CircularProgressIndicator(strokeWidth: 2),
-                              ),
-                            ),
-                          );
-                        }
-
-                        final car = _cars[index];
-                        final id =
-                            (car['id'] ?? car['public_id'] ?? '').toString();
-
-                        final mapped =
-                            mapListingToGlobalCarCardData(context, car);
-                        final card = buildGlobalCarCard(
-                          context,
-                          mapped,
-                          listLayout: listingColumns == 1,
-                        );
-
-                        return Stack(
-                          clipBehavior: Clip.none,
-                          children: [
-                            card,
-                            if (id.isNotEmpty)
-                              Positioned(
-                                top: 6,
-                                left: 6,
-                                child: Material(
-                                  color: const Color(0xFFFF6B00),
-                                  borderRadius: BorderRadius.circular(6),
-                                  child: InkWell(
-                                    borderRadius: BorderRadius.circular(6),
-                                    onTap: () => _showListingAnalyticsPopup(
-                                      car,
-                                      id,
-                                    ),
-                                    child: Padding(
-                                      padding: const EdgeInsets.symmetric(
-                                        horizontal: 10,
-                                        vertical: 6,
-                                      ),
-                                      child: Text(
-                                        loc?.analyticsTitle ?? 'Analytics',
-                                        style: const TextStyle(
-                                          color: Colors.white,
-                                          fontWeight: FontWeight.w800,
-                                          fontSize: 12,
-                                          letterSpacing: 0.2,
+                    return Column(
+                      children: [
+                        if (_draftSnapshot != null) _buildDraftCard(),
+                        Expanded(
+                          child: _cars.isEmpty
+                              ? ListView(
+                                  controller: _controller,
+                                  padding: const EdgeInsets.fromLTRB(
+                                    16,
+                                    12,
+                                    16,
+                                    12,
+                                  ),
+                                  children: [
+                                    if (_loadingDraft)
+                                      const Padding(
+                                        padding:
+                                            EdgeInsets.symmetric(vertical: 24),
+                                        child: Center(
+                                          child: CircularProgressIndicator(),
                                         ),
-                                      ),
-                                    ),
-                                  ),
-                                ),
-                              ),
-                            Positioned(
-                              top: 6,
-                              right: 6,
-                              child: Material(
-                                color: Colors.black54,
-                                shape: const CircleBorder(),
-                                child: PopupMenuButton<String>(
-                                  tooltip: 'More',
-                                  onSelected: (v) {
-                                    if (v == 'edit') _editListing(car);
-                                    if (v == 'delete') _deleteListing(id);
-                                  },
-                                  itemBuilder: (context) => [
-                                    PopupMenuItem(
-                                      value: 'edit',
-                                      child: Text(loc?.editAction ?? 'Edit'),
-                                    ),
-                                    PopupMenuItem(
-                                      value: 'delete',
-                                      child: Text(loc?.deleteAction ?? 'Delete'),
-                                    ),
+                                      )
+                                    else
+                                      _buildEmptyState(),
                                   ],
-                                  icon: const Padding(
-                                    padding: EdgeInsets.all(6),
-                                    child: Icon(
-                                      Icons.more_vert,
-                                      color: Colors.white,
-                                      size: 22,
-                                    ),
+                                )
+                              : GridView.builder(
+                                  controller: _controller,
+                                  padding: EdgeInsets.fromLTRB(
+                                    listingColumns == 1 ? 4 : 12,
+                                    12,
+                                    listingColumns == 1 ? 4 : 12,
+                                    12,
                                   ),
+                                  gridDelegate:
+                                      SliverGridDelegateWithFixedCrossAxisCount(
+                                    crossAxisCount: listingColumns,
+                                    childAspectRatio:
+                                        listingColumns == 2 ? 0.62 : 2.78,
+                                    crossAxisSpacing: 8,
+                                    mainAxisSpacing: 8,
+                                  ),
+                                  itemCount: _cars.length + (_hasNext ? 1 : 0),
+                                  itemBuilder: (context, index) {
+                                    if (index >= _cars.length) {
+                                      return const Center(
+                                        child: Padding(
+                                          padding: EdgeInsets.all(12),
+                                          child: SizedBox(
+                                            width: 20,
+                                            height: 20,
+                                            child: CircularProgressIndicator(
+                                              strokeWidth: 2,
+                                            ),
+                                          ),
+                                        ),
+                                      );
+                                    }
+
+                                    final car = _cars[index];
+                                    final id = (car['id'] ?? car['public_id'] ?? '')
+                                        .toString();
+
+                                    final mapped = mapListingToGlobalCarCardData(
+                                      context,
+                                      car,
+                                    );
+                                    final card = buildGlobalCarCard(
+                                      context,
+                                      mapped,
+                                      listLayout: listingColumns == 1,
+                                    );
+
+                                    return Stack(
+                                      clipBehavior: Clip.none,
+                                      children: [
+                                        card,
+                                        if (id.isNotEmpty)
+                                          Positioned(
+                                            top: 6,
+                                            left: 6,
+                                            child: Material(
+                                              color: const Color(0xFFFF6B00),
+                                              borderRadius:
+                                                  BorderRadius.circular(6),
+                                              child: InkWell(
+                                                borderRadius:
+                                                    BorderRadius.circular(6),
+                                                onTap: () =>
+                                                    _showListingAnalyticsPopup(
+                                                  car,
+                                                  id,
+                                                ),
+                                                child: Padding(
+                                                  padding:
+                                                      const EdgeInsets.symmetric(
+                                                    horizontal: 10,
+                                                    vertical: 6,
+                                                  ),
+                                                  child: Text(
+                                                    loc?.analyticsTitle ??
+                                                        'Analytics',
+                                                    style: const TextStyle(
+                                                      color: Colors.white,
+                                                      fontWeight:
+                                                          FontWeight.w800,
+                                                      fontSize: 12,
+                                                      letterSpacing: 0.2,
+                                                    ),
+                                                  ),
+                                                ),
+                                              ),
+                                            ),
+                                          ),
+                                        Positioned(
+                                          top: 6,
+                                          right: 6,
+                                          child: Material(
+                                            color: Colors.black54,
+                                            shape: const CircleBorder(),
+                                            child: PopupMenuButton<String>(
+                                              tooltip: 'More',
+                                              onSelected: (v) {
+                                                if (v == 'edit') _editListing(car);
+                                                if (v == 'delete') _deleteListing(id);
+                                              },
+                                              itemBuilder: (context) => [
+                                                PopupMenuItem(
+                                                  value: 'edit',
+                                                  child: Text(
+                                                    loc?.editAction ?? 'Edit',
+                                                  ),
+                                                ),
+                                                PopupMenuItem(
+                                                  value: 'delete',
+                                                  child: Text(
+                                                    loc?.deleteAction ?? 'Delete',
+                                                  ),
+                                                ),
+                                              ],
+                                              icon: const Padding(
+                                                padding: EdgeInsets.all(6),
+                                                child: Icon(
+                                                  Icons.more_vert,
+                                                  color: Colors.white,
+                                                  size: 22,
+                                                ),
+                                              ),
+                                            ),
+                                          ),
+                                        ),
+                                      ],
+                                    );
+                                  },
                                 ),
-                              ),
-                            ),
-                          ],
-                        );
-                      },
+                        ),
+                      ],
                     );
                   },
                 ),

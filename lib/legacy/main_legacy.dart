@@ -15004,6 +15004,11 @@ class SellCarPage extends StatefulWidget {
 class _SellCarPageState extends State<SellCarPage> {
   int currentStep = 0;
   final PageController _pageController = PageController();
+  static const String _draftCurrentStepKey = 'legacy_sell_draft_current_step_v1';
+  static const String _draftSnapshotKey = 'legacy_sell_draft_snapshot_v1';
+  bool _hasDraftSnapshot = false;
+  int _draftPreviewStep = 0;
+  Map<String, dynamic>? _draftPreviewCarData;
 
   // Car data that will be passed between steps
   Map<String, dynamic> carData = {};
@@ -15052,6 +15057,310 @@ class _SellCarPageState extends State<SellCarPage> {
     return '$imgPart::$vidPart';
   }
 
+  Future<void> _restoreDraftCurrentStep() async {
+    try {
+      final sp = await SharedPreferences.getInstance();
+      final saved = sp.getInt(_draftCurrentStepKey);
+      if (saved == null) return;
+      final clamped = saved.clamp(0, _kSellStepCount - 1);
+      if (!mounted) return;
+      setState(() {
+        currentStep = clamped;
+      });
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (mounted && _pageController.hasClients) {
+          _pageController.jumpToPage(clamped);
+        }
+      });
+    } catch (_) {}
+  }
+
+  Future<void> _saveDraftCurrentStep() async {
+    try {
+      final sp = await SharedPreferences.getInstance();
+      await sp.setInt(_draftCurrentStepKey, currentStep);
+    } catch (_) {}
+  }
+
+  Future<void> _clearDraftCurrentStep() async {
+    try {
+      final sp = await SharedPreferences.getInstance();
+      await sp.remove(_draftCurrentStepKey);
+    } catch (_) {}
+  }
+
+  Future<void> _clearAllSellDrafts() async {
+    try {
+      final sp = await SharedPreferences.getInstance();
+      await sp.remove(_draftCurrentStepKey);
+      await sp.remove(_draftSnapshotKey);
+      await sp.remove('legacy_sell_draft_step1_v1');
+      await sp.remove('legacy_sell_draft_step2_v1');
+      await sp.remove('legacy_sell_draft_step3_v1');
+      await sp.remove('legacy_sell_draft_step4_v1');
+      if (mounted) {
+        setState(() {
+          _hasDraftSnapshot = false;
+        });
+      }
+    } catch (_) {}
+  }
+
+  dynamic _draftValue(dynamic value) {
+    if (value == null) return null;
+    if (value is String || value is num || value is bool) return value;
+    if (value is XFile) return value.path;
+    if (value is Map) {
+      return value.map((k, v) => MapEntry(k.toString(), _draftValue(v)));
+    }
+    if (value is Iterable) {
+      return value.map(_draftValue).toList();
+    }
+    return value.toString();
+  }
+
+  bool _hasMeaningfulDraftValue(dynamic value) {
+    if (value == null) return false;
+    if (value is String) return value.trim().isNotEmpty;
+    if (value is num) return value != 0;
+    if (value is bool) return value;
+    if (value is XFile) return value.path.trim().isNotEmpty;
+    if (value is Map) {
+      for (final entry in value.entries) {
+        if (_hasMeaningfulDraftValue(entry.value)) return true;
+      }
+      return false;
+    }
+    if (value is Iterable) {
+      for (final item in value) {
+        if (_hasMeaningfulDraftValue(item)) return true;
+      }
+      return false;
+    }
+    return value.toString().trim().isNotEmpty;
+  }
+
+  Future<void> _saveSellDraftSnapshot() async {
+    try {
+      final sp = await SharedPreferences.getInstance();
+      if (!_hasMeaningfulDraftValue(carData)) {
+        await sp.remove(_draftCurrentStepKey);
+        await sp.remove(_draftSnapshotKey);
+        if (mounted) {
+          setState(() {
+            _hasDraftSnapshot = false;
+          });
+        }
+        return;
+      }
+      await sp.setString(
+        _draftSnapshotKey,
+        json.encode(<String, dynamic>{
+          'currentStep': currentStep,
+          'carData': _draftValue(carData),
+        }),
+      );
+    } catch (_) {}
+  }
+
+  Future<void> _restoreSellDraftSnapshot() async {
+    try {
+      final sp = await SharedPreferences.getInstance();
+      final raw = sp.getString(_draftSnapshotKey);
+      if (raw == null || raw.trim().isEmpty) return;
+      final decoded = json.decode(raw);
+      if (decoded is! Map) return;
+      final data = Map<String, dynamic>.from(decoded.cast<String, dynamic>());
+      final restoredStep = int.tryParse(data['currentStep']?.toString() ?? '');
+      final rawCarData = data['carData'];
+      final restoredCarData = rawCarData is Map
+          ? Map<String, dynamic>.from(rawCarData.cast<String, dynamic>())
+          : <String, dynamic>{};
+      if (!_hasMeaningfulDraftValue(restoredCarData)) {
+        await sp.remove(_draftCurrentStepKey);
+        await sp.remove(_draftSnapshotKey);
+        if (!mounted) return;
+        setState(() {
+          _hasDraftSnapshot = false;
+        });
+        return;
+      }
+      if (!mounted) return;
+      setState(() {
+        currentStep = restoredStep?.clamp(0, _kSellStepCount - 1) ?? currentStep;
+        carData = restoredCarData;
+        _hasDraftSnapshot = true;
+        _draftPreviewStep = currentStep;
+        _draftPreviewCarData = restoredCarData;
+      });
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (mounted && _pageController.hasClients) {
+          _pageController.jumpToPage(currentStep);
+        }
+      });
+    } catch (_) {}
+  }
+
+  Future<void> _resumeSellDraft() async {
+    await _restoreSellDraftSnapshot();
+  }
+
+  Future<void> _loadSellDraftPreview() async {
+    try {
+      final sp = await SharedPreferences.getInstance();
+      final raw = sp.getString(_draftSnapshotKey);
+      if (raw == null || raw.trim().isEmpty) {
+        if (!mounted) return;
+        setState(() {
+          _hasDraftSnapshot = false;
+          _draftPreviewStep = 0;
+          _draftPreviewCarData = null;
+        });
+        return;
+      }
+      final decoded = json.decode(raw);
+      if (decoded is! Map) return;
+      final data = Map<String, dynamic>.from(decoded.cast<String, dynamic>());
+      final restoredStep = int.tryParse(data['currentStep']?.toString() ?? '');
+      final rawCarData = data['carData'];
+      final restoredCarData = rawCarData is Map
+          ? Map<String, dynamic>.from(rawCarData.cast<String, dynamic>())
+          : <String, dynamic>{};
+      if (!_hasMeaningfulDraftValue(restoredCarData)) {
+        await sp.remove(_draftCurrentStepKey);
+        await sp.remove(_draftSnapshotKey);
+        if (!mounted) return;
+        setState(() {
+          _hasDraftSnapshot = false;
+          _draftPreviewStep = 0;
+          _draftPreviewCarData = null;
+        });
+        return;
+      }
+      if (!mounted) return;
+      setState(() {
+        _hasDraftSnapshot = true;
+        _draftPreviewStep = restoredStep?.clamp(0, _kSellStepCount - 1) ?? 0;
+        _draftPreviewCarData = restoredCarData;
+      });
+    } catch (_) {}
+  }
+
+  String _draftTitle(Map<String, dynamic> data) {
+    final brand = (data['brand'] ?? '').toString().trim();
+    final model = (data['model'] ?? '').toString().trim();
+    final trim = (data['trim'] ?? '').toString().trim();
+    final year = (data['year'] ?? '').toString().trim();
+    final title = [brand, model].where((v) => v.isNotEmpty).join(' ');
+    final suffix = [trim, year].where((v) => v.isNotEmpty).join(' • ');
+    if (title.isEmpty && suffix.isEmpty) return 'Untitled draft';
+    if (title.isEmpty) return suffix;
+    if (suffix.isEmpty) return title;
+    return '$title • $suffix';
+  }
+
+  Widget _buildDraftBanner() {
+    if (!_hasDraftSnapshot) return const SizedBox.shrink();
+    final labels = <String>[
+      'Step 1: Basic info',
+      'Step 2: Details',
+      'Step 3: Pricing',
+      'Step 4: Photos',
+      'Step 5: Review',
+    ];
+    final stepLabel = labels[_draftPreviewStep.clamp(0, 4).toInt()];
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(16, 16, 16, 8),
+      child: Container(
+        decoration: BoxDecoration(
+          color: Colors.orange.withOpacity(0.08),
+          borderRadius: BorderRadius.circular(16),
+          border: Border.all(color: Colors.orange.withOpacity(0.24)),
+        ),
+        child: Padding(
+          padding: const EdgeInsets.all(14),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Row(
+                children: [
+                  const Icon(Icons.drafts_outlined, color: Color(0xFFFF6B00)),
+                  const SizedBox(width: 10),
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          'Draft in progress',
+                          style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                                fontWeight: FontWeight.w700,
+                              ),
+                        ),
+                        const SizedBox(height: 2),
+                        Text(stepLabel, style: Theme.of(context).textTheme.bodySmall),
+                      ],
+                    ),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 12),
+              Text(
+                _draftTitle(_draftPreviewCarData ?? carData),
+                style: Theme.of(context).textTheme.titleSmall?.copyWith(
+                      fontWeight: FontWeight.w700,
+                    ),
+                maxLines: 2,
+                overflow: TextOverflow.ellipsis,
+              ),
+              const SizedBox(height: 6),
+              Text(
+                'Continue here to finish the listing, or discard it if you want to start over.',
+                style: Theme.of(context).textTheme.bodySmall,
+              ),
+              const SizedBox(height: 12),
+              Row(
+                children: [
+                  Expanded(
+                    child: OutlinedButton.icon(
+                      onPressed: () async {
+                        await _clearAllSellDrafts();
+                        if (!mounted) return;
+                        setState(() {
+                          currentStep = 0;
+                          carData = {};
+                          completedSteps.clear();
+                        });
+                        if (_pageController.hasClients) {
+                          _pageController.jumpToPage(0);
+                        }
+                      },
+                      icon: const Icon(Icons.delete_outline),
+                      label: const Text('Discard draft'),
+                    ),
+                  ),
+                  const SizedBox(width: 10),
+                  Expanded(
+                    child: ElevatedButton.icon(
+                      onPressed: () => unawaited(_resumeSellDraft()),
+                      icon: const Icon(Icons.play_arrow),
+                      label: const Text('Continue'),
+                    ),
+                  ),
+                ],
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  @override
+  void initState() {
+    super.initState();
+    unawaited(_loadSellDraftPreview());
+  }
+
   @override
   Widget build(BuildContext context) {
     return PopScope(
@@ -15078,6 +15387,7 @@ class _SellCarPageState extends State<SellCarPage> {
           ),
           child: Column(
             children: [
+              _buildDraftBanner(),
               // Progress indicator
               Container(
                 padding: EdgeInsets.all(16),
@@ -15141,6 +15451,8 @@ class _SellCarPageState extends State<SellCarPage> {
                     setState(() {
                       currentStep = index;
                     });
+                    unawaited(_saveDraftCurrentStep());
+                    unawaited(_saveSellDraftSnapshot());
                   },
                   itemCount: _kSellStepCount,
                   itemBuilder: (context, index) => _sellStepChild(index),
@@ -15268,6 +15580,8 @@ class _SellCarPageState extends State<SellCarPage> {
 
   @override
   void dispose() {
+    unawaited(_saveDraftCurrentStep());
+    unawaited(_saveSellDraftSnapshot());
     _pageController.dispose();
     super.dispose();
   }
@@ -15283,6 +15597,7 @@ class SellStep1Page extends StatefulWidget {
 
 class _SellStep1PageState extends State<SellStep1Page> {
   final _formKey = GlobalKey<FormState>();
+  static const String _draftKey = 'legacy_sell_draft_step1_v1';
   String? selectedBrand;
   String? selectedModel;
   String? selectedTrim;
@@ -15360,6 +15675,7 @@ class _SellStep1PageState extends State<SellStep1Page> {
     _yearController = TextEditingController();
     _yearController.addListener(_onYearTextForCatalog);
     _resetSellFilters();
+    unawaited(_restoreDraft());
     CarSpecIndex.loadWithResult().then((r) {
       if (!mounted) return;
       setState(() {
@@ -15374,10 +15690,61 @@ class _SellStep1PageState extends State<SellStep1Page> {
 
   @override
   void dispose() {
+    unawaited(_saveDraft());
     _yearFocusNode.dispose();
     _yearController.removeListener(_onYearTextForCatalog);
     _yearController.dispose();
     super.dispose();
+  }
+
+  Future<void> _restoreDraft() async {
+    try {
+      final sp = await SharedPreferences.getInstance();
+      final raw = sp.getString(_draftKey);
+      if (raw == null || raw.trim().isEmpty) return;
+      final decoded = json.decode(raw);
+      if (decoded is! Map) return;
+      final data = Map<String, dynamic>.from(decoded.cast<String, dynamic>());
+      if (!mounted) return;
+      setState(() {
+        selectedBrand = data['selectedBrand']?.toString();
+        selectedModel = data['selectedModel']?.toString();
+        selectedTrim = data['selectedTrim']?.toString();
+        selectedYear = data['selectedYear']?.toString();
+        errBrand = data['errBrand'] == true;
+        errModel = data['errModel'] == true;
+        errTrim = data['errTrim'] == true;
+        errYear = data['errYear'] == true;
+        isYearManualInput = data['isYearManualInput'] == true;
+        _dsModelId = int.tryParse(data['dsModelId']?.toString() ?? '');
+        _catYear = int.tryParse(data['catYear']?.toString() ?? '');
+        _yearController.text = data['yearControllerText']?.toString() ?? '';
+      });
+      _schedDsRefresh();
+    } catch (_) {}
+  }
+
+  Future<void> _saveDraft() async {
+    try {
+      final sp = await SharedPreferences.getInstance();
+      await sp.setString(
+        _draftKey,
+        json.encode(<String, dynamic>{
+          'selectedBrand': selectedBrand,
+          'selectedModel': selectedModel,
+          'selectedTrim': selectedTrim,
+          'selectedYear': selectedYear,
+          'errBrand': errBrand,
+          'errModel': errModel,
+          'errTrim': errTrim,
+          'errYear': errYear,
+          'isYearManualInput': isYearManualInput,
+          'dsModelId': _dsModelId,
+          'catYear': _catYear,
+          'yearControllerText': _yearController.text,
+        }),
+      );
+    } catch (_) {}
   }
 
   Future<void> _resetSellFilters() async {
@@ -15590,6 +15957,7 @@ class _SellStep1PageState extends State<SellStep1Page> {
     parent.carData['_catalog_specs_applied'] =
         DateTime.now().millisecondsSinceEpoch;
     parent.setState(() {});
+    unawaited(parent._saveSellDraftSnapshot());
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
         content: Text('Specs applied — year set; step 2 fields pre-filled.'),
@@ -16593,6 +16961,7 @@ class _SellStep1PageState extends State<SellStep1Page> {
                       errBrand = errModel = errTrim = errYear = false;
                     });
                     parentState._goToNextStep();
+                    unawaited(parentState._saveSellDraftSnapshot());
                   }
                 },
                 style: ElevatedButton.styleFrom(
@@ -16629,6 +16998,7 @@ class SellStep2Page extends StatefulWidget {
 
 class _SellStep2PageState extends State<SellStep2Page> {
   final _formKey = GlobalKey<FormState>();
+  static const String _draftKey = 'legacy_sell_draft_step2_v1';
   String? selectedMileage;
   String? selectedCondition;
   String? selectedTransmission;
@@ -16680,6 +17050,7 @@ class _SellStep2PageState extends State<SellStep2Page> {
     _mileageController = TextEditingController();
     _engineSizeController = TextEditingController();
     _resetStep2();
+    unawaited(_restoreDraft());
     WidgetsBinding.instance.addPostFrameCallback((_) {
       if (!mounted) return;
       _hydrateFromParentCarData(force: true);
@@ -16875,11 +17246,117 @@ class _SellStep2PageState extends State<SellStep2Page> {
 
   @override
   void dispose() {
+    unawaited(_saveDraft());
     _mileageFocusNode.dispose();
     _engineSizeFocusNode.dispose();
     _mileageController.dispose();
     _engineSizeController.dispose();
     super.dispose();
+  }
+
+  Future<void> _restoreDraft() async {
+    try {
+      final sp = await SharedPreferences.getInstance();
+      final raw = sp.getString(_draftKey);
+      if (raw == null || raw.trim().isEmpty) return;
+      final decoded = json.decode(raw);
+      if (decoded is! Map) return;
+      final data = Map<String, dynamic>.from(decoded.cast<String, dynamic>());
+      if (!mounted) return;
+      setState(() {
+        selectedMileage = data['selectedMileage']?.toString();
+        selectedCondition = data['selectedCondition']?.toString();
+        selectedTransmission = data['selectedTransmission']?.toString();
+        selectedFuelType = data['selectedFuelType']?.toString();
+        selectedBodyType = data['selectedBodyType']?.toString();
+        selectedColor = data['selectedColor']?.toString();
+        selectedDriveType = data['selectedDriveType']?.toString();
+        selectedRegionSpecs = data['selectedRegionSpecs']?.toString();
+        selectedSeating = data['selectedSeating']?.toString();
+        selectedEngineSize = data['selectedEngineSize']?.toString();
+        selectedCylinderCount = data['selectedCylinderCount']?.toString();
+        selectedTitleStatus = data['selectedTitleStatus']?.toString();
+        selectedDamagedParts = data['selectedDamagedParts']?.toString();
+        errMileage = data['errMileage'] == true;
+        errCondition = data['errCondition'] == true;
+        errTransmission = data['errTransmission'] == true;
+        errFuelType = data['errFuelType'] == true;
+        errBodyType = data['errBodyType'] == true;
+        errColor = data['errColor'] == true;
+        errDrive = data['errDrive'] == true;
+        errRegionSpecs = data['errRegionSpecs'] == true;
+        errSeating = data['errSeating'] == true;
+        errEngineSize = data['errEngineSize'] == true;
+        errCylinderCount = data['errCylinderCount'] == true;
+        errTitle = data['errTitle'] == true;
+        errDamagedParts = data['errDamagedParts'] == true;
+        isMileageManualInput = data['isMileageManualInput'] == true;
+        isEngineSizeManualInput = data['isEngineSizeManualInput'] == true;
+        _mileageController.text = data['mileageControllerText']?.toString() ?? '';
+        _engineSizeController.text =
+            data['engineSizeControllerText']?.toString() ?? '';
+      });
+      final parentState = context.findAncestorStateOfType<_SellCarPageState>();
+      if (parentState != null) {
+        parentState.carData['mileage'] = selectedMileage;
+        parentState.carData['condition'] = selectedCondition;
+        parentState.carData['transmission'] = selectedTransmission;
+        parentState.carData['fuel_type'] = selectedFuelType;
+        parentState.carData['body_type'] = selectedBodyType;
+        parentState.carData['color'] = selectedColor;
+        parentState.carData['drive_type'] = selectedDriveType;
+        parentState.carData['region_specs'] =
+            selectedRegionSpecs?.trim().toLowerCase();
+        parentState.carData['seating'] = selectedSeating;
+        parentState.carData['engine_size'] = selectedEngineSize;
+        parentState.carData['cylinder_count'] = selectedCylinderCount;
+        parentState.carData['title_status'] = selectedTitleStatus;
+        parentState.carData['damaged_parts'] = selectedDamagedParts;
+        parentState.setState(() {});
+      }
+      _hydrateFromParentCarData(force: true);
+    } catch (_) {}
+  }
+
+  Future<void> _saveDraft() async {
+    try {
+      final sp = await SharedPreferences.getInstance();
+      await sp.setString(
+        _draftKey,
+        json.encode(<String, dynamic>{
+          'selectedMileage': selectedMileage,
+          'selectedCondition': selectedCondition,
+          'selectedTransmission': selectedTransmission,
+          'selectedFuelType': selectedFuelType,
+          'selectedBodyType': selectedBodyType,
+          'selectedColor': selectedColor,
+          'selectedDriveType': selectedDriveType,
+          'selectedRegionSpecs': selectedRegionSpecs,
+          'selectedSeating': selectedSeating,
+          'selectedEngineSize': selectedEngineSize,
+          'selectedCylinderCount': selectedCylinderCount,
+          'selectedTitleStatus': selectedTitleStatus,
+          'selectedDamagedParts': selectedDamagedParts,
+          'errMileage': errMileage,
+          'errCondition': errCondition,
+          'errTransmission': errTransmission,
+          'errFuelType': errFuelType,
+          'errBodyType': errBodyType,
+          'errColor': errColor,
+          'errDrive': errDrive,
+          'errRegionSpecs': errRegionSpecs,
+          'errSeating': errSeating,
+          'errEngineSize': errEngineSize,
+          'errCylinderCount': errCylinderCount,
+          'errTitle': errTitle,
+          'errDamagedParts': errDamagedParts,
+          'isMileageManualInput': isMileageManualInput,
+          'isEngineSizeManualInput': isEngineSizeManualInput,
+          'mileageControllerText': _mileageController.text,
+          'engineSizeControllerText': _engineSizeController.text,
+        }),
+      );
+    } catch (_) {}
   }
 
   @override
@@ -18681,6 +19158,7 @@ class _SellStep2PageState extends State<SellStep2Page> {
                                             errTitle = errDamagedParts = false;
                           });
                           parentState._goToNextStep();
+                          unawaited(parentState._saveSellDraftSnapshot());
                         }
                       },
                       style: ElevatedButton.styleFrom(
@@ -18720,6 +19198,7 @@ class SellStep3Page extends StatefulWidget {
 
 class _SellStep3PageState extends State<SellStep3Page> {
   static const String _pricePickerNoneOption = 'none';
+  static const String _draftKey = 'legacy_sell_draft_step3_v1';
 
   final _formKey = GlobalKey<FormState>();
   String? selectedPrice;
@@ -18780,14 +19259,74 @@ class _SellStep3PageState extends State<SellStep3Page> {
     _priceController = TextEditingController();
     _descriptionController.text = '';
     _resetStep3();
+    unawaited(_restoreDraft());
   }
 
   @override
   void dispose() {
+    unawaited(_saveDraft());
     _priceFocusNode.dispose();
     _priceController.dispose();
     _descriptionController.dispose();
     super.dispose();
+  }
+
+  Future<void> _restoreDraft() async {
+    try {
+      final sp = await SharedPreferences.getInstance();
+      final raw = sp.getString(_draftKey);
+      if (raw == null || raw.trim().isEmpty) return;
+      final decoded = json.decode(raw);
+      if (decoded is! Map) return;
+      final data = Map<String, dynamic>.from(decoded.cast<String, dynamic>());
+      if (!mounted) return;
+      setState(() {
+        selectedPrice = data['selectedPrice']?.toString();
+        selectedCity = data['selectedCity']?.toString();
+        selectedPlateType = data['selectedPlateType']?.toString();
+        selectedPlateCity = data['selectedPlateCity']?.toString();
+        contactPhone = data['contactPhone']?.toString();
+        isQuickSell = data['isQuickSell'] == true;
+        isPriceManualInput = data['isPriceManualInput'] == true;
+        selectedCurrency = data['selectedCurrency']?.toString() ?? 'USD';
+        _priceController.text = data['priceControllerText']?.toString() ?? '';
+        _descriptionController.text =
+            data['descriptionControllerText']?.toString() ?? '';
+      });
+      final parentState = context.findAncestorStateOfType<_SellCarPageState>();
+      if (parentState != null) {
+        parentState.carData['price'] = selectedPrice;
+        parentState.carData['city'] = selectedCity;
+        parentState.carData['plate_type'] = selectedPlateType;
+        parentState.carData['plate_city'] = selectedPlateCity;
+        parentState.carData['contact_phone'] = contactPhone;
+        parentState.carData['quick_sell'] = isQuickSell;
+        parentState.carData['currency'] = selectedCurrency;
+        parentState.carData['description'] = _descriptionController.text;
+        parentState.setState(() {});
+      }
+    } catch (_) {}
+  }
+
+  Future<void> _saveDraft() async {
+    try {
+      final sp = await SharedPreferences.getInstance();
+      await sp.setString(
+        _draftKey,
+        json.encode(<String, dynamic>{
+          'selectedPrice': selectedPrice,
+          'selectedCity': selectedCity,
+          'selectedPlateType': selectedPlateType,
+          'selectedPlateCity': selectedPlateCity,
+          'contactPhone': contactPhone,
+          'isQuickSell': isQuickSell,
+          'isPriceManualInput': isPriceManualInput,
+          'selectedCurrency': selectedCurrency,
+          'priceControllerText': _priceController.text,
+          'descriptionControllerText': _descriptionController.text,
+        }),
+      );
+    } catch (_) {}
   }
 
   void _resetStep3() {
@@ -19202,6 +19741,11 @@ class _SellStep3PageState extends State<SellStep3Page> {
                               selectedPrice = null;
                             }
                           });
+                          unawaited(
+                            context
+                                .findAncestorStateOfType<_SellCarPageState>()
+                                ?._saveSellDraftSnapshot(),
+                          );
                         } else {
                           // If in dropdown mode, switch to manual input
                           setState(() {
@@ -19210,6 +19754,11 @@ class _SellStep3PageState extends State<SellStep3Page> {
                             _priceController.clear();
                             selectedPrice = null;
                           });
+                          unawaited(
+                            context
+                                .findAncestorStateOfType<_SellCarPageState>()
+                                ?._saveSellDraftSnapshot(),
+                          );
                         }
                       },
                       icon: Icon(
@@ -19515,6 +20064,7 @@ class SellStep4Page extends StatefulWidget {
 }
 
 class _SellStep4PageState extends State<SellStep4Page> {
+  static const String _draftKey = 'legacy_sell_draft_step4_v1';
   final ImagePicker _imagePicker = ImagePicker();
   // Can contain either local XFile (original picks) or server-relative paths (after "Blur Plates").
   List<dynamic> _selectedImages = [];
@@ -19522,6 +20072,12 @@ class _SellStep4PageState extends State<SellStep4Page> {
   bool _videosHydratedFromParent = false;
   bool _isProcessingImages = false;
   bool _imagesProcessed = false;
+
+  @override
+  void initState() {
+    super.initState();
+    unawaited(_restoreDraft());
+  }
 
   @override
   void didChangeDependencies() {
@@ -19539,6 +20095,68 @@ class _SellStep4PageState extends State<SellStep4Page> {
         }
       }
     }
+  }
+
+  @override
+  void dispose() {
+    unawaited(_saveDraft());
+    super.dispose();
+  }
+
+  Future<void> _restoreDraft() async {
+    try {
+      final sp = await SharedPreferences.getInstance();
+      final raw = sp.getString(_draftKey);
+      if (raw == null || raw.trim().isEmpty) return;
+      final decoded = json.decode(raw);
+      if (decoded is! Map) return;
+      final data = Map<String, dynamic>.from(decoded.cast<String, dynamic>());
+      final images = data['selectedImages'];
+      final videos = data['selectedVideos'];
+      if (!mounted) return;
+      setState(() {
+        _selectedImages = images is List
+            ? images
+                .map((e) => e.toString())
+                .where((e) => e.trim().isNotEmpty)
+                .map((e) => File(e).existsSync() ? XFile(e) : e)
+                .toList()
+            : _selectedImages;
+        _selectedVideos
+          ..clear()
+          ..addAll(
+            videos is List
+                ? videos
+                    .map((e) => e.toString())
+                    .where((e) => e.trim().isNotEmpty && File(e).existsSync())
+                    .map((e) => XFile(e))
+                    .toList()
+                : <XFile>[],
+          );
+        _imagesProcessed = data['imagesProcessed'] == true;
+        _isProcessingImages = false;
+      });
+      final parentState = context.findAncestorStateOfType<_SellCarPageState>();
+      if (parentState != null) {
+        parentState.carData['images'] = List<dynamic>.from(_selectedImages);
+        parentState.carData['videos'] = List<XFile>.from(_selectedVideos);
+        parentState.setState(() {});
+      }
+    } catch (_) {}
+  }
+
+  Future<void> _saveDraft() async {
+    try {
+      final sp = await SharedPreferences.getInstance();
+      await sp.setString(
+        _draftKey,
+        json.encode(<String, dynamic>{
+          'selectedImages': _selectedImages.map((e) => e.toString()).toList(),
+          'selectedVideos': _selectedVideos.map((e) => e.path).toList(),
+          'imagesProcessed': _imagesProcessed,
+        }),
+      );
+    } catch (_) {}
   }
 
   void _syncVideosToParent() {
@@ -19562,6 +20180,7 @@ class _SellStep4PageState extends State<SellStep4Page> {
         _selectedImages = [..._selectedImages, ...additions];
         _imagesProcessed = false;
       });
+      unawaited(_saveDraft());
     } catch (_) {}
   }
 
@@ -19656,6 +20275,7 @@ class _SellStep4PageState extends State<SellStep4Page> {
           okPaths.isNotEmpty ? okPaths : paths,
         );
         parentState.setState(() {});
+        unawaited(parentState._saveSellDraftSnapshot());
       }
 
       ScaffoldMessenger.of(
@@ -19700,6 +20320,7 @@ class _SellStep4PageState extends State<SellStep4Page> {
         }
       });
       _syncVideosToParent();
+      unawaited(_saveDraft());
     } catch (e) {
       if (!mounted) return;
       ScaffoldMessenger.of(
@@ -21373,6 +21994,7 @@ class _SellStep5PageState extends State<SellStep5Page> {
                                   }
                                   // Submit the listing
                                   await _submitListing(carData);
+                                  await parentState?._clearAllSellDrafts();
 
                                   // Show success message
                                   if (!mounted) return;
@@ -26853,14 +27475,19 @@ class _SettingsPageState extends State<SettingsPage> {
 }
 
 class _MyListingsPageState extends State<MyListingsPage> {
+  static const String _draftSnapshotKey = 'legacy_sell_draft_snapshot_v1';
+  static const String _draftCurrentStepKey = 'legacy_sell_draft_current_step_v1';
   List<Map<String, dynamic>> myListings = [];
   bool isLoading = true;
+  bool isLoadingDraft = true;
   String? error;
+  Map<String, dynamic>? _draftSnapshot;
 
   @override
   void initState() {
     super.initState();
     ListingLayoutPrefs.load();
+    _loadSellDraftSnapshot();
     _loadMyListings();
   }
 
@@ -27184,6 +27811,201 @@ class _MyListingsPageState extends State<MyListingsPage> {
     }
   }
 
+  dynamic _draftValue(dynamic value) {
+    if (value == null) return null;
+    if (value is String || value is num || value is bool) return value;
+    if (value is XFile) return value.path;
+    if (value is Map) {
+      return value.map((k, v) => MapEntry(k.toString(), _draftValue(v)));
+    }
+    if (value is Iterable) {
+      return value.map(_draftValue).toList();
+    }
+    return value.toString();
+  }
+
+  Future<void> _loadSellDraftSnapshot() async {
+    try {
+      final sp = await SharedPreferences.getInstance();
+      final raw = sp.getString(_draftSnapshotKey);
+      if (raw == null || raw.trim().isEmpty) {
+        if (!mounted) return;
+        setState(() {
+          _draftSnapshot = null;
+          isLoadingDraft = false;
+        });
+        return;
+      }
+      final decoded = json.decode(raw);
+      if (decoded is! Map) {
+        if (!mounted) return;
+        setState(() {
+          _draftSnapshot = null;
+          isLoadingDraft = false;
+        });
+        return;
+      }
+      final data = Map<String, dynamic>.from(decoded.cast<String, dynamic>());
+      final rawCarData = data['carData'];
+      final carData = rawCarData is Map
+          ? Map<String, dynamic>.from(rawCarData.cast<String, dynamic>())
+          : <String, dynamic>{};
+      if (!mounted) return;
+      setState(() {
+        _draftSnapshot = <String, dynamic>{
+          'currentStep': int.tryParse(data['currentStep']?.toString() ?? '') ?? 0,
+          'carData': carData,
+        };
+        isLoadingDraft = false;
+      });
+    } catch (_) {
+      if (!mounted) return;
+      setState(() {
+        _draftSnapshot = null;
+        isLoadingDraft = false;
+      });
+    }
+  }
+
+  Future<void> _discardSellDraft() async {
+    try {
+      final sp = await SharedPreferences.getInstance();
+      await sp.remove(_draftSnapshotKey);
+      await sp.remove(_draftCurrentStepKey);
+      await sp.remove('legacy_sell_draft_step1_v1');
+      await sp.remove('legacy_sell_draft_step2_v1');
+      await sp.remove('legacy_sell_draft_step3_v1');
+      await sp.remove('legacy_sell_draft_step4_v1');
+      if (!mounted) return;
+      setState(() {
+        _draftSnapshot = null;
+      });
+    } catch (_) {}
+  }
+
+  Future<void> _resumeSellDraft() async {
+    Navigator.pushNamed(context, '/sell');
+  }
+
+  String _draftTitle(Map<String, dynamic> carData) {
+    final brand = (carData['brand'] ?? '').toString().trim();
+    final model = (carData['model'] ?? '').toString().trim();
+    final trim = (carData['trim'] ?? '').toString().trim();
+    final year = (carData['year'] ?? '').toString().trim();
+    final parts = <String>[brand, model];
+    final title = parts.where((s) => s.isNotEmpty).join(' ');
+    final suffix = [trim, year].where((s) => s.isNotEmpty).join(' • ');
+    if (title.isEmpty && suffix.isEmpty) return 'Untitled draft';
+    if (title.isEmpty) return suffix;
+    if (suffix.isEmpty) return title;
+    return '$title • $suffix';
+  }
+
+  Widget _buildDraftSection() {
+    final snapshot = _draftSnapshot;
+    if (snapshot == null) return const SizedBox.shrink();
+    final carData = snapshot['carData'] is Map
+        ? Map<String, dynamic>.from((snapshot['carData'] as Map).cast<String, dynamic>())
+        : <String, dynamic>{};
+    final currentStep = int.tryParse(snapshot['currentStep']?.toString() ?? '') ?? 0;
+    final stepLabel = [
+      'Step 1: Basic info',
+      'Step 2: Details',
+      'Step 3: Pricing',
+      'Step 4: Photos',
+      'Step 5: Review',
+    ];
+    final stepText = stepLabel[currentStep.clamp(0, 4).toInt()];
+
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(16, 16, 16, 8),
+      child: Container(
+        decoration: BoxDecoration(
+          color: Colors.orange.withOpacity(0.08),
+          borderRadius: BorderRadius.circular(16),
+          border: Border.all(color: Colors.orange.withOpacity(0.24)),
+        ),
+        child: Padding(
+          padding: const EdgeInsets.all(14),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Row(
+                children: [
+                  Container(
+                    width: 42,
+                    height: 42,
+                    decoration: BoxDecoration(
+                      color: const Color(0xFFFF6B00).withOpacity(0.12),
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                    child: const Icon(
+                      Icons.drafts_outlined,
+                      color: Color(0xFFFF6B00),
+                    ),
+                  ),
+                  const SizedBox(width: 12),
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          'Draft in progress',
+                          style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                                fontWeight: FontWeight.w700,
+                              ),
+                        ),
+                        const SizedBox(height: 2),
+                        Text(
+                          stepText,
+                          style: Theme.of(context).textTheme.bodySmall,
+                        ),
+                      ],
+                    ),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 12),
+              Text(
+                _draftTitle(carData),
+                style: Theme.of(context).textTheme.titleSmall?.copyWith(
+                      fontWeight: FontWeight.w700,
+                    ),
+                maxLines: 2,
+                overflow: TextOverflow.ellipsis,
+              ),
+              const SizedBox(height: 6),
+              Text(
+                'Continue here to finish the listing, or discard it if you want to start over.',
+                style: Theme.of(context).textTheme.bodySmall,
+              ),
+              const SizedBox(height: 12),
+              Row(
+                children: [
+                  Expanded(
+                    child: OutlinedButton.icon(
+                      onPressed: _discardSellDraft,
+                      icon: const Icon(Icons.delete_outline),
+                      label: const Text('Discard draft'),
+                    ),
+                  ),
+                  const SizedBox(width: 10),
+                  Expanded(
+                    child: ElevatedButton.icon(
+                      onPressed: _resumeSellDraft,
+                      icon: const Icon(Icons.play_arrow),
+                      label: const Text('Continue'),
+                    ),
+                  ),
+                ],
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     final isLightShell = Theme.of(context).brightness == Brightness.light;
@@ -27191,7 +28013,7 @@ class _MyListingsPageState extends State<MyListingsPage> {
         ? Center(child: CircularProgressIndicator())
         : error != null
         ? _buildErrorState()
-        : myListings.isEmpty
+        : (myListings.isEmpty && _draftSnapshot == null && !isLoadingDraft)
         ? _buildEmptyState()
         : _buildListingsGrid();
     return Scaffold(
@@ -27344,6 +28166,7 @@ class _MyListingsPageState extends State<MyListingsPage> {
     final isLightShell = Theme.of(context).brightness == Brightness.light;
     return Column(
       children: [
+        if (_draftSnapshot != null) _buildDraftSection(),
         Padding(
           padding: EdgeInsets.all(16),
           child: Container(
@@ -27413,78 +28236,80 @@ class _MyListingsPageState extends State<MyListingsPage> {
         ),
         SizedBox(height: 0),
         Expanded(
-          child: ValueListenableBuilder<int>(
-            valueListenable: ListingLayoutPrefs.columns,
-            builder: (context, cols, _) {
-              final listingColumns = (cols == 1) ? 1 : 2;
-              return GridView.builder(
-                padding: EdgeInsets.fromLTRB(
-                  listingColumns == 1 ? 4 : 8,
-                  8,
-                  listingColumns == 1 ? 4 : 8,
-                  8,
-                ),
-                gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
-                  crossAxisCount: listingColumns,
-                  crossAxisSpacing: 8,
-                  mainAxisSpacing: 8,
-                  childAspectRatio: listingColumns == 2
-                      ? (Platform.isIOS ? 0.66 : 0.61)
-                      : 2.78,
-                ),
-                itemCount: myListings.length,
-                itemBuilder: (context, index) {
-                  final listing = myListings[index];
-                  final id =
-                      (listing['id'] ?? listing['public_id'] ?? '').toString();
-                  final mapped = mapListingToGlobalCarCardData(context, listing);
-                  final card = buildGlobalCarCard(
-                    context,
-                    mapped,
-                    listLayout: listingColumns == 1,
-                  );
+          child: myListings.isEmpty
+              ? _buildEmptyState()
+              : ValueListenableBuilder<int>(
+                  valueListenable: ListingLayoutPrefs.columns,
+                  builder: (context, cols, _) {
+                    final listingColumns = (cols == 1) ? 1 : 2;
+                    return GridView.builder(
+                      padding: EdgeInsets.fromLTRB(
+                        listingColumns == 1 ? 4 : 8,
+                        8,
+                        listingColumns == 1 ? 4 : 8,
+                        8,
+                      ),
+                      gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
+                        crossAxisCount: listingColumns,
+                        crossAxisSpacing: 8,
+                        mainAxisSpacing: 8,
+                        childAspectRatio: listingColumns == 2
+                            ? (Platform.isIOS ? 0.66 : 0.61)
+                            : 2.78,
+                      ),
+                      itemCount: myListings.length,
+                      itemBuilder: (context, index) {
+                        final listing = myListings[index];
+                        final id =
+                            (listing['id'] ?? listing['public_id'] ?? '').toString();
+                        final mapped = mapListingToGlobalCarCardData(context, listing);
+                        final card = buildGlobalCarCard(
+                          context,
+                          mapped,
+                          listLayout: listingColumns == 1,
+                        );
 
-                  return Stack(
-                    clipBehavior: Clip.none,
-                    children: [
-                      card,
-                      if (id.isNotEmpty)
-                        Positioned(
-                          top: 6,
-                          left: 6,
-                          child: Material(
-                            color: const Color(0xFFFF6B00),
-                            borderRadius: BorderRadius.circular(6),
-                            child: InkWell(
-                              borderRadius: BorderRadius.circular(6),
-                              onTap: () => _showListingAnalyticsPopup(
-                                listing,
-                                id,
-                              ),
-                              child: Padding(
-                                padding: const EdgeInsets.symmetric(
-                                  horizontal: 10,
-                                  vertical: 6,
-                                ),
-                                child: Text(
-                                  AppLocalizations.of(context)!.analyticsTitle,
-                                  style: const TextStyle(
-                                    color: Colors.white,
-                                    fontWeight: FontWeight.w800,
-                                    fontSize: 12,
-                                    letterSpacing: 0.2,
+                        return Stack(
+                          clipBehavior: Clip.none,
+                          children: [
+                            card,
+                            if (id.isNotEmpty)
+                              Positioned(
+                                top: 6,
+                                left: 6,
+                                child: Material(
+                                  color: const Color(0xFFFF6B00),
+                                  borderRadius: BorderRadius.circular(6),
+                                  child: InkWell(
+                                    borderRadius: BorderRadius.circular(6),
+                                    onTap: () => _showListingAnalyticsPopup(
+                                      listing,
+                                      id,
+                                    ),
+                                    child: Padding(
+                                      padding: const EdgeInsets.symmetric(
+                                        horizontal: 10,
+                                        vertical: 6,
+                                      ),
+                                      child: Text(
+                                        AppLocalizations.of(context)!.analyticsTitle,
+                                        style: const TextStyle(
+                                          color: Colors.white,
+                                          fontWeight: FontWeight.w800,
+                                          fontSize: 12,
+                                          letterSpacing: 0.2,
+                                        ),
+                                      ),
+                                    ),
                                   ),
                                 ),
                               ),
-                            ),
-                          ),
-                        ),
-                    ],
-                  );
-                },
-              );
-            },
-          ),
+                          ],
+                        );
+                      },
+                    );
+                  },
+                ),
         ),
       ],
     );
