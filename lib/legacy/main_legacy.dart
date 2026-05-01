@@ -15009,6 +15009,8 @@ class _SellCarPageState extends State<SellCarPage> {
   bool _hasDraftSnapshot = false;
   int _draftPreviewStep = 0;
   Map<String, dynamic>? _draftPreviewCarData;
+  int _sellPageResetToken = 0;
+  int _draftResumeToken = 0;
 
   // Car data that will be passed between steps
   Map<String, dynamic> carData = {};
@@ -15025,7 +15027,10 @@ class _SellCarPageState extends State<SellCarPage> {
     }
     switch (index) {
       case 0:
-        return const SellStep1Page();
+        return SellStep1Page(
+          resumeDraftToken: _draftResumeToken,
+          key: ValueKey('s1_${_draftResumeToken}'),
+        );
       case 1:
         return SellStep2Page(
           key: ValueKey(
@@ -15202,6 +15207,9 @@ class _SellCarPageState extends State<SellCarPage> {
   }
 
   Future<void> _resumeSellDraft() async {
+    setState(() {
+      _draftResumeToken++;
+    });
     await _restoreSellDraftSnapshot();
   }
 
@@ -15329,6 +15337,10 @@ class _SellCarPageState extends State<SellCarPage> {
                           currentStep = 0;
                           carData = {};
                           completedSteps.clear();
+                          _hasDraftSnapshot = false;
+                          _draftPreviewStep = 0;
+                          _draftPreviewCarData = null;
+                          _sellPageResetToken++;
                         });
                         if (_pageController.hasClients) {
                           _pageController.jumpToPage(0);
@@ -15444,6 +15456,7 @@ class _SellCarPageState extends State<SellCarPage> {
               // Page content
               Expanded(
                 child: PageView.builder(
+                  key: ValueKey(_sellPageResetToken),
                   controller: _pageController,
                   physics:
                       NeverScrollableScrollPhysics(), // Disable swipe scrolling
@@ -15589,7 +15602,9 @@ class _SellCarPageState extends State<SellCarPage> {
 
 // Step 1: Basic Information (Brand, Model, Trim, Year)
 class SellStep1Page extends StatefulWidget {
-  const SellStep1Page({super.key});
+  const SellStep1Page({super.key, this.resumeDraftToken = 0});
+
+  final int resumeDraftToken;
 
   @override
   _SellStep1PageState createState() => _SellStep1PageState();
@@ -15675,7 +15690,9 @@ class _SellStep1PageState extends State<SellStep1Page> {
     _yearController = TextEditingController();
     _yearController.addListener(_onYearTextForCatalog);
     _resetSellFilters();
-    unawaited(_restoreDraft());
+    if (widget.resumeDraftToken > 0) {
+      unawaited(_restoreDraft());
+    }
     CarSpecIndex.loadWithResult().then((r) {
       if (!mounted) return;
       setState(() {
@@ -15686,6 +15703,15 @@ class _SellStep1PageState extends State<SellStep1Page> {
       });
       _schedDsRefresh();
     });
+  }
+
+  @override
+  void didUpdateWidget(covariant SellStep1Page oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (widget.resumeDraftToken != oldWidget.resumeDraftToken &&
+        widget.resumeDraftToken > 0) {
+      unawaited(_restoreDraft());
+    }
   }
 
   @override
@@ -15722,6 +15748,22 @@ class _SellStep1PageState extends State<SellStep1Page> {
       });
       _schedDsRefresh();
     } catch (_) {}
+  }
+
+  void _hydrateFromParentCarData() {
+    final parent = context.findAncestorStateOfType<_SellCarPageState>();
+    final data = parent?.carData;
+    if (data == null || data.isEmpty) return;
+    setState(() {
+      selectedBrand = data['brand']?.toString();
+      selectedModel = data['model']?.toString();
+      selectedTrim = data['trim']?.toString();
+      selectedYear = data['year']?.toString();
+      _dsModelId = int.tryParse(data['_catalog_model_id']?.toString() ?? '');
+      _catYear = int.tryParse(data['_catalog_year']?.toString() ?? '');
+      final yearText = data['year']?.toString() ?? '';
+      _yearController.text = yearText;
+    });
   }
 
   Future<void> _saveDraft() async {
@@ -17050,7 +17092,7 @@ class _SellStep2PageState extends State<SellStep2Page> {
     _mileageController = TextEditingController();
     _engineSizeController = TextEditingController();
     _resetStep2();
-    unawaited(_restoreDraft());
+    _hydrateFromParentCarData();
     WidgetsBinding.instance.addPostFrameCallback((_) {
       if (!mounted) return;
       _hydrateFromParentCarData(force: true);
@@ -19259,7 +19301,26 @@ class _SellStep3PageState extends State<SellStep3Page> {
     _priceController = TextEditingController();
     _descriptionController.text = '';
     _resetStep3();
-    unawaited(_restoreDraft());
+    _hydrateFromParentCarData();
+  }
+
+  void _hydrateFromParentCarData() {
+    final parentState = context.findAncestorStateOfType<_SellCarPageState>();
+    final data = parentState?.carData;
+    if (data == null || data.isEmpty) return;
+    setState(() {
+      selectedPrice = data['price']?.toString();
+      selectedCity = data['city']?.toString();
+      selectedPlateType = data['plate_type']?.toString();
+      selectedPlateCity = data['plate_city']?.toString();
+      contactPhone = data['contact_phone']?.toString();
+      isQuickSell = data['is_quick_sell'] == true;
+      selectedCurrency = (data['currency']?.toString().trim().isNotEmpty == true)
+          ? data['currency'].toString()
+          : selectedCurrency;
+      _priceController.text = selectedPrice ?? '';
+      _descriptionController.text = data['description']?.toString() ?? '';
+    });
   }
 
   @override
@@ -20076,7 +20137,7 @@ class _SellStep4PageState extends State<SellStep4Page> {
   @override
   void initState() {
     super.initState();
-    unawaited(_restoreDraft());
+    _hydrateFromParentCarData();
   }
 
   @override
@@ -20143,6 +20204,29 @@ class _SellStep4PageState extends State<SellStep4Page> {
         parentState.setState(() {});
       }
     } catch (_) {}
+  }
+
+  void _hydrateFromParentCarData() {
+    final parentState = context.findAncestorStateOfType<_SellCarPageState>();
+    final saved = parentState?.carData['images'];
+    final videos = parentState?.carData['videos'];
+    final images = parentState?.carData['images'];
+    if ((images is! List || images.isEmpty) && (videos is! List || videos.isEmpty)) return;
+    setState(() {
+      _selectedImages = images is List ? List<dynamic>.from(images) : _selectedImages;
+      _selectedVideos.clear();
+      if (videos is List) {
+        for (final dynamic item in videos) {
+          if (item is XFile) {
+            _selectedVideos.add(item);
+          } else if (item is String && item.trim().isNotEmpty) {
+            _selectedVideos.add(XFile(item.trim()));
+          }
+        }
+      }
+      _imagesProcessed = parentState?.carData['images_processed'] == true || _imagesProcessed;
+      _isProcessingImages = false;
+    });
   }
 
   Future<void> _saveDraft() async {
