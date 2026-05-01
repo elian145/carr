@@ -15691,7 +15691,7 @@ class _SellStep1PageState extends State<SellStep1Page> {
     _yearController.addListener(_onYearTextForCatalog);
     _resetSellFilters();
     if (widget.resumeDraftToken > 0) {
-      unawaited(_restoreDraft());
+      _hydrateFromParentCarData();
     }
     CarSpecIndex.loadWithResult().then((r) {
       if (!mounted) return;
@@ -15710,7 +15710,7 @@ class _SellStep1PageState extends State<SellStep1Page> {
     super.didUpdateWidget(oldWidget);
     if (widget.resumeDraftToken != oldWidget.resumeDraftToken &&
         widget.resumeDraftToken > 0) {
-      unawaited(_restoreDraft());
+      _hydrateFromParentCarData();
     }
   }
 
@@ -16689,6 +16689,8 @@ class _SellStep1PageState extends State<SellStep1Page> {
                       _pruneYearOutsideCatalog();
                     });
                     _schedDsRefresh();
+                    final parent = context.findAncestorStateOfType<_SellCarPageState>();
+                    if (parent != null) unawaited(parent._saveSellDraftSnapshot());
                   }
                 },
                 child: buildFancySelector(
@@ -16758,6 +16760,8 @@ class _SellStep1PageState extends State<SellStep1Page> {
                       _pruneYearOutsideCatalog();
                     });
                     _schedDsRefresh();
+                    final parent = context.findAncestorStateOfType<_SellCarPageState>();
+                    if (parent != null) unawaited(parent._saveSellDraftSnapshot());
                   }
                 },
                 child: buildFancySelector(
@@ -16806,6 +16810,8 @@ class _SellStep1PageState extends State<SellStep1Page> {
                       _pruneYearOutsideCatalog();
                     });
                     _schedDsRefresh();
+                    final parent = context.findAncestorStateOfType<_SellCarPageState>();
+                    if (parent != null) unawaited(parent._saveSellDraftSnapshot());
                   }
                 },
                 child: buildFancySelector(
@@ -16883,6 +16889,8 @@ class _SellStep1PageState extends State<SellStep1Page> {
                                 setState(() {
                                   selectedYear = choice;
                                 });
+                                final parent = context.findAncestorStateOfType<_SellCarPageState>();
+                                if (parent != null) unawaited(parent._saveSellDraftSnapshot());
                               }
                             },
                             child: buildFancySelector(
@@ -16918,6 +16926,8 @@ class _SellStep1PageState extends State<SellStep1Page> {
                           selectedYear = _yearController.text;
                         }
                       });
+                      final parent = context.findAncestorStateOfType<_SellCarPageState>();
+                      if (parent != null) unawaited(parent._saveSellDraftSnapshot());
                     } else {
                       // If in dropdown mode, switch to manual input
                       setState(() {
@@ -16926,6 +16936,8 @@ class _SellStep1PageState extends State<SellStep1Page> {
                         _yearController.clear();
                         selectedYear = null;
                       });
+                      final parent = context.findAncestorStateOfType<_SellCarPageState>();
+                      if (parent != null) unawaited(parent._saveSellDraftSnapshot());
                     }
                   },
                   icon: Icon(
@@ -23968,7 +23980,11 @@ Widget build(BuildContext context) {
                 decoration: InputDecoration(labelText: AppLocalizations.of(context)!.conditionLabel),
                 value: selectedCondition != null && conditions.contains(selectedCondition) ? selectedCondition : null,
                 items: conditions.map((c) => DropdownMenuItem(value: c, child: Text(_translateValueGlobal(context, c) ?? c))).toList(),
-                onChanged: (v) => setState(() => selectedCondition = v),
+                onChanged: (v) {
+                  setState(() => selectedCondition = v);
+                  final parent = context.findAncestorStateOfType<_SellCarPageState>();
+                  if (parent != null) unawaited(parent._saveSellDraftSnapshot());
+                },
                 validator: (v) => v == null || v.isEmpty ? AppLocalizations.of(context)!.conditionLabel : null,
               ),
               SizedBox(height: 12),
@@ -24007,7 +24023,11 @@ Widget build(BuildContext context) {
                 decoration: InputDecoration(labelText: AppLocalizations.of(context)!.transmissionLabel),
                 value: selectedTransmission != null && transmissions.contains(selectedTransmission) ? selectedTransmission : null,
                 items: transmissions.map((t) => DropdownMenuItem(value: t, child: Text(_translateValueGlobal(context, t) ?? t))).toList(),
-                onChanged: (v) => setState(() => selectedTransmission = v),
+                onChanged: (v) {
+                  setState(() => selectedTransmission = v);
+                  final parent = context.findAncestorStateOfType<_SellCarPageState>();
+                  if (parent != null) unawaited(parent._saveSellDraftSnapshot());
+                },
                 validator: (v) => v == null || v.isEmpty ? AppLocalizations.of(context)!.transmissionLabel : null,
               ),
               SizedBox(height: 12),
@@ -24015,7 +24035,11 @@ Widget build(BuildContext context) {
                 decoration: InputDecoration(labelText: AppLocalizations.of(context)!.fuelTypeLabel),
                 value: selectedFuelType != null && fuelTypes.contains(selectedFuelType) ? selectedFuelType : null,
                 items: fuelTypes.map((f) => DropdownMenuItem(value: f, child: Text(_translateValueGlobal(context, f) ?? f))).toList(),
-                onChanged: (v) => setState(() => selectedFuelType = v),
+                onChanged: (v) {
+                  setState(() => selectedFuelType = v);
+                  final parent = context.findAncestorStateOfType<_SellCarPageState>();
+                  if (parent != null) unawaited(parent._saveSellDraftSnapshot());
+                },
                 validator: (v) => v == null || v.isEmpty ? AppLocalizations.of(context)!.fuelTypeLabel : null,
               ),
               SizedBox(height: 12),
@@ -24066,7 +24090,11 @@ Widget build(BuildContext context) {
                                       
                                       return InkWell(
                                         borderRadius: BorderRadius.circular(12),
-                                        onTap: () => Navigator.pop(context, bodyTypeName),
+                                        onTap: () {
+                                          Navigator.pop(context, bodyTypeName);
+                                          final parent = context.findAncestorStateOfType<_SellCarPageState>();
+                                          if (parent != null) unawaited(parent._saveSellDraftSnapshot());
+                                        },
                                         child: Container(
                                           decoration: BoxDecoration(
                                             color: Colors.black.withOpacity(0.15),
@@ -24118,6 +24146,8 @@ Widget build(BuildContext context) {
                       setState(() {
                         selectedBodyType = bodyType == 'Any' ? null : bodyType;
                       });
+                      final parent = context.findAncestorStateOfType<_SellCarPageState>();
+                      if (parent != null) unawaited(parent._saveSellDraftSnapshot());
                     }
                   },
                   style: ElevatedButton.styleFrom(
@@ -24249,7 +24279,11 @@ Widget build(BuildContext context) {
                                       
                                       return InkWell(
                                         borderRadius: BorderRadius.circular(12),
-                                        onTap: () => Navigator.pop(context, colorName),
+                                        onTap: () {
+                                          Navigator.pop(context, colorName);
+                                          final parent = context.findAncestorStateOfType<_SellCarPageState>();
+                                          if (parent != null) unawaited(parent._saveSellDraftSnapshot());
+                                        },
                                         child: Container(
                                           decoration: BoxDecoration(
                                             color: Colors.black.withOpacity(0.15),
@@ -24294,6 +24328,8 @@ Widget build(BuildContext context) {
                       setState(() {
                         selectedColor = color == 'Any' ? null : color;
                       });
+                      final parent = context.findAncestorStateOfType<_SellCarPageState>();
+                      if (parent != null) unawaited(parent._saveSellDraftSnapshot());
                     }
                   },
                   style: ElevatedButton.styleFrom(
@@ -24339,7 +24375,11 @@ Widget build(BuildContext context) {
                 decoration: InputDecoration(labelText: AppLocalizations.of(context)!.driveType),
                 value: selectedDriveType != null && getAddCarAvailableDriveTypes().contains(selectedDriveType) ? selectedDriveType : null,
                 items: getAddCarAvailableDriveTypes().map((d) => DropdownMenuItem(value: d, child: Text(_translateValueGlobal(context, d) ?? d))).toList(),
-                onChanged: (v) => setState(() => selectedDriveType = v),
+                onChanged: (v) {
+                  setState(() => selectedDriveType = v);
+                  final parent = context.findAncestorStateOfType<_SellCarPageState>();
+                  if (parent != null) unawaited(parent._saveSellDraftSnapshot());
+                },
                 validator: (v) => v == null || v.isEmpty ? AppLocalizations.of(context)!.selectDriveType : null,
               ),
               SizedBox(height: 12),
@@ -24348,7 +24388,11 @@ Widget build(BuildContext context) {
                 decoration: InputDecoration(labelText: AppLocalizations.of(context)!.cylinderCount),
                 value: selectedCylinderCount != null && getAddCarAvailableCylinderCounts().contains(selectedCylinderCount) ? selectedCylinderCount : null,
                 items: getAddCarAvailableCylinderCounts().map((c) => DropdownMenuItem(value: c, child: Text(_localizeDigitsGlobal(context, c)))).toList(),
-                onChanged: (v) => setState(() => selectedCylinderCount = v),
+                onChanged: (v) {
+                  setState(() => selectedCylinderCount = v);
+                  final parent = context.findAncestorStateOfType<_SellCarPageState>();
+                  if (parent != null) unawaited(parent._saveSellDraftSnapshot());
+                },
                 validator: (v) => v == null || v.isEmpty ? AppLocalizations.of(context)!.selectCylinderCount : null,
               ),
               SizedBox(height: 12),
@@ -24357,7 +24401,11 @@ Widget build(BuildContext context) {
                 decoration: InputDecoration(labelText: AppLocalizations.of(context)!.seating),
                 value: selectedSeating != null && getAddCarAvailableSeatings().contains(selectedSeating) ? selectedSeating : null,
                 items: getAddCarAvailableSeatings().map((s) => DropdownMenuItem(value: s, child: Text(_localizeDigitsGlobal(context, s)))).toList(),
-                onChanged: (v) => setState(() => selectedSeating = v),
+                onChanged: (v) {
+                  setState(() => selectedSeating = v);
+                  final parent = context.findAncestorStateOfType<_SellCarPageState>();
+                  if (parent != null) unawaited(parent._saveSellDraftSnapshot());
+                },
                 validator: (v) => v == null || v.isEmpty ? AppLocalizations.of(context)!.selectSeating : null,
               ),
               SizedBox(height: 12),
@@ -24379,7 +24427,11 @@ Widget build(BuildContext context) {
                                   ),
                                 )
                                 .toList(),
-                            onChanged: (v) => setState(() => selectedEngineSize = v),
+                            onChanged: (v) {
+                              setState(() => selectedEngineSize = v);
+                              final parent = context.findAncestorStateOfType<_SellCarPageState>();
+                              if (parent != null) unawaited(parent._saveSellDraftSnapshot());
+                            },
                             validator: (v) => v == null || v.isEmpty ? AppLocalizations.of(context)!.selectEngineSize : null,
                           )
                         : TextFormField(
@@ -24422,7 +24474,11 @@ Widget build(BuildContext context) {
                 decoration: InputDecoration(labelText: AppLocalizations.of(context)!.cityLabel),
                 value: selectedCity != null && cities.contains(selectedCity) ? selectedCity : null,
                 items: cities.map((c) => DropdownMenuItem(value: c, child: Text(c))).toList(),
-                onChanged: (v) => setState(() => selectedCity = v),
+                onChanged: (v) {
+                  setState(() => selectedCity = v);
+                  final parent = context.findAncestorStateOfType<_SellCarPageState>();
+                  if (parent != null) unawaited(parent._saveSellDraftSnapshot());
+                },
                 validator: (v) => v == null || v.isEmpty ? AppLocalizations.of(context)!.selectCity : null,
               ),
               SizedBox(height: 12),
@@ -24442,7 +24498,11 @@ Widget build(BuildContext context) {
                   services.FilteringTextInputFormatter.allow(RegExp(r'[0-9]')),
                   services.LengthLimitingTextInputFormatter(10),
                 ],
-                onChanged: (v) => setState(() => contactPhone = '+964' + v.trim()),
+                onChanged: (v) {
+                  setState(() => contactPhone = '+964' + v.trim());
+                  final parent = context.findAncestorStateOfType<_SellCarPageState>();
+                  if (parent != null) unawaited(parent._saveSellDraftSnapshot());
+                },
                 validator: (v) {
                   if (v == null || v.trim().isEmpty) return AppLocalizations.of(context)!.enterWhatsAppNumber;
                   if (v.trim().length < 10) return 'Please enter a valid phone number';
