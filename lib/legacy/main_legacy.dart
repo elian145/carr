@@ -17868,6 +17868,26 @@ class _SellStep2PageState extends State<SellStep2Page> {
     if (m != null) _applyOnlineVariantToSellStep2(m);
   }
 
+  void _syncStep2DraftToParent() {
+    final parentState = context.findAncestorStateOfType<_SellCarPageState>();
+    if (parentState == null) return;
+    parentState.carData['mileage'] = selectedMileage;
+    parentState.carData['condition'] = selectedCondition;
+    parentState.carData['transmission'] = selectedTransmission;
+    parentState.carData['fuel_type'] = selectedFuelType;
+    parentState.carData['body_type'] = selectedBodyType;
+    parentState.carData['color'] = selectedColor;
+    parentState.carData['drive_type'] = selectedDriveType;
+    parentState.carData['region_specs'] =
+        selectedRegionSpecs?.trim().toLowerCase();
+    parentState.carData['seating'] = selectedSeating;
+    parentState.carData['engine_size'] = selectedEngineSize;
+    parentState.carData['cylinder_count'] = selectedCylinderCount;
+    parentState.carData['title_status'] = selectedTitleStatus;
+    parentState.carData['damaged_parts'] = selectedDamagedParts;
+    unawaited(parentState._saveSellDraftSnapshot());
+  }
+
   Color _colorFromName(String colorName) {
     switch (colorName.toLowerCase()) {
       case 'black':
@@ -18126,6 +18146,7 @@ class _SellStep2PageState extends State<SellStep2Page> {
                             setState(() {
                               selectedMileage = value.isEmpty ? null : value;
                             });
+                            _syncStep2DraftToParent();
                           },
                           validator: (value) {
                             final l = AppLocalizations.of(context)!;
@@ -18198,6 +18219,7 @@ class _SellStep2PageState extends State<SellStep2Page> {
                           selectedMileage = _mileageController.text;
                         }
                       });
+                      _syncStep2DraftToParent();
                     } else {
                       // If in dropdown mode, switch to manual input
                       setState(() {
@@ -18206,6 +18228,7 @@ class _SellStep2PageState extends State<SellStep2Page> {
                         _mileageController.clear();
                         selectedMileage = null;
                       });
+                      _syncStep2DraftToParent();
                     }
                   },
                   icon: Icon(
@@ -18240,6 +18263,7 @@ class _SellStep2PageState extends State<SellStep2Page> {
                   );
                   if (choice != null) {
                     setState(() => selectedCondition = choice);
+                    _syncStep2DraftToParent();
                   }
                 },
                 child: buildFancySelector(
@@ -18271,6 +18295,7 @@ class _SellStep2PageState extends State<SellStep2Page> {
                       selectedTransmission = choice;
                       _syncStep2ToOnlineVariant({'tr'});
                     });
+                    _syncStep2DraftToParent();
                   }
                 },
                 child: buildFancySelector(
@@ -18303,6 +18328,7 @@ class _SellStep2PageState extends State<SellStep2Page> {
                       selectedFuelType = choice;
                       _syncStep2ToOnlineVariant({'fuel'});
                     });
+                    _syncStep2DraftToParent();
                   }
                 },
                 child: buildFancySelector(
@@ -18492,6 +18518,7 @@ class _SellStep2PageState extends State<SellStep2Page> {
                       selectedBodyType = choice;
                       _syncStep2ToOnlineVariant({'body'});
                     });
+                    _syncStep2DraftToParent();
                   }
                 },
                 child: buildFancySelector(
@@ -18632,6 +18659,7 @@ class _SellStep2PageState extends State<SellStep2Page> {
                     },
                   );
                   if (choice != null) setState(() => selectedColor = choice);
+                  if (choice != null) _syncStep2DraftToParent();
                 },
                 child: buildFancySelector(
                   context,
@@ -18662,6 +18690,7 @@ class _SellStep2PageState extends State<SellStep2Page> {
                       selectedDriveType = choice;
                       _syncStep2ToOnlineVariant({'drv'});
                     });
+                    _syncStep2DraftToParent();
                   }
                 },
                 child: buildFancySelector(
@@ -18693,6 +18722,7 @@ class _SellStep2PageState extends State<SellStep2Page> {
                     setState(() {
                       selectedRegionSpecs = choice.trim().toLowerCase();
                     });
+                    _syncStep2DraftToParent();
                   }
                 },
                 child: buildFancySelector(
@@ -18727,6 +18757,7 @@ class _SellStep2PageState extends State<SellStep2Page> {
                       selectedSeating = choice;
                       _syncStep2ToOnlineVariant({'seat'});
                     });
+                    _syncStep2DraftToParent();
                   }
                 },
                 child: buildFancySelector(
@@ -18797,6 +18828,7 @@ class _SellStep2PageState extends State<SellStep2Page> {
                                   : value.trim();
                               if (errEngineSize) errEngineSize = false;
                             });
+                            _syncStep2DraftToParent();
                           },
                           validator: (value) {
                             final l = AppLocalizations.of(context)!;
@@ -18836,6 +18868,7 @@ class _SellStep2PageState extends State<SellStep2Page> {
                                   if (errEngineSize) errEngineSize = false;
                                   _syncStep2ToOnlineVariant({'e'});
                                 });
+                                _syncStep2DraftToParent();
                               }
                             },
                             child: buildFancySelector(
@@ -18872,6 +18905,7 @@ class _SellStep2PageState extends State<SellStep2Page> {
                           _syncStep2ToOnlineVariant({'e'});
                         }
                       });
+                      _syncStep2DraftToParent();
                     } else {
                       // Switch from modal picker to manual input
                       setState(() {
@@ -18879,6 +18913,7 @@ class _SellStep2PageState extends State<SellStep2Page> {
                         _engineSizeController.clear();
                         selectedEngineSize = null;
                       });
+                      _syncStep2DraftToParent();
                     }
                   },
                   icon: Icon(
@@ -18923,6 +18958,7 @@ class _SellStep2PageState extends State<SellStep2Page> {
                       if (errCylinderCount) errCylinderCount = false;
                       _syncStep2ToOnlineVariant({'c'});
                     });
+                    _syncStep2DraftToParent();
                   }
                 },
                 child: buildFancySelector(
@@ -18957,6 +18993,7 @@ class _SellStep2PageState extends State<SellStep2Page> {
                       selectedTitleStatus = choice;
                       if (choice != 'Damaged') selectedDamagedParts = null;
                     });
+                    _syncStep2DraftToParent();
                   }
                 },
                 child: buildFancySelector(
@@ -18985,6 +19022,7 @@ class _SellStep2PageState extends State<SellStep2Page> {
                     );
                     if (choice != null) {
                       setState(() => selectedDamagedParts = choice);
+                    _syncStep2DraftToParent();
                     }
                   },
                   child: buildFancySelector(
