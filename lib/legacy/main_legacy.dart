@@ -3472,7 +3472,21 @@ class MyApp extends StatelessWidget {
               initialRoute: '/',
               routes: {
                 '/': (context) => HomePage(),
-                '/sell': (context) => AuthGuard(child: SellCarPage()),
+                '/sell': (context) {
+                  final args = ModalRoute.of(context)?.settings.arguments;
+                  final initialDraftSnapshot = args is Map
+                      ? (args['draftSnapshot'] is Map
+                          ? Map<String, dynamic>.from(
+                              (args['draftSnapshot'] as Map).cast<String, dynamic>(),
+                            )
+                          : null)
+                      : null;
+                  return AuthGuard(
+                    child: SellCarPage(
+                      initialDraftSnapshot: initialDraftSnapshot,
+                    ),
+                  );
+                },
                 '/settings': (context) => SettingsPage(),
                 '/favorites': (context) => AuthGuard(child: FavoritesPage()),
                 '/chat': (context) => AuthGuard(child: ChatListPage()),
@@ -14995,7 +15009,9 @@ class _SpecItem {
 
 // Multi-step sell page
 class SellCarPage extends StatefulWidget {
-  const SellCarPage({super.key});
+  const SellCarPage({super.key, this.initialDraftSnapshot});
+
+  final Map<String, dynamic>? initialDraftSnapshot;
 
   @override
   _SellCarPageState createState() => _SellCarPageState();
@@ -15007,6 +15023,7 @@ class _SellCarPageState extends State<SellCarPage> {
   static const String _draftCurrentStepKey = 'legacy_sell_draft_current_step_v1';
   static const String _draftSnapshotKey = 'legacy_sell_draft_snapshot_v1';
   bool _hasDraftSnapshot = false;
+  bool _hideDraftBanner = false;
   int _draftPreviewStep = 0;
   Map<String, dynamic>? _draftPreviewCarData;
   int _sellPageResetToken = 0;
@@ -15223,6 +15240,33 @@ class _SellCarPageState extends State<SellCarPage> {
     await _restoreSellDraftSnapshot();
   }
 
+  void _applyDraftSnapshot(
+    Map<String, dynamic> snapshot, {
+    bool restoreCurrentStep = true,
+  }) {
+    final currentStepValue = int.tryParse(
+      snapshot['currentStep']?.toString() ?? '',
+    );
+    final rawCarData = snapshot['carData'];
+    final restoredCarData = rawCarData is Map
+        ? Map<String, dynamic>.from(rawCarData.cast<String, dynamic>())
+        : <String, dynamic>{};
+    if (!_hasMeaningfulDraftValue(restoredCarData)) return;
+
+    if (restoreCurrentStep) {
+      currentStep = currentStepValue?.clamp(0, _kSellStepCount - 1) ?? 0;
+    }
+    carData = restoredCarData;
+    _hasDraftSnapshot = true;
+    _draftPreviewStep = currentStep;
+    _draftPreviewCarData = restoredCarData;
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (mounted && _pageController.hasClients) {
+        _pageController.jumpToPage(currentStep);
+      }
+    });
+  }
+
   Future<void> _loadSellDraftPreview() async {
     try {
       final sp = await SharedPreferences.getInstance();
@@ -15278,7 +15322,9 @@ class _SellCarPageState extends State<SellCarPage> {
   }
 
   Widget _buildDraftBanner() {
-    if (!_hasDraftSnapshot) return const SizedBox.shrink();
+    if (!_hasDraftSnapshot || _hideDraftBanner) {
+      return const SizedBox.shrink();
+    }
     final labels = <String>[
       'Step 1: Basic info',
       'Step 2: Details',
@@ -15380,7 +15426,13 @@ class _SellCarPageState extends State<SellCarPage> {
   @override
   void initState() {
     super.initState();
-    unawaited(_loadSellDraftPreview());
+    final initialDraft = widget.initialDraftSnapshot;
+    if (initialDraft != null) {
+      _hideDraftBanner = true;
+      _applyDraftSnapshot(initialDraft);
+    } else {
+      unawaited(_loadSellDraftPreview());
+    }
   }
 
   @override
@@ -15700,9 +15752,7 @@ class _SellStep1PageState extends State<SellStep1Page> {
     _yearController = TextEditingController();
     _yearController.addListener(_onYearTextForCatalog);
     _resetSellFilters();
-    if (widget.resumeDraftToken > 0) {
-      _hydrateFromParentCarData();
-    }
+    _hydrateFromParentCarData();
     CarSpecIndex.loadWithResult().then((r) {
       if (!mounted) return;
       setState(() {
@@ -15718,7 +15768,7 @@ class _SellStep1PageState extends State<SellStep1Page> {
   @override
   void didUpdateWidget(covariant SellStep1Page oldWidget) {
     super.didUpdateWidget(oldWidget);
-    if (widget.resumeDraftToken != oldWidget.resumeDraftToken &&
+    if (widget.resumeDraftToken != oldWidget.resumeDraftToken ||
         widget.resumeDraftToken > 0) {
       _hydrateFromParentCarData();
     }
@@ -19326,6 +19376,7 @@ class _SellStep3PageState extends State<SellStep3Page> {
 
   // Controller for price input
   late TextEditingController _priceController;
+  late TextEditingController _phoneController;
   final TextEditingController _descriptionController =
       TextEditingController();
 
@@ -19368,6 +19419,7 @@ class _SellStep3PageState extends State<SellStep3Page> {
   void initState() {
     super.initState();
     _priceController = TextEditingController();
+    _phoneController = TextEditingController();
     _descriptionController.text = '';
     _resetStep3();
     _hydrateFromParentCarData();
@@ -19388,6 +19440,7 @@ class _SellStep3PageState extends State<SellStep3Page> {
           ? data['currency'].toString()
           : selectedCurrency;
       _priceController.text = selectedPrice ?? '';
+      _phoneController.text = (contactPhone ?? '').replaceFirst(RegExp(r'^\+964'), '');
       _descriptionController.text = data['description']?.toString() ?? '';
     });
   }
@@ -19412,6 +19465,7 @@ class _SellStep3PageState extends State<SellStep3Page> {
     unawaited(_saveDraft());
     _priceFocusNode.dispose();
     _priceController.dispose();
+    _phoneController.dispose();
     _descriptionController.dispose();
     super.dispose();
   }
@@ -19435,6 +19489,8 @@ class _SellStep3PageState extends State<SellStep3Page> {
         isPriceManualInput = data['isPriceManualInput'] == true;
         selectedCurrency = data['selectedCurrency']?.toString() ?? 'USD';
         _priceController.text = data['priceControllerText']?.toString() ?? '';
+        _phoneController.text =
+            (contactPhone ?? '').replaceFirst(RegExp(r'^\+964'), '');
         _descriptionController.text =
             data['descriptionControllerText']?.toString() ?? '';
       });
@@ -19481,6 +19537,7 @@ class _SellStep3PageState extends State<SellStep3Page> {
     selectedPlateCity = null;
     contactPhone = null;
     _descriptionController.clear();
+    _phoneController.clear();
     isQuickSell = false;
     selectedCurrency = 'USD';
     _priceController.clear();
@@ -19992,6 +20049,7 @@ class _SellStep3PageState extends State<SellStep3Page> {
             // Contact Phone
             TextFormField(
               onTap: () => _dismissKeyboard(),
+              controller: _phoneController,
               decoration: InputDecoration(
                 labelText: 'WhatsApp/Phone Number *',
                 hintText: '7XX XXX XXXX',
@@ -20326,7 +20384,9 @@ class _SellStep4PageState extends State<SellStep4Page> {
       await sp.setString(
         _draftKey,
         json.encode(<String, dynamic>{
-          'selectedImages': _selectedImages.map((e) => e.toString()).toList(),
+          'selectedImages': _selectedImages
+              .map((e) => e is XFile ? e.path : e.toString())
+              .toList(),
           'selectedVideos': _selectedVideos.map((e) => e.path).toList(),
           'imagesProcessed': _imagesProcessed,
         }),
@@ -20891,6 +20951,7 @@ class _SellStep4PageState extends State<SellStep4Page> {
                   height: 50,
                   child: OutlinedButton(
                     onPressed: () {
+                    _syncMediaDraftToParent();
                       final parentState = context
                           .findAncestorStateOfType<_SellCarPageState>();
                       if (parentState != null) {
@@ -20936,14 +20997,16 @@ class _SellStep4PageState extends State<SellStep4Page> {
                       }
 
                       // Save data and navigate to next step
+                    _syncMediaDraftToParent();
                       final parentState = context
                           .findAncestorStateOfType<_SellCarPageState>();
                       if (parentState != null) {
-                        parentState.carData['images'] = _selectedImages;
-                        parentState.carData['videos'] = List<XFile>.from(
-                          _selectedVideos,
-                        );
-
+                      parentState.carData['images'] = List<dynamic>.from(
+                        _selectedImages,
+                      );
+                      parentState.carData['videos'] = List<XFile>.from(
+                        _selectedVideos,
+                      );
                         parentState._goToNextStep();
                       }
                     },
@@ -28124,7 +28187,16 @@ class _MyListingsPageState extends State<MyListingsPage> {
   }
 
   Future<void> _resumeSellDraft() async {
-    Navigator.pushNamed(context, '/sell');
+    final snapshot = _draftSnapshot;
+    if (snapshot == null) {
+      Navigator.pushNamed(context, '/sell');
+      return;
+    }
+    Navigator.pushNamed(
+      context,
+      '/sell',
+      arguments: {'draftSnapshot': snapshot},
+    );
   }
 
   String _draftTitle(Map<String, dynamic> carData) {
@@ -28141,7 +28213,7 @@ class _MyListingsPageState extends State<MyListingsPage> {
     return '$title • $suffix';
   }
 
-  Widget _buildDraftSection() {
+  Widget _buildDraftSection({required bool listLayout}) {
     final snapshot = _draftSnapshot;
     if (snapshot == null) return const SizedBox.shrink();
     final carData = snapshot['carData'] is Map
@@ -28157,91 +28229,94 @@ class _MyListingsPageState extends State<MyListingsPage> {
     ];
     final stepText = stepLabel[currentStep.clamp(0, 4).toInt()];
 
+    final draftListing = <String, dynamic>{
+      ...carData,
+      'title': _draftTitle(carData),
+      'price': carData['price']?.toString().trim(),
+      'images': (carData['images'] is List)
+          ? List<dynamic>.from(carData['images'] as List)
+          : const <dynamic>[],
+      'videos': (carData['videos'] is List)
+          ? List<dynamic>.from(carData['videos'] as List)
+          : const <dynamic>[],
+      'is_quick_sell': carData['is_quick_sell'] ?? false,
+    };
+
     return Padding(
-      padding: const EdgeInsets.fromLTRB(16, 16, 16, 8),
-      child: Container(
-        decoration: BoxDecoration(
-          color: Colors.orange.withOpacity(0.08),
-          borderRadius: BorderRadius.circular(16),
-          border: Border.all(color: Colors.orange.withOpacity(0.24)),
-        ),
-        child: Padding(
-          padding: const EdgeInsets.all(14),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Row(
-                children: [
-                  Container(
-                    width: 42,
-                    height: 42,
-                    decoration: BoxDecoration(
-                      color: const Color(0xFFFF6B00).withOpacity(0.12),
-                      borderRadius: BorderRadius.circular(12),
-                    ),
-                    child: const Icon(
-                      Icons.drafts_outlined,
-                      color: Color(0xFFFF6B00),
-                    ),
-                  ),
-                  const SizedBox(width: 12),
-                  Expanded(
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text(
-                          'Draft in progress',
-                          style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                                fontWeight: FontWeight.w700,
-                              ),
-                        ),
-                        const SizedBox(height: 2),
-                        Text(
-                          stepText,
-                          style: Theme.of(context).textTheme.bodySmall,
-                        ),
-                      ],
-                    ),
-                  ),
-                ],
-              ),
-              const SizedBox(height: 12),
-              Text(
-                _draftTitle(carData),
-                style: Theme.of(context).textTheme.titleSmall?.copyWith(
-                      fontWeight: FontWeight.w700,
-                    ),
-                maxLines: 2,
-                overflow: TextOverflow.ellipsis,
-              ),
-              const SizedBox(height: 6),
-              Text(
-                'Continue here to finish the listing, or discard it if you want to start over.',
-                style: Theme.of(context).textTheme.bodySmall,
-              ),
-              const SizedBox(height: 12),
-              Row(
-                children: [
-                  Expanded(
-                    child: OutlinedButton.icon(
-                      onPressed: _discardSellDraft,
-                      icon: const Icon(Icons.delete_outline),
-                      label: const Text('Discard draft'),
-                    ),
-                  ),
-                  const SizedBox(width: 10),
-                  Expanded(
-                    child: ElevatedButton.icon(
-                      onPressed: _resumeSellDraft,
-                      icon: const Icon(Icons.play_arrow),
-                      label: const Text('Continue'),
-                    ),
-                  ),
-                ],
-              ),
-            ],
+      padding: const EdgeInsets.all(4),
+      child: Stack(
+        clipBehavior: Clip.none,
+        children: [
+          IgnorePointer(
+            child: buildGlobalCarCard(
+              context,
+              draftListing,
+              listLayout: listLayout,
+            ),
           ),
-        ),
+          Positioned.fill(
+            child: Material(
+              color: Colors.transparent,
+              child: InkWell(
+                borderRadius: BorderRadius.circular(20),
+                onTap: _resumeSellDraft,
+              ),
+            ),
+          ),
+          Positioned(
+            top: 12,
+            left: 12,
+            child: Container(
+              padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+              decoration: BoxDecoration(
+                color: Colors.black.withOpacity(0.62),
+                borderRadius: BorderRadius.circular(999),
+              ),
+              child: const Text(
+                'DRAFT',
+                style: TextStyle(
+                  color: Colors.white,
+                  fontWeight: FontWeight.w800,
+                  fontSize: 11,
+                  letterSpacing: 0.8,
+                ),
+              ),
+            ),
+          ),
+          Positioned(
+            top: 10,
+            right: 10,
+            child: Material(
+              color: Colors.black.withOpacity(0.62),
+              shape: const CircleBorder(),
+              child: IconButton(
+                visualDensity: VisualDensity.compact,
+                onPressed: _discardSellDraft,
+                icon: const Icon(Icons.delete_outline, color: Colors.white),
+                tooltip: 'Discard draft',
+              ),
+            ),
+          ),
+          Positioned(
+            bottom: 12,
+            right: 12,
+            child: Container(
+              padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+              decoration: BoxDecoration(
+                color: Colors.black.withOpacity(0.62),
+                borderRadius: BorderRadius.circular(999),
+              ),
+              child: Text(
+                stepText,
+                style: const TextStyle(
+                  color: Colors.white,
+                  fontWeight: FontWeight.w700,
+                  fontSize: 11,
+                ),
+              ),
+            ),
+          ),
+        ],
       ),
     );
   }
@@ -28406,7 +28481,6 @@ class _MyListingsPageState extends State<MyListingsPage> {
     final isLightShell = Theme.of(context).brightness == Brightness.light;
     return Column(
       children: [
-        if (_draftSnapshot != null) _buildDraftSection(),
         Padding(
           padding: EdgeInsets.all(16),
           child: Container(
@@ -28476,12 +28550,14 @@ class _MyListingsPageState extends State<MyListingsPage> {
         ),
         SizedBox(height: 0),
         Expanded(
-          child: myListings.isEmpty
+          child: (myListings.isEmpty && _draftSnapshot == null)
               ? _buildEmptyState()
               : ValueListenableBuilder<int>(
                   valueListenable: ListingLayoutPrefs.columns,
                   builder: (context, cols, _) {
                     final listingColumns = (cols == 1) ? 1 : 2;
+                    final hasDraft = _draftSnapshot != null;
+                    final totalCards = myListings.length + (hasDraft ? 1 : 0);
                     return GridView.builder(
                       padding: EdgeInsets.fromLTRB(
                         listingColumns == 1 ? 4 : 8,
@@ -28497,9 +28573,15 @@ class _MyListingsPageState extends State<MyListingsPage> {
                             ? (Platform.isIOS ? 0.66 : 0.61)
                             : 2.78,
                       ),
-                      itemCount: myListings.length,
+                      itemCount: totalCards,
                       itemBuilder: (context, index) {
-                        final listing = myListings[index];
+                        if (hasDraft && index == 0) {
+                          return _buildDraftSection(
+                            listLayout: listingColumns == 1,
+                          );
+                        }
+
+                        final listing = myListings[hasDraft ? index - 1 : index];
                         final id =
                             (listing['id'] ?? listing['public_id'] ?? '').toString();
                         final mapped = mapListingToGlobalCarCardData(context, listing);
