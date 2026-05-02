@@ -20283,6 +20283,17 @@ class _SellStep4PageState extends State<SellStep4Page> {
   bool _isProcessingImages = false;
   bool _imagesProcessed = false;
 
+  dynamic _normalizeDraftImageItem(dynamic item) {
+    if (item is XFile) return item;
+    final raw = item?.toString().trim() ?? '';
+    if (raw.isEmpty) return raw;
+    if (raw.startsWith('http://') || raw.startsWith('https://')) {
+      return raw;
+    }
+    final localPath = raw.startsWith('file://') ? raw.replaceFirst('file://', '') : raw;
+    return File(localPath).existsSync() ? XFile(localPath) : raw;
+  }
+
   @override
   void initState() {
     super.initState();
@@ -20327,9 +20338,8 @@ class _SellStep4PageState extends State<SellStep4Page> {
       setState(() {
         _selectedImages = images is List
             ? images
-                .map((e) => e.toString())
-                .where((e) => e.trim().isNotEmpty)
-                .map((e) => File(e).existsSync() ? XFile(e) : e)
+                .map(_normalizeDraftImageItem)
+                .where((e) => e.toString().trim().isNotEmpty)
                 .toList()
             : _selectedImages;
         _selectedVideos
@@ -20362,7 +20372,12 @@ class _SellStep4PageState extends State<SellStep4Page> {
     final images = parentState?.carData['images'];
     if ((images is! List || images.isEmpty) && (videos is! List || videos.isEmpty)) return;
     setState(() {
-      _selectedImages = images is List ? List<dynamic>.from(images) : _selectedImages;
+      _selectedImages = images is List
+          ? images
+              .map(_normalizeDraftImageItem)
+              .where((e) => e.toString().trim().isNotEmpty)
+              .toList()
+          : _selectedImages;
       _selectedVideos.clear();
       if (videos is List) {
         for (final dynamic item in videos) {
