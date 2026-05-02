@@ -3481,10 +3481,21 @@ class MyApp extends StatelessWidget {
                             )
                           : null)
                       : null;
+                  final startFresh = args is Map && args['startFresh'] == true;
+                  if (initialDraftSnapshot != null) {
+                    return AuthGuard(
+                      child: SellCarPage(
+                        initialDraftSnapshot: initialDraftSnapshot,
+                      ),
+                    );
+                  }
+                  if (startFresh) {
+                    return AuthGuard(
+                      child: const SellCarPage(startFreshListing: true),
+                    );
+                  }
                   return AuthGuard(
-                    child: SellCarPage(
-                      initialDraftSnapshot: initialDraftSnapshot,
-                    ),
+                    child: const SellDraftGatePage(),
                   );
                 },
                 '/settings': (context) => SettingsPage(),
@@ -15005,13 +15016,255 @@ class _SpecItem {
   });
 }
 
-// Removed old AddListingPage in favor of the new multi-step SellCarPage
+class SellDraftGatePage extends StatefulWidget {
+  const SellDraftGatePage({super.key});
+
+  @override
+  State<SellDraftGatePage> createState() => _SellDraftGatePageState();
+}
+
+class _SellDraftGatePageState extends State<SellDraftGatePage> {
+  static const String _draftSnapshotKey = 'legacy_sell_draft_snapshot_v1';
+  bool _loading = true;
+  Map<String, dynamic>? _snapshot;
+
+  bool _hasMeaningfulDraftValue(dynamic value) {
+    if (value == null) return false;
+    if (value is String) return value.trim().isNotEmpty;
+    if (value is num) return value != 0;
+    if (value is bool) return value;
+    if (value is XFile) return value.path.trim().isNotEmpty;
+    if (value is Map) {
+      for (final entry in value.entries) {
+        if (_hasMeaningfulDraftValue(entry.value)) return true;
+      }
+      return false;
+    }
+    if (value is Iterable) {
+      for (final item in value) {
+        if (_hasMeaningfulDraftValue(item)) return true;
+      }
+      return false;
+    }
+    return value.toString().trim().isNotEmpty;
+  }
+
+  String _draftTitle(Map<String, dynamic> data) {
+    final brand = (data['brand'] ?? '').toString().trim();
+    final model = (data['model'] ?? '').toString().trim();
+    final trim = (data['trim'] ?? '').toString().trim();
+    final year = (data['year'] ?? '').toString().trim();
+    final title = [brand, model].where((v) => v.isNotEmpty).join(' ');
+    final suffix = [trim, year].where((v) => v.isNotEmpty).join(' • ');
+    if (title.isEmpty && suffix.isEmpty) return 'Untitled draft';
+    if (title.isEmpty) return suffix;
+    if (suffix.isEmpty) return title;
+    return '$title • $suffix';
+  }
+
+  Future<void> _loadDraft() async {
+    try {
+      final sp = await SharedPreferences.getInstance();
+      final raw = sp.getString(_draftSnapshotKey);
+      if (raw == null || raw.trim().isEmpty) {
+        if (!mounted) return;
+        setState(() {
+          _loading = false;
+          _snapshot = null;
+        });
+        WidgetsBinding.instance.addPostFrameCallback((_) {
+          if (mounted) _startFresh();
+        });
+        return;
+      }
+      final decoded = json.decode(raw);
+      if (decoded is! Map) return;
+      final data = Map<String, dynamic>.from(decoded.cast<String, dynamic>());
+      final rawCarData = data['carData'];
+      final carData = rawCarData is Map
+          ? Map<String, dynamic>.from(rawCarData.cast<String, dynamic>())
+          : <String, dynamic>{};
+      if (!_hasMeaningfulDraftValue(carData)) {
+        if (!mounted) return;
+        setState(() {
+          _loading = false;
+          _snapshot = null;
+        });
+        WidgetsBinding.instance.addPostFrameCallback((_) {
+          if (mounted) _startFresh();
+        });
+        return;
+      }
+      if (!mounted) return;
+      setState(() {
+        _snapshot = <String, dynamic>{
+          'currentStep': data['currentStep'],
+          'carData': carData,
+        };
+        _loading = false;
+      });
+    } catch (_) {
+      if (!mounted) return;
+      setState(() {
+        _loading = false;
+        _snapshot = null;
+      });
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (mounted) _startFresh();
+      });
+    }
+  }
+
+  void _startFresh() {
+    Navigator.pushReplacementNamed(
+      context,
+      '/sell',
+      arguments: {'startFresh': true},
+    );
+  }
+
+  void _continueDraft() {
+    final snapshot = _snapshot;
+    if (snapshot == null) {
+      _startFresh();
+      return;
+    }
+    Navigator.pushReplacementNamed(
+      context,
+      '/sell',
+      arguments: {'draftSnapshot': snapshot},
+    );
+  }
+
+  @override
+  void initState() {
+    super.initState();
+    unawaited(_loadDraft());
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      backgroundColor: Theme.of(context).scaffoldBackgroundColor,
+      appBar: AppBar(
+        title: Text(AppLocalizations.of(context)!.addListingTitle),
+        backgroundColor: const Color(0xFFFF6B00),
+        foregroundColor: Colors.white,
+      ),
+      body: Center(
+        child: Padding(
+          padding: const EdgeInsets.all(20),
+          child: _loading
+              ? const CircularProgressIndicator()
+              : (_snapshot == null)
+                  ? ElevatedButton(
+                      onPressed: _startFresh,
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: const Color(0xFFFF6B00),
+                        foregroundColor: Colors.white,
+                      ),
+                      child: const Text('Start new listing'),
+                    )
+                  : Container(
+                      width: double.infinity,
+                      constraints: const BoxConstraints(maxWidth: 460),
+                      padding: const EdgeInsets.all(16),
+                      decoration: BoxDecoration(
+                        color: Colors.orange.withOpacity(0.08),
+                        borderRadius: BorderRadius.circular(18),
+                        border: Border.all(
+                          color: Colors.orange.withOpacity(0.24),
+                        ),
+                      ),
+                      child: Column(
+                        mainAxisSize: MainAxisSize.min,
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Row(
+                            children: [
+                              Container(
+                                width: 42,
+                                height: 42,
+                                decoration: BoxDecoration(
+                                  color: const Color(0xFFFF6B00).withOpacity(0.12),
+                                  borderRadius: BorderRadius.circular(12),
+                                ),
+                                child: const Icon(
+                                  Icons.drafts_outlined,
+                                  color: Color(0xFFFF6B00),
+                                ),
+                              ),
+                              const SizedBox(width: 12),
+                              Expanded(
+                                child: Column(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  children: [
+                                    Text(
+                                      'Draft in progress',
+                                      style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                                            fontWeight: FontWeight.w700,
+                                          ),
+                                    ),
+                                    const SizedBox(height: 2),
+                                    Text(
+                                      'You can continue it or start a new listing without deleting it.',
+                                      style: Theme.of(context).textTheme.bodySmall,
+                                    ),
+                                  ],
+                                ),
+                              ),
+                            ],
+                          ),
+                          const SizedBox(height: 12),
+                          Text(
+                            _draftTitle(_snapshot!['carData'] as Map<String, dynamic>),
+                            style: Theme.of(context).textTheme.titleSmall?.copyWith(
+                                  fontWeight: FontWeight.w700,
+                                ),
+                            maxLines: 2,
+                            overflow: TextOverflow.ellipsis,
+                          ),
+                          const SizedBox(height: 16),
+                          Row(
+                            children: [
+                              Expanded(
+                                child: OutlinedButton(
+                                  onPressed: _startFresh,
+                                  child: const Text('Start new listing'),
+                                ),
+                              ),
+                              const SizedBox(width: 10),
+                              Expanded(
+                                child: ElevatedButton(
+                                  onPressed: _continueDraft,
+                                  style: ElevatedButton.styleFrom(
+                                    backgroundColor: const Color(0xFFFF6B00),
+                                    foregroundColor: Colors.white,
+                                  ),
+                                  child: const Text('Continue draft'),
+                                ),
+                              ),
+                            ],
+                          ),
+                        ],
+                      ),
+                    ),
+        ),
+      ),
+    );
+  }
+}
 
 // Multi-step sell page
 class SellCarPage extends StatefulWidget {
-  const SellCarPage({super.key, this.initialDraftSnapshot});
+  const SellCarPage({
+    super.key,
+    this.initialDraftSnapshot,
+    this.startFreshListing = false,
+  });
 
   final Map<String, dynamic>? initialDraftSnapshot;
+  final bool startFreshListing;
 
   @override
   _SellCarPageState createState() => _SellCarPageState();
@@ -15430,6 +15683,11 @@ class _SellCarPageState extends State<SellCarPage> {
     if (initialDraft != null) {
       _hideDraftBanner = true;
       _applyDraftSnapshot(initialDraft);
+    } else if (widget.startFreshListing) {
+      _hideDraftBanner = true;
+      _hasDraftSnapshot = false;
+      _draftPreviewStep = 0;
+      _draftPreviewCarData = null;
     } else {
       unawaited(_loadSellDraftPreview());
     }
