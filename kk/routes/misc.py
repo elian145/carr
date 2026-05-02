@@ -15,6 +15,11 @@ def health():
     return jsonify({"status": "ok"}), 200
 
 
+@bp.route("/", methods=["GET"])
+def root():
+    return jsonify({"status": "ok"}), 200
+
+
 @bp.route("/static/<path:filename>")
 def static_files(filename: str):
     """Serve static files from kk/static, then repo root static/ as fallback.
