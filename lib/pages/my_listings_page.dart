@@ -218,11 +218,13 @@ class _MyListingsPageState extends State<MyListingsPage> {
     return '$title • $suffix';
   }
 
-  Widget _buildDraftCard() {
+  Widget _buildDraftCard({required bool listLayout}) {
     final snapshot = _draftSnapshot;
     if (snapshot == null) return const SizedBox.shrink();
     final carData = snapshot['carData'] is Map
-        ? Map<String, dynamic>.from((snapshot['carData'] as Map).cast<String, dynamic>())
+        ? Map<String, dynamic>.from(
+            (snapshot['carData'] as Map).cast<String, dynamic>(),
+          )
         : <String, dynamic>{};
     final currentStep = int.tryParse(snapshot['currentStep']?.toString() ?? '') ?? 0;
     const labels = [
@@ -233,73 +235,94 @@ class _MyListingsPageState extends State<MyListingsPage> {
       'Step 5: Review',
     ];
     final label = labels[currentStep.clamp(0, 4).toInt()];
+    final draftListing = <String, dynamic>{
+      ...carData,
+      'title': _draftTitle(carData),
+      'price': carData['price']?.toString().trim(),
+      'images': (carData['images'] is List)
+          ? List<dynamic>.from(carData['images'] as List)
+          : const <dynamic>[],
+      'videos': (carData['videos'] is List)
+          ? List<dynamic>.from(carData['videos'] as List)
+          : const <dynamic>[],
+      'is_quick_sell': carData['is_quick_sell'] ?? false,
+    };
 
     return Padding(
-      padding: const EdgeInsets.fromLTRB(16, 16, 16, 8),
-      child: Container(
-        decoration: BoxDecoration(
-          color: Colors.orange.withOpacity(0.08),
-          borderRadius: BorderRadius.circular(16),
-          border: Border.all(color: Colors.orange.withOpacity(0.24)),
-        ),
-        child: Padding(
-          padding: const EdgeInsets.all(14),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Row(
-                children: [
-                  const Icon(Icons.drafts_outlined, color: Color(0xFFFF6B00)),
-                  const SizedBox(width: 10),
-                  Expanded(
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text(
-                          'Draft in progress',
-                          style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                                fontWeight: FontWeight.w700,
-                              ),
-                        ),
-                        const SizedBox(height: 2),
-                        Text(label, style: Theme.of(context).textTheme.bodySmall),
-                      ],
-                    ),
-                  ),
-                ],
-              ),
-              const SizedBox(height: 12),
-              Text(
-                _draftTitle(carData),
-                style: Theme.of(context).textTheme.titleSmall?.copyWith(
-                      fontWeight: FontWeight.w700,
-                    ),
-                maxLines: 2,
-                overflow: TextOverflow.ellipsis,
-              ),
-              const SizedBox(height: 12),
-              Row(
-                children: [
-                  Expanded(
-                    child: OutlinedButton.icon(
-                      onPressed: _discardDraft,
-                      icon: const Icon(Icons.delete_outline),
-                      label: const Text('Discard draft'),
-                    ),
-                  ),
-                  const SizedBox(width: 10),
-                  Expanded(
-                    child: ElevatedButton.icon(
-                      onPressed: _resumeDraft,
-                      icon: const Icon(Icons.play_arrow),
-                      label: const Text('Continue'),
-                    ),
-                  ),
-                ],
-              ),
-            ],
+      padding: const EdgeInsets.all(4),
+      child: Stack(
+        clipBehavior: Clip.none,
+        children: [
+          IgnorePointer(
+            child: buildGlobalCarCard(
+              context,
+              draftListing,
+              listLayout: listLayout,
+            ),
           ),
-        ),
+          Positioned.fill(
+            child: Material(
+              color: Colors.transparent,
+              child: InkWell(
+                borderRadius: BorderRadius.circular(20),
+                onTap: _resumeDraft,
+              ),
+            ),
+          ),
+          Positioned(
+            top: 12,
+            left: 12,
+            child: Container(
+              padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+              decoration: BoxDecoration(
+                color: Colors.black.withOpacity(0.62),
+                borderRadius: BorderRadius.circular(999),
+              ),
+              child: const Text(
+                'DRAFT',
+                style: TextStyle(
+                  color: Colors.white,
+                  fontWeight: FontWeight.w800,
+                  fontSize: 11,
+                  letterSpacing: 0.8,
+                ),
+              ),
+            ),
+          ),
+          Positioned(
+            top: 10,
+            right: 10,
+            child: Material(
+              color: Colors.black.withOpacity(0.62),
+              shape: const CircleBorder(),
+              child: IconButton(
+                visualDensity: VisualDensity.compact,
+                onPressed: _discardDraft,
+                icon: const Icon(Icons.delete_outline, color: Colors.white),
+                tooltip: 'Discard draft',
+              ),
+            ),
+          ),
+          Positioned(
+            bottom: 12,
+            right: 12,
+            child: Container(
+              padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+              decoration: BoxDecoration(
+                color: Colors.black.withOpacity(0.62),
+                borderRadius: BorderRadius.circular(999),
+              ),
+              child: Text(
+                label,
+                style: const TextStyle(
+                  color: Colors.white,
+                  fontWeight: FontWeight.w700,
+                  fontSize: 11,
+                ),
+              ),
+            ),
+          ),
+        ],
       ),
     );
   }
@@ -632,11 +655,12 @@ class _MyListingsPageState extends State<MyListingsPage> {
                   valueListenable: ListingLayoutPrefs.columns,
                   builder: (context, cols, _) {
                     final listingColumns = (cols == 1) ? 1 : 2;
+                    final hasDraft = _draftSnapshot != null;
+                    final totalCards = _cars.length + (hasDraft ? 1 : 0);
                     return Column(
                       children: [
-                        if (_draftSnapshot != null) _buildDraftCard(),
                         Expanded(
-                          child: _cars.isEmpty
+                          child: totalCards == 0
                               ? ListView(
                                   controller: _controller,
                                   padding: const EdgeInsets.fromLTRB(
@@ -674,9 +698,9 @@ class _MyListingsPageState extends State<MyListingsPage> {
                                     crossAxisSpacing: 8,
                                     mainAxisSpacing: 8,
                                   ),
-                                  itemCount: _cars.length + (_hasNext ? 1 : 0),
+                                  itemCount: totalCards + (_hasNext ? 1 : 0),
                                   itemBuilder: (context, index) {
-                                    if (index >= _cars.length) {
+                                    if (index >= totalCards) {
                                       return const Center(
                                         child: Padding(
                                           padding: EdgeInsets.all(12),
@@ -691,7 +715,13 @@ class _MyListingsPageState extends State<MyListingsPage> {
                                       );
                                     }
 
-                                    final car = _cars[index];
+                                    if (hasDraft && index == 0) {
+                                      return _buildDraftCard(
+                                        listLayout: listingColumns == 1,
+                                      );
+                                    }
+
+                                    final car = _cars[hasDraft ? index - 1 : index];
                                     final id = (car['id'] ?? car['public_id'] ?? '')
                                         .toString();
 
