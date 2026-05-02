@@ -17203,6 +17203,8 @@ class _SellStep2PageState extends State<SellStep2Page> {
     }
 
     setState(() {
+      selectedMileage = d['mileage']?.toString();
+      selectedCondition = d['condition']?.toString();
       takeScalarOrOnlineOpt(
         'transmission',
         '_online_opts_transmission',
@@ -17232,6 +17234,12 @@ class _SellStep2PageState extends State<SellStep2Page> {
         '_online_opts_seating',
         (v) => selectedSeating = v,
       );
+      selectedColor = d['color']?.toString();
+      final rawTitle = d['title_status']?.toString().trim();
+      if (rawTitle != null && rawTitle.isNotEmpty) {
+        selectedTitleStatus = rawTitle;
+      }
+      selectedDamagedParts = d['damaged_parts']?.toString();
       takeScalarOrOnlineOpt(
         'cylinder_count',
         '_online_opts_cylinder',
