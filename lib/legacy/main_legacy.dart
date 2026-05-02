@@ -18187,6 +18187,7 @@ class _SellStep2PageState extends State<SellStep2Page> {
                               );
                               if (choice != null) {
                                 setState(() => selectedMileage = choice);
+                                _syncStep2DraftToParent();
                               }
                             },
                             child: buildFancySelector(
@@ -19373,6 +19374,21 @@ class _SellStep3PageState extends State<SellStep3Page> {
     });
   }
 
+  void _syncStep3DraftToParent() {
+    final parentState = context.findAncestorStateOfType<_SellCarPageState>();
+    if (parentState == null) return;
+    parentState.carData['price'] = selectedPrice;
+    parentState.carData['city'] = selectedCity;
+    parentState.carData['plate_type'] = selectedPlateType;
+    parentState.carData['plate_city'] = selectedPlateCity;
+    parentState.carData['contact_phone'] = contactPhone;
+    parentState.carData['description'] = _descriptionController.text.trim();
+    parentState.carData['is_quick_sell'] = isQuickSell;
+    parentState.carData['currency'] = selectedCurrency;
+    parentState.setState(() {});
+    unawaited(parentState._saveSellDraftSnapshot());
+  }
+
   @override
   void dispose() {
     unawaited(_saveDraft());
@@ -19711,6 +19727,7 @@ class _SellStep3PageState extends State<SellStep3Page> {
                                             ? 'IQD $value'
                                             : '\$$value');
                                 });
+                                _syncStep3DraftToParent();
                               },
                               validator: (value) {
                                 if (value == null || value.trim().isEmpty) {
@@ -19769,6 +19786,7 @@ class _SellStep3PageState extends State<SellStep3Page> {
                                           ? null
                                           : choice;
                                     });
+                                    _syncStep3DraftToParent();
                                   }
                                 },
                                 child: buildFancySelector(
@@ -19814,6 +19832,7 @@ class _SellStep3PageState extends State<SellStep3Page> {
                               ? 'IQD '
                               : r'$';
                         });
+                        _syncStep3DraftToParent();
                       },
                       icon: Text(
                         selectedCurrency,
@@ -19852,11 +19871,7 @@ class _SellStep3PageState extends State<SellStep3Page> {
                               selectedPrice = null;
                             }
                           });
-                          unawaited(
-                            context
-                                .findAncestorStateOfType<_SellCarPageState>()
-                                ?._saveSellDraftSnapshot(),
-                          );
+                          _syncStep3DraftToParent();
                         } else {
                           // If in dropdown mode, switch to manual input
                           setState(() {
@@ -19865,11 +19880,7 @@ class _SellStep3PageState extends State<SellStep3Page> {
                             _priceController.clear();
                             selectedPrice = null;
                           });
-                          unawaited(
-                            context
-                                .findAncestorStateOfType<_SellCarPageState>()
-                                ?._saveSellDraftSnapshot(),
-                          );
+                          _syncStep3DraftToParent();
                         }
                       },
                       icon: Icon(
@@ -19900,7 +19911,10 @@ class _SellStep3PageState extends State<SellStep3Page> {
                 onTap: () async {
                   _dismissKeyboard();
                   final choice = await _pickFromList('City', cities);
-                  if (choice != null) setState(() => selectedCity = choice);
+                  if (choice != null) {
+                    setState(() => selectedCity = choice);
+                    _syncStep3DraftToParent();
+                  }
                 },
                 child: buildFancySelector(
                   context,
@@ -19924,6 +19938,7 @@ class _SellStep3PageState extends State<SellStep3Page> {
                   setState(() {
                     selectedPlateType = choice.toLowerCase();
                   });
+                  _syncStep3DraftToParent();
                 }
               },
               child: buildFancySelector(
@@ -19942,7 +19957,10 @@ class _SellStep3PageState extends State<SellStep3Page> {
               onTap: () async {
                 _dismissKeyboard();
                 final choice = await _pickFromList('Plate city', _plateCities);
-                if (choice != null) setState(() => selectedPlateCity = choice);
+                if (choice != null) {
+                  setState(() => selectedPlateCity = choice);
+                  _syncStep3DraftToParent();
+                }
               },
               child: buildFancySelector(
                 context,
@@ -19980,7 +19998,10 @@ class _SellStep3PageState extends State<SellStep3Page> {
                 services.FilteringTextInputFormatter.allow(RegExp(r'[0-9]')),
                 services.LengthLimitingTextInputFormatter(10),
               ],
-              onChanged: (value) => contactPhone = '+964$value',
+              onChanged: (value) {
+                setState(() => contactPhone = '+964$value');
+                _syncStep3DraftToParent();
+              },
               validator: (value) {
                 if (value == null || value.trim().isEmpty) {
                   return 'Please enter phone number';
@@ -20017,6 +20038,7 @@ class _SellStep3PageState extends State<SellStep3Page> {
                 alignLabelWithHint: true,
               ),
               style: _sellFlowManualFieldTextStyle(context),
+              onChanged: (_) => _syncStep3DraftToParent(),
             ),
             SizedBox(height: 24),
 
@@ -20060,6 +20082,7 @@ class _SellStep3PageState extends State<SellStep3Page> {
                       setState(() {
                         isQuickSell = value;
                       });
+                      _syncStep3DraftToParent();
                     },
                     activeThumbColor: Colors.orange,
                   ),
@@ -20299,6 +20322,24 @@ class _SellStep4PageState extends State<SellStep4Page> {
     parentState.carData['videos'] = List<XFile>.from(_selectedVideos);
   }
 
+  void _syncMediaDraftToParent() {
+    final parentState = context.findAncestorStateOfType<_SellCarPageState>();
+    if (parentState == null) return;
+    parentState.carData['images'] = List<dynamic>.from(_selectedImages);
+    parentState.carData['videos'] = List<XFile>.from(_selectedVideos);
+    parentState.carData['images_processed'] = _imagesProcessed;
+    if (_imagesProcessed) {
+      parentState.carData['processed_image_paths'] = _selectedImages
+          .map((e) => e is XFile ? e.path : e.toString())
+          .where((s) => s.trim().isNotEmpty)
+          .toList();
+    } else {
+      parentState.carData.remove('processed_image_paths');
+    }
+    parentState.setState(() {});
+    unawaited(parentState._saveSellDraftSnapshot());
+  }
+
   String _imagePathKey(dynamic item) =>
       item is XFile ? item.path : item.toString().trim();
 
@@ -20314,6 +20355,7 @@ class _SellStep4PageState extends State<SellStep4Page> {
         _selectedImages = [..._selectedImages, ...additions];
         _imagesProcessed = false;
       });
+      _syncMediaDraftToParent();
       unawaited(_saveDraft());
     } catch (_) {}
   }
@@ -20399,12 +20441,9 @@ class _SellStep4PageState extends State<SellStep4Page> {
         _imagesProcessed = true;
       });
 
+      _syncMediaDraftToParent();
       final parentState = context.findAncestorStateOfType<_SellCarPageState>();
       if (parentState != null) {
-        // Keep local files for the Step 5 preview, but store server paths separately for attaching on submit.
-        parentState.carData['images'] = blurredLocal.isNotEmpty
-            ? List<XFile>.from(blurredLocal)
-            : List<String>.from(paths);
         parentState.carData['processed_image_paths'] = List<String>.from(
           okPaths.isNotEmpty ? okPaths : paths,
         );
@@ -20453,7 +20492,7 @@ class _SellStep4PageState extends State<SellStep4Page> {
           }
         }
       });
-      _syncVideosToParent();
+      _syncMediaDraftToParent();
       unawaited(_saveDraft());
     } catch (e) {
       if (!mounted) return;
@@ -20613,6 +20652,7 @@ class _SellStep4PageState extends State<SellStep4Page> {
                               setState(() {
                                 _selectedImages.removeAt(index);
                               });
+                            _syncMediaDraftToParent();
                             },
                             child: Container(
                               decoration: BoxDecoration(
@@ -20785,7 +20825,7 @@ class _SellStep4PageState extends State<SellStep4Page> {
                           setState(() {
                             _selectedVideos.removeAt(index);
                           });
-                          _syncVideosToParent();
+                          _syncMediaDraftToParent();
                         },
                         child: Container(
                           decoration: BoxDecoration(
