@@ -15148,7 +15148,17 @@ class _SellCarPageState extends State<SellCarPage> {
   Future<void> _saveSellDraftSnapshot() async {
     try {
       final sp = await SharedPreferences.getInstance();
+      final hasExistingSnapshot =
+          (sp.getString(_draftSnapshotKey)?.trim().isNotEmpty == true);
       if (!_hasMeaningfulDraftValue(carData)) {
+        if (hasExistingSnapshot) {
+          if (mounted) {
+            setState(() {
+              _hasDraftSnapshot = true;
+            });
+          }
+          return;
+        }
         await sp.remove(_draftCurrentStepKey);
         await sp.remove(_draftSnapshotKey);
         if (mounted) {
