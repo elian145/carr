@@ -3482,6 +3482,7 @@ class MyApp extends StatelessWidget {
                           : null)
                       : null;
                   final startFresh = args is Map && args['startFresh'] == true;
+                  final showDraftGate = args is Map && args['showDraftGate'] == true;
                   if (initialDraftSnapshot != null) {
                     return AuthGuard(
                       child: SellCarPage(
@@ -3494,8 +3495,13 @@ class MyApp extends StatelessWidget {
                       child: const SellCarPage(startFreshListing: true),
                     );
                   }
+                  if (showDraftGate) {
+                    return AuthGuard(
+                      child: const SellDraftGatePage(),
+                    );
+                  }
                   return AuthGuard(
-                    child: const SellDraftGatePage(),
+                    child: const SellEntryRouterPage(),
                   );
                 },
                 '/settings': (context) => SettingsPage(),
@@ -15016,6 +15022,135 @@ class _SpecItem {
   });
 }
 
+const String _sellDraftArchiveKey = 'legacy_sell_draft_archive_v1';
+
+String _newSellDraftId() => DateTime.now().microsecondsSinceEpoch.toString();
+
+Map<String, dynamic> _normalizeSellDraftSnapshot(Map<String, dynamic> raw) {
+  final rawCarData = raw['carData'];
+  final carData = rawCarData is Map
+      ? Map<String, dynamic>.from(rawCarData.cast<String, dynamic>())
+      : <String, dynamic>{};
+  final draftId = (raw['draftId'] ?? '').toString().trim();
+  return <String, dynamic>{
+    'draftId': draftId.isEmpty ? _newSellDraftId() : draftId,
+    'currentStep': int.tryParse(raw['currentStep']?.toString() ?? '') ?? 0,
+    'carData': carData,
+    'isPlaceholder': raw['isPlaceholder'] == true,
+    'updatedAt': raw['updatedAt'] ?? DateTime.now().millisecondsSinceEpoch,
+  };
+}
+
+List<Map<String, dynamic>> _decodeSellDraftArchive(String? raw) {
+  if (raw == null || raw.trim().isEmpty) return <Map<String, dynamic>>[];
+  try {
+    final decoded = json.decode(raw);
+    if (decoded is! List) return <Map<String, dynamic>>[];
+    return decoded
+        .whereType<Map>()
+        .map(
+          (item) => _normalizeSellDraftSnapshot(
+            Map<String, dynamic>.from(item.cast<String, dynamic>()),
+          ),
+        )
+        .toList();
+  } catch (_) {
+    return <Map<String, dynamic>>[];
+  }
+}
+
+String _encodeSellDraftArchive(List<Map<String, dynamic>> drafts) {
+  return json.encode(
+    drafts.map((draft) => _normalizeSellDraftSnapshot(draft)).toList(),
+  );
+}
+
+bool _hasMeaningfulSellDraftValue(dynamic value) {
+  if (value == null) return false;
+  if (value is String) return value.trim().isNotEmpty;
+  if (value is num) return value != 0;
+  if (value is bool) return value;
+  if (value is XFile) return value.path.trim().isNotEmpty;
+  if (value is Map) {
+    for (final entry in value.entries) {
+      if (_hasMeaningfulSellDraftValue(entry.value)) return true;
+    }
+    return false;
+  }
+  if (value is Iterable) {
+    for (final item in value) {
+      if (_hasMeaningfulSellDraftValue(item)) return true;
+    }
+    return false;
+  }
+  return value.toString().trim().isNotEmpty;
+}
+
+bool _isVisibleSellDraft(Map<String, dynamic> draft) {
+  return _hasMeaningfulSellDraftValue(draft['carData']);
+}
+
+class SellEntryRouterPage extends StatefulWidget {
+  const SellEntryRouterPage({super.key});
+
+  @override
+  State<SellEntryRouterPage> createState() => _SellEntryRouterPageState();
+}
+
+class _SellEntryRouterPageState extends State<SellEntryRouterPage> {
+  static const String _draftSnapshotKey = 'legacy_sell_draft_snapshot_v1';
+  static const String _sellDraftArchiveKey = 'legacy_sell_draft_archive_v1';
+
+  Future<void> _resolve() async {
+    try {
+      final sp = await SharedPreferences.getInstance();
+      final activeRaw = sp.getString(_draftSnapshotKey);
+      final archive = _decodeSellDraftArchive(sp.getString(_sellDraftArchiveKey));
+      bool hasAnyDraft = false;
+      if (activeRaw != null && activeRaw.trim().isNotEmpty) {
+        final decoded = json.decode(activeRaw);
+        if (decoded is Map) {
+          final active = _normalizeSellDraftSnapshot(
+            Map<String, dynamic>.from(decoded.cast<String, dynamic>()),
+          );
+          hasAnyDraft = _isVisibleSellDraft(active);
+        }
+      }
+      hasAnyDraft = hasAnyDraft || archive.any(_isVisibleSellDraft);
+      if (!mounted) return;
+      Navigator.pushReplacementNamed(
+        context,
+        '/sell',
+        arguments: hasAnyDraft ? {'showDraftGate': true} : {'startFresh': true},
+      );
+    } catch (_) {
+      if (!mounted) return;
+      Navigator.pushReplacementNamed(
+        context,
+        '/sell',
+        arguments: {'startFresh': true},
+      );
+    }
+  }
+
+  @override
+  void initState() {
+    super.initState();
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (mounted) unawaited(_resolve());
+    });
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return const Scaffold(
+      body: Center(
+        child: CircularProgressIndicator(),
+      ),
+    );
+  }
+}
+
 class SellDraftGatePage extends StatefulWidget {
   const SellDraftGatePage({super.key});
 
@@ -15026,27 +15161,14 @@ class SellDraftGatePage extends StatefulWidget {
 class _SellDraftGatePageState extends State<SellDraftGatePage> {
   static const String _draftSnapshotKey = 'legacy_sell_draft_snapshot_v1';
   bool _loading = true;
-  Map<String, dynamic>? _snapshot;
+  List<Map<String, dynamic>> _drafts = <Map<String, dynamic>>[];
 
-  bool _hasMeaningfulDraftValue(dynamic value) {
-    if (value == null) return false;
-    if (value is String) return value.trim().isNotEmpty;
-    if (value is num) return value != 0;
-    if (value is bool) return value;
-    if (value is XFile) return value.path.trim().isNotEmpty;
-    if (value is Map) {
-      for (final entry in value.entries) {
-        if (_hasMeaningfulDraftValue(entry.value)) return true;
-      }
-      return false;
+  void _goBack() {
+    if (Navigator.of(context).canPop()) {
+      Navigator.of(context).pop();
+    } else {
+      Navigator.pushReplacementNamed(context, '/');
     }
-    if (value is Iterable) {
-      for (final item in value) {
-        if (_hasMeaningfulDraftValue(item)) return true;
-      }
-      return false;
-    }
-    return value.toString().trim().isNotEmpty;
   }
 
   String _draftTitle(Map<String, dynamic> data) {
@@ -15062,57 +15184,114 @@ class _SellDraftGatePageState extends State<SellDraftGatePage> {
     return '$title • $suffix';
   }
 
-  Future<void> _loadDraft() async {
+  Future<void> _loadDrafts() async {
     try {
       final sp = await SharedPreferences.getInstance();
-      final raw = sp.getString(_draftSnapshotKey);
-      if (raw == null || raw.trim().isEmpty) {
-        if (!mounted) return;
-        setState(() {
-          _loading = false;
-          _snapshot = null;
-        });
-        WidgetsBinding.instance.addPostFrameCallback((_) {
-          if (mounted) _startFresh();
-        });
-        return;
+      final activeRaw = sp.getString(_draftSnapshotKey);
+      final archive = _decodeSellDraftArchive(sp.getString(_sellDraftArchiveKey));
+
+      final drafts = <Map<String, dynamic>>[];
+      final seenIds = <String>{};
+      if (activeRaw != null && activeRaw.trim().isNotEmpty) {
+        try {
+          final decoded = json.decode(activeRaw);
+          if (decoded is Map) {
+            final active = _normalizeSellDraftSnapshot(
+              Map<String, dynamic>.from(decoded.cast<String, dynamic>()),
+            );
+            if (_isVisibleSellDraft(active)) {
+              drafts.add(<String, dynamic>{...active, 'isActive': true});
+              seenIds.add(active['draftId'].toString());
+            }
+          }
+        } catch (_) {}
       }
-      final decoded = json.decode(raw);
-      if (decoded is! Map) return;
-      final data = Map<String, dynamic>.from(decoded.cast<String, dynamic>());
-      final rawCarData = data['carData'];
-      final carData = rawCarData is Map
-          ? Map<String, dynamic>.from(rawCarData.cast<String, dynamic>())
-          : <String, dynamic>{};
-      if (!_hasMeaningfulDraftValue(carData)) {
-        if (!mounted) return;
-        setState(() {
-          _loading = false;
-          _snapshot = null;
-        });
-        WidgetsBinding.instance.addPostFrameCallback((_) {
-          if (mounted) _startFresh();
-        });
-        return;
+      for (final draft in archive) {
+        if (!_isVisibleSellDraft(draft)) continue;
+        final id = draft['draftId'].toString();
+        if (seenIds.contains(id)) continue;
+        drafts.add(<String, dynamic>{...draft, 'isActive': false});
+        seenIds.add(id);
       }
+
       if (!mounted) return;
       setState(() {
-        _snapshot = <String, dynamic>{
-          'currentStep': data['currentStep'],
-          'carData': carData,
-        };
+        _drafts = drafts;
         _loading = false;
       });
+      if (_drafts.isEmpty) {
+        WidgetsBinding.instance.addPostFrameCallback((_) {
+          if (mounted) _startFresh();
+        });
+      }
     } catch (_) {
       if (!mounted) return;
       setState(() {
+        _drafts = <Map<String, dynamic>>[];
         _loading = false;
-        _snapshot = null;
       });
       WidgetsBinding.instance.addPostFrameCallback((_) {
         if (mounted) _startFresh();
       });
     }
+  }
+
+  Future<void> _archiveActiveDraftIfAny({bool clearActive = true}) async {
+    try {
+      final sp = await SharedPreferences.getInstance();
+      final activeRaw = sp.getString(_draftSnapshotKey);
+      if (activeRaw != null && activeRaw.trim().isNotEmpty) {
+        final decoded = json.decode(activeRaw);
+        if (decoded is Map) {
+          final active = _normalizeSellDraftSnapshot(
+            Map<String, dynamic>.from(decoded.cast<String, dynamic>()),
+          );
+          if (_isVisibleSellDraft(active)) {
+            final archive =
+                _decodeSellDraftArchive(sp.getString(_sellDraftArchiveKey));
+            archive.removeWhere((draft) => draft['draftId'] == active['draftId']);
+            archive.insert(0, active);
+            await sp.setString(
+              _sellDraftArchiveKey,
+              _encodeSellDraftArchive(archive),
+            );
+          }
+        }
+      }
+      if (clearActive) {
+        await sp.remove(_draftSnapshotKey);
+        await sp.remove('legacy_sell_draft_current_step_v1');
+        await sp.remove('legacy_sell_draft_step1_v1');
+        await sp.remove('legacy_sell_draft_step2_v1');
+        await sp.remove('legacy_sell_draft_step3_v1');
+        await sp.remove('legacy_sell_draft_step4_v1');
+      }
+    } catch (_) {}
+  }
+
+  Future<void> _discardDraft(Map<String, dynamic> draft) async {
+    final draftId = (draft['draftId'] ?? '').toString();
+    final isActive = draft['isActive'] == true;
+    try {
+      final sp = await SharedPreferences.getInstance();
+      if (isActive) {
+        await sp.remove(_draftSnapshotKey);
+        await sp.remove('legacy_sell_draft_current_step_v1');
+        await sp.remove('legacy_sell_draft_step1_v1');
+        await sp.remove('legacy_sell_draft_step2_v1');
+        await sp.remove('legacy_sell_draft_step3_v1');
+        await sp.remove('legacy_sell_draft_step4_v1');
+      } else {
+        final archive =
+            _decodeSellDraftArchive(sp.getString(_sellDraftArchiveKey));
+        archive.removeWhere((item) => item['draftId'] == draftId);
+        await sp.setString(_sellDraftArchiveKey, _encodeSellDraftArchive(archive));
+      }
+      if (!mounted) return;
+      setState(() {
+        _drafts.removeWhere((item) => item['draftId'] == draftId);
+      });
+    } catch (_) {}
   }
 
   void _startFresh() {
@@ -15123,23 +15302,138 @@ class _SellDraftGatePageState extends State<SellDraftGatePage> {
     );
   }
 
-  void _continueDraft() {
-    final snapshot = _snapshot;
-    if (snapshot == null) {
-      _startFresh();
-      return;
+  Future<void> _startFreshWithArchive() async {
+    await _archiveActiveDraftIfAny(clearActive: false);
+    if (!mounted) return;
+    _startFresh();
+  }
+
+  Future<void> _continueDraft(Map<String, dynamic> draft) async {
+    final normalized = _normalizeSellDraftSnapshot(draft);
+    final isActive = draft['isActive'] == true;
+    if (!isActive) {
+      await _archiveActiveDraftIfAny(clearActive: false);
+      try {
+        final sp = await SharedPreferences.getInstance();
+        final archive =
+            _decodeSellDraftArchive(sp.getString(_sellDraftArchiveKey));
+        archive.removeWhere((item) => item['draftId'] == normalized['draftId']);
+        await sp.setString(_sellDraftArchiveKey, _encodeSellDraftArchive(archive));
+        await sp.setString(_draftSnapshotKey, json.encode(normalized));
+      } catch (_) {}
     }
+    if (!mounted) return;
     Navigator.pushReplacementNamed(
       context,
       '/sell',
-      arguments: {'draftSnapshot': snapshot},
+      arguments: {'draftSnapshot': normalized},
+    );
+  }
+
+  Widget _buildDraftCard(Map<String, dynamic> draft) {
+    final carData = draft['carData'] is Map
+        ? Map<String, dynamic>.from((draft['carData'] as Map).cast<String, dynamic>())
+        : <String, dynamic>{};
+    final currentStep = int.tryParse(draft['currentStep']?.toString() ?? '') ?? 0;
+    final labels = <String>[
+      'Step 1: Basic info',
+      'Step 2: Details',
+      'Step 3: Pricing',
+      'Step 4: Photos',
+      'Step 5: Review',
+    ];
+    final label = labels[currentStep.clamp(0, 4).toInt()];
+    final title = _draftTitle(carData);
+    final isActive = draft['isActive'] == true;
+
+    return Container(
+      margin: const EdgeInsets.only(bottom: 12),
+      decoration: BoxDecoration(
+        color: Colors.orange.withOpacity(0.08),
+        borderRadius: BorderRadius.circular(18),
+        border: Border.all(color: Colors.orange.withOpacity(0.24)),
+      ),
+      child: Padding(
+        padding: const EdgeInsets.all(14),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Row(
+              children: [
+                Container(
+                  width: 42,
+                  height: 42,
+                  decoration: BoxDecoration(
+                    color: const Color(0xFFFF6B00).withOpacity(0.12),
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                  child: const Icon(Icons.drafts_outlined, color: Color(0xFFFF6B00)),
+                ),
+                const SizedBox(width: 12),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        isActive ? 'Draft in progress' : 'Saved draft',
+                        style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                              fontWeight: FontWeight.w700,
+                            ),
+                      ),
+                      const SizedBox(height: 2),
+                      Text(
+                        label,
+                        style: Theme.of(context).textTheme.bodySmall,
+                      ),
+                    ],
+                  ),
+                ),
+              ],
+            ),
+            const SizedBox(height: 12),
+            Text(
+              title,
+              style: Theme.of(context).textTheme.titleSmall?.copyWith(
+                    fontWeight: FontWeight.w700,
+                  ),
+              maxLines: 2,
+              overflow: TextOverflow.ellipsis,
+            ),
+            const SizedBox(height: 6),
+            Text(
+              'Continue, discard, or start a new listing without deleting this draft.',
+              style: Theme.of(context).textTheme.bodySmall,
+            ),
+            const SizedBox(height: 12),
+            Row(
+              children: [
+                Expanded(
+                  child: OutlinedButton.icon(
+                    onPressed: () => _continueDraft(draft),
+                    icon: const Icon(Icons.play_arrow),
+                    label: const Text('Continue'),
+                  ),
+                ),
+                const SizedBox(width: 10),
+                Expanded(
+                  child: OutlinedButton.icon(
+                    onPressed: () => _discardDraft(draft),
+                    icon: const Icon(Icons.delete_outline),
+                    label: const Text('Discard'),
+                  ),
+                ),
+              ],
+            ),
+          ],
+        ),
+      ),
     );
   }
 
   @override
   void initState() {
     super.initState();
-    unawaited(_loadDraft());
+    unawaited(_loadDrafts());
   }
 
   @override
@@ -15150,107 +15444,67 @@ class _SellDraftGatePageState extends State<SellDraftGatePage> {
         title: Text(AppLocalizations.of(context)!.addListingTitle),
         backgroundColor: const Color(0xFFFF6B00),
         foregroundColor: Colors.white,
+        leading: IconButton(
+          icon: const Icon(Icons.arrow_back),
+          onPressed: _goBack,
+        ),
       ),
-      body: Center(
-        child: Padding(
-          padding: const EdgeInsets.all(20),
-          child: _loading
-              ? const CircularProgressIndicator()
-              : (_snapshot == null)
-                  ? ElevatedButton(
-                      onPressed: _startFresh,
-                      style: ElevatedButton.styleFrom(
-                        backgroundColor: const Color(0xFFFF6B00),
-                        foregroundColor: Colors.white,
-                      ),
-                      child: const Text('Start new listing'),
-                    )
-                  : Container(
-                      width: double.infinity,
-                      constraints: const BoxConstraints(maxWidth: 460),
+      body: _loading
+          ? const Center(child: CircularProgressIndicator())
+          : (_drafts.isEmpty)
+              ? Center(
+                  child: ElevatedButton(
+                    onPressed: _startFresh,
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: const Color(0xFFFF6B00),
+                      foregroundColor: Colors.white,
+                    ),
+                    child: const Text('Start new listing'),
+                  ),
+                )
+              : ListView(
+                  padding: const EdgeInsets.all(20),
+                  children: [
+                    Container(
                       padding: const EdgeInsets.all(16),
                       decoration: BoxDecoration(
                         color: Colors.orange.withOpacity(0.08),
                         borderRadius: BorderRadius.circular(18),
-                        border: Border.all(
-                          color: Colors.orange.withOpacity(0.24),
-                        ),
+                        border: Border.all(color: Colors.orange.withOpacity(0.24)),
                       ),
                       child: Column(
-                        mainAxisSize: MainAxisSize.min,
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
-                          Row(
-                            children: [
-                              Container(
-                                width: 42,
-                                height: 42,
-                                decoration: BoxDecoration(
-                                  color: const Color(0xFFFF6B00).withOpacity(0.12),
-                                  borderRadius: BorderRadius.circular(12),
-                                ),
-                                child: const Icon(
-                                  Icons.drafts_outlined,
-                                  color: Color(0xFFFF6B00),
-                                ),
-                              ),
-                              const SizedBox(width: 12),
-                              Expanded(
-                                child: Column(
-                                  crossAxisAlignment: CrossAxisAlignment.start,
-                                  children: [
-                                    Text(
-                                      'Draft in progress',
-                                      style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                                            fontWeight: FontWeight.w700,
-                                          ),
-                                    ),
-                                    const SizedBox(height: 2),
-                                    Text(
-                                      'You can continue it or start a new listing without deleting it.',
-                                      style: Theme.of(context).textTheme.bodySmall,
-                                    ),
-                                  ],
-                                ),
-                              ),
-                            ],
-                          ),
-                          const SizedBox(height: 12),
                           Text(
-                            _draftTitle(_snapshot!['carData'] as Map<String, dynamic>),
-                            style: Theme.of(context).textTheme.titleSmall?.copyWith(
+                            'Drafts in progress',
+                            style: Theme.of(context).textTheme.titleMedium?.copyWith(
                                   fontWeight: FontWeight.w700,
                                 ),
-                            maxLines: 2,
-                            overflow: TextOverflow.ellipsis,
                           ),
-                          const SizedBox(height: 16),
-                          Row(
-                            children: [
-                              Expanded(
-                                child: OutlinedButton(
-                                  onPressed: _startFresh,
-                                  child: const Text('Start new listing'),
-                                ),
-                              ),
-                              const SizedBox(width: 10),
-                              Expanded(
-                                child: ElevatedButton(
-                                  onPressed: _continueDraft,
-                                  style: ElevatedButton.styleFrom(
-                                    backgroundColor: const Color(0xFFFF6B00),
-                                    foregroundColor: Colors.white,
-                                  ),
-                                  child: const Text('Continue draft'),
-                                ),
-                              ),
-                            ],
+                          const SizedBox(height: 4),
+                          Text(
+                            'Continue any draft, discard one, or start a new listing while keeping the others.',
+                            style: Theme.of(context).textTheme.bodySmall,
                           ),
                         ],
                       ),
                     ),
-        ),
-      ),
+                    const SizedBox(height: 16),
+                    ..._drafts.map(_buildDraftCard),
+                    const SizedBox(height: 8),
+                    SizedBox(
+                      width: double.infinity,
+                      child: ElevatedButton(
+                        onPressed: _startFreshWithArchive,
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: const Color(0xFFFF6B00),
+                          foregroundColor: Colors.white,
+                        ),
+                        child: const Text('Start new listing'),
+                      ),
+                    ),
+                  ],
+                ),
     );
   }
 }
@@ -15281,6 +15535,7 @@ class _SellCarPageState extends State<SellCarPage> {
   Map<String, dynamic>? _draftPreviewCarData;
   int _sellPageResetToken = 0;
   int _draftResumeToken = 0;
+  String _currentDraftId = _newSellDraftId();
 
   // Car data that will be passed between steps
   Map<String, dynamic> carData = {};
@@ -15369,6 +15624,7 @@ class _SellCarPageState extends State<SellCarPage> {
       final sp = await SharedPreferences.getInstance();
       await sp.remove(_draftCurrentStepKey);
       await sp.remove(_draftSnapshotKey);
+      await sp.remove(_sellDraftArchiveKey);
       await sp.remove('legacy_sell_draft_step1_v1');
       await sp.remove('legacy_sell_draft_step2_v1');
       await sp.remove('legacy_sell_draft_step3_v1');
@@ -15376,6 +15632,32 @@ class _SellCarPageState extends State<SellCarPage> {
       if (mounted) {
         setState(() {
           _hasDraftSnapshot = false;
+        });
+      }
+    } catch (_) {}
+  }
+
+  Future<void> _seedFreshDraftPlaceholder() async {
+    try {
+      final sp = await SharedPreferences.getInstance();
+      final placeholder = _normalizeSellDraftSnapshot(<String, dynamic>{
+        'draftId': _currentDraftId.isNotEmpty ? _currentDraftId : _newSellDraftId(),
+        'currentStep': 0,
+        'carData': <String, dynamic>{},
+        'isPlaceholder': true,
+        'updatedAt': DateTime.now().millisecondsSinceEpoch,
+      });
+      _currentDraftId = placeholder['draftId'].toString();
+      await sp.setString(_draftSnapshotKey, json.encode(placeholder));
+      final archive = _decodeSellDraftArchive(sp.getString(_sellDraftArchiveKey));
+      archive.removeWhere((item) => item['draftId'] == placeholder['draftId']);
+      archive.insert(0, placeholder);
+      await sp.setString(_sellDraftArchiveKey, _encodeSellDraftArchive(archive));
+      if (mounted) {
+        setState(() {
+          _hasDraftSnapshot = true;
+          _draftPreviewStep = 0;
+          _draftPreviewCarData = const <String, dynamic>{};
         });
       }
     } catch (_) {}
@@ -15431,6 +15713,7 @@ class _SellCarPageState extends State<SellCarPage> {
         }
         await sp.remove(_draftCurrentStepKey);
         await sp.remove(_draftSnapshotKey);
+        await sp.remove(_sellDraftArchiveKey);
         if (mounted) {
           setState(() {
             _hasDraftSnapshot = false;
@@ -15438,13 +15721,21 @@ class _SellCarPageState extends State<SellCarPage> {
         }
         return;
       }
+      final snapshot = <String, dynamic>{
+        'draftId': _currentDraftId.isNotEmpty ? _currentDraftId : _newSellDraftId(),
+        'currentStep': currentStep,
+        'carData': _draftValue(carData),
+        'updatedAt': DateTime.now().millisecondsSinceEpoch,
+      };
+      _currentDraftId = snapshot['draftId'].toString();
       await sp.setString(
         _draftSnapshotKey,
-        json.encode(<String, dynamic>{
-          'currentStep': currentStep,
-          'carData': _draftValue(carData),
-        }),
+        json.encode(snapshot),
       );
+      final archive = _decodeSellDraftArchive(sp.getString(_sellDraftArchiveKey));
+      archive.removeWhere((draft) => draft['draftId'] == _currentDraftId);
+      archive.insert(0, snapshot);
+      await sp.setString(_sellDraftArchiveKey, _encodeSellDraftArchive(archive));
     } catch (_) {}
   }
 
@@ -15457,11 +15748,13 @@ class _SellCarPageState extends State<SellCarPage> {
       if (decoded is! Map) return;
       final data = Map<String, dynamic>.from(decoded.cast<String, dynamic>());
       final restoredStep = int.tryParse(data['currentStep']?.toString() ?? '');
+      _currentDraftId = (data['draftId'] ?? _newSellDraftId()).toString();
       final rawCarData = data['carData'];
       final restoredCarData = rawCarData is Map
           ? Map<String, dynamic>.from(rawCarData.cast<String, dynamic>())
           : <String, dynamic>{};
-      if (!_hasMeaningfulDraftValue(restoredCarData)) {
+      final isPlaceholder = data['isPlaceholder'] == true;
+      if (!_hasMeaningfulDraftValue(restoredCarData) && !isPlaceholder) {
         await sp.remove(_draftCurrentStepKey);
         await sp.remove(_draftSnapshotKey);
         if (!mounted) return;
@@ -15504,7 +15797,9 @@ class _SellCarPageState extends State<SellCarPage> {
     final restoredCarData = rawCarData is Map
         ? Map<String, dynamic>.from(rawCarData.cast<String, dynamic>())
         : <String, dynamic>{};
-    if (!_hasMeaningfulDraftValue(restoredCarData)) return;
+    final isPlaceholder = snapshot['isPlaceholder'] == true;
+    if (!_hasMeaningfulDraftValue(restoredCarData) && !isPlaceholder) return;
+    _currentDraftId = (snapshot['draftId'] ?? _newSellDraftId()).toString();
 
     if (restoreCurrentStep) {
       currentStep = currentStepValue?.clamp(0, _kSellStepCount - 1) ?? 0;
@@ -15682,12 +15977,14 @@ class _SellCarPageState extends State<SellCarPage> {
     final initialDraft = widget.initialDraftSnapshot;
     if (initialDraft != null) {
       _hideDraftBanner = true;
+      _currentDraftId = (initialDraft['draftId'] ?? _newSellDraftId()).toString();
       _applyDraftSnapshot(initialDraft);
     } else if (widget.startFreshListing) {
       _hideDraftBanner = true;
       _hasDraftSnapshot = false;
       _draftPreviewStep = 0;
       _draftPreviewCarData = null;
+      _currentDraftId = _newSellDraftId();
     } else {
       unawaited(_loadSellDraftPreview());
     }
@@ -16226,6 +16523,17 @@ class _SellStep1PageState extends State<SellStep1Page> {
     if (selectedYear != null && !catalog.contains(selectedYear)) {
       selectedYear = null;
     }
+  }
+
+  void _syncStep1DraftToParent() {
+    final parent = context.findAncestorStateOfType<_SellCarPageState>();
+    if (parent == null) return;
+    parent.carData['brand'] = selectedBrand;
+    parent.carData['model'] = selectedModel;
+    parent.carData['trim'] = selectedTrim;
+    parent.carData['year'] = selectedYear;
+    parent.setState(() {});
+    unawaited(parent._saveSellDraftSnapshot());
   }
 
   void _applyCatalogSpecsToFlow() {
@@ -17007,8 +17315,7 @@ class _SellStep1PageState extends State<SellStep1Page> {
                       _pruneYearOutsideCatalog();
                     });
                     _schedDsRefresh();
-                    final parent = context.findAncestorStateOfType<_SellCarPageState>();
-                    if (parent != null) unawaited(parent._saveSellDraftSnapshot());
+                    _syncStep1DraftToParent();
                   }
                 },
                 child: buildFancySelector(
@@ -17078,8 +17385,7 @@ class _SellStep1PageState extends State<SellStep1Page> {
                       _pruneYearOutsideCatalog();
                     });
                     _schedDsRefresh();
-                    final parent = context.findAncestorStateOfType<_SellCarPageState>();
-                    if (parent != null) unawaited(parent._saveSellDraftSnapshot());
+                    _syncStep1DraftToParent();
                   }
                 },
                 child: buildFancySelector(
@@ -17128,8 +17434,7 @@ class _SellStep1PageState extends State<SellStep1Page> {
                       _pruneYearOutsideCatalog();
                     });
                     _schedDsRefresh();
-                    final parent = context.findAncestorStateOfType<_SellCarPageState>();
-                    if (parent != null) unawaited(parent._saveSellDraftSnapshot());
+                    _syncStep1DraftToParent();
                   }
                 },
                 child: buildFancySelector(
@@ -17207,8 +17512,7 @@ class _SellStep1PageState extends State<SellStep1Page> {
                                 setState(() {
                                   selectedYear = choice;
                                 });
-                                final parent = context.findAncestorStateOfType<_SellCarPageState>();
-                                if (parent != null) unawaited(parent._saveSellDraftSnapshot());
+                                _syncStep1DraftToParent();
                               }
                             },
                             child: buildFancySelector(
@@ -17244,8 +17548,7 @@ class _SellStep1PageState extends State<SellStep1Page> {
                           selectedYear = _yearController.text;
                         }
                       });
-                      final parent = context.findAncestorStateOfType<_SellCarPageState>();
-                      if (parent != null) unawaited(parent._saveSellDraftSnapshot());
+                      _syncStep1DraftToParent();
                     } else {
                       // If in dropdown mode, switch to manual input
                       setState(() {
@@ -17254,8 +17557,7 @@ class _SellStep1PageState extends State<SellStep1Page> {
                         _yearController.clear();
                         selectedYear = null;
                       });
-                      final parent = context.findAncestorStateOfType<_SellCarPageState>();
-                      if (parent != null) unawaited(parent._saveSellDraftSnapshot());
+                      _syncStep1DraftToParent();
                     }
                   },
                   icon: Icon(

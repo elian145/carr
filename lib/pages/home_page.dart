@@ -262,41 +262,52 @@ class _HomePageState extends State<HomePage> {
                                     children: [
                                       // Reserve space so short titles don't collapse the card body.
                                       SizedBox(
-                                        height: 34, // ~2 lines at 15px font size and 1.1 height
-                                        child: Align(
-                                          alignment: Alignment.centerLeft,
-                                          child: Text(
-                                            carTitle.isEmpty
-                                                ? (loc?.carLabel ?? 'Car')
-                                                : carTitle,
-                                            maxLines: 2,
-                                            overflow: TextOverflow.ellipsis,
-                                            style: TextStyle(
-                                              fontWeight: FontWeight.w600,
-                                              color: isLight
-                                                  ? const Color(0xFFFF6B00)
-                                                  : Theme.of(context)
-                                                      .colorScheme
-                                                      .onSurface,
-                                              fontSize: 15,
-                                              height: 1.1,
+                                        height: 34,
+                                        child: Row(
+                                          crossAxisAlignment:
+                                              CrossAxisAlignment.start,
+                                          children: [
+                                            Expanded(
+                                              child: Align(
+                                                alignment: Alignment.centerLeft,
+                                                child: Text(
+                                                  carTitle.isEmpty
+                                                      ? (loc?.carLabel ?? 'Car')
+                                                      : carTitle,
+                                                  maxLines: 2,
+                                                  overflow:
+                                                      TextOverflow.ellipsis,
+                                                  style: TextStyle(
+                                                    fontWeight: FontWeight.w600,
+                                                    color: isLight
+                                                        ? const Color(0xFFFF6B00)
+                                                        : Theme.of(context)
+                                                            .colorScheme
+                                                            .onSurface,
+                                                    fontSize: 15,
+                                                    height: 1.1,
+                                                  ),
+                                                ),
+                                              ),
                                             ),
-                                          ),
-                                        ),
-                                      ),
-                                      const SizedBox(height: 6),
-                                      Text(
-                                        price.isEmpty ? '' : price,
-                                        maxLines: 1,
-                                        overflow: TextOverflow.ellipsis,
-                                        style: TextStyle(
-                                          fontWeight: FontWeight.w600,
-                                          color: isLight
-                                              ? const Color(0xFFFF6B00)
-                                              : Theme.of(context)
-                                                  .colorScheme
-                                                  .onSurface,
-                                          fontSize: 14,
+                                            if (price.isNotEmpty) ...[
+                                              const SizedBox(width: 8),
+                                              Text(
+                                                price,
+                                                maxLines: 1,
+                                                overflow: TextOverflow.ellipsis,
+                                                style: TextStyle(
+                                                  fontWeight: FontWeight.w700,
+                                                  color: isLight
+                                                      ? const Color(0xFFFF6B00)
+                                                      : Theme.of(context)
+                                                          .colorScheme
+                                                          .onSurface,
+                                                  fontSize: 14,
+                                                ),
+                                              ),
+                                            ],
+                                          ],
                                         ),
                                       ),
                                       const Spacer(),
