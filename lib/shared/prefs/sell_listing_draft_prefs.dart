@@ -4,7 +4,7 @@ import 'package:shared_preferences/shared_preferences.dart';
 
 class SellListingDraftPrefs {
   static const String _prefix = 'sell_listing_draft_v1_';
-  static const String _globalKey = '$_prefixglobal';
+  static const String _globalKey = '${_prefix}global';
 
   static String _safeOwnerKey(String ownerKey) {
     final trimmed = ownerKey.trim();

@@ -327,6 +327,63 @@ class _MyListingsPageState extends State<MyListingsPage> {
     );
   }
 
+  Widget _buildEmptyState() {
+    final loc = AppLocalizations.of(context);
+    return Center(
+      child: Padding(
+        padding: const EdgeInsets.all(32),
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Container(
+              padding: const EdgeInsets.all(24),
+              decoration: BoxDecoration(
+                color: const Color(0xFFFF6B00).withOpacity(0.1),
+                shape: BoxShape.circle,
+              ),
+              child: const Icon(
+                Icons.directions_car_outlined,
+                size: 64,
+                color: Color(0xFFFF6B00),
+              ),
+            ),
+            const SizedBox(height: 24),
+            Text(
+              loc?.noListingsYet ?? 'No listings yet',
+              textAlign: TextAlign.center,
+              style: Theme.of(context).textTheme.titleLarge?.copyWith(
+                    fontWeight: FontWeight.bold,
+                  ),
+            ),
+            const SizedBox(height: 8),
+            Text(
+              loc?.noListingsEmptyHint ??
+                  'Create your first car listing to see it here.',
+              textAlign: TextAlign.center,
+              style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                    color: Colors.grey[600],
+                  ),
+            ),
+            const SizedBox(height: 32),
+            ElevatedButton.icon(
+              onPressed: () => Navigator.pushReplacementNamed(context, '/sell'),
+              style: ElevatedButton.styleFrom(
+                backgroundColor: const Color(0xFFFF6B00),
+                foregroundColor: Colors.white,
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 24,
+                  vertical: 14,
+                ),
+              ),
+              icon: const Icon(Icons.add),
+              label: Text(loc?.addYourFirstCar ?? 'Add your first car'),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
   Future<void> _deleteListing(String carId) async {
     final loc = AppLocalizations.of(context);
     final ok = await showDialog<bool>(
