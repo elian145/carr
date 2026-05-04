@@ -1013,10 +1013,7 @@ class _HomePageState extends State<HomePage> {
 
                       final car = _cars[index];
                       final carId = (car['id'] ?? car['public_id'] ?? '').toString();
-                      final carTitleRaw = (car['title'] ?? '${car['brand'] ?? ''} ${car['model'] ?? ''}')
-                          .toString()
-                          .trim();
-                      final carTitle = prettyTitleCase(carTitleRaw);
+                      final carTitle = _localizedCarTitleForCard(context, car);
                       final price = (car['price'] ?? '').toString();
                       final location = (car['location'] ?? '').toString();
                       final year = (car['year'] ?? '').toString();
@@ -1111,7 +1108,7 @@ class _HomePageState extends State<HomePage> {
                                       ),
                                       const Spacer(),
                                       Text(
-                                        [year, location]
+                                        [location]
                                             .where((s) => s.isNotEmpty)
                                             .join(' • '),
                                         maxLines: 1,

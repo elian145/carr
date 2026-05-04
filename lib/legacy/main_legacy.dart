@@ -12527,13 +12527,17 @@ class _CarDetailsPageState extends State<CarDetailsPage> {
     if (car == null) return '';
     final brand = (car!['brand'] ?? '').toString().trim();
     final model = (car!['model'] ?? '').toString().trim();
+    final year = (car!['year'] ?? '').toString().trim();
 
     final locModel = CarNameTranslations.getLocalizedModel(
       context,
       brand.isEmpty ? null : brand,
       model.isEmpty ? null : model,
     );
-    final raw = locModel.isNotEmpty ? locModel : model;
+    final raw = [
+      if (locModel.isNotEmpty) locModel else model,
+      if (year.isNotEmpty) year,
+    ].join(' ').trim();
     return prettyTitleCase(raw);
   }
 

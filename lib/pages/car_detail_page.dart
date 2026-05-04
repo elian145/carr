@@ -894,6 +894,16 @@ class _CarDetailPageState extends State<CarDetailPage> {
     final title = prettyTitleCase(titleRaw);
     final brandStr = prettyTitleCase((car['brand'] ?? '').toString().trim());
     final modelStr = prettyTitleCase((car['model'] ?? '').toString().trim());
+    final yearStr = (car['year'] ?? '').toString().trim().isNotEmpty
+        ? (car['year'] ?? '').toString().trim()
+        : RegExp(r'\b(19\d{2}|20\d{2})\b')
+                .firstMatch(titleRaw)
+                ?.group(0)
+                ?.trim() ??
+            '';
+    final modelYearStr = prettyTitleCase(
+      [modelStr, yearStr].where((s) => s.isNotEmpty).join(' '),
+    );
 
     final price = (car['price'] ?? '').toString();
     final currency = (car['currency'] ?? '').toString();
@@ -984,7 +994,7 @@ class _CarDetailPageState extends State<CarDetailPage> {
                         if (modelStr.isNotEmpty) ...[
                           if (brandStr.isNotEmpty) const SizedBox(height: 4),
                           Text(
-                            modelStr,
+                            modelYearStr.isNotEmpty ? modelYearStr : modelStr,
                             style: Theme.of(context).textTheme.titleLarge
                                 ?.copyWith(
                                   fontWeight: FontWeight.w800,
