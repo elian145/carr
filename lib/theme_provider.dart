@@ -162,7 +162,7 @@ class AppThemes {
       pageTransitionsTheme: const PageTransitionsTheme(
         builders: {
           TargetPlatform.android: AppNoTransitionsPageTransitionsBuilder(),
-          TargetPlatform.iOS: AppNoTransitionsPageTransitionsBuilder(),
+          TargetPlatform.iOS: CupertinoPageTransitionsBuilder(),
           TargetPlatform.linux: AppNoTransitionsPageTransitionsBuilder(),
           TargetPlatform.macOS: AppNoTransitionsPageTransitionsBuilder(),
           TargetPlatform.windows: AppNoTransitionsPageTransitionsBuilder(),
@@ -238,7 +238,7 @@ class AppThemes {
       pageTransitionsTheme: const PageTransitionsTheme(
         builders: {
           TargetPlatform.android: AppNoTransitionsPageTransitionsBuilder(),
-          TargetPlatform.iOS: AppNoTransitionsPageTransitionsBuilder(),
+          TargetPlatform.iOS: CupertinoPageTransitionsBuilder(),
           TargetPlatform.linux: AppNoTransitionsPageTransitionsBuilder(),
           TargetPlatform.macOS: AppNoTransitionsPageTransitionsBuilder(),
           TargetPlatform.windows: AppNoTransitionsPageTransitionsBuilder(),
