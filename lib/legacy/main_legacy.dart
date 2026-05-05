@@ -1699,7 +1699,12 @@ Widget _buildGlobalCarCardInnerText(
 }
 
 // Global car card building function to ensure consistency across all pages
-Widget buildGlobalCarCard(BuildContext context, Map car, {bool listLayout = false}) {
+Widget buildGlobalCarCard(
+  BuildContext context,
+  Map car, {
+  bool listLayout = false,
+  int carouselResetSeed = 0,
+}) {
   final brand = car['brand'] ?? '';
   final brandId =
       brandLogoFilenames[brand] ??
@@ -1834,7 +1839,11 @@ Widget buildGlobalCarCard(BuildContext context, Map car, {bool listLayout = fals
                               child: Stack(
                                 fit: StackFit.expand,
                                 children: [
-                                  _buildGlobalCardImageCarousel(context, car),
+                                  _buildGlobalCardImageCarousel(
+                                    context,
+                                    car,
+                                    carouselResetSeed: carouselResetSeed,
+                                  ),
                                   if (showVideoCountBadge)
                                     Positioned(
                                       top: 8,
@@ -1927,7 +1936,11 @@ Widget buildGlobalCarCard(BuildContext context, Map car, {bool listLayout = fals
                                   : Radius.circular(20),
                           bottom: Radius.zero,
                         ),
-                        child: _buildGlobalCardImageCarousel(context, car),
+                        child: _buildGlobalCardImageCarousel(
+                          context,
+                          car,
+                          carouselResetSeed: carouselResetSeed,
+                        ),
                       ),
                     ),
                     // Content section (year/mileage + city below price — in flow, no overlap)
@@ -1964,7 +1977,11 @@ Widget buildGlobalCarCard(BuildContext context, Map car, {bool listLayout = fals
 }
 
 // Global image carousel for consistency
-Widget _buildGlobalCardImageCarousel(BuildContext context, Map car) {
+Widget _buildGlobalCardImageCarousel(
+  BuildContext context,
+  Map car, {
+  int carouselResetSeed = 0,
+}) {
   final List<String> urls = () {
     final List<String> u = [];
     final String primary = (car['image_url'] ?? '').toString();
@@ -2016,6 +2033,7 @@ Widget _buildGlobalCardImageCarousel(BuildContext context, Map car) {
   bool dotWindowForward = true;
 
   return StatefulBuilder(
+    key: ValueKey('global_card_carousel_${car['id']}_$carouselResetSeed'),
     builder: (context, setState) {
       int computeDotStart(int index) {
         final int visible =
@@ -3976,6 +3994,7 @@ class _HomePageState extends State<HomePage> {
   int listingColumns = 2;
   // Infinite scroll state
   final ScrollController _homeScrollController = ScrollController();
+  int _homeCarouselResetSeed = 0;
   int _page = 1;
   bool _hasNext = true;
   bool _isLoadingMore = false;
@@ -5150,7 +5169,7 @@ class _HomePageState extends State<HomePage> {
               .cast<Map<String, dynamic>>();
           if (mounted) {
             setState(() {
-              cars = parsed;
+              cars = _applyDamagedPartsExactFilter(parsed);
               isLoading = false;
               hasLoadedOnce = true;
               loadErrorMessage = null;
@@ -5210,7 +5229,7 @@ class _HomePageState extends State<HomePage> {
 
         if (mounted) {
           setState(() {
-            cars = parsed;
+            cars = _applyDamagedPartsExactFilter(parsed);
             isLoading = false;
             hasLoadedOnce = true;
             loadErrorMessage =
@@ -5344,13 +5363,28 @@ class _HomePageState extends State<HomePage> {
             .cast<Map<String, dynamic>>();
         if (mounted && more.isNotEmpty) {
           setState(() {
-            cars.addAll(more);
+            cars.addAll(_applyDamagedPartsExactFilter(more));
           });
         }
         _page += 1;
       }
     } catch (_) {}
     _isLoadingMore = false;
+  }
+
+  void _scrollHomeToTopAndResetCardImages() {
+    if (_homeScrollController.hasClients) {
+      _homeScrollController.animateTo(
+        0,
+        duration: const Duration(milliseconds: 320),
+        curve: Curves.easeOutCubic,
+      );
+    }
+    if (mounted) {
+      setState(() {
+        _homeCarouselResetSeed++;
+      });
+    }
   }
 
   // Fallback fetch using /api/cars which wraps results in { cars: [...], pagination: { has_next: bool } }
@@ -5382,7 +5416,7 @@ class _HomePageState extends State<HomePage> {
               );
           if (mounted) {
             setState(() {
-              cars = parsed;
+              cars = _applyDamagedPartsExactFilter(parsed);
               isLoading = false;
               hasLoadedOnce = true;
               loadErrorMessage = null;
@@ -5440,7 +5474,7 @@ class _HomePageState extends State<HomePage> {
 
         if (mounted) {
           setState(() {
-            cars = parsed;
+            cars = _applyDamagedPartsExactFilter(parsed);
             isLoading = false;
             hasLoadedOnce = true;
             loadErrorMessage = null;
@@ -5490,7 +5524,7 @@ class _HomePageState extends State<HomePage> {
 
         if (mounted) {
           setState(() {
-            cars = parsed;
+            cars = _applyDamagedPartsExactFilter(parsed);
             isLoading = false;
             hasLoadedOnce = true;
             loadErrorMessage = null;
@@ -5536,6 +5570,23 @@ class _HomePageState extends State<HomePage> {
     fetchCars();
     // Auto-save search after applying filters
     unawaited(_autoSaveSearch());
+  }
+
+  List<Map<String, dynamic>> _applyDamagedPartsExactFilter(
+    List<Map<String, dynamic>> input,
+  ) {
+    if (selectedTitleStatus != 'damaged') return input;
+    final targetParts = int.tryParse(selectedDamagedParts ?? '');
+    if (targetParts == null) return input;
+
+    return input.where((car) {
+      final titleStatus = (car['title_status']?.toString() ?? '')
+          .trim()
+          .toLowerCase();
+      if (titleStatus != 'damaged') return false;
+      final parts = int.tryParse(car['damaged_parts']?.toString() ?? '');
+      return parts == targetParts;
+    }).toList();
   }
 
   Timer? _sortDebounceTimer;
@@ -5795,9 +5846,9 @@ class _HomePageState extends State<HomePage> {
           if (mounted) {
             setState(() {
               if (parsed.isNotEmpty) {
-                cars = parsed;
+                cars = _applyDamagedPartsExactFilter(parsed);
               } else if (cars.isEmpty) {
-                cars = parsed;
+                cars = _applyDamagedPartsExactFilter(parsed);
               }
               isLoading = false;
               hasLoadedOnce = true;
@@ -5869,9 +5920,9 @@ class _HomePageState extends State<HomePage> {
           if (mounted) {
             setState(() {
               if (parsed.isNotEmpty) {
-                cars = parsed;
+                cars = _applyDamagedPartsExactFilter(parsed);
               } else if (cars.isEmpty) {
-                cars = parsed;
+                cars = _applyDamagedPartsExactFilter(parsed);
               }
               isLoading = false;
               hasLoadedOnce = true;
@@ -5925,9 +5976,9 @@ class _HomePageState extends State<HomePage> {
       if (mounted) {
         setState(() {
           if (parsed.isNotEmpty) {
-            cars = parsed;
+            cars = _applyDamagedPartsExactFilter(parsed);
           } else if (cars.isEmpty) {
-            cars = parsed;
+            cars = _applyDamagedPartsExactFilter(parsed);
           }
           isLoading = false;
           hasLoadedOnce = true;
@@ -5974,9 +6025,9 @@ class _HomePageState extends State<HomePage> {
         if (mounted) {
           setState(() {
             if (parsed.isNotEmpty) {
-              cars = parsed;
+              cars = _applyDamagedPartsExactFilter(parsed);
             } else if (cars.isEmpty) {
-              cars = parsed;
+              cars = _applyDamagedPartsExactFilter(parsed);
             }
             isLoading = false;
             hasLoadedOnce = true;
@@ -6972,7 +7023,7 @@ class _HomePageState extends State<HomePage> {
         onTap: (idx) {
           switch (idx) {
             case 0:
-              Navigator.pushReplacementNamed(context, '/');
+              _scrollHomeToTopAndResetCardImages();
               break;
             case 1:
               Navigator.pushReplacementNamed(context, '/favorites');
@@ -9374,80 +9425,82 @@ class _HomePageState extends State<HomePage> {
                                                           setStateDialog(() {});
                                                         },
                                                       ),
-                                                      SizedBox(
-                                                        height:
-                                                            moreFiltersFieldGap,
-                                                      ),
                                                       if (selectedTitleStatus ==
                                                           'damaged')
-                                                        DropdownButtonFormField<
-                                                          String
-                                                        >(
-                                                          initialValue:
-                                                              selectedDamagedParts ??
-                                                              '',
-                                                          decoration: InputDecoration(
-                                                            labelText:
-                                                                AppLocalizations.of(
-                                                                  context,
-                                                                )!.damagedParts,
-                                                            filled: true,
-                                                            fillColor:
-                                                                moreFiltersFieldFill,
-                                                            labelStyle: TextStyle(
-                                                              color:
-                                                                  moreFiltersOnSurface,
-                                                              fontSize: 16,
-                                                            ),
-                                                            border: OutlineInputBorder(
-                                                              borderRadius:
-                                                                  BorderRadius.circular(
-                                                                    12,
-                                                                  ),
-                                                            ),
+                                                        ...[
+                                                          SizedBox(
+                                                            height:
+                                                                moreFiltersFieldGap,
                                                           ),
-                                                          items: [
-                                                            DropdownMenuItem(
-                                                              value: '',
-                                                              child: Text(
-                                                                AppLocalizations.of(
-                                                                  context,
-                                                                )!.any,
-                                                                style: TextStyle(
-                                                                  color:
-                                                                      moreFiltersAnyOrange,
-                                                                ),
+                                                          DropdownButtonFormField<
+                                                            String
+                                                          >(
+                                                            initialValue:
+                                                                selectedDamagedParts ??
+                                                                '',
+                                                            decoration: InputDecoration(
+                                                              labelText:
+                                                                  AppLocalizations.of(
+                                                                    context,
+                                                                  )!.damagedParts,
+                                                              filled: true,
+                                                              fillColor:
+                                                                  moreFiltersFieldFill,
+                                                              labelStyle: TextStyle(
+                                                                color:
+                                                                    moreFiltersOnSurface,
+                                                                fontSize: 16,
+                                                              ),
+                                                              border: OutlineInputBorder(
+                                                                borderRadius:
+                                                                    BorderRadius.circular(
+                                                                      12,
+                                                                    ),
                                                               ),
                                                             ),
-                                                            ...List.generate(
-                                                              15,
-                                                              (i) => (i + 1)
-                                                                  .toString(),
-                                                            ).map(
-                                                              (
-                                                                p,
-                                                              ) => DropdownMenuItem(
-                                                                value: p,
+                                                            items: [
+                                                              DropdownMenuItem(
+                                                                value: '',
                                                                 child: Text(
-                                                                  '${_localizeDigitsGlobal(context, p)} ${AppLocalizations.of(context)!.damagedParts}',
+                                                                  AppLocalizations.of(
+                                                                    context,
+                                                                  )!.any,
+                                                                  style: TextStyle(
+                                                                    color:
+                                                                        moreFiltersAnyOrange,
+                                                                  ),
                                                                 ),
                                                               ),
-                                                            ),
-                                                          ],
-                                                          onChanged: (value) {
-                                                            setState(
-                                                              () =>
-                                                                  selectedDamagedParts =
-                                                                      value ==
-                                                                          ''
-                                                                      ? null
-                                                                      : value,
-                                                            );
-                                                            setStateDialog(
-                                                              () {},
-                                                            );
-                                                          },
-                                                        ),
+                                                              ...List.generate(
+                                                                15,
+                                                                (i) => (i + 1)
+                                                                    .toString(),
+                                                              ).map(
+                                                                (
+                                                                  p,
+                                                                ) => DropdownMenuItem(
+                                                                  value: p,
+                                                                  child: Text(
+                                                                    '${_localizeDigitsGlobal(context, p)} ${AppLocalizations.of(context)!.damagedParts}',
+                                                                  ),
+                                                                ),
+                                                              ),
+                                                            ],
+                                                            onChanged: (value) {
+                                                              setState(
+                                                                () =>
+                                                                    selectedDamagedParts =
+                                                                        value ==
+                                                                            ''
+                                                                        ? null
+                                                                        : value,
+                                                              );
+                                                              setStateDialog(
+                                                                () {},
+                                                              );
+                                                            },
+                                                          ),
+                                                        ],
                                                       SizedBox(
                                                         height:
                                                             moreFiltersFieldGap,
@@ -10947,49 +11000,75 @@ class _HomePageState extends State<HomePage> {
                                                 ),
                                               ),
                                               actions: [
-                                                TextButton(
-                                                  onPressed: () async {
-                                                    await _resetFiltersFromMoreFiltersDialog(
-                                                      () =>
-                                                          setStateDialog(() {}),
-                                                    );
-                                                  },
-                                                  child: Text(
-                                                    AppLocalizations.of(
-                                                      context,
-                                                    )!.resetButton,
-                                                    style: TextStyle(
-                                                      color: moreFiltersMuted,
-                                                    ),
-                                                  ),
-                                                ),
-                                                TextButton(
-                                                  onPressed: () =>
-                                                      Navigator.pop(context),
-                                                  child: Text(
-                                                    _cancelTextGlobal(context),
-                                                    style: TextStyle(
-                                                      color: moreFiltersMuted,
-                                                    ),
-                                                  ),
-                                                ),
-                                                ElevatedButton(
-                                                  style:
-                                                      ElevatedButton.styleFrom(
-                                                        backgroundColor: Color(
-                                                          0xFFFF6B00,
+                                                SizedBox(
+                                                  width: double.infinity,
+                                                  child: Row(
+                                                    textDirection:
+                                                        ui.TextDirection.ltr,
+                                                    children: [
+                                                      TextButton(
+                                                        onPressed: () async {
+                                                          await _resetFiltersFromMoreFiltersDialog(
+                                                            () =>
+                                                                setStateDialog(
+                                                                  () {},
+                                                                ),
+                                                          );
+                                                        },
+                                                        child: Text(
+                                                          AppLocalizations.of(
+                                                            context,
+                                                          )!.resetButton,
+                                                          style: TextStyle(
+                                                            color:
+                                                                moreFiltersMuted,
+                                                          ),
                                                         ),
-                                                        foregroundColor:
-                                                            Colors.white,
                                                       ),
-                                                  onPressed: () {
-                                                    onFilterChanged();
-                                                    Navigator.pop(context);
-                                                  },
-                                                  child: Text(
-                                                    AppLocalizations.of(
-                                                      context,
-                                                    )!.applyFilters,
+                                                      TextButton(
+                                                        onPressed: () =>
+                                                            Navigator.pop(
+                                                              context,
+                                                            ),
+                                                        child: Text(
+                                                          _cancelTextGlobal(
+                                                            context,
+                                                          ),
+                                                          style: TextStyle(
+                                                            color:
+                                                                moreFiltersMuted,
+                                                          ),
+                                                        ),
+                                                      ),
+                                                      const SizedBox(width: 8),
+                                                      Expanded(
+                                                        child: ElevatedButton(
+                                                          style: ElevatedButton.styleFrom(
+                                                            backgroundColor:
+                                                                Color(
+                                                                  0xFFFF6B00,
+                                                                ),
+                                                            foregroundColor:
+                                                                Colors.white,
+                                                          ),
+                                                          onPressed: () {
+                                                            onFilterChanged();
+                                                            Navigator.pop(
+                                                              context,
+                                                            );
+                                                          },
+                                                          child: Text(
+                                                            AppLocalizations.of(
+                                                              context,
+                                                            )!.applyFilters,
+                                                            maxLines: 1,
+                                                            overflow:
+                                                                TextOverflow
+                                                                    .ellipsis,
+                                                          ),
+                                                        ),
+                                                      ),
+                                                    ],
                                                   ),
                                                 ),
                                               ],
@@ -11206,7 +11285,7 @@ class _HomePageState extends State<HomePage> {
                         listingColumns == 1 ? 4 : 8,
                         8,
                         listingColumns == 1 ? 4 : 8,
-                        8,
+                        8 + MediaQuery.of(context).padding.bottom + 92,
                       ),
                       sliver: SliverGrid(
                         gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
@@ -11237,6 +11316,7 @@ class _HomePageState extends State<HomePage> {
                             context,
                             car,
                             listLayout: listingColumns == 1,
+                            carouselResetSeed: _homeCarouselResetSeed,
                           );
                         }, childCount: cars.length + (_hasNext ? 1 : 0)),
                       ),

@@ -363,7 +363,7 @@ class _LoginPageState extends State<LoginPage> {
       );
 
       if (mounted) {
-        Navigator.pushReplacementNamed(context, '/');
+        Navigator.of(context).pushNamedAndRemoveUntil('/', (route) => false);
       }
     } catch (e) {
       developer.log('Login failed', name: 'LoginPage', error: e);
@@ -567,7 +567,7 @@ class _RegisterPageState extends State<RegisterPage> {
             backgroundColor: Colors.green,
           ),
         );
-        Navigator.pushReplacementNamed(context, '/');
+        Navigator.of(context).pushNamedAndRemoveUntil('/', (route) => false);
       } else {
         await authService.registerEmailWithVerification(
           username: _isDealer ? null : _usernameController.text,
