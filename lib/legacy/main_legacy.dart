@@ -60,6 +60,7 @@ import '../data/car_name_translations.dart';
 import '../services/car_spec_index.dart';
 import '../models/online_spec_variant.dart';
 import '../widgets/in_app_video_screen.dart';
+import '../pages/listing_image_gallery_page.dart';
 import '../widgets/network_video_thumbnail.dart';
 import '../widgets/edge_swipe_back.dart';
 
@@ -13365,33 +13366,19 @@ class _CarDetailsPageState extends State<CarDetailsPage> {
                           child: GestureDetector(
                             onTap: () {
                               if (_heroMediaCount == 0) return;
-                              final idx = _currentImageIndex;
-                              if (idx < _imageUrls.length) {
-                                final urls = _imageUrls;
-                                if (urls.isEmpty) return;
-                                Navigator.of(context).push(
-                                  MaterialPageRoute(
-                                    builder: (_) => FullScreenGalleryPage(
-                                      imageUrls: urls,
-                                      videoUrls: _videoUrls,
-                                      initialIndex: idx,
-                                    ),
+                              final idx = _currentImageIndex.clamp(
+                                0,
+                                _heroMediaCount - 1,
+                              );
+                              Navigator.of(context).push(
+                                MaterialPageRoute(
+                                  builder: (_) => ListingImageGalleryPage(
+                                    imageUrls: _imageUrls,
+                                    videoUrls: _videoUrls,
+                                    initialIndex: idx,
                                   ),
-                                );
-                              } else {
-                                final vIdx = idx - _imageUrls.length;
-                                if (vIdx < 0 || vIdx >= _videoUrls.length) {
-                                  return;
-                                }
-                                final videoUrl = _videoUrls[vIdx];
-                                if (videoUrl.trim().isEmpty) return;
-                                Navigator.of(context).push<void>(
-                                  MaterialPageRoute<void>(
-                                    builder: (ctx) =>
-                                        InAppVideoScreen(videoUrl: videoUrl),
-                                  ),
-                                );
-                              }
+                                ),
+                              );
                             },
                             child: (_heroMediaCount > 0)
                                 ? PageView.builder(

@@ -12,7 +12,8 @@ String _formatVideoTime(Duration d) {
   return '$m:${s.toString().padLeft(2, '0')}';
 }
 
-/// Inline video for [FullScreenGalleryPage] so users can swipe to other media
+/// Inline video for [ListingMediaViewerPage] / full-screen media pager so
+/// users can swipe to other media while the video is playing.
 /// while the video is playing (no pushed route on top).
 class GalleryEmbeddedVideoPlayer extends StatefulWidget {
   const GalleryEmbeddedVideoPlayer({

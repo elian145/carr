@@ -12,6 +12,7 @@ import '../services/api_service.dart';
 import '../services/config.dart';
 import '../shared/media/media_url.dart';
 import '../shared/text/pretty_title_case.dart';
+import 'listing_image_gallery_page.dart';
 
 class CarDetailPage extends StatefulWidget {
   final String carId;
@@ -69,6 +70,53 @@ class _CarDetailPageState extends State<CarDetailPage> {
     }
 
     return urls;
+  }
+
+  static List<String> _normalizeVideoPaths(dynamic raw) {
+    if (raw == null) return [];
+    if (raw is! List) return [];
+    final List<String> out = [];
+    for (final dynamic it in raw) {
+      final String s;
+      if (it is String) {
+        s = it.trim();
+      } else if (it is Map) {
+        s = (it['video_url'] ?? it['url'] ?? it['path'] ?? '').toString().trim();
+      } else {
+        s = it.toString().trim();
+      }
+      if (s.isNotEmpty && !s.startsWith('{') && s != 'null') {
+        out.add(s);
+      }
+    }
+    return out;
+  }
+
+  List<String> get _videoUrls {
+    final car = _car;
+    if (car == null) return const <String>[];
+    final paths = _normalizeVideoPaths(car['videos']);
+    final out = <String>[];
+    for (final p in paths) {
+      final full = buildMediaUrl(p);
+      if (full.isNotEmpty && !out.contains(full)) out.add(full);
+    }
+    return out;
+  }
+
+  void _openImageGallery(BuildContext context, List<String> urls, int tappedIndex) {
+    final videos = _videoUrls;
+    if (urls.isEmpty && videos.isEmpty) return;
+    final i = urls.isEmpty ? 0 : tappedIndex.clamp(0, urls.length - 1);
+    Navigator.of(context).push<void>(
+      MaterialPageRoute<void>(
+        builder: (context) => ListingImageGalleryPage(
+          imageUrls: urls,
+          videoUrls: videos,
+          initialIndex: i,
+        ),
+      ),
+    );
   }
 
   Future<void> _load() async {
@@ -726,29 +774,32 @@ class _CarDetailPageState extends State<CarDetailPage> {
             onPageChanged: (i) => setState(() => _pageIndex = i),
             itemBuilder: (context, i) {
               final url = urls[i];
-              return Image.network(
-                url,
-                fit: BoxFit.cover,
-                filterQuality: FilterQuality.low,
-                errorBuilder: (context, error, stackTrace) {
-                  return Container(
-                    color: Colors.black12,
-                    child: const Center(child: Icon(Icons.broken_image)),
-                  );
-                },
-                loadingBuilder: (context, child, progress) {
-                  if (progress == null) return child;
-                  return Container(
-                    color: Colors.black12,
-                    child: const Center(
-                      child: SizedBox(
-                        width: 22,
-                        height: 22,
-                        child: CircularProgressIndicator(strokeWidth: 2),
+              return InkWell(
+                onTap: () => _openImageGallery(context, urls, i),
+                child: Image.network(
+                  url,
+                  fit: BoxFit.cover,
+                  filterQuality: FilterQuality.low,
+                  errorBuilder: (context, error, stackTrace) {
+                    return Container(
+                      color: Colors.black12,
+                      child: const Center(child: Icon(Icons.broken_image)),
+                    );
+                  },
+                  loadingBuilder: (context, child, progress) {
+                    if (progress == null) return child;
+                    return Container(
+                      color: Colors.black12,
+                      child: const Center(
+                        child: SizedBox(
+                          width: 22,
+                          height: 22,
+                          child: CircularProgressIndicator(strokeWidth: 2),
+                        ),
                       ),
-                    ),
-                  );
-                },
+                    );
+                  },
+                ),
               );
             },
           ),
