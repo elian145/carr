@@ -161,7 +161,7 @@ class AppThemes {
       scaffoldBackgroundColor: lightAppBackground,
       pageTransitionsTheme: const PageTransitionsTheme(
         builders: {
-          TargetPlatform.android: AppNoTransitionsPageTransitionsBuilder(),
+          TargetPlatform.android: CupertinoPageTransitionsBuilder(),
           TargetPlatform.iOS: CupertinoPageTransitionsBuilder(),
           TargetPlatform.linux: AppNoTransitionsPageTransitionsBuilder(),
           TargetPlatform.macOS: AppNoTransitionsPageTransitionsBuilder(),
@@ -237,7 +237,7 @@ class AppThemes {
       scaffoldBackgroundColor: scheme.surfaceContainerLowest,
       pageTransitionsTheme: const PageTransitionsTheme(
         builders: {
-          TargetPlatform.android: AppNoTransitionsPageTransitionsBuilder(),
+          TargetPlatform.android: CupertinoPageTransitionsBuilder(),
           TargetPlatform.iOS: CupertinoPageTransitionsBuilder(),
           TargetPlatform.linux: AppNoTransitionsPageTransitionsBuilder(),
           TargetPlatform.macOS: AppNoTransitionsPageTransitionsBuilder(),

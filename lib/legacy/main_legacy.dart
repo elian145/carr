@@ -745,6 +745,41 @@ TextStyle _sellFlowManualFieldTextStyle(BuildContext context) =>
     ? const TextStyle(color: Colors.white)
     : TextStyle(color: Colors.grey[900]!);
 
+void _switchMainTabNoAnimation(BuildContext context, String routeName) {
+  final currentRoute = ModalRoute.of(context)?.settings.name;
+  if (currentRoute == routeName) return;
+
+  Widget? page;
+  switch (routeName) {
+    case '/':
+      page = HomePage();
+      break;
+    case '/favorites':
+      page = AuthGuard(child: FavoritesPage());
+      break;
+    case '/sell':
+      page = AuthGuard(child: const SellEntryRouterPage());
+      break;
+    case '/profile':
+      page = AuthGuard(child: ProfilePage());
+      break;
+  }
+
+  if (page == null) {
+    Navigator.pushReplacementNamed(context, routeName);
+    return;
+  }
+
+  Navigator.of(context).pushReplacement(
+    PageRouteBuilder(
+      settings: RouteSettings(name: routeName),
+      pageBuilder: (_, __, ___) => page!,
+      transitionDuration: Duration.zero,
+      reverseTransitionDuration: Duration.zero,
+    ),
+  );
+}
+
 Widget buildFloatingBottomNav(
   BuildContext context, {
   required int currentIndex,
@@ -3349,7 +3384,7 @@ class _SellAuthPromptState extends State<_SellAuthPrompt> {
             onPressed: () {
               handled = true;
               Navigator.pop(ctx);
-              Navigator.pushReplacementNamed(context, '/');
+              _switchMainTabNoAnimation(context, '/');
             },
             child: Text(loc.cancelAction),
           ),
@@ -7026,13 +7061,13 @@ class _HomePageState extends State<HomePage> {
               _scrollHomeToTopAndResetCardImages();
               break;
             case 1:
-              Navigator.pushReplacementNamed(context, '/favorites');
+              _switchMainTabNoAnimation(context, '/favorites');
               break;
             case 2:
-              Navigator.pushReplacementNamed(context, '/sell');
+              _switchMainTabNoAnimation(context, '/sell');
               break;
             case 3:
-              Navigator.pushReplacementNamed(context, '/profile');
+              _switchMainTabNoAnimation(context, '/profile');
               break;
           }
         },
@@ -25765,20 +25800,20 @@ Widget build(BuildContext context) {
       onTap: (idx) {
         switch (idx) {
           case 0:
-            Navigator.pushReplacementNamed(context, '/');
+            _switchMainTabNoAnimation(context, '/');
             break;
           case 1:
-            Navigator.pushReplacementNamed(context, '/favorites');
+            _switchMainTabNoAnimation(context, '/favorites');
             break;
           case 2:
-            Navigator.pushReplacementNamed(context, '/sell');
+            _switchMainTabNoAnimation(context, '/sell');
             break;
           case 3:
             if (ApiService.accessToken == null ||
                 ApiService.accessToken!.isEmpty) {
               Navigator.pushReplacementNamed(context, '/login');
             } else {
-              Navigator.pushReplacementNamed(context, '/profile');
+              _switchMainTabNoAnimation(context, '/profile');
             }
             break;
         }
@@ -26108,16 +26143,16 @@ class _FavoritesPageState extends State<FavoritesPage> {
         onTap: (idx) {
           switch (idx) {
             case 0:
-              Navigator.pushReplacementNamed(context, '/');
+              _switchMainTabNoAnimation(context, '/');
               break;
             case 1:
               // Already on favorites
               break;
             case 2:
-              Navigator.pushReplacementNamed(context, '/sell');
+              _switchMainTabNoAnimation(context, '/sell');
               break;
             case 3:
-              Navigator.pushReplacementNamed(context, '/profile');
+              _switchMainTabNoAnimation(context, '/profile');
               break;
           }
         },
@@ -26257,13 +26292,13 @@ class _LoginPageState extends State<LoginPage> {
         onTap: (idx) {
           switch (idx) {
             case 0:
-              Navigator.pushReplacementNamed(context, '/');
+              _switchMainTabNoAnimation(context, '/');
               break;
             case 1:
-              Navigator.pushReplacementNamed(context, '/favorites');
+              _switchMainTabNoAnimation(context, '/favorites');
               break;
             case 2:
-              Navigator.pushReplacementNamed(context, '/sell');
+              _switchMainTabNoAnimation(context, '/sell');
               break;
             case 3:
               // Already on login
@@ -26979,20 +27014,20 @@ class _SignupPageState extends State<SignupPage> {
         onTap: (idx) {
           switch (idx) {
             case 0:
-              Navigator.pushReplacementNamed(context, '/');
+              _switchMainTabNoAnimation(context, '/');
               break;
             case 1:
-              Navigator.pushReplacementNamed(context, '/favorites');
+              _switchMainTabNoAnimation(context, '/favorites');
               break;
             case 2:
-              Navigator.pushReplacementNamed(context, '/sell');
+              _switchMainTabNoAnimation(context, '/sell');
               break;
             case 3:
               if (ApiService.accessToken == null ||
                   ApiService.accessToken!.isEmpty) {
                 Navigator.pushReplacementNamed(context, '/login');
               } else {
-                Navigator.pushReplacementNamed(context, '/profile');
+                _switchMainTabNoAnimation(context, '/profile');
               }
               break;
           }
@@ -28005,20 +28040,20 @@ class _ProfilePageState extends State<ProfilePage> {
         onTap: (idx) {
           switch (idx) {
             case 0:
-              Navigator.pushReplacementNamed(context, '/');
+              _switchMainTabNoAnimation(context, '/');
               break;
             case 1:
-              Navigator.pushReplacementNamed(context, '/favorites');
+              _switchMainTabNoAnimation(context, '/favorites');
               break;
             case 2:
-              Navigator.pushReplacementNamed(context, '/sell');
+              _switchMainTabNoAnimation(context, '/sell');
               break;
             case 3:
               if (ApiService.accessToken == null ||
                   ApiService.accessToken!.isEmpty) {
                 Navigator.pushReplacementNamed(context, '/login');
               } else {
-                Navigator.pushReplacementNamed(context, '/profile');
+                _switchMainTabNoAnimation(context, '/profile');
               }
               break;
           }
@@ -28052,13 +28087,13 @@ class _PaymentHistoryPageState extends State<PaymentHistoryPage> {
         onTap: (idx) {
           switch (idx) {
             case 0:
-              Navigator.pushReplacementNamed(context, '/');
+              _switchMainTabNoAnimation(context, '/');
               break;
             case 1:
-              Navigator.pushReplacementNamed(context, '/favorites');
+              _switchMainTabNoAnimation(context, '/favorites');
               break;
             case 2:
-              Navigator.pushReplacementNamed(context, '/sell');
+              _switchMainTabNoAnimation(context, '/sell');
               break;
             case 3:
               Navigator.pushReplacementNamed(context, '/login');
@@ -29027,20 +29062,20 @@ class _MyListingsPageState extends State<MyListingsPage> {
         onTap: (idx) {
           switch (idx) {
             case 0:
-              Navigator.pushReplacementNamed(context, '/');
+              _switchMainTabNoAnimation(context, '/');
               break;
             case 1:
-              Navigator.pushReplacementNamed(context, '/favorites');
+              _switchMainTabNoAnimation(context, '/favorites');
               break;
             case 2:
-              Navigator.pushReplacementNamed(context, '/sell');
+              _switchMainTabNoAnimation(context, '/sell');
               break;
             case 3:
               if (ApiService.accessToken == null ||
                   ApiService.accessToken!.isEmpty) {
                 Navigator.pushReplacementNamed(context, '/login');
               } else {
-                Navigator.pushReplacementNamed(context, '/profile');
+                _switchMainTabNoAnimation(context, '/profile');
               }
               break;
           }
