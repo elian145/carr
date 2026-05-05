@@ -15375,6 +15375,11 @@ class _SellDraftGatePageState extends State<SellDraftGatePage> {
       setState(() {
         _drafts.removeWhere((item) => item['draftId'] == draftId);
       });
+      if (_drafts.isEmpty) {
+        WidgetsBinding.instance.addPostFrameCallback((_) {
+          if (mounted) _startFresh();
+        });
+      }
     } catch (_) {}
   }
 
