@@ -23,6 +23,13 @@ class CarDetailPage extends StatefulWidget {
 }
 
 class _CarDetailPageState extends State<CarDetailPage> {
+  String _tr(String en, {String? ar, String? ku}) {
+    final code = Localizations.localeOf(context).languageCode;
+    if (code == 'ar') return ar ?? en;
+    if (code == 'ku' || code == 'ckb') return ku ?? en;
+    return en;
+  }
+
   Map<String, dynamic>? _car;
   bool _loading = true;
   String? _error;
@@ -436,7 +443,7 @@ class _CarDetailPageState extends State<CarDetailPage> {
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(dialogContext),
-            child: const Text('Close'),
+            child: Text(_tr('Close', ar: 'إغلاق', ku: 'داخستن')),
           ),
         ],
       ),
@@ -491,7 +498,9 @@ class _CarDetailPageState extends State<CarDetailPage> {
     final isApprovedDealer =
         accountType == 'dealer' && dealerStatus == 'approved';
     final isDealerSeller = accountType == 'dealer';
-    final sellerTypeLabel = isDealerSeller ? 'Dealership' : 'Private seller';
+    final sellerTypeLabel = isDealerSeller
+        ? _tr('Dealership', ar: 'معرض', ku: 'نمایشگا')
+        : _tr('Private seller', ar: 'بائع فردي', ku: 'فرۆشیاری تاک');
 
     final displayName = (isApprovedDealer && dealershipName.isNotEmpty)
         ? dealershipName
@@ -500,8 +509,8 @@ class _CarDetailPageState extends State<CarDetailPage> {
               : (fullName.isNotEmpty
                     ? fullName
                     : (isDealerSeller
-                          ? 'Dealer'
-                          : (username.isNotEmpty ? username : 'Seller'))));
+                          ? _tr('Dealer', ar: 'وكيل', ku: 'وەکیل')
+                          : (username.isNotEmpty ? username : _tr('Seller', ar: 'البائع', ku: 'فرۆشیار')))));
 
     final locationShown =
         (isApprovedDealer && dealershipLocation.isNotEmpty)
@@ -569,7 +578,7 @@ class _CarDetailPageState extends State<CarDetailPage> {
       );
       addRow(
         Icons.notes_outlined,
-        'Description',
+        loc?.descriptionTitle ?? 'Description',
         dealershipDescription,
       );
     }
@@ -656,13 +665,13 @@ class _CarDetailPageState extends State<CarDetailPage> {
                     color: Colors.green.withOpacity(0.12),
                     borderRadius: BorderRadius.circular(999),
                   ),
-                  child: const Row(
+                  child: Row(
                     mainAxisSize: MainAxisSize.min,
                     children: [
                       Icon(Icons.verified, color: Colors.green, size: 14),
                       SizedBox(width: 4),
                       Text(
-                        'Verified',
+                        _tr('Verified', ar: 'موثّق', ku: 'پشتڕاستکراوە'),
                         style: TextStyle(
                           color: Colors.green,
                           fontSize: 11,
@@ -1158,7 +1167,11 @@ class _CarDetailPageState extends State<CarDetailPage> {
             Padding(
               padding: const EdgeInsets.only(top: 8),
               child: Text(
-                'Tap seller info to open dealership page',
+                _tr(
+                  'Tap seller info to open dealership page',
+                  ar: 'اضغط معلومات البائع لفتح صفحة المعرض',
+                  ku: 'لە زانیاری فرۆشیار بکە بۆ کردنەوەی پەڕەی نمایشگا',
+                ),
                 style: Theme.of(context).textTheme.bodySmall,
               ),
             ),
@@ -1219,7 +1232,7 @@ class _CarDetailPageState extends State<CarDetailPage> {
                     const SizedBox(width: 12),
                     Expanded(
                       child: Text(
-                        'View description',
+                        _tr('View description', ar: 'عرض الوصف', ku: 'پیشاندانی وەسف'),
                         style: Theme.of(context).textTheme.titleSmall?.copyWith(
                               fontWeight: FontWeight.w700,
                               color: isLightShell

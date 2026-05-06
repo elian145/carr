@@ -5,6 +5,7 @@ import 'package:flutter/services.dart';
 import 'package:provider/provider.dart';
 import 'package:url_launcher/url_launcher.dart';
 
+import '../l10n/app_localizations.dart';
 import '../legacy/main_legacy.dart'
     show buildGlobalCarCard, mapListingToGlobalCarCardData;
 import '../services/auth_service.dart';
@@ -36,6 +37,95 @@ class _DealerProfilePageState extends State<DealerProfilePage> {
   void initState() {
     super.initState();
     _load();
+  }
+
+  String _tr(String en, {String? ar, String? ku}) {
+    final code = Localizations.localeOf(context).languageCode;
+    if (code == 'ar') return ar ?? en;
+    if (code == 'ku' || code == 'ckb') return ku ?? en;
+    return en;
+  }
+
+  String _dayLabel(String key) {
+    switch (key) {
+      case 'sun':
+        return _tr('Sunday', ar: 'الأحد', ku: 'یەکشەممە');
+      case 'mon':
+        return _tr('Monday', ar: 'الاثنين', ku: 'دووشەممە');
+      case 'tue':
+        return _tr('Tuesday', ar: 'الثلاثاء', ku: 'سێشەممە');
+      case 'wed':
+        return _tr('Wednesday', ar: 'الأربعاء', ku: 'چوارشەممە');
+      case 'thu':
+        return _tr('Thursday', ar: 'الخميس', ku: 'پێنجشەممە');
+      case 'fri':
+        return _tr('Friday', ar: 'الجمعة', ku: 'هەینی');
+      case 'sat':
+        return _tr('Saturday', ar: 'السبت', ku: 'شەممە');
+      default:
+        return key;
+    }
+  }
+
+  TimeOfDay? _parseHourTime(String raw) {
+    final m = RegExp(
+      r'^\s*(\d{1,2})(?::(\d{2}))?\s*(am|pm)?\s*$',
+      caseSensitive: false,
+    ).firstMatch(raw);
+    if (m == null) return null;
+    int? h = int.tryParse(m.group(1) ?? '');
+    final min = int.tryParse(m.group(2) ?? '0') ?? 0;
+    final ap = (m.group(3) ?? '').toLowerCase();
+    if (h == null || min < 0 || min > 59) return null;
+    if (ap.isNotEmpty) {
+      if (h < 1 || h > 12) return null;
+      if (ap == 'am') {
+        h = h == 12 ? 0 : h;
+      } else if (ap == 'pm') {
+        h = h == 12 ? 12 : h + 12;
+      }
+    } else {
+      if (h < 0 || h > 23) return null;
+    }
+    return TimeOfDay(hour: h, minute: min);
+  }
+
+  String _formatLocalTime(TimeOfDay t) {
+    return MaterialLocalizations.of(context).formatTimeOfDay(
+      t,
+      alwaysUse24HourFormat: false,
+    );
+  }
+
+  String _localizedOpeningHoursValue(String raw, {required bool allEmpty}) {
+    final v = raw.trim();
+    if (allEmpty) return _tr('Not provided', ar: 'غير متوفر', ku: 'بەردەست نییە');
+    if (v.isEmpty) return _tr('Closed', ar: 'مغلق', ku: 'داخراوە');
+
+    final normalized = v
+        .toLowerCase()
+        .replaceAll(RegExp(r'[^a-z0-9\s:]'), '')
+        .trim();
+    if (normalized == 'closed' ||
+        normalized == 'close' ||
+        normalized.contains('closed') ||
+        normalized.contains('close')) {
+      return _tr('Closed', ar: 'مغلق', ku: 'داخراوە');
+    }
+    if ((normalized.contains('24') && normalized.contains('hour')) ||
+        normalized == '24') {
+      return _tr('24 hours', ar: '24 ساعة', ku: '24 کاتژمێر');
+    }
+
+    final parts = v.split(RegExp(r'\s*-\s*'));
+    if (parts.length >= 2) {
+      final a = _parseHourTime(parts[0]);
+      final b = _parseHourTime(parts[1]);
+      if (a != null && b != null) {
+        return '${_formatLocalTime(a)} - ${_formatLocalTime(b)}';
+      }
+    }
+    return v;
   }
 
   Future<void> _load() async {
@@ -140,7 +230,7 @@ class _DealerProfilePageState extends State<DealerProfilePage> {
     }
     if (!launched && mounted) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Could not start a call')),
+        SnackBar(content: Text(_tr('Could not start a call', ar: 'تعذر بدء الاتصال', ku: 'نەتوانرا پەیوەندی دەستپێبکرێت'))),
       );
     }
   }
@@ -180,7 +270,7 @@ class _DealerProfilePageState extends State<DealerProfilePage> {
     }
     if (!launched && mounted) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Could not open email app')),
+        SnackBar(content: Text(_tr('Could not open email app', ar: 'تعذر فتح تطبيق البريد الإلكتروني', ku: 'نەکرا ئەپی ئیمەیل بکرێتەوە'))),
       );
     }
   }
@@ -202,7 +292,7 @@ class _DealerProfilePageState extends State<DealerProfilePage> {
     final ok = await openGoogleMapsAt(lat, lng);
     if (!ok && mounted) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Could not open Google Maps')),
+        SnackBar(content: Text(_tr('Could not open Google Maps', ar: 'تعذر فتح خرائط Google', ku: 'نەکرا نەخشەی گووگڵ بکرێتەوە'))),
       );
     }
   }
@@ -275,7 +365,7 @@ class _DealerProfilePageState extends State<DealerProfilePage> {
       children: [
         const SizedBox(height: 12),
         Text(
-          'Opening hours',
+          _tr('Opening hours', ar: 'ساعات العمل', ku: 'کاتەکانی کارکردن'),
           style: Theme.of(context)
               .textTheme
               .titleSmall
@@ -307,18 +397,18 @@ class _DealerProfilePageState extends State<DealerProfilePage> {
                         .surfaceContainerHighest
                         .withValues(alpha: 0.55),
                   ),
-                  children: const [
+                  children: [
                     Padding(
                       padding: EdgeInsets.symmetric(horizontal: 12, vertical: 10),
                       child: Text(
-                        'Day',
+                        _tr('Day', ar: 'اليوم', ku: 'ڕۆژ'),
                         style: TextStyle(fontWeight: FontWeight.w700),
                       ),
                     ),
                     Padding(
                       padding: EdgeInsets.symmetric(horizontal: 12, vertical: 10),
                       child: Text(
-                        'Hours',
+                        _tr('Hours', ar: 'الساعات', ku: 'کاتەکان'),
                         style: TextStyle(fontWeight: FontWeight.w700),
                       ),
                     ),
@@ -332,7 +422,7 @@ class _DealerProfilePageState extends State<DealerProfilePage> {
                           horizontal: 12,
                           vertical: 10,
                         ),
-                        child: Text(r.label),
+                        child: Text(_dayLabel(r.key)),
                       ),
                       Padding(
                         padding: const EdgeInsets.symmetric(
@@ -340,16 +430,10 @@ class _DealerProfilePageState extends State<DealerProfilePage> {
                           vertical: 10,
                         ),
                         child: Text(
-                          () {
-                            if (allEmpty) return 'Not provided';
-                            final v = (hours[r.key] ?? '').trim();
-                            if (v.isEmpty) return 'Closed';
-                            if (v.toLowerCase() == 'closed' ||
-                                v.toLowerCase() == 'close') {
-                              return 'Closed';
-                            }
-                            return v;
-                          }(),
+                          _localizedOpeningHoursValue(
+                            (hours[r.key] ?? '').trim(),
+                            allEmpty: allEmpty,
+                          ),
                         ),
                       ),
                     ],
@@ -372,7 +456,7 @@ class _DealerProfilePageState extends State<DealerProfilePage> {
     final fallbackName = ('$firstName $lastName').trim();
     final displayName = dealershipName.isNotEmpty
         ? dealershipName
-        : (fallbackName.isNotEmpty ? fallbackName : 'Dealer');
+        : (fallbackName.isNotEmpty ? fallbackName : _tr('Dealer', ar: 'وكيل', ku: 'وەکیل'));
     final logoUrl = buildMediaUrl((dealer?['profile_picture'] ?? '').toString().trim());
     final coverUrl = buildMediaUrl(
       (dealer?['dealership_cover_picture'] ?? '').toString().trim(),
@@ -399,7 +483,7 @@ class _DealerProfilePageState extends State<DealerProfilePage> {
     final isLightShell = Theme.of(context).brightness == Brightness.light;
 
     return Scaffold(
-      appBar: AppBar(title: const Text('Dealer')),
+      appBar: AppBar(title: Text(_tr('Dealer', ar: 'الوكيل', ku: 'وەکیل'))),
       backgroundColor: isLightShell ? AppThemes.lightAppBackground : null,
       body: Stack(
         children: [
@@ -418,7 +502,7 @@ class _DealerProfilePageState extends State<DealerProfilePage> {
                         children: [
                           Text(_error!, style: const TextStyle(color: Colors.red)),
                           const SizedBox(height: 12),
-                          FilledButton(onPressed: _load, child: const Text('Retry')),
+                          FilledButton(onPressed: _load, child: Text(AppLocalizations.of(context)?.retryAction ?? 'Retry')),
                         ],
                       )
                     : ListView(
@@ -499,19 +583,19 @@ class _DealerProfilePageState extends State<DealerProfilePage> {
                                   }
                                 },
                                 icon: const Icon(Icons.edit_outlined),
-                                label: const Text('Edit dealer page'),
+                                label: Text(_tr('Edit dealer page', ar: 'تعديل صفحة الوكيل', ku: 'دەستکاری پەڕەی وەکیل')),
                               ),
                             ],
                             const SizedBox(height: 12),
                             SegmentedButton<_DealerSection>(
-                              segments: const [
+                              segments: [
                                 ButtonSegment(
                                   value: _DealerSection.listings,
-                                  label: Text('Listings'),
+                                  label: Text(_tr('Listings', ar: 'الإعلانات', ku: 'ڕێکلامەکان')),
                                 ),
                                 ButtonSegment(
                                   value: _DealerSection.about,
-                                  label: Text('About'),
+                                  label: Text(_tr('About', ar: 'حول', ku: 'دەربارە')),
                                 ),
                               ],
                               selected: {_section},
@@ -532,7 +616,7 @@ class _DealerProfilePageState extends State<DealerProfilePage> {
                                       Padding(
                                         padding: EdgeInsets.only(top: i == 0 ? 0 : 8),
                                         child: Tooltip(
-                                          message: 'Tap to call • Hold to copy',
+                                          message: _tr('Tap to call • Hold to copy', ar: 'اضغط للاتصال • اضغط مطولاً للنسخ', ku: 'کرتە بکە بۆ پەیوەندی • چەند چرکە هەڵبگرە بۆ کۆپی'),
                                           child: SizedBox(
                                             width: double.infinity,
                                             child: FilledButton.icon(
@@ -541,7 +625,7 @@ class _DealerProfilePageState extends State<DealerProfilePage> {
                                               onLongPress: () =>
                                                   _copyToClipboard(
                                                 phones[i],
-                                                'Phone number copied to clipboard',
+                                                _tr('Phone number copied to clipboard', ar: 'تم نسخ رقم الهاتف', ku: 'ژمارەی تەلەفۆن کۆپی کرا'),
                                               ),
                                               icon: const Icon(
                                                 Icons.phone_outlined,
@@ -560,7 +644,7 @@ class _DealerProfilePageState extends State<DealerProfilePage> {
                               ),
                             _infoRow(
                               Icons.location_on_outlined,
-                              'Location',
+                              _tr('Location', ar: 'الموقع', ku: 'شوێن'),
                               location,
                             ),
                             if (mapLat != null &&
@@ -580,14 +664,14 @@ class _DealerProfilePageState extends State<DealerProfilePage> {
                               Padding(
                                 padding: const EdgeInsets.only(top: 8),
                                 child: Tooltip(
-                                  message: 'Tap to send email • Hold to copy',
+                                  message: _tr('Tap to send email • Hold to copy', ar: 'اضغط لإرسال بريد • اضغط مطولاً للنسخ', ku: 'کرتە بکە بۆ ناردنی ئیمەیل • چەند چرکە هەڵبگرە بۆ کۆپی'),
                                   child: SizedBox(
                                     width: double.infinity,
                                     child: OutlinedButton.icon(
                                       onPressed: () => _emailDealer(email),
                                       onLongPress: () => _copyToClipboard(
                                         email,
-                                        'Email copied to clipboard',
+                                        _tr('Email copied to clipboard', ar: 'تم نسخ البريد الإلكتروني', ku: 'ئیمەیل کۆپی کرا'),
                                       ),
                                       icon: const Icon(Icons.email_outlined),
                                       label: Text(
@@ -607,9 +691,9 @@ class _DealerProfilePageState extends State<DealerProfilePage> {
                       if (_section == _DealerSection.listings) ...[
                         const Divider(height: 1),
                         if (_listings.isEmpty)
-                          const Padding(
+                          Padding(
                             padding: EdgeInsets.symmetric(horizontal: 16),
-                            child: Text('No active vehicles right now.'),
+                            child: Text(_tr('No active vehicles right now.', ar: 'لا توجد مركبات نشطة حالياً.', ku: 'لە ئێستادا هیچ ئۆتۆمبێلێکی چالاک نییە.')),
                           )
                         else
                           GridView.builder(

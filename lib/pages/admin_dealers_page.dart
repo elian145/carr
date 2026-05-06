@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 
+import '../l10n/app_localizations.dart';
 import '../services/api_service.dart';
 
 /// Admin-only: review and approve or reject pending dealer signups.
@@ -21,6 +22,13 @@ class _AdminDealersPageState extends State<AdminDealersPage> {
   void initState() {
     super.initState();
     _load();
+  }
+
+  String _tr(String en, {String? ar, String? ku}) {
+    final code = Localizations.localeOf(context).languageCode;
+    if (code == 'ar') return ar ?? en;
+    if (code == 'ku' || code == 'ckb') return ku ?? en;
+    return en;
   }
 
   Future<void> _load() async {
@@ -51,7 +59,7 @@ class _AdminDealersPageState extends State<AdminDealersPage> {
       await ApiService.adminApproveDealer(publicId);
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Dealer approved'), backgroundColor: Colors.green),
+        SnackBar(content: Text(_tr('Dealer approved', ar: 'تمت الموافقة على الوكيل', ku: 'وەکیل پەسەند کرا')), backgroundColor: Colors.green),
       );
       await _load();
     } catch (e) {
@@ -70,18 +78,18 @@ class _AdminDealersPageState extends State<AdminDealersPage> {
     final ok = await showDialog<bool>(
       context: context,
       builder: (ctx) => AlertDialog(
-        title: const Text('Reject dealer application?'),
+        title: Text(_tr('Reject dealer application?', ar: 'رفض طلب الوكيل؟', ku: 'داواکاری وەکیل ڕەتبکرێتەوە؟')),
         content: TextField(
           controller: controller,
-          decoration: const InputDecoration(
-            labelText: 'Reason (optional)',
+          decoration: InputDecoration(
+            labelText: _tr('Reason (optional)', ar: 'السبب (اختياري)', ku: 'هۆکار (ئارەزوومەندانە)'),
             border: OutlineInputBorder(),
           ),
           maxLines: 2,
         ),
         actions: [
-          TextButton(onPressed: () => Navigator.pop(ctx, false), child: const Text('Cancel')),
-          FilledButton(onPressed: () => Navigator.pop(ctx, true), child: const Text('Reject')),
+          TextButton(onPressed: () => Navigator.pop(ctx, false), child: Text(AppLocalizations.of(context)?.cancelAction ?? 'Cancel')),
+          FilledButton(onPressed: () => Navigator.pop(ctx, true), child: Text(_tr('Reject', ar: 'رفض', ku: 'ڕەتکردنەوە'))),
         ],
       ),
     );
@@ -90,7 +98,7 @@ class _AdminDealersPageState extends State<AdminDealersPage> {
       await ApiService.adminRejectDealer(publicId, reason: controller.text.trim());
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Application rejected')),
+        SnackBar(content: Text(_tr('Application rejected', ar: 'تم رفض الطلب', ku: 'داواکارییەکە ڕەتکرایەوە'))),
       );
       await _load();
     } catch (e) {
@@ -110,7 +118,7 @@ class _AdminDealersPageState extends State<AdminDealersPage> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Dealer approvals'),
+        title: Text(_tr('Dealer approvals', ar: 'موافقات الوكلاء', ku: 'پەسەندکردنی وەکیلەکان')),
         actions: [
           IconButton(
             icon: const Icon(Icons.refresh),
@@ -129,9 +137,12 @@ class _AdminDealersPageState extends State<AdminDealersPage> {
                     children: [
                       Text(_error!, style: const TextStyle(color: Colors.red)),
                       const SizedBox(height: 16),
-                      const Text(
-                        'You must be logged in as an admin (is_admin on the server). '
-                        'If you see 403, set is_admin=true for your user in the database.',
+                      Text(
+                        _tr(
+                          'You must be logged in as an admin (is_admin on the server). If you see 403, set is_admin=true for your user in the database.',
+                          ar: 'يجب تسجيل الدخول كمدير (is_admin على الخادم). إذا ظهر 403 فقم بتعيين is_admin=true للمستخدم في قاعدة البيانات.',
+                          ku: 'پێویستە وەک بەڕێوەبەر بچیتە ژوورەوە (is_admin لە سێرڤەر). ئەگەر 403 ببینیت، is_admin=true بۆ بەکارهێنەرەکەت لە داتابەیس دابنێ.',
+                        ),
                       ),
                     ],
                   )
@@ -139,8 +150,8 @@ class _AdminDealersPageState extends State<AdminDealersPage> {
                     ? ListView(
                         physics: const AlwaysScrollableScrollPhysics(),
                         padding: const EdgeInsets.all(24),
-                        children: const [
-                          Text('No pending dealer applications.'),
+                        children: [
+                          Text(_tr('No pending dealer applications.', ar: 'لا توجد طلبات وكلاء معلقة.', ku: 'هیچ داواکاری وەکیلی چاوەڕوان نییە.')),
                         ],
                       )
                     : ListView.separated(
@@ -169,20 +180,20 @@ class _AdminDealersPageState extends State<AdminDealersPage> {
                                         ),
                                   ),
                                   if (name.isNotEmpty) Text(name),
-                                  if (dn.isNotEmpty) Text('Dealership: $dn'),
-                                  if (dp.isNotEmpty) Text('Phone: $dp'),
-                                  if (loc.isNotEmpty) Text('Location: $loc'),
+                                  if (dn.isNotEmpty) Text('${_tr('Dealership', ar: 'المعرض', ku: 'نمایشگا')}: $dn'),
+                                  if (dp.isNotEmpty) Text('${_tr('Phone', ar: 'الهاتف', ku: 'تەلەفۆن')}: $dp'),
+                                  if (loc.isNotEmpty) Text('${_tr('Location', ar: 'الموقع', ku: 'شوێن')}: $loc'),
                                   const SizedBox(height: 8),
                                   Row(
                                     children: [
                                       FilledButton(
                                         onPressed: id.isEmpty ? null : () => _approve(id),
-                                        child: const Text('Approve'),
+                                        child: Text(_tr('Approve', ar: 'موافقة', ku: 'پەسەندکردن')),
                                       ),
                                       const SizedBox(width: 8),
                                       OutlinedButton(
                                         onPressed: id.isEmpty ? null : () => _reject(id),
-                                        child: const Text('Reject'),
+                                        child: Text(_tr('Reject', ar: 'رفض', ku: 'ڕەتکردنەوە')),
                                       ),
                                     ],
                                   ),

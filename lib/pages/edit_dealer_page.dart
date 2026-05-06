@@ -8,6 +8,7 @@ import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:provider/provider.dart';
 
+import '../l10n/app_localizations.dart';
 import '../services/auth_service.dart';
 import '../shared/maps/dealer_map_coords.dart';
 import '../shared/maps/open_google_maps.dart';
@@ -70,6 +71,36 @@ class _EditDealerPageState extends State<EditDealerPage> {
     (key: 'fri', label: 'Friday'),
     (key: 'sat', label: 'Saturday'),
   ];
+
+  AppLocalizations? get _loc => AppLocalizations.of(context);
+
+  String _tr(String en, {String? ar, String? ku}) {
+    final code = Localizations.localeOf(context).languageCode;
+    if (code == 'ar') return ar ?? en;
+    if (code == 'ku' || code == 'ckb') return ku ?? en;
+    return en;
+  }
+
+  String _dayLabel(String key) {
+    switch (key) {
+      case 'sun':
+        return _tr('Sunday', ar: 'الأحد', ku: 'یەکشەممە');
+      case 'mon':
+        return _tr('Monday', ar: 'الاثنين', ku: 'دووشەممە');
+      case 'tue':
+        return _tr('Tuesday', ar: 'الثلاثاء', ku: 'سێشەممە');
+      case 'wed':
+        return _tr('Wednesday', ar: 'الأربعاء', ku: 'چوارشەممە');
+      case 'thu':
+        return _tr('Thursday', ar: 'الخميس', ku: 'پێنجشەممە');
+      case 'fri':
+        return _tr('Friday', ar: 'الجمعة', ku: 'هەینی');
+      case 'sat':
+        return _tr('Saturday', ar: 'السبت', ku: 'شەممە');
+      default:
+        return key;
+    }
+  }
 
   TextStyle _fieldTextStyle(bool isLightShell) {
     return TextStyle(
@@ -194,20 +225,20 @@ class _EditDealerPageState extends State<EditDealerPage> {
 
   String _daySummaryText(String dayKey) {
     final day = _openingHours[dayKey]!;
-    if (!day.enabled) return 'Closed';
-    if (day.is24h) return '24 hours';
+    if (!day.enabled) return _tr('Closed', ar: 'مغلق', ku: 'داخراوە');
+    if (day.is24h) return _tr('24 hours', ar: '24 ساعة', ku: '24 کاتژمێر');
     if (day.open != null && day.close != null) {
       return _formatRange(day.open!, day.close!);
     }
     final legacy = (day.legacyText ?? '').trim();
     if (legacy.isNotEmpty) return legacy;
     if (day.open != null && day.close == null) {
-      return 'From ${_formatTime(day.open!)}';
+      return '${_tr('From', ar: 'من', ku: 'لە')} ${_formatTime(day.open!)}';
     }
     if (day.open == null && day.close != null) {
-      return 'To ${_formatTime(day.close!)}';
+      return '${_tr('To', ar: 'إلى', ku: 'بۆ')} ${_formatTime(day.close!)}';
     }
-    return 'Select time';
+    return _tr('Select time', ar: 'اختر الوقت', ku: 'کات هەڵبژێرە');
   }
 
   void _openOpeningHoursDayEditor(String dayKey) {
@@ -329,11 +360,11 @@ class _EditDealerPageState extends State<EditDealerPage> {
                       ),
                       TextButton(
                         onPressed: () => Navigator.pop(ctx),
-                        child: const Text('Cancel'),
+                        child: Text(_loc?.cancelAction ?? 'Cancel'),
                       ),
                       FilledButton(
                         onPressed: () => Navigator.pop(ctx, options[selectedIndex]),
-                        child: const Text('Done'),
+                        child: Text(_tr('Done', ar: 'تم', ku: 'تەواو')),
                       ),
                     ],
                   ),
@@ -499,7 +530,7 @@ class _EditDealerPageState extends State<EditDealerPage> {
     final ok = await openGoogleMapsAt(lat, lng).catchError((_) => false);
     if (!ok && mounted) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Could not open Google Maps')),
+        SnackBar(content: Text(_tr('Could not open Google Maps', ar: 'تعذر فتح خرائط Google', ku: 'نەکرا نەخشەی گووگڵ بکرێتەوە'))),
       );
     }
   }
@@ -538,7 +569,7 @@ class _EditDealerPageState extends State<EditDealerPage> {
     if (phones.isEmpty) {
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Please enter at least one phone number.')),
+        SnackBar(content: Text(_tr('Please enter at least one phone number.', ar: 'يرجى إدخال رقم هاتف واحد على الأقل.', ku: 'تکایە لانیکەم یەک ژمارەی تەلەفۆن بنووسە.'))),
       );
       return;
     }
@@ -556,7 +587,7 @@ class _EditDealerPageState extends State<EditDealerPage> {
         if (!mounted) return;
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: Text('Please select both From and To for ${d.label}.'),
+            content: Text('${_tr('Please select both From and To for', ar: 'يرجى اختيار وقت من وإلى ليوم', ku: 'تکایە کاتی لە و بۆ هەڵبژێرە بۆ')} ${d.label}.'),
             backgroundColor: Colors.orange,
           ),
         );
@@ -573,8 +604,8 @@ class _EditDealerPageState extends State<EditDealerPage> {
     if ((lat != null) != (lng != null)) {
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('Enter both latitude and longitude, or leave both empty.'),
+        SnackBar(
+          content: Text(_tr('Enter both latitude and longitude, or leave both empty.', ar: 'أدخل خط العرض وخط الطول معًا، أو اتركهما فارغين.', ku: 'هەردوو لاتیتوود و لۆنگیتوود بنووسە یان هەردووکیان بەتاڵ بهێڵە.')),
         ),
       );
       return;
@@ -582,7 +613,7 @@ class _EditDealerPageState extends State<EditDealerPage> {
     if (lat != null && lng != null && !isValidDealerLatLng(lat, lng)) {
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Coordinates are out of range.')),
+        SnackBar(content: Text(_tr('Coordinates are out of range.', ar: 'الإحداثيات خارج النطاق.', ku: 'کۆئۆردیناتەکان لە دەورە دەرچوون.'))),
       );
       return;
     }
@@ -657,7 +688,7 @@ class _EditDealerPageState extends State<EditDealerPage> {
 
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Edit dealer'),
+        title: Text(_tr('Edit dealer', ar: 'تعديل الوكيل', ku: 'دەستکاری وەکیل')),
         backgroundColor: _accent,
         foregroundColor: Colors.white,
         elevation: 0,
@@ -709,7 +740,7 @@ class _EditDealerPageState extends State<EditDealerPage> {
                             ),
                           )
                         : const Icon(Icons.save_outlined),
-                    label: Text(_saving ? 'Saving...' : 'Save changes'),
+                    label: Text(_saving ? (_loc?.savingLabel ?? 'Saving...') : (_loc?.saveChangesButton ?? 'Save changes')),
                   ),
                 ),
               ),
@@ -742,8 +773,8 @@ class _EditDealerPageState extends State<EditDealerPage> {
                       children: [
                         _sectionTitle(
                           icon: Icons.photo_outlined,
-                          title: 'Branding',
-                          subtitle: 'Logo and cover image shown on your dealer page.',
+                          title: _tr('Branding', ar: 'العلامة التجارية', ku: 'براندینگ'),
+                          subtitle: _tr('Logo and cover image shown on your dealer page.', ar: 'يظهر الشعار وصورة الغلاف في صفحة الوكيل.', ku: 'لۆگۆ و وێنەی کاڤەر لە پەڕەی وەکیلت پیشان دەدرێت.'),
                         ),
                         const SizedBox(height: 12),
                         SizedBox(
@@ -806,7 +837,7 @@ class _EditDealerPageState extends State<EditDealerPage> {
                                       style: _outlineAccentStyle(),
                                       icon: const Icon(Icons.image_outlined),
                                       label: Text(
-                                        _logo == null ? 'Change logo' : 'Logo selected',
+                                        _logo == null ? _tr('Change logo', ar: 'تغيير الشعار', ku: 'گۆڕینی لۆگۆ') : _tr('Logo selected', ar: 'تم اختيار الشعار', ku: 'لۆگۆ هەڵبژێردرا'),
                                       ),
                                     ),
                                   ),
@@ -818,8 +849,8 @@ class _EditDealerPageState extends State<EditDealerPage> {
                                       icon: const Icon(Icons.photo_outlined),
                                       label: Text(
                                         _cover == null
-                                            ? 'Change cover'
-                                            : 'Cover selected',
+                                            ? _tr('Change cover', ar: 'تغيير الغلاف', ku: 'گۆڕینی کاڤەر')
+                                            : _tr('Cover selected', ar: 'تم اختيار الغلاف', ku: 'کاڤەر هەڵبژێردرا'),
                                       ),
                                     ),
                                   ),
@@ -846,8 +877,8 @@ class _EditDealerPageState extends State<EditDealerPage> {
                       children: [
                         _sectionTitle(
                           icon: Icons.storefront_outlined,
-                          title: 'Dealership details',
-                          subtitle: 'What buyers see on your dealer page.',
+                          title: _tr('Dealership details', ar: 'تفاصيل المعرض', ku: 'وردەکاری نمایشگا'),
+                          subtitle: _tr('What buyers see on your dealer page.', ar: 'ما يراه المشترون في صفحة الوكيل.', ku: 'ئەوەی کڕیاران لە پەڕەی وەکیلت دەیبینن.'),
                         ),
                         const SizedBox(height: 12),
                         TextFormField(
@@ -855,11 +886,11 @@ class _EditDealerPageState extends State<EditDealerPage> {
                           style: _fieldTextStyle(isLightShell),
                           decoration: _fieldDecoration(
                             isLightShell,
-                            label: 'Dealership name',
+                            label: _tr('Dealership name', ar: 'اسم المعرض', ku: 'ناوی نمایشگا'),
                             icon: Icons.badge_outlined,
                           ),
                           validator: (v) => (v == null || v.trim().isEmpty)
-                              ? 'Dealership name is required'
+                              ? _tr('Dealership name is required', ar: 'اسم المعرض مطلوب', ku: 'ناوی نمایشگا پێویستە')
                               : null,
                           textInputAction: TextInputAction.next,
                         ),
@@ -869,11 +900,11 @@ class _EditDealerPageState extends State<EditDealerPage> {
                           style: _fieldTextStyle(isLightShell),
                           decoration: _fieldDecoration(
                             isLightShell,
-                            label: 'Dealership location',
+                            label: _tr('Dealership location', ar: 'موقع المعرض', ku: 'شوێنی نمایشگا'),
                             icon: Icons.location_on_outlined,
                           ),
                           validator: (v) => (v == null || v.trim().isEmpty)
-                              ? 'Dealership location is required'
+                              ? _tr('Dealership location is required', ar: 'موقع المعرض مطلوب', ku: 'شوێنی نمایشگا پێویستە')
                               : null,
                           textInputAction: TextInputAction.next,
                         ),
@@ -886,8 +917,8 @@ class _EditDealerPageState extends State<EditDealerPage> {
                           style: _fieldTextStyle(isLightShell),
                           decoration: _fieldDecoration(
                             isLightShell,
-                            label: 'Description',
-                            hint: 'Tell buyers about your dealership',
+                            label: _loc?.descriptionTitle ?? 'Description',
+                            hint: _tr('Tell buyers about your dealership', ar: 'أخبر المشترين عن معرضك', ku: 'دەربارەی نمایشگاکەت بە کڕیاران بڵێ'),
                             icon: Icons.notes_outlined,
                           ),
                         ),
@@ -909,8 +940,8 @@ class _EditDealerPageState extends State<EditDealerPage> {
                       children: [
                         _sectionTitle(
                           icon: Icons.phone_outlined,
-                          title: 'Contact numbers',
-                          subtitle: 'Add up to $_maxPhones phone numbers.',
+                          title: _tr('Contact numbers', ar: 'أرقام التواصل', ku: 'ژمارەکانی پەیوەندی'),
+                          subtitle: _tr('Add up to $_maxPhones phone numbers.', ar: 'يمكنك إضافة حتى $_maxPhones أرقام.', ku: 'دەتوانیت تا $_maxPhones ژمارە زیاد بکەیت.'),
                           trailing: OutlinedButton.icon(
                             onPressed: (_saving || _phones.length >= _maxPhones)
                                 ? null
@@ -919,7 +950,7 @@ class _EditDealerPageState extends State<EditDealerPage> {
                                     ),
                             style: _outlineAccentStyle(),
                             icon: const Icon(Icons.add),
-                            label: const Text('Add'),
+                            label: Text(_tr('Add', ar: 'إضافة', ku: 'زیادکردن')),
                           ),
                         ),
                         const SizedBox(height: 12),
@@ -935,13 +966,13 @@ class _EditDealerPageState extends State<EditDealerPage> {
                                   decoration: _fieldDecoration(
                                     isLightShell,
                                     label: i == 0
-                                        ? 'Primary phone'
-                                        : 'Phone ${i + 1}',
+                                        ? _tr('Primary phone', ar: 'الهاتف الأساسي', ku: 'تەلەفۆنی سەرەکی')
+                                        : '${_tr('Phone', ar: 'هاتف', ku: 'تەلەفۆن')} ${i + 1}',
                                     icon: Icons.phone_outlined,
                                   ),
                                   validator: i == 0
                                       ? (v) => (v == null || v.trim().isEmpty)
-                                          ? 'At least one phone is required'
+                                          ? _tr('At least one phone is required', ar: 'مطلوب رقم هاتف واحد على الأقل', ku: 'لانیکەم یەک ژمارەی تەلەفۆن پێویستە')
                                           : null
                                       : null,
                                 ),
@@ -951,7 +982,7 @@ class _EditDealerPageState extends State<EditDealerPage> {
                                 Padding(
                                   padding: const EdgeInsets.only(top: 6),
                                   child: IconButton(
-                                    tooltip: 'Remove',
+                                    tooltip: _tr('Remove', ar: 'إزالة', ku: 'لابردن'),
                                     onPressed: _saving
                                         ? null
                                         : () {
@@ -985,8 +1016,8 @@ class _EditDealerPageState extends State<EditDealerPage> {
                         padding: const EdgeInsets.fromLTRB(16, 16, 16, 8),
                         child: _sectionTitle(
                           icon: Icons.schedule_outlined,
-                          title: 'Opening hours',
-                          subtitle: 'Start week is Sunday. Tap a day to edit.',
+                          title: _tr('Opening hours', ar: 'ساعات العمل', ku: 'کاتەکانی کارکردن'),
+                          subtitle: _tr('Start week is Sunday. Tap a day to edit.', ar: 'بداية الأسبوع يوم الأحد. اضغط على يوم للتعديل.', ku: 'دەستپێکی هەفتە یەکشەممەیە. کرتە لە ڕۆژێک بکە بۆ دەستکاری.'),
                         ),
                       ),
                       Divider(height: 1, color: dividerColor),
@@ -1008,7 +1039,7 @@ class _EditDealerPageState extends State<EditDealerPage> {
                                 childrenPadding:
                                     const EdgeInsets.fromLTRB(16, 0, 16, 12),
                                 title: Text(
-                                  d.label,
+                                  _dayLabel(d.key),
                                   style: Theme.of(context)
                                       .textTheme
                                       .bodyLarge
@@ -1061,14 +1092,14 @@ class _EditDealerPageState extends State<EditDealerPage> {
                                           });
                                         }
                                       },
-                                      itemBuilder: (context) => const [
+                                      itemBuilder: (context) => [
                                         PopupMenuItem(
                                           value: '24h',
-                                          child: Text('Set 24 hours'),
+                                          child: Text(_tr('Set 24 hours', ar: 'تعيين 24 ساعة', ku: 'دانانی 24 کاتژمێر')),
                                         ),
                                         PopupMenuItem(
                                           value: 'clear',
-                                          child: Text('Set closed'),
+                                          child: Text(_tr('Set closed', ar: 'تعيين مغلق', ku: 'دانانی داخراو')),
                                         ),
                                       ],
                                       child: const Padding(
@@ -1082,13 +1113,13 @@ class _EditDealerPageState extends State<EditDealerPage> {
                                 children: [
                                   if (!day.enabled)
                                     Text(
-                                      'This day is set to closed.',
+                                      _tr('This day is set to closed.', ar: 'هذا اليوم مغلق.', ku: 'ئەم ڕۆژە داخراوە.'),
                                       style:
                                           Theme.of(context).textTheme.bodySmall,
                                     )
                                   else if (day.is24h)
                                     Text(
-                                      'Open 24 hours.',
+                                      _tr('Open 24 hours.', ar: 'مفتوح 24 ساعة.', ku: '24 کاتژمێر کراوەیە.'),
                                       style:
                                           Theme.of(context).textTheme.bodySmall,
                                     )
@@ -1107,7 +1138,7 @@ class _EditDealerPageState extends State<EditDealerPage> {
                                                     final picked =
                                                         await _pickTimeWheel(
                                                       title:
-                                                          '${d.label} opens at',
+                                                          '${_dayLabel(d.key)} ${_tr('opens at', ar: 'يفتح في', ku: 'دەکرێتەوە لە')}',
                                                       initial: day.open ??
                                                           const TimeOfDay(
                                                             hour: 9,
@@ -1125,7 +1156,7 @@ class _EditDealerPageState extends State<EditDealerPage> {
                                             style: _outlineAccentStyle(),
                                             child: Text(
                                               day.open == null
-                                                  ? 'From'
+                                                  ? _tr('From', ar: 'من', ku: 'لە')
                                                   : _formatTime(day.open!),
                                             ),
                                           ),
@@ -1143,7 +1174,7 @@ class _EditDealerPageState extends State<EditDealerPage> {
                                                     final picked =
                                                         await _pickTimeWheel(
                                                       title:
-                                                          '${d.label} closes at',
+                                                          '${_dayLabel(d.key)} ${_tr('closes at', ar: 'يغلق في', ku: 'دادەخرێت لە')}',
                                                       initial: day.close ??
                                                           const TimeOfDay(
                                                             hour: 18,
@@ -1161,7 +1192,7 @@ class _EditDealerPageState extends State<EditDealerPage> {
                                             style: _outlineAccentStyle(),
                                             child: Text(
                                               day.close == null
-                                                  ? 'To'
+                                                  ? _tr('To', ar: 'إلى', ku: 'بۆ')
                                                   : _formatTime(day.close!),
                                             ),
                                           ),
@@ -1191,10 +1222,10 @@ class _EditDealerPageState extends State<EditDealerPage> {
                       children: [
                         _sectionTitle(
                           icon: Icons.map_outlined,
-                          title: 'Map location',
+                          title: _tr('Map location', ar: 'موقع الخريطة', ku: 'شوێنی نەخشە'),
                           subtitle: kIsWeb
-                              ? 'Optional: paste coordinates from Google Maps.'
-                              : 'Optional: drop a pin so buyers can open this spot in Google Maps.',
+                              ? _tr('Optional: paste coordinates from Google Maps.', ar: 'اختياري: ألصق الإحداثيات من خرائط Google.', ku: 'ئارەزوومەندانە: کۆئۆردینات لە نەخشەی گووگڵ لێبکەوە.')
+                              : _tr('Optional: drop a pin so buyers can open this spot in Google Maps.', ar: 'اختياري: ضع دبوسًا ليتمكن المشترون من فتح هذا الموقع في خرائط Google.', ku: 'ئارەزوومەندانە: پینی شوێن دابنێ بۆ ئەوەی کڕیاران بتوانن ئەم شوێنە لە نەخشەی گووگڵ بکەنەوە.'),
                         ),
                         const SizedBox(height: 12),
                         if (!kIsWeb) ...[
@@ -1207,8 +1238,8 @@ class _EditDealerPageState extends State<EditDealerPage> {
                                   icon: const Icon(Icons.map_outlined),
                                   label: Text(
                                     _pickLat != null
-                                        ? 'Update map pin'
-                                        : 'Set map pin',
+                                        ? _tr('Update map pin', ar: 'تحديث دبوس الخريطة', ku: 'نوێکردنەوەی پینی نەخشە')
+                                        : _tr('Set map pin', ar: 'تعيين دبوس الخريطة', ku: 'دانانی پینی نەخشە'),
                                   ),
                                 ),
                               ),
@@ -1219,7 +1250,7 @@ class _EditDealerPageState extends State<EditDealerPage> {
                                   style: TextButton.styleFrom(
                                     foregroundColor: _accent,
                                   ),
-                                  child: const Text('Clear'),
+                                  child: Text(_tr('Clear', ar: 'مسح', ku: 'پاککردنەوە')),
                                 ),
                               ],
                             ],
@@ -1271,7 +1302,7 @@ class _EditDealerPageState extends State<EditDealerPage> {
                                   style: _fieldTextStyle(isLightShell),
                                   decoration: _fieldDecoration(
                                     isLightShell,
-                                    label: 'Latitude',
+                                    label: _tr('Latitude', ar: 'خط العرض', ku: 'لاتیتوود'),
                                     icon: Icons.my_location_outlined,
                                   ),
                                   onChanged: (_) => setState(() {}),
@@ -1289,7 +1320,7 @@ class _EditDealerPageState extends State<EditDealerPage> {
                                   style: _fieldTextStyle(isLightShell),
                                   decoration: _fieldDecoration(
                                     isLightShell,
-                                    label: 'Longitude',
+                                    label: _tr('Longitude', ar: 'خط الطول', ku: 'لۆنگیتوود'),
                                     icon: Icons.my_location_outlined,
                                   ),
                                   onChanged: (_) => setState(() {}),

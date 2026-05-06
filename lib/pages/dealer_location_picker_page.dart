@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:google_places_autocomplete/google_places_autocomplete.dart';
 import 'package:google_maps_flutter/google_maps_flutter.dart';
 
+import '../l10n/app_localizations.dart';
 import '../shared/maps/dealer_map_coords.dart';
 
 /// Default map center (Baghdad) when the dealer has no saved pin yet.
@@ -35,6 +36,13 @@ class _DealerLocationPickerPageState extends State<DealerLocationPickerPage> {
   String? _placesInitError;
   String _lastQuery = '';
   String _lastExplicitSearchQuery = '';
+
+  String _tr(String en, {String? ar, String? ku}) {
+    final code = Localizations.localeOf(context).languageCode;
+    if (code == 'ar') return ar ?? en;
+    if (code == 'ku' || code == 'ckb') return ku ?? en;
+    return en;
+  }
 
   @override
   void initState() {
@@ -144,8 +152,16 @@ class _DealerLocationPickerPageState extends State<DealerLocationPickerPage> {
     if (!_placesReady) {
       if (!mounted) return;
       final msg = _placesInitError == null
-          ? 'Search is still loading. Please try again in a moment.'
-          : 'Search unavailable: ${_placesInitError!}';
+          ? _tr(
+              'Search is still loading. Please try again in a moment.',
+              ar: 'لا يزال البحث قيد التحميل. يرجى المحاولة بعد قليل.',
+              ku: 'گەڕان هێشتا بار دەبێت. تکایە دواتر هەوڵ بدەوە.',
+            )
+          : _tr(
+              'Search unavailable: ${_placesInitError!}',
+              ar: 'البحث غير متاح: ${_placesInitError!}',
+              ku: 'گەڕان بەردەست نییە: ${_placesInitError!}',
+            );
       ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(msg)));
       return;
     }
@@ -160,9 +176,13 @@ class _DealerLocationPickerPageState extends State<DealerLocationPickerPage> {
       if (_searching) return;
       if (_predictions.isNotEmpty) return;
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
+        SnackBar(
           content: Text(
-            'No results. If this keeps happening, enable the Places API for your key (and ensure billing / restrictions allow Places).',
+            _tr(
+              'No results. If this keeps happening, enable the Places API for your key (and ensure billing / restrictions allow Places).',
+              ar: 'لا توجد نتائج. إذا استمرت المشكلة، فعّل Places API للمفتاح وتأكد من الفوترة وصلاحيات القيود.',
+              ku: 'هیچ ئەنجامێک نەدۆزرایەوە. ئەگەر بەردەوام بوو، Places API بۆ key ـەکەت چالاک بکە و دڵنیابە لە billing و قەیدەکان.',
+            ),
           ),
           backgroundColor: Colors.orange,
         ),
@@ -183,7 +203,7 @@ class _DealerLocationPickerPageState extends State<DealerLocationPickerPage> {
       if (!mounted) return;
       if (lat == null || lng == null) {
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Could not get place coordinates.')),
+          SnackBar(content: Text(_tr('Could not get place coordinates.', ar: 'تعذر جلب إحداثيات المكان.', ku: 'نەتوانرا کۆئۆردیناتەکانی شوێن وەربگیرێت.'))),
         );
         setState(() => _searching = false);
         return;
@@ -201,7 +221,7 @@ class _DealerLocationPickerPageState extends State<DealerLocationPickerPage> {
       if (!mounted) return;
       setState(() => _searching = false);
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Search failed: $e')),
+        SnackBar(content: Text(_tr('Search failed: $e', ar: 'فشل البحث: $e', ku: 'گەڕان شکستی هێنا: $e'))),
       );
     }
   }
@@ -217,14 +237,16 @@ class _DealerLocationPickerPageState extends State<DealerLocationPickerPage> {
   Widget build(BuildContext context) {
     if (kIsWeb) {
       return Scaffold(
-        appBar: AppBar(title: const Text('Map location')),
-        body: const Center(
+        appBar: AppBar(title: Text(_tr('Map location', ar: 'موقع الخريطة', ku: 'شوێنی نەخشە'))),
+        body: Center(
           child: Padding(
             padding: EdgeInsets.all(24),
             child: Text(
-              'The in-app map picker is available on Android and iOS. '
-              'On web, set latitude and longitude in the edit form, or open '
-              'Google Maps in your browser to copy coordinates.',
+              _tr(
+                'The in-app map picker is available on Android and iOS. On web, set latitude and longitude in the edit form, or open Google Maps in your browser to copy coordinates.',
+                ar: 'محدد الموقع داخل التطبيق متاح على Android و iOS. على الويب، أدخل خط العرض وخط الطول في نموذج التعديل أو افتح خرائط Google في المتصفح لنسخ الإحداثيات.',
+                ku: 'هەڵبژێرەری شوێنی ناو ئەپ لە Android و iOS بەردەستە. لە وێبدا، لاتیتوود و لۆنگیتوود لە فۆڕمی دەستکاریکردندا دابنێ یان نەخشەی گووگڵ لە وێبگەڕەکەت بکەرەوە بۆ کۆپیکردنی کۆئۆردینات.',
+              ),
               textAlign: TextAlign.center,
             ),
           ),
@@ -234,11 +256,11 @@ class _DealerLocationPickerPageState extends State<DealerLocationPickerPage> {
 
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Pin dealership location'),
+        title: Text(_tr('Pin dealership location', ar: 'تثبيت موقع المعرض', ku: 'پینی شوێنی نمایشگا')),
         actions: [
           TextButton(
             onPressed: _confirmFromMap,
-            child: const Text('USE THIS PIN'),
+            child: Text(_tr('USE THIS PIN', ar: 'استخدم هذا الدبوس', ku: 'ئەم پینە بەکاربهێنە')),
           ),
         ],
       ),
@@ -278,15 +300,15 @@ class _DealerLocationPickerPageState extends State<DealerLocationPickerPage> {
                               focusNode: _searchFocusNode,
                               textInputAction: TextInputAction.search,
                               onSubmitted: (_) => _searchPlace(),
-                              decoration: const InputDecoration(
-                                hintText: 'Search in Google Maps',
+                              decoration: InputDecoration(
+                                hintText: _tr('Search in Google Maps', ar: 'ابحث في خرائط Google', ku: 'لە نەخشەی گووگڵ بگەڕێ'),
                                 border: InputBorder.none,
                               ),
                             ),
                           ),
                           if (_searchController.text.trim().isNotEmpty)
                             IconButton(
-                              tooltip: 'Clear',
+                              tooltip: _tr('Clear', ar: 'مسح', ku: 'پاککردنەوە'),
                               onPressed: () {
                                 _searchController.clear();
                                 setState(() => _predictions = const []);
@@ -305,7 +327,11 @@ class _DealerLocationPickerPageState extends State<DealerLocationPickerPage> {
                                       strokeWidth: 2,
                                     ),
                                   )
-                                : Text(_placesReady ? 'Search' : 'Loading'),
+                                : Text(
+                                    _placesReady
+                                        ? _tr('Search', ar: 'بحث', ku: 'گەڕان')
+                                        : _tr('Loading', ar: 'جارٍ التحميل', ku: 'بار دەبێت'),
+                                  ),
                           ),
                         ],
                       ),
@@ -329,21 +355,25 @@ class _DealerLocationPickerPageState extends State<DealerLocationPickerPage> {
                                 child: CircularProgressIndicator(strokeWidth: 2),
                               ),
                               const SizedBox(width: 10),
-                              const Expanded(
-                                child: Text('Loading Google Maps search...'),
+                              Expanded(
+                                child: Text(_tr('Loading Google Maps search...', ar: 'جارٍ تحميل بحث خرائط Google...', ku: 'بارکردنی گەڕانی نەخشەی گووگڵ...')),
                               ),
                             ] else ...[
                               const Icon(Icons.warning_amber_rounded),
                               const SizedBox(width: 10),
                               Expanded(
                                 child: Text(
-                                  'Search unavailable. Check Places API + billing/key restrictions.',
+                                  _tr(
+                                    'Search unavailable. Check Places API + billing/key restrictions.',
+                                    ar: 'البحث غير متاح. تحقق من Places API والفوترة وقيود المفتاح.',
+                                    ku: 'گەڕان بەردەست نییە. Places API و billing و قەیدەکانی key بپشکنە.',
+                                  ),
                                   style: Theme.of(context).textTheme.bodySmall,
                                 ),
                               ),
                               TextButton(
                                 onPressed: _initPlaces,
-                                child: const Text('Retry'),
+                                child: Text(AppLocalizations.of(context)?.retryAction ?? 'Retry'),
                               ),
                             ],
                           ],
@@ -373,7 +403,7 @@ class _DealerLocationPickerPageState extends State<DealerLocationPickerPage> {
                                   const Icon(Icons.place_outlined, size: 22),
                               title: Text(
                                 (p.title ?? '').trim().isEmpty
-                                    ? (p.description ?? 'Result')
+                                    ? (p.description ?? _tr('Result', ar: 'نتيجة', ku: 'ئەنجام'))
                                     : p.title!,
                                 maxLines: 2,
                                 overflow: TextOverflow.ellipsis,
@@ -401,7 +431,7 @@ class _DealerLocationPickerPageState extends State<DealerLocationPickerPage> {
       floatingActionButton: FloatingActionButton.extended(
         onPressed: _confirmFromMap,
         icon: const Icon(Icons.check),
-        label: const Text('Save pin'),
+        label: Text(_tr('Save pin', ar: 'حفظ الدبوس', ku: 'پاشەکەوتکردنی پین')),
       ),
     );
   }

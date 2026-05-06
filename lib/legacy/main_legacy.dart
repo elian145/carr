@@ -117,6 +117,41 @@ bool isValidCarRegionSpecCode(String? s) {
   return kCarRegionSpecCodes.contains(s.trim().toLowerCase());
 }
 
+String _trLegacyText(
+  BuildContext context,
+  String en, {
+  String? ar,
+  String? ku,
+}) {
+  final code = Localizations.localeOf(context).languageCode;
+  if (code == 'ar') return ar ?? en;
+  if (code == 'ku' || code == 'ckb') return ku ?? en;
+  return en;
+}
+
+String _translatePlateTypeLegacy(BuildContext context, String raw) {
+  final v = raw.trim().toLowerCase().replaceAll('-', ' ').replaceAll('_', ' ');
+  switch (v) {
+    case 'private':
+      return _trLegacyText(context, 'Private', ar: 'خصوصي', ku: 'تایبەت');
+    case 'commercial':
+    case 'comercial':
+      return _trLegacyText(context, 'Commercial', ar: 'تجاري', ku: 'بازرگانی');
+    case 'taxi':
+      return _trLegacyText(context, 'Taxi', ar: 'تاكسي', ku: 'تەکسی');
+    case 'government':
+      return _trLegacyText(context, 'Government', ar: 'حكومي', ku: 'حکومی');
+    case 'temporary':
+      return _trLegacyText(context, 'Temporary', ar: 'مؤقت', ku: 'کاتی');
+    case 'diplomatic':
+      return _trLegacyText(context, 'Diplomatic', ar: 'دبلوماسي', ku: 'دیبلۆماسی');
+    case 'police':
+      return _trLegacyText(context, 'Police', ar: 'شرطة', ku: 'پۆلیس');
+    default:
+      return prettyTitleCase(raw);
+  }
+}
+
 /// JSON list of [OnlineSpecVariant] maps for correlated step-2 fields (bundled catalog).
 const String _kOnlineSpecVariantsKey = '_online_spec_variants';
 
@@ -3586,7 +3621,7 @@ class MyApp extends StatelessWidget {
                   if (rawId.isEmpty) {
                     return Scaffold(
                       appBar: AppBar(title: const Text('Navigation error')),
-                      body: const Center(
+                      body: Center(
                         child: Text('Missing chat conversation id'),
                       ),
                     );
@@ -3645,8 +3680,15 @@ class MyApp extends StatelessWidget {
                   if (dealerPublicId.isEmpty) {
                     return Scaffold(
                       appBar: AppBar(title: const Text('Navigation error')),
-                      body: const Center(
-                        child: Text('Missing dealer id'),
+                      body: Center(
+                        child: Text(
+                          _trLegacyText(
+                            context,
+                            'Missing dealer id',
+                            ar: 'معرّف الوكيل مفقود',
+                            ku: 'ناسنامەی وەکیل ونە',
+                          ),
+                        ),
                       ),
                     );
                   }
@@ -6929,8 +6971,8 @@ class _HomePageState extends State<HomePage> {
         selectedPlateType!.toLowerCase() != 'any') {
       chips.add(
         _buildFilterChip(
-          'Plate type',
-          prettyTitleCase(selectedPlateType!),
+          _trLegacyText(context, 'Plate type', ar: 'نوع اللوحة', ku: 'جۆری پڵەیت'),
+          _translatePlateTypeLegacy(context, selectedPlateType!),
           'plateType',
           Icons.confirmation_number_outlined,
           const Color(0xFFFF6B00),
@@ -6944,7 +6986,7 @@ class _HomePageState extends State<HomePage> {
         selectedPlateCity!.toLowerCase() != 'any') {
       chips.add(
         _buildFilterChip(
-          'Plate city',
+          _trLegacyText(context, 'Plate city', ar: 'مدينة اللوحة', ku: 'شاری پڵەیت'),
           _translateValueGlobal(context, selectedPlateCity) ?? selectedPlateCity!,
           'plateCity',
           Icons.location_on_outlined,
@@ -10912,7 +10954,7 @@ class _HomePageState extends State<HomePage> {
                                                             selectedPlateType ??
                                                             '',
                                                         decoration: InputDecoration(
-                                                          labelText: 'Plate type',
+                                                          labelText: _trLegacyText(context, 'Plate type', ar: 'نوع اللوحة', ku: 'جۆری پڵەیت'),
                                                           filled: true,
                                                           fillColor:
                                                               moreFiltersFieldFill,
@@ -10970,7 +11012,7 @@ class _HomePageState extends State<HomePage> {
                                                             selectedPlateCity ??
                                                             '',
                                                         decoration: InputDecoration(
-                                                          labelText: 'Plate city',
+                                                          labelText: _trLegacyText(context, 'Plate city', ar: 'مدينة اللوحة', ku: 'شاری پڵەیت'),
                                                           filled: true,
                                                           fillColor:
                                                               moreFiltersFieldFill,
@@ -11892,8 +11934,8 @@ class _SavedSearchesPageState extends State<SavedSearchesPage> {
       chips.add(
         _buildFilterChip(
           context,
-          'Plate type',
-          prettyTitleCase(filters['plate_type'].toString()),
+          _trLegacyText(context, 'Plate type', ar: 'نوع اللوحة', ku: 'جۆری پڵەیت'),
+          _translatePlateTypeLegacy(context, filters['plate_type'].toString()),
         ),
       );
     }
@@ -11901,7 +11943,7 @@ class _SavedSearchesPageState extends State<SavedSearchesPage> {
       chips.add(
         _buildFilterChip(
           context,
-          'Plate city',
+          _trLegacyText(context, 'Plate city', ar: 'مدينة اللوحة', ku: 'شاری پڵەیت'),
           tr(filters['plate_city'].toString()),
         ),
       );
@@ -13799,7 +13841,12 @@ class _CarDetailsPageState extends State<CarDetailsPage> {
                                           ),
                                           icon: Icon(Icons.phone, size: 19),
                                           label: Text(
-                                            'Call Seller',
+                                            _trLegacyText(
+                                              context,
+                                              'Call Seller',
+                                              ar: 'اتصل بالبائع',
+                                              ku: 'پەیوەندی بە فرۆشیار',
+                                            ),
                                             style: TextStyle(
                                               fontSize: 13,
                                               fontWeight: FontWeight.w600,
@@ -14148,7 +14195,14 @@ class _CarDetailsPageState extends State<CarDetailsPage> {
     final bool isApprovedDealer =
         accountType == 'dealer' && dealerStatus == 'approved';
     final bool isDealerSeller = accountType == 'dealer';
-    final String sellerTypeLabel = isDealerSeller ? 'Dealership' : 'Private seller';
+    final String sellerTypeLabel = isDealerSeller
+        ? _trLegacyText(context, 'Dealership', ar: 'معرض', ku: 'نمایشگا')
+        : _trLegacyText(
+            context,
+            'Private seller',
+            ar: 'بائع فردي',
+            ku: 'فرۆشیاری تاک',
+          );
     final String dealerPublicId =
         (seller['id'] ?? seller['user_id'] ?? '').toString().trim();
     final bool canOpenDealerPage =
@@ -14161,8 +14215,15 @@ class _CarDetailsPageState extends State<CarDetailsPage> {
               : (fullName.isNotEmpty
                     ? fullName
                     : (isDealerSeller
-                          ? 'Dealer'
-                          : (username.isNotEmpty ? username : 'Seller'))));
+                          ? _trLegacyText(context, 'Dealer', ar: 'وكيل', ku: 'وەکیل')
+                          : (username.isNotEmpty
+                                ? username
+                                : _trLegacyText(
+                                    context,
+                                    'Seller',
+                                    ar: 'البائع',
+                                    ku: 'فرۆشیار',
+                                  )))));
 
     final String locationShown =
         (isApprovedDealer && dealershipLocation.isNotEmpty)
@@ -14308,7 +14369,7 @@ class _CarDetailsPageState extends State<CarDetailsPage> {
                         color: const Color(0x1A4CAF50),
                         borderRadius: BorderRadius.circular(999),
                       ),
-                      child: const Row(
+                      child: Row(
                         mainAxisSize: MainAxisSize.min,
                         children: [
                           Icon(
@@ -14318,7 +14379,12 @@ class _CarDetailsPageState extends State<CarDetailsPage> {
                           ),
                           SizedBox(width: 4),
                           Text(
-                            'Verified',
+                            _trLegacyText(
+                              context,
+                              'Verified',
+                              ar: 'موثّق',
+                              ku: 'پشتڕاستکراوە',
+                            ),
                             style: TextStyle(
                               fontSize: 11,
                               color: Color(0xFF4CAF50),
@@ -14331,18 +14397,39 @@ class _CarDetailsPageState extends State<CarDetailsPage> {
                 ],
               ),
               if (isDealerSeller) ...[
-                detailRow(Icons.phone_outlined, 'Phone', phone),
-                detailRow(Icons.email_outlined, 'Email', email),
+                detailRow(
+                  Icons.phone_outlined,
+                  _trLegacyText(context, 'Phone', ar: 'الهاتف', ku: 'تەلەفۆن'),
+                  phone,
+                ),
+                detailRow(
+                  Icons.email_outlined,
+                  _trLegacyText(context, 'Email', ar: 'البريد الإلكتروني', ku: 'ئیمەیل'),
+                  email,
+                ),
               ],
               if (isDealerSeller)
-                detailRow(Icons.location_on_outlined, 'Location', locationShown),
+                detailRow(
+                  Icons.location_on_outlined,
+                  _trLegacyText(context, 'Location', ar: 'الموقع', ku: 'شوێن'),
+                  locationShown,
+                ),
               if (isDealerSeller)
-                detailRow(Icons.notes_outlined, 'Description', dealershipDescription),
+                detailRow(
+                  Icons.notes_outlined,
+                  AppLocalizations.of(context)?.descriptionTitle ?? 'Description',
+                  dealershipDescription,
+                ),
               if (canOpenDealerPage)
                 Padding(
                   padding: const EdgeInsets.only(top: 10),
                   child: Text(
-                    'Tap to open dealership page',
+                    _trLegacyText(
+                      context,
+                      'Tap to open dealership page',
+                      ar: 'اضغط لفتح صفحة المعرض',
+                      ku: 'کرتە بکە بۆ کردنەوەی پەڕەی نمایشگا',
+                    ),
                     style: TextStyle(
                       fontSize: 12,
                       color: isLight ? Colors.black54 : Colors.white60,
@@ -15023,7 +15110,12 @@ Widget buildCarListingSpecsGrid(
     ),
     detailRowSpec(
       icon: Icons.confirmation_number_outlined,
-      label: 'Plate',
+      label: _trLegacyText(
+        context,
+        'Plate',
+        ar: 'اللوحة',
+        ku: 'پڵەیت',
+      ),
       value: _orDash(() {
         final rawCity = pickNE(car, ['plate_city', 'plateCity'])?.trim();
         final rawType = pickNE(car, ['plate_type', 'plateType'])?.trim();
@@ -15033,7 +15125,7 @@ Widget buildCarListingSpecsGrid(
             : (_translateValueGlobal(context, rawCity) ?? rawCity);
         final String? type = (rawType == null || rawType.isEmpty)
             ? null
-            : prettyTitleCase(rawType);
+            : _translatePlateTypeLegacy(context, rawType);
 
         if (city == null && type == null) return null;
         if (city != null && type != null) return '$city/$type';
@@ -15046,18 +15138,32 @@ Widget buildCarListingSpecsGrid(
     details.add(
       detailRowSpec(
         icon: Icons.description_outlined,
-        label: 'Description',
-        value: 'View description',
+        label: AppLocalizations.of(context)?.descriptionTitle ?? 'Description',
+        value: _trLegacyText(
+          context,
+          'View description',
+          ar: 'عرض الوصف',
+          ku: 'پیشاندانی وەسف',
+        ),
         onTap: () {
           showDialog<void>(
             context: context,
             builder: (dialogContext) => AlertDialog(
-              title: const Text('Description'),
+              title: Text(
+                AppLocalizations.of(context)?.descriptionTitle ?? 'Description',
+              ),
               content: SingleChildScrollView(child: Text(description)),
               actions: [
                 TextButton(
                   onPressed: () => Navigator.pop(dialogContext),
-                  child: const Text('Close'),
+                  child: Text(
+                    _trLegacyText(
+                      context,
+                      'Close',
+                      ar: 'إغلاق',
+                      ku: 'داخستن',
+                    ),
+                  ),
                 ),
               ],
             ),
@@ -20677,7 +20783,12 @@ class _SellStep3PageState extends State<SellStep3Page> {
               onTap: () async {
                 _dismissKeyboard();
                 final choice = await _pickFromList(
-                  'Plate type',
+                  _trLegacyText(
+                    context,
+                    'Plate type',
+                    ar: 'نوع اللوحة',
+                    ku: 'جۆری پڵەیت',
+                  ),
                   _plateTypeOptions.map(prettyTitleCase).toList(),
                 );
                 if (choice != null) {
@@ -20690,7 +20801,12 @@ class _SellStep3PageState extends State<SellStep3Page> {
               child: buildFancySelector(
                 context,
                 icon: Icons.confirmation_number_outlined,
-                label: 'Plate type',
+                label: _trLegacyText(
+                  context,
+                  'Plate type',
+                  ar: 'نوع اللوحة',
+                  ku: 'جۆری پڵەیت',
+                ),
                 value: selectedPlateType == null
                     ? null
                     : prettyTitleCase(selectedPlateType!),
@@ -20702,7 +20818,15 @@ class _SellStep3PageState extends State<SellStep3Page> {
             GestureDetector(
               onTap: () async {
                 _dismissKeyboard();
-                final choice = await _pickFromList('Plate city', _plateCities);
+                final choice = await _pickFromList(
+                  _trLegacyText(
+                    context,
+                    'Plate city',
+                    ar: 'مدينة اللوحة',
+                    ku: 'شاری پڵەیت',
+                  ),
+                  _plateCities,
+                );
                 if (choice != null) {
                   setState(() => selectedPlateCity = choice);
                   _syncStep3DraftToParent();
@@ -20711,7 +20835,12 @@ class _SellStep3PageState extends State<SellStep3Page> {
               child: buildFancySelector(
                 context,
                 icon: Icons.location_on_outlined,
-                label: 'Plate city',
+                label: _trLegacyText(
+                  context,
+                  'Plate city',
+                  ar: 'مدينة اللوحة',
+                  ku: 'شاری پڵەیت',
+                ),
                 value: selectedPlateCity,
               ),
             ),
@@ -20768,7 +20897,9 @@ class _SellStep3PageState extends State<SellStep3Page> {
               minLines: 3,
               maxLines: 6,
               decoration: InputDecoration(
-                labelText: 'Description (optional)',
+                labelText:
+                    AppLocalizations.of(context)?.descriptionOptionalLabel ??
+                    'Description (optional)',
                 hintText:
                     'Add details about the car, condition, features, or notes',
                 filled: true,
@@ -27701,7 +27832,12 @@ class _ProfilePageState extends State<ProfilePage> {
                       SizedBox(height: 12),
                       _buildActionButton(
                         Icons.storefront_outlined,
-                        'Edit dealer page',
+                        _trLegacyText(
+                          context,
+                          'Edit dealer page',
+                          ar: 'تعديل صفحة الوكيل',
+                          ku: 'دەستکاری پەڕەی وەکیل',
+                        ),
                         () async {
                           if (ApiService.accessToken == null ||
                               ApiService.accessToken!.isEmpty) {
@@ -27721,13 +27857,13 @@ class _ProfilePageState extends State<ProfilePage> {
                     SizedBox(height: 12),
                     _buildActionButton(
                       Icons.contact_mail_outlined,
-                      'Support',
+                      AppLocalizations.of(context)!.helpSupportTitle,
                       () {
                         // TODO: Add support contact email/action.
                         ScaffoldMessenger.of(context).showSnackBar(
                           SnackBar(
                             content: Text(
-                              'Support details coming soon.',
+                              AppLocalizations.of(context)!.helpSupportComingSoon,
                             ),
                           ),
                         );
