@@ -21768,7 +21768,7 @@ class _ListingPreviewWidgetState extends State<ListingPreviewWidget> {
     final videos = media.where((m) => m.isVideo).map((m) => m.item).toList();
     Navigator.of(context).push(
       MaterialPageRoute(
-        builder: (_) => ListingPreviewGalleryPage(
+        builder: (_) => ListingPreviewMediaGridPage(
           imageFilesOrUrls: images,
           videoFilesOrUrls: videos,
           initialIndex: i,
@@ -22332,11 +22332,16 @@ String _sellReviewListingBrand(BuildContext context, Map<String, dynamic> car) {
 String _sellReviewListingModel(BuildContext context, Map<String, dynamic> car) {
   final brand = (car['brand'] ?? '').toString().trim();
   final model = (car['model'] ?? '').toString().trim();
-  return CarNameTranslations.getLocalizedModel(
+  final localizedModel = CarNameTranslations.getLocalizedModel(
     context,
     brand.isEmpty ? null : brand,
     model.isEmpty ? null : model,
   );
+  final displayModel = localizedModel.isNotEmpty ? localizedModel : model;
+  final year = (car['year'] ?? '').toString().trim();
+  if (displayModel.isEmpty) return year;
+  if (year.isEmpty) return displayModel;
+  return '$displayModel $year';
 }
 
 bool _sellReviewHasPrice(Map<String, dynamic> car) {
@@ -22388,7 +22393,7 @@ class _SellReviewCarDetailScrollViewState
     final videos = media.where((m) => m.isVideo).map((m) => m.item).toList();
     Navigator.of(context).push(
       MaterialPageRoute(
-        builder: (_) => ListingPreviewGalleryPage(
+        builder: (_) => ListingPreviewMediaGridPage(
           imageFilesOrUrls: images,
           videoFilesOrUrls: videos,
           initialIndex: i,
