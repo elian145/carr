@@ -13,7 +13,7 @@ KEY_ALIAS=upload
 KEY_PASSWORD=your_key_password
 ```
 
-3. In `android/app/build.gradle.kts`, uncomment the signing block to use `releaseConfig` and enable minify for release.
+3. Add `android/signing.properties` (the release signing block is already enabled in `android/app/build.gradle.kts`).
 
 4. Build a signed release:
 ```
@@ -202,7 +202,8 @@ For production deployment details (Gunicorn/Celery/Redis/Socket.IO scaling), see
 
 3. **Configure Firebase (Optional)**
    - Create a Firebase project
-   - Add `google-services.json` (Android) and `GoogleService-Info.plist` (iOS)
+   - Add `android/app/src/dev/google-services.json`, `android/app/src/stage/google-services.json`, and `android/app/src/prod/google-services.json`
+   - Add `ios/Runner/GoogleService-Info.plist`
    - Update Firebase configuration in the app
 
 4. **Run the Flutter app**

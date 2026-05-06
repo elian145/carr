@@ -63,9 +63,9 @@
 	<key>NSMicrophoneUsageDescription</key>
 	<string>Microphone access is needed for video capture when adding listings.</string>
 	<key>GMSApiKey</key>
-	<string>YOUR_GOOGLE_MAPS_IOS_KEY</string>
+	<string>$(IOS_GOOGLE_MAPS_API_KEY)</string>
 	<key>GOOGLE_PLACES_API_KEY</key>
-	<string>YOUR_GOOGLE_PLACES_IOS_KEY</string>
+	<string>$(IOS_GOOGLE_PLACES_API_KEY)</string>
 	<!-- Release/Profile: ATS default (HTTPS only). Debug uses Info-Debug.plist. -->
 	<key>NSAppTransportSecurity</key>
 	<dict>

@@ -17,6 +17,7 @@ workflows:
         FORCE_SKIP_BLUR: "false"
       # Configure these in Codemagic UI (Environment variables / Secure):
       # - IOS_GOOGLE_MAPS_API_KEY  (iOS Maps SDK key, restricted to bundle id com.carzo.app)
+      # - IOS_GOOGLE_PLACES_API_KEY (iOS Places key, restricted to bundle id com.carzo.app)
       # - ANDROID_GOOGLE_MAPS_API_KEY (Android Maps SDK key, restricted by package + SHA-1)
     cache:
       cache_paths:
@@ -42,11 +43,17 @@ workflows:
       - name: Inject iOS Google Maps key (CI)
         script: |
           if [ -n "$IOS_GOOGLE_MAPS_API_KEY" ]; then
-            echo "Injecting GMSApiKey into Info.plist and Info-Debug.plist"
+            echo "Injecting iOS map keys into Info.plist and Info-Debug.plist"
             /usr/libexec/PlistBuddy -c "Set :GMSApiKey $IOS_GOOGLE_MAPS_API_KEY" ios/Runner/Info.plist 2>/dev/null || \
             /usr/libexec/PlistBuddy -c "Add :GMSApiKey string $IOS_GOOGLE_MAPS_API_KEY" ios/Runner/Info.plist 2>/dev/null || true
             /usr/libexec/PlistBuddy -c "Set :GMSApiKey $IOS_GOOGLE_MAPS_API_KEY" ios/Runner/Info-Debug.plist 2>/dev/null || \
             /usr/libexec/PlistBuddy -c "Add :GMSApiKey string $IOS_GOOGLE_MAPS_API_KEY" ios/Runner/Info-Debug.plist 2>/dev/null || true
+            if [ -n "$IOS_GOOGLE_PLACES_API_KEY" ]; then
+              /usr/libexec/PlistBuddy -c "Set :GOOGLE_PLACES_API_KEY $IOS_GOOGLE_PLACES_API_KEY" ios/Runner/Info.plist 2>/dev/null || \
+              /usr/libexec/PlistBuddy -c "Add :GOOGLE_PLACES_API_KEY string $IOS_GOOGLE_PLACES_API_KEY" ios/Runner/Info.plist 2>/dev/null || true
+              /usr/libexec/PlistBuddy -c "Set :GOOGLE_PLACES_API_KEY $IOS_GOOGLE_PLACES_API_KEY" ios/Runner/Info-Debug.plist 2>/dev/null || \
+              /usr/libexec/PlistBuddy -c "Add :GOOGLE_PLACES_API_KEY string $IOS_GOOGLE_PLACES_API_KEY" ios/Runner/Info-Debug.plist 2>/dev/null || true
+            fi
             # Diagnostics (do not print the key)
             summarize_plist () {
               local plist="$1"
@@ -103,7 +110,7 @@ workflows:
       vars:
         # IMPORTANT: Do NOT include /api in API_BASE. The app adds /api itself.
         # Release builds enforce HTTPS. Override in Codemagic UI.
-        API_BASE: "https://api.example.com"
+        API_BASE: "https://carr-5hrm.onrender.com"
     scripts:
       - name: Flutter pub get
         script: |
@@ -111,7 +118,7 @@ workflows:
           flutter pub get
       - name: Build APK
         script: |
-          flutter build apk --release --dart-define=API_BASE=${API_BASE}
+          flutter build apk --release --flavor prod --dart-define=API_BASE=${API_BASE}
     artifacts:
       - build/app/outputs/flutter-apk/app-release.apk
 
@@ -170,7 +177,7 @@ workflows:
         FLAVOR: prod
         # IMPORTANT: Do NOT include /api in API_BASE. The app adds /api itself.
         # Release builds require HTTPS.
-        API_BASE: "https://api.example.com"
+        API_BASE: "https://carr-5hrm.onrender.com"
       # Configure these in Codemagic UI (Environment variables / Secure):
       # - CM_KEYSTORE (base64 of your .jks)
       # - CM_KEYSTORE_PASSWORD

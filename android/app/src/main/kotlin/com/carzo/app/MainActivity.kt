@@ -1,4 +1,4 @@
-package com.example.car_listing_app
+package com.carzo.app
 
 import io.flutter.embedding.android.FlutterActivity
 

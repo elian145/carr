@@ -1,1 +1,5 @@
 #include "Generated.xcconfig"
+
+// Inject via local xcconfig or CI environment at build time.
+IOS_GOOGLE_MAPS_API_KEY=
+IOS_GOOGLE_PLACES_API_KEY=

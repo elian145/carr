@@ -19,8 +19,9 @@ import GoogleMaps
     let googleMapsApiKey = googleMapsApiKeyRaw.trimmingCharacters(in: .whitespacesAndNewlines)
     let bundleId = Bundle.main.bundleIdentifier ?? "(unknown)"
     let looksLikeApiKey = googleMapsApiKey.hasPrefix("AIza") && googleMapsApiKey.count >= 30
-    let isPlaceholder = googleMapsApiKey.uppercased().hasPrefix("YOUR_GOOGLE_MAP") || googleMapsApiKey == "YOUR_GOOGLE_MAPS_IOS_KEY"
-    NSLog("[Maps] bundleId=%@ keyLen=%d startsWithAIza=%@ placeholder=%@", bundleId, googleMapsApiKey.count, looksLikeApiKey ? "true" : "false", isPlaceholder ? "true" : "false")
+    let hasUnresolvedBuildVar = googleMapsApiKey.contains("$(IOS_GOOGLE_MAPS_API_KEY)")
+    let isMissingOrPlaceholder = googleMapsApiKey.isEmpty || hasUnresolvedBuildVar
+    NSLog("[Maps] bundleId=%@ keyLen=%d startsWithAIza=%@ unresolvedOrMissing=%@", bundleId, googleMapsApiKey.count, looksLikeApiKey ? "true" : "false", isMissingOrPlaceholder ? "true" : "false")
     // The SDK can terminate the process if a GMSMapView is created without provideAPIKey being called.
     // Call it unconditionally with a sentinel when missing to keep the app alive and surface a clear
     // "invalid key" signal in logs rather than a hard crash.

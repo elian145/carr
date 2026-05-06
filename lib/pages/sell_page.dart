@@ -892,9 +892,11 @@ class _SellPageState extends State<SellPage> {
 
       if (!mounted) return;
       await SellListingDraftPrefs.clear(_draftOwnerKey ?? _buildDraftOwnerKey());
+      if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(content: Text(loc?.listingCreated ?? 'Listing created')),
       );
+      if (!mounted) return;
       Navigator.pushReplacementNamed(
         context,
         '/car_detail',

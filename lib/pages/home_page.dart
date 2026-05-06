@@ -183,12 +183,12 @@ Widget _buildGlobalCarCardInnerText(
   required Color metaTextColor,
   bool pinBottomMeta = false,
 }) {
-  const double _titleBoxFontSize = 15;
+  const double titleBoxFontSize = 15;
   const double titleFontSize = 17;
   const double titleLineHeight = 1.1;
   const int titleMaxLines = 2;
   final double reservedTitleHeight =
-      _titleBoxFontSize * titleLineHeight * titleMaxLines;
+      titleBoxFontSize * titleLineHeight * titleMaxLines;
   final bool hasTrim = trimLine.isNotEmpty;
 
   return Column(
@@ -460,14 +460,14 @@ Widget _buildGlobalCardImageCarousel(BuildContext context, Map<String, dynamic> 
   }
 
   int currentIndex = 0;
-  const int _kMaxVisibleDots = 6;
+  const int kMaxVisibleDots = 6;
   int dotWindowStart = 0;
   bool dotWindowForward = true;
 
   return StatefulBuilder(
     builder: (context, setState) {
       int computeDotStart(int index) {
-        final int visible = urls.length < _kMaxVisibleDots ? urls.length : _kMaxVisibleDots;
+        final int visible = urls.length < kMaxVisibleDots ? urls.length : kMaxVisibleDots;
         if (visible <= 0 || urls.length <= visible) return 0;
         final int maxStart = (urls.length - visible).clamp(0, urls.length);
         return (index - (visible - 1)).clamp(0, maxStart);
@@ -509,7 +509,7 @@ Widget _buildGlobalCardImageCarousel(BuildContext context, Map<String, dynamic> 
               right: 0,
               child: Center(
                 child: () {
-                  final int visible = urls.length < _kMaxVisibleDots ? urls.length : _kMaxVisibleDots;
+                  final int visible = urls.length < kMaxVisibleDots ? urls.length : kMaxVisibleDots;
                   if (visible <= 1) return const SizedBox.shrink();
 
                   Widget buildDotRow(int startIndex) {

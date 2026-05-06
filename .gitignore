@@ -58,7 +58,16 @@ cloudflared.exe
 python310.exe
 releases_windows.json
 android/.kotlin/
+android/.gradle/
+
+# Android signing and local machine paths (never commit)
 signing.properties
+android/signing.properties
+android/local.properties
+
+# Keystores (never commit)
+*.jks
+*.keystore
 
 # Scratch outputs (never commit)
 tools/scratch/
