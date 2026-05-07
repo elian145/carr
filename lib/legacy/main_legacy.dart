@@ -15998,6 +15998,38 @@ class _SellCarPageState extends State<SellCarPage> {
     } catch (_) {}
   }
 
+  Future<void> _clearSubmittedDraftOnly({String? draftId}) async {
+    try {
+      _skipDraftPersistOnDispose = true;
+      final sp = await SharedPreferences.getInstance();
+      final String resolvedDraftId =
+          (draftId ?? _currentDraftId).toString().trim();
+
+      await sp.remove(_draftCurrentStepKey);
+      await sp.remove(_draftSnapshotKey);
+      await sp.remove('legacy_sell_draft_step1_v1');
+      await sp.remove('legacy_sell_draft_step2_v1');
+      await sp.remove('legacy_sell_draft_step3_v1');
+      await sp.remove('legacy_sell_draft_step4_v1');
+
+      if (resolvedDraftId.isNotEmpty) {
+        final archive = _decodeSellDraftArchive(sp.getString(_sellDraftArchiveKey));
+        archive.removeWhere(
+          (item) => item['draftId']?.toString() == resolvedDraftId,
+        );
+        await sp.setString(_sellDraftArchiveKey, _encodeSellDraftArchive(archive));
+      }
+
+      if (mounted) {
+        setState(() {
+          carData = <String, dynamic>{};
+          _hasDraftSnapshot = false;
+          _currentDraftId = _newSellDraftId();
+        });
+      }
+    } catch (_) {}
+  }
+
   Future<void> _seedFreshDraftPlaceholder() async {
     try {
       final sp = await SharedPreferences.getInstance();
@@ -23449,16 +23481,41 @@ class _SellStep5PageState extends State<SellStep5Page> {
                                   // Submit the listing
                                   await _submitListing(carData);
                                   if (parentState != null) {
-                                    await parentState._clearAllSellDrafts();
+                                    await parentState._clearSubmittedDraftOnly(
+                                      draftId: parentState._currentDraftId,
+                                    );
                                   } else {
                                     final sp = await SharedPreferences.getInstance();
+                                    String draftId = '';
+                                    final activeRaw =
+                                        sp.getString('legacy_sell_draft_snapshot_v1');
+                                    if (activeRaw != null && activeRaw.trim().isNotEmpty) {
+                                      try {
+                                        final decoded = json.decode(activeRaw);
+                                        if (decoded is Map) {
+                                          draftId =
+                                              (decoded['draftId'] ?? '').toString().trim();
+                                        }
+                                      } catch (_) {}
+                                    }
                                     await sp.remove('legacy_sell_draft_current_step_v1');
                                     await sp.remove('legacy_sell_draft_snapshot_v1');
-                                    await sp.remove(_sellDraftArchiveKey);
                                     await sp.remove('legacy_sell_draft_step1_v1');
                                     await sp.remove('legacy_sell_draft_step2_v1');
                                     await sp.remove('legacy_sell_draft_step3_v1');
                                     await sp.remove('legacy_sell_draft_step4_v1');
+                                    if (draftId.isNotEmpty) {
+                                      final archive = _decodeSellDraftArchive(
+                                        sp.getString(_sellDraftArchiveKey),
+                                      );
+                                      archive.removeWhere(
+                                        (item) => item['draftId']?.toString() == draftId,
+                                      );
+                                      await sp.setString(
+                                        _sellDraftArchiveKey,
+                                        _encodeSellDraftArchive(archive),
+                                      );
+                                    }
                                   }
 
                                   // Show success message
