@@ -1657,7 +1657,7 @@ Widget _buildGlobalCarCardInnerText(
               style: TextStyle(
                 color: Color(0xFFFF6B00),
                 fontWeight: FontWeight.w600,
-                fontSize: 12,
+                fontSize: 14,
               ),
               maxLines: 1,
               overflow: TextOverflow.ellipsis,
@@ -1673,7 +1673,7 @@ Widget _buildGlobalCarCardInnerText(
                   style: TextStyle(
                     color: Color(0xFFFF6B00),
                     fontWeight: FontWeight.w600,
-                    fontSize: 12,
+                    fontSize: 14,
                   ),
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,
@@ -1705,7 +1705,7 @@ Widget _buildGlobalCarCardInnerText(
                           overflow: TextOverflow.visible,
                           style: TextStyle(
                             color: metaTextColor,
-                            fontSize: 11,
+                            fontSize: 13,
                           ),
                         ),
                       )
@@ -1753,7 +1753,7 @@ Widget _buildGlobalCarCardInnerText(
                             textAlign: TextAlign.end,
                             style: TextStyle(
                               color: metaTextColor,
-                              fontSize: 11,
+                              fontSize: 13,
                             ),
                           ),
                         ],
@@ -1807,9 +1807,12 @@ Widget buildGlobalCarCard(
   final String yearDisplay = yearRaw.isEmpty
       ? ''
       : _localizeDigitsGlobal(context, yearRaw);
+  final num? mileageNum = mileageRaw.isEmpty
+      ? null
+      : num.tryParse(mileageRaw.replaceAll(RegExp(r'[^0-9.]'), ''));
   final String mileageDisplay = mileageRaw.isEmpty
       ? ''
-      : '${_localizeDigitsGlobal(context, mileageRaw)} ${locCard.unit_km}';
+      : '${_localizeDigitsGlobal(context, mileageNum == null ? mileageRaw : _decimalFormatterGlobal(context).format(mileageNum))} ${locCard.unit_km}';
 
   final isLight = Theme.of(context).brightness == Brightness.light;
   // On dark shell: true frosted overlay. On light shell: solid blend so color matches dark mode.
@@ -14855,7 +14858,7 @@ Widget buildCarListingSpecsGrid(
           final double labelFontSize =
               (constraints.maxWidth * 0.13).clamp(9.0, 11.0);
           final double valueFontSize =
-              (constraints.maxWidth * 0.18).clamp(12.0, 16.0);
+              (constraints.maxWidth * 0.16).clamp(10.0, 14.0);
 
           final labelStyle = TextStyle(
             fontSize: labelFontSize,
@@ -14929,7 +14932,7 @@ Widget buildCarListingSpecsGrid(
                     textAlign: TextAlign.center,
                     textScaleFactor: 1.0,
                     style: valueStyle,
-                    minFontSize: 10,
+                    minFontSize: 9,
                     stepGranularity: 0.5,
                     overflow: TextOverflow.clip,
                   ),
