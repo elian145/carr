@@ -1658,7 +1658,7 @@ Widget _buildGlobalCarCardInnerText(
               style: TextStyle(
                 color: Color(0xFFFF6B00),
                 fontWeight: FontWeight.w600,
-                fontSize: 13,
+                fontSize: 14,
               ),
               maxLines: 1,
               overflow: TextOverflow.ellipsis,
@@ -1675,7 +1675,7 @@ Widget _buildGlobalCarCardInnerText(
                   style: TextStyle(
                     color: Color(0xFFFF6B00),
                     fontWeight: FontWeight.w600,
-                    fontSize: 13,
+                    fontSize: 14,
                   ),
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,
@@ -1708,7 +1708,7 @@ Widget _buildGlobalCarCardInnerText(
                           overflow: TextOverflow.visible,
                           style: TextStyle(
                             color: metaTextColor,
-                            fontSize: 12,
+                            fontSize: 13,
                           ),
                         ),
                       )
@@ -1757,7 +1757,7 @@ Widget _buildGlobalCarCardInnerText(
                             textAlign: TextAlign.end,
                             style: TextStyle(
                               color: metaTextColor,
-                              fontSize: 12,
+                              fontSize: 13,
                             ),
                           ),
                         ],
