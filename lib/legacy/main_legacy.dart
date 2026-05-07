@@ -15893,6 +15893,7 @@ class _SellCarPageState extends State<SellCarPage> {
   int _sellPageResetToken = 0;
   int _draftResumeToken = 0;
   String _currentDraftId = _newSellDraftId();
+  bool _skipDraftPersistOnDispose = false;
 
   // Car data that will be passed between steps
   Map<String, dynamic> carData = {};
@@ -15978,6 +15979,7 @@ class _SellCarPageState extends State<SellCarPage> {
 
   Future<void> _clearAllSellDrafts() async {
     try {
+      _skipDraftPersistOnDispose = true;
       final sp = await SharedPreferences.getInstance();
       await sp.remove(_draftCurrentStepKey);
       await sp.remove(_draftSnapshotKey);
@@ -15988,7 +15990,9 @@ class _SellCarPageState extends State<SellCarPage> {
       await sp.remove('legacy_sell_draft_step4_v1');
       if (mounted) {
         setState(() {
+          carData = <String, dynamic>{};
           _hasDraftSnapshot = false;
+          _currentDraftId = _newSellDraftId();
         });
       }
     } catch (_) {}
@@ -16572,8 +16576,10 @@ class _SellCarPageState extends State<SellCarPage> {
 
   @override
   void dispose() {
-    unawaited(_saveDraftCurrentStep());
-    unawaited(_saveSellDraftSnapshot());
+    if (!_skipDraftPersistOnDispose) {
+      unawaited(_saveDraftCurrentStep());
+      unawaited(_saveSellDraftSnapshot());
+    }
     _pageController.dispose();
     super.dispose();
   }
@@ -23442,7 +23448,18 @@ class _SellStep5PageState extends State<SellStep5Page> {
                                   }
                                   // Submit the listing
                                   await _submitListing(carData);
-                                  await parentState?._clearAllSellDrafts();
+                                  if (parentState != null) {
+                                    await parentState._clearAllSellDrafts();
+                                  } else {
+                                    final sp = await SharedPreferences.getInstance();
+                                    await sp.remove('legacy_sell_draft_current_step_v1');
+                                    await sp.remove('legacy_sell_draft_snapshot_v1');
+                                    await sp.remove(_sellDraftArchiveKey);
+                                    await sp.remove('legacy_sell_draft_step1_v1');
+                                    await sp.remove('legacy_sell_draft_step2_v1');
+                                    await sp.remove('legacy_sell_draft_step3_v1');
+                                    await sp.remove('legacy_sell_draft_step4_v1');
+                                  }
 
                                   // Show success message
                                   if (!mounted) return;
