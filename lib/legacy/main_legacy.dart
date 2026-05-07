@@ -1123,39 +1123,39 @@ String _videosOptionalTitleGlobal(BuildContext context) {
 }
 
 String _pleaseSelectPhotoTextGlobal(BuildContext context) {
-  final code = Localizations.localeOf(context).languageCode;
-  if (code == 'ar') {
-    return 'ÙŠØ±Ø¬Ù‰ Ø§Ø®ØªÙŠØ§Ø± ØµÙˆØ±Ø© ÙˆØ§Ø­Ø¯Ø© Ø¹Ù„Ù‰ Ø§Ù„Ø£Ù‚Ù„';
-  }
-  if (code == 'ku') {
-    return 'ØªÚ©Ø§ÛŒÛ• Ø¨Û•Ù„Ø§ÛŒÛ•Ù†ÛŒ Ú©Û•Ù…Û•ÙˆÛ• ÛŒÛ•Ú© ÙˆÛŽÙ†Û• Ù‡Û•Ù„Ø¨Ú˜ÛŽØ±Û•';
-  }
-  return 'Please select at least one photo';
+  return _trLegacyText(
+    context,
+    'Please select at least one photo',
+    ar: 'يرجى اختيار صورة واحدة على الأقل',
+    ku: 'تکایە لانیکەم یەک وێنە هەڵبژێرە',
+  );
 }
 
 String _listingSubmittedSuccessTextGlobal(BuildContext context) {
-  final code = Localizations.localeOf(context).languageCode;
-  if (code == 'ar') return 'ØªÙ… Ø¥Ø±Ø³Ø§Ù„ Ø§Ù„Ø¥Ø¹Ù„Ø§Ù† Ø¨Ù†Ø¬Ø§Ø­!';
-  if (code == 'ku') {
-    return 'Ú•ÛŽÚ©Ù„Ø§Ù… Ø¨Û•Ø³Û•Ø±ÙƒÛ•ÙˆØªÙˆÙˆÛŒÛŒ Ù†ÛŽØ±Ø¯Ø±Ø§!';
-  }
-  return 'Listing submitted successfully!';
+  return _trLegacyText(
+    context,
+    'Listing submitted successfully!',
+    ar: 'تم إرسال الإعلان بنجاح!',
+    ku: 'ڕیکلام بە سەرکەوتوویی نێردرا!',
+  );
 }
 
 String _couldNotLoadListingsTextGlobal(BuildContext context) {
-  final code = Localizations.localeOf(context).languageCode;
-  if (code == 'ar') return 'ØªØ¹Ø°Ù‘Ø± ØªØ­Ù…ÙŠÙ„ Ø§Ù„Ø¥Ø¹Ù„Ø§Ù†Ø§Øª';
-  if (code == 'ku') {
-    return 'Ù†Û•ØªÙˆØ§Ù†Ø±Ø§ Ú•ÛŽÚ©Ù„Ø§Ù…Û•Ú©Ø§Ù† Ø¨Ø§Ø±Ø¨Ú©Ø±ÛŽÙ†';
-  }
-  return 'Could not load listings';
+  return _trLegacyText(
+    context,
+    'Could not load listings',
+    ar: 'تعذر تحميل الإعلانات',
+    ku: 'نەتوانرا ڕیکلامەکان باربکرێن',
+  );
 }
 
 String _photosUploadedTextGlobal(BuildContext context) {
-  final code = Localizations.localeOf(context).languageCode;
-  if (code == 'ar') return 'ØªÙ… ØªØ­Ù…ÙŠÙ„ Ø§Ù„ØµÙˆØ±';
-  if (code == 'ku') return 'ÙˆÛŽÙ†Û•Ú©Ø§Ù† Ø¨Ø§Ø±Ú©Ø±Ø§Ù†';
-  return 'Photos uploaded';
+  return _trLegacyText(
+    context,
+    'Photos uploaded',
+    ar: 'تم تحميل الصور',
+    ku: 'وێنەکان بارکران',
+  );
 }
 
 // Convert localized sort options to backend API parameters
@@ -2990,7 +2990,12 @@ class _SearchDialogState extends State<_SearchDialog> {
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
                 Text(
-                  'Search Cars',
+                  _trLegacyText(
+                    context,
+                    'Search Cars',
+                    ar: 'البحث عن السيارات',
+                    ku: 'گەڕان بە دوای ئۆتۆمبێل',
+                  ),
                   style: GoogleFonts.orbitron(
                     color: Color(0xFFFF6B00),
                     fontWeight: FontWeight.bold,
@@ -3012,9 +3017,14 @@ class _SearchDialogState extends State<_SearchDialog> {
                   child: ElevatedButton(
                     onPressed: _isSearchingBrands ? null : _toggleSearchMode,
                     style: _searchModeButtonStyle(selected: _isSearchingBrands),
-                    child: const Text(
-                      'Search by Brand',
-                      style: TextStyle(fontWeight: FontWeight.w700),
+                    child: Text(
+                      _trLegacyText(
+                        context,
+                        'Search by Brand',
+                        ar: 'بحث حسب العلامة',
+                        ku: 'گەڕان بە براند',
+                      ),
+                      style: const TextStyle(fontWeight: FontWeight.w700),
                     ),
                   ),
                 ),
@@ -3023,9 +3033,14 @@ class _SearchDialogState extends State<_SearchDialog> {
                   child: ElevatedButton(
                     onPressed: _isSearchingBrands ? _toggleSearchMode : null,
                     style: _searchModeButtonStyle(selected: !_isSearchingBrands),
-                    child: const Text(
-                      'Search by Model',
-                      style: TextStyle(fontWeight: FontWeight.w700),
+                    child: Text(
+                      _trLegacyText(
+                        context,
+                        'Search by Model',
+                        ar: 'بحث حسب الموديل',
+                        ku: 'گەڕان بە مۆدێل',
+                      ),
+                      style: const TextStyle(fontWeight: FontWeight.w700),
                     ),
                   ),
                 ),
@@ -3039,8 +3054,18 @@ class _SearchDialogState extends State<_SearchDialog> {
               style: TextStyle(color: Colors.white),
               decoration: InputDecoration(
                 hintText: _isSearchingBrands
-                    ? 'Search brands...'
-                    : 'Search models...',
+                    ? _trLegacyText(
+                        context,
+                        'Search brands...',
+                        ar: 'ابحث عن العلامات...',
+                        ku: 'گەڕان بە براندەکان...',
+                      )
+                    : _trLegacyText(
+                        context,
+                        'Search models...',
+                        ar: 'ابحث عن الموديلات...',
+                        ku: 'گەڕان بە مۆدێلەکان...',
+                      ),
                 hintStyle: TextStyle(color: Colors.grey[400]),
                 prefixIcon: Icon(Icons.search, color: Color(0xFFFF6B00)),
                 border: OutlineInputBorder(
@@ -12234,7 +12259,14 @@ class _SavedSearchesPageState extends State<SavedSearchesPage> {
       // Show success message
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
-          content: Text('Search applied successfully!'),
+          content: Text(
+            _trLegacyText(
+              context,
+              'Search applied successfully!',
+              ar: 'تم تطبيق البحث بنجاح!',
+              ku: 'گەڕان بە سەرکەوتوویی جێبەجێ کرا!',
+            ),
+          ),
           backgroundColor: Colors.green,
           duration: Duration(seconds: 2),
         ),
@@ -12266,7 +12298,12 @@ class _SavedSearchesPageState extends State<SavedSearchesPage> {
                   Icon(Icons.filter_list, color: Color(0xFFFF6B00), size: 20),
                   SizedBox(width: 8),
                   Text(
-                    'Applied Filters:',
+                    _trLegacyText(
+                      context,
+                      'Applied Filters:',
+                      ar: 'الفلاتر المطبقة:',
+                      ku: 'فلتەرە جێبەجێکراوەکان:',
+                    ),
                     style: TextStyle(
                       fontSize: 16,
                       fontWeight: FontWeight.bold,
@@ -12284,7 +12321,14 @@ class _SavedSearchesPageState extends State<SavedSearchesPage> {
           TextButton(
             onPressed: () => Navigator.pop(context),
             style: TextButton.styleFrom(foregroundColor: Colors.grey[400]),
-            child: Text('Close'),
+            child: Text(
+              _trLegacyText(
+                context,
+                'Close',
+                ar: 'إغلاق',
+                ku: 'داخستن',
+              ),
+            ),
           ),
           ElevatedButton(
             onPressed: () {
@@ -12298,7 +12342,14 @@ class _SavedSearchesPageState extends State<SavedSearchesPage> {
                 borderRadius: BorderRadius.circular(8),
               ),
             ),
-            child: Text('Apply Search'),
+            child: Text(
+              _trLegacyText(
+                context,
+                'Apply Search',
+                ar: 'تطبيق البحث',
+                ku: 'جێبەجێکردنی گەڕان',
+              ),
+            ),
           ),
         ],
       ),
@@ -15587,11 +15638,11 @@ class _SellDraftGatePageState extends State<SellDraftGatePage> {
         : <String, dynamic>{};
     final currentStep = int.tryParse(draft['currentStep']?.toString() ?? '') ?? 0;
     final labels = <String>[
-      'Step 1: Basic info',
-      'Step 2: Details',
-      'Step 3: Pricing',
-      'Step 4: Photos',
-      'Step 5: Review',
+      _trLegacyText(context, 'Step 1: Basic info', ar: 'الخطوة 1: المعلومات الأساسية', ku: 'هەنگاو 1: زانیاری سەرەکی'),
+      _trLegacyText(context, 'Step 2: Details', ar: 'الخطوة 2: التفاصيل', ku: 'هەنگاو 2: وردەکاری'),
+      _trLegacyText(context, 'Step 3: Pricing', ar: 'الخطوة 3: السعر', ku: 'هەنگاو 3: نرخ'),
+      _trLegacyText(context, 'Step 4: Photos', ar: 'الخطوة 4: الصور', ku: 'هەنگاو 4: وێنەکان'),
+      _trLegacyText(context, 'Step 5: Review', ar: 'الخطوة 5: المراجعة', ku: 'هەنگاو 5: پێداچوونەوە'),
     ];
     final label = labels[currentStep.clamp(0, 4).toInt()];
     final title = _draftTitle(carData);
@@ -15626,7 +15677,19 @@ class _SellDraftGatePageState extends State<SellDraftGatePage> {
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       Text(
-                        isActive ? 'Draft in progress' : 'Saved draft',
+                        isActive
+                            ? _trLegacyText(
+                                context,
+                                'Draft in progress',
+                                ar: 'مسودة قيد التقدم',
+                                ku: 'ڕەشنووسی لە پێشکەوتن',
+                              )
+                            : _trLegacyText(
+                                context,
+                                'Saved draft',
+                                ar: 'مسودة محفوظة',
+                                ku: 'ڕەشنووسی پارێزراو',
+                              ),
                         style: Theme.of(context).textTheme.titleMedium?.copyWith(
                               fontWeight: FontWeight.w700,
                             ),
@@ -15652,7 +15715,12 @@ class _SellDraftGatePageState extends State<SellDraftGatePage> {
             ),
             const SizedBox(height: 6),
             Text(
-              'Continue, discard, or start a new listing without deleting this draft.',
+              _trLegacyText(
+                context,
+                'Continue, discard, or start a new listing without deleting this draft.',
+                ar: 'أكمل أو احذف أو ابدأ إعلانا جديدا بدون حذف هذه المسودة.',
+                ku: 'بەردەوام بە یان بسڕەوە یان ڕیکلامێکی نوێ دەستپێبکە بێ سڕینەوەی ئەم ڕەشنووسە.',
+              ),
               style: Theme.of(context).textTheme.bodySmall,
             ),
             const SizedBox(height: 12),
@@ -15662,7 +15730,14 @@ class _SellDraftGatePageState extends State<SellDraftGatePage> {
                   child: OutlinedButton.icon(
                     onPressed: () => _continueDraft(draft),
                     icon: const Icon(Icons.play_arrow),
-                    label: const Text('Continue'),
+                    label: Text(
+                      _trLegacyText(
+                        context,
+                        'Continue',
+                        ar: 'متابعة',
+                        ku: 'بەردەوام بە',
+                      ),
+                    ),
                   ),
                 ),
                 const SizedBox(width: 10),
@@ -15670,7 +15745,14 @@ class _SellDraftGatePageState extends State<SellDraftGatePage> {
                   child: OutlinedButton.icon(
                     onPressed: () => _discardDraft(draft),
                     icon: const Icon(Icons.delete_outline),
-                    label: const Text('Discard'),
+                    label: Text(
+                      _trLegacyText(
+                        context,
+                        'Discard',
+                        ar: 'حذف',
+                        ku: 'بسڕەوە',
+                      ),
+                    ),
                   ),
                 ),
               ],
@@ -15710,7 +15792,14 @@ class _SellDraftGatePageState extends State<SellDraftGatePage> {
                       backgroundColor: const Color(0xFFFF6B00),
                       foregroundColor: Colors.white,
                     ),
-                    child: const Text('Start new listing'),
+                    child: Text(
+                      _trLegacyText(
+                        context,
+                        'Start new listing',
+                        ar: 'ابدأ إعلانا جديدا',
+                        ku: 'ڕیکلامێکی نوێ دەستپێبکە',
+                      ),
+                    ),
                   ),
                 )
               : ListView(
@@ -15727,14 +15816,24 @@ class _SellDraftGatePageState extends State<SellDraftGatePage> {
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
                           Text(
-                            'Drafts in progress',
+                            _trLegacyText(
+                              context,
+                              'Drafts in progress',
+                              ar: 'مسودات قيد التقدم',
+                              ku: 'ڕەشنووسەکان لە پێشکەوتندان',
+                            ),
                             style: Theme.of(context).textTheme.titleMedium?.copyWith(
                                   fontWeight: FontWeight.w700,
                                 ),
                           ),
                           const SizedBox(height: 4),
                           Text(
-                            'Continue any draft, discard one, or start a new listing while keeping the others.',
+                            _trLegacyText(
+                              context,
+                              'Continue any draft, discard one, or start a new listing while keeping the others.',
+                              ar: 'تابع أي مسودة أو احذف واحدة أو ابدأ إعلانا جديدا مع الاحتفاظ بالباقي.',
+                              ku: 'هەر ڕەشنووسێک بەردەوام پێبدە یان یەکێک بسڕەوە یان ڕیکلامێکی نوێ دەستپێبکە لەگەڵ پاراستنی ئەوانی تر.',
+                            ),
                             style: Theme.of(context).textTheme.bodySmall,
                           ),
                         ],
@@ -15751,7 +15850,14 @@ class _SellDraftGatePageState extends State<SellDraftGatePage> {
                           backgroundColor: const Color(0xFFFF6B00),
                           foregroundColor: Colors.white,
                         ),
-                        child: const Text('Start new listing'),
+                        child: Text(
+                          _trLegacyText(
+                            context,
+                            'Start new listing',
+                            ar: 'ابدأ إعلانا جديدا',
+                            ku: 'ڕیکلامێکی نوێ دەستپێبکە',
+                          ),
+                        ),
                       ),
                     ),
                   ],
@@ -16154,7 +16260,12 @@ class _SellCarPageState extends State<SellCarPage> {
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
                         Text(
-                          'Draft in progress',
+                          _trLegacyText(
+                            context,
+                            'Draft in progress',
+                            ar: 'مسودة قيد التقدم',
+                            ku: 'ڕەشنووسی لە پێشکەوتن',
+                          ),
                           style: Theme.of(context).textTheme.titleMedium?.copyWith(
                                 fontWeight: FontWeight.w700,
                               ),
@@ -16879,7 +16990,14 @@ class _SellStep1PageState extends State<SellStep1Page> {
     unawaited(parent._saveSellDraftSnapshot());
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
-        content: Text('Specs applied — year set; step 2 fields pre-filled.'),
+        content: Text(
+          _trLegacyText(
+            context,
+            'Specs applied — year set; step 2 fields pre-filled.',
+            ar: 'تم تطبيق المواصفات — تم ضبط السنة وملء حقول الخطوة 2 مسبقا.',
+            ku: 'سپێسەکان جێبەجێ کران — ساڵ دانرا و خانەکانی هەنگاو 2 پڕکرانەوە.',
+          ),
+        ),
         backgroundColor: Colors.green[700],
       ),
     );
@@ -16905,7 +17023,16 @@ class _SellStep1PageState extends State<SellStep1Page> {
                 child: CircularProgressIndicator(strokeWidth: 2),
               ),
               const SizedBox(width: 12),
-              const Expanded(child: Text('Loading vehicle spec database…')),
+              Expanded(
+                child: Text(
+                  _trLegacyText(
+                    context,
+                    'Loading vehicle spec database...',
+                    ar: 'جاري تحميل قاعدة بيانات مواصفات السيارة...',
+                    ku: 'بنکەی زانیاری سپێسی ئۆتۆمبێل بار دەکرێت...',
+                  ),
+                ),
+              ),
             ],
           ),
         ),
@@ -16919,7 +17046,12 @@ class _SellStep1PageState extends State<SellStep1Page> {
           padding: const EdgeInsets.all(14),
           child: Text(
             _specLoadErr ??
-                'Spec database unavailable. Run a full app restart after flutter pub get.',
+                _trLegacyText(
+                  context,
+                  'Spec database unavailable. Run a full app restart after flutter pub get.',
+                  ar: 'قاعدة بيانات المواصفات غير متاحة. أعد تشغيل التطبيق بالكامل بعد flutter pub get.',
+                  ku: 'بنکەی زانیاری سپێس بەردەست نییە. دوای flutter pub get ئەپەکە بە تەواوی دووبارە بکەرەوە.',
+                ),
           ),
         ),
       );
@@ -16935,13 +17067,23 @@ class _SellStep1PageState extends State<SellStep1Page> {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              const Text(
-                'No catalog auto-fill for this vehicle',
-                style: TextStyle(fontWeight: FontWeight.bold),
+              Text(
+                _trLegacyText(
+                  context,
+                  'No catalog auto-fill for this vehicle',
+                  ar: 'لا يوجد تعبئة تلقائية من الكتالوج لهذه السيارة',
+                  ku: 'پڕکردنەوەی خۆکار لە کاتالۆگ بۆ ئەم ئۆتۆمبێلە نییە',
+                ),
+                style: const TextStyle(fontWeight: FontWeight.bold),
               ),
               const SizedBox(height: 6),
               Text(
-                'You selected $b $m. This build only includes some lines in the bundled file, e.g.:',
+                _trLegacyText(
+                  context,
+                  'You selected $b $m. This build only includes some lines in the bundled file, e.g.:',
+                  ar: 'لقد اخترت $b $m. هذا الإصدار يحتوي فقط على بعض السطور في الملف المدمج، مثلا:',
+                  ku: 'تۆ $b $m هەڵبژارد. ئەم وەشانە تەنها هەندێک هێڵ لە پەڕگەی هاوپێکراودا هەیە، بۆ نموونە:',
+                ),
                 style: TextStyle(fontSize: 13, color: Colors.grey[800]),
               ),
               if (sample.isNotEmpty) ...[
@@ -17001,15 +17143,30 @@ class _SellStep1PageState extends State<SellStep1Page> {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
-            const Text(
-              'Catalog auto-fill',
-              style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
+            Text(
+              _trLegacyText(
+                context,
+                'Catalog auto-fill',
+                ar: 'تعبئة تلقائية من الكتالوج',
+                ku: 'پڕکردنەوەی خۆکاری کاتالۆگ',
+              ),
+              style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
             ),
             const SizedBox(height: 8),
             Text(
               listingYear != null
-                  ? 'Pick catalog year and apply. Step 2 lists every engine and spec row we have for this model—choose what matches your car.'
-                  : 'Enter or pick a year above, choose catalog year, then apply. Step 2 is where you pick engine and other specs.',
+                  ? _trLegacyText(
+                      context,
+                      'Pick catalog year and apply. Step 2 lists every engine and spec row we have for this model—choose what matches your car.',
+                      ar: 'اختر سنة الكتالوج ثم طبّق. الخطوة 2 تعرض كل خيارات المحرك والمواصفات لهذا الموديل — اختر ما يناسب سيارتك.',
+                      ku: 'ساڵی کاتالۆگ هەڵبژێرە و جێبەجێی بکە. هەنگاوی 2 هەموو هەڵبژاردەکانی مەکینە و سپێس بۆ ئەم مۆدێلە پیشان دەدات — ئەوە هەڵبژێرە کە لەگەڵ ئۆتۆمبێلەکەت دەگونجێت.',
+                    )
+                  : _trLegacyText(
+                      context,
+                      'Enter or pick a year above, choose catalog year, then apply. Step 2 is where you pick engine and other specs.',
+                      ar: 'أدخل أو اختر سنة بالأعلى، ثم اختر سنة الكتالوج وبعدها طبّق. في الخطوة 2 تختار المحرك وباقي المواصفات.',
+                      ku: 'لە سەرەوە ساڵ بنووسە یان هەڵیبژێرە، پاشان ساڵی کاتالۆگ هەڵبژێرە و جێبەجێی بکە. لە هەنگاوی 2 مەکینە و سپێسی تر هەڵدەبژێریت.',
+                    ),
               style: TextStyle(fontSize: 12, color: Colors.grey[700]),
             ),
             if (preview != null || unionPreview != null) ...[
@@ -17039,12 +17196,12 @@ class _SellStep1PageState extends State<SellStep1Page> {
                           ),
                         );
                       engExtra =
-                          '\nStep 2 will offer engines: ${engList.join(', ')} L';
+                          '\n${_trLegacyText(context, 'Step 2 will offer engines:', ar: 'الخطوة 2 ستعرض المحركات:', ku: 'هەنگاوی 2 ئەم مەکینانە پیشان دەدات:')} ${engList.join(', ')} L';
                     }
                     if (preview != null) {
-                      return 'Preview (smallest engine in list — change in step 2 if needed): ${preview.engineType}, ${preview.transmission}, ${preview.driveType}, ${preview.bodyType}$engExtra';
+                      return '${_trLegacyText(context, 'Preview (smallest engine in list — change in step 2 if needed):', ar: 'معاينة (أصغر محرك في القائمة — يمكنك تغييره في الخطوة 2 إذا لزم):', ku: 'پێشبینین (بچووکترین مەکینە لە لیستەکە — دەتوانیت لە هەنگاوی 2 بیگۆڕیت ئەگەر پێویست بوو):')} ${_translateValueGlobal(context, preview.engineType) ?? preview.engineType}, ${_translateValueGlobal(context, preview.transmission) ?? preview.transmission}, ${_translateValueGlobal(context, preview.driveType) ?? preview.driveType}, ${_translateValueGlobal(context, preview.bodyType) ?? preview.bodyType}$engExtra';
                     }
-                    return 'This year has catalog coverage — apply to load step 2 options (engine, cylinders, etc.).$engExtra';
+                    return '${_trLegacyText(context, 'This year has catalog coverage — apply to load step 2 options (engine, cylinders, etc.).', ar: 'هذه السنة مدعومة في الكتالوج — طبّق لتحميل خيارات الخطوة 2 (المحرك، الأسطوانات، إلخ).', ku: 'ئەم ساڵە پشتگیری کاتالۆگی هەیە — جێبەجێ بکە بۆ بارکردنی هەڵبژاردەکانی هەنگاوی 2 (مەکینە، سیلەندەر، هتد).')}$engExtra';
                   }(),
                   softWrap: true,
                   style: const TextStyle(
@@ -17063,7 +17220,14 @@ class _SellStep1PageState extends State<SellStep1Page> {
                 value: _catYear != null && years.contains(_catYear)
                     ? _catYear
                     : years.first,
-                decoration: const InputDecoration(labelText: 'Model year'),
+                decoration: InputDecoration(
+                  labelText: _trLegacyText(
+                    context,
+                    'Model year',
+                    ar: 'سنة الموديل',
+                    ku: 'ساڵی مۆدێل',
+                  ),
+                ),
                 items: years
                     .map(
                       (y) => DropdownMenuItem<int>(value: y, child: Text('$y')),
@@ -17082,7 +17246,14 @@ class _SellStep1PageState extends State<SellStep1Page> {
                   ? null
                   : _applyCatalogSpecsToFlow,
               icon: const Icon(Icons.auto_fix_high),
-              label: const Text('Apply specs to listing'),
+              label: Text(
+                _trLegacyText(
+                  context,
+                  'Apply specs to listing',
+                  ar: 'تطبيق المواصفات على الإعلان',
+                  ku: 'سپێسەکان بخرە ناو ڕیکلامەکە',
+                ),
+              ),
               style: ElevatedButton.styleFrom(
                 backgroundColor: const Color(0xFFFF6B00),
                 foregroundColor: Colors.white,
@@ -17169,7 +17340,12 @@ class _SellStep1PageState extends State<SellStep1Page> {
                         },
                         style: const TextStyle(color: Colors.white),
                         decoration: InputDecoration(
-                          hintText: 'Search...',
+                          hintText: _trLegacyText(
+                            context,
+                            'Search...',
+                            ar: 'بحث...',
+                            ku: 'گەڕان...',
+                          ),
                           hintStyle: const TextStyle(color: Colors.white60),
                           prefixIcon: const Icon(
                             Icons.search,
@@ -17224,6 +17400,10 @@ class _SellStep1PageState extends State<SellStep1Page> {
                               isNumeric) {
                             displayText =
                                 '${_localizeDigitsGlobal(context, value)} ${_trLegacyText(context, 'cylinders', ar: 'أسطوانات', ku: 'سیلەندەر')}';
+                          } else if (lowerTitle.contains('region') &&
+                              isValidCarRegionSpecCode(value)) {
+                            displayText =
+                                carRegionSpecDisplayLabelLocalized(context, value);
                           } else if (lowerTitle.contains('engine') &&
                               isNumeric) {
                             displayText =
@@ -17371,7 +17551,12 @@ class _SellStep1PageState extends State<SellStep1Page> {
                       },
                       style: const TextStyle(color: Colors.white),
                       decoration: InputDecoration(
-                        hintText: 'Search...',
+                          hintText: _trLegacyText(
+                            context,
+                            'Search...',
+                            ar: 'بحث...',
+                            ku: 'گەڕان...',
+                          ),
                         hintStyle: const TextStyle(color: Colors.white60),
                         prefixIcon: const Icon(
                           Icons.search,
@@ -20495,6 +20680,8 @@ class _SellStep3PageState extends State<SellStep3Page> {
                         'police',
                       }.contains(rawLower)
                           ? _translatePlateTypeLegacy(context, value)
+                          : isValidCarRegionSpecCode(rawLower)
+                          ? carRegionSpecDisplayLabelLocalized(context, rawLower)
                           : (_translateValueGlobal(context, value) ?? value);
                       return InkWell(
                         borderRadius: BorderRadius.circular(14),
@@ -21032,7 +21219,12 @@ class _SellStep3PageState extends State<SellStep3Page> {
                     AppLocalizations.of(context)?.descriptionOptionalLabel ??
                     'Description (optional)',
                 hintText:
-                    'Add details about the car, condition, features, or notes',
+                    _trLegacyText(
+                      context,
+                      'Add details about the car, condition, features, or notes',
+                      ar: 'أضف تفاصيل عن السيارة والحالة والمزايا أو ملاحظات',
+                      ku: 'وردەکاری دەربارەی ئۆتۆمبێلەکە، دۆخ، تایبەتمەندیەکان یان تێبینی زیاد بکە',
+                    ),
                 filled: true,
                 fillColor: _sellFlowManualFieldFill(context),
                 labelStyle: _sellFlowManualFieldLabelStyle(context),
@@ -21914,7 +22106,19 @@ class _SellStep4PageState extends State<SellStep4Page> {
               onPressed: _pickVideos,
               icon: Icon(Icons.videocam),
               label: Text(
-                _selectedVideos.isEmpty ? 'Add Videos' : 'Add More Videos',
+                _selectedVideos.isEmpty
+                    ? _trLegacyText(
+                        context,
+                        'Add Videos',
+                        ar: 'إضافة فيديوهات',
+                        ku: 'ڤیدیۆ زیاد بکە',
+                      )
+                    : _trLegacyText(
+                        context,
+                        'Add More Videos',
+                        ar: 'إضافة المزيد من الفيديوهات',
+                        ku: 'ڤیدیۆی زیاتر زیاد بکە',
+                      ),
               ),
               style: ElevatedButton.styleFrom(
                 backgroundColor: Colors.grey.withOpacity(0.2),
@@ -25811,7 +26015,21 @@ Widget build(BuildContext context) {
                 child: ElevatedButton.icon(
                   onPressed: _pickVideos,
                   icon: Icon(Icons.videocam),
-                  label: Text(_selectedVideos.isEmpty ? 'Add Videos' : 'Add More Videos'),
+                  label: Text(
+                    _selectedVideos.isEmpty
+                        ? _trLegacyText(
+                            context,
+                            'Add Videos',
+                            ar: 'إضافة فيديوهات',
+                            ku: 'ڤیدیۆ زیاد بکە',
+                          )
+                        : _trLegacyText(
+                            context,
+                            'Add More Videos',
+                            ar: 'إضافة المزيد من الفيديوهات',
+                            ku: 'ڤیدیۆی زیاتر زیاد بکە',
+                          ),
+                  ),
                   style: ElevatedButton.styleFrom(
                     backgroundColor: Colors.grey.withOpacity(0.2),
                     foregroundColor: Colors.white,
