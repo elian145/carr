@@ -112,6 +112,31 @@ String carRegionSpecDisplayLabel(String code) {
   }
 }
 
+String carRegionSpecDisplayLabelLocalized(BuildContext context, String code) {
+  switch (code.trim().toLowerCase()) {
+    case 'gcc':
+      return _trLegacyText(context, 'GCC', ar: 'خليجي', ku: 'کەنداو');
+    case 'us':
+      return _trLegacyText(context, 'US', ar: 'أمريكي', ku: 'ئەمەریکی');
+    case 'iraq':
+      return _trLegacyText(context, 'Iraq', ar: 'عراقي', ku: 'عێراقی');
+    case 'canada':
+      return _trLegacyText(context, 'Canada', ar: 'كندي', ku: 'کەنەدی');
+    case 'eu':
+      return _trLegacyText(context, 'EU', ar: 'أوروبي', ku: 'ئەوروپی');
+    case 'cn':
+      return _trLegacyText(context, 'CN', ar: 'صيني', ku: 'چینی');
+    case 'korea':
+      return _trLegacyText(context, 'Korea', ar: 'كوري', ku: 'کۆری');
+    case 'ru':
+      return _trLegacyText(context, 'RU', ar: 'روسي', ku: 'ڕووسی');
+    case 'iran':
+      return _trLegacyText(context, 'Iran', ar: 'إيراني', ku: 'ئێرانی');
+    default:
+      return carRegionSpecDisplayLabel(code);
+  }
+}
+
 bool isValidCarRegionSpecCode(String? s) {
   if (s == null || s.isEmpty) return false;
   return kCarRegionSpecCodes.contains(s.trim().toLowerCase());
@@ -17194,11 +17219,11 @@ class _SellStep1PageState extends State<SellStep1Page> {
                           } else if (lowerTitle.contains('seating') &&
                               isNumeric) {
                             displayText =
-                                '${_localizeDigitsGlobal(context, value)} seats';
+                                '${_localizeDigitsGlobal(context, value)} ${_trLegacyText(context, 'seats', ar: 'مقاعد', ku: 'دانیشتن')}';
                           } else if (lowerTitle.contains('cylinder') &&
                               isNumeric) {
                             displayText =
-                                '${_localizeDigitsGlobal(context, value)} cylinders';
+                                '${_localizeDigitsGlobal(context, value)} ${_trLegacyText(context, 'cylinders', ar: 'أسطوانات', ku: 'سیلەندەر')}';
                           } else if (lowerTitle.contains('engine') &&
                               isNumeric) {
                             displayText =
@@ -18847,14 +18872,15 @@ class _SellStep2PageState extends State<SellStep2Page> {
                           } else if (lowerTitle.contains('seating') &&
                               isNumeric) {
                             displayText =
-                                '${_localizeDigitsGlobal(context, value)} seats';
+                                '${_localizeDigitsGlobal(context, value)} ${_trLegacyText(context, 'seats', ar: 'مقاعد', ku: 'دانیشتن')}';
                           } else if (lowerTitle.contains('cylinder') &&
                               isNumeric) {
                             displayText =
-                                '${_localizeDigitsGlobal(context, value)} cylinders';
+                                '${_localizeDigitsGlobal(context, value)} ${_trLegacyText(context, 'cylinders', ar: 'أسطوانات', ku: 'سیلەندەر')}';
                           } else if (lowerTitle.contains('region') &&
                               isValidCarRegionSpecCode(value)) {
-                            displayText = carRegionSpecDisplayLabel(value);
+                            displayText =
+                                carRegionSpecDisplayLabelLocalized(context, value);
                           } else if (lowerTitle.contains('engine') &&
                               isNumeric) {
                             displayText =
@@ -19125,7 +19151,7 @@ class _SellStep2PageState extends State<SellStep2Page> {
                   context,
                   icon: Icons.check_circle,
                   label: '${AppLocalizations.of(context)!.conditionLabel} *',
-                  value: selectedCondition,
+                  value: _translateValueGlobal(context, selectedCondition),
                   isError:
                       errCondition &&
                       (selectedCondition == null || selectedCondition!.isEmpty),
@@ -19157,7 +19183,7 @@ class _SellStep2PageState extends State<SellStep2Page> {
                   context,
                   icon: Icons.settings,
                   label: '${AppLocalizations.of(context)!.transmissionLabel} *',
-                  value: selectedTransmission,
+                  value: _translateValueGlobal(context, selectedTransmission),
                   isError:
                       errTransmission &&
                       (selectedTransmission == null ||
@@ -19190,7 +19216,7 @@ class _SellStep2PageState extends State<SellStep2Page> {
                   context,
                   icon: Icons.local_gas_station,
                   label: '${AppLocalizations.of(context)!.fuelTypeLabel} *',
-                  value: selectedFuelType,
+                  value: _translateValueGlobal(context, selectedFuelType),
                   isError:
                       errFuelType &&
                       (selectedFuelType == null || selectedFuelType!.isEmpty),
@@ -19380,7 +19406,10 @@ class _SellStep2PageState extends State<SellStep2Page> {
                   context,
                   icon: Icons.directions_car,
                   label: '${AppLocalizations.of(context)!.bodyTypeLabel} *',
-                  value: selectedBodyType ?? _tapToSelectTextGlobal(context),
+                  value: selectedBodyType == null
+                      ? _tapToSelectTextGlobal(context)
+                      : (_translateValueGlobal(context, selectedBodyType) ??
+                          selectedBodyType),
                   isError:
                       errBodyType &&
                       (selectedBodyType == null || selectedBodyType!.isEmpty),
@@ -19520,7 +19549,10 @@ class _SellStep2PageState extends State<SellStep2Page> {
                   context,
                   icon: Icons.palette,
                   label: '${AppLocalizations.of(context)!.colorLabel} *',
-                  value: selectedColor ?? _tapToSelectTextGlobal(context),
+                  value: selectedColor == null
+                      ? _tapToSelectTextGlobal(context)
+                      : (_translateValueGlobal(context, selectedColor) ??
+                          selectedColor),
                   isError:
                       errColor &&
                       (selectedColor == null || selectedColor!.isEmpty),
@@ -19552,7 +19584,7 @@ class _SellStep2PageState extends State<SellStep2Page> {
                   context,
                   icon: Icons.directions,
                   label: '${AppLocalizations.of(context)!.driveType} *',
-                  value: selectedDriveType,
+                  value: _translateValueGlobal(context, selectedDriveType),
                   isError:
                       errDrive &&
                       (selectedDriveType == null || selectedDriveType!.isEmpty),
@@ -19586,7 +19618,10 @@ class _SellStep2PageState extends State<SellStep2Page> {
                   label: '${AppLocalizations.of(context)!.regionSpecsLabel} *',
                   value: selectedRegionSpecs == null
                       ? null
-                      : carRegionSpecDisplayLabel(selectedRegionSpecs!),
+                      : carRegionSpecDisplayLabelLocalized(
+                          context,
+                          selectedRegionSpecs!,
+                        ),
                   isError:
                       errRegionSpecs &&
                       (selectedRegionSpecs == null ||
@@ -19621,7 +19656,7 @@ class _SellStep2PageState extends State<SellStep2Page> {
                   label: '${AppLocalizations.of(context)!.seating} *',
                   value: selectedSeating == null
                       ? null
-                      : ('${_localizeDigitsGlobal(context, selectedSeating!)} seats'),
+                      : ('${_localizeDigitsGlobal(context, selectedSeating!)} ${_trLegacyText(context, 'seats', ar: 'مقاعد', ku: 'دانیشتن')}'),
                   isError:
                       errSeating &&
                       (selectedSeating == null || selectedSeating!.isEmpty),
@@ -19822,7 +19857,7 @@ class _SellStep2PageState extends State<SellStep2Page> {
                   label: '${AppLocalizations.of(context)!.cylinderCount} *',
                   value: selectedCylinderCount == null
                       ? null
-                      : ('${_localizeDigitsGlobal(context, selectedCylinderCount!)} cylinders'),
+                      : ('${_localizeDigitsGlobal(context, selectedCylinderCount!)} ${_trLegacyText(context, 'cylinders', ar: 'أسطوانات', ku: 'سیلەندەر')}'),
                   isError:
                       errCylinderCount &&
                       (selectedCylinderCount == null ||
@@ -20448,6 +20483,19 @@ class _SellStep3PageState extends State<SellStep3Page> {
                     separatorBuilder: (_, __) => SizedBox(height: 10),
                     itemBuilder: (context, index) {
                       final value = options[index];
+                      final rawLower = value.trim().toLowerCase();
+                      final displayValue = const {
+                        'private',
+                        'commercial',
+                        'comercial',
+                        'taxi',
+                        'government',
+                        'temporary',
+                        'diplomatic',
+                        'police',
+                      }.contains(rawLower)
+                          ? _translatePlateTypeLegacy(context, value)
+                          : (_translateValueGlobal(context, value) ?? value);
                       return InkWell(
                         borderRadius: BorderRadius.circular(14),
                         onTap: () => Navigator.pop(context, value),
@@ -20472,7 +20520,7 @@ class _SellStep3PageState extends State<SellStep3Page> {
                             children: [
                               Expanded(
                                 child: Text(
-                                  value,
+                                  displayValue,
                                   style: TextStyle(
                                     color: Colors.white,
                                     fontWeight: FontWeight.w600,
@@ -20522,7 +20570,7 @@ class _SellStep3PageState extends State<SellStep3Page> {
                   Icon(Icons.attach_money, size: 48, color: Color(0xFFFF6B00)),
                   SizedBox(height: 12),
                   Text(
-                    'Pricing & Contact',
+                    AppLocalizations.of(context)!.pricingContactTitle,
                     style: TextStyle(
                       fontSize: 24,
                       fontWeight: FontWeight.bold,
@@ -20531,7 +20579,12 @@ class _SellStep3PageState extends State<SellStep3Page> {
                   ),
                   SizedBox(height: 8),
                   Text(
-                    'Set your price and contact information',
+                    _trLegacyText(
+                      context,
+                      'Set your price and contact information',
+                      ar: 'حدد السعر ومعلومات التواصل',
+                      ku: 'نرخ و زانیاری پەیوەندی دابنێ',
+                    ),
                     style: TextStyle(fontSize: 16, color: Colors.grey[600]),
                     textAlign: TextAlign.center,
                   ),
@@ -20551,8 +20604,18 @@ class _SellStep3PageState extends State<SellStep3Page> {
                               focusNode: _priceFocusNode,
                               controller: _priceController,
                               decoration: InputDecoration(
-                                labelText: 'Price (optional)',
-                                hintText: 'Enter price',
+                                labelText: _trLegacyText(
+                                  context,
+                                  'Price (optional)',
+                                  ar: 'السعر (اختياري)',
+                                  ku: 'نرخ (ئیختیاری)',
+                                ),
+                                hintText: _trLegacyText(
+                                  context,
+                                  'Enter price',
+                                  ar: 'أدخل السعر',
+                                  ku: 'نرخ بنووسە',
+                                ),
                                 prefixText: selectedCurrency == 'IQD'
                                     ? 'IQD '
                                     : '\$',
@@ -20595,9 +20658,21 @@ class _SellStep3PageState extends State<SellStep3Page> {
                                   return null;
                                 }
                                 final price = int.tryParse(value.trim());
-                                if (price == null) return 'Invalid price';
+                                if (price == null) {
+                                  return _trLegacyText(
+                                    context,
+                                    'Invalid price',
+                                    ar: 'سعر غير صالح',
+                                    ku: 'نرخی نادروست',
+                                  );
+                                }
                                 if (price < 0) {
-                                  return 'Price cannot be negative';
+                                  return _trLegacyText(
+                                    context,
+                                    'Price cannot be negative',
+                                    ar: 'لا يمكن أن يكون السعر سالبا',
+                                    ku: 'نرخ ناتوانێت سالب بێت',
+                                  );
                                 }
                                 return null;
                               },
@@ -20637,7 +20712,13 @@ class _SellStep3PageState extends State<SellStep3Page> {
                                     ...numericOptions,
                                   ];
                                   final choice = await _pickFromList(
-                                    'Price ($selectedCurrency) (optional)',
+                                    _trLegacyText(
+                                      context,
+                                      'Price ($selectedCurrency) (optional)',
+                                      ar: 'السعر ($selectedCurrency) (اختياري)',
+                                      ku:
+                                          'نرخ ($selectedCurrency) (ئیختیاری)',
+                                    ),
                                     priceOptions,
                                   );
                                   if (choice != null) {
@@ -20653,7 +20734,13 @@ class _SellStep3PageState extends State<SellStep3Page> {
                                 child: buildFancySelector(
                                   context,
                                   currency: selectedCurrency,
-                                  label: 'Price ($selectedCurrency) (optional)',
+                                  label: _trLegacyText(
+                                    context,
+                                    'Price ($selectedCurrency) (optional)',
+                                    ar: 'السعر ($selectedCurrency) (اختياري)',
+                                    ku:
+                                        'نرخ ($selectedCurrency) (ئیختیاری)',
+                                  ),
                                   value: selectedPrice != null
                                       ? _formatCurrencyGlobal(
                                           context,
@@ -20710,7 +20797,14 @@ class _SellStep3PageState extends State<SellStep3Page> {
                         ),
                       ),
                       tooltip:
-                          'Switch to ${selectedCurrency == 'USD' ? 'IQD' : 'USD'}',
+                          _trLegacyText(
+                            context,
+                            'Switch to ${selectedCurrency == 'USD' ? 'IQD' : 'USD'}',
+                            ar:
+                                'التبديل إلى ${selectedCurrency == 'USD' ? 'IQD' : 'USD'}',
+                            ku:
+                                'گۆڕین بۆ ${selectedCurrency == 'USD' ? 'IQD' : 'USD'}',
+                          ),
                     ),
                     SizedBox(width: 8),
                     // Pencil/Checkmark button
@@ -20767,11 +20861,21 @@ class _SellStep3PageState extends State<SellStep3Page> {
             // City (Modal)
             FormField<String>(
               validator: (_) =>
-                  selectedCity == null ? 'Please select city' : null,
+                  selectedCity == null
+                      ? _trLegacyText(
+                          context,
+                          'Please select city',
+                          ar: 'يرجى اختيار المدينة',
+                          ku: 'تکایە شار هەڵبژێرە',
+                        )
+                      : null,
               builder: (state) => GestureDetector(
                 onTap: () async {
                   _dismissKeyboard();
-                  final choice = await _pickFromList('City', cities);
+                  final choice = await _pickFromList(
+                    AppLocalizations.of(context)!.cityLabel,
+                    cities,
+                  );
                   if (choice != null) {
                     setState(() => selectedCity = choice);
                     _syncStep3DraftToParent();
@@ -20780,8 +20884,8 @@ class _SellStep3PageState extends State<SellStep3Page> {
                 child: buildFancySelector(
                   context,
                   icon: Icons.location_city,
-                  label: 'City *',
-                  value: selectedCity,
+                  label: '${AppLocalizations.of(context)!.cityLabel} *',
+                  value: _translateValueGlobal(context, selectedCity),
                 ),
               ),
             ),
@@ -20818,7 +20922,7 @@ class _SellStep3PageState extends State<SellStep3Page> {
                 ),
                 value: selectedPlateType == null
                     ? null
-                    : prettyTitleCase(selectedPlateType!),
+                    : _translatePlateTypeLegacy(context, selectedPlateType!),
               ),
             ),
             SizedBox(height: 16),
@@ -20850,7 +20954,10 @@ class _SellStep3PageState extends State<SellStep3Page> {
                   ar: 'مدينة اللوحة',
                   ku: 'شاری پڵەیت',
                 ),
-                value: selectedPlateCity,
+                value: selectedPlateCity == null
+                    ? null
+                    : (_translateValueGlobal(context, selectedPlateCity) ??
+                        selectedPlateCity),
               ),
             ),
             SizedBox(height: 16),
@@ -20860,7 +20967,12 @@ class _SellStep3PageState extends State<SellStep3Page> {
               onTap: () => _dismissKeyboard(),
               controller: _phoneController,
               decoration: InputDecoration(
-                labelText: 'WhatsApp/Phone Number *',
+                labelText: _trLegacyText(
+                  context,
+                  'WhatsApp/Phone Number *',
+                  ar: 'رقم واتساب/الهاتف *',
+                  ku: 'ژمارەی واتساپ/مۆبایل *',
+                ),
                 hintText: '7XX XXX XXXX',
                 filled: true,
                 fillColor: _sellFlowManualFieldFill(context),
@@ -20889,10 +21001,20 @@ class _SellStep3PageState extends State<SellStep3Page> {
               },
               validator: (value) {
                 if (value == null || value.trim().isEmpty) {
-                  return 'Please enter phone number';
+                  return _trLegacyText(
+                    context,
+                    'Please enter phone number',
+                    ar: 'يرجى إدخال رقم الهاتف',
+                    ku: 'تکایە ژمارەی مۆبایل بنووسە',
+                  );
                 }
                 if (value.trim().length < 10) {
-                  return 'Please enter a valid phone number';
+                  return _trLegacyText(
+                    context,
+                    'Please enter a valid phone number',
+                    ar: 'يرجى إدخال رقم هاتف صحيح',
+                    ku: 'تکایە ژمارەی دروست بنووسە',
+                  );
                 }
                 return null;
               },
@@ -20946,7 +21068,7 @@ class _SellStep3PageState extends State<SellStep3Page> {
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
                         Text(
-                          'Quick Sell',
+                          _quickSellTextGlobal(context),
                           style: TextStyle(
                             fontSize: 16,
                             fontWeight: FontWeight.bold,
@@ -20954,7 +21076,12 @@ class _SellStep3PageState extends State<SellStep3Page> {
                           ),
                         ),
                         Text(
-                          'Make your listing stand out with a special banner',
+                          _trLegacyText(
+                            context,
+                            'Make your listing stand out with a special banner',
+                            ar: 'اجعل إعلانك مميزا بشارة خاصة',
+                            ku: 'ڕیکلامەکەت بە بانەری تایبەت دیار بکە',
+                          ),
                           style: TextStyle(
                             fontSize: 12,
                             color: Colors.grey[600],
@@ -21460,14 +21587,28 @@ class _SellStep4PageState extends State<SellStep4Page> {
                     Icon(Icons.blur_on, color: Colors.blue),
                     SizedBox(width: 8),
                     Text(
-                      'Images Processed',
+                      _trLegacyText(
+                        context,
+                        'Images Processed',
+                        ar: 'تمت معالجة الصور',
+                        ku: 'وێنەکان پرۆسێس کران',
+                      ),
                       style: TextStyle(
                         fontWeight: FontWeight.bold,
                         color: Colors.blue,
                       ),
                     ),
                     SizedBox(width: 8),
-                    Expanded(child: Text('License plates have been blurred.')),
+                    Expanded(
+                      child: Text(
+                        _trLegacyText(
+                          context,
+                          'License plates have been blurred.',
+                          ar: 'تم تمويه لوحات المركبات.',
+                          ku: 'ژمارەی تابلۆکان شاردراون.',
+                        ),
+                      ),
+                    ),
                   ],
                 ),
               ),
@@ -21586,7 +21727,9 @@ class _SellStep4PageState extends State<SellStep4Page> {
                   onPressed: _pickImages,
                   icon: Icon(Icons.photo_library),
                   label: Text(
-                    _selectedImages.isEmpty ? 'Add Photos' : 'Add More Photos',
+                    _selectedImages.isEmpty
+                        ? AppLocalizations.of(context)!.addPhotos
+                        : AppLocalizations.of(context)!.addMorePhotos,
                   ),
                   style: ElevatedButton.styleFrom(
                     backgroundColor: Colors.grey.withOpacity(0.2),
@@ -21611,10 +21754,25 @@ class _SellStep4PageState extends State<SellStep4Page> {
                     : Icon(_imagesProcessed ? Icons.check : Icons.blur_on),
                 label: Text(
                   _isProcessingImages
-                      ? 'Processing...'
+                      ? _trLegacyText(
+                          context,
+                          'Processing...',
+                          ar: '...جارٍ المعالجة',
+                          ku: '...پرۆسێس دەکرێت',
+                        )
                       : _imagesProcessed
-                      ? 'Processed'
-                      : 'Blur Plates',
+                      ? _trLegacyText(
+                          context,
+                          'Processed',
+                          ar: 'تمت المعالجة',
+                          ku: 'پرۆسێس کرا',
+                        )
+                      : _trLegacyText(
+                          context,
+                          'Blur Plates',
+                          ar: 'تمويه اللوحات',
+                          ku: 'تابلۆ بشارەوە',
+                        ),
                 ),
                 style: ElevatedButton.styleFrom(
                   backgroundColor: _imagesProcessed
@@ -23163,7 +23321,7 @@ class _SellStep5PageState extends State<SellStep5Page> {
                                 ),
                               )
                             : Text(
-                                'Submit Listing',
+                                AppLocalizations.of(context)!.submitListing,
                                 style: TextStyle(
                                   fontSize: 16,
                                   fontWeight: FontWeight.w600,
@@ -25495,7 +25653,14 @@ Widget build(BuildContext context) {
                 },
                 validator: (v) {
                   if (v == null || v.trim().isEmpty) return AppLocalizations.of(context)!.enterWhatsAppNumber;
-                  if (v.trim().length < 10) return 'Please enter a valid phone number';
+                  if (v.trim().length < 10) {
+                    return _trLegacyText(
+                      context,
+                      'Please enter a valid phone number',
+                      ar: 'يرجى إدخال رقم هاتف صحيح',
+                      ku: 'تکایە ژمارەی دروست بنووسە',
+                    );
+                  }
                   return null;
                 },
                 onSaved: (_) {},
@@ -25671,7 +25836,7 @@ Widget build(BuildContext context) {
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
                           Text(
-                            'Quick Sell',
+                            _quickSellTextGlobal(context),
                             style: TextStyle(
                               fontSize: 16,
                               fontWeight: FontWeight.bold,
@@ -25679,7 +25844,13 @@ Widget build(BuildContext context) {
                             ),
                           ),
                           Text(
-                            'Enable this to make your listing stand out with a special banner',
+                            _trLegacyText(
+                              context,
+                              'Enable this to make your listing stand out with a special banner',
+                              ar: 'فعّل هذا الخيار ليظهر إعلانك بشارة خاصة',
+                              ku:
+                                  'ئەمە چالاک بکە بۆ ئەوەی ڕیکلامەکەت بە بانەری تایبەت دیار بێت',
+                            ),
                             style: TextStyle(
                               fontSize: 12,
                               color: Colors.grey[600],
