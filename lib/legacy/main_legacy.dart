@@ -1654,10 +1654,11 @@ Widget _buildGlobalCarCardInnerText(
               yearDisplay.isNotEmpty
                   ? yearDisplay
                   : _formatCurrencyGlobal(context, car['price']),
+              textScaler: const TextScaler.linear(1.0),
               style: TextStyle(
                 color: Color(0xFFFF6B00),
                 fontWeight: FontWeight.w600,
-                fontSize: 14,
+                fontSize: 12,
               ),
               maxLines: 1,
               overflow: TextOverflow.ellipsis,
@@ -1670,10 +1671,11 @@ Widget _buildGlobalCarCardInnerText(
                 alignment: AlignmentDirectional.centerEnd,
                 child: Text(
                   _formatCurrencyGlobal(context, car['price']),
+                  textScaler: const TextScaler.linear(1.0),
                   style: TextStyle(
                     color: Color(0xFFFF6B00),
                     fontWeight: FontWeight.w600,
-                    fontSize: 14,
+                    fontSize: 12,
                   ),
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,
@@ -1700,12 +1702,13 @@ Widget _buildGlobalCarCardInnerText(
                         alignment: AlignmentDirectional.centerStart,
                         child: Text(
                           mileageDisplay,
+                          textScaler: const TextScaler.linear(1.0),
                           maxLines: 1,
                           softWrap: false,
                           overflow: TextOverflow.visible,
                           style: TextStyle(
                             color: metaTextColor,
-                            fontSize: 13,
+                            fontSize: 11,
                           ),
                         ),
                       )
@@ -1747,13 +1750,14 @@ Widget _buildGlobalCarCardInnerText(
                           const SizedBox(width: 4),
                           Text(
                             cityLine,
+                            textScaler: const TextScaler.linear(1.0),
                             maxLines: 1,
                             softWrap: false,
                             overflow: TextOverflow.visible,
                             textAlign: TextAlign.end,
                             style: TextStyle(
                               color: metaTextColor,
-                              fontSize: 13,
+                              fontSize: 11,
                             ),
                           ),
                         ],
@@ -14858,7 +14862,7 @@ Widget buildCarListingSpecsGrid(
           final double labelFontSize =
               (constraints.maxWidth * 0.13).clamp(9.0, 11.0);
           final double valueFontSize =
-              (constraints.maxWidth * 0.16).clamp(10.0, 14.0);
+              (constraints.maxWidth * 0.14).clamp(9.0, 12.0);
 
           final labelStyle = TextStyle(
             fontSize: labelFontSize,
@@ -14932,7 +14936,7 @@ Widget buildCarListingSpecsGrid(
                     textAlign: TextAlign.center,
                     textScaleFactor: 1.0,
                     style: valueStyle,
-                    minFontSize: 9,
+                    minFontSize: 8,
                     stepGranularity: 0.5,
                     overflow: TextOverflow.clip,
                   ),
