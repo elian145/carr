@@ -546,7 +546,16 @@ class _ChatListPageState extends State<ChatListPage>
   Widget build(BuildContext context) {
     final useLightInk = Theme.of(context).brightness == Brightness.light;
     return Scaffold(
-      appBar: AppBar(title: Text(AppLocalizations.of(context)!.chatTitle)),
+      appBar: AppBar(
+        title: Text(AppLocalizations.of(context)!.chatTitle),
+        actions: [
+          IconButton(
+            tooltip: 'Notifications',
+            onPressed: () => Navigator.pushNamed(context, '/notifications'),
+            icon: const Icon(Icons.notifications_none),
+          ),
+        ],
+      ),
             body: RefreshIndicator(
               onRefresh: _loadChats,
               child: _loading && _chats.isEmpty
@@ -3396,6 +3405,13 @@ class _NotificationsPageState extends State<NotificationsPage> {
   final List<AppNotification> _notifications = [];
   StreamSubscription<Map<String, dynamic>>? _notificationSub;
 
+  String _tr(String en, {String? ar, String? ku}) {
+    final code = Localizations.localeOf(context).languageCode;
+    if (code == 'ar') return ar ?? en;
+    if (code == 'ku' || code == 'ckb') return ku ?? en;
+    return en;
+  }
+
   @override
   void initState() {
     super.initState();
@@ -3422,11 +3438,21 @@ class _NotificationsPageState extends State<NotificationsPage> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: Text(AppLocalizations.of(context)!.paymentHistoryTitle),
+        title: Text(
+          _tr('Notifications', ar: 'الإشعارات', ku: 'ئاگادارکردنەوەکان'),
+        ),
         actions: const [ThemeToggleWidget()],
       ),
       body: _notifications.isEmpty
-          ? Center(child: Text(AppLocalizations.of(context)!.noCarsFound))
+          ? Center(
+              child: Text(
+                _tr(
+                  'No notifications yet',
+                  ar: 'لا توجد إشعارات بعد',
+                  ku: 'هێشتا هیچ ئاگادارکردنەوەیەک نییە',
+                ),
+              ),
+            )
           : ListView.builder(
               padding: const EdgeInsets.all(16),
               itemCount: _notifications.length,

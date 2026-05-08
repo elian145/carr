@@ -46,6 +46,7 @@ Map<String, WidgetBuilder> buildAppRoutes() {
     '/settings': (context) => const settings.SettingsPage(),
     '/favorites': (context) => const favorites.FavoritesPage(),
     '/chat': (context) => const chat.ChatListPage(),
+    '/notifications': (context) => const chat.NotificationsPage(),
     '/login': (context) => const auth.LoginPage(),
     '/signup': (context) => const auth.RegisterPage(),
     '/register': (context) => const auth.RegisterPage(),
