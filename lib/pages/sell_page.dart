@@ -25,6 +25,13 @@ class SellPage extends StatefulWidget {
 class _SellPageState extends State<SellPage> {
   final _formKey = GlobalKey<FormState>();
 
+  String _text(String en, {String? ar, String? ku}) {
+    final code = Localizations.localeOf(context).languageCode;
+    if (code == 'ar') return ar ?? en;
+    if (code == 'ku' || code == 'ckb') return ku ?? en;
+    return en;
+  }
+
   final _year = TextEditingController();
   final _mileage = TextEditingController();
   final _price = TextEditingController();
@@ -721,7 +728,15 @@ class _SellPageState extends State<SellPage> {
       _syncConstrainedSelectionsAfterCatalogApply();
     });
     ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(content: Text('Applied specs from catalog')),
+      SnackBar(
+        content: Text(
+          _text(
+            'Applied specs from catalog',
+            ar: 'تم تطبيق المواصفات من الكتالوج',
+            ku: 'تایبەتمەندییەکان لە کاتالۆگەوە جێبەجێ کران',
+          ),
+        ),
+      ),
     );
     _scheduleDraftSave();
   }
@@ -1190,7 +1205,13 @@ class _SellPageState extends State<SellPage> {
                   ? _applyCatalogSpecs
                   : null,
               icon: const Icon(Icons.auto_fix_high_outlined),
-              label: const Text('Apply to form below'),
+              label: Text(
+                _text(
+                  'Apply to form below',
+                  ar: 'تطبيق على النموذج أدناه',
+                  ku: 'جێبەجێکردن لەسەر فۆڕمی خوارەوە',
+                ),
+              ),
             ),
           ],
         ),
@@ -1848,7 +1869,11 @@ class _SellPageState extends State<SellPage> {
                               ),
                               const SizedBox(height: 4),
                               Text(
-                                'Continue here to finish the listing, or discard it if you want to start over.',
+                                _text(
+                                  'Continue here to finish the listing, or discard it if you want to start over.',
+                                  ar: 'لەێرە بەردەوام بە بۆ تەواوکردنی لیستەکە، یان ئەگەر دەتەوێت لە نوێوە دەستپێبکەیت ڕەشنووسەکە بسڕەوە.',
+                                  ku: 'لەێرە بەردەوام بە بۆ تەواوکردنی لیستەکە، یان ئەگەر دەتەوێت لە نوێوە دەستپێبکەیت ڕەشنووسەکە بسڕەوە.',
+                                ),
                                 style: Theme.of(context).textTheme.bodySmall,
                               ),
                               const SizedBox(height: 8),
@@ -1859,12 +1884,24 @@ class _SellPageState extends State<SellPage> {
                                   TextButton.icon(
                                     onPressed: _discardDraft,
                                     icon: const Icon(Icons.delete_outline),
-                                    label: const Text('Discard draft'),
+                                    label: Text(
+                                      _text(
+                                        'Discard draft',
+                                        ar: 'حذف المسودة',
+                                        ku: 'سڕینەوەی ڕەشنووس',
+                                      ),
+                                    ),
                                   ),
                                   TextButton.icon(
                                     onPressed: () => unawaited(_resumeDraft()),
                                     icon: const Icon(Icons.play_arrow),
-                                    label: const Text('Continue'),
+                                    label: Text(
+                                      _text(
+                                        'Continue',
+                                        ar: 'متابعة',
+                                        ku: 'بەردەوامبوون',
+                                      ),
+                                    ),
                                   ),
                                 ],
                               ),
