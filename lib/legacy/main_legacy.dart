@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/foundation.dart';
+import 'package:flutter/scheduler.dart';
 import 'package:http/http.dart' as http;
 import 'dart:convert';
 import 'dart:developer' as developer;
@@ -5279,6 +5280,8 @@ class _HomePageState extends State<HomePage> {
     if (target == null || target <= 0) return;
 
     final gen = ++_homeScrollRestoreScheduleGen;
+    // Ensure a frame is produced even when nothing else is animating.
+    SchedulerBinding.instance.scheduleFrame();
     unawaited(_restoreHomeScrollWork(gen, target));
   }
 
@@ -5318,6 +5321,7 @@ class _HomePageState extends State<HomePage> {
       await _nextLayoutFrame();
       if (!mounted || gen != _homeScrollRestoreScheduleGen) return;
       if (!_homeScrollController.hasClients) {
+        SchedulerBinding.instance.scheduleFrame();
         WidgetsBinding.instance.addPostFrameCallback((_) {
           if (!mounted || gen != _homeScrollRestoreScheduleGen) return;
           _scheduleHomeScrollRestoreAfterListReady();
@@ -5326,6 +5330,7 @@ class _HomePageState extends State<HomePage> {
       }
       final pos = _homeScrollController.position;
       if (!pos.hasContentDimensions) {
+        SchedulerBinding.instance.scheduleFrame();
         WidgetsBinding.instance.addPostFrameCallback((_) {
           if (!mounted || gen != _homeScrollRestoreScheduleGen) return;
           _scheduleHomeScrollRestoreAfterListReady();
@@ -5340,6 +5345,7 @@ class _HomePageState extends State<HomePage> {
       final reachedTarget = (desired - target).abs() <= slack;
       final canStillGrow = _hasNext;
       if (!reachedTarget && canStillGrow) {
+        SchedulerBinding.instance.scheduleFrame();
         WidgetsBinding.instance.addPostFrameCallback((_) {
           if (!mounted || gen != _homeScrollRestoreScheduleGen) return;
           _scheduleHomeScrollRestoreAfterListReady();
