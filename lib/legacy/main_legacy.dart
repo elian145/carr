@@ -4546,7 +4546,18 @@ class _HomePageState extends State<HomePage> {
         selectedDamagedParts = map['damaged_parts'];
         selectedSortBy = map['sort_by'];
       });
+      _syncHomeFilterTextControllersFromSelection();
     } catch (_) {}
+  }
+
+  void _syncHomeFilterTextControllersFromSelection() {
+    _minPriceController.text = selectedMinPrice ?? '';
+    _maxPriceController.text = selectedMaxPrice ?? '';
+    _minYearController.text = selectedMinYear ?? '';
+    _maxYearController.text = selectedMaxYear ?? '';
+    _minMileageController.text = selectedMinMileage ?? '';
+    _maxMileageController.text = selectedMaxMileage ?? '';
+    _engineSizeController.text = selectedEngineSize ?? '';
   }
 
   Future<void> _persistFilters() async {
@@ -5192,9 +5203,6 @@ class _HomePageState extends State<HomePage> {
         listingColumns = cols;
       });
     });
-    // Only clear filters, but preserve cached car data for better reliability
-    _clearFiltersOnly();
-    _resetAllFiltersInMemory();
     _loadBodyTypesFromAssets();
     CarSpecIndex.loadWithResult().then((r) {
       if (!mounted) return;
@@ -5204,13 +5212,15 @@ class _HomePageState extends State<HomePage> {
         _pruneHomeMotorFilterSelectionsIfInvalid();
       });
     });
-    WidgetsBinding.instance.addPostFrameCallback((_) {
+    WidgetsBinding.instance.addPostFrameCallback((_) async {
       // Avoid network calls during `flutter test` runs.
       // `FLUTTER_TEST` isn't reliably set as a compile-time define for all builds,
       // so we also check the runtime environment variable.
       if (_kFlutterTest || Platform.environment.containsKey('FLUTTER_TEST')) {
         return;
       }
+      await _restoreFilters();
+      if (!mounted) return;
       // If we already rehydrated listings from memory (tab return), do not run an
       // immediate fetchCars(): the first-page API response would replace a deep
       // scroll's many rows with ~20 items, collapse maxScrollExtent, and wipe the
@@ -5251,6 +5261,7 @@ class _HomePageState extends State<HomePage> {
   @override
   void dispose() {
     _sortDebounceTimer?.cancel();
+    unawaited(_persistFilters());
     _minPriceController.dispose();
     _maxPriceController.dispose();
     _minYearController.dispose();
