@@ -1757,11 +1757,13 @@ class _ChatConversationPageState extends State<ChatConversationPage>
           actions: [
             TextButton(
               onPressed: () => Navigator.pop(context, false),
-              child: const Text('Cancel'),
+              child: Text(AppLocalizations.of(context)?.cancelAction ?? 'Cancel'),
             ),
             TextButton(
               onPressed: () => Navigator.pop(context, true),
-              child: const Text('Remove'),
+              child: Text(
+                _chatText(context, 'Remove', ar: 'إزالة', ku: 'لابردن'),
+              ),
             ),
           ],
         ),
@@ -1793,11 +1795,11 @@ class _ChatConversationPageState extends State<ChatConversationPage>
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(context, false),
-            child: const Text('Cancel'),
+            child: Text(AppLocalizations.of(context)?.cancelAction ?? 'Cancel'),
           ),
           TextButton(
             onPressed: () => Navigator.pop(context, true),
-            child: const Text('Delete'),
+            child: Text(AppLocalizations.of(context)?.deleteAction ?? 'Delete'),
           ),
         ],
       ),
@@ -2535,7 +2537,7 @@ class _ChatConversationPageState extends State<ChatConversationPage>
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(ctx),
-            child: const Text('Cancel'),
+            child: Text(AppLocalizations.of(context)?.cancelAction ?? 'Cancel'),
           ),
           TextButton(
             onPressed: () async {
