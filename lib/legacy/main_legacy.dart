@@ -5207,9 +5207,13 @@ class _HomePageState extends State<HomePage> {
           pos.minScrollExtent,
           pos.maxScrollExtent,
         );
-        // Persist continuously so tab switches always restore the latest
-        // real position, even if disposal timing is delayed/racy.
-        _HomeFeedScrollPersistence.savePixels(_lastHomeScrollPixels);
+        // Persist continuously, but don't let temporary clamped restore values
+        // overwrite a higher pending target that we still need to reach.
+        final pending = _pendingHomeScrollRestore;
+        final snapshot = (pending != null && pending > _lastHomeScrollPixels)
+            ? pending
+            : _lastHomeScrollPixels;
+        _HomeFeedScrollPersistence.savePixels(snapshot);
         if (_hasNext &&
             !_isLoadingMore &&
             pos.pixels >= (pos.maxScrollExtent - 400)) {
@@ -5258,10 +5262,12 @@ class _HomePageState extends State<HomePage> {
         final pos = _homeScrollController.position;
         final y = pos.pixels.clamp(pos.minScrollExtent, pos.maxScrollExtent);
         _lastHomeScrollPixels = y;
+        _pendingHomeScrollRestore = y;
         _HomeFeedScrollPersistence.savePixels(y);
         return;
       }
     } catch (_) {}
+    _pendingHomeScrollRestore = _lastHomeScrollPixels;
     _HomeFeedScrollPersistence.savePixels(_lastHomeScrollPixels);
   }
 
