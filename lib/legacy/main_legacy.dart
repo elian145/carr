@@ -5269,6 +5269,8 @@ class _HomePageState extends State<HomePage> {
 
   Future<void> _nextLayoutFrame() async {
     final c = Completer<void>();
+    // Force a frame so awaiting this helper never depends on user input.
+    SchedulerBinding.instance.scheduleFrame();
     WidgetsBinding.instance.addPostFrameCallback((_) {
       if (!c.isCompleted) c.complete();
     });
