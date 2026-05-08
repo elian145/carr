@@ -102,6 +102,13 @@ String _noMessagesText(BuildContext context) {
   return AppLocalizations.of(context)!.noMessagesYet;
 }
 
+String _chatText(BuildContext context, String en, {String? ar, String? ku}) {
+  final code = Localizations.localeOf(context).languageCode;
+  if (code == 'ar') return ar ?? en;
+  if (code == 'ku' || code == 'ckb') return ku ?? en;
+  return en;
+}
+
 /// Chat list row inks when chat UI is light ([ChatUiThemeController]).
 const Color _kChatListRowInkLight = Color(0xFF000000);
 const Color _kChatListRowInkDarkPrimary = Color(0xFFF5F5F5);
@@ -550,7 +557,12 @@ class _ChatListPageState extends State<ChatListPage>
         title: Text(AppLocalizations.of(context)!.chatTitle),
         actions: [
           IconButton(
-            tooltip: 'Notifications',
+            tooltip: _chatText(
+              context,
+              'Notifications',
+              ar: 'الإشعارات',
+              ku: 'ئاگادارکردنەوەکان',
+            ),
             onPressed: () => Navigator.pushNamed(context, '/notifications'),
             icon: const Icon(Icons.notifications_none),
           ),
@@ -1085,8 +1097,15 @@ class _ChatConversationPageState extends State<ChatConversationPage>
     final remaining = maxCount - _draftAttachments.length;
     if (remaining <= 0) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('You can attach up to 10 files.'),
+        SnackBar(
+          content: Text(
+            _chatText(
+              context,
+              'You can attach up to 10 files.',
+              ar: 'دەتوانیت تەنها تا 10 فایل زیاد بکەیت.',
+              ku: 'دەتوانیت تەنها تا 10 فایل زیاد بکەیت.',
+            ),
+          ),
           backgroundColor: Colors.orange,
         ),
       );
@@ -1099,8 +1118,15 @@ class _ChatConversationPageState extends State<ChatConversationPage>
     });
     if (valid.length > toAdd.length) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('Only the first 10 attachments were added.'),
+        SnackBar(
+          content: Text(
+            _chatText(
+              context,
+              'Only the first 10 attachments were added.',
+              ar: 'تەنها یەکەم 10 پاشکۆ زیاد کران.',
+              ku: 'تەنها یەکەم 10 پاشکۆ زیاد کران.',
+            ),
+          ),
           backgroundColor: Colors.orange,
         ),
       );
@@ -1970,7 +1996,7 @@ class _ChatConversationPageState extends State<ChatConversationPage>
           IconButton(
             onPressed: _cancelComposerAction,
             icon: const Icon(Icons.close),
-            tooltip: 'Cancel',
+            tooltip: AppLocalizations.of(context)?.cancelAction ?? 'Cancel',
           ),
         ],
       ),
@@ -3240,7 +3266,12 @@ class _ChatConversationPageState extends State<ChatConversationPage>
                                 ? null
                                 : _showAttachmentPicker,
                             icon: const Icon(Icons.attach_file),
-                            tooltip: 'Send attachment',
+                            tooltip: _chatText(
+                              context,
+                              'Send attachment',
+                              ar: 'إرسال مرفق',
+                              ku: 'ناردنی پاشکۆ',
+                            ),
                           ),
                           Expanded(
                             child:
