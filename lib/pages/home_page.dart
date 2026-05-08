@@ -824,7 +824,8 @@ class HomePage extends StatefulWidget {
   State<HomePage> createState() => _HomePageState();
 }
 
-class _HomePageState extends State<HomePage> {
+class _HomePageState extends State<HomePage>
+    with AutomaticKeepAliveClientMixin<HomePage> {
   final ScrollController _controller = ScrollController();
 
   final List<Map<String, dynamic>> _cars = <Map<String, dynamic>>[];
@@ -835,6 +836,9 @@ class _HomePageState extends State<HomePage> {
   String? _error;
 
   static const int _perPage = 20;
+
+  @override
+  bool get wantKeepAlive => true;
 
   @override
   void initState() {
@@ -960,6 +964,7 @@ class _HomePageState extends State<HomePage> {
 
   @override
   Widget build(BuildContext context) {
+    super.build(context);
     final loc = AppLocalizations.of(context);
     final title = (loc?.appTitle ?? 'CARZO').toUpperCase();
 
@@ -1007,8 +1012,28 @@ class _HomePageState extends State<HomePage> {
                       ),
                     ],
                   )
+                : (_cars.isEmpty)
+                    ? ListView(
+                        children: [
+                          const SizedBox(height: 40),
+                          Center(
+                            child: Text(
+                              loc?.noListingsYet ?? 'No listings yet',
+                              textAlign: TextAlign.center,
+                            ),
+                          ),
+                          const SizedBox(height: 12),
+                          Center(
+                            child: OutlinedButton(
+                              onPressed: () => _fetch(refresh: true),
+                              child: Text(loc?.retryAction ?? 'Retry'),
+                            ),
+                          ),
+                        ],
+                      )
                 : GridView.builder(
                     controller: _controller,
+                    key: const PageStorageKey<String>('home_grid'),
                     padding: const EdgeInsets.all(12),
                     gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
                       crossAxisCount: 2,
