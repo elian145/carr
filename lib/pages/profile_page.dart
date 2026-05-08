@@ -4,6 +4,7 @@ import 'package:provider/provider.dart';
 import '../l10n/app_localizations.dart';
 import '../services/api_service.dart';
 import '../services/auth_service.dart';
+import '../shared/account/delete_account_dialog.dart';
 import '../shared/errors/user_error_text.dart';
 import '../shared/media/media_url.dart';
 import '../theme_provider.dart';
@@ -217,51 +218,7 @@ class _ProfilePageState extends State<ProfilePage> {
 
   Future<void> _deleteAccountTapped() async {
     final loc = AppLocalizations.of(context)!;
-    final passwordResult = await showDialog<String?>(
-      context: context,
-      builder: (ctx) {
-        final passwordController = TextEditingController();
-        final locD = AppLocalizations.of(ctx)!;
-        return AlertDialog(
-          title: Text(locD.deleteAccountTitle),
-          content: SingleChildScrollView(
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(locD.deleteAccountBody),
-                const SizedBox(height: 16),
-                TextField(
-                  controller: passwordController,
-                  decoration: InputDecoration(
-                    labelText: locD.passwordOptionalConfirm,
-                    hintText: locD.confirmWithPasswordHint,
-                  ),
-                  obscureText: true,
-                  autocorrect: false,
-                ),
-              ],
-            ),
-          ),
-          actions: [
-            TextButton(
-              onPressed: () => Navigator.pop(ctx),
-              child: Text(locD.cancelAction),
-            ),
-            TextButton(
-              onPressed: () {
-                final p = passwordController.text.trim();
-                Navigator.pop(ctx, p);
-              },
-              child: Text(
-                locD.deleteMyAccount,
-                style: TextStyle(color: Theme.of(context).colorScheme.error),
-              ),
-            ),
-          ],
-        );
-      },
-    );
+    final passwordResult = await showDeleteAccountPasswordDialog(context);
     if (passwordResult == null || !mounted) return;
     try {
       await AuthService().deleteAccount(

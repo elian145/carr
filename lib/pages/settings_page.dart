@@ -5,6 +5,7 @@ import 'package:shared_preferences/shared_preferences.dart';
 import '../l10n/app_localizations.dart';
 import '../services/auth_service.dart';
 import '../services/config.dart';
+import '../shared/account/delete_account_dialog.dart';
 import '../shared/errors/user_error_text.dart';
 import '../state/locale_controller.dart';
 import '../theme_provider.dart';
@@ -69,51 +70,7 @@ class _SettingsPageState extends State<SettingsPage> {
 
   Future<void> _deleteAccountTapped() async {
     final loc = AppLocalizations.of(context)!;
-    final passwordResult = await showDialog<String?>(
-      context: context,
-      builder: (ctx) {
-        final passwordController = TextEditingController();
-        final locDialog = AppLocalizations.of(ctx)!;
-        return AlertDialog(
-          title: Text(locDialog.deleteAccountTitle),
-          content: SingleChildScrollView(
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(locDialog.deleteAccountBody),
-                const SizedBox(height: 16),
-                TextField(
-                  controller: passwordController,
-                  decoration: InputDecoration(
-                    labelText: locDialog.passwordOptionalConfirm,
-                    hintText: locDialog.confirmWithPasswordHint,
-                  ),
-                  obscureText: true,
-                  autocorrect: false,
-                ),
-              ],
-            ),
-          ),
-          actions: [
-            TextButton(
-              onPressed: () => Navigator.pop(ctx),
-              child: Text(locDialog.cancelAction),
-            ),
-            TextButton(
-              onPressed: () {
-                final p = passwordController.text.trim();
-                Navigator.pop(ctx, p); // empty string = no password, non-empty = password
-              },
-              child: Text(
-                locDialog.deleteMyAccount,
-                style: TextStyle(color: Theme.of(context).colorScheme.error),
-              ),
-            ),
-          ],
-        );
-      },
-    );
+    final passwordResult = await showDeleteAccountPasswordDialog(context);
     if (passwordResult == null || !mounted) return;
 
     final auth = AuthService();
