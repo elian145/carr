@@ -11,6 +11,8 @@ import '../services/auth_service.dart';
 import '../services/analytics_service.dart';
 import '../models/analytics_model.dart';
 import '../shared/errors/user_error_text.dart';
+import '../shared/listings/listing_identity.dart';
+import '../shared/prefs/sell_listing_draft_prefs.dart';
 import '../shared/text/pretty_title_case.dart';
 import '../shared/prefs/listing_layout_prefs.dart';
 import '../legacy/main_legacy.dart'
@@ -131,6 +133,20 @@ class _MyListingsPageState extends State<MyListingsPage> {
 
   Future<void> _loadDraftSnapshot() async {
     try {
+      final ownerKey = _buildDraftOwnerKey();
+      final modernDraft = await SellListingDraftPrefs.load(ownerKey);
+      if (modernDraft != null && _hasMeaningfulDraftData(modernDraft)) {
+        if (!mounted) return;
+        setState(() {
+          _draftSnapshot = <String, dynamic>{
+            'currentStep': modernDraft['complete'] == true ? 4 : 0,
+            'carData': modernDraft,
+          };
+          _loadingDraft = false;
+        });
+        return;
+      }
+
       final sp = await SharedPreferences.getInstance();
       final raw = sp.getString(_draftSnapshotKey);
       if (raw == null || raw.trim().isEmpty) {
@@ -195,6 +211,8 @@ class _MyListingsPageState extends State<MyListingsPage> {
   }
 
   Future<void> _discardDraft() async {
+    final ownerKey = _buildDraftOwnerKey();
+    await SellListingDraftPrefs.clear(ownerKey);
     final sp = await SharedPreferences.getInstance();
     await sp.remove(_draftSnapshotKey);
     await sp.remove('legacy_sell_draft_current_step_v1');
@@ -210,6 +228,30 @@ class _MyListingsPageState extends State<MyListingsPage> {
 
   void _resumeDraft() {
     Navigator.pushNamed(context, '/sell');
+  }
+
+  String _buildDraftOwnerKey() {
+    final user = Provider.of<AuthService>(context, listen: false).currentUser;
+    final raw = (user?['public_id'] ??
+            user?['id'] ??
+            user?['username'] ??
+            user?['email'] ??
+            'guest')
+        .toString()
+        .trim();
+    return raw.isEmpty ? 'guest' : raw;
+  }
+
+  bool _hasMeaningfulDraftData(Map<String, dynamic> data) {
+    return data.values.any((value) {
+      if (value == null) return false;
+      if (value is String) return value.trim().isNotEmpty;
+      if (value is num) return value != 0;
+      if (value is bool) return value;
+      if (value is Iterable) return value.isNotEmpty;
+      if (value is Map) return value.isNotEmpty;
+      return value.toString().trim().isNotEmpty;
+    });
   }
 
   String _draftTitle(Map<String, dynamic> carData) {
@@ -248,9 +290,13 @@ class _MyListingsPageState extends State<MyListingsPage> {
       'price': carData['price']?.toString().trim(),
       'images': (carData['images'] is List)
           ? List<dynamic>.from(carData['images'] as List)
+          : (carData['image_paths'] is List)
+              ? List<dynamic>.from(carData['image_paths'] as List)
           : const <dynamic>[],
       'videos': (carData['videos'] is List)
           ? List<dynamic>.from(carData['videos'] as List)
+          : (carData['video_paths'] is List)
+              ? List<dynamic>.from(carData['video_paths'] as List)
           : const <dynamic>[],
       'is_quick_sell': carData['is_quick_sell'] ?? false,
     };
@@ -418,7 +464,7 @@ class _MyListingsPageState extends State<MyListingsPage> {
       await ApiService.deleteCar(carId);
       if (!mounted) return;
       setState(() {
-        _cars.removeWhere((c) => (c['id'] ?? '').toString() == carId);
+        _cars.removeWhere((c) => listingMatchesId(c, carId));
       });
     } catch (e) {
       if (!mounted) return;
@@ -437,7 +483,7 @@ class _MyListingsPageState extends State<MyListingsPage> {
   }
 
   Future<void> _editListing(Map<String, dynamic> car) async {
-    final carId = (car['id'] ?? car['public_id'] ?? '').toString();
+    final carId = listingPrimaryId(car);
     if (carId.isEmpty) return;
 
     final loc = AppLocalizations.of(context);
@@ -528,7 +574,7 @@ class _MyListingsPageState extends State<MyListingsPage> {
       if (!mounted) return;
       if (updated != null) {
         setState(() {
-          final idx = _cars.indexWhere((c) => (c['id'] ?? '').toString() == carId);
+          final idx = _cars.indexWhere((c) => listingMatchesId(c, carId));
           if (idx >= 0) _cars[idx] = {..._cars[idx], ...updated};
         });
       }
@@ -794,8 +840,7 @@ class _MyListingsPageState extends State<MyListingsPage> {
                                     }
 
                                     final car = _cars[hasDraft ? index - 1 : index];
-                                    final id = (car['id'] ?? car['public_id'] ?? '')
-                                        .toString();
+                                    final id = listingPrimaryId(car);
 
                                     final mapped = mapListingToGlobalCarCardData(
                                       context,

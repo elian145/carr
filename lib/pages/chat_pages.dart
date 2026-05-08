@@ -12,6 +12,7 @@ import '../services/auth_service.dart';
 import '../services/api_service.dart';
 import '../services/outgoing_chat_send_service.dart';
 import '../shared/errors/user_error_text.dart';
+import '../shared/listings/listing_identity.dart';
 import '../shared/media/media_url.dart';
 import '../theme_provider.dart';
 import '../widgets/theme_toggle_widget.dart';
@@ -2568,7 +2569,7 @@ class _ChatConversationPageState extends State<ChatConversationPage>
         Navigator.pushNamed(
           context,
           '/car_detail',
-          arguments: {'carId': (car['id'] ?? widget.carId).toString()},
+            arguments: {'carId': listingPrimaryId(car)},
         );
       },
       child: Container(

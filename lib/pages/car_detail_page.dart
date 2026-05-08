@@ -12,6 +12,7 @@ import '../services/api_service.dart';
 import '../services/config.dart';
 import '../shared/media/media_url.dart';
 import '../shared/errors/user_error_text.dart';
+import '../shared/listings/listing_identity.dart';
 import '../shared/text/pretty_title_case.dart';
 import 'listing_image_gallery_page.dart';
 
@@ -366,7 +367,7 @@ class _CarDetailPageState extends State<CarDetailPage> {
         final items = list
             .whereType<Map>()
             .map((m) => Map<String, dynamic>.from(m.cast<String, dynamic>()))
-            .where((m) => (m['id'] ?? '').toString() != widget.carId)
+            .where((m) => !listingMatchesId(m, widget.carId))
             .take(12)
             .toList();
         if (mounted) {
@@ -387,7 +388,7 @@ class _CarDetailPageState extends State<CarDetailPage> {
       final relItems = relList
           .whereType<Map>()
           .map((m) => Map<String, dynamic>.from(m.cast<String, dynamic>()))
-          .where((m) => (m['id'] ?? '').toString() != widget.carId)
+          .where((m) => !listingMatchesId(m, widget.carId))
           .take(12)
           .toList();
       if (mounted) {
@@ -865,7 +866,7 @@ class _CarDetailPageState extends State<CarDetailPage> {
         separatorBuilder: (context, index) => const SizedBox(width: 12),
         itemBuilder: (context, index) {
           final c = cars[index];
-          final id = (c['id'] ?? '').toString();
+          final id = listingPrimaryId(c);
           final title =
               (c['title'] ?? '${c['brand'] ?? ''} ${c['model'] ?? ''}')
                   .toString();

@@ -7,6 +7,7 @@ import '../services/config.dart';
 import '../models/analytics_model.dart';
 import '../services/analytics_service.dart';
 import '../shared/errors/user_error_text.dart';
+import '../shared/listings/listing_identity.dart';
 // Intentionally avoid importing shared card or helpers; this page uses its own duplicated implementations
 import '../globals.dart';
 import '../theme_provider.dart';
@@ -843,7 +844,7 @@ class _AnalyticsPageState extends State<AnalyticsPage> {
 
     return _AnalyticsImageCarousel(
       urls: urls,
-      carId: (car['id'] ?? car['public_id'] ?? '').toString(),
+      carId: listingPrimaryId(Map<String, dynamic>.from(car)),
     );
   }
 
