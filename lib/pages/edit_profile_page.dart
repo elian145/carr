@@ -51,6 +51,58 @@ class _EditProfilePageState extends State<EditProfilePage> {
     super.dispose();
   }
 
+  bool _shellLight(BuildContext context) =>
+      Theme.of(context).brightness == Brightness.light;
+
+  Color _cardFill(BuildContext context) {
+    if (_shellLight(context)) return Colors.white;
+    return Color.alphaBlend(
+      Colors.white.withOpacity(0.085),
+      AppThemes.darkHomeShellBackground,
+    );
+  }
+
+  Color _cardBorderColor(BuildContext context) {
+    if (_shellLight(context)) return const Color(0xFFE0E0E0);
+    return Colors.white.withOpacity(0.12);
+  }
+
+  Color _primaryInk(BuildContext context) {
+    if (_shellLight(context)) return Colors.grey[800]!;
+    return const Color(0xFFECECEC);
+  }
+
+  Color _secondaryInk(BuildContext context) {
+    if (_shellLight(context)) return Colors.grey[600]!;
+    return Colors.white70;
+  }
+
+  Color _fieldFill(BuildContext context) {
+    if (_shellLight(context)) return Colors.grey[50]!;
+    return Colors.white.withOpacity(0.06);
+  }
+
+  Color _fieldBorder(BuildContext context) {
+    if (_shellLight(context)) return Colors.grey[300]!;
+    return Colors.white.withOpacity(0.14);
+  }
+
+  BoxDecoration _cardDecoration(BuildContext context, {double radius = 16}) {
+    final light = _shellLight(context);
+    return BoxDecoration(
+      color: _cardFill(context),
+      borderRadius: BorderRadius.circular(radius),
+      border: Border.all(color: _cardBorderColor(context), width: 1),
+      boxShadow: [
+        BoxShadow(
+          color: Colors.black.withOpacity(light ? 0.05 : 0.45),
+          blurRadius: light ? 10 : 18,
+          offset: const Offset(0, 6),
+        ),
+      ],
+    );
+  }
+
   Future<void> _loadUserData() async {
     if (!mounted) return;
 
@@ -205,24 +257,11 @@ class _EditProfilePageState extends State<EditProfilePage> {
 
   Widget _buildProfileImageSection(BuildContext context) {
     final loc = AppLocalizations.of(context)!;
-    final isLightShell = Theme.of(context).brightness == Brightness.light;
+    final light = _shellLight(context);
     return Container(
       width: double.infinity,
       padding: EdgeInsets.all(20),
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(16),
-        border: isLightShell
-            ? Border.all(color: Colors.black, width: 1)
-            : null,
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withOpacity(0.05),
-            blurRadius: 10,
-            offset: Offset(0, 5),
-          ),
-        ],
-      ),
+      decoration: _cardDecoration(context),
       child: Column(
         children: [
           Text(
@@ -230,7 +269,7 @@ class _EditProfilePageState extends State<EditProfilePage> {
             style: TextStyle(
               fontSize: 18,
               fontWeight: FontWeight.bold,
-              color: Colors.grey[800],
+              color: _primaryInk(context),
             ),
           ),
           SizedBox(height: 20),
@@ -238,7 +277,8 @@ class _EditProfilePageState extends State<EditProfilePage> {
             children: [
               CircleAvatar(
                 radius: 60,
-                backgroundColor: Colors.grey[200],
+                backgroundColor:
+                    light ? Colors.grey[200]! : Colors.white.withOpacity(0.12),
                 backgroundImage: _profileImage != null
                     ? FileImage(File(_profileImage!.path))
                     : (_currentProfilePicture != null &&
@@ -251,7 +291,11 @@ class _EditProfilePageState extends State<EditProfilePage> {
                     (_profileImage == null &&
                         (_currentProfilePicture == null ||
                             _currentProfilePicture!.isEmpty))
-                    ? Icon(Icons.person, size: 60, color: Colors.grey[400])
+                    ? Icon(
+                        Icons.person,
+                        size: 60,
+                        color: light ? Colors.grey[400]! : Colors.white38,
+                      )
                     : null,
               ),
               Positioned(
@@ -261,7 +305,10 @@ class _EditProfilePageState extends State<EditProfilePage> {
                   decoration: BoxDecoration(
                     color: Color(0xFFFF6B00),
                     shape: BoxShape.circle,
-                    border: Border.all(color: Colors.white, width: 3),
+                    border: Border.all(
+                      color: light ? Colors.white : const Color(0xFF1E222A),
+                      width: 3,
+                    ),
                   ),
                   child: IconButton(
                     icon: Icon(Icons.camera_alt, color: Colors.white, size: 20),
@@ -274,7 +321,10 @@ class _EditProfilePageState extends State<EditProfilePage> {
           SizedBox(height: 16),
           Text(
             loc.tapCameraToChangeProfile,
-            style: TextStyle(fontSize: 14, color: Colors.grey[600]),
+            style: TextStyle(
+              fontSize: 14,
+              color: _secondaryInk(context),
+            ),
             textAlign: TextAlign.center,
           ),
         ],
@@ -282,7 +332,8 @@ class _EditProfilePageState extends State<EditProfilePage> {
     );
   }
 
-  Widget _buildFormField({
+  Widget _buildFormField(
+    BuildContext context, {
     required String label,
     required TextEditingController controller,
     required IconData icon,
@@ -292,6 +343,7 @@ class _EditProfilePageState extends State<EditProfilePage> {
     bool enabled = true,
     String? prefixText,
   }) {
+    final borderColor = _fieldBorder(context);
     return Container(
       margin: EdgeInsets.only(bottom: 16),
       child: Column(
@@ -302,7 +354,9 @@ class _EditProfilePageState extends State<EditProfilePage> {
             style: TextStyle(
               fontSize: 14,
               fontWeight: FontWeight.w600,
-              color: Colors.grey[700],
+              color: _shellLight(context)
+                  ? Colors.grey[700]!
+                  : _secondaryInk(context),
             ),
           ),
           SizedBox(height: 8),
@@ -312,7 +366,10 @@ class _EditProfilePageState extends State<EditProfilePage> {
             inputFormatters: inputFormatters,
             validator: validator,
             enabled: enabled,
-            style: TextStyle(color: Colors.black, fontSize: 16),
+            style: TextStyle(
+              color: _primaryInk(context),
+              fontSize: 16,
+            ),
             decoration: InputDecoration(
               prefixIcon: Icon(icon, color: Color(0xFFFF6B00)),
               prefixText: prefixText,
@@ -323,11 +380,11 @@ class _EditProfilePageState extends State<EditProfilePage> {
               ),
               border: OutlineInputBorder(
                 borderRadius: BorderRadius.circular(12),
-                borderSide: BorderSide(color: Colors.grey[300]!),
+                borderSide: BorderSide(color: borderColor),
               ),
               enabledBorder: OutlineInputBorder(
                 borderRadius: BorderRadius.circular(12),
-                borderSide: BorderSide(color: Colors.grey[300]!),
+                borderSide: BorderSide(color: borderColor),
               ),
               focusedBorder: OutlineInputBorder(
                 borderRadius: BorderRadius.circular(12),
@@ -342,7 +399,7 @@ class _EditProfilePageState extends State<EditProfilePage> {
                 borderSide: BorderSide(color: Colors.red, width: 2),
               ),
               filled: true,
-              fillColor: Colors.grey[50],
+              fillColor: _fieldFill(context),
               contentPadding: EdgeInsets.symmetric(
                 horizontal: 16,
                 vertical: 16,
@@ -417,18 +474,28 @@ class _EditProfilePageState extends State<EditProfilePage> {
                           padding: EdgeInsets.all(16),
                           margin: EdgeInsets.only(bottom: 16),
                           decoration: BoxDecoration(
-                            color: Colors.red[50],
+                            color: isLightShell
+                                ? Colors.red[50]!
+                                : Colors.red.withOpacity(0.14),
                             borderRadius: BorderRadius.circular(12),
-                            border: Border.all(color: Colors.red[200]!),
+                            border: Border.all(
+                              color: isLightShell
+                                  ? Colors.red[200]!
+                                  : Colors.red.withOpacity(0.45),
+                            ),
                           ),
                           child: Row(
                             children: [
-                              Icon(Icons.error_outline, color: Colors.red),
+                              Icon(Icons.error_outline, color: Colors.red.shade300),
                               SizedBox(width: 8),
                               Expanded(
                                 child: Text(
                                   _errorMessage!,
-                                  style: TextStyle(color: Colors.red[700]),
+                                  style: TextStyle(
+                                    color: isLightShell
+                                        ? Colors.red[700]!
+                                        : Colors.red.shade200,
+                                  ),
                                 ),
                               ),
                             ],
@@ -442,21 +509,33 @@ class _EditProfilePageState extends State<EditProfilePage> {
                           padding: EdgeInsets.all(16),
                           margin: EdgeInsets.only(bottom: 16),
                           decoration: BoxDecoration(
-                            color: Colors.green[50],
+                            color: isLightShell
+                                ? Colors.green[50]!
+                                : Colors.green.withOpacity(0.14),
                             borderRadius: BorderRadius.circular(12),
-                            border: Border.all(color: Colors.green[200]!),
+                            border: Border.all(
+                              color: isLightShell
+                                  ? Colors.green[200]!
+                                  : Colors.green.withOpacity(0.45),
+                            ),
                           ),
                           child: Row(
                             children: [
                               Icon(
                                 Icons.check_circle_outline,
-                                color: Colors.green,
+                                color: isLightShell
+                                    ? Colors.green
+                                    : Colors.green.shade300,
                               ),
                               SizedBox(width: 8),
                               Expanded(
                                 child: Text(
                                   _successMessage!,
-                                  style: TextStyle(color: Colors.green[700]),
+                                  style: TextStyle(
+                                    color: isLightShell
+                                        ? Colors.green[700]!
+                                        : Colors.green.shade200,
+                                  ),
                                 ),
                               ),
                             ],
@@ -467,20 +546,7 @@ class _EditProfilePageState extends State<EditProfilePage> {
                       Container(
                         width: double.infinity,
                         padding: EdgeInsets.all(20),
-                        decoration: BoxDecoration(
-                          color: Colors.white,
-                          borderRadius: BorderRadius.circular(16),
-                          border: isLightShell
-                              ? Border.all(color: Colors.black, width: 1)
-                              : null,
-                          boxShadow: [
-                            BoxShadow(
-                              color: Colors.black.withOpacity(0.05),
-                              blurRadius: 10,
-                              offset: Offset(0, 5),
-                            ),
-                          ],
-                        ),
+                        decoration: _cardDecoration(context),
                         child: Column(
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
@@ -489,13 +555,14 @@ class _EditProfilePageState extends State<EditProfilePage> {
                               style: TextStyle(
                                 fontSize: 18,
                                 fontWeight: FontWeight.bold,
-                                color: Colors.grey[800],
+                                color: _primaryInk(context),
                               ),
                             ),
                             SizedBox(height: 20),
 
                             // First Name
                             _buildFormField(
+                              context,
                               label: loc.firstNameLabel,
                               controller: _firstNameController,
                               icon: Icons.person_outline,
@@ -509,6 +576,7 @@ class _EditProfilePageState extends State<EditProfilePage> {
 
                             // Last Name
                             _buildFormField(
+                              context,
                               label: loc.lastNameLabel,
                               controller: _lastNameController,
                               icon: Icons.person_outline,
@@ -522,6 +590,7 @@ class _EditProfilePageState extends State<EditProfilePage> {
 
                             // Username
                             _buildFormField(
+                              context,
                               label: loc.usernameLabel,
                               controller: _usernameController,
                               icon: Icons.alternate_email,
@@ -538,6 +607,7 @@ class _EditProfilePageState extends State<EditProfilePage> {
 
                             // Email
                             _buildFormField(
+                              context,
                               label: loc.emailLabel,
                               controller: _emailController,
                               icon: Icons.email_outlined,
@@ -559,6 +629,7 @@ class _EditProfilePageState extends State<EditProfilePage> {
 
                             // Phone Number
                             _buildFormField(
+                              context,
                               label: loc.phoneNumberLabel,
                               controller: _phoneController,
                               icon: Icons.phone_outlined,
