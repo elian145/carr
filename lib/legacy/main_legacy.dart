@@ -5157,9 +5157,9 @@ class _HomePageState extends State<HomePage> {
     super.initState();
     _homeScrollController = ScrollController();
     _primePendingHomeScrollRestoreFromPersistence();
-    if ((_pendingHomeScrollRestore ?? 0) > 0) {
-      _obscureHomeBodyUntilScrollRestored = true;
-    }
+    // Do not obscure the home body while restoring scroll; in route-replacement
+    // flows this can get stuck and appear as a blank page.
+    _obscureHomeBodyUntilScrollRestored = false;
     _minPriceController = TextEditingController();
     _maxPriceController = TextEditingController();
     _minYearController = TextEditingController();
@@ -11614,16 +11614,7 @@ class _HomePageState extends State<HomePage> {
                 ],
               ),
             ),
-            if (_obscureHomeBodyUntilScrollRestored)
-              Positioned.fill(
-                child: AbsorbPointer(
-                  child: DecoratedBox(
-                    decoration: AppThemes.shellBackgroundDecoration(
-                      Theme.of(context).brightness,
-                    ),
-                  ),
-                ),
-              ),
+            // Intentionally avoid full-screen obscuring overlay while scroll restores.
           ],
         ),
       ),
