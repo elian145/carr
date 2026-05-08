@@ -828,6 +828,12 @@ class _HomePageState extends State<HomePage>
     with AutomaticKeepAliveClientMixin<HomePage> {
   final ScrollController _controller = ScrollController();
 
+  // Route replacement recreates Home; keep an in-memory snapshot for exact restore.
+  static List<Map<String, dynamic>> _cacheCars = <Map<String, dynamic>>[];
+  static bool _cacheHasNext = true;
+  static int _cachePage = 1;
+  static double _cacheOffset = 0;
+
   final List<Map<String, dynamic>> _cars = <Map<String, dynamic>>[];
   bool _loading = true;
   bool _loadingMore = false;
@@ -845,6 +851,9 @@ class _HomePageState extends State<HomePage>
     super.initState();
 
     _controller.addListener(() {
+      if (_controller.hasClients) {
+        _cacheOffset = _controller.offset;
+      }
       if (!_hasNext || _loadingMore || _loading) return;
       final pos = _controller.position;
       if (pos.pixels >= (pos.maxScrollExtent - 500)) {
@@ -852,15 +861,52 @@ class _HomePageState extends State<HomePage>
       }
     });
 
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      _fetch(refresh: true);
-    });
+    if (_cacheCars.isNotEmpty) {
+      _cars
+        ..clear()
+        ..addAll(_cacheCars.map((e) => Map<String, dynamic>.from(e)));
+      _hasNext = _cacheHasNext;
+      _page = _cachePage;
+      _loading = false;
+      _loadingMore = false;
+      _error = null;
+      WidgetsBinding.instance.addPostFrameCallback((_) => _restoreScrollOffset());
+    } else {
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        _fetch(refresh: true);
+      });
+    }
   }
 
   @override
   void dispose() {
+    _persistCacheSnapshot();
     _controller.dispose();
     super.dispose();
+  }
+
+  void _persistCacheSnapshot() {
+    _cacheCars = _cars.map((e) => Map<String, dynamic>.from(e)).toList();
+    _cacheHasNext = _hasNext;
+    _cachePage = _page;
+    if (_controller.hasClients) {
+      _cacheOffset = _controller.offset;
+    }
+  }
+
+  void _restoreScrollOffset() {
+    if (!_controller.hasClients || _cacheOffset <= 0) return;
+    final max = _controller.position.maxScrollExtent;
+    final target = _cacheOffset.clamp(0, max).toDouble();
+    _controller.jumpTo(target);
+    // If layout expands after first frame, retry once to reach exact previous offset.
+    if (target < _cacheOffset) {
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (!_controller.hasClients) return;
+        final max2 = _controller.position.maxScrollExtent;
+        _controller.jumpTo(_cacheOffset.clamp(0, max2).toDouble());
+      });
+    }
   }
 
   Future<void> _fetch({required bool refresh}) async {
@@ -904,6 +950,7 @@ class _HomePageState extends State<HomePage>
         _loading = false;
         _loadingMore = false;
       });
+      _persistCacheSnapshot();
     } catch (e) {
       if (!mounted) return;
       setState(() {
@@ -917,6 +964,7 @@ class _HomePageState extends State<HomePage>
         _loading = false;
         _loadingMore = false;
       });
+      _persistCacheSnapshot();
     }
   }
 
