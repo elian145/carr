@@ -518,67 +518,92 @@ class _DealerProfilePageState extends State<DealerProfilePage> {
                       )
                     : ListView(
                         children: [
-                      if (bannerUrl.isNotEmpty)
-                        SizedBox(
-                          height: 180,
-                          child: Image.network(
-                            bannerUrl,
-                            fit: BoxFit.cover,
-                            errorBuilder: (context, error, stackTrace) =>
-                                Container(color: Colors.black12),
-                          ),
-                        )
-                      else
-                        Container(height: 140, color: Colors.black12),
-                      Padding(
-                        padding: const EdgeInsets.all(16),
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
+                      SizedBox(
+                        height: bannerUrl.isNotEmpty ? 188 : 148,
+                        child: Stack(
+                          fit: StackFit.expand,
+                          clipBehavior: Clip.none,
                           children: [
-                            Row(
-                              children: [
-                                CircleAvatar(
-                                  radius: 34,
-                                  backgroundImage: logoUrl.isNotEmpty
-                                      ? NetworkImage(logoUrl)
-                                      : null,
-                                  child: logoUrl.isEmpty
-                                      ? Text(
-                                          displayName.isNotEmpty
-                                              ? displayName[0].toUpperCase()
-                                              : 'D',
-                                          style: const TextStyle(
-                                            fontSize: 24,
-                                            fontWeight: FontWeight.bold,
-                                          ),
-                                        )
-                                      : null,
-                                ),
-                                const SizedBox(width: 12),
-                                Expanded(
-                                  child: Column(
-                                    crossAxisAlignment: CrossAxisAlignment.start,
-                                    children: [
-                                      Text(
-                                        displayName,
-                                        style: Theme.of(context)
-                                            .textTheme
-                                            .titleLarge
-                                            ?.copyWith(fontWeight: FontWeight.w800),
-                                      ),
-                                      const SizedBox(height: 4),
-                                      if (description.isNotEmpty)
-                                        Text(
-                                          description,
-                                          style: Theme.of(context).textTheme.bodySmall,
-                                          maxLines: 3,
-                                          overflow: TextOverflow.ellipsis,
-                                        ),
+                            Positioned.fill(
+                              child: bannerUrl.isNotEmpty
+                                  ? Image.network(
+                                      bannerUrl,
+                                      fit: BoxFit.cover,
+                                      width: double.infinity,
+                                      height: double.infinity,
+                                      errorBuilder: (context, error, stackTrace) =>
+                                          const ColoredBox(color: Colors.black12),
+                                    )
+                                  : const ColoredBox(color: Colors.black12),
+                            ),
+                            if (bannerUrl.isNotEmpty)
+                              DecoratedBox(
+                                decoration: BoxDecoration(
+                                  gradient: LinearGradient(
+                                    begin: Alignment.topCenter,
+                                    end: Alignment.bottomCenter,
+                                    colors: [
+                                      Colors.transparent,
+                                      Colors.black.withValues(alpha: 0.5),
                                     ],
                                   ),
                                 ),
-                              ],
+                              ),
+                            Positioned(
+                              left: 16,
+                              bottom: 12,
+                              child: Material(
+                                elevation: 6,
+                                shadowColor: Colors.black45,
+                                shape: const CircleBorder(),
+                                clipBehavior: Clip.antiAlias,
+                                child: CircleAvatar(
+                                  radius: 36,
+                                  backgroundColor: Theme.of(context).colorScheme.surface,
+                                  child: CircleAvatar(
+                                    radius: 32,
+                                    backgroundImage: logoUrl.isNotEmpty
+                                        ? NetworkImage(logoUrl)
+                                        : null,
+                                    child: logoUrl.isEmpty
+                                        ? Text(
+                                            displayName.isNotEmpty
+                                                ? displayName[0].toUpperCase()
+                                                : 'D',
+                                            style: const TextStyle(
+                                              fontSize: 22,
+                                              fontWeight: FontWeight.bold,
+                                            ),
+                                          )
+                                        : null,
+                                  ),
+                                ),
+                              ),
                             ),
+                          ],
+                        ),
+                      ),
+                      Padding(
+                        padding: const EdgeInsets.fromLTRB(16, 12, 16, 16),
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(
+                              displayName,
+                              style: Theme.of(context)
+                                  .textTheme
+                                  .titleLarge
+                                  ?.copyWith(fontWeight: FontWeight.w800),
+                            ),
+                            if (description.isNotEmpty) ...[
+                              const SizedBox(height: 8),
+                              Text(
+                                description,
+                                style: Theme.of(context).textTheme.bodySmall,
+                                maxLines: 3,
+                                overflow: TextOverflow.ellipsis,
+                              ),
+                            ],
                             if (isDealerOwner) ...[
                               const SizedBox(height: 10),
                               OutlinedButton.icon(
