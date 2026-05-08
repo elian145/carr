@@ -2420,14 +2420,26 @@ class _ChatConversationPageState extends State<ChatConversationPage>
     showDialog(
       context: context,
       builder: (ctx) => AlertDialog(
-        title: const Text('Block User'),
-        content: const Text(
-          'Blocked users cannot send you messages and their conversations will be hidden. You can unblock them later.',
+        title: Text(
+          _chatText(
+            context,
+            'Block User',
+            ar: 'حظر المستخدم',
+            ku: 'بلۆککردنی بەکارهێنەر',
+          ),
+        ),
+        content: Text(
+          _chatText(
+            context,
+            'Blocked users cannot send you messages and their conversations will be hidden. You can unblock them later.',
+            ar: 'المستخدمون المحظورون لا يمكنهم إرسال رسائل إليك وسيتم إخفاء محادثاتهم. يمكنك إلغاء الحظر لاحقاً.',
+            ku: 'بەکارهێنەرانێکی بلۆککراو ناتوانن پەیام بۆت بنێرن و گفتوگۆکانیان دەشاردرێنەوە. دەتوانیت دواتر بلۆکەکە هەڵبوەشێنیت.',
+          ),
         ),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(ctx),
-            child: const Text('Cancel'),
+            child: Text(AppLocalizations.of(context)?.cancelAction ?? 'Cancel'),
           ),
           TextButton(
             onPressed: () async {
@@ -2437,7 +2449,18 @@ class _ChatConversationPageState extends State<ChatConversationPage>
                 if (!mounted) return;
                 ScaffoldMessenger.of(
                   context,
-                ).showSnackBar(const SnackBar(content: Text('User blocked')));
+                ).showSnackBar(
+                  SnackBar(
+                    content: Text(
+                      _chatText(
+                        context,
+                        'User blocked',
+                        ar: 'تم حظر المستخدم',
+                        ku: 'بەکارهێنەر بلۆک کرا',
+                      ),
+                    ),
+                  ),
+                );
                 Navigator.pop(context);
               } catch (e) {
                 if (!mounted) return;
@@ -2456,7 +2479,10 @@ class _ChatConversationPageState extends State<ChatConversationPage>
                 );
               }
             },
-            child: const Text('Block', style: TextStyle(color: Colors.red)),
+            child: Text(
+              _chatText(context, 'Block', ar: 'حظر', ku: 'بلۆک'),
+              style: const TextStyle(color: Colors.red),
+            ),
           ),
         ],
       ),
@@ -2471,7 +2497,14 @@ class _ChatConversationPageState extends State<ChatConversationPage>
     showDialog(
       context: context,
       builder: (ctx) => AlertDialog(
-        title: const Text('Report User'),
+        title: Text(
+          _chatText(
+            context,
+            'Report User',
+            ar: 'الإبلاغ عن المستخدم',
+            ku: 'ڕاپۆرتکردنی بەکارهێنەر',
+          ),
+        ),
         content: SingleChildScrollView(
           child: Column(
             mainAxisSize: MainAxisSize.min,
@@ -2509,8 +2542,15 @@ class _ChatConversationPageState extends State<ChatConversationPage>
               final reason = reasonController.text.trim();
               if (reason.isEmpty) {
                 ScaffoldMessenger.of(context).showSnackBar(
-                  const SnackBar(
-                    content: Text('Please provide a reason'),
+                  SnackBar(
+                    content: Text(
+                      _chatText(
+                        context,
+                        'Please provide a reason',
+                        ar: 'يرجى إدخال السبب',
+                        ku: 'تکایە هۆکارێک بنووسە',
+                      ),
+                    ),
                     backgroundColor: Colors.orange,
                   ),
                 );
@@ -2525,7 +2565,16 @@ class _ChatConversationPageState extends State<ChatConversationPage>
                 );
                 if (!mounted) return;
                 ScaffoldMessenger.of(context).showSnackBar(
-                  const SnackBar(content: Text('Report submitted. Thank you.')),
+                  SnackBar(
+                    content: Text(
+                      _chatText(
+                        context,
+                        'Report submitted. Thank you.',
+                        ar: 'تم إرسال البلاغ. شكراً لك.',
+                        ku: 'ڕاپۆرتەکە نێردرا. سوپاس.',
+                      ),
+                    ),
+                  ),
                 );
               } catch (e) {
                 if (!mounted) return;
@@ -2544,9 +2593,14 @@ class _ChatConversationPageState extends State<ChatConversationPage>
                 );
               }
             },
-            child: const Text(
-              'Submit Report',
-              style: TextStyle(color: Colors.red),
+            child: Text(
+              _chatText(
+                context,
+                'Submit Report',
+                ar: 'إرسال البلاغ',
+                ku: 'ناردنی ڕاپۆرت',
+              ),
+              style: const TextStyle(color: Colors.red),
             ),
           ),
         ],
@@ -2976,13 +3030,27 @@ class _ChatConversationPageState extends State<ChatConversationPage>
                       if (value == 'report') _showReportDialog();
                     },
                     itemBuilder: (context) => [
-                      const PopupMenuItem(
+                      PopupMenuItem(
                         value: 'block',
-                        child: Text('Block User'),
+                        child: Text(
+                          _chatText(
+                            context,
+                            'Block User',
+                            ar: 'حظر المستخدم',
+                            ku: 'بلۆککردنی بەکارهێنەر',
+                          ),
+                        ),
                       ),
-                      const PopupMenuItem(
+                      PopupMenuItem(
                         value: 'report',
-                        child: Text('Report User'),
+                        child: Text(
+                          _chatText(
+                            context,
+                            'Report User',
+                            ar: 'الإبلاغ عن المستخدم',
+                            ku: 'ڕاپۆرتکردنی بەکارهێنەر',
+                          ),
+                        ),
                       ),
                     ],
                   ),

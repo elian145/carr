@@ -535,8 +535,13 @@ class _RegisterPageState extends State<RegisterPage> {
   Future<void> _register() async {
     if (!_formKey.currentState!.validate()) {
       if (!mounted) return;
+      final loc = AppLocalizations.of(context);
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Please fix the highlighted fields')),
+        SnackBar(
+          content: Text(
+            loc?.pleaseFixHighlightedFields ?? 'Please fix the highlighted fields',
+          ),
+        ),
       );
       return;
     }

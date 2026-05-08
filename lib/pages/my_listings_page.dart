@@ -39,6 +39,13 @@ class _MyListingsPageState extends State<MyListingsPage> {
 
   final List<Map<String, dynamic>> _cars = <Map<String, dynamic>>[];
 
+  String _text(String en, {String? ar, String? ku}) {
+    final code = Localizations.localeOf(context).languageCode;
+    if (code == 'ar') return ar ?? en;
+    if (code == 'ku' || code == 'ckb') return ku ?? en;
+    return en;
+  }
+
   @override
   void initState() {
     super.initState();
@@ -352,7 +359,11 @@ class _MyListingsPageState extends State<MyListingsPage> {
                 visualDensity: VisualDensity.compact,
                 onPressed: _discardDraft,
                 icon: const Icon(Icons.delete_outline, color: Colors.white),
-                tooltip: 'Discard draft',
+                tooltip: _text(
+                  'Discard draft',
+                  ar: 'حذف المسودة',
+                  ku: 'سڕینەوەی ڕەشنووس',
+                ),
               ),
             ),
           ),
@@ -900,7 +911,11 @@ class _MyListingsPageState extends State<MyListingsPage> {
                                             color: Colors.black54,
                                             shape: const CircleBorder(),
                                             child: PopupMenuButton<String>(
-                                              tooltip: 'More',
+                                              tooltip: _text(
+                                                'More',
+                                                ar: 'المزيد',
+                                                ku: 'زیاتر',
+                                              ),
                                               onSelected: (v) {
                                                 if (v == 'edit') _editListing(car);
                                                 if (v == 'delete') _deleteListing(id);
