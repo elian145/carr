@@ -5324,6 +5324,16 @@ class _HomePageState extends State<HomePage> {
       if ((pos.pixels - desired).abs() > 0.5) {
         _homeScrollController.jumpTo(desired);
       }
+      // Do not clear pending target until we actually reach it (or exhaust data).
+      final reachedTarget = (desired - target).abs() <= slack;
+      final canStillGrow = _hasNext;
+      if (!reachedTarget && canStillGrow) {
+        WidgetsBinding.instance.addPostFrameCallback((_) {
+          if (!mounted || gen != _homeScrollRestoreScheduleGen) return;
+          _scheduleHomeScrollRestoreAfterListReady();
+        });
+        return;
+      }
       _pendingHomeScrollRestore = null;
     } finally {
       if (mounted && gen == _homeScrollRestoreScheduleGen) {
