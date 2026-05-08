@@ -130,6 +130,12 @@ abstract class AppLocalizations {
   /// **'Saved'**
   String get navSaved;
 
+  /// No description provided for @navDealers.
+  ///
+  /// In en, this message translates to:
+  /// **'Dealerships'**
+  String get navDealers;
+
   /// No description provided for @navLogin.
   ///
   /// In en, this message translates to:

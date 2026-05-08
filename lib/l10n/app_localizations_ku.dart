@@ -24,6 +24,9 @@ class AppLocalizationsKu extends AppLocalizations {
   String get navSaved => 'دڵخواز';
 
   @override
+  String get navDealers => 'نمایشگەکان';
+
+  @override
   String get navLogin => 'چوونەژوورەوە';
 
   @override

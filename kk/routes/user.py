@@ -7,6 +7,7 @@ import secrets
 
 from flask import Blueprint, jsonify, request, current_app
 from flask_jwt_extended import jwt_required
+from sqlalchemy import or_
 from sqlalchemy.orm import selectinload
 
 from ..auth import get_current_user, log_user_action, validate_user_input
@@ -313,6 +314,76 @@ def upload_dealer_cover():
     except Exception as e:
         current_app.logger.exception("upload_dealer_cover failed: %s", e)
         return jsonify({"message": "Failed to upload dealer cover"}), 500
+
+
+def _public_dealer_search_dict(user: User) -> dict:
+    """Minimal fields for directory search (no personal phone / email)."""
+    return {
+        "id": user.public_id,
+        "dealership_name": (user.dealership_name or "").strip(),
+        "dealership_location": (user.dealership_location or "").strip(),
+        "profile_picture": user.profile_picture,
+        "dealership_cover_picture": user.dealership_cover_picture,
+    }
+
+
+@bp.route("/api/dealers", methods=["GET"])
+def list_dealers():
+    """Public directory of approved dealerships; optional name/location search."""
+    try:
+        q_raw = (request.args.get("q") or "").strip()
+        try:
+            page = max(1, int(request.args.get("page") or 1))
+        except (TypeError, ValueError):
+            page = 1
+        try:
+            per_page = int(request.args.get("per_page") or 20)
+        except (TypeError, ValueError):
+            per_page = 20
+        per_page = max(1, min(per_page, 50))
+
+        query = User.query.filter(
+            User.account_type == "dealer",
+            User.dealer_status == "approved",
+            User.is_active.is_(True),
+            User.dealership_name.isnot(None),
+            User.dealership_name != "",
+        )
+
+        if q_raw:
+            pattern = f"%{q_raw}%"
+            query = query.filter(
+                or_(
+                    User.dealership_name.ilike(pattern),
+                    User.dealership_location.ilike(pattern),
+                )
+            )
+
+        total = query.count()
+        rows = (
+            query.order_by(User.dealership_name.asc(), User.public_id.asc())
+            .offset((page - 1) * per_page)
+            .limit(per_page)
+            .all()
+        )
+        dealers = [_public_dealer_search_dict(u) for u in rows]
+        return (
+            jsonify(
+                {
+                    "dealers": dealers,
+                    "pagination": {
+                        "page": page,
+                        "per_page": per_page,
+                        "total": total,
+                        "has_next": page * per_page < total,
+                    },
+                }
+            ),
+            200,
+        )
+    except Exception as e:
+        current_app.logger.exception("list_dealers failed: %s", e)
+        return jsonify({"message": "Failed to list dealerships"}), 500
 
 
 @bp.route("/api/dealers/<dealer_public_id>", methods=["GET"])

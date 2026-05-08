@@ -24,6 +24,9 @@ class AppLocalizationsAr extends AppLocalizations {
   String get navSaved => 'المحفوظات';
 
   @override
+  String get navDealers => 'المعارض';
+
+  @override
   String get navLogin => 'تسجيل الدخول';
 
   @override

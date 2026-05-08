@@ -54,6 +54,7 @@ import '../pages/reset_password_page.dart';
 import '../pages/verify_email_page.dart';
 import '../pages/admin_dealers_page.dart';
 import '../pages/dealer_profile_page.dart';
+import '../pages/dealers_directory_page.dart';
 import '../pages/edit_dealer_page.dart';
 import '../features/comparison/state/car_comparison_store.dart';
 import '../data/car_catalog.dart';
@@ -854,6 +855,9 @@ void _switchMainTabNoAnimation(BuildContext context, String routeName) {
     case '/sell':
       page = AuthGuard(child: const SellEntryRouterPage());
       break;
+    case '/dealers':
+      page = const DealersDirectoryPage();
+      break;
     case '/profile':
       page = AuthGuard(child: ProfilePage());
       break;
@@ -872,6 +876,11 @@ void _switchMainTabNoAnimation(BuildContext context, String routeName) {
       reverseTransitionDuration: Duration.zero,
     ),
   );
+}
+
+/// Same as [_switchMainTabNoAnimation] but callable from other libraries (e.g. shell pages).
+void navigateMainShellTab(BuildContext context, String routeName) {
+  _switchMainTabNoAnimation(context, routeName);
 }
 
 Widget buildFloatingBottomNav(
@@ -948,8 +957,8 @@ Widget buildFloatingBottomNav(
                     label: AppLocalizations.of(context)!.navSaved,
                   ),
                   BottomNavigationBarItem(
-                    icon: Icon(Icons.sell),
-                    label: AppLocalizations.of(context)!.sellTitle,
+                    icon: Icon(Icons.storefront_outlined),
+                    label: AppLocalizations.of(context)!.navDealers,
                   ),
                   BottomNavigationBarItem(
                     icon: Icon(Icons.person),
@@ -3685,6 +3694,7 @@ class MyApp extends StatelessWidget {
                 },
                 '/settings': (context) => SettingsPage(),
                 '/favorites': (context) => AuthGuard(child: FavoritesPage()),
+                '/dealers': (context) => const DealersDirectoryPage(),
                 '/chat': (context) => AuthGuard(child: ChatListPage()),
                 '/login': (context) => LoginPage(),
                 '/signup': (context) => SignupPage(),
@@ -7429,7 +7439,7 @@ class _HomePageState extends State<HomePage> {
               _switchMainTabNoAnimation(context, '/favorites');
               break;
             case 2:
-              _switchMainTabNoAnimation(context, '/sell');
+              _switchMainTabNoAnimation(context, '/dealers');
               break;
             case 3:
               _switchMainTabNoAnimation(context, '/profile');
@@ -26667,7 +26677,7 @@ Widget build(BuildContext context) {
             _switchMainTabNoAnimation(context, '/favorites');
             break;
           case 2:
-            _switchMainTabNoAnimation(context, '/sell');
+            _switchMainTabNoAnimation(context, '/dealers');
             break;
           case 3:
             if (ApiService.accessToken == null ||
@@ -27010,7 +27020,7 @@ class _FavoritesPageState extends State<FavoritesPage> {
               // Already on favorites
               break;
             case 2:
-              _switchMainTabNoAnimation(context, '/sell');
+              _switchMainTabNoAnimation(context, '/dealers');
               break;
             case 3:
               _switchMainTabNoAnimation(context, '/profile');
@@ -27159,7 +27169,7 @@ class _LoginPageState extends State<LoginPage> {
               _switchMainTabNoAnimation(context, '/favorites');
               break;
             case 2:
-              _switchMainTabNoAnimation(context, '/sell');
+              _switchMainTabNoAnimation(context, '/dealers');
               break;
             case 3:
               // Already on login
@@ -27881,7 +27891,7 @@ class _SignupPageState extends State<SignupPage> {
               _switchMainTabNoAnimation(context, '/favorites');
               break;
             case 2:
-              _switchMainTabNoAnimation(context, '/sell');
+              _switchMainTabNoAnimation(context, '/dealers');
               break;
             case 3:
               if (ApiService.accessToken == null ||
@@ -28911,7 +28921,7 @@ class _ProfilePageState extends State<ProfilePage> {
               _switchMainTabNoAnimation(context, '/favorites');
               break;
             case 2:
-              _switchMainTabNoAnimation(context, '/sell');
+              _switchMainTabNoAnimation(context, '/dealers');
               break;
             case 3:
               if (ApiService.accessToken == null ||
@@ -28958,7 +28968,7 @@ class _PaymentHistoryPageState extends State<PaymentHistoryPage> {
               _switchMainTabNoAnimation(context, '/favorites');
               break;
             case 2:
-              _switchMainTabNoAnimation(context, '/sell');
+              _switchMainTabNoAnimation(context, '/dealers');
               break;
             case 3:
               Navigator.pushReplacementNamed(context, '/login');
@@ -29933,7 +29943,7 @@ class _MyListingsPageState extends State<MyListingsPage> {
               _switchMainTabNoAnimation(context, '/favorites');
               break;
             case 2:
-              _switchMainTabNoAnimation(context, '/sell');
+              _switchMainTabNoAnimation(context, '/dealers');
               break;
             case 3:
               if (ApiService.accessToken == null ||

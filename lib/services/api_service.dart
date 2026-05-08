@@ -646,6 +646,25 @@ class ApiService {
     return _handleResponse(response);
   }
 
+  /// Public directory search for approved dealerships (`GET /dealers`).
+  static Future<Map<String, dynamic>> searchDealers({
+    String? q,
+    int page = 1,
+    int perPage = 20,
+  }) async {
+    final params = <String, String>{
+      'page': page.toString(),
+      'per_page': perPage.toString(),
+    };
+    final query = (q ?? '').trim();
+    if (query.isNotEmpty) params['q'] = query;
+    final uri = Uri.parse('$baseUrl/dealers').replace(queryParameters: params);
+    final response = await http
+        .get(uri, headers: _getHeaders(includeAuth: false))
+        .timeout(_defaultTimeout);
+    return _handleResponse(response);
+  }
+
   static Future<Map<String, dynamic>> updateDealerProfile(
     Map<String, dynamic> dealerData,
   ) async {
