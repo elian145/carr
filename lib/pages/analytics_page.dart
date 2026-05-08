@@ -6,6 +6,7 @@ import 'dart:io';
 import '../services/config.dart';
 import '../models/analytics_model.dart';
 import '../services/analytics_service.dart';
+import '../shared/errors/user_error_text.dart';
 // Intentionally avoid importing shared card or helpers; this page uses its own duplicated implementations
 import '../globals.dart';
 import '../theme_provider.dart';
@@ -278,10 +279,14 @@ class _AnalyticsPageState extends State<AnalyticsPage> {
       });
     } catch (e) {
       if (!mounted) return;
-      if (!mounted) return;
-      final errMsg = e.toString();
       setState(() {
-        _error = errMsg;
+        _error = userErrorText(
+          context,
+          e,
+          fallback:
+              AppLocalizations.of(context)?.failedToLoadListings ??
+              'Failed to load your listings',
+        );
         _isLoading = false;
       });
     }

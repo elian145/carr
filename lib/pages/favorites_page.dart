@@ -6,6 +6,7 @@ import '../legacy/main_legacy.dart'
     show buildGlobalCarCard, mapListingToGlobalCarCardData;
 import '../services/api_service.dart';
 import '../services/auth_service.dart';
+import '../shared/errors/user_error_text.dart';
 import '../shared/prefs/listing_layout_prefs.dart';
 import '../theme_provider.dart';
 
@@ -61,7 +62,13 @@ class _FavoritesPageState extends State<FavoritesPage> {
     } catch (e) {
       if (!mounted) return;
       setState(() {
-        _error = e.toString();
+        _error = userErrorText(
+          context,
+          e,
+          fallback:
+              AppLocalizations.of(context)?.failedToLoadListings ??
+              'Failed to load listings',
+        );
         _loading = false;
       });
     }

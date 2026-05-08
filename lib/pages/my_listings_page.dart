@@ -10,6 +10,7 @@ import '../services/api_service.dart';
 import '../services/auth_service.dart';
 import '../services/analytics_service.dart';
 import '../models/analytics_model.dart';
+import '../shared/errors/user_error_text.dart';
 import '../shared/text/pretty_title_case.dart';
 import '../shared/prefs/listing_layout_prefs.dart';
 import '../legacy/main_legacy.dart'
@@ -109,7 +110,13 @@ class _MyListingsPageState extends State<MyListingsPage> {
     } catch (e) {
       if (!mounted) return;
       setState(() {
-        _error = e.toString();
+        _error = userErrorText(
+          context,
+          e,
+          fallback:
+              AppLocalizations.of(context)?.failedToLoadListings ??
+              'Failed to load listings',
+        );
         _loading = false;
         _loadingMore = false;
       });
@@ -416,7 +423,15 @@ class _MyListingsPageState extends State<MyListingsPage> {
     } catch (e) {
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text(e.toString())),
+        SnackBar(
+          content: Text(
+            userErrorText(
+              context,
+              e,
+              fallback: AppLocalizations.of(context)?.errorTitle ?? 'Error',
+            ),
+          ),
+        ),
       );
     }
   }

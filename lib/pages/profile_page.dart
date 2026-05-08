@@ -4,6 +4,7 @@ import 'package:provider/provider.dart';
 import '../l10n/app_localizations.dart';
 import '../services/api_service.dart';
 import '../services/auth_service.dart';
+import '../shared/errors/user_error_text.dart';
 import '../shared/media/media_url.dart';
 import '../theme_provider.dart';
 
@@ -71,7 +72,13 @@ class _ProfilePageState extends State<ProfilePage> {
       if (!context.mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
-          content: Text(e.toString().replaceFirst('Exception: ', '')),
+          content: Text(
+            userErrorText(
+              context,
+              e,
+              fallback: AppLocalizations.of(context)?.errorTitle ?? 'Error',
+            ),
+          ),
           backgroundColor: Colors.red,
         ),
       );
@@ -137,7 +144,13 @@ class _ProfilePageState extends State<ProfilePage> {
                         ScaffoldMessenger.of(ctx2).showSnackBar(
                           SnackBar(
                             content: Text(
-                              e.toString().replaceFirst('Exception: ', ''),
+                              userErrorText(
+                                ctx2,
+                                e,
+                                fallback:
+                                    AppLocalizations.of(ctx2)?.errorTitle ??
+                                    'Error',
+                              ),
                             ),
                             backgroundColor: Colors.red,
                           ),
@@ -178,7 +191,13 @@ class _ProfilePageState extends State<ProfilePage> {
                       ScaffoldMessenger.of(ctx2).showSnackBar(
                         SnackBar(
                           content: Text(
-                            e.toString().replaceFirst('Exception: ', ''),
+                            userErrorText(
+                              ctx2,
+                              e,
+                              fallback:
+                                  AppLocalizations.of(ctx2)?.errorTitle ??
+                                  'Error',
+                            ),
                           ),
                           backgroundColor: Colors.red,
                         ),
@@ -257,7 +276,13 @@ class _ProfilePageState extends State<ProfilePage> {
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
-          content: Text(e.toString().replaceFirst('Exception: ', '')),
+          content: Text(
+            userErrorText(
+              context,
+              e,
+              fallback: AppLocalizations.of(context)?.errorTitle ?? 'Error',
+            ),
+          ),
           backgroundColor: Theme.of(context).colorScheme.error,
         ),
       );
@@ -277,7 +302,13 @@ class _ProfilePageState extends State<ProfilePage> {
       // This is best-effort and safe even if already initialized.
       await auth.initialize();
     } catch (e) {
-      _error = e.toString();
+      _error = userErrorText(
+        context,
+        e,
+        fallback:
+            AppLocalizations.of(context)?.failedToLoadUserData ??
+            'Failed to load user data',
+      );
     } finally {
       if (mounted) {
         setState(() => _loading = false);

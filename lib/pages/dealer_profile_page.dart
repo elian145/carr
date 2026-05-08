@@ -13,6 +13,7 @@ import '../services/api_service.dart';
 import '../shared/maps/dealer_map_coords.dart';
 import '../shared/maps/open_google_maps.dart';
 import '../shared/media/media_url.dart';
+import '../shared/errors/user_error_text.dart';
 import '../theme_provider.dart';
 import '../widgets/dealer_location_map_preview.dart';
 import 'edit_dealer_page.dart';
@@ -154,7 +155,13 @@ class _DealerProfilePageState extends State<DealerProfilePage> {
       });
     } catch (e) {
       setState(() {
-        _error = e.toString();
+        _error = userErrorText(
+          context,
+          e,
+          fallback:
+              AppLocalizations.of(context)?.failedToLoadListings ??
+              'Failed to load listings',
+        );
       });
     } finally {
       if (mounted) setState(() => _loading = false);
@@ -699,14 +706,15 @@ class _DealerProfilePageState extends State<DealerProfilePage> {
                           GridView.builder(
                             shrinkWrap: true,
                             physics: const NeverScrollableScrollPhysics(),
-                            padding: const EdgeInsets.fromLTRB(12, 12, 12, 16),
+                            // Match home_page.dart listing grid padding and gaps.
+                            padding: const EdgeInsets.all(12),
                             gridDelegate:
                                 const SliverGridDelegateWithFixedCrossAxisCount(
                               crossAxisCount: 2,
                               // Match global card layout used on home/favorites.
                               childAspectRatio: 0.62,
-                              crossAxisSpacing: 8,
-                              mainAxisSpacing: 8,
+                              crossAxisSpacing: 12,
+                              mainAxisSpacing: 12,
                             ),
                             itemCount: _listings.length,
                             itemBuilder: (context, index) {

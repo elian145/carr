@@ -5,6 +5,7 @@ import 'package:shared_preferences/shared_preferences.dart';
 import '../l10n/app_localizations.dart';
 import '../services/auth_service.dart';
 import '../services/config.dart';
+import '../shared/errors/user_error_text.dart';
 import '../state/locale_controller.dart';
 import '../theme_provider.dart';
 
@@ -127,7 +128,13 @@ class _SettingsPageState extends State<SettingsPage> {
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
-          content: Text(e.toString().replaceFirst('Exception: ', '')),
+          content: Text(
+            userErrorText(
+              context,
+              e,
+              fallback: AppLocalizations.of(context)?.errorTitle ?? 'Error',
+            ),
+          ),
           backgroundColor: Theme.of(context).colorScheme.error,
         ),
       );

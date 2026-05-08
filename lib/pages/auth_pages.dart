@@ -6,6 +6,7 @@ import 'dart:developer' as developer;
 import '../services/auth_service.dart';
 import '../l10n/app_localizations.dart';
 import '../services/api_service.dart';
+import '../shared/errors/user_error_text.dart';
 import '../widgets/theme_toggle_widget.dart';
 
 // Lightweight i18n helpers for auth pages
@@ -662,7 +663,11 @@ class _RegisterPageState extends State<RegisterPage> {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
           content: Text(
-            AppLocalizations.of(context)!.otpFailedWithMsg(e.toString()),
+            userErrorText(
+              context,
+              e,
+              fallback: AppLocalizations.of(context)!.otpFailed,
+            ),
           ),
         ),
       );

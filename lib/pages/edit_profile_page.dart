@@ -5,6 +5,7 @@ import 'dart:io';
 import '../l10n/app_localizations.dart';
 import '../services/auth_service.dart';
 import '../services/config.dart';
+import '../shared/errors/user_error_text.dart';
 import '../theme_provider.dart';
 import 'package:provider/provider.dart';
 
@@ -78,7 +79,11 @@ class _EditProfilePageState extends State<EditProfilePage> {
     } catch (e) {
       if (mounted) {
         setState(() {
-          _errorMessage = '${AppLocalizations.of(context)!.failedToLoadUserData}: ${e.toString()}';
+          _errorMessage = userErrorText(
+            context,
+            e,
+            fallback: AppLocalizations.of(context)!.failedToLoadUserData,
+          );
         });
       }
     } finally {
@@ -109,7 +114,11 @@ class _EditProfilePageState extends State<EditProfilePage> {
     } catch (e) {
       if (mounted) {
         setState(() {
-          _errorMessage = '${AppLocalizations.of(context)!.failedToPickImage}: ${e.toString()}';
+          _errorMessage = userErrorText(
+            context,
+            e,
+            fallback: AppLocalizations.of(context)!.failedToPickImage,
+          );
         });
       }
     }
@@ -178,7 +187,11 @@ class _EditProfilePageState extends State<EditProfilePage> {
     } catch (e) {
       if (mounted) {
         setState(() {
-          _errorMessage = '${AppLocalizations.of(context)!.failedToUpdateProfile}: ${e.toString()}';
+          _errorMessage = userErrorText(
+            context,
+            e,
+            fallback: AppLocalizations.of(context)!.failedToUpdateProfile,
+          );
         });
       }
     } finally {

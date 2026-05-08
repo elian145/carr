@@ -11,6 +11,7 @@ import '../services/analytics_service.dart';
 import '../services/api_service.dart';
 import '../services/config.dart';
 import '../shared/media/media_url.dart';
+import '../shared/errors/user_error_text.dart';
 import '../shared/text/pretty_title_case.dart';
 import 'listing_image_gallery_page.dart';
 
@@ -184,7 +185,13 @@ class _CarDetailPageState extends State<CarDetailPage> {
     } catch (e) {
       if (!mounted) return;
       setState(() {
-        _error = e.toString();
+        _error = userErrorText(
+          context,
+          e,
+          fallback:
+              AppLocalizations.of(context)?.failedToLoadListings ??
+              'Failed to load listings',
+        );
         _loading = false;
       });
     }
@@ -228,9 +235,17 @@ class _CarDetailPageState extends State<CarDetailPage> {
       }
     } catch (e) {
       if (!mounted) return;
-      ScaffoldMessenger.of(
-        context,
-      ).showSnackBar(SnackBar(content: Text(e.toString())));
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(
+            userErrorText(
+              context,
+              e,
+              fallback: AppLocalizations.of(context)?.errorTitle ?? 'Error',
+            ),
+          ),
+        ),
+      );
     }
   }
 

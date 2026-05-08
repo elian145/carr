@@ -11,6 +11,7 @@ import '../services/websocket_service.dart';
 import '../services/auth_service.dart';
 import '../services/api_service.dart';
 import '../services/outgoing_chat_send_service.dart';
+import '../shared/errors/user_error_text.dart';
 import '../shared/media/media_url.dart';
 import '../theme_provider.dart';
 import '../widgets/theme_toggle_widget.dart';
@@ -516,7 +517,10 @@ class _ChatListPageState extends State<ChatListPage>
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
-          content: const Text('Failed to load chats'),
+          content: Text(
+            AppLocalizations.of(context)?.failedToLoadListings ??
+                'Failed to load chats',
+          ),
           backgroundColor: Colors.red,
         ),
       );
@@ -1506,7 +1510,16 @@ class _ChatConversationPageState extends State<ChatConversationPage>
     } catch (e) {
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text(e.toString()), backgroundColor: Colors.red),
+        SnackBar(
+          content: Text(
+            userErrorText(
+              context,
+              e,
+              fallback: AppLocalizations.of(context)?.errorTitle ?? 'Error',
+            ),
+          ),
+          backgroundColor: Colors.red,
+        ),
       );
     }
   }
@@ -1548,7 +1561,16 @@ class _ChatConversationPageState extends State<ChatConversationPage>
     } catch (e) {
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text(e.toString()), backgroundColor: Colors.red),
+        SnackBar(
+          content: Text(
+            userErrorText(
+              context,
+              e,
+              fallback: AppLocalizations.of(context)?.errorTitle ?? 'Error',
+            ),
+          ),
+          backgroundColor: Colors.red,
+        ),
       );
     }
   }
@@ -1580,7 +1602,16 @@ class _ChatConversationPageState extends State<ChatConversationPage>
     } catch (e) {
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text(e.toString()), backgroundColor: Colors.red),
+        SnackBar(
+          content: Text(
+            userErrorText(
+              context,
+              e,
+              fallback: AppLocalizations.of(context)?.errorTitle ?? 'Error',
+            ),
+          ),
+          backgroundColor: Colors.red,
+        ),
       );
     }
   }
@@ -1758,7 +1789,16 @@ class _ChatConversationPageState extends State<ChatConversationPage>
     } catch (e) {
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text(e.toString()), backgroundColor: Colors.red),
+        SnackBar(
+          content: Text(
+            userErrorText(
+              context,
+              e,
+              fallback: AppLocalizations.of(context)?.errorTitle ?? 'Error',
+            ),
+          ),
+          backgroundColor: Colors.red,
+        ),
       );
     }
   }
@@ -2212,7 +2252,16 @@ class _ChatConversationPageState extends State<ChatConversationPage>
         _scrollComposerToTop();
       });
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text(e.toString()), backgroundColor: Colors.red),
+        SnackBar(
+          content: Text(
+            userErrorText(
+              context,
+              e,
+              fallback: AppLocalizations.of(context)?.errorTitle ?? 'Error',
+            ),
+          ),
+          backgroundColor: Colors.red,
+        ),
       );
     } finally {
       if (!deferIsSendingReset) {
@@ -2358,7 +2407,14 @@ class _ChatConversationPageState extends State<ChatConversationPage>
                 if (!mounted) return;
                 ScaffoldMessenger.of(context).showSnackBar(
                   SnackBar(
-                    content: Text(e.toString()),
+                    content: Text(
+                      userErrorText(
+                        context,
+                        e,
+                        fallback:
+                            AppLocalizations.of(context)?.errorTitle ?? 'Error',
+                      ),
+                    ),
                     backgroundColor: Colors.red,
                   ),
                 );
@@ -2439,7 +2495,14 @@ class _ChatConversationPageState extends State<ChatConversationPage>
                 if (!mounted) return;
                 ScaffoldMessenger.of(context).showSnackBar(
                   SnackBar(
-                    content: Text(e.toString()),
+                    content: Text(
+                      userErrorText(
+                        context,
+                        e,
+                        fallback:
+                            AppLocalizations.of(context)?.errorTitle ?? 'Error',
+                      ),
+                    ),
                     backgroundColor: Colors.red,
                   ),
                 );

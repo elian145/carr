@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 
 import '../l10n/app_localizations.dart';
 import '../services/api_service.dart';
+import '../shared/errors/user_error_text.dart';
 
 /// Admin-only: review and approve or reject pending dealer signups.
 ///
@@ -45,7 +46,11 @@ class _AdminDealersPageState extends State<AdminDealersPage> {
           .map((m) => Map<String, dynamic>.from(m.cast<String, dynamic>()))
           .toList();
     } catch (e) {
-      _error = e is ApiException ? e.message : e.toString();
+      _error = userErrorText(
+        context,
+        e,
+        fallback: AppLocalizations.of(context)?.errorTitle ?? 'Error',
+      );
       _rows = [];
     } finally {
       if (mounted) {
@@ -66,7 +71,13 @@ class _AdminDealersPageState extends State<AdminDealersPage> {
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
-          content: Text(e is ApiException ? e.message : e.toString()),
+          content: Text(
+            userErrorText(
+              context,
+              e,
+              fallback: AppLocalizations.of(context)?.errorTitle ?? 'Error',
+            ),
+          ),
           backgroundColor: Colors.red,
         ),
       );
@@ -105,7 +116,13 @@ class _AdminDealersPageState extends State<AdminDealersPage> {
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
-          content: Text(e is ApiException ? e.message : e.toString()),
+          content: Text(
+            userErrorText(
+              context,
+              e,
+              fallback: AppLocalizations.of(context)?.errorTitle ?? 'Error',
+            ),
+          ),
           backgroundColor: Colors.red,
         ),
       );

@@ -11,6 +11,7 @@ import '../services/api_service.dart';
 import '../services/auth_service.dart';
 import '../services/car_spec_index.dart';
 import '../models/online_spec_variant.dart';
+import '../shared/errors/user_error_text.dart';
 import '../shared/prefs/sell_listing_draft_prefs.dart';
 
 class SellPage extends StatefulWidget {
@@ -751,7 +752,13 @@ class _SellPageState extends State<SellPage> {
       _scheduleDraftSave();
     } catch (e) {
       if (!mounted) return;
-      setState(() => _error = e.toString());
+      setState(() {
+        _error = userErrorText(
+          context,
+          e,
+          fallback: AppLocalizations.of(context)?.errorTitle ?? 'Error',
+        );
+      });
     }
   }
 
@@ -769,7 +776,13 @@ class _SellPageState extends State<SellPage> {
       _scheduleDraftSave();
     } catch (e) {
       if (!mounted) return;
-      setState(() => _error = e.toString());
+      setState(() {
+        _error = userErrorText(
+          context,
+          e,
+          fallback: AppLocalizations.of(context)?.errorTitle ?? 'Error',
+        );
+      });
     }
   }
 
@@ -904,7 +917,15 @@ class _SellPageState extends State<SellPage> {
       );
     } catch (e) {
       if (!mounted) return;
-      setState(() => _error = e.toString());
+      setState(() {
+        _error = userErrorText(
+          context,
+          e,
+          fallback:
+              AppLocalizations.of(context)?.couldNotSubmitListing ??
+              'Could not submit listing. Please try again.',
+        );
+      });
     } finally {
       if (mounted) {
         setState(() {

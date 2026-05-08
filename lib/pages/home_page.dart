@@ -10,6 +10,7 @@ import '../theme_provider.dart';
 import '../services/api_service.dart';
 import '../services/config.dart';
 import '../shared/media/media_url.dart';
+import '../shared/errors/user_error_text.dart';
 import '../shared/text/pretty_title_case.dart';
 
 String _normalizeBrandId(String brand) {
@@ -899,7 +900,13 @@ class _HomePageState extends State<HomePage> {
     } catch (e) {
       if (!mounted) return;
       setState(() {
-        _error = e.toString();
+        _error = userErrorText(
+          context,
+          e,
+          fallback:
+              AppLocalizations.of(context)?.failedToLoadListings ??
+              'Failed to load listings',
+        );
         _loading = false;
         _loadingMore = false;
       });

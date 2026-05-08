@@ -10,6 +10,7 @@ import 'package:provider/provider.dart';
 
 import '../l10n/app_localizations.dart';
 import '../services/auth_service.dart';
+import '../shared/errors/user_error_text.dart';
 import '../shared/maps/dealer_map_coords.dart';
 import '../shared/maps/open_google_maps.dart';
 import '../shared/media/media_url.dart';
@@ -660,7 +661,15 @@ class _EditDealerPageState extends State<EditDealerPage> {
     } catch (e) {
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text(e.toString())),
+        SnackBar(
+          content: Text(
+            userErrorText(
+              context,
+              e,
+              fallback: AppLocalizations.of(context)?.errorTitle ?? 'Error',
+            ),
+          ),
+        ),
       );
     } finally {
       if (mounted) setState(() => _saving = false);
