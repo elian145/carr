@@ -5194,6 +5194,9 @@ class _HomePageState extends State<HomePage> {
         return;
       }
       fetchCars();
+      // Kick restoration once the first frame is mounted, instead of waiting
+      // for user interaction/layout changes.
+      _scheduleHomeScrollRestoreAfterListReady();
     });
     // Hook up infinite scroll
     _homeScrollController.addListener(() {
@@ -5303,12 +5306,18 @@ class _HomePageState extends State<HomePage> {
       await _nextLayoutFrame();
       if (!mounted || gen != _homeScrollRestoreScheduleGen) return;
       if (!_homeScrollController.hasClients) {
-        _pendingHomeScrollRestore = null;
+        WidgetsBinding.instance.addPostFrameCallback((_) {
+          if (!mounted || gen != _homeScrollRestoreScheduleGen) return;
+          _scheduleHomeScrollRestoreAfterListReady();
+        });
         return;
       }
       final pos = _homeScrollController.position;
       if (!pos.hasContentDimensions) {
-        _pendingHomeScrollRestore = null;
+        WidgetsBinding.instance.addPostFrameCallback((_) {
+          if (!mounted || gen != _homeScrollRestoreScheduleGen) return;
+          _scheduleHomeScrollRestoreAfterListReady();
+        });
         return;
       }
       final desired = target.clamp(pos.minScrollExtent, pos.maxScrollExtent);
