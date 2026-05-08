@@ -4114,6 +4114,11 @@ class _HomeEmptyListMessageState extends State<_HomeEmptyListMessage> {
 }
 
 class _HomePageState extends State<HomePage> {
+  // Keep a lightweight in-memory feed snapshot across route replacement.
+  static List<Map<String, dynamic>> _homeFeedCache = <Map<String, dynamic>>[];
+  static int _homeFeedCachePage = 1;
+  static bool _homeFeedCacheHasNext = true;
+
   List<Map<String, dynamic>> cars = [];
   bool isLoading = true;
   bool hasLoadedOnce = false;
@@ -5156,7 +5161,10 @@ class _HomePageState extends State<HomePage> {
   @override
   void initState() {
     super.initState();
-    _homeScrollController = ScrollController();
+    final seededOffset = _HomeFeedScrollPersistence.initialOffset;
+    _homeScrollController = ScrollController(
+      initialScrollOffset: seededOffset > 0 ? seededOffset : 0,
+    );
     _primePendingHomeScrollRestoreFromPersistence();
     // Do not obscure the home body while restoring scroll; in route-replacement
     // flows this can get stuck and appear as a blank page.
@@ -5168,6 +5176,15 @@ class _HomePageState extends State<HomePage> {
     _minMileageController = TextEditingController();
     _maxMileageController = TextEditingController();
     _engineSizeController = TextEditingController();
+    if (_homeFeedCache.isNotEmpty) {
+      cars = _homeFeedCache
+          .map((e) => Map<String, dynamic>.from(e))
+          .toList(growable: true);
+      isLoading = false;
+      hasLoadedOnce = true;
+      _page = _homeFeedCachePage;
+      _hasNext = _homeFeedCacheHasNext;
+    }
     // Restore last chosen layout (grid vs list) across pages.
     ListingLayoutPrefs.load().then((cols) {
       if (!mounted) return;
@@ -5251,6 +5268,11 @@ class _HomePageState extends State<HomePage> {
         best = _pendingHomeScrollRestore!;
       }
       _HomeFeedScrollPersistence.savePixels(best);
+      _homeFeedCache = cars
+          .map((e) => Map<String, dynamic>.from(e))
+          .toList(growable: true);
+      _homeFeedCachePage = _page;
+      _homeFeedCacheHasNext = _hasNext;
       _homeScrollController.dispose();
     } catch (_) {}
     super.dispose();
@@ -5567,6 +5589,11 @@ class _HomePageState extends State<HomePage> {
                 null; // Clear any previous error message on success
             if (parsed.isNotEmpty) _autoFetchedForEmptyWithSort = false;
           });
+          _homeFeedCache = cars
+              .map((e) => Map<String, dynamic>.from(e))
+              .toList(growable: true);
+          _homeFeedCachePage = _page;
+          _homeFeedCacheHasNext = _hasNext;
         }
         // Save fresh cache
         unawaited(sp.setString(cacheKey, response.body));
@@ -5699,6 +5726,11 @@ class _HomePageState extends State<HomePage> {
           setState(() {
             cars.addAll(_applyDamagedPartsExactFilter(more));
           });
+          _homeFeedCache = cars
+              .map((e) => Map<String, dynamic>.from(e))
+              .toList(growable: true);
+          _homeFeedCachePage = _page;
+          _homeFeedCacheHasNext = _hasNext;
         }
         _page += 1;
       }
