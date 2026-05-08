@@ -806,6 +806,38 @@ TextStyle _sellFlowManualFieldTextStyle(BuildContext context) =>
     ? const TextStyle(color: Colors.white)
     : TextStyle(color: Colors.grey[900]!);
 
+/// Persists home feed scroll when main tabs use [Navigator.pushReplacement],
+/// which disposes and rebuilds [HomePage].
+class _HomeFeedScrollPersistence {
+  _HomeFeedScrollPersistence._();
+
+  static double? _pixels;
+
+  static double get initialOffset => _pixels ?? 0;
+
+  static void capture(ScrollController c) {
+    try {
+      if (c.hasClients) {
+        final pos = c.position;
+        _pixels = pos.pixels.clamp(
+          pos.minScrollExtent,
+          pos.maxScrollExtent,
+        );
+      }
+    } catch (_) {}
+  }
+
+  /// Home tab tapped while already on Home (scroll-to-top); keep bucket in sync.
+  static void markTop() {
+    _pixels = 0;
+  }
+
+  /// When the route is disposed before a deferred scroll restore runs, keep the target offset.
+  static void savePixels(double pixels) {
+    _pixels = pixels;
+  }
+}
+
 void _switchMainTabNoAnimation(BuildContext context, String routeName) {
   final currentRoute = ModalRoute.of(context)?.settings.name;
   if (currentRoute == routeName) return;
@@ -4127,8 +4159,15 @@ class _HomePageState extends State<HomePage> {
 
   // Listings layout
   int listingColumns = 2;
-  // Infinite scroll state
-  final ScrollController _homeScrollController = ScrollController();
+  // Infinite scroll state (offset restored via [_HomeFeedScrollPersistence] after tab switches)
+  late final ScrollController _homeScrollController;
+  /// Target scroll offset to apply after listings finish loading (initial offset is lost while `isLoading`).
+  double? _pendingHomeScrollRestore;
+  int _homeScrollRestoreScheduleGen = 0;
+  /// Last known pixels (updated in scroll listener); [dispose] often runs after the viewport dropped [ScrollPosition] clients.
+  double _lastHomeScrollPixels = 0;
+  /// Hides the feed until [_restoreHomeScrollWork] jumps to the saved offset (avoids a flash of the top).
+  bool _obscureHomeBodyUntilScrollRestored = false;
   int _homeCarouselResetSeed = 0;
   int _page = 1;
   bool _hasNext = true;
@@ -5116,6 +5155,11 @@ class _HomePageState extends State<HomePage> {
   @override
   void initState() {
     super.initState();
+    _homeScrollController = ScrollController();
+    _primePendingHomeScrollRestoreFromPersistence();
+    if ((_pendingHomeScrollRestore ?? 0) > 0) {
+      _obscureHomeBodyUntilScrollRestored = true;
+    }
     _minPriceController = TextEditingController();
     _maxPriceController = TextEditingController();
     _minYearController = TextEditingController();
@@ -5155,6 +5199,10 @@ class _HomePageState extends State<HomePage> {
     _homeScrollController.addListener(() {
       try {
         final pos = _homeScrollController.position;
+        _lastHomeScrollPixels = pos.pixels.clamp(
+          pos.minScrollExtent,
+          pos.maxScrollExtent,
+        );
         if (_hasNext &&
             !_isLoadingMore &&
             pos.pixels >= (pos.maxScrollExtent - 400)) {
@@ -5175,9 +5223,106 @@ class _HomePageState extends State<HomePage> {
     _maxMileageController.dispose();
     _engineSizeController.dispose();
     try {
+      _homeScrollRestoreScheduleGen++;
+      // Prefer live controller position; on tab replacement the viewport is often
+      // gone already (`!hasClients`), so fall back to [_lastHomeScrollPixels] / pending.
+      var best = _lastHomeScrollPixels;
+      if (_pendingHomeScrollRestore != null &&
+          _pendingHomeScrollRestore! > best) {
+        best = _pendingHomeScrollRestore!;
+      }
+      try {
+        if (_homeScrollController.hasClients) {
+          final pos = _homeScrollController.position;
+          best = pos.pixels.clamp(
+            pos.minScrollExtent,
+            pos.maxScrollExtent,
+          );
+        }
+      } catch (_) {}
+      _HomeFeedScrollPersistence.savePixels(best);
       _homeScrollController.dispose();
     } catch (_) {}
     super.dispose();
+  }
+
+  void _primePendingHomeScrollRestoreFromPersistence() {
+    final y = _HomeFeedScrollPersistence.initialOffset;
+    if (y > 0) _pendingHomeScrollRestore = y;
+  }
+
+  Future<void> _nextLayoutFrame() async {
+    final c = Completer<void>();
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (!c.isCompleted) c.complete();
+    });
+    return c.future;
+  }
+
+  void _scheduleHomeScrollRestoreAfterListReady() {
+    final target = _pendingHomeScrollRestore;
+    if (target == null || target <= 0) return;
+
+    final gen = ++_homeScrollRestoreScheduleGen;
+    unawaited(_restoreHomeScrollWork(gen, target));
+  }
+
+  /// Loads extra pages without waiting on scroll physics, then jumps once — faster than
+  /// nudging scroll each frame to trigger [_loadMore].
+  Future<void> _restoreHomeScrollWork(int gen, double target) async {
+    const slack = 12.0;
+    const maxPrefetchPages = 40;
+
+    try {
+      for (var i = 0; i < 240 && mounted; i++) {
+        if (gen != _homeScrollRestoreScheduleGen) return;
+        await _nextLayoutFrame();
+        if (!isLoading &&
+            _homeScrollController.hasClients &&
+            _homeScrollController.position.hasContentDimensions) {
+          break;
+        }
+      }
+      if (!mounted || gen != _homeScrollRestoreScheduleGen) return;
+
+      for (var p = 0; p < maxPrefetchPages && mounted; p++) {
+        if (gen != _homeScrollRestoreScheduleGen) return;
+        if (!_homeScrollController.hasClients) return;
+        final pos = _homeScrollController.position;
+        if (!pos.hasContentDimensions) {
+          await _nextLayoutFrame();
+          continue;
+        }
+        if (pos.maxScrollExtent >= target - slack) break;
+        if (!_hasNext) break;
+        await _loadMore();
+        await _nextLayoutFrame();
+      }
+
+      if (!mounted || gen != _homeScrollRestoreScheduleGen) return;
+      await _nextLayoutFrame();
+      if (!mounted || gen != _homeScrollRestoreScheduleGen) return;
+      if (!_homeScrollController.hasClients) {
+        _pendingHomeScrollRestore = null;
+        return;
+      }
+      final pos = _homeScrollController.position;
+      if (!pos.hasContentDimensions) {
+        _pendingHomeScrollRestore = null;
+        return;
+      }
+      final desired = target.clamp(pos.minScrollExtent, pos.maxScrollExtent);
+      if ((pos.pixels - desired).abs() > 0.5) {
+        _homeScrollController.jumpTo(desired);
+      }
+      _pendingHomeScrollRestore = null;
+    } finally {
+      if (mounted && gen == _homeScrollRestoreScheduleGen) {
+        setState(() {
+          _obscureHomeBodyUntilScrollRestored = false;
+        });
+      }
+    }
   }
 
   Future<void> _loadBodyTypesFromAssets() async {
@@ -5310,6 +5455,7 @@ class _HomePageState extends State<HomePage> {
               loadErrorMessage = null;
               if (parsed.isNotEmpty) _autoFetchedForEmptyWithSort = false;
             });
+            _scheduleHomeScrollRestoreAfterListReady();
           }
         } catch (_) {}
       }
@@ -5396,6 +5542,9 @@ class _HomePageState extends State<HomePage> {
         'Network error',
         isRetry: isRetry,
       );
+    }
+    if (mounted) {
+      _scheduleHomeScrollRestoreAfterListReady();
     }
   }
 
@@ -5508,6 +5657,10 @@ class _HomePageState extends State<HomePage> {
   }
 
   void _scrollHomeToTopAndResetCardImages() {
+    _homeScrollRestoreScheduleGen++;
+    _pendingHomeScrollRestore = null;
+    _lastHomeScrollPixels = 0;
+    _HomeFeedScrollPersistence.markTop();
     if (_homeScrollController.hasClients) {
       _homeScrollController.animateTo(
         0,
@@ -5517,6 +5670,7 @@ class _HomePageState extends State<HomePage> {
     }
     if (mounted) {
       setState(() {
+        _obscureHomeBodyUntilScrollRestored = false;
         _homeCarouselResetSeed++;
       });
     }
@@ -11460,6 +11614,16 @@ class _HomePageState extends State<HomePage> {
                 ],
               ),
             ),
+            if (_obscureHomeBodyUntilScrollRestored)
+              Positioned.fill(
+                child: AbsorbPointer(
+                  child: DecoratedBox(
+                    decoration: AppThemes.shellBackgroundDecoration(
+                      Theme.of(context).brightness,
+                    ),
+                  ),
+                ),
+              ),
           ],
         ),
       ),
