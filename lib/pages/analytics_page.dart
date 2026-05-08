@@ -633,10 +633,12 @@ class _AnalyticsPageState extends State<AnalyticsPage> {
           InkWell(
             borderRadius: BorderRadius.circular(20),
             onTap: () {
+              final carId = listingPrimaryId(Map<String, dynamic>.from(car));
+              if (carId.isEmpty) return;
               Navigator.pushNamed(
                 context,
                 '/car_detail',
-                arguments: {'carId': car['id']},
+                arguments: {'carId': carId},
               );
             },
             child: Column(

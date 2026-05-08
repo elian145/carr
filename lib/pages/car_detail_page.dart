@@ -174,8 +174,9 @@ class _CarDetailPageState extends State<CarDetailPage> {
       } catch (_) {}
 
       // Track view (auth-only, best-effort).
-      final idForAnalytics = (car['id'] ?? car['public_id'] ?? widget.carId)
-          .toString();
+      final idForAnalytics = listingPrimaryId(car).isNotEmpty
+          ? listingPrimaryId(car)
+          : widget.carId;
       await AnalyticsService.trackView(idForAnalytics);
 
       // Favorite status (best-effort).
@@ -202,8 +203,11 @@ class _CarDetailPageState extends State<CarDetailPage> {
     try {
       final tok = ApiService.accessToken;
       if (tok == null || tok.isEmpty) return;
-      final targetId = (_car?['id'] ?? _car?['public_id'] ?? widget.carId)
-          .toString();
+      final targetId = _car == null
+          ? widget.carId
+          : (listingPrimaryId(_car!).isNotEmpty
+                ? listingPrimaryId(_car!)
+                : widget.carId);
       final fav = await ApiService.isCarFavorited(targetId);
       if (!mounted) return;
       setState(() => _isFavorite = fav);
@@ -224,8 +228,11 @@ class _CarDetailPageState extends State<CarDetailPage> {
         );
         return;
       }
-      final targetId = (_car?['id'] ?? _car?['public_id'] ?? widget.carId)
-          .toString();
+      final targetId = _car == null
+          ? widget.carId
+          : (listingPrimaryId(_car!).isNotEmpty
+                ? listingPrimaryId(_car!)
+                : widget.carId);
       final res = await ApiService.toggleFavorite(targetId);
       final bool favorited =
           (res['is_favorited'] == true) || (res['favorited'] == true);
@@ -253,7 +260,9 @@ class _CarDetailPageState extends State<CarDetailPage> {
   Future<void> _shareCar() async {
     final car = _car;
     if (car == null) return;
-    final id = (car['id'] ?? car['public_id'] ?? widget.carId).toString();
+    final id = listingPrimaryId(car).isNotEmpty
+        ? listingPrimaryId(car)
+        : widget.carId;
     final title =
         (car['title'] ?? '${car['brand'] ?? ''} ${car['model'] ?? ''}')
             .toString()
@@ -1121,20 +1130,21 @@ class _CarDetailPageState extends State<CarDetailPage> {
             Expanded(
               child: OutlinedButton.icon(
                 onPressed: () {
+                  final listingId = listingPrimaryId(car).isNotEmpty
+                      ? listingPrimaryId(car)
+                      : widget.carId;
                   Navigator.pushNamed(
                     context,
                     '/chat/conversation',
                     arguments: {
-                      'carId': (car['id'] ?? car['public_id'] ?? widget.carId)
-                          .toString(),
+                      'carId': listingId,
                       if (receiverId != null && receiverId.isNotEmpty)
                         'receiverId': receiverId,
                       if (receiverName != null && receiverName.isNotEmpty)
                         'receiverName': receiverName,
                       'initialDraft': starterMessage,
                       'listingPreview': {
-                        'id': (car['id'] ?? car['public_id'] ?? widget.carId)
-                            .toString(),
+                        'id': listingId,
                         'title': title,
                         'price': car['price'],
                         'currency': currency,

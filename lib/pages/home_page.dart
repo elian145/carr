@@ -11,6 +11,7 @@ import '../services/api_service.dart';
 import '../services/config.dart';
 import '../shared/media/media_url.dart';
 import '../shared/errors/user_error_text.dart';
+import '../shared/listings/listing_identity.dart';
 import '../shared/text/pretty_title_case.dart';
 
 String _normalizeBrandId(String brand) {
@@ -486,7 +487,7 @@ Widget _buildGlobalCardImageCarousel(BuildContext context, Map<String, dynamic> 
               Navigator.pushNamed(
                 context,
                 '/car_detail',
-                arguments: {'carId': (car['id'] ?? car['public_id'] ?? '').toString()},
+                arguments: {'carId': listingPrimaryId(car)},
               );
             },
             child: PageView.builder(
@@ -634,7 +635,7 @@ Widget buildGlobalCarCard(
         InkWell(
           borderRadius: BorderRadius.circular(20),
           onTap: () {
-            final String carId = (car['id'] ?? car['public_id'] ?? '').toString();
+            final String carId = listingPrimaryId(car);
             if (carId.isEmpty) return;
             Navigator.pushNamed(
               context,
@@ -1026,7 +1027,7 @@ class _HomePageState extends State<HomePage> {
                       }
 
                       final car = _cars[index];
-                      final carId = (car['id'] ?? car['public_id'] ?? '').toString();
+                      final carId = listingPrimaryId(car);
                       final carTitle = _localizedCarTitleForCard(context, car);
                       final price = (car['price'] ?? '').toString();
                       final location = (car['location'] ?? '').toString();

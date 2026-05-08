@@ -12,6 +12,7 @@ import '../services/auth_service.dart';
 import '../services/car_spec_index.dart';
 import '../models/online_spec_variant.dart';
 import '../shared/errors/user_error_text.dart';
+import '../shared/listings/listing_identity.dart';
 import '../shared/prefs/sell_listing_draft_prefs.dart';
 
 class SellPage extends StatefulWidget {
@@ -889,7 +890,7 @@ class _SellPageState extends State<SellPage> {
       final car = (created['car'] is Map<String, dynamic>)
           ? Map<String, dynamic>.from(created['car'])
           : <String, dynamic>{};
-      final carId = (car['id'] ?? car['public_id'] ?? '').toString().trim();
+      final carId = listingPrimaryId(car);
       if (carId.isEmpty) {
         throw StateError('Car created but missing id');
       }
