@@ -5207,6 +5207,9 @@ class _HomePageState extends State<HomePage> {
           pos.minScrollExtent,
           pos.maxScrollExtent,
         );
+        // Persist continuously so tab switches always restore the latest
+        // real position, even if disposal timing is delayed/racy.
+        _HomeFeedScrollPersistence.savePixels(_lastHomeScrollPixels);
         if (_hasNext &&
             !_isLoadingMore &&
             pos.pixels >= (pos.maxScrollExtent - 400)) {
