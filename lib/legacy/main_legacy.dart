@@ -5230,10 +5230,6 @@ class _HomePageState extends State<HomePage> {
       // Prefer live controller position; on tab replacement the viewport is often
       // gone already (`!hasClients`), so fall back to [_lastHomeScrollPixels] / pending.
       var best = _lastHomeScrollPixels;
-      if (_pendingHomeScrollRestore != null &&
-          _pendingHomeScrollRestore! > best) {
-        best = _pendingHomeScrollRestore!;
-      }
       try {
         if (_homeScrollController.hasClients) {
           final pos = _homeScrollController.position;
@@ -5243,10 +5239,26 @@ class _HomePageState extends State<HomePage> {
           );
         }
       } catch (_) {}
+      if (best <= 0 && _pendingHomeScrollRestore != null) {
+        best = _pendingHomeScrollRestore!;
+      }
       _HomeFeedScrollPersistence.savePixels(best);
       _homeScrollController.dispose();
     } catch (_) {}
     super.dispose();
+  }
+
+  void _persistCurrentHomeOffsetNow() {
+    try {
+      if (_homeScrollController.hasClients) {
+        final pos = _homeScrollController.position;
+        final y = pos.pixels.clamp(pos.minScrollExtent, pos.maxScrollExtent);
+        _lastHomeScrollPixels = y;
+        _HomeFeedScrollPersistence.savePixels(y);
+        return;
+      }
+    } catch (_) {}
+    _HomeFeedScrollPersistence.savePixels(_lastHomeScrollPixels);
   }
 
   void _primePendingHomeScrollRestoreFromPersistence() {
@@ -7329,6 +7341,10 @@ class _HomePageState extends State<HomePage> {
         context,
         currentIndex: 0,
         onTap: (idx) {
+          if (idx != 0) {
+            // Persist exact offset before route replacement to avoid stale restores.
+            _persistCurrentHomeOffsetNow();
+          }
           switch (idx) {
             case 0:
               _scrollHomeToTopAndResetCardImages();
