@@ -106,11 +106,11 @@ class _DealerLocationPickerPageState extends State<DealerLocationPickerPage> {
       if (q.isNotEmpty) {
         places.getPredictions(q);
       }
-    }).catchError((e) {
+    }).catchError((_) {
       if (!mounted) return;
       setState(() {
         _placesReady = false;
-        _placesInitError = e.toString();
+        _placesInitError = 'init_failed';
       });
     });
   }
@@ -158,9 +158,9 @@ class _DealerLocationPickerPageState extends State<DealerLocationPickerPage> {
               ku: 'گەڕان هێشتا بار دەبێت. تکایە دواتر هەوڵ بدەوە.',
             )
           : _tr(
-              'Search unavailable: ${_placesInitError!}',
-              ar: 'البحث غير متاح: ${_placesInitError!}',
-              ku: 'گەڕان بەردەست نییە: ${_placesInitError!}',
+              'Search is unavailable right now. Please try again.',
+              ar: 'البحث غير متاح حالياً. يرجى المحاولة مرة أخرى.',
+              ku: 'گەڕان لەم کاتەدا بەردەست نییە. تکایە دووبارە هەوڵبدەوە.',
             );
       ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(msg)));
       return;
@@ -217,11 +217,19 @@ class _DealerLocationPickerPageState extends State<DealerLocationPickerPage> {
       });
       _searchFocusNode.unfocus();
       _mapController?.animateCamera(CameraUpdate.newLatLngZoom(pos, 15));
-    } catch (e) {
+    } catch (_) {
       if (!mounted) return;
       setState(() => _searching = false);
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text(_tr('Search failed: $e', ar: 'فشل البحث: $e', ku: 'گەڕان شکستی هێنا: $e'))),
+        SnackBar(
+          content: Text(
+            _tr(
+              'Search failed. Please try again.',
+              ar: 'فشل البحث. يرجى المحاولة مرة أخرى.',
+              ku: 'گەڕان شکستی هێنا. تکایە دووبارە هەوڵبدەوە.',
+            ),
+          ),
+        ),
       );
     }
   }
