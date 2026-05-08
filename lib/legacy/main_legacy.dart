@@ -5211,7 +5211,13 @@ class _HomePageState extends State<HomePage> {
       if (_kFlutterTest || Platform.environment.containsKey('FLUTTER_TEST')) {
         return;
       }
-      fetchCars();
+      // If we already rehydrated listings from memory (tab return), do not run an
+      // immediate fetchCars(): the first-page API response would replace a deep
+      // scroll's many rows with ~20 items, collapse maxScrollExtent, and wipe the
+      // saved offset. User can pull-to-refresh or change filters to refetch.
+      if (cars.isEmpty) {
+        fetchCars();
+      }
       // Kick restoration once the first frame is mounted, instead of waiting
       // for user interaction/layout changes.
       _scheduleHomeScrollRestoreAfterListReady();
@@ -5224,6 +5230,8 @@ class _HomePageState extends State<HomePage> {
           pos.minScrollExtent,
           pos.maxScrollExtent,
         );
+        // Never persist while loading overlay replaces the feed (short extent).
+        if (isLoading || _isLoadingMore) return;
         // Persist continuously, but don't let temporary clamped restore values
         // overwrite a higher pending target that we still need to reach.
         final pending = _pendingHomeScrollRestore;
@@ -5472,9 +5480,15 @@ class _HomePageState extends State<HomePage> {
       'ðŸš€ fetchCars called with bypassCache: $bypassCache, isRetry: $isRetry',
     );
     // Analytics tracking for search fetch
+    // Only show full-screen loading when there is no feed yet. If we already have
+    // listings (e.g. memory rehydrate after tab switch), isLoading would replace the
+    // grid with SliverFillRemaining, collapse scroll extent, and the scroll listener
+    // would persist a tiny clamped offset — wiping the user's deep scroll position.
     if (mounted) {
       setState(() {
-        isLoading = true;
+        if (cars.isEmpty) {
+          isLoading = true;
+        }
         loadErrorMessage = null;
       });
     }
