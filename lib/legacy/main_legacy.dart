@@ -5343,10 +5343,12 @@ class _HomePageState extends State<HomePage> {
       if ((pos.pixels - desired).abs() > 0.5) {
         _homeScrollController.jumpTo(desired);
       }
-      // Do not clear pending target until we actually reach it (or exhaust data).
+      // Do not clear pending target until we actually reach it (or data loading
+      // has fully settled and no further growth is possible).
       final reachedTarget = (desired - target).abs() <= slack;
-      final canStillGrow = _hasNext;
-      if (!reachedTarget && canStillGrow) {
+      final settling =
+          isLoading || _isLoadingMore || (_hasNext && pos.maxScrollExtent < target - slack);
+      if (!reachedTarget && settling) {
         SchedulerBinding.instance.scheduleFrame();
         WidgetsBinding.instance.addPostFrameCallback((_) {
           if (!mounted || gen != _homeScrollRestoreScheduleGen) return;
