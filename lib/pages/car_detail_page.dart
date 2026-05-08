@@ -996,7 +996,7 @@ class _CarDetailPageState extends State<CarDetailPage> {
         sellerAccountType == 'dealer' && sellerDealerStatus == 'approved';
     final sellerPublicId = seller == null
         ? ''
-        : (seller['id'] ?? seller['user_id'] ?? '')
+        : (seller['public_id'] ?? seller['id'] ?? seller['user_id'] ?? '')
             .toString()
             .trim();
     final receiverId = seller == null

@@ -178,7 +178,9 @@ class _AdminDealersPageState extends State<AdminDealersPage> {
                         separatorBuilder: (context, _) => const Divider(height: 1),
                         itemBuilder: (context, i) {
                           final u = _rows[i];
-                          final id = (u['id'] ?? '').toString();
+                          final id = (u['public_id'] ?? u['id'] ?? '')
+                              .toString()
+                              .trim();
                           final username = (u['username'] ?? '').toString();
                           final name = '${u['first_name'] ?? ''} ${u['last_name'] ?? ''}'.trim();
                           final dn = (u['dealership_name'] ?? '').toString();

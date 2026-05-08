@@ -477,8 +477,12 @@ class _DealerProfilePageState extends State<DealerProfilePage> {
     final phones = _phonesFromAnySource(dealer);
     final email = (dealer?['email'] ?? '').toString().trim();
     final description = (dealer?['dealership_description'] ?? '').toString().trim();
-    final currentUserPublicId =
-        (auth.currentUser?['id'] ?? '').toString().trim();
+    final currentUserPublicId = (auth.currentUser?['public_id'] ??
+            auth.currentUser?['id'] ??
+            auth.currentUser?['user_id'] ??
+            '')
+        .toString()
+        .trim();
     final isDealerOwner =
         auth.isAuthenticated && currentUserPublicId == widget.dealerPublicId;
     final openingHours = _openingHoursFromAnySource(
