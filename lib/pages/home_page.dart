@@ -88,7 +88,9 @@ String? _translateValueGlobal(BuildContext context, String? raw) {
 
 String _localizeDigitsGlobal(BuildContext context, String input) {
   final locale = Localizations.localeOf(context);
-  if (locale.languageCode == 'ar' || locale.languageCode == 'ku') {
+  if (locale.languageCode == 'ar' ||
+      locale.languageCode == 'ku' ||
+      locale.languageCode == 'ckb') {
     return input;
   }
   return input;

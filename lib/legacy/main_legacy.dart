@@ -28495,7 +28495,6 @@ class _ProfilePageState extends State<ProfilePage> {
                       Icons.contact_mail_outlined,
                       AppLocalizations.of(context)!.helpSupportTitle,
                       () {
-                        // TODO: Add support contact email/action.
                         ScaffoldMessenger.of(context).showSnackBar(
                           SnackBar(
                             content: Text(

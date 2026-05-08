@@ -221,7 +221,8 @@ class _SettingsPageState extends State<SettingsPage> {
                             ? 'English'
                             : currentLocale == 'ar'
                                 ? 'العربية'
-                                : currentLocale == 'ku'
+                                : (currentLocale == 'ku' ||
+                                          currentLocale == 'ckb')
                                     ? 'کوردی'
                                     : currentLocale,
                   ),

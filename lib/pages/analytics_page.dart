@@ -8,7 +8,7 @@ import '../models/analytics_model.dart';
 import '../services/analytics_service.dart';
 import '../shared/errors/user_error_text.dart';
 import '../shared/listings/listing_identity.dart';
-// Intentionally avoid importing shared card or helpers; this page uses its own duplicated implementations
+import 'home_page.dart' as home show buildGlobalCarCard;
 import '../globals.dart';
 import '../theme_provider.dart';
 import '../shared/text/pretty_title_case.dart';
@@ -150,7 +150,9 @@ class _AnalyticsPageState extends State<AnalyticsPage> {
 
   String _localizeDigitsGlobal(BuildContext context, String input) {
     final locale = Localizations.localeOf(context);
-    if (locale.languageCode == 'ar' || locale.languageCode == 'ku') {
+    if (locale.languageCode == 'ar' ||
+        locale.languageCode == 'ku' ||
+        locale.languageCode == 'ckb') {
       const western = ['0', '1', '2', '3', '4', '5', '6', '7', '8', '9', ','];
       const eastern = ['٠', '١', '٢', '٣', '٤', '٥', '٦', '٧', '٨', '٩', '٬'];
       String out = input;
@@ -164,7 +166,9 @@ class _AnalyticsPageState extends State<AnalyticsPage> {
 
   NumberFormat _decimalFormatterGlobal(BuildContext context) {
     final locale = Localizations.localeOf(context);
-    if (locale.languageCode == 'ar' || locale.languageCode == 'ku') {
+    if (locale.languageCode == 'ar' ||
+        locale.languageCode == 'ku' ||
+        locale.languageCode == 'ckb') {
       return NumberFormat.decimalPattern('en_US');
     }
     return NumberFormat.decimalPattern(locale.toLanguageTag());
@@ -581,272 +585,24 @@ class _AnalyticsPageState extends State<AnalyticsPage> {
       'is_quick_sell': false,
     };
 
-    // Pass selection state into the card and draw border inside to avoid layout shift
-    car['selected'] = isSelected;
-    Widget cardWidget = _buildAnalyticsCarCard(context, car);
+    Widget cardWidget = home.buildGlobalCarCard(
+      context,
+      Map<String, dynamic>.from(car),
+    );
+    if (isSelected) {
+      cardWidget = Container(
+        decoration: BoxDecoration(
+          borderRadius: BorderRadius.circular(20),
+          border: Border.all(color: const Color(0xFFFF6B00), width: 2),
+        ),
+        child: cardWidget,
+      );
+    }
 
     // Override tap behavior for analytics modal
     return GestureDetector(
       onTap: () => _showAnalyticsModal(context, listing),
       child: AbsorbPointer(child: cardWidget),
-    );
-  }
-
-  // DUPLICATED from Home page buildGlobalCarCard function
-  Widget _buildAnalyticsCarCard(BuildContext context, Map car) {
-    final brand = car['brand'] ?? '';
-    final brandId =
-        brandLogoFilenames[brand] ??
-        brand
-            .toString()
-            .toLowerCase()
-            .replaceAll(' ', '-')
-            .replaceAll('é', 'e')
-            .replaceAll('ö', 'o');
-
-    final isLight = Theme.of(context).brightness == Brightness.light;
-    final cardFill = isLight
-        ? AppThemes.listingCardFillGridOnLightShell()
-        : Colors.white.withValues(alpha: 0.10);
-    const metaColor = Colors.white70;
-    final String yearRaw = (car['year'] ?? '').toString().trim();
-    final String yearDisplay = yearRaw.isEmpty
-        ? ''
-        : _localizeDigitsGlobal(context, yearRaw);
-
-    return Container(
-      height: 205, // Standard height for all car cards
-      decoration: BoxDecoration(
-        color: cardFill,
-        borderRadius: BorderRadius.circular(20),
-        border: null,
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withValues(alpha: 0.2),
-            blurRadius: 8,
-            offset: Offset(0, 4),
-          ),
-        ],
-      ),
-      child: Stack(
-        children: [
-          InkWell(
-            borderRadius: BorderRadius.circular(20),
-            onTap: () {
-              final carId = listingPrimaryId(Map<String, dynamic>.from(car));
-              if (carId.isEmpty) return;
-              Navigator.pushNamed(
-                context,
-                '/car_detail',
-                arguments: {'carId': carId},
-              );
-            },
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                // Quick Sell Banner (conditional height)
-                if (car['is_quick_sell'] == true ||
-                    car['is_quick_sell'] == 'true')
-                  Container(
-                    width: double.infinity,
-                    height: 35, // Fixed height for banner
-                    padding: EdgeInsets.symmetric(vertical: 8, horizontal: 12),
-                    decoration: BoxDecoration(
-                      gradient: LinearGradient(
-                        colors: [Colors.orange, Colors.deepOrange],
-                        begin: Alignment.centerLeft,
-                        end: Alignment.centerRight,
-                      ),
-                      borderRadius: BorderRadius.vertical(
-                        top: Radius.circular(20),
-                      ),
-                    ),
-                    child: Row(
-                      mainAxisAlignment: MainAxisAlignment.center,
-                      children: [
-                        Icon(Icons.flash_on, color: Colors.white, size: 16),
-                        SizedBox(width: 6),
-                        Text(
-                          'QUICK SELL',
-                          style: TextStyle(
-                            color: Colors.white,
-                            fontWeight: FontWeight.bold,
-                            fontSize: 12,
-                            letterSpacing: 1.2,
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
-                // Image section
-                SizedBox(
-                  height:
-                      (car['is_quick_sell'] == true ||
-                          car['is_quick_sell'] == 'true')
-                      ? 120
-                      : 170,
-                  child: ClipRRect(
-                    borderRadius: BorderRadius.vertical(
-                      top:
-                          (car['is_quick_sell'] == true ||
-                              car['is_quick_sell'] == 'true')
-                          ? Radius.zero
-                          : Radius.circular(20),
-                      bottom: Radius.zero,
-                    ),
-                    child: _buildAnalyticsCardImageCarousel(context, car),
-                  ),
-                ),
-                // Content section
-                Container(
-                  height: 85, // Standard height for content
-                  padding: EdgeInsets.fromLTRB(12, 8, 12, 0),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    mainAxisSize: MainAxisSize.max,
-                    mainAxisAlignment: MainAxisAlignment.start,
-                    children: [
-                      Row(
-                        children: [
-                          if (car['brand'] != null &&
-                              car['brand'].toString().isNotEmpty)
-                            SizedBox(
-                              width: 28,
-                              height: 28,
-                              child: Container(
-                                width: 28,
-                                height: 28,
-                                padding: EdgeInsets.all(4),
-                                decoration: BoxDecoration(
-                                  color: Colors.white,
-                                  borderRadius: BorderRadius.circular(8),
-                                  border: null,
-                                ),
-                                child: CachedNetworkImage(
-                                  imageUrl:
-                                      '${getApiBase()}/static/images/brands/$brandId.png',
-                                  placeholder: (context, url) => SizedBox(
-                                    width: 24,
-                                    height: 24,
-                                    child: CircularProgressIndicator(
-                                      strokeWidth: 2,
-                                    ),
-                                  ),
-                                  errorWidget: (context, url, error) => Icon(
-                                    Icons.directions_car,
-                                    size: 20,
-                                    color: Color(0xFFFF6B00),
-                                  ),
-                                  fit: BoxFit.contain,
-                                ),
-                              ),
-                            ),
-                          SizedBox(width: 8),
-                          Expanded(
-                            child: Text(
-                              car['title'] ?? '',
-                              style: TextStyle(
-                                fontWeight: FontWeight.bold,
-                                color: Color(0xFFFF6B00),
-                                fontSize: 15,
-                                height: 1.1,
-                              ),
-                              maxLines: 2,
-                              overflow: TextOverflow.ellipsis,
-                            ),
-                          ),
-                        ],
-                      ),
-                      SizedBox(height: 6),
-                      Text(
-                        yearDisplay.isNotEmpty
-                            ? yearDisplay
-                            : _formatCurrencyGlobal(context, car['price']),
-                        style: TextStyle(
-                          color: Color(0xFFFF6B00),
-                          fontWeight: FontWeight.w600,
-                          fontSize: 15,
-                        ),
-                      ),
-                      SizedBox(height: 16),
-                    ],
-                  ),
-                ),
-              ],
-            ),
-          ),
-          // Bottom info positioned relative to entire card
-          Positioned(
-            bottom: 35,
-            left: 12,
-            right: 12,
-            child: Text(
-              [
-                if (yearDisplay.isNotEmpty)
-                  _formatCurrencyGlobal(context, car['price']),
-                '${_localizeDigitsGlobal(context, (car['mileage'] ?? '').toString())} ${AppLocalizations.of(context)!.unit_km}',
-              ].where((s) => s.isNotEmpty).join(' • '),
-              style: TextStyle(color: metaColor, fontSize: 13),
-            ),
-          ),
-          // City name at bottom
-          Positioned(
-            bottom: 15,
-            left: 12,
-            child: Text(
-              '${_translateValueGlobal(context, car['city']?.toString()) ?? (car['city'] ?? '')}',
-              style: TextStyle(color: metaColor, fontSize: 13),
-            ),
-          ),
-          // Selection border drawn inside so size matches Home exactly
-          if (car['selected'] == true)
-            Positioned.fill(
-              child: IgnorePointer(
-                child: Container(
-                  decoration: BoxDecoration(
-                    borderRadius: BorderRadius.circular(20),
-                    border: Border.all(color: Color(0xFFFF6B00), width: 2),
-                  ),
-                ),
-              ),
-            ),
-        ],
-      ),
-    );
-  }
-
-  // DUPLICATED from Home page _buildGlobalCardImageCarousel function
-  Widget _buildAnalyticsCardImageCarousel(BuildContext context, Map car) {
-    final List<String> urls = () {
-      final List<String> u = [];
-      final String primary = (car['image_url'] ?? '').toString();
-      final List<dynamic> imgs = (car['images'] is List)
-          ? (car['images'] as List)
-          : const [];
-      if (primary.isNotEmpty) {
-        u.add('${getApiBase()}/static/uploads/$primary');
-      }
-      for (final dynamic it in imgs) {
-        final s = it.toString();
-        if (s.isNotEmpty) {
-          final full = '${getApiBase()}/static/uploads/$s';
-          if (!u.contains(full)) u.add(full);
-        }
-      }
-      return u;
-    }();
-
-    if (urls.isEmpty) {
-      return Container(
-        color: Colors.grey[900],
-        width: double.infinity,
-        child: Icon(Icons.directions_car, size: 60, color: Colors.grey[400]),
-      );
-    }
-
-    return _AnalyticsImageCarousel(
-      urls: urls,
-      carId: listingPrimaryId(Map<String, dynamic>.from(car)),
     );
   }
 
@@ -1396,113 +1152,6 @@ class _AnalyticsPageState extends State<AnalyticsPage> {
           ),
         ],
       ),
-    );
-  }
-}
-
-class _AnalyticsImageCarousel extends StatefulWidget {
-  final List<String> urls;
-  final String carId;
-
-  const _AnalyticsImageCarousel({required this.urls, required this.carId});
-
-  @override
-  State<_AnalyticsImageCarousel> createState() => _AnalyticsImageCarouselState();
-}
-
-class _AnalyticsImageCarouselState extends State<_AnalyticsImageCarousel> {
-  late final PageController _controller;
-  int _currentIndex = 0;
-
-  @override
-  void initState() {
-    super.initState();
-    _controller = PageController();
-  }
-
-  @override
-  void dispose() {
-    _controller.dispose();
-    super.dispose();
-  }
-
-  void _openDetail() {
-    Navigator.pushNamed(
-      context,
-      '/car_detail',
-      arguments: {'carId': widget.carId},
-    );
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    return Stack(
-      fit: StackFit.expand,
-      children: [
-        GestureDetector(
-          onTap: _openDetail,
-          child: PageView.builder(
-            controller: _controller,
-            onPageChanged: (i) => setState(() => _currentIndex = i),
-            itemCount: widget.urls.length,
-            itemBuilder: (context, i) {
-              final url = widget.urls[i];
-              return CachedNetworkImage(
-                imageUrl: url,
-                fit: BoxFit.cover,
-                placeholder: (context, url) => Container(
-                  color: Colors.white10,
-                  child: Center(
-                    child: SizedBox(
-                      width: 20,
-                      height: 20,
-                      child: CircularProgressIndicator(
-                        strokeWidth: 2,
-                        valueColor: AlwaysStoppedAnimation<Color>(
-                          Color(0xFFFF6B00),
-                        ),
-                      ),
-                    ),
-                  ),
-                ),
-                errorWidget: (context, url, error) => Container(
-                  color: Colors.grey[900],
-                  child: Icon(
-                    Icons.directions_car,
-                    size: 60,
-                    color: Colors.grey[400],
-                  ),
-                ),
-              );
-            },
-          ),
-        ),
-        if (widget.urls.length > 1)
-          Positioned(
-            bottom: 8,
-            left: 0,
-            right: 0,
-            child: SingleChildScrollView(
-              scrollDirection: Axis.horizontal,
-              child: Row(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: List.generate(widget.urls.length, (i) {
-                  final active = i == _currentIndex;
-                  return AnimatedContainer(
-                    duration: Duration(milliseconds: 200),
-                    margin: EdgeInsets.symmetric(horizontal: 3),
-                    width: active ? 8 : 6,
-                    height: active ? 8 : 6,
-                    decoration: BoxDecoration(
-                      color: active ? Colors.white : Colors.white70,
-                      shape: BoxShape.circle,
-                    ),
-                  );
-                }),
-              ),
-            ),
-          ),
-      ],
     );
   }
 }

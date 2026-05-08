@@ -33,7 +33,7 @@ Color _homeListingCardBackgroundFill(BuildContext context) {
 
 String _digitsLocalized(BuildContext context, String input) {
   final code = Localizations.localeOf(context).languageCode;
-  if (code == 'ar' || code == 'ku') {
+  if (code == 'ar' || code == 'ku' || code == 'ckb') {
     const western = ['0', '1', '2', '3', '4', '5', '6', '7', '8', '9'];
     const eastern = ['٠', '١', '٢', '٣', '٤', '٥', '٦', '٧', '٨', '٩'];
     var out = input;
@@ -1750,9 +1750,21 @@ class _ChatConversationPageState extends State<ChatConversationPage>
       final confirmed = await showDialog<bool>(
         context: context,
         builder: (context) => AlertDialog(
-          title: const Text('Discard message?'),
-          content: const Text(
-            'This message has not finished sending yet. Remove it from the chat?',
+          title: Text(
+            _chatText(
+              context,
+              'Discard message?',
+              ar: 'تجاهل الرسالة؟',
+              ku: 'پەیامەکە لاببرێت؟',
+            ),
+          ),
+          content: Text(
+            _chatText(
+              context,
+              'This message has not finished sending yet. Remove it from the chat?',
+              ar: 'لم تنتهِ هذه الرسالة من الإرسال بعد. هل تريد إزالتها من الدردشة؟',
+              ku: 'ئەم پەیامە هێشتا تەواو نەبووە لە ناردن. دەتەوێت لە چاتەکە لاببریت؟',
+            ),
           ),
           actions: [
             TextButton(
@@ -1788,9 +1800,21 @@ class _ChatConversationPageState extends State<ChatConversationPage>
     final confirmed = await showDialog<bool>(
       context: context,
       builder: (context) => AlertDialog(
-        title: const Text('Delete message?'),
-        content: const Text(
-          'This message will be removed from the conversation.',
+        title: Text(
+          _chatText(
+            context,
+            'Delete message?',
+            ar: 'حذف الرسالة؟',
+            ku: 'پەیامەکە بسڕدرێتەوە؟',
+          ),
+        ),
+        content: Text(
+          _chatText(
+            context,
+            'This message will be removed from the conversation.',
+            ar: 'سيتم حذف هذه الرسالة من المحادثة.',
+            ku: 'ئەم پەیامە لە گفتوگۆکە دەسڕدرێتەوە.',
+          ),
         ),
         actions: [
           TextButton(

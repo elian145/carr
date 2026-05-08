@@ -10,8 +10,12 @@ import '../shared/errors/user_error_text.dart';
 import '../widgets/theme_toggle_widget.dart';
 
 // Lightweight i18n helpers for auth pages
-String _lang(BuildContext context) =>
-    Localizations.localeOf(context).languageCode;
+String _lang(BuildContext context) {
+  final code = Localizations.localeOf(context).languageCode;
+  // Normalize Central Kurdish code to the same branch used by existing `ku` strings.
+  if (code == 'ckb') return 'ku';
+  return code;
+}
 String _forgotPasswordTitle(BuildContext context) {
   final c = _lang(context);
   if (c == 'ar') return 'نسيت كلمة المرور';
