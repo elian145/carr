@@ -27,6 +27,7 @@ class MyListingsPage extends StatefulWidget {
 
 class _MyListingsPageState extends State<MyListingsPage> {
   static const String _draftSnapshotKey = 'legacy_sell_draft_snapshot_v1';
+  static const String _draftCurrentStepKey = 'legacy_sell_draft_current_step_v1';
   final ScrollController _controller = ScrollController();
 
   bool _loading = true;
@@ -201,10 +202,19 @@ class _MyListingsPageState extends State<MyListingsPage> {
         });
         return;
       }
+      final jsonStep = int.tryParse(map['currentStep']?.toString() ?? '');
+      final prefsStep = sp.getInt(_draftCurrentStepKey);
+      final j = (jsonStep ?? 0).clamp(0, 4);
+      final mergedStep = prefsStep == null
+          ? j
+          : (j > prefsStep.clamp(0, 4) ? j : prefsStep.clamp(0, 4));
       setState(() {
         _draftSnapshot = <String, dynamic>{
-          'currentStep': int.tryParse(map['currentStep']?.toString() ?? '') ?? 0,
+          if (map['draftId'] != null) 'draftId': map['draftId'],
+          'currentStep': mergedStep,
           'carData': carData,
+          if (map['isPlaceholder'] == true) 'isPlaceholder': true,
+          if (map['updatedAt'] != null) 'updatedAt': map['updatedAt'],
         };
         _loadingDraft = false;
       });
@@ -234,6 +244,17 @@ class _MyListingsPageState extends State<MyListingsPage> {
   }
 
   void _resumeDraft() {
+    final snapshot = _draftSnapshot;
+    if (snapshot != null && snapshot.isNotEmpty) {
+      Navigator.pushNamed(
+        context,
+        '/sell',
+        arguments: <String, dynamic>{
+          'draftSnapshot': Map<String, dynamic>.from(snapshot),
+        },
+      );
+      return;
+    }
     Navigator.pushNamed(context, '/sell');
   }
 
