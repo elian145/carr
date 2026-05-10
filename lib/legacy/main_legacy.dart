@@ -15598,6 +15598,23 @@ const String _sellDraftArchiveKey = 'legacy_sell_draft_archive_v1';
 
 String _newSellDraftId() => DateTime.now().microsecondsSinceEpoch.toString();
 
+/// Robust step index from JSON / route maps (`int`, `double`, `1.0` strings).
+int _readSellDraftStepDynamic(dynamic raw, {int maxIdx = 4}) {
+  if (raw == null) return 0;
+  if (raw is int) return raw.clamp(0, maxIdx);
+  if (raw is double) {
+    if (raw.isNaN || raw.isInfinite) return 0;
+    return raw.round().clamp(0, maxIdx);
+  }
+  final s = raw.toString().trim();
+  if (s.isEmpty) return 0;
+  final asDouble = double.tryParse(s);
+  if (asDouble != null) {
+    return asDouble.round().clamp(0, maxIdx);
+  }
+  return int.tryParse(s)?.clamp(0, maxIdx) ?? 0;
+}
+
 /// Prefer the higher of JSON snapshot step and prefs step when they disagree.
 int _mergeSellDraftStep({int? jsonStep, int? prefsStep}) {
   const int maxIdx = 4;
@@ -15605,6 +15622,11 @@ int _mergeSellDraftStep({int? jsonStep, int? prefsStep}) {
   if (prefsStep == null) return j;
   final p = prefsStep.clamp(0, maxIdx);
   return j > p ? j : p;
+}
+
+int _maxSellDraftStep(int a, int b, [int c = 0]) {
+  const int maxIdx = 4;
+  return math.max(math.max(a.clamp(0, maxIdx), b.clamp(0, maxIdx)), c.clamp(0, maxIdx));
 }
 
 Map<String, dynamic> _normalizeSellDraftSnapshot(Map<String, dynamic> raw) {
@@ -15615,7 +15637,7 @@ Map<String, dynamic> _normalizeSellDraftSnapshot(Map<String, dynamic> raw) {
   final draftId = (raw['draftId'] ?? '').toString().trim();
   return <String, dynamic>{
     'draftId': draftId.isEmpty ? _newSellDraftId() : draftId,
-    'currentStep': int.tryParse(raw['currentStep']?.toString() ?? '') ?? 0,
+    'currentStep': _readSellDraftStepDynamic(raw['currentStep']),
     'carData': carData,
     'isPlaceholder': raw['isPlaceholder'] == true,
     'updatedAt': raw['updatedAt'] ?? DateTime.now().millisecondsSinceEpoch,
@@ -15741,6 +15763,7 @@ class SellDraftGatePage extends StatefulWidget {
 
 class _SellDraftGatePageState extends State<SellDraftGatePage> {
   static const String _draftSnapshotKey = 'legacy_sell_draft_snapshot_v1';
+  static const String _draftCurrentStepKey = 'legacy_sell_draft_current_step_v1';
   bool _loading = true;
   List<Map<String, dynamic>> _drafts = <Map<String, dynamic>>[];
 
@@ -15909,6 +15932,14 @@ class _SellDraftGatePageState extends State<SellDraftGatePage> {
       } catch (_) {}
     }
     if (!mounted) return;
+    try {
+      final sp = await SharedPreferences.getInstance();
+      final prefsStep = sp.getInt(_draftCurrentStepKey);
+      final fromNorm = _readSellDraftStepDynamic(normalized['currentStep']);
+      final merged = _mergeSellDraftStep(jsonStep: fromNorm, prefsStep: prefsStep);
+      normalized['currentStep'] = merged;
+    } catch (_) {}
+    if (!mounted) return;
     Navigator.pushReplacementNamed(
       context,
       '/sell',
@@ -15920,7 +15951,7 @@ class _SellDraftGatePageState extends State<SellDraftGatePage> {
     final carData = draft['carData'] is Map
         ? Map<String, dynamic>.from((draft['carData'] as Map).cast<String, dynamic>())
         : <String, dynamic>{};
-    final currentStep = int.tryParse(draft['currentStep']?.toString() ?? '') ?? 0;
+    final currentStep = _readSellDraftStepDynamic(draft['currentStep']);
     final labels = <String>[
       _trLegacyText(context, 'Step 1: Basic info', ar: 'الخطوة 1: المعلومات الأساسية', ku: 'هەنگاو 1: زانیاری سەرەکی'),
       _trLegacyText(context, 'Step 2: Details', ar: 'الخطوة 2: التفاصيل', ku: 'هەنگاو 2: وردەکاری'),
@@ -16178,9 +16209,6 @@ class _SellCarPageState extends State<SellCarPage> {
   int _draftResumeToken = 0;
   String _currentDraftId = _newSellDraftId();
   bool _skipDraftPersistOnDispose = false;
-  /// Blocks [PageView.onPageChanged] from persisting during layout/jumps so a
-  /// spurious page-0 callback cannot overwrite the saved draft step (e.g. resume at step 2).
-  bool _suppressSellPagePersistFromPager = false;
 
   // Car data that will be passed between steps
   Map<String, dynamic> carData = {};
@@ -16250,10 +16278,67 @@ class _SellCarPageState extends State<SellCarPage> {
     } catch (_) {}
   }
 
+  /// Non-empty field check for draft persistence (aligned with step sync keys).
+  bool _sellPersistFieldNonEmpty(dynamic v) {
+    if (v == null) return false;
+    if (v is String) return v.trim().isNotEmpty;
+    if (v is num) return true;
+    if (v is bool) return v;
+    if (v is Iterable) return v.isNotEmpty;
+    if (v is Map) return v.isNotEmpty;
+    return v.toString().trim().isNotEmpty;
+  }
+
+  /// Highest wizard index (0–4) that already has saved field data.
+  /// Used so "Back" from step 2 to step 1 does not persist [currentStep] = 0
+  /// while car details (e.g. transmission) remain in [carData].
+  int _deepestSellWizardStepHintFromCarData() {
+    final d = carData;
+    int maxIdx = 0;
+    if (_sellPersistFieldNonEmpty(d['mileage']) ||
+        _sellPersistFieldNonEmpty(d['condition']) ||
+        _sellPersistFieldNonEmpty(d['transmission']) ||
+        _sellPersistFieldNonEmpty(d['fuel_type']) ||
+        _sellPersistFieldNonEmpty(d['body_type']) ||
+        _sellPersistFieldNonEmpty(d['color']) ||
+        _sellPersistFieldNonEmpty(d['drive_type']) ||
+        _sellPersistFieldNonEmpty(d['region_specs']) ||
+        _sellPersistFieldNonEmpty(d['seating']) ||
+        _sellPersistFieldNonEmpty(d['engine_size']) ||
+        _sellPersistFieldNonEmpty(d['cylinder_count']) ||
+        _sellPersistFieldNonEmpty(d['title_status']) ||
+        _sellPersistFieldNonEmpty(d['damaged_parts'])) {
+      maxIdx = 1;
+    }
+    if (_sellPersistFieldNonEmpty(d['price']) ||
+        _sellPersistFieldNonEmpty(d['city']) ||
+        _sellPersistFieldNonEmpty(d['contact_phone']) ||
+        _sellPersistFieldNonEmpty(d['plate_type']) ||
+        _sellPersistFieldNonEmpty(d['plate_city']) ||
+        _sellPersistFieldNonEmpty(d['description'])) {
+      maxIdx = math.max(maxIdx, 2);
+    }
+    final imgs = d['images'];
+    if (imgs is List && imgs.isNotEmpty) {
+      maxIdx = math.max(maxIdx, 3);
+    }
+    final vids = d['videos'];
+    if (vids is List && vids.isNotEmpty) {
+      maxIdx = math.max(maxIdx, 3);
+    }
+    return maxIdx.clamp(0, _kSellStepCount - 1);
+  }
+
+  int _effectivePersistedDraftStep() {
+    return math
+        .max(currentStep, _deepestSellWizardStepHintFromCarData())
+        .clamp(0, _kSellStepCount - 1);
+  }
+
   Future<void> _saveDraftCurrentStep() async {
     try {
       final sp = await SharedPreferences.getInstance();
-      await sp.setInt(_draftCurrentStepKey, currentStep);
+      await sp.setInt(_draftCurrentStepKey, _effectivePersistedDraftStep());
     } catch (_) {}
   }
 
@@ -16401,9 +16486,10 @@ class _SellCarPageState extends State<SellCarPage> {
         }
         return;
       }
+      final persistedStep = _effectivePersistedDraftStep();
       final snapshot = <String, dynamic>{
         'draftId': _currentDraftId.isNotEmpty ? _currentDraftId : _newSellDraftId(),
-        'currentStep': currentStep,
+        'currentStep': persistedStep,
         'carData': _draftValue(carData),
         'updatedAt': DateTime.now().millisecondsSinceEpoch,
       };
@@ -16412,6 +16498,7 @@ class _SellCarPageState extends State<SellCarPage> {
         _draftSnapshotKey,
         json.encode(snapshot),
       );
+      await sp.setInt(_draftCurrentStepKey, persistedStep);
       final archive = _decodeSellDraftArchive(sp.getString(_sellDraftArchiveKey));
       archive.removeWhere((draft) => draft['draftId'] == _currentDraftId);
       archive.insert(0, snapshot);
@@ -16427,7 +16514,7 @@ class _SellCarPageState extends State<SellCarPage> {
       final decoded = json.decode(raw);
       if (decoded is! Map) return;
       final data = Map<String, dynamic>.from(decoded.cast<String, dynamic>());
-      final jsonStep = int.tryParse(data['currentStep']?.toString() ?? '');
+      final jsonStep = _readSellDraftStepDynamic(data['currentStep']);
       final prefsStep = sp.getInt(_draftCurrentStepKey);
       final restoredStep = _mergeSellDraftStep(
         jsonStep: jsonStep,
@@ -16449,7 +16536,6 @@ class _SellCarPageState extends State<SellCarPage> {
         return;
       }
       if (!mounted) return;
-      _beginSellPagerHydrationGuard();
       setState(() {
         currentStep = restoredStep.clamp(0, _kSellStepCount - 1);
         carData = restoredCarData;
@@ -16472,24 +16558,26 @@ class _SellCarPageState extends State<SellCarPage> {
     await _restoreSellDraftSnapshot();
   }
 
-  void _beginSellPagerHydrationGuard() {
-    _suppressSellPagePersistFromPager = true;
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      WidgetsBinding.instance.addPostFrameCallback((_) {
-        if (!mounted) return;
-        _suppressSellPagePersistFromPager = false;
-      });
-    });
-  }
-
   Future<void> _reconcileSellStepWithPrefsAfterDraftOpen() async {
     try {
       final sp = await SharedPreferences.getInstance();
       if (!mounted) return;
       final prefsStep = sp.getInt(_draftCurrentStepKey);
-      final merged = _mergeSellDraftStep(
-        jsonStep: currentStep,
-        prefsStep: prefsStep,
+      int fromDisk = currentStep;
+      final raw = sp.getString(_draftSnapshotKey);
+      if (raw != null && raw.trim().isNotEmpty) {
+        try {
+          final decoded = json.decode(raw);
+          if (decoded is Map) {
+            final m = Map<String, dynamic>.from(decoded.cast<String, dynamic>());
+            fromDisk = _readSellDraftStepDynamic(m['currentStep']);
+          }
+        } catch (_) {}
+      }
+      final merged = _maxSellDraftStep(
+        currentStep,
+        fromDisk,
+        prefsStep ?? 0,
       );
       if (merged == currentStep) return;
       setState(() {
@@ -16509,9 +16597,7 @@ class _SellCarPageState extends State<SellCarPage> {
     Map<String, dynamic> snapshot, {
     bool restoreCurrentStep = true,
   }) {
-    final currentStepValue = int.tryParse(
-      snapshot['currentStep']?.toString() ?? '',
-    );
+    final currentStepValue = _readSellDraftStepDynamic(snapshot['currentStep']);
     final rawCarData = snapshot['carData'];
     final restoredCarData = rawCarData is Map
         ? Map<String, dynamic>.from(rawCarData.cast<String, dynamic>())
@@ -16521,7 +16607,7 @@ class _SellCarPageState extends State<SellCarPage> {
     _currentDraftId = (snapshot['draftId'] ?? _newSellDraftId()).toString();
 
     if (restoreCurrentStep) {
-      currentStep = currentStepValue?.clamp(0, _kSellStepCount - 1) ?? 0;
+      currentStep = currentStepValue.clamp(0, _kSellStepCount - 1);
     }
     carData = restoredCarData;
     _hasDraftSnapshot = true;
@@ -16550,7 +16636,7 @@ class _SellCarPageState extends State<SellCarPage> {
       final decoded = json.decode(raw);
       if (decoded is! Map) return;
       final data = Map<String, dynamic>.from(decoded.cast<String, dynamic>());
-      final restoredStep = int.tryParse(data['currentStep']?.toString() ?? '');
+      final restoredStep = _readSellDraftStepDynamic(data['currentStep']);
       final rawCarData = data['carData'];
       final restoredCarData = rawCarData is Map
           ? Map<String, dynamic>.from(rawCarData.cast<String, dynamic>())
@@ -16569,7 +16655,7 @@ class _SellCarPageState extends State<SellCarPage> {
       if (!mounted) return;
       setState(() {
         _hasDraftSnapshot = true;
-        _draftPreviewStep = restoredStep?.clamp(0, _kSellStepCount - 1) ?? 0;
+        _draftPreviewStep = restoredStep.clamp(0, _kSellStepCount - 1);
         _draftPreviewCarData = restoredCarData;
       });
     } catch (_) {}
@@ -16701,17 +16787,27 @@ class _SellCarPageState extends State<SellCarPage> {
     int controllerInitialPage = 0;
     final initialDraft = widget.initialDraftSnapshot;
     if (initialDraft != null) {
-      final parsed = int.tryParse(initialDraft['currentStep']?.toString() ?? '');
       controllerInitialPage =
-          (parsed ?? 0).clamp(0, _kSellStepCount - 1);
+          _readSellDraftStepDynamic(initialDraft['currentStep'])
+              .clamp(0, _kSellStepCount - 1);
     }
     _pageController = PageController(initialPage: controllerInitialPage);
     if (initialDraft != null) {
       _hideDraftBanner = true;
       _currentDraftId = (initialDraft['draftId'] ?? _newSellDraftId()).toString();
       _applyDraftSnapshot(initialDraft);
-      _beginSellPagerHydrationGuard();
       unawaited(_reconcileSellStepWithPrefsAfterDraftOpen());
+      // Some builds align [PageView] after layout; force the visible page once attached.
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        WidgetsBinding.instance.addPostFrameCallback((_) {
+          if (!mounted || !_pageController.hasClients) return;
+          final t = currentStep.clamp(0, _kSellStepCount - 1);
+          final cur = _pageController.page?.round();
+          if (cur != t) {
+            _pageController.jumpToPage(t);
+          }
+        });
+      });
     } else if (widget.startFreshListing) {
       _hideDraftBanner = true;
       _hasDraftSnapshot = false;
@@ -16810,14 +16906,10 @@ class _SellCarPageState extends State<SellCarPage> {
                   controller: _pageController,
                   physics:
                       NeverScrollableScrollPhysics(), // Disable swipe scrolling
-                  onPageChanged: (index) {
-                    setState(() {
-                      currentStep = index;
-                    });
-                    if (_suppressSellPagePersistFromPager) return;
-                    unawaited(_saveDraftCurrentStep());
-                    unawaited(_saveSellDraftSnapshot());
-                  },
+                  // Do not persist from [onPageChanged]: during [nextPage] the
+                  // callback can report page 0 and race async saves, overwriting
+                  // the real step (e.g. user on step 2). Step is saved from
+                  // [_goToNextStep]/[_goToPreviousStep], field syncs, and [dispose].
                   itemCount: _kSellStepCount,
                   itemBuilder: (context, index) => _sellStepChild(index),
                 ),
@@ -16944,6 +17036,26 @@ class _SellCarPageState extends State<SellCarPage> {
       // route below us — pop would show an empty/black screen.
       Navigator.pushReplacementNamed(context, '/');
     }
+  }
+
+  /// Jump to a wizard index and keep [currentStep] + persisted draft in sync
+  /// (used e.g. when validation sends the user back to a specific step).
+  void _jumpSellWizardToIndex(int index) {
+    final clamped = index.clamp(0, _kSellStepCount - 1);
+    setState(() {
+      currentStep = clamped;
+    });
+    if (_pageController.hasClients) {
+      _pageController.jumpToPage(clamped);
+    } else {
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (mounted && _pageController.hasClients) {
+          _pageController.jumpToPage(clamped);
+        }
+      });
+    }
+    unawaited(_saveDraftCurrentStep());
+    unawaited(_saveSellDraftSnapshot());
   }
 
   @override
@@ -22521,10 +22633,7 @@ class _SellStep4PageState extends State<SellStep4Page> {
                       final parentState = context
                           .findAncestorStateOfType<_SellCarPageState>();
                       if (parentState != null) {
-                        parentState._pageController.previousPage(
-                          duration: Duration(milliseconds: 300),
-                          curve: Curves.easeInOut,
-                        );
+                        parentState._goToPreviousStep();
                       }
                     },
                     style: OutlinedButton.styleFrom(
@@ -23694,7 +23803,7 @@ class _SellStep5PageState extends State<SellStep5Page> {
                   Expanded(
                     child: SizedBox(
                       height: 50,
-                      child: OutlinedButton(
+                        child: OutlinedButton(
                         onPressed: isSubmitting
                             ? null
                             : () {
@@ -23703,10 +23812,7 @@ class _SellStep5PageState extends State<SellStep5Page> {
                                       _SellCarPageState
                                     >();
                                 if (parentState != null) {
-                                  parentState._pageController.previousPage(
-                                    duration: Duration(milliseconds: 300),
-                                    curve: Curves.easeInOut,
-                                  );
+                                  parentState._goToPreviousStep();
                                 }
                               },
                         style: OutlinedButton.styleFrom(
@@ -23801,7 +23907,7 @@ class _SellStep5PageState extends State<SellStep5Page> {
                                     final targetStep = stepFor(first);
                                     // Navigate user to the step containing the first missing field
                                     if (parentState != null) {
-                                      parentState._pageController.jumpToPage(
+                                      parentState._jumpSellWizardToIndex(
                                         targetStep - 1,
                                       );
                                     }
@@ -29820,7 +29926,7 @@ class _MyListingsPageState extends State<MyListingsPage> {
       final carData = rawCarData is Map
           ? Map<String, dynamic>.from(rawCarData.cast<String, dynamic>())
           : <String, dynamic>{};
-      final jsonStep = int.tryParse(data['currentStep']?.toString() ?? '');
+      final jsonStep = _readSellDraftStepDynamic(data['currentStep']);
       final prefsStep = sp.getInt(_draftCurrentStepKey);
       final mergedStep = _mergeSellDraftStep(
         jsonStep: jsonStep,
@@ -29895,7 +30001,7 @@ class _MyListingsPageState extends State<MyListingsPage> {
     final carData = snapshot['carData'] is Map
         ? Map<String, dynamic>.from((snapshot['carData'] as Map).cast<String, dynamic>())
         : <String, dynamic>{};
-    final currentStep = int.tryParse(snapshot['currentStep']?.toString() ?? '') ?? 0;
+    final currentStep = _readSellDraftStepDynamic(snapshot['currentStep']);
     final stepLabel = [
       'Step 1: Basic info',
       'Step 2: Details',

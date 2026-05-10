@@ -18,6 +18,20 @@ import '../shared/prefs/listing_layout_prefs.dart';
 import '../legacy/main_legacy.dart'
     show buildGlobalCarCard, mapListingToGlobalCarCardData;
 
+int _readLegacySellDraftStepForListings(dynamic raw, {int maxIdx = 4}) {
+  if (raw == null) return 0;
+  if (raw is int) return raw.clamp(0, maxIdx);
+  if (raw is double) {
+    if (raw.isNaN || raw.isInfinite) return 0;
+    return raw.round().clamp(0, maxIdx);
+  }
+  final s = raw.toString().trim();
+  if (s.isEmpty) return 0;
+  final d = double.tryParse(s);
+  if (d != null) return d.round().clamp(0, maxIdx);
+  return int.tryParse(s)?.clamp(0, maxIdx) ?? 0;
+}
+
 class MyListingsPage extends StatefulWidget {
   const MyListingsPage({super.key});
 
@@ -202,9 +216,8 @@ class _MyListingsPageState extends State<MyListingsPage> {
         });
         return;
       }
-      final jsonStep = int.tryParse(map['currentStep']?.toString() ?? '');
       final prefsStep = sp.getInt(_draftCurrentStepKey);
-      final j = (jsonStep ?? 0).clamp(0, 4);
+      final j = _readLegacySellDraftStepForListings(map['currentStep']);
       final mergedStep = prefsStep == null
           ? j
           : (j > prefsStep.clamp(0, 4) ? j : prefsStep.clamp(0, 4));
