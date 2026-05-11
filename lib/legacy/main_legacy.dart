@@ -995,11 +995,20 @@ Widget buildFancySelector(
   final Color labelColor = isError
       ? Colors.redAccent
       : (isDark ? Colors.white70 : Colors.grey[600]!);
+  final loc = AppLocalizations.of(context)!;
+  final bool valueShowsAny = value != null &&
+      value.isNotEmpty &&
+      (value == 'Any' ||
+          value.trim().toLowerCase() == 'any' ||
+          value == loc.any ||
+          value == loc.anyOption);
   final Color valueColor = (value == null || value.isEmpty)
       ? (isError ? Colors.redAccent : (isDark ? Colors.white38 : Colors.grey))
       : (isError
             ? Colors.redAccent
-            : (isDark ? Colors.white : Colors.grey[900]!));
+            : (valueShowsAny
+                  ? accent
+                  : (isDark ? Colors.white : Colors.grey[900]!)));
   return Container(
     padding: const EdgeInsets.all(14),
     decoration: BoxDecoration(
@@ -11118,11 +11127,8 @@ class _HomePageState extends State<HomePage> {
                                                                       )!.engineSizeL,
                                                                       filled:
                                                                           true,
-                                                                      fillColor: Colors
-                                                                          .black
-                                                                          .withOpacity(
-                                                                            0.2,
-                                                                          ),
+                                                                      fillColor:
+                                                                          moreFiltersFieldFill,
                                                                       labelStyle:
                                                                           TextStyle(
                                                                             color:
@@ -11194,11 +11200,8 @@ class _HomePageState extends State<HomePage> {
                                                                       )!.engineSizeL,
                                                                       filled:
                                                                           true,
-                                                                      fillColor: Colors
-                                                                          .black
-                                                                          .withOpacity(
-                                                                            0.2,
-                                                                          ),
+                                                                      fillColor:
+                                                                          moreFiltersFieldFill,
                                                                       labelStyle:
                                                                           TextStyle(
                                                                             color:
@@ -11301,24 +11304,32 @@ class _HomePageState extends State<HomePage> {
                                                                 ),
                                                           ),
                                                         ),
-                                                        items: const [
+                                                        items: [
                                                           DropdownMenuItem(
                                                             value: '',
-                                                            child: Text('Any'),
+                                                            child: Text(
+                                                              AppLocalizations.of(
+                                                                context,
+                                                              )!.any,
+                                                              style: TextStyle(
+                                                                color:
+                                                                    moreFiltersAnyOrange,
+                                                              ),
+                                                            ),
                                                           ),
-                                                          DropdownMenuItem(
+                                                          const DropdownMenuItem(
                                                             value: 'private',
                                                             child: Text('Private'),
                                                           ),
-                                                          DropdownMenuItem(
+                                                          const DropdownMenuItem(
                                                             value: 'temporary',
                                                             child: Text('Temporary'),
                                                           ),
-                                                          DropdownMenuItem(
+                                                          const DropdownMenuItem(
                                                             value: 'commercial',
                                                             child: Text('Commercial'),
                                                           ),
-                                                          DropdownMenuItem(
+                                                          const DropdownMenuItem(
                                                             value: 'taxi',
                                                             child: Text('Taxi'),
                                                           ),
@@ -30282,31 +30293,50 @@ class _MyListingsPageState extends State<MyListingsPage> {
               children: [
                 Icon(Icons.directions_car, color: Color(0xFFFF6B00)),
                 SizedBox(width: 12),
-                Text(
-                  AppLocalizations.of(
-                    context,
-                  )!.yourListingsCount(myListings.length),
-                  style: TextStyle(
-                    fontSize: 18,
-                    fontWeight: FontWeight.bold,
-                    color: isLightShell ? Colors.white : Colors.grey[800],
+                Flexible(
+                  flex: 0,
+                  fit: FlexFit.loose,
+                  child: Text(
+                    AppLocalizations.of(
+                      context,
+                    )!.yourListingsCount(myListings.length),
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                    style: TextStyle(
+                      fontSize: 18,
+                      fontWeight: FontWeight.bold,
+                      color: isLightShell ? Colors.white : Colors.grey[800],
+                    ),
                   ),
                 ),
-                Spacer(),
-                ElevatedButton.icon(
+                // Slightly more flex before the button nudges it right while
+                // keeping spacing roughly balanced.
+                const Expanded(flex: 5, child: SizedBox.shrink()),
+                ElevatedButton(
                   onPressed: () =>
                       Navigator.pushReplacementNamed(context, '/sell'),
-                  icon: Icon(Icons.add, size: 18),
-                  label: Text(AppLocalizations.of(context)!.addNewButton),
                   style: ElevatedButton.styleFrom(
                     backgroundColor: Color(0xFFFF6B00),
                     foregroundColor: Colors.white,
                     shape: RoundedRectangleBorder(
                       borderRadius: BorderRadius.circular(8),
                     ),
-                    padding: EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 20,
+                      vertical: 8,
+                    ),
+                    minimumSize: Size.zero,
+                    tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                  ),
+                  child: Text(
+                    AppLocalizations.of(context)!.addNewButton,
+                    style: const TextStyle(
+                      fontSize: 13,
+                      fontWeight: FontWeight.w600,
+                    ),
                   ),
                 ),
+                const Expanded(flex: 4, child: SizedBox.shrink()),
               ],
             ),
           ),
