@@ -23,26 +23,20 @@ bool _isNonPublicApiHost(String host) {
   return false;
 }
 
-/// When [kListingShareWebBase] is empty, derive an HTTPS origin from [effectiveApiBase]
-/// so shares are normal `https://` links (not `carzo://`) for known production APIs.
+/// When [kListingShareWebBase] is empty, use the API origin from [effectiveApiBase]
+/// so shares are normal `https://` URLs (tap-to-open in chat apps), e.g.
+/// `https://<api-host>/listing/<id>`. Your server must handle that path or set
+/// [kListingShareWebBase] to your public marketing domain.
 String? _inferredShareWebBase() {
   try {
     final api = effectiveApiBase().trim();
     if (api.isEmpty) return null;
     final uri = Uri.parse(api);
-    if (uri.scheme != 'https' && uri.scheme != 'http') return null;
+    // Prefer HTTPS for shared links; skip local/LAN API hosts.
+    if (uri.scheme != 'https') return null;
     final host = uri.host;
     if (host.isEmpty || _isNonPublicApiHost(host)) return null;
-    final lower = host.toLowerCase();
-    // Default Render deployment for this project → public redirect site (universal link style).
-    if (lower == 'carr-5hrm.onrender.com') {
-      return 'https://www.iqcars.net';
-    }
-    return Uri(
-      scheme: uri.scheme,
-      host: uri.host,
-      port: uri.hasPort ? uri.port : null,
-    ).origin;
+    return uri.origin;
   } catch (_) {
     return null;
   }
@@ -52,18 +46,10 @@ String _normalizedPathSegment(String raw) {
   return raw.trim().replaceAll(RegExp(r'^/+|/+$'), '');
 }
 
-/// Path segment between share base and listing id.
-String _resolvedSharePath(String resolvedWebBase) {
-  final explicitBase = kListingShareWebBase.trim();
-  if (explicitBase.isNotEmpty) {
-    return _normalizedPathSegment(kListingShareUrlPath);
-  }
-  final lower = resolvedWebBase.toLowerCase();
-  if (lower.contains('iqcars.net')) {
-    return 'en/redirect';
-  }
-  final fromEnv = _normalizedPathSegment(kListingShareUrlPath);
-  return fromEnv.isEmpty ? 'listing' : fromEnv;
+/// Path between share base and listing id (e.g. `listing`, or `en/redirect`).
+String _sharePathSegment() {
+  final p = _normalizedPathSegment(kListingShareUrlPath);
+  return p.isEmpty ? 'listing' : p;
 }
 
 String? _resolvedShareWebBase() {
@@ -72,7 +58,7 @@ String? _resolvedShareWebBase() {
   return _inferredShareWebBase();
 }
 
-/// Public web URL: explicit [kListingShareWebBase], or inferred from API base, plus path.
+/// Public web URL: [kListingShareWebBase] if set, else inferred API origin, plus path.
 String? listingWebShareLink(String listingId) {
   final id = listingId.trim();
   if (id.isEmpty) return null;
@@ -80,14 +66,14 @@ String? listingWebShareLink(String listingId) {
   if (base.isEmpty) return null;
   final normalized =
       base.endsWith('/') ? base.substring(0, base.length - 1) : base;
-  var path = _resolvedSharePath(normalized);
+  final path = _sharePathSegment();
   if (path.isEmpty) {
     return '$normalized/${Uri.encodeComponent(id)}';
   }
   return '$normalized/$path/${Uri.encodeComponent(id)}';
 }
 
-/// Single URL for sharing: HTTPS when web base is set or can be inferred, else `carzo://`.
+/// Single URL for sharing: HTTPS when a web base is set or inferred, else `carzo://`.
 String listingShareLinkOnly(String listingId) {
   final web = listingWebShareLink(listingId);
   if (web != null && web.isNotEmpty) return web;

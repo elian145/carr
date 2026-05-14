@@ -20,11 +20,11 @@ const bool kForceSkipBlur = bool.fromEnvironment(
   defaultValue: false,
 );
 
-/// Optional HTTPS origin for listing share links (no trailing slash), e.g.
-/// `https://www.iqcars.net`. Final URL is `$base/$path/<id>` (see [kListingShareUrlPath]).
+/// Optional public origin for listing share links (no trailing slash), e.g.
+/// `https://www.example.com`. Final URL is `$base/$path/<id>` (see [kListingShareUrlPath]).
 ///
-/// When empty, [listingWebShareLink] may still infer an HTTPS base from [effectiveApiBase]
-/// (e.g. API host `carr-5hrm.onrender.com` → `https://www.iqcars.net` with path `en/redirect`).
+/// When empty and the API base is public **HTTPS**, shares use the same origin as the API
+/// (`https://<api-host>/<path>/<id>`) so links stay tap-to-open in messengers.
 const String kListingShareWebBase = String.fromEnvironment(
   'LISTING_SHARE_WEB_BASE',
   defaultValue: '',
