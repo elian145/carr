@@ -2,7 +2,6 @@ import 'dart:convert';
 
 import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
-import 'package:share_plus/share_plus.dart';
 import 'package:url_launcher/url_launcher.dart';
 
 import '../l10n/app_localizations.dart';
@@ -13,6 +12,7 @@ import '../services/config.dart';
 import '../shared/media/media_url.dart';
 import '../shared/errors/user_error_text.dart';
 import '../shared/listings/listing_identity.dart';
+import '../shared/listings/listing_share.dart';
 import '../shared/listings/listing_share_urls.dart';
 import '../shared/text/pretty_title_case.dart';
 import 'listing_image_gallery_page.dart';
@@ -325,7 +325,7 @@ class _CarDetailPageState extends State<CarDetailPage> {
     );
 
     try {
-      await Share.share(text);
+      await shareListingWithPrimaryImage(shareText: text, car: car);
     } catch (_) {}
     try {
       await AnalyticsService.trackShare(id);

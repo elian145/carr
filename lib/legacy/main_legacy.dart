@@ -27,6 +27,7 @@ import '../models/analytics_model.dart';
 import '../shared/auth/token_store.dart';
 import '../shared/text/pretty_title_case.dart';
 import '../shared/listings/listing_identity.dart';
+import '../shared/listings/listing_share.dart';
 import '../shared/listings/listing_share_urls.dart';
 import '../shared/prefs/listing_layout_prefs.dart';
 import '../state/locale_controller.dart' as app_state;
@@ -13659,7 +13660,7 @@ class _CarDetailsPageState extends State<CarDetailsPage> {
         bodyLines: [if (line.isNotEmpty) line],
       );
 
-      await Share.share(shareText);
+      await shareListingWithPrimaryImage(shareText: shareText, car: car!);
 
       // Track share for analytics
       await AnalyticsService.trackShare(widget.carId.toString());
