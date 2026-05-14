@@ -15166,12 +15166,33 @@ List<String> listingDamageImageFullUrls(Map<String, dynamic> car) {
   return urls;
 }
 
+/// Damage photos for preview / review: API `images` with `kind: damage`, else
+/// sell-flow `damage_images` (XFile or path strings) before submit.
+List<dynamic> listingDamagePreviewEntries(Map<String, dynamic> car) {
+  final List<dynamic> out = [];
+  for (final url in listingDamageImageFullUrls(car)) {
+    if (url.trim().isNotEmpty) out.add(url);
+  }
+  if (out.isNotEmpty) return out;
+  final raw = car['damage_images'];
+  if (raw is! List) return out;
+  for (final e in raw) {
+    if (e is XFile) {
+      if (e.path.trim().isNotEmpty) out.add(e);
+    } else {
+      final s = e?.toString().trim() ?? '';
+      if (s.isNotEmpty) out.add(e);
+    }
+  }
+  return out;
+}
+
 /// Specification grid matching [CarDetailsPage] (shared with sell-flow review).
 Widget buildCarListingSpecsGrid(
   BuildContext context,
   Map<String, dynamic> car,
 ) {
-  final List<String> damagePhotoUrls = listingDamageImageFullUrls(car);
+  final List<dynamic> damagePreviewEntries = listingDamagePreviewEntries(car);
   String? pickNE(Map<String, dynamic> map, List<String> keys) {
     for (final key in keys) {
       final dynamic value = map[key];
@@ -15540,14 +15561,13 @@ Widget buildCarListingSpecsGrid(
       icon: Icons.assignment_turned_in,
       label: AppLocalizations.of(context)!.titleStatus,
       value: titleStatusVal,
-      onTap: damagePhotoUrls.isEmpty
+      onTap: damagePreviewEntries.isEmpty
           ? null
           : () {
               Navigator.of(context).push(
                 MaterialPageRoute(
-                  builder: (_) => ListingImageGalleryPage(
-                    imageUrls: damagePhotoUrls,
-                    videoUrls: const <String>[],
+                  builder: (_) => ListingPreviewGalleryPage(
+                    imageFilesOrUrls: List<dynamic>.from(damagePreviewEntries),
                     initialIndex: 0,
                   ),
                 ),
