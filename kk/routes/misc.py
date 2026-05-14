@@ -17,6 +17,19 @@ logger = logging.getLogger(__name__)
 _LISTING_ID_RE = re.compile(r"^[a-zA-Z0-9_-]{1,128}$")
 
 
+def _listing_browser_image_url(rel: str) -> str:
+    """Turn stored relative / absolute media path into a browser-loadable URL on this host."""
+    if not rel:
+        return ""
+    if rel.startswith("http://") or rel.startswith("https://"):
+        return rel
+    root = request.url_root.rstrip("/")
+    r = rel.lstrip("/")
+    if r.startswith("static/"):
+        return f"{root}/{r}"
+    return f"{root}/static/{r}"
+
+
 @bp.route("/health", methods=["GET"])
 def health():
     return jsonify({"status": "ok"}), 200
@@ -93,162 +106,95 @@ def android_assetlinks():
 
 @bp.route("/listing/<listing_id>", methods=["GET"])
 def listing_share_landing(listing_id: str):
-    """Fallback HTML when a shared ``https://…/listing/<id>`` URL opens in a browser.
+    """Public listing page for shared URLs: ``https://<host>/listing/<id>`` *is* the listing."""
+    from sqlalchemy.orm import joinedload, selectinload
 
-    With **Universal Links** (iOS) / **App Links** (Android) configured on the server,
-    the app opens the listing directly and this page is not used. Otherwise the user
-    taps **Open listing** (``carzo://`` on iOS, ``intent:`` on Android).
-    """
+    from ..models import Car
+    from ..routes.cars import _with_media_compat
+
     raw = (listing_id or "").strip()
     if not raw or not _LISTING_ID_RE.match(raw):
         abort(404)
-    qid = quote(raw, safe="")
-    deep = f"carzo://listing?id={qid}"
+
+    car = (
+        Car.query.options(
+            selectinload(Car.images),
+            selectinload(Car.videos),
+            joinedload(Car.seller),
+        )
+        .filter_by(public_id=raw, is_active=True)
+        .first()
+    )
+    if not car and raw.isdigit():
+        car = (
+            Car.query.options(
+                selectinload(Car.images),
+                selectinload(Car.videos),
+                joinedload(Car.seller),
+            )
+            .filter_by(id=int(raw), is_active=True)
+            .first()
+        )
+    if not car:
+        nf = "<!DOCTYPE html><html><head><meta charset='utf-8'/><title>Not found</title></head><body><p>Listing not found.</p></body></html>"
+        return Response(nf, 404, {"Content-Type": "text/html; charset=utf-8"})
+
+    d = _with_media_compat(car)
+    title = escape((d.get("title") or "Listing").strip() or "Listing")
+    price = d.get("price")
+    currency = escape(str(d.get("currency") or "").strip())
+    try:
+        price_s = escape(f"{float(price):,.0f}") if price is not None else ""
+    except (TypeError, ValueError):
+        price_s = escape(str(price)) if price is not None else ""
+    year = escape(str(d.get("year") or ""))
+    mileage = d.get("mileage")
+    try:
+        mile_s = escape(f"{int(mileage):,}") if mileage is not None else ""
+    except (TypeError, ValueError):
+        mile_s = escape(str(mileage)) if mileage is not None else ""
+    loc = escape(str(d.get("location") or d.get("city") or "").strip())
+    desc = (d.get("description") or "").strip()
+    if len(desc) > 900:
+        desc = desc[:900] + "…"
+    desc_html = escape(desc).replace("\n", "<br/>\n") if desc else ""
+
+    img_rel = (d.get("image_url") or "").strip()
+    img_url = _listing_browser_image_url(img_rel)
+    img_block = ""
+    if img_url:
+        esc_img = escape(img_url, quote=True)
+        img_block = f'<p class="hero"><img src="{esc_img}" alt="" loading="lazy"/></p>'
+
+    deep = f"carzo://listing?id={quote(raw, safe='')}"
     esc_deep = escape(deep, quote=True)
-    deep_js = json.dumps(deep)
-
-    ua = (request.headers.get("User-Agent") or "").lower()
-    is_ios = "iphone" in ua or "ipad" in ua or "ipod" in ua
-    is_android = "android" in ua
-
-    intent_href = f"intent://listing?id={qid}#Intent;scheme=carzo;package=com.carzo.app;end"
-    esc_intent = escape(intent_href, quote=True)
-
-    if is_android:
-        cta_html = f'<a class="btn" href="{esc_intent}">Open listing</a>'
-        body_msg = (
-            "Tap the button below. If CARZO is installed, the listing will open in the app."
-        )
-        hint = "If nothing happens, install CARZO from the Play Store, then try again."
-    elif is_ios:
-        body_msg = (
-            "Tap Open listing to open CARZO. "
-            "If Universal Links are set up on the server, this page is skipped."
-        )
-        hint = (
-            "If the button does nothing, you are probably inside CARZO's in-app browser "
-            "(you see CARZO at the top-left). Tap Share, choose Open in Safari, then tap "
-            "Open listing again. Or tap Copy app link, paste into Notes, and tap the link there. "
-            "If CARZO is not installed, get it from the App Store first."
-        )
-        cta_html = f"""
-    <button type="button" class="btn" id="open-listing-btn">Open listing</button>
-    <button type="button" class="btn btn-secondary" id="copy-listing-deep">Copy app link</button>
-    <p class="hint" id="copy-done" style="display:none;font-weight:600;">Copied — open Notes, paste, then tap the link.</p>
-    <p class="sub"><a class="link-plain" href="{esc_deep}">Open as link</a></p>
-    <script>(function(){{
-      var u = {deep_js};
-      var b = document.getElementById("open-listing-btn");
-      if (b) {{
-        b.addEventListener("click", function () {{
-          try {{ window.top.location.href = u; }} catch (e) {{ window.location.href = u; }}
-        }});
-      }}
-      var c = document.getElementById("copy-listing-deep");
-      var m = document.getElementById("copy-done");
-      if (c && navigator.clipboard && navigator.clipboard.writeText) {{
-        c.addEventListener("click", function () {{
-          navigator.clipboard.writeText(u).then(function () {{
-            if (m) m.style.display = "block";
-          }}).catch(function () {{}});
-        }});
-      }}
-    }})();</script>"""
-    else:
-        body_msg = "Tap Open listing to open this listing in the CARZO app."
-        hint = ""
-        cta_html = f"""
-    <button type="button" class="btn" id="open-listing-btn">Open listing</button>
-    <p class="sub"><a class="link-plain" href="{esc_deep}">Open as link</a></p>
-    <script>(function(){{
-      var u = {deep_js};
-      var b = document.getElementById("open-listing-btn");
-      if (b) {{
-        b.addEventListener("click", function () {{
-          try {{ window.top.location.href = u; }} catch (e) {{ window.location.href = u; }}
-        }});
-      }}
-    }})();</script>"""
-
-    hint_html = f'<p class="hint">{escape(hint)}</p>' if hint else ""
 
     html = f"""<!DOCTYPE html>
 <html lang="en">
 <head>
   <meta charset="utf-8"/>
   <meta name="viewport" content="width=device-width, initial-scale=1"/>
-  <title>CARZO — open listing</title>
+  <title>{title} · CARZO</title>
   <style>
-    * {{ box-sizing: border-box; }}
-    body {{
-      margin: 0;
-      min-height: 100vh;
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      justify-content: center;
-      padding: 1.5rem;
-      font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
-      background: #f2f2f7;
-      color: #111;
-    }}
-    .card {{
-      max-width: 22rem;
-      width: 100%;
-      background: #fff;
-      border-radius: 16px;
-      padding: 1.75rem 1.35rem;
-      box-shadow: 0 4px 24px rgba(0, 0, 0, 0.08);
-      text-align: center;
-    }}
-    h1 {{
-      font-size: 1.2rem;
-      font-weight: 700;
-      margin: 0 0 0.75rem;
-    }}
-    .body {{
-      margin: 0 0 1.25rem;
-      color: #444;
-      line-height: 1.5;
-      font-size: 0.95rem;
-    }}
-    .btn {{
-      display: block;
-      width: 100%;
-      padding: 1rem 1.25rem;
-      margin: 0 0 0.6rem;
-      background: #ff6b00;
-      color: #fff !important;
-      text-decoration: none;
-      font-weight: 700;
-      font-size: 1.05rem;
-      border-radius: 12px;
-      text-align: center;
-      border: none;
-      cursor: pointer;
-      font-family: inherit;
-    }}
-    a.btn {{ color: #fff !important; }}
-    .btn-secondary {{
-      background: #555;
-      color: #fff !important;
-    }}
-    .hint {{
-      margin: 1rem 0 0;
-      font-size: 0.8rem;
-      color: #666;
-      line-height: 1.4;
-    }}
-    .sub {{ margin: 0.75rem 0 0; font-size: 0.85rem; }}
-    .link-plain {{ color: #ff6b00; font-weight: 600; }}
+    body {{ margin: 0; font-family: system-ui, -apple-system, sans-serif; background: #f4f4f7; color: #111; }}
+    .wrap {{ max-width: 40rem; margin: 0 auto; padding: 1rem 1rem 2rem; }}
+    .hero img {{ width: 100%; border-radius: 12px; display: block; background: #ddd; }}
+    h1 {{ font-size: 1.35rem; margin: 0.75rem 0 0.25rem; }}
+    .meta {{ color: #555; font-size: 0.95rem; margin-bottom: 0.75rem; }}
+    .price {{ font-size: 1.35rem; font-weight: 700; color: #ff6b00; margin: 0.25rem 0 1rem; }}
+    .desc {{ line-height: 1.5; font-size: 0.95rem; color: #333; }}
+    .foot {{ margin-top: 1.5rem; padding-top: 1rem; border-top: 1px solid #ddd; font-size: 0.85rem; color: #666; }}
+    .foot a {{ color: #ff6b00; font-weight: 600; }}
   </style>
 </head>
 <body>
-  <div class="card">
-    <h1>Open in CARZO</h1>
-    <p class="body">{escape(body_msg)}</p>
-    {cta_html}
-    {hint_html}
+  <div class="wrap">
+    {img_block}
+    <h1>{title}</h1>
+    <p class="meta">{year} · {mile_s} · {loc}</p>
+    <p class="price">{currency} {price_s}</p>
+    <div class="desc">{desc_html}</div>
+    <p class="foot">Prefer the app? <a href="{esc_deep}">Open in CARZO</a></p>
   </div>
 </body>
 </html>"""
