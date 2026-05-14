@@ -21,10 +21,18 @@ const bool kForceSkipBlur = bool.fromEnvironment(
 );
 
 /// Optional HTTPS origin for listing share links (no trailing slash), e.g.
-/// `https://www.example.com`. Shared text includes `$base/listing/<id>` when set.
+/// `https://www.iqcars.net`. Final URL is `$base/$path/<id>` (see [kListingShareUrlPath]).
 const String kListingShareWebBase = String.fromEnvironment(
   'LISTING_SHARE_WEB_BASE',
   defaultValue: '',
+);
+
+/// Path between [kListingShareWebBase] and the listing id (no leading/trailing slashes).
+/// Default `listing` → `https://example.com/listing/<id>`.
+/// Use `en/redirect` for `https://example.com/en/redirect/<id>` (redirect / universal-link style).
+const String kListingShareUrlPath = String.fromEnvironment(
+  'LISTING_SHARE_URL_PATH',
+  defaultValue: 'listing',
 );
 /// Opt-in for insecure HTTP in *release* builds.
 ///
