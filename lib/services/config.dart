@@ -22,6 +22,9 @@ const bool kForceSkipBlur = bool.fromEnvironment(
 
 /// Optional HTTPS origin for listing share links (no trailing slash), e.g.
 /// `https://www.iqcars.net`. Final URL is `$base/$path/<id>` (see [kListingShareUrlPath]).
+///
+/// When empty, [listingWebShareLink] may still infer an HTTPS base from [effectiveApiBase]
+/// (e.g. API host `carr-5hrm.onrender.com` → `https://www.iqcars.net` with path `en/redirect`).
 const String kListingShareWebBase = String.fromEnvironment(
   'LISTING_SHARE_WEB_BASE',
   defaultValue: '',

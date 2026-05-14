@@ -14,6 +14,8 @@ workflows:
         # IMPORTANT: Do NOT include /api in API_BASE. The app adds /api itself.
         # Render server: https://carr-5hrm.onrender.com
         API_BASE: "https://carr-5hrm.onrender.com"
+        LISTING_SHARE_WEB_BASE: "https://www.iqcars.net"
+        LISTING_SHARE_URL_PATH: "en/redirect"
         FORCE_SKIP_BLUR: "false"
       # Configure these in Codemagic UI (Environment variables / Secure):
       # - IOS_GOOGLE_MAPS_API_KEY  (iOS Maps SDK key, restricted to bundle id com.carzo.app)
@@ -82,6 +84,8 @@ workflows:
           flutter build ios --release --no-codesign \
             --dart-define=SIDELOAD_BUILD=true \
             --dart-define=API_BASE="$API_BASE" \
+            --dart-define=LISTING_SHARE_WEB_BASE="$LISTING_SHARE_WEB_BASE" \
+            --dart-define=LISTING_SHARE_URL_PATH="$LISTING_SHARE_URL_PATH" \
             --dart-define=FORCE_SKIP_BLUR="$FORCE_SKIP_BLUR"
       - name: Package unsigned IPA for Sideloadly
         script: |
@@ -111,6 +115,8 @@ workflows:
         # IMPORTANT: Do NOT include /api in API_BASE. The app adds /api itself.
         # Release builds enforce HTTPS. Override in Codemagic UI.
         API_BASE: "https://carr-5hrm.onrender.com"
+        LISTING_SHARE_WEB_BASE: "https://www.iqcars.net"
+        LISTING_SHARE_URL_PATH: "en/redirect"
     scripts:
       - name: Flutter pub get
         script: |
@@ -118,7 +124,7 @@ workflows:
           flutter pub get
       - name: Build APK
         script: |
-          flutter build apk --release --flavor prod --dart-define=API_BASE=${API_BASE}
+          flutter build apk --release --flavor prod --dart-define=API_BASE=${API_BASE} --dart-define=LISTING_SHARE_WEB_BASE=${LISTING_SHARE_WEB_BASE} --dart-define=LISTING_SHARE_URL_PATH=${LISTING_SHARE_URL_PATH}
     artifacts:
       - build/app/outputs/flutter-apk/app-release.apk
 
@@ -178,6 +184,8 @@ workflows:
         # IMPORTANT: Do NOT include /api in API_BASE. The app adds /api itself.
         # Release builds require HTTPS.
         API_BASE: "https://carr-5hrm.onrender.com"
+        LISTING_SHARE_WEB_BASE: "https://www.iqcars.net"
+        LISTING_SHARE_URL_PATH: "en/redirect"
       # Configure these in Codemagic UI (Environment variables / Secure):
       # - CM_KEYSTORE (base64 of your .jks)
       # - CM_KEYSTORE_PASSWORD
@@ -223,9 +231,9 @@ workflows:
       - name: Tests
         script: flutter test --no-pub --dart-define=API_BASE=http://127.0.0.1:8081
       - name: Build APK (release)
-        script: flutter build apk --release --no-pub --flavor "$FLAVOR" --dart-define=API_BASE="$API_BASE"
+        script: flutter build apk --release --no-pub --flavor "$FLAVOR" --dart-define=API_BASE="$API_BASE" --dart-define=LISTING_SHARE_WEB_BASE="$LISTING_SHARE_WEB_BASE" --dart-define=LISTING_SHARE_URL_PATH="$LISTING_SHARE_URL_PATH"
       - name: Build App Bundle (release)
-        script: flutter build appbundle --release --no-pub --flavor "$FLAVOR" --dart-define=API_BASE="$API_BASE"
+        script: flutter build appbundle --release --no-pub --flavor "$FLAVOR" --dart-define=API_BASE="$API_BASE" --dart-define=LISTING_SHARE_WEB_BASE="$LISTING_SHARE_WEB_BASE" --dart-define=LISTING_SHARE_URL_PATH="$LISTING_SHARE_URL_PATH"
     artifacts:
       - build/app/outputs/flutter-apk/*.apk
       - build/app/outputs/bundle/*/*.aab
