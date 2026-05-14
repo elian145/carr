@@ -518,8 +518,11 @@ class KuWidgetsLocalizationsDelegate
 }
 
 String getApiBase() {
-  final base = apiBase();
-  // On Android emulator, default LAN base is unreachable; use host alias so images load
+  // Must match [effectiveApiBase] in config.dart — home feed uses raw [http.get]
+  // with this base, while [ApiService] uses [apiBaseApi] (already effective).
+  // If we only used [apiBase] here, an empty compile-time API_BASE yields '' and
+  // listing fetches break on device even though authenticated calls work.
+  final base = effectiveApiBase();
   if (Platform.isAndroid && base == 'http://192.168.1.7:5003') {
     return 'http://10.0.2.2:5000';
   }
