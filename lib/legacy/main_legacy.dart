@@ -26,6 +26,8 @@ import '../services/auth_service.dart';
 import '../models/analytics_model.dart';
 import '../shared/auth/token_store.dart';
 import '../shared/text/pretty_title_case.dart';
+import '../shared/listings/listing_identity.dart';
+import '../shared/listings/listing_share_urls.dart';
 import '../shared/prefs/listing_layout_prefs.dart';
 import '../state/locale_controller.dart' as app_state;
 import '../globals.dart';
@@ -13642,13 +13644,20 @@ class _CarDetailsPageState extends State<CarDetailsPage> {
     try {
       if (car == null) return;
 
+      final String id = listingPrimaryId(car!).isNotEmpty
+          ? listingPrimaryId(car!)
+          : widget.carId.toString();
       final String title = _displayCarTitle(context).isNotEmpty
           ? _displayCarTitle(context)
           : 'Car Listing';
       final String year = car!['year']?.toString() ?? '';
       final String price = car!['price']?.toString() ?? '';
 
-      final String shareText = '$title ($year) - \$$price';
+      final String line = '$title ($year) - \$$price'.trim();
+      final String shareText = buildListingShareMessage(
+        listingId: id,
+        bodyLines: [if (line.isNotEmpty) line],
+      );
 
       await Share.share(shareText);
 
@@ -13823,6 +13832,11 @@ class _CarDetailsPageState extends State<CarDetailsPage> {
                     onPressed: () => Navigator.of(context).maybePop(),
                   ),
                   actions: [
+                    IconButton(
+                      tooltip: AppLocalizations.of(context)!.shareAction,
+                      onPressed: _shareCar,
+                      icon: Icon(Icons.share_outlined),
+                    ),
                     IconButton(
                       onPressed: _toggleFavoriteOnServer,
                       icon: Icon(
@@ -14344,48 +14358,10 @@ class _CarDetailsPageState extends State<CarDetailsPage> {
                                 ),
                                 SizedBox(height: 6),
                               ],
-                              Row(
-                                children: [
-                                  Expanded(
-                                    child: SizedBox(
-                                      height: 46,
-                                      child: ComparisonButton(car: car!),
-                                    ),
-                                  ),
-                                  SizedBox(width: 6),
-                                  Expanded(
-                                    child: SizedBox(
-                                      height: 46,
-                                      child: OutlinedButton.icon(
-                                        style: OutlinedButton.styleFrom(
-                                          padding: EdgeInsets.symmetric(
-                                            horizontal: 10,
-                                            vertical: 8,
-                                          ),
-                                          minimumSize: Size(0, 46),
-                                          tapTargetSize:
-                                              MaterialTapTargetSize.shrinkWrap,
-                                          shape: RoundedRectangleBorder(
-                                            borderRadius: BorderRadius.circular(
-                                              17,
-                                            ),
-                                          ),
-                                        ),
-                                        onPressed: _shareCar,
-                                        icon: Icon(Icons.share, size: 19),
-                                        label: Text(
-                                          AppLocalizations.of(
-                                            context,
-                                          )!.shareAction,
-                                          style: TextStyle(
-                                            fontSize: 13,
-                                            fontWeight: FontWeight.w600,
-                                          ),
-                                        ),
-                                      ),
-                                    ),
-                                  ),
-                                ],
+                              SizedBox(
+                                width: double.infinity,
+                                height: 46,
+                                child: ComparisonButton(car: car!),
                               ),
                               SizedBox(height: 6),
                               SizedBox(

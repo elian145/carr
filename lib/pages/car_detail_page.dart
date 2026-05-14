@@ -13,6 +13,7 @@ import '../services/config.dart';
 import '../shared/media/media_url.dart';
 import '../shared/errors/user_error_text.dart';
 import '../shared/listings/listing_identity.dart';
+import '../shared/listings/listing_share_urls.dart';
 import '../shared/text/pretty_title_case.dart';
 import 'listing_image_gallery_page.dart';
 
@@ -314,11 +315,14 @@ class _CarDetailPageState extends State<CarDetailPage> {
     final price = (car['price'] ?? '').toString();
     final currency = (car['currency'] ?? '').toString();
     final location = (car['location'] ?? car['city'] ?? '').toString();
-    final text = [
-      title,
-      [price, currency].where((s) => s.isNotEmpty).join(' '),
-      location,
-    ].where((s) => s.trim().isNotEmpty).join('\n');
+    final text = buildListingShareMessage(
+      listingId: id,
+      bodyLines: [
+        title,
+        [price, currency].where((s) => s.isNotEmpty).join(' '),
+        location,
+      ],
+    );
 
     try {
       await Share.share(text);
@@ -1447,14 +1451,14 @@ class _CarDetailPageState extends State<CarDetailPage> {
         title: Text(loc?.listingTitle ?? 'Listing'),
         actions: [
           IconButton(
-            tooltip: loc?.shareAction ?? 'Share',
-            onPressed: _shareCar,
-            icon: const Icon(Icons.share_outlined),
-          ),
-          IconButton(
             tooltip: loc?.callAction ?? 'Call',
             onPressed: _callSeller,
             icon: const Icon(Icons.call_outlined),
+          ),
+          IconButton(
+            tooltip: loc?.shareAction ?? 'Share',
+            onPressed: _shareCar,
+            icon: const Icon(Icons.share_outlined),
           ),
           IconButton(
             tooltip: loc?.favoriteAction ?? 'Favorite',

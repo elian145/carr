@@ -19,6 +19,13 @@ const bool kForceSkipBlur = bool.fromEnvironment(
   'FORCE_SKIP_BLUR',
   defaultValue: false,
 );
+
+/// Optional HTTPS origin for listing share links (no trailing slash), e.g.
+/// `https://www.example.com`. Shared text includes `$base/listing/<id>` when set.
+const String kListingShareWebBase = String.fromEnvironment(
+  'LISTING_SHARE_WEB_BASE',
+  defaultValue: '',
+);
 /// Opt-in for insecure HTTP in *release* builds.
 ///
 /// This is intended ONLY for local development / emulator usage.

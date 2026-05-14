@@ -54,6 +54,24 @@ class DeepLinkService {
           );
         }
       });
+      return;
+    }
+    // carzo://listing?id=<public_id>
+    if (uri.scheme == 'carzo' && uri.host == 'listing') {
+      final carId = (uri.queryParameters['id'] ??
+              uri.queryParameters['carId'] ??
+              '')
+          .trim();
+      if (carId.isEmpty) return;
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (key?.currentContext != null && key!.currentState != null) {
+          key.currentState!.pushNamed(
+            '/car_detail',
+            arguments: <String, dynamic>{'carId': carId},
+          );
+        }
+      });
+      return;
     }
   }
 

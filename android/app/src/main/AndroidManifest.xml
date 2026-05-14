@@ -39,6 +39,13 @@
                 <category android:name="android.intent.category.BROWSABLE"/>
                 <data android:scheme="carzo" android:host="auth"/>
             </intent-filter>
+            <!-- Open a specific listing from share links: carzo://listing?id=... -->
+            <intent-filter>
+                <action android:name="android.intent.action.VIEW"/>
+                <category android:name="android.intent.category.DEFAULT"/>
+                <category android:name="android.intent.category.BROWSABLE"/>
+                <data android:scheme="carzo" android:host="listing"/>
+            </intent-filter>
         </activity>
         <!-- Allow HTTP for backend (emulator/LAN); Flutter network policy -->
         <meta-data
