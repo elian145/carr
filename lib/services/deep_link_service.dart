@@ -13,19 +13,45 @@ class DeepLinkService {
   GlobalKey<NavigatorState>? _navigatorKey;
   StreamSubscription<Uri>? _linkSub;
 
-  /// Initialize with the [MaterialApp] navigator key. Call once after app is built.
+  /// Same URI can arrive from both [AppLinks.getInitialLink] and [AppLinks.uriLinkStream]
+  /// on cold start; ignore repeats within this window so we do not push twice.
+  static const Duration _kDuplicateLinkWindow = Duration(seconds: 3);
+  String? _lastHandledUriString;
+  DateTime? _lastHandledAt;
+
+  /// Initialize with the [MaterialApp] navigator key. Call once after [MaterialApp] is built.
   void init(GlobalKey<NavigatorState> navigatorKey) {
     _navigatorKey = navigatorKey;
     _linkSub?.cancel();
-    _linkSub = _appLinks.uriLinkStream.listen(_handleLink);
-    _appLinks.getInitialLink().then((uri) {
-      if (uri != null) _handleLink(uri);
+    _linkSub = null;
+    _lastHandledUriString = null;
+    _lastHandledAt = null;
+
+    // Consume the launch URI first, then subscribe — reduces duplicate delivery on some platforms.
+    _appLinks.getInitialLink().then((Uri? initial) {
+      if (_navigatorKey != navigatorKey) return;
+      _linkSub = _appLinks.uriLinkStream.listen(_handleLink);
+      if (initial != null) _handleLink(initial);
     });
+  }
+
+  bool _isDuplicateDelivery(Uri uri) {
+    final now = DateTime.now();
+    final s = uri.toString();
+    if (_lastHandledUriString == s &&
+        _lastHandledAt != null &&
+        now.difference(_lastHandledAt!) < _kDuplicateLinkWindow) {
+      return true;
+    }
+    _lastHandledUriString = s;
+    _lastHandledAt = now;
+    return false;
   }
 
   void _handleLink(Uri uri) {
     final key = _navigatorKey;
     if (key?.currentContext == null) return;
+    if (_isDuplicateDelivery(uri)) return;
     // carzo://auth/reset-password?token=xxx
     final path = uri.path;
     final token = uri.queryParameters['token']?.trim();
@@ -79,5 +105,7 @@ class DeepLinkService {
     _linkSub?.cancel();
     _linkSub = null;
     _navigatorKey = null;
+    _lastHandledUriString = null;
+    _lastHandledAt = null;
   }
 }
