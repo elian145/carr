@@ -57,28 +57,67 @@ class _CarDetailPageState extends State<CarDetailPage> {
     super.dispose();
   }
 
+  static bool _imageEntryIsDamage(dynamic it) {
+    if (it is! Map) return false;
+    final k = (it['kind'] ?? '').toString().toLowerCase();
+    return k == 'damage';
+  }
+
   List<String> get _imageUrls {
     final car = _car;
     if (car == null) return const <String>[];
     final List<String> urls = [];
+    final Set<String> seen = {};
+
+    void addOne(String raw) {
+      if (raw.trim().isEmpty) return;
+      final full = buildMediaUrl(raw);
+      if (full.isEmpty || seen.contains(full)) return;
+      seen.add(full);
+      urls.add(full);
+    }
 
     final primary = (car['image_url'] ?? '').toString();
-    if (primary.isNotEmpty) urls.add(buildMediaUrl(primary));
+    if (primary.isNotEmpty) {
+      addOne(primary);
+    }
 
     final imgs = car['images'];
     if (imgs is List) {
       for (final it in imgs) {
+        if (_imageEntryIsDamage(it)) continue;
         final s = it is Map
             ? (it['image_url'] ?? it['url'] ?? it['path'] ?? it['src'] ?? '')
                   .toString()
             : it.toString();
         if (s.isEmpty) continue;
-        final full = buildMediaUrl(s);
-        if (full.isNotEmpty && !urls.contains(full)) urls.add(full);
+        addOne(s);
       }
     }
 
     return urls;
+  }
+
+  List<String> get _damageImageUrls {
+    final car = _car;
+    if (car == null) return const <String>[];
+    final imgs = car['images'];
+    if (imgs is! List) return const <String>[];
+    final out = <String>[];
+    final seen = <String>{};
+    for (final it in imgs) {
+      if (!_imageEntryIsDamage(it)) continue;
+      final s = it is Map
+          ? (it['image_url'] ?? it['url'] ?? it['path'] ?? it['src'] ?? '')
+                .toString()
+          : it.toString();
+      if (s.trim().isEmpty) continue;
+      final full = buildMediaUrl(s);
+      if (full.isEmpty || seen.contains(full)) continue;
+      seen.add(full);
+      out.add(full);
+    }
+    return out;
   }
 
   static List<String> _normalizeVideoPaths(dynamic raw) {
@@ -113,8 +152,13 @@ class _CarDetailPageState extends State<CarDetailPage> {
     return out;
   }
 
-  void _openImageGallery(BuildContext context, List<String> urls, int tappedIndex) {
-    final videos = _videoUrls;
+  void _openImageGallery(
+    BuildContext context,
+    List<String> urls,
+    int tappedIndex, {
+    List<String>? videoUrls,
+  }) {
+    final videos = videoUrls ?? _videoUrls;
     if (urls.isEmpty && videos.isEmpty) return;
     final i = urls.isEmpty ? 0 : tappedIndex.clamp(0, urls.length - 1);
     Navigator.of(context).push<void>(
@@ -743,47 +787,115 @@ class _CarDetailPageState extends State<CarDetailPage> {
         rows.add(MapEntry(loc?.seating ?? 'Seating', n));
       }
     }
-    if (rows.isEmpty) return const SizedBox.shrink();
+
+    final titleStyle = Theme.of(
+      context,
+    ).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.w700);
+
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Text(
           loc?.specificationsLabel ?? 'Specifications',
-          style: Theme.of(
-            context,
-          ).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.w700),
+          style: titleStyle,
         ),
         const SizedBox(height: 10),
-        Wrap(
-          spacing: 12,
-          runSpacing: 10,
-          children: rows.map((e) {
-            return Container(
-              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-              decoration: BoxDecoration(
-                color: Theme.of(
-                  context,
-                ).colorScheme.surfaceContainerHighest.withOpacity(0.5),
-                borderRadius: BorderRadius.circular(8),
-              ),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  Text(
-                    e.key,
-                    style: Theme.of(context).textTheme.labelSmall?.copyWith(
-                      color: Theme.of(context).colorScheme.onSurfaceVariant,
+        _buildTitleStatusRow(car, loc),
+        if (rows.isNotEmpty) ...[
+          const SizedBox(height: 10),
+          Wrap(
+            spacing: 12,
+            runSpacing: 10,
+            children: rows.map((e) {
+              return Container(
+                padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                decoration: BoxDecoration(
+                  color: Theme.of(
+                    context,
+                  ).colorScheme.surfaceContainerHighest.withOpacity(0.5),
+                  borderRadius: BorderRadius.circular(8),
+                ),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Text(
+                      e.key,
+                      style: Theme.of(context).textTheme.labelSmall?.copyWith(
+                        color: Theme.of(context).colorScheme.onSurfaceVariant,
+                      ),
                     ),
-                  ),
-                  const SizedBox(height: 2),
-                  Text(e.value, style: Theme.of(context).textTheme.bodyMedium),
-                ],
-              ),
-            );
-          }).toList(),
-        ),
+                    const SizedBox(height: 2),
+                    Text(e.value, style: Theme.of(context).textTheme.bodyMedium),
+                  ],
+                ),
+              );
+            }).toList(),
+          ),
+        ],
         const SizedBox(height: 16),
+      ],
+    );
+  }
+
+  Widget _buildTitleStatusRow(Map<String, dynamic> car, AppLocalizations? loc) {
+    final damageUrls = _damageImageUrls;
+    final titleRaw = (car['title_status'] ?? 'clean').toString().toLowerCase();
+    final isDamaged = titleRaw == 'damaged';
+    final parts = car['damaged_parts'];
+    final String value;
+    if (isDamaged) {
+      value = parts != null
+          ? (loc?.titleStatusDamagedWithParts(parts.toString()) ??
+              'Damaged (${parts.toString()} parts)')
+          : (loc?.value_title_damaged ?? 'Damaged');
+    } else {
+      value = loc?.value_title_clean ?? 'Clean';
+    }
+    return Row(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Expanded(
+          child: Container(
+            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+            decoration: BoxDecoration(
+              color: Theme.of(
+                context,
+              ).colorScheme.surfaceContainerHighest.withOpacity(0.5),
+              borderRadius: BorderRadius.circular(8),
+            ),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Text(
+                  loc?.titleStatus ?? 'Title Status',
+                  style: Theme.of(context).textTheme.labelSmall?.copyWith(
+                        color: Theme.of(context).colorScheme.onSurfaceVariant,
+                      ),
+                ),
+                const SizedBox(height: 2),
+                Text(value, style: Theme.of(context).textTheme.bodyMedium),
+              ],
+            ),
+          ),
+        ),
+        if (damageUrls.isNotEmpty) ...[
+          const SizedBox(width: 8),
+          Tooltip(
+            message:
+                loc?.viewDamagePhotosTooltip ?? 'View damage or crash photos',
+            child: IconButton.filledTonal(
+              onPressed: () => _openImageGallery(
+                context,
+                damageUrls,
+                0,
+                videoUrls: const <String>[],
+              ),
+              icon: const Icon(Icons.photo_library_outlined),
+            ),
+          ),
+        ],
       ],
     );
   }

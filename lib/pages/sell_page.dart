@@ -64,6 +64,10 @@ class _SellPageState extends State<SellPage> {
   String _bodyType = 'sedan';
   String _currency = 'USD';
 
+  String _titleStatus = 'clean';
+  final _damagedParts = TextEditingController();
+  final List<XFile> _damageImages = <XFile>[];
+
   final List<XFile> _images = <XFile>[];
   final List<XFile> _videos = <XFile>[];
   bool _submitting = false;
@@ -106,6 +110,7 @@ class _SellPageState extends State<SellPage> {
     _cylinderCtl.addListener(_onDraftFieldChanged);
     _fuelEconomyCtl.addListener(_onDraftFieldChanged);
     _seatingCtl.addListener(_onDraftFieldChanged);
+    _damagedParts.addListener(_onDraftFieldChanged);
     unawaited(_loadDraftPreview());
     CarSpecIndex.loadWithResult().then((r) {
       if (!mounted) return;
@@ -131,6 +136,7 @@ class _SellPageState extends State<SellPage> {
     _cylinderCtl.removeListener(_onDraftFieldChanged);
     _fuelEconomyCtl.removeListener(_onDraftFieldChanged);
     _seatingCtl.removeListener(_onDraftFieldChanged);
+    _damagedParts.removeListener(_onDraftFieldChanged);
     _year.dispose();
     _mileage.dispose();
     _price.dispose();
@@ -140,6 +146,7 @@ class _SellPageState extends State<SellPage> {
     _cylinderCtl.dispose();
     _fuelEconomyCtl.dispose();
     _seatingCtl.dispose();
+    _damagedParts.dispose();
     super.dispose();
   }
 
@@ -214,7 +221,10 @@ class _SellPageState extends State<SellPage> {
         (data['drive_type'] ?? 'fwd') != 'fwd' ||
         (data['condition'] ?? 'used') != 'used' ||
         (data['body_type'] ?? 'sedan') != 'sedan' ||
-        (data['currency'] ?? 'USD') != 'USD';
+        (data['currency'] ?? 'USD') != 'USD' ||
+        (data['title_status'] ?? 'clean').toString().toLowerCase() != 'clean' ||
+        (data['damage_image_paths'] is List &&
+            (data['damage_image_paths'] as List).isNotEmpty);
   }
 
   Future<void> _loadDraftPreview() async {
@@ -258,7 +268,11 @@ class _SellPageState extends State<SellPage> {
     if (_condition != 'used') return true;
     if (_bodyType != 'sedan') return true;
     if (_currency != 'USD') return true;
-    return _images.isNotEmpty || _videos.isNotEmpty;
+    if (_titleStatus != 'clean') return true;
+    if (_damagedParts.text.trim().isNotEmpty) return true;
+    return _images.isNotEmpty ||
+        _videos.isNotEmpty ||
+        _damageImages.isNotEmpty;
   }
 
   bool _isListingComplete() {
@@ -307,6 +321,9 @@ class _SellPageState extends State<SellPage> {
       'catalog_year': _catalogYear,
       'image_paths': _images.map((file) => file.path).toList(),
       'video_paths': _videos.map((file) => file.path).toList(),
+      'title_status': _titleStatus,
+      'damaged_parts': _damagedParts.text.trim(),
+      'damage_image_paths': _damageImages.map((file) => file.path).toList(),
       'complete': _isListingComplete(),
       'updated_at': DateTime.now().toIso8601String(),
     };
@@ -376,6 +393,15 @@ class _SellPageState extends State<SellPage> {
               .where((path) => path.trim().isNotEmpty && File(path).existsSync())
               .toList()
           : <String>[];
+      final damageImagePaths = (draft['damage_image_paths'] is List)
+          ? (draft['damage_image_paths'] as List)
+              .map((e) => e.toString())
+              .where((path) => path.trim().isNotEmpty && File(path).existsSync())
+              .toList()
+          : <String>[];
+
+      final draftTitleStatus = (draft['title_status'] ?? 'clean').toString().toLowerCase();
+      final normalizedTitle = draftTitleStatus == 'damaged' ? 'damaged' : 'clean';
 
       final loadedDraft = <String, dynamic>{
         'brand': (draft['brand'] ?? '').toString().trim(),
@@ -399,6 +425,9 @@ class _SellPageState extends State<SellPage> {
         'seating': (draft['seating'] ?? '').toString().trim(),
         'image_paths': imagePaths,
         'video_paths': videoPaths,
+        'title_status': normalizedTitle,
+        'damaged_parts': (draft['damaged_parts'] ?? '').toString().trim(),
+        'damage_image_paths': damageImagePaths,
       };
       final hasMeaningfulContent = loadedDraft.entries.any((entry) {
         final value = entry.value;
@@ -425,7 +454,10 @@ class _SellPageState extends State<SellPage> {
           loadedDraft['drive_type'] != 'fwd' ||
           loadedDraft['condition'] != 'used' ||
           loadedDraft['body_type'] != 'sedan' ||
-          loadedDraft['currency'] != 'USD');
+          loadedDraft['currency'] != 'USD' ||
+          loadedDraft['title_status'] != 'clean' ||
+          loadedDraft['damaged_parts'].toString().trim().isNotEmpty ||
+          damageImagePaths.isNotEmpty);
       if (!hasMeaningfulContent) {
         await SellListingDraftPrefs.clear(owner);
         if (!mounted) return;
@@ -463,11 +495,16 @@ class _SellPageState extends State<SellPage> {
         _cylinderCtl.text = loadedDraft['cylinder_count'];
         _fuelEconomyCtl.text = loadedDraft['fuel_economy'];
         _seatingCtl.text = loadedDraft['seating'];
+        _titleStatus = loadedDraft['title_status'] as String;
+        _damagedParts.text = loadedDraft['damaged_parts'] as String;
         _catalogYear = int.tryParse((draft['catalog_year'] ?? '').toString());
         _datasetModelId = int.tryParse((draft['dataset_model_id'] ?? '').toString());
         _images
           ..clear()
           ..addAll(imagePaths.map((path) => XFile(path)));
+        _damageImages
+          ..clear()
+          ..addAll(damageImagePaths.map((path) => XFile(path)));
         _videos
           ..clear()
           ..addAll(videoPaths.map((path) => XFile(path)));
@@ -515,8 +552,11 @@ class _SellPageState extends State<SellPage> {
         _condition = 'used';
         _bodyType = 'sedan';
         _currency = 'USD';
+        _titleStatus = 'clean';
+        _damagedParts.clear();
         _images.clear();
         _videos.clear();
+        _damageImages.clear();
         _clearOnlineSpecOptionLists();
         _draftExists = false;
         _draftIsComplete = false;
@@ -802,6 +842,32 @@ class _SellPageState extends State<SellPage> {
     }
   }
 
+  Future<void> _pickDamageImages() async {
+    try {
+      final picker = ImagePicker();
+      final picked = await picker.pickMultiImage(
+        imageQuality: 85,
+        maxWidth: 1920,
+        maxHeight: 1920,
+      );
+      if (picked.isEmpty) return;
+      if (!mounted) return;
+      setState(() {
+        _damageImages.addAll(picked);
+      });
+      _scheduleDraftSave();
+    } catch (e) {
+      if (!mounted) return;
+      setState(() {
+        _error = userErrorText(
+          context,
+          e,
+          fallback: AppLocalizations.of(context)?.errorTitle ?? 'Error',
+        );
+      });
+    }
+  }
+
   Future<void> _uploadCarImages(String carId) async {
     try {
       final publicUrls = <String>[];
@@ -831,6 +897,38 @@ class _SellPageState extends State<SellPage> {
       }
     } catch (_) {
       await ApiService.uploadCarImages(carId, _images);
+    }
+  }
+
+  Future<void> _uploadDamageImages(String carId) async {
+    try {
+      final publicUrls = <String>[];
+      for (final file in _damageImages) {
+        final sign = await ApiService.signR2ImageUpload(
+          filename: file.name,
+          contentType: file.mimeType,
+        );
+        final uploadUrl = sign['upload_url'] as String?;
+        final publicUrl = sign['public_url'] as String?;
+        if (uploadUrl == null ||
+            uploadUrl.isEmpty ||
+            publicUrl == null ||
+            publicUrl.isEmpty) {
+          await ApiService.uploadCarImages(carId, _damageImages, imageKind: 'damage');
+          return;
+        }
+        await ApiService.uploadToSignedUpload(uploadUrl, file);
+        publicUrls.add(publicUrl);
+      }
+      await ApiService.attachCarImageUrls(carId, publicUrls, kind: 'damage');
+    } on ApiException catch (e) {
+      if (e.statusCode == 503) {
+        await ApiService.uploadCarImages(carId, _damageImages, imageKind: 'damage');
+      } else {
+        rethrow;
+      }
+    } catch (_) {
+      await ApiService.uploadCarImages(carId, _damageImages, imageKind: 'damage');
     }
   }
 
@@ -888,6 +986,7 @@ class _SellPageState extends State<SellPage> {
         'currency': _currency,
         'location': _location.text.trim(),
         'description': _description.text.trim().isEmpty ? null : _description.text.trim(),
+        'title_status': _titleStatus,
       };
       final eng = OnlineSpecVariant.parseLeadingEngineLiters(
         _engineSizeCtl.text.trim(),
@@ -899,6 +998,10 @@ class _SellPageState extends State<SellPage> {
       if (fe.isNotEmpty) body['fuel_economy'] = fe;
       final seat = int.tryParse(_seatingCtl.text.trim());
       if (seat != null && seat > 0) body['seating'] = seat;
+      if (_titleStatus == 'damaged') {
+        final dp = int.tryParse(_damagedParts.text.trim());
+        if (dp != null && dp > 0) body['damaged_parts'] = dp;
+      }
 
       final created = await ApiService.createCar(body);
 
@@ -913,6 +1016,12 @@ class _SellPageState extends State<SellPage> {
       if (_images.isNotEmpty) {
         setState(() => _stage = loc?.uploadingPhotos ?? 'Uploading photos...');
         await _uploadCarImages(carId);
+      }
+      if (_damageImages.isNotEmpty) {
+        setState(
+          () => _stage = loc?.uploadingDamagePhotos ?? 'Uploading damage photos...',
+        );
+        await _uploadDamageImages(carId);
       }
       if (_videos.isNotEmpty) {
         setState(() => _stage = loc?.uploadingVideos ?? 'Uploading videos...');
@@ -2088,6 +2197,46 @@ class _SellPageState extends State<SellPage> {
                 },
               ),
               const SizedBox(height: 10),
+              DropdownButtonFormField<String>(
+                value: _titleStatus,
+                decoration: InputDecoration(
+                  labelText: loc?.titleStatus ?? 'Title status',
+                ),
+                items: [
+                  DropdownMenuItem(
+                    value: 'clean',
+                    child: Text(loc?.value_title_clean ?? 'Clean'),
+                  ),
+                  DropdownMenuItem(
+                    value: 'damaged',
+                    child: Text(loc?.value_title_damaged ?? 'Damaged'),
+                  ),
+                ],
+                onChanged: _submitting
+                    ? null
+                    : (v) {
+                        setState(() {
+                          _titleStatus = v ?? 'clean';
+                          if (_titleStatus == 'clean') {
+                            _damagedParts.clear();
+                            _damageImages.clear();
+                          }
+                        });
+                        _scheduleDraftSave();
+                      },
+              ),
+              if (_titleStatus == 'damaged') ...[
+                const SizedBox(height: 10),
+                TextFormField(
+                  controller: _damagedParts,
+                  keyboardType: TextInputType.number,
+                  textInputAction: TextInputAction.next,
+                  decoration: InputDecoration(
+                    labelText: loc?.damagedParts ?? 'Damaged parts',
+                  ),
+                ),
+              ],
+              const SizedBox(height: 10),
               _bodyTypeField(loc),
               const SizedBox(height: 10),
               Text(
@@ -2187,6 +2336,82 @@ class _SellPageState extends State<SellPage> {
                                   ? null
                                   : () {
                                       setState(() => _images.removeAt(index));
+                                    },
+                              child: Container(
+                                padding: const EdgeInsets.all(4),
+                                decoration: BoxDecoration(
+                                  color: Colors.black54,
+                                  borderRadius: BorderRadius.circular(12),
+                                ),
+                                child: const Icon(
+                                  Icons.close,
+                                  size: 16,
+                                  color: Colors.white,
+                                ),
+                              ),
+                            ),
+                          ),
+                        ],
+                      );
+                    },
+                  ),
+                ),
+              ],
+              const SizedBox(height: 8),
+              Text(
+                loc?.damageCrashPhotosSection ??
+                    'Damage / crash photos (optional)',
+                style: Theme.of(context).textTheme.titleSmall,
+              ),
+              const SizedBox(height: 8),
+              OutlinedButton.icon(
+                onPressed: _submitting ? null : _pickDamageImages,
+                icon: const Icon(Icons.add_photo_alternate_outlined),
+                label: Text(
+                  loc?.addDamagePhotosCount(_damageImages.length) ??
+                      'Add damage photos (${_damageImages.length})',
+                ),
+              ),
+              if (_damageImages.isNotEmpty) ...[
+                const SizedBox(height: 10),
+                SizedBox(
+                  height: 92,
+                  child: ListView.separated(
+                    scrollDirection: Axis.horizontal,
+                    itemCount: _damageImages.length,
+                    separatorBuilder: (context, index) =>
+                        const SizedBox(width: 8),
+                    itemBuilder: (context, index) {
+                      final img = _damageImages[index];
+                      return Stack(
+                        children: [
+                          ClipRRect(
+                            borderRadius: BorderRadius.circular(10),
+                            child: Image.file(
+                              File(img.path),
+                              width: 92,
+                              height: 92,
+                              fit: BoxFit.cover,
+                              errorBuilder: (context, error, stackTrace) =>
+                                  Container(
+                                width: 92,
+                                height: 92,
+                                color: Colors.black12,
+                                child: const Icon(Icons.image_not_supported),
+                              ),
+                            ),
+                          ),
+                          Positioned(
+                            top: 2,
+                            right: 2,
+                            child: InkWell(
+                              onTap: _submitting
+                                  ? null
+                                  : () {
+                                      setState(
+                                        () => _damageImages.removeAt(index),
+                                      );
+                                      _scheduleDraftSave();
                                     },
                               child: Container(
                                 padding: const EdgeInsets.all(4),

@@ -161,6 +161,7 @@ def ensure_minimal_schema_compat(app, db) -> None:
                     ("is_primary", "BOOLEAN DEFAULT 0"),
                     ('"order"', "INTEGER DEFAULT 0"),
                     ("created_at", "DATETIME"),
+                    ("kind", "TEXT DEFAULT 'listing'"),
                 ):
                     _add_ci(col, typ)
 

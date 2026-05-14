@@ -113,6 +113,40 @@ def _get_car_by_any_id(car_id: str):
     return car
 
 
+def _normalize_car_image_kind(raw) -> str:
+    """Return 'damage' or 'listing' for stored CarImage.kind."""
+    s = (str(raw or "")).strip().lower()
+    return "damage" if s == "damage" else "listing"
+
+
+def _count_listing_images(car: Car) -> int:
+    try:
+        return sum(
+            1
+            for img in car.images
+            if _normalize_car_image_kind(getattr(img, "kind", None)) == "listing"
+        )
+    except Exception:
+        return 0
+
+
+def _pick_primary_listing_url(car: Car):
+    """Prefer primary among listing photos; never use damage-only rows as hero."""
+    try:
+        for img in car.images:
+            if (
+                getattr(img, "is_primary", False)
+                and _normalize_car_image_kind(getattr(img, "kind", None)) == "listing"
+            ):
+                return img.image_url
+        for img in car.images:
+            if _normalize_car_image_kind(getattr(img, "kind", None)) == "listing":
+                return img.image_url
+        return None
+    except Exception:
+        return None
+
+
 @bp.route("/api/media/r2/sign-upload", methods=["POST"])
 @jwt_required()
 def r2_sign_upload():
@@ -197,6 +231,7 @@ def upload_car_images(car_id: str):
         skip_param = (request.args.get("skip_blur") or "").strip().lower()
         requested_skip = skip_param in ("1", "true", "yes", "y", "on")
         skip_blur = bool(requested_skip)
+        upload_kind = _normalize_car_image_kind(request.args.get("kind"))
 
         for fs in incoming_files:
             if not fs or not fs.filename:
@@ -211,10 +246,13 @@ def upload_car_images(car_id: str):
                 continue
 
             rel_path, _b64 = process_and_store_image(fs, inline_base64=False, skip_blur=skip_blur)
+            listing_n = _count_listing_images(car)
+            is_primary = upload_kind == "listing" and listing_n == 0
             car_image = CarImage(
                 car_id=car.id,
                 image_url=rel_path,
-                is_primary=len(car.images) == 0,
+                is_primary=is_primary,
+                kind=upload_kind,
             )
             db.session.add(car_image)
             uploaded_images.append(car_image.to_dict())
@@ -227,7 +265,7 @@ def upload_car_images(car_id: str):
         log_user_action(current_user, "upload_images", "car", car.public_id)
 
         try:
-            primary = next((img.image_url for img in car.images if getattr(img, "is_primary", False)), None)
+            primary = _pick_primary_listing_url(car)
             if not primary and car.images:
                 primary = car.images[0].image_url
         except Exception:
@@ -269,6 +307,8 @@ def attach_car_images(car_id: str):
         if not isinstance(paths, list) or not paths:
             return jsonify({"message": "No image paths or URLs provided"}), 400
 
+        attach_kind = _normalize_car_image_kind(data.get("kind"))
+
         attached = []
         upload_root = os.path.abspath(os.path.join(current_app.root_path, "static", "uploads"))
         for rel in paths:
@@ -276,7 +316,14 @@ def attach_car_images(car_id: str):
                 rel_str = str(rel or "").strip().lstrip("/").replace("\\", "/")
                 # Full URL (e.g. R2 public URL): store as-is
                 if rel_str.lower().startswith("http://") or rel_str.lower().startswith("https://"):
-                    ci = CarImage(car_id=car.id, image_url=rel_str, is_primary=len(car.images) == 0)
+                    listing_n = _count_listing_images(car)
+                    is_primary = attach_kind == "listing" and listing_n == 0
+                    ci = CarImage(
+                        car_id=car.id,
+                        image_url=rel_str,
+                        is_primary=is_primary,
+                        kind=attach_kind,
+                    )
                     db.session.add(ci)
                     attached.append(ci)
                     continue
@@ -292,7 +339,14 @@ def attach_car_images(car_id: str):
                 if not os.path.isfile(abs_path):
                     continue
                 rel_str = f"uploads/{subpath}".replace("\\", "/")
-                ci = CarImage(car_id=car.id, image_url=rel_str, is_primary=len(car.images) == 0)
+                listing_n = _count_listing_images(car)
+                is_primary = attach_kind == "listing" and listing_n == 0
+                ci = CarImage(
+                    car_id=car.id,
+                    image_url=rel_str,
+                    is_primary=is_primary,
+                    kind=attach_kind,
+                )
                 db.session.add(ci)
                 attached.append(ci)
             except Exception:
@@ -301,7 +355,7 @@ def attach_car_images(car_id: str):
         db.session.commit()
 
         try:
-            primary = next((img.image_url for img in car.images if getattr(img, "is_primary", False)), None)
+            primary = _pick_primary_listing_url(car)
             if not primary and car.images:
                 primary = car.images[0].image_url
         except Exception:

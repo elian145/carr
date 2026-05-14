@@ -332,6 +332,20 @@ class AppLocalizationsAr extends AppLocalizations {
   }
 
   @override
+  String get damageCrashPhotosSection => 'صور الضرر / الحادث (اختياري)';
+
+  @override
+  String addDamagePhotosCount(Object count) {
+    return 'إضافة صور الضرر ($count)';
+  }
+
+  @override
+  String get viewDamagePhotosTooltip => 'عرض صور الضرر أو الحادث';
+
+  @override
+  String get uploadingDamagePhotos => 'جاري رفع صور الضرر...';
+
+  @override
   String get value_drive_fwd => 'أمامي';
 
   @override

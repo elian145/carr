@@ -115,6 +115,18 @@
       }
     }
   },
+  "damageCrashPhotosSection": "Damage / crash photos (optional)",
+  "addDamagePhotosCount": "Add damage photos ({count})",
+  "@addDamagePhotosCount": {
+    "placeholders": {
+      "count": {
+        "type": "Object",
+        "example": "0"
+      }
+    }
+  },
+  "viewDamagePhotosTooltip": "View damage or crash photos",
+  "uploadingDamagePhotos": "Uploading damage photos...",
   "value_drive_fwd": "fwd",
   "value_drive_rwd": "rwd",
   "value_drive_awd": "awd",

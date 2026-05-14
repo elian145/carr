@@ -333,6 +333,8 @@ class CarImage(db.Model):
     image_url = db.Column(db.String(200), nullable=False)
     is_primary = db.Column(db.Boolean, default=False)
     order = db.Column(db.Integer, default=0)
+    # "listing" = normal gallery photos; "damage" = crash / damage disclosure (not in main carousel).
+    kind = db.Column(db.String(20), nullable=False, default="listing")
     created_at = db.Column(db.DateTime, default=utcnow)
     
     def to_dict(self):
@@ -340,7 +342,8 @@ class CarImage(db.Model):
             'id': self.id,
             'image_url': self.image_url,
             'is_primary': self.is_primary,
-            'order': self.order
+            'order': self.order,
+            'kind': getattr(self, "kind", None) or "listing",
         }
     
     def __repr__(self):

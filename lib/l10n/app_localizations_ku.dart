@@ -332,6 +332,20 @@ class AppLocalizationsKu extends AppLocalizations {
   }
 
   @override
+  String get damageCrashPhotosSection => 'وێنەی زیان / ڕووداو (ئارەزوومەندانە)';
+
+  @override
+  String addDamagePhotosCount(Object count) {
+    return 'وێنەی زیان زیاد بکە ($count)';
+  }
+
+  @override
+  String get viewDamagePhotosTooltip => 'بینینی وێنەکانی زیان یان ڕووداو';
+
+  @override
+  String get uploadingDamagePhotos => 'بارکردنی وێنەی زیان...';
+
+  @override
   String get value_drive_fwd => 'پێشەوە';
 
   @override

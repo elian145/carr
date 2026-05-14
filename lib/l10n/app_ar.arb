@@ -116,6 +116,18 @@
       }
     }
   },
+  "damageCrashPhotosSection": "صور الضرر / الحادث (اختياري)",
+  "addDamagePhotosCount": "إضافة صور الضرر ({count})",
+  "@addDamagePhotosCount": {
+    "placeholders": {
+      "count": {
+        "type": "Object",
+        "example": "0"
+      }
+    }
+  },
+  "viewDamagePhotosTooltip": "عرض صور الضرر أو الحادث",
+  "uploadingDamagePhotos": "جاري رفع صور الضرر...",
   "value_drive_fwd": "أمامي",
   "value_drive_rwd": "خلفي",
   "value_drive_awd": "كلي",

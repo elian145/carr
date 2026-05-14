@@ -332,6 +332,20 @@ class AppLocalizationsEn extends AppLocalizations {
   }
 
   @override
+  String get damageCrashPhotosSection => 'Damage / crash photos (optional)';
+
+  @override
+  String addDamagePhotosCount(Object count) {
+    return 'Add damage photos ($count)';
+  }
+
+  @override
+  String get viewDamagePhotosTooltip => 'View damage or crash photos';
+
+  @override
+  String get uploadingDamagePhotos => 'Uploading damage photos...';
+
+  @override
   String get value_drive_fwd => 'fwd';
 
   @override

@@ -116,6 +116,18 @@
       }
     }
   },
+  "damageCrashPhotosSection": "وێنەی زیان / ڕووداو (ئارەزوومەندانە)",
+  "addDamagePhotosCount": "وێنەی زیان زیاد بکە ({count})",
+  "@addDamagePhotosCount": {
+    "placeholders": {
+      "count": {
+        "type": "Object",
+        "example": "0"
+      }
+    }
+  },
+  "viewDamagePhotosTooltip": "بینینی وێنەکانی زیان یان ڕووداو",
+  "uploadingDamagePhotos": "بارکردنی وێنەی زیان...",
   "value_drive_fwd": "پێشەوە",
   "value_drive_rwd": "دواوە",
   "value_drive_awd": "هەموو چوار",

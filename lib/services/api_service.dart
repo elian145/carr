@@ -854,11 +854,16 @@ class ApiService {
     String carId,
     List<XFile> imageFiles, {
     bool blurPlates = false,
+    /// Backend: `kind=damage` for crash/damage disclosure (excluded from main gallery).
+    String imageKind = 'listing',
   }) async {
     // App-default behavior: do NOT blur unless user explicitly requests it.
     // FORCE_SKIP_BLUR remains a hard override for dev/testing builds.
     final bool skipBlur = forceSkipBlur() || !blurPlates;
-    final String query = skipBlur ? '?skip_blur=1' : '';
+    final qp = <String>[];
+    if (skipBlur) qp.add('skip_blur=1');
+    if (imageKind.toLowerCase() == 'damage') qp.add('kind=damage');
+    final String query = qp.isEmpty ? '' : '?${qp.join('&')}';
     final request = http.MultipartRequest(
       'POST',
       Uri.parse('$baseUrl/cars/$carId/images$query'),
@@ -945,12 +950,17 @@ class ApiService {
   /// Attach image URLs (e.g. R2 public URLs) to a car listing.
   static Future<Map<String, dynamic>> attachCarImageUrls(
     String carId,
-    List<String> urls,
-  ) async {
+    List<String> urls, {
+    String kind = 'listing',
+  }) async {
+    final body = <String, dynamic>{
+      'urls': urls,
+      if (kind.toLowerCase() == 'damage') 'kind': 'damage',
+    };
     return await _makeAuthenticatedRequest(
       'POST',
       '/cars/$carId/images/attach',
-      body: {'urls': urls},
+      body: body,
     );
   }
 

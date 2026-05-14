@@ -742,6 +742,30 @@ abstract class AppLocalizations {
   /// **'damaged ({count} parts)'**
   String titleStatusDamagedWithParts(String count);
 
+  /// No description provided for @damageCrashPhotosSection.
+  ///
+  /// In en, this message translates to:
+  /// **'Damage / crash photos (optional)'**
+  String get damageCrashPhotosSection;
+
+  /// No description provided for @addDamagePhotosCount.
+  ///
+  /// In en, this message translates to:
+  /// **'Add damage photos ({count})'**
+  String addDamagePhotosCount(Object count);
+
+  /// No description provided for @viewDamagePhotosTooltip.
+  ///
+  /// In en, this message translates to:
+  /// **'View damage or crash photos'**
+  String get viewDamagePhotosTooltip;
+
+  /// No description provided for @uploadingDamagePhotos.
+  ///
+  /// In en, this message translates to:
+  /// **'Uploading damage photos...'**
+  String get uploadingDamagePhotos;
+
   /// No description provided for @value_drive_fwd.
   ///
   /// In en, this message translates to:
