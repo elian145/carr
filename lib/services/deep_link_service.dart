@@ -2,6 +2,8 @@ import 'dart:async';
 import 'package:app_links/app_links.dart';
 import 'package:flutter/material.dart';
 
+import '../shared/listings/listing_share_urls.dart';
+
 /// Handles app deep links (e.g. carzo://auth/reset-password?token=xxx).
 /// Call [init] with the app's [NavigatorState] key after [MaterialApp] is built.
 class DeepLinkService {
@@ -77,6 +79,19 @@ class DeepLinkService {
           key.currentState!.pushNamed(
             '/verify-email',
             arguments: <String, dynamic>{'token': token, 'mode': 'signup'},
+          );
+        }
+      });
+      return;
+    }
+    // https://<api-or-share-host>/listing/<id> (Universal / App Links)
+    final httpsListingId = listingIdFromSharedHttpsUri(uri);
+    if (httpsListingId != null) {
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (key?.currentContext != null && key!.currentState != null) {
+          key.currentState!.pushNamed(
+            '/car_detail',
+            arguments: <String, dynamic>{'carId': httpsListingId},
           );
         }
       });

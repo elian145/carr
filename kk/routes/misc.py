@@ -1,11 +1,11 @@
 from __future__ import annotations
 
-import json
 import logging
 import os
 import re
+import json
 
-from flask import Blueprint, Response, abort, current_app, jsonify, send_from_directory
+from flask import Blueprint, Response, abort, current_app, jsonify, request, send_from_directory
 from urllib.parse import quote
 from html import escape
 from werkzeug.utils import safe_join
@@ -27,35 +27,180 @@ def root():
     return jsonify({"status": "ok"}), 200
 
 
+def _listing_share_path_globs() -> list[str]:
+    """Path patterns for iOS Universal Links / documentation (must match app + LISTING_SHARE_URL_PATH)."""
+    raw = (os.environ.get("LISTING_SHARE_URL_PATH") or "listing").strip().strip("/")
+    if not raw:
+        return ["/listing/*"]
+    primary = f"/{raw}/*"
+    out = [primary]
+    if not raw.startswith("listing"):
+        out.append("/listing/*")
+    return out
+
+
+@bp.route("/.well-known/apple-app-site-association", methods=["GET"])
+def apple_app_site_association():
+    """iOS Universal Links — set ``APPLE_TEAM_ID`` (10-char) on the server."""
+    team = (os.environ.get("APPLE_TEAM_ID") or "").strip()
+    if not team:
+        abort(404)
+    data = {
+        "applinks": {
+            "apps": [],
+            "details": [
+                {
+                    "appID": f"{team}.com.carzo.app",
+                    "paths": _listing_share_path_globs(),
+                }
+            ],
+        }
+    }
+    return Response(
+        json.dumps(data),
+        200,
+        mimetype="application/json",
+        headers={"Cache-Control": "public, max-age=300"},
+    )
+
+
+@bp.route("/.well-known/assetlinks.json", methods=["GET"])
+def android_assetlinks():
+    """Android App Links — comma-separated SHA-256 cert fingerprints in ``ANDROID_SHA256_CERT_FINGERPRINTS``."""
+    raw = (os.environ.get("ANDROID_SHA256_CERT_FINGERPRINTS") or "").strip()
+    if not raw:
+        abort(404)
+    fps = [x.strip() for x in raw.split(",") if x.strip()]
+    if not fps:
+        abort(404)
+    body = [
+        {
+            "relation": ["delegate_permission/common.handle_all_urls"],
+            "target": {
+                "namespace": "android_app",
+                "package_name": "com.carzo.app",
+                "sha256_cert_fingerprints": fps,
+            },
+        }
+    ]
+    return Response(
+        json.dumps(body),
+        200,
+        mimetype="application/json",
+        headers={"Cache-Control": "public, max-age=300"},
+    )
+
+
 @bp.route("/listing/<listing_id>", methods=["GET"])
 def listing_share_landing(listing_id: str):
-    """Landing page for shared HTTPS links (`/listing/<public_id>`).
+    """Fallback HTML when a shared ``https://…/listing/<id>`` URL opens in a browser.
 
-    The mobile app shares this URL when LISTING_SHARE_WEB_BASE is unset (inferred API
-    origin). Browsers cannot open ``carzo://`` from cold start without user gesture
-    on some platforms; this page attempts handoff and offers a manual link.
+    With **Universal Links** (iOS) / **App Links** (Android) configured on the server,
+    the app opens the listing directly and this page is not used. Otherwise the user
+    taps **Open listing** (``carzo://`` on iOS, ``intent:`` on Android).
     """
     raw = (listing_id or "").strip()
     if not raw or not _LISTING_ID_RE.match(raw):
         abort(404)
-    deep = f"carzo://listing?id={quote(raw, safe='')}"
-    esc_href = escape(deep, quote=True)
-    esc_js = json.dumps(deep)
+    qid = quote(raw, safe="")
+    deep = f"carzo://listing?id={qid}"
+    esc_deep = escape(deep, quote=True)
+
+    ua = (request.headers.get("User-Agent") or "").lower()
+    is_ios = "iphone" in ua or "ipad" in ua or "ipod" in ua
+    is_android = "android" in ua
+
+    # Android Chrome: intent URI hands off to the installed app when user taps.
+    intent_href = f"intent://listing?id={qid}#Intent;scheme=carzo;package=com.carzo.app;end"
+    esc_intent = escape(intent_href, quote=True)
+
+    if is_android:
+        primary_href = esc_intent
+        body_msg = (
+            "Tap the button below. If CARZO is installed, the listing will open in the app."
+        )
+        hint = "If nothing happens, install CARZO from the Play Store, then try again."
+    elif is_ios:
+        primary_href = esc_deep
+        body_msg = (
+            "Tap Open listing to continue in CARZO. "
+            "When Universal Links are set up on the server, the app may open automatically instead."
+        )
+        hint = "If you do not have CARZO yet, install it from the App Store first."
+    else:
+        primary_href = esc_deep
+        body_msg = "Tap the button below to open this listing in the CARZO app."
+        hint = ""
+
+    hint_html = f'<p class="hint">{escape(hint)}</p>' if hint else ""
+
     html = f"""<!DOCTYPE html>
 <html lang="en">
 <head>
   <meta charset="utf-8"/>
   <meta name="viewport" content="width=device-width, initial-scale=1"/>
-  <title>CARZO</title>
+  <title>CARZO — open listing</title>
   <style>
-    body {{ font-family: system-ui, sans-serif; margin: 2rem; line-height: 1.45; }}
-    a {{ color: #ff6b00; font-weight: 600; }}
+    * {{ box-sizing: border-box; }}
+    body {{
+      margin: 0;
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      padding: 1.5rem;
+      font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      background: #f2f2f7;
+      color: #111;
+    }}
+    .card {{
+      max-width: 22rem;
+      width: 100%;
+      background: #fff;
+      border-radius: 16px;
+      padding: 1.75rem 1.35rem;
+      box-shadow: 0 4px 24px rgba(0, 0, 0, 0.08);
+      text-align: center;
+    }}
+    h1 {{
+      font-size: 1.2rem;
+      font-weight: 700;
+      margin: 0 0 0.75rem;
+    }}
+    .body {{
+      margin: 0 0 1.25rem;
+      color: #444;
+      line-height: 1.5;
+      font-size: 0.95rem;
+    }}
+    .btn {{
+      display: block;
+      width: 100%;
+      padding: 1rem 1.25rem;
+      background: #ff6b00;
+      color: #fff !important;
+      text-decoration: none;
+      font-weight: 700;
+      font-size: 1.05rem;
+      border-radius: 12px;
+      text-align: center;
+    }}
+    .hint {{
+      margin: 1rem 0 0;
+      font-size: 0.8rem;
+      color: #666;
+      line-height: 1.4;
+    }}
   </style>
 </head>
 <body>
-  <p>Opening this listing in <strong>CARZO</strong>…</p>
-  <p>If nothing happens, <a href="{esc_href}">tap here to open the app</a>.</p>
-  <script>try {{ location.replace({esc_js}); }} catch (e) {{}}</script>
+  <div class="card">
+    <h1>Open in CARZO</h1>
+    <p class="body">{escape(body_msg)}</p>
+    <a class="btn" href="{primary_href}">Open listing</a>
+    {hint_html}
+  </div>
 </body>
 </html>"""
     return Response(html, 200, {"Content-Type": "text/html; charset=utf-8"})

@@ -46,6 +46,16 @@
                 <category android:name="android.intent.category.BROWSABLE"/>
                 <data android:scheme="carzo" android:host="listing"/>
             </intent-filter>
+            <!-- Open shared listing HTTPS URLs in the app (App Links; see /.well-known/assetlinks.json). -->
+            <intent-filter android:autoVerify="true">
+                <action android:name="android.intent.action.VIEW"/>
+                <category android:name="android.intent.category.DEFAULT"/>
+                <category android:name="android.intent.category.BROWSABLE"/>
+                <data
+                    android:scheme="https"
+                    android:host="${appLinkHost}"
+                    android:pathPrefix="/listing"/>
+            </intent-filter>
         </activity>
         <!-- Allow HTTP for backend (emulator/LAN); Flutter network policy -->
         <meta-data

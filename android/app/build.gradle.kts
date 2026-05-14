@@ -16,6 +16,13 @@ if (localPropertiesFile.exists()) {
 }
 val googleMapsApiKey = localProperties.getProperty("GOOGLE_MAPS_API_KEY")?.trim().orEmpty()
 
+// Host for https://<host>/listing/... App Links (match API / share URL host).
+val appLinkHost = (
+    (project.findProperty("APP_LINK_HOST") as String?)?.trim()
+        ?: System.getenv("APP_LINK_HOST")?.trim()
+        ?: "carr-5hrm.onrender.com"
+)
+
 android {
     namespace = "com.carzo.app"
     compileSdk = flutter.compileSdkVersion
@@ -36,6 +43,7 @@ android {
         versionCode = flutter.versionCode
         versionName = flutter.versionName
         manifestPlaceholders["GOOGLE_MAPS_API_KEY"] = googleMapsApiKey
+        manifestPlaceholders["appLinkHost"] = appLinkHost
     }
 
     // Signing setup:

@@ -79,3 +79,51 @@ String listingShareLinkOnly(String listingId) {
   if (web != null && web.isNotEmpty) return web;
   return listingDeepLink(listingId);
 }
+
+bool _isListingPublicId(String id) {
+  if (id.isEmpty || id.length > 128) return false;
+  return RegExp(r'^[a-zA-Z0-9_-]+$').hasMatch(id);
+}
+
+/// Hosts used in shared HTTPS listing URLs (explicit share base or API origin).
+bool isHostUsedForListingShareLinks(String host) {
+  final h = host.trim().toLowerCase();
+  if (h.isEmpty) return false;
+  final share = kListingShareWebBase.trim();
+  if (share.isNotEmpty) {
+    try {
+      if (Uri.parse(share).host.toLowerCase() == h) return true;
+    } catch (_) {}
+  }
+  try {
+    final apiHost = Uri.parse(effectiveApiBase()).host.toLowerCase();
+    if (apiHost.isNotEmpty && apiHost == h) return true;
+  } catch (_) {}
+  return false;
+}
+
+/// Parses shared HTTPS listing path: `/<LISTING_SHARE_URL_PATH>/<id>` (default `/listing/<id>`).
+String? listingIdFromSharedHttpsUri(Uri uri) {
+  if (uri.scheme != 'https' && uri.scheme != 'http') return null;
+  if (!isHostUsedForListingShareLinks(uri.host)) return null;
+  final segs = uri.pathSegments;
+  if (segs.isEmpty) return null;
+
+  final pathSeg = _sharePathSegment();
+  final prefixParts = pathSeg.split('/').where((p) => p.isNotEmpty).toList();
+  if (segs.length == prefixParts.length + 1) {
+    for (var i = 0; i < prefixParts.length; i++) {
+      if (segs[i] != prefixParts[i]) return null;
+    }
+    final id = segs.last.trim();
+    return _isListingPublicId(id) ? id : null;
+  }
+  // Back-compat: `/listing/<id>` when configured path is not `listing`.
+  if (pathSeg != 'listing' &&
+      segs.length >= 2 &&
+      segs[0] == 'listing') {
+    final id = segs[1].trim();
+    return _isListingPublicId(id) ? id : null;
+  }
+  return null;
+}
