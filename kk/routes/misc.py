@@ -105,32 +105,70 @@ def listing_share_landing(listing_id: str):
     qid = quote(raw, safe="")
     deep = f"carzo://listing?id={qid}"
     esc_deep = escape(deep, quote=True)
+    deep_js = json.dumps(deep)
 
     ua = (request.headers.get("User-Agent") or "").lower()
     is_ios = "iphone" in ua or "ipad" in ua or "ipod" in ua
     is_android = "android" in ua
 
-    # Android Chrome: intent URI hands off to the installed app when user taps.
     intent_href = f"intent://listing?id={qid}#Intent;scheme=carzo;package=com.carzo.app;end"
     esc_intent = escape(intent_href, quote=True)
 
     if is_android:
-        primary_href = esc_intent
+        cta_html = f'<a class="btn" href="{esc_intent}">Open listing</a>'
         body_msg = (
             "Tap the button below. If CARZO is installed, the listing will open in the app."
         )
         hint = "If nothing happens, install CARZO from the Play Store, then try again."
     elif is_ios:
-        primary_href = esc_deep
         body_msg = (
-            "Tap Open listing to continue in CARZO. "
-            "When Universal Links are set up on the server, the app may open automatically instead."
+            "Tap Open listing to open CARZO. "
+            "If Universal Links are set up on the server, this page is skipped."
         )
-        hint = "If you do not have CARZO yet, install it from the App Store first."
+        hint = (
+            "If the button does nothing, you are probably inside CARZO's in-app browser "
+            "(you see CARZO at the top-left). Tap Share, choose Open in Safari, then tap "
+            "Open listing again. Or tap Copy app link, paste into Notes, and tap the link there. "
+            "If CARZO is not installed, get it from the App Store first."
+        )
+        cta_html = f"""
+    <button type="button" class="btn" id="open-listing-btn">Open listing</button>
+    <button type="button" class="btn btn-secondary" id="copy-listing-deep">Copy app link</button>
+    <p class="hint" id="copy-done" style="display:none;font-weight:600;">Copied — open Notes, paste, then tap the link.</p>
+    <p class="sub"><a class="link-plain" href="{esc_deep}">Open as link</a></p>
+    <script>(function(){{
+      var u = {deep_js};
+      var b = document.getElementById("open-listing-btn");
+      if (b) {{
+        b.addEventListener("click", function () {{
+          try {{ window.top.location.href = u; }} catch (e) {{ window.location.href = u; }}
+        }});
+      }}
+      var c = document.getElementById("copy-listing-deep");
+      var m = document.getElementById("copy-done");
+      if (c && navigator.clipboard && navigator.clipboard.writeText) {{
+        c.addEventListener("click", function () {{
+          navigator.clipboard.writeText(u).then(function () {{
+            if (m) m.style.display = "block";
+          }}).catch(function () {{}});
+        }});
+      }}
+    }})();</script>"""
     else:
-        primary_href = esc_deep
-        body_msg = "Tap the button below to open this listing in the CARZO app."
+        body_msg = "Tap Open listing to open this listing in the CARZO app."
         hint = ""
+        cta_html = f"""
+    <button type="button" class="btn" id="open-listing-btn">Open listing</button>
+    <p class="sub"><a class="link-plain" href="{esc_deep}">Open as link</a></p>
+    <script>(function(){{
+      var u = {deep_js};
+      var b = document.getElementById("open-listing-btn");
+      if (b) {{
+        b.addEventListener("click", function () {{
+          try {{ window.top.location.href = u; }} catch (e) {{ window.location.href = u; }}
+        }});
+      }}
+    }})();</script>"""
 
     hint_html = f'<p class="hint">{escape(hint)}</p>' if hint else ""
 
@@ -178,6 +216,7 @@ def listing_share_landing(listing_id: str):
       display: block;
       width: 100%;
       padding: 1rem 1.25rem;
+      margin: 0 0 0.6rem;
       background: #ff6b00;
       color: #fff !important;
       text-decoration: none;
@@ -185,6 +224,14 @@ def listing_share_landing(listing_id: str):
       font-size: 1.05rem;
       border-radius: 12px;
       text-align: center;
+      border: none;
+      cursor: pointer;
+      font-family: inherit;
+    }}
+    a.btn {{ color: #fff !important; }}
+    .btn-secondary {{
+      background: #555;
+      color: #fff !important;
     }}
     .hint {{
       margin: 1rem 0 0;
@@ -192,13 +239,15 @@ def listing_share_landing(listing_id: str):
       color: #666;
       line-height: 1.4;
     }}
+    .sub {{ margin: 0.75rem 0 0; font-size: 0.85rem; }}
+    .link-plain {{ color: #ff6b00; font-weight: 600; }}
   </style>
 </head>
 <body>
   <div class="card">
     <h1>Open in CARZO</h1>
     <p class="body">{escape(body_msg)}</p>
-    <a class="btn" href="{primary_href}">Open listing</a>
+    {cta_html}
     {hint_html}
   </div>
 </body>
