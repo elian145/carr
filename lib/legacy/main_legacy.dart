@@ -15566,8 +15566,9 @@ Widget buildCarListingSpecsGrid(
           : () {
               Navigator.of(context).push(
                 MaterialPageRoute(
-                  builder: (_) => ListingPreviewGalleryPage(
+                  builder: (_) => ListingPreviewMediaGridPage(
                     imageFilesOrUrls: List<dynamic>.from(damagePreviewEntries),
+                    videoFilesOrUrls: const <dynamic>[],
                     initialIndex: 0,
                   ),
                 ),
