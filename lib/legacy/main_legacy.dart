@@ -13128,6 +13128,10 @@ class _CarDetailsPageState extends State<CarDetailsPage> {
         urls.add(_buildFullImageUrl(primary));
       }
       for (final dynamic it in imgs) {
+        if (it is Map &&
+            (it['kind'] ?? '').toString().toLowerCase() == 'damage') {
+          continue;
+        }
         String s;
         if (it is Map) {
           s = (it['image_url'] ?? it['url'] ?? it['path'] ?? it['src'] ?? '')
@@ -13143,19 +13147,46 @@ class _CarDetailsPageState extends State<CarDetailsPage> {
       // If no explicit primary but images exist, treat first as primary
       if (urls.isEmpty && imgs.isNotEmpty) {
         final dynamic first = imgs.first;
-        final String s = first is Map
-            ? (first['image_url'] ??
-                      first['url'] ??
-                      first['path'] ??
-                      first['src'] ??
-                      '')
-                  .toString()
-            : first.toString();
-        if (s.isNotEmpty) urls.add(_buildFullImageUrl(s));
+        if (first is Map &&
+            (first['kind'] ?? '').toString().toLowerCase() == 'damage') {
+          // First row is damage-only; find first listing image for hero.
+          for (final dynamic it in imgs) {
+            if (it is Map &&
+                (it['kind'] ?? '').toString().toLowerCase() == 'damage') {
+              continue;
+            }
+            final String s = it is Map
+                ? (it['image_url'] ??
+                          it['url'] ??
+                          it['path'] ??
+                          it['src'] ??
+                          '')
+                      .toString()
+                : it.toString();
+            if (s.isNotEmpty) {
+              urls.add(_buildFullImageUrl(s));
+              break;
+            }
+          }
+        } else {
+          final String s = first is Map
+              ? (first['image_url'] ??
+                        first['url'] ??
+                        first['path'] ??
+                        first['src'] ??
+                        '')
+                    .toString()
+              : first.toString();
+          if (s.isNotEmpty) urls.add(_buildFullImageUrl(s));
+        }
       }
     }
     return urls;
   }
+
+  /// Image URLs tagged `kind: damage` on the server (crash / disclosure photos).
+  List<String> get _damageImageUrls =>
+      car == null ? const <String>[] : listingDamageImageFullUrls(car!);
 
   /// Normalizes API `videos` (strings and/or `{video_url: ...}` maps) to relative paths.
   static List<String> _normalizeVideoPaths(dynamic raw) {
@@ -15073,11 +15104,30 @@ class _CarDetailsPageState extends State<CarDetailsPage> {
   }
 }
 
+/// Full URLs for listing images tagged `kind: damage` (shared by detail + specs grid).
+List<String> listingDamageImageFullUrls(Map<String, dynamic> car) {
+  final List<String> urls = [];
+  final List<dynamic> imgs =
+      (car['images'] is List) ? (car['images'] as List) : const [];
+  for (final dynamic it in imgs) {
+    if (it is! Map) continue;
+    if ((it['kind'] ?? '').toString().toLowerCase() != 'damage') continue;
+    final s =
+        (it['image_url'] ?? it['url'] ?? it['path'] ?? it['src'] ?? '').toString();
+    if (s.isNotEmpty) {
+      final full = _buildFullImageUrl(s);
+      if (!urls.contains(full)) urls.add(full);
+    }
+  }
+  return urls;
+}
+
 /// Specification grid matching [CarDetailsPage] (shared with sell-flow review).
 Widget buildCarListingSpecsGrid(
   BuildContext context,
   Map<String, dynamic> car,
 ) {
+  final List<String> damagePhotoUrls = listingDamageImageFullUrls(car);
   String? pickNE(Map<String, dynamic> map, List<String> keys) {
     for (final key in keys) {
       final dynamic value = map[key];
@@ -15446,6 +15496,19 @@ Widget buildCarListingSpecsGrid(
       icon: Icons.assignment_turned_in,
       label: AppLocalizations.of(context)!.titleStatus,
       value: titleStatusVal,
+      onTap: damagePhotoUrls.isEmpty
+          ? null
+          : () {
+              Navigator.of(context).push(
+                MaterialPageRoute(
+                  builder: (_) => ListingImageGalleryPage(
+                    imageUrls: damagePhotoUrls,
+                    videoUrls: const <String>[],
+                    initialIndex: 0,
+                  ),
+                ),
+              );
+            },
     ),
     detailRowSpec(
       icon: Icons.drive_eta,
@@ -16264,14 +16327,18 @@ class _SellCarPageState extends State<SellCarPage> {
   String get _step5ImagesKey {
     final imgs = carData['images'];
     final vids = carData['videos'];
+    final dmg = carData['damage_images'];
+    final dmgPart = (dmg == null || dmg is! List || dmg.isEmpty)
+        ? ''
+        : dmg.map((e) => e is XFile ? e.path : e.toString()).join('|');
     final imgPart = (imgs == null || imgs is! List || imgs.isEmpty)
         ? ''
         : imgs.map((e) => e is XFile ? e.path : e.toString()).join('|');
     final vidPart = (vids == null || vids is! List || vids.isEmpty)
         ? ''
         : vids.map((e) => e is XFile ? e.path : e.toString()).join('|');
-    if (imgPart.isEmpty && vidPart.isEmpty) return '0';
-    return '$imgPart::$vidPart';
+    if (imgPart.isEmpty && vidPart.isEmpty && dmgPart.isEmpty) return '0';
+    return '$imgPart::$vidPart::$dmgPart';
   }
 
   Future<void> _restoreDraftCurrentStep() async {
@@ -16334,6 +16401,10 @@ class _SellCarPageState extends State<SellCarPage> {
     }
     final imgs = d['images'];
     if (imgs is List && imgs.isNotEmpty) {
+      maxIdx = math.max(maxIdx, 3);
+    }
+    final dmg = d['damage_images'];
+    if (dmg is List && dmg.isNotEmpty) {
       maxIdx = math.max(maxIdx, 3);
     }
     final vids = d['videos'];
@@ -21912,6 +21983,8 @@ class _SellStep4PageState extends State<SellStep4Page> {
   final ImagePicker _imagePicker = ImagePicker();
   // Can contain either local XFile (original picks) or server-relative paths (after "Blur Plates").
   List<dynamic> _selectedImages = [];
+  /// Local picks and/or server-relative paths for damage / crash disclosure.
+  List<dynamic> _damageImages = [];
   final List<XFile> _selectedVideos = [];
   bool _videosHydratedFromParent = false;
   bool _isProcessingImages = false;
@@ -21968,6 +22041,7 @@ class _SellStep4PageState extends State<SellStep4Page> {
       final data = Map<String, dynamic>.from(decoded.cast<String, dynamic>());
       final images = data['selectedImages'];
       final videos = data['selectedVideos'];
+      final dmg = data['damage_images'];
       if (!mounted) return;
       setState(() {
         _selectedImages = images is List
@@ -21976,6 +22050,12 @@ class _SellStep4PageState extends State<SellStep4Page> {
                 .where((e) => e.toString().trim().isNotEmpty)
                 .toList()
             : _selectedImages;
+        _damageImages = dmg is List
+            ? dmg
+                .map(_normalizeDraftImageItem)
+                .where((e) => e.toString().trim().isNotEmpty)
+                .toList()
+            : <dynamic>[];
         _selectedVideos
           ..clear()
           ..addAll(
@@ -21994,6 +22074,8 @@ class _SellStep4PageState extends State<SellStep4Page> {
       if (parentState != null) {
         parentState.carData['images'] = List<dynamic>.from(_selectedImages);
         parentState.carData['videos'] = List<XFile>.from(_selectedVideos);
+        parentState.carData['damage_images'] =
+            List<dynamic>.from(_damageImages);
         parentState.setState(() {});
       }
     } catch (_) {}
@@ -22001,10 +22083,15 @@ class _SellStep4PageState extends State<SellStep4Page> {
 
   void _hydrateFromParentCarData() {
     final parentState = context.findAncestorStateOfType<_SellCarPageState>();
-    final saved = parentState?.carData['images'];
     final videos = parentState?.carData['videos'];
     final images = parentState?.carData['images'];
-    if ((images is! List || images.isEmpty) && (videos is! List || videos.isEmpty)) return;
+    final dmg = parentState?.carData['damage_images'];
+    final hasDamageList = dmg is List && dmg.isNotEmpty;
+    if ((images is! List || images.isEmpty) &&
+        (videos is! List || videos.isEmpty) &&
+        !hasDamageList) {
+      return;
+    }
     setState(() {
       _selectedImages = images is List
           ? images
@@ -22012,6 +22099,12 @@ class _SellStep4PageState extends State<SellStep4Page> {
               .where((e) => e.toString().trim().isNotEmpty)
               .toList()
           : _selectedImages;
+      _damageImages = hasDamageList
+          ? (dmg as List)
+              .map(_normalizeDraftImageItem)
+              .where((e) => e.toString().trim().isNotEmpty)
+              .toList()
+          : <dynamic>[];
       _selectedVideos.clear();
       if (videos is List) {
         for (final dynamic item in videos) {
@@ -22036,6 +22129,9 @@ class _SellStep4PageState extends State<SellStep4Page> {
           'selectedImages': _selectedImages
               .map((e) => e is XFile ? e.path : e.toString())
               .toList(),
+          'damage_images': _damageImages
+              .map((e) => e is XFile ? e.path : e.toString())
+              .toList(),
           'selectedVideos': _selectedVideos.map((e) => e.path).toList(),
           'imagesProcessed': _imagesProcessed,
         }),
@@ -22053,6 +22149,7 @@ class _SellStep4PageState extends State<SellStep4Page> {
     final parentState = context.findAncestorStateOfType<_SellCarPageState>();
     if (parentState == null) return;
     parentState.carData['images'] = List<dynamic>.from(_selectedImages);
+    parentState.carData['damage_images'] = List<dynamic>.from(_damageImages);
     parentState.carData['videos'] = List<XFile>.from(_selectedVideos);
     parentState.carData['images_processed'] = _imagesProcessed;
     if (_imagesProcessed) {
@@ -22081,6 +22178,21 @@ class _SellStep4PageState extends State<SellStep4Page> {
       setState(() {
         _selectedImages = [..._selectedImages, ...additions];
         _imagesProcessed = false;
+      });
+      _syncMediaDraftToParent();
+      unawaited(_saveDraft());
+    } catch (_) {}
+  }
+
+  Future<void> _pickDamageImages() async {
+    try {
+      final files = await _imagePicker.pickMultiImage();
+      if (files.isEmpty || !mounted) return;
+      final existing = _damageImages.map(_imagePathKey).toSet();
+      final additions = files.where((f) => !existing.contains(f.path)).toList();
+      if (additions.isEmpty) return;
+      setState(() {
+        _damageImages = [..._damageImages, ...additions];
       });
       _syncMediaDraftToParent();
       unawaited(_saveDraft());
@@ -22484,6 +22596,146 @@ class _SellStep4PageState extends State<SellStep4Page> {
           ),
           SizedBox(height: 24),
 
+          // Damage / crash photos (optional) — uploaded with kind=damage on submit
+          Text(
+            AppLocalizations.of(context)!.damageCrashPhotosSection,
+            style: TextStyle(fontWeight: FontWeight.bold, fontSize: 18),
+          ),
+          SizedBox(height: 6),
+          Text(
+            _trLegacyText(
+              context,
+              'Shown next to title status on your listing. Not mixed into the main photo gallery.',
+              ar: 'تظهر بجانب حالة الملكية في إعلانك. لا تُدمج مع معرض الصور الرئيسي.',
+              ku: 'لەگەڵ دۆکی تایتڵ دەردەکەوێت، ناچێتە ناو گەلەری وێنەی سەرەکی.',
+            ),
+            style: TextStyle(fontSize: 13, color: Colors.grey[600]),
+          ),
+          SizedBox(height: 12),
+          if (_damageImages.isNotEmpty)
+            LayoutBuilder(
+              builder: (context, constraints) {
+                const spacing = 8.0;
+                return GridView.builder(
+                  key: ValueKey(
+                    _damageImages
+                        .map((e) => e is XFile ? e.path : e.toString())
+                        .join('|'),
+                  ),
+                  shrinkWrap: true,
+                  physics: NeverScrollableScrollPhysics(),
+                  gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
+                    crossAxisCount: 2,
+                    mainAxisSpacing: spacing,
+                    crossAxisSpacing: spacing,
+                    childAspectRatio: 1.25,
+                  ),
+                  itemCount: _damageImages.length,
+                  itemBuilder: (context, index) {
+                    final image = _damageImages[index];
+                    final keyStr = image is XFile
+                        ? image.path
+                        : image.toString();
+                    return Stack(
+                      key: ValueKey('dmg_$keyStr'),
+                      children: [
+                        GestureDetector(
+                          onTap: () {
+                            Navigator.of(context).push(
+                              MaterialPageRoute(
+                                builder: (_) => ListingPreviewGalleryPage(
+                                  imageFilesOrUrls: _damageImages,
+                                  initialIndex: index,
+                                ),
+                              ),
+                            );
+                          },
+                          child: Container(
+                            decoration: BoxDecoration(
+                              borderRadius: BorderRadius.circular(12),
+                              border: Border.all(
+                                color: Colors.deepOrange.shade400,
+                                width: 2,
+                              ),
+                              boxShadow: [
+                                BoxShadow(
+                                  color: Colors.black26,
+                                  blurRadius: 6,
+                                  offset: Offset(0, 2),
+                                ),
+                              ],
+                            ),
+                            clipBehavior: Clip.antiAlias,
+                            child: (image is XFile)
+                                ? Image.file(
+                                    File(image.path),
+                                    fit: BoxFit.cover,
+                                    width: double.infinity,
+                                    height: double.infinity,
+                                    key: ValueKey(image.path),
+                                  )
+                                : _listingNetworkImage(
+                                    (image.toString().trim().startsWith('http'))
+                                        ? image.toString().trim()
+                                        : _buildFullImageUrl(image.toString()),
+                                    fit: BoxFit.cover,
+                                    width: double.infinity,
+                                    height: double.infinity,
+                                  ),
+                          ),
+                        ),
+                        Positioned(
+                          right: 6,
+                          top: 6,
+                          child: InkWell(
+                            onTap: () {
+                              setState(() {
+                                _damageImages.removeAt(index);
+                              });
+                              _syncMediaDraftToParent();
+                              unawaited(_saveDraft());
+                            },
+                            child: Container(
+                              decoration: BoxDecoration(
+                                color: Colors.black54,
+                                shape: BoxShape.circle,
+                              ),
+                              padding: EdgeInsets.all(6),
+                              child: Icon(
+                                Icons.close,
+                                size: 18,
+                                color: Colors.white,
+                              ),
+                            ),
+                          ),
+                        ),
+                      ],
+                    );
+                  },
+                );
+              },
+            ),
+          SizedBox(height: 12),
+          SizedBox(
+            width: double.infinity,
+            child: ElevatedButton.icon(
+              onPressed: _pickDamageImages,
+              icon: Icon(Icons.car_crash_outlined),
+              label: Text(
+                AppLocalizations.of(context)!
+                    .addDamagePhotosCount(_damageImages.length),
+              ),
+              style: ElevatedButton.styleFrom(
+                backgroundColor: Colors.deepOrange.shade50,
+                foregroundColor: Colors.deepOrange.shade900,
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(12),
+                ),
+              ),
+            ),
+          ),
+          SizedBox(height: 24),
+
           // Videos Section — 2 per row like photos; tap opens full-screen PageView to swipe between videos
           Text(
             _videosOptionalTitleGlobal(context),
@@ -22693,6 +22945,8 @@ class _SellStep4PageState extends State<SellStep4Page> {
                       parentState.carData['images'] = List<dynamic>.from(
                         _selectedImages,
                       );
+                      parentState.carData['damage_images'] =
+                          List<dynamic>.from(_damageImages);
                       parentState.carData['videos'] = List<XFile>.from(
                         _selectedVideos,
                       );
@@ -24302,6 +24556,43 @@ class _SellStep5PageState extends State<SellStep5Page> {
                 );
               }
             }
+          }
+          final dynamic maybeDmg = carData['damage_images'];
+          final List<dynamic> dimgs =
+              (maybeDmg is List) ? maybeDmg : const [];
+          final List<XFile> damageToUpload = <XFile>[];
+          final List<String> damageToAttach = <String>[];
+          for (final dynamic img in dimgs) {
+            if (img is XFile) {
+              damageToUpload.add(img);
+            } else if (img is String) {
+              final s = img.trim();
+              if (s.startsWith('uploads/') ||
+                  s.startsWith('static/') ||
+                  s.startsWith('/static/')) {
+                damageToAttach.add(s);
+              } else if (s.startsWith('http://') || s.startsWith('https://')) {
+                // Skip absolute URLs for attach/upload here.
+              } else {
+                try {
+                  damageToUpload.add(XFile(s));
+                } catch (_) {}
+              }
+            }
+          }
+          if (damageToAttach.isNotEmpty) {
+            await CarService().attachCarImages(
+              carId,
+              damageToAttach,
+              kind: 'damage',
+            );
+          }
+          if (damageToUpload.isNotEmpty) {
+            await CarService().uploadCarImages(
+              carId,
+              damageToUpload,
+              imageKind: 'damage',
+            );
           }
           // Refresh list so new listing has server-confirmed image_url/images before success/navigation
           try {

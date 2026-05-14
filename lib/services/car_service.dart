@@ -208,12 +208,14 @@ class CarService extends ChangeNotifier {
   // Upload car images
   Future<Map<String, dynamic>> uploadCarImages(
     String carId,
-    List<XFile> imageFiles,
-  ) async {
+    List<XFile> imageFiles, {
+    String imageKind = 'listing',
+  }) async {
     _setLoading(true);
 
     try {
-      final response = await ApiService.uploadCarImages(carId, imageFiles);
+      final response =
+          await ApiService.uploadCarImages(carId, imageFiles, imageKind: imageKind);
 
       // Update local car data
       // Accept either { images: [...] } or { uploaded: [...] } from backend
@@ -269,11 +271,13 @@ class CarService extends ChangeNotifier {
   // Attach already-processed images by server paths (used after "Blur Plates")
   Future<Map<String, dynamic>> attachCarImages(
     String carId,
-    List<String> paths,
-  ) async {
+    List<String> paths, {
+    String kind = 'listing',
+  }) async {
     _setLoading(true);
     try {
-      final response = await ApiService.attachCarImages(carId, paths);
+      final response =
+          await ApiService.attachCarImages(carId, paths, kind: kind);
 
       final dynamic imagesField = response['images'] ?? response['uploaded'];
       if (imagesField != null) {

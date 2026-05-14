@@ -898,12 +898,17 @@ class ApiService {
 
   static Future<Map<String, dynamic>> attachCarImages(
     String carId,
-    List<String> paths,
-  ) async {
+    List<String> paths, {
+    String kind = 'listing',
+  }) async {
+    final body = <String, dynamic>{
+      'paths': paths,
+      if (kind.toLowerCase() == 'damage') 'kind': 'damage',
+    };
     return await _makeAuthenticatedRequest(
       'POST',
       '/cars/$carId/images/attach',
-      body: {'paths': paths},
+      body: body,
     );
   }
 
