@@ -22,17 +22,10 @@ String? listingWebShareLink(String listingId) {
   return '$normalized/listing/${Uri.encodeComponent(id)}';
 }
 
-/// Share sheet text: optional description lines, then web link (if configured), then app link.
-String buildListingShareMessage({
-  required String listingId,
-  required List<String> bodyLines,
-}) {
-  final lines = <String>[
-    ...bodyLines.map((s) => s.trim()).where((s) => s.isNotEmpty),
-  ];
+/// Single URL for sharing: HTTPS listing page when [kListingShareWebBase] is
+/// set, otherwise the `carzo://` deep link.
+String listingShareLinkOnly(String listingId) {
   final web = listingWebShareLink(listingId);
-  if (web != null) lines.add(web);
-  final deep = listingDeepLink(listingId);
-  if (deep.isNotEmpty) lines.add(deep);
-  return lines.join('\n');
+  if (web != null && web.isNotEmpty) return web;
+  return listingDeepLink(listingId);
 }

@@ -28,7 +28,6 @@ import '../shared/auth/token_store.dart';
 import '../shared/text/pretty_title_case.dart';
 import '../shared/listings/listing_identity.dart';
 import '../shared/listings/listing_share.dart';
-import '../shared/listings/listing_share_urls.dart';
 import '../shared/prefs/listing_layout_prefs.dart';
 import '../state/locale_controller.dart' as app_state;
 import '../globals.dart';
@@ -13648,19 +13647,8 @@ class _CarDetailsPageState extends State<CarDetailsPage> {
       final String id = listingPrimaryId(car!).isNotEmpty
           ? listingPrimaryId(car!)
           : widget.carId.toString();
-      final String title = _displayCarTitle(context).isNotEmpty
-          ? _displayCarTitle(context)
-          : 'Car Listing';
-      final String year = car!['year']?.toString() ?? '';
-      final String price = car!['price']?.toString() ?? '';
 
-      final String line = '$title ($year) - \$$price'.trim();
-      final String shareText = buildListingShareMessage(
-        listingId: id,
-        bodyLines: [if (line.isNotEmpty) line],
-      );
-
-      await shareListingWithPrimaryImage(shareText: shareText, car: car!);
+      await shareListingAsLinkOnly(id);
 
       // Track share for analytics
       await AnalyticsService.trackShare(widget.carId.toString());

@@ -13,7 +13,6 @@ import '../shared/media/media_url.dart';
 import '../shared/errors/user_error_text.dart';
 import '../shared/listings/listing_identity.dart';
 import '../shared/listings/listing_share.dart';
-import '../shared/listings/listing_share_urls.dart';
 import '../shared/text/pretty_title_case.dart';
 import 'listing_image_gallery_page.dart';
 
@@ -308,24 +307,9 @@ class _CarDetailPageState extends State<CarDetailPage> {
     final id = listingPrimaryId(car).isNotEmpty
         ? listingPrimaryId(car)
         : widget.carId;
-    final title =
-        (car['title'] ?? '${car['brand'] ?? ''} ${car['model'] ?? ''}')
-            .toString()
-            .trim();
-    final price = (car['price'] ?? '').toString();
-    final currency = (car['currency'] ?? '').toString();
-    final location = (car['location'] ?? car['city'] ?? '').toString();
-    final text = buildListingShareMessage(
-      listingId: id,
-      bodyLines: [
-        title,
-        [price, currency].where((s) => s.isNotEmpty).join(' '),
-        location,
-      ],
-    );
 
     try {
-      await shareListingWithPrimaryImage(shareText: text, car: car);
+      await shareListingAsLinkOnly(id);
     } catch (_) {}
     try {
       await AnalyticsService.trackShare(id);
