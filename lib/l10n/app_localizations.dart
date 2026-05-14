@@ -754,6 +754,12 @@ abstract class AppLocalizations {
   /// **'Add damage photos ({count})'**
   String addDamagePhotosCount(Object count);
 
+  /// No description provided for @damageImagesTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Damage images'**
+  String get damageImagesTitle;
+
   /// No description provided for @viewDamagePhotosTooltip.
   ///
   /// In en, this message translates to:

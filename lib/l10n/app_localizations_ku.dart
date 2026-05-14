@@ -340,6 +340,9 @@ class AppLocalizationsKu extends AppLocalizations {
   }
 
   @override
+  String get damageImagesTitle => 'وێنەکانی زیان';
+
+  @override
   String get viewDamagePhotosTooltip => 'بینینی وێنەکانی زیان یان ڕووداو';
 
   @override

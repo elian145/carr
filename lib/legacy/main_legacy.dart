@@ -15570,6 +15570,7 @@ Widget buildCarListingSpecsGrid(
                     imageFilesOrUrls: List<dynamic>.from(damagePreviewEntries),
                     videoFilesOrUrls: const <dynamic>[],
                     initialIndex: 0,
+                    appBarTitle: AppLocalizations.of(context)!.damageImagesTitle,
                   ),
                 ),
               );

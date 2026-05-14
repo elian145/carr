@@ -126,6 +126,7 @@
       }
     }
   },
+  "damageImagesTitle": "صور الضرر",
   "viewDamagePhotosTooltip": "عرض صور الضرر أو الحادث",
   "uploadingDamagePhotos": "جاري رفع صور الضرر...",
   "value_drive_fwd": "أمامي",

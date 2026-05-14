@@ -427,19 +427,23 @@ class _ListingImageGalleryPageState extends State<ListingImageGalleryPage> {
 }
 
 /// Sell-flow media grid that supports both local [XFile] and URL strings.
-/// Opens [ListingPreviewGalleryPage] for swipeable full-screen browsing.
+/// Opens [ListingPreviewMediaViewerPage] when a tile is tapped.
 class ListingPreviewMediaGridPage extends StatefulWidget {
   const ListingPreviewMediaGridPage({
     super.key,
     required this.imageFilesOrUrls,
     this.videoFilesOrUrls = const <dynamic>[],
     this.initialIndex = 0,
+    this.appBarTitle,
   });
 
   final List<dynamic> imageFilesOrUrls;
   final List<dynamic> videoFilesOrUrls;
   /// Index in combined list: all images first, then all videos.
   final int initialIndex;
+
+  /// When set, used as the scaffold app bar title (e.g. damage-only gallery).
+  final String? appBarTitle;
 
   @override
   State<ListingPreviewMediaGridPage> createState() =>
@@ -622,7 +626,10 @@ class _ListingPreviewMediaGridPageState extends State<ListingPreviewMediaGridPag
   @override
   Widget build(BuildContext context) {
     final loc = AppLocalizations.of(context);
-    final title = loc?.photosVideosTitle ?? 'Photos & Videos';
+    final title = (widget.appBarTitle != null &&
+            widget.appBarTitle!.trim().isNotEmpty)
+        ? widget.appBarTitle!.trim()
+        : (loc?.photosVideosTitle ?? 'Photos & Videos');
     if (_totalCount == 0) {
       return Scaffold(
         appBar: AppBar(title: Text(title)),

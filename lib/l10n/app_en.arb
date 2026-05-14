@@ -125,6 +125,7 @@
       }
     }
   },
+  "damageImagesTitle": "Damage images",
   "viewDamagePhotosTooltip": "View damage or crash photos",
   "uploadingDamagePhotos": "Uploading damage photos...",
   "value_drive_fwd": "fwd",

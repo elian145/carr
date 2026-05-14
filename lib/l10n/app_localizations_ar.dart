@@ -340,6 +340,9 @@ class AppLocalizationsAr extends AppLocalizations {
   }
 
   @override
+  String get damageImagesTitle => 'صور الضرر';
+
+  @override
   String get viewDamagePhotosTooltip => 'عرض صور الضرر أو الحادث';
 
   @override

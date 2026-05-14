@@ -340,6 +340,9 @@ class AppLocalizationsEn extends AppLocalizations {
   }
 
   @override
+  String get damageImagesTitle => 'Damage images';
+
+  @override
   String get viewDamagePhotosTooltip => 'View damage or crash photos';
 
   @override
