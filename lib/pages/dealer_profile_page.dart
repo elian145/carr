@@ -13,6 +13,7 @@ import '../services/api_service.dart';
 import '../shared/maps/dealer_map_coords.dart';
 import '../shared/maps/open_google_maps.dart';
 import '../shared/media/media_url.dart';
+import '../shared/prefs/listing_layout_prefs.dart';
 import '../shared/errors/user_error_text.dart';
 import '../theme_provider.dart';
 import '../widgets/dealer_location_map_preview.dart';
@@ -37,6 +38,7 @@ class _DealerProfilePageState extends State<DealerProfilePage> {
   @override
   void initState() {
     super.initState();
+    ListingLayoutPrefs.load();
     _load();
   }
 
@@ -732,35 +734,40 @@ class _DealerProfilePageState extends State<DealerProfilePage> {
                             child: Text(_tr('No active vehicles right now.', ar: 'لا توجد مركبات نشطة حالياً.', ku: 'لە ئێستادا هیچ ئۆتۆمبێلێکی چالاک نییە.')),
                           )
                         else
-                          GridView.builder(
-                            shrinkWrap: true,
-                            physics: const NeverScrollableScrollPhysics(),
-                            // Match home_page.dart listing grid padding and gaps.
-                            padding: const EdgeInsets.all(12),
-                            gridDelegate:
-                                const SliverGridDelegateWithFixedCrossAxisCount(
-                              crossAxisCount: 2,
-                              // Match global card layout used on home/favorites.
-                              childAspectRatio: 0.62,
-                              crossAxisSpacing: 12,
-                              mainAxisSpacing: 12,
-                            ),
-                            itemCount: _listings.length,
-                            itemBuilder: (context, index) {
-                              final item = _listings[index];
-                              final mapped =
-                                  mapListingToGlobalCarCardData(context, item);
-                              return LayoutBuilder(
-                                builder: (context, constraints) {
-                                  final card =
-                                      buildGlobalCarCard(context, mapped);
-                                  return FittedBox(
-                                    fit: BoxFit.scaleDown,
-                                    alignment: Alignment.topCenter,
-                                    child: SizedBox(
-                                      width: constraints.maxWidth,
-                                      child: card,
-                                    ),
+                          ValueListenableBuilder<int>(
+                            valueListenable: ListingLayoutPrefs.columns,
+                            builder: (context, cols, _) {
+                              final listingColumns = (cols == 1) ? 1 : 2;
+                              return GridView.builder(
+                                shrinkWrap: true,
+                                physics: const NeverScrollableScrollPhysics(),
+                                padding: EdgeInsets.fromLTRB(
+                                  listingColumns == 1 ? 4 : 12,
+                                  12,
+                                  listingColumns == 1 ? 4 : 12,
+                                  12,
+                                ),
+                                gridDelegate:
+                                    SliverGridDelegateWithFixedCrossAxisCount(
+                                  crossAxisCount: listingColumns,
+                                  childAspectRatio: listingColumns == 2
+                                      ? 0.62
+                                      : 2.78,
+                                  crossAxisSpacing: 12,
+                                  mainAxisSpacing: 12,
+                                ),
+                                itemCount: _listings.length,
+                                itemBuilder: (context, index) {
+                                  final item = _listings[index];
+                                  final mapped =
+                                      mapListingToGlobalCarCardData(
+                                    context,
+                                    item,
+                                  );
+                                  return buildGlobalCarCard(
+                                    context,
+                                    mapped,
+                                    listLayout: listingColumns == 1,
                                   );
                                 },
                               );
