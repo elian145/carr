@@ -65,8 +65,6 @@ import '../widgets/in_app_video_screen.dart';
 import '../pages/listing_image_gallery_page.dart';
 import '../widgets/network_video_thumbnail.dart';
 import '../widgets/edge_swipe_back.dart';
-import '../pages/car_detail_page.dart' as carzo_listing;
-import '../pages/sell_page.dart' as carzo_sell;
 
 const List<String> _kOnlineSpecOptionKeys = [
   '_online_opts_transmission',
@@ -3587,7 +3585,7 @@ class AuthGuard extends StatelessWidget {
         child is ProfilePage) {
       return child;
     }
-    if (child is SellCarPage || child is carzo_sell.SellPage) {
+    if (child is SellCarPage) {
       return const _SellAuthPrompt();
     }
     WidgetsBinding.instance.addPostFrameCallback((_) {
@@ -3694,7 +3692,7 @@ class MyApp extends StatelessWidget {
                   }
                   if (startFresh) {
                     return AuthGuard(
-                      child: const carzo_sell.SellPage(),
+                      child: const SellCarPage(startFreshListing: true),
                     );
                   }
                   if (showDraftGate) {
@@ -3720,22 +3718,10 @@ class MyApp extends StatelessWidget {
                 '/payment/initiate': (context) =>
                     AuthGuard(child: PaymentInitiatePage()),
                 '/car_detail': (context) {
-                  final raw = ModalRoute.of(context)?.settings.arguments;
-                  if (raw is! Map) {
-                    return Scaffold(
-                      appBar: AppBar(title: const Text('Navigation error')),
-                      body: const Center(child: Text('Invalid listing link')),
-                    );
-                  }
-                  final args = Map<String, dynamic>.from(raw.cast<String, dynamic>());
-                  final carId = args['carId'];
-                  if (carId == null) {
-                    return Scaffold(
-                      appBar: AppBar(title: const Text('Navigation error')),
-                      body: const Center(child: Text('Missing listing id')),
-                    );
-                  }
-                  return carzo_listing.CarDetailPage(carId: carId.toString());
+                  final args =
+                      ModalRoute.of(context)!.settings.arguments
+                          as Map<String, dynamic>;
+                  return CarDetailsPage(carId: args['carId'].toString());
                 },
                 '/chat/conversation': (context) {
                   final args =
