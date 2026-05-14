@@ -438,6 +438,9 @@ Widget _buildGlobalCardImageCarousel(BuildContext context, Map<String, dynamic> 
       u.add(buildMediaUrl(primary));
     }
     for (final dynamic it in imgs) {
+      if (it is Map && (it['kind'] ?? '').toString().toLowerCase() == 'damage') {
+        continue;
+      }
       String s;
       if (it is Map) {
         s = (it['image_url'] ?? it['url'] ?? it['path'] ?? it['src'] ?? '').toString();
@@ -450,11 +453,20 @@ Widget _buildGlobalCardImageCarousel(BuildContext context, Map<String, dynamic> 
       }
     }
     if (u.isEmpty && imgs.isNotEmpty) {
-      final dynamic first = imgs.first;
-      final String s = first is Map
-          ? (first['image_url'] ?? first['url'] ?? first['path'] ?? first['src'] ?? '').toString()
-          : first.toString();
-      if (s.isNotEmpty) u.add(buildMediaUrl(s));
+      dynamic first;
+      for (final dynamic e in imgs) {
+        if (e is Map && (e['kind'] ?? '').toString().toLowerCase() == 'damage') {
+          continue;
+        }
+        first = e;
+        break;
+      }
+      if (first != null) {
+        final String s = first is Map
+            ? (first['image_url'] ?? first['url'] ?? first['path'] ?? first['src'] ?? '').toString()
+            : first.toString();
+        if (s.isNotEmpty) u.add(buildMediaUrl(s));
+      }
     }
     return u;
   }();

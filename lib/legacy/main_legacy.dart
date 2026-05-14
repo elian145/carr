@@ -2149,6 +2149,10 @@ Widget _buildGlobalCardImageCarousel(
       u.add(_buildFullImageUrl(primary));
     }
     for (final dynamic it in imgs) {
+      if (it is Map &&
+          (it['kind'] ?? '').toString().toLowerCase() == 'damage') {
+        continue;
+      }
       String s;
       if (it is Map) {
         s = (it['image_url'] ?? it['url'] ?? it['path'] ?? it['src'] ?? '')
@@ -2162,16 +2166,26 @@ Widget _buildGlobalCardImageCarousel(
       }
     }
     if (u.isEmpty && imgs.isNotEmpty) {
-      final dynamic first = imgs.first;
-      final String s = first is Map
-          ? (first['image_url'] ??
-                    first['url'] ??
-                    first['path'] ??
-                    first['src'] ??
-                    '')
-                .toString()
-          : first.toString();
-      if (s.isNotEmpty) u.add(_buildFullImageUrl(s));
+      dynamic first;
+      for (final dynamic e in imgs) {
+        if (e is Map &&
+            (e['kind'] ?? '').toString().toLowerCase() == 'damage') {
+          continue;
+        }
+        first = e;
+        break;
+      }
+      if (first != null) {
+        final String s = first is Map
+            ? (first['image_url'] ??
+                      first['url'] ??
+                      first['path'] ??
+                      first['src'] ??
+                      '')
+                  .toString()
+            : first.toString();
+        if (s.isNotEmpty) u.add(_buildFullImageUrl(s));
+      }
     }
     return u;
   }();
@@ -11767,6 +11781,10 @@ class _HomePageState extends State<HomePage> {
         u.add(_buildFullImageUrl(primary));
       }
       for (final dynamic it in imgs) {
+        if (it is Map &&
+            (it['kind'] ?? '').toString().toLowerCase() == 'damage') {
+          continue;
+        }
         String s;
         if (it is Map) {
           s = (it['image_url'] ?? it['url'] ?? it['path'] ?? it['src'] ?? '')
@@ -11780,16 +11798,26 @@ class _HomePageState extends State<HomePage> {
         }
       }
       if (u.isEmpty && imgs.isNotEmpty) {
-        final dynamic first = imgs.first;
-        final String s = first is Map
-            ? (first['image_url'] ??
-                      first['url'] ??
-                      first['path'] ??
-                      first['src'] ??
-                      '')
-                  .toString()
-            : first.toString();
-        if (s.isNotEmpty) u.add(_buildFullImageUrl(s));
+        dynamic first;
+        for (final dynamic e in imgs) {
+          if (e is Map &&
+              (e['kind'] ?? '').toString().toLowerCase() == 'damage') {
+            continue;
+          }
+          first = e;
+          break;
+        }
+        if (first != null) {
+          final String s = first is Map
+              ? (first['image_url'] ??
+                        first['url'] ??
+                        first['path'] ??
+                        first['src'] ??
+                        '')
+                    .toString()
+              : first.toString();
+          if (s.isNotEmpty) u.add(_buildFullImageUrl(s));
+        }
       }
       return u;
     }();
@@ -15028,9 +15056,25 @@ class _CarDetailsPageState extends State<CarDetailsPage> {
                 final List<dynamic> imgs = (data['images'] is List)
                     ? (data['images'] as List)
                     : const [];
-                final String rel = primary.isNotEmpty
-                    ? primary
-                    : (imgs.isNotEmpty ? imgs.first.toString() : '');
+                String rel = primary;
+                if (rel.isEmpty && imgs.isNotEmpty) {
+                  for (final dynamic e in imgs) {
+                    if (e is Map &&
+                        (e['kind'] ?? '').toString().toLowerCase() ==
+                            'damage') {
+                      continue;
+                    }
+                    rel = e is Map
+                        ? (e['image_url'] ??
+                                  e['url'] ??
+                                  e['path'] ??
+                                  e['src'] ??
+                                  '')
+                              .toString()
+                        : e.toString();
+                    if (rel.trim().isNotEmpty) break;
+                  }
+                }
                 if (rel.isNotEmpty) {
                   final built = _buildFullImageUrl(rel);
                   return _listingNetworkImage(
@@ -24615,6 +24659,10 @@ class _SellStep5PageState extends State<SellStep5Page> {
                   : const [];
               if (primary.isNotEmpty) urls.add(_buildFullImageUrl(primary));
               for (final dynamic it in imgs) {
+                if (it is Map &&
+                    (it['kind'] ?? '').toString().toLowerCase() == 'damage') {
+                  continue;
+                }
                 final String s = it is Map
                     ? (it['image_url'] ??
                               it['url'] ??
@@ -24629,16 +24677,26 @@ class _SellStep5PageState extends State<SellStep5Page> {
                 }
               }
               if (urls.isEmpty && imgs.isNotEmpty) {
-                final dynamic first = imgs.first;
-                final String s = first is Map
-                    ? (first['image_url'] ??
-                              first['url'] ??
-                              first['path'] ??
-                              first['src'] ??
-                              '')
-                          .toString()
-                    : first.toString();
-                if (s.isNotEmpty) urls.add(_buildFullImageUrl(s));
+                dynamic first;
+                for (final dynamic e in imgs) {
+                  if (e is Map &&
+                      (e['kind'] ?? '').toString().toLowerCase() == 'damage') {
+                    continue;
+                  }
+                  first = e;
+                  break;
+                }
+                if (first != null) {
+                  final String s = first is Map
+                      ? (first['image_url'] ??
+                                first['url'] ??
+                                first['path'] ??
+                                first['src'] ??
+                                '')
+                            .toString()
+                      : first.toString();
+                  if (s.isNotEmpty) urls.add(_buildFullImageUrl(s));
+                }
               }
               for (final url in urls) {
                 if (url.isEmpty || !mounted) continue;

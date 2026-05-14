@@ -12,6 +12,7 @@ from sqlalchemy.orm import joinedload, selectinload
 from ..auth import get_current_user, log_user_action
 from ..models import Car, User, db, user_viewed_listings
 from ..time_utils import utcnow
+from .media import _normalize_car_image_kind, _pick_primary_listing_url
 
 bp = Blueprint("cars", __name__)
 
@@ -142,13 +143,40 @@ def _resolve_rel(rel: str) -> str:
 
 def _with_media_compat(car: Car) -> dict:
     d = car.to_dict()
-    raw_list = [img.image_url for img in car.images] if car.images else []
-    image_list = [r for r in (_resolve_rel(rel) for rel in raw_list) if r]
-    primary_rel = image_list[0] if image_list else ""
+    # Keep per-image metadata (especially `kind`: listing vs damage). Plain string
+    # lists made every photo look like a normal gallery image on the client.
+    image_objs: list[dict] = []
+    for img in car.images or []:
+        rel = getattr(img, "image_url", "") or ""
+        resolved = _resolve_rel(rel)
+        if not resolved:
+            continue
+        kind = _normalize_car_image_kind(getattr(img, "kind", None))
+        image_objs.append(
+            {
+                "id": img.id,
+                "image_url": resolved,
+                "is_primary": bool(getattr(img, "is_primary", False)),
+                "order": int(getattr(img, "order", 0) or 0),
+                "kind": kind,
+            }
+        )
+
+    raw_primary = _pick_primary_listing_url(car)
+    primary_rel = ""
+    if raw_primary:
+        primary_rel = _resolve_rel(raw_primary) or raw_primary
+    if not primary_rel:
+        for row in image_objs:
+            if row.get("kind") == "listing":
+                primary_rel = row["image_url"]
+                break
+    if not primary_rel and image_objs:
+        primary_rel = image_objs[0]["image_url"]
     if not primary_rel and _static_exists("uploads/car_photos/placeholder.jpg"):
         primary_rel = "uploads/car_photos/placeholder.jpg"
     d["image_url"] = primary_rel
-    d["images"] = image_list
+    d["images"] = image_objs
     # Match list endpoints: expose plain relative paths so mobile clients can build /static/... URLs.
     d["videos"] = [v.video_url for v in car.videos] if car.videos else []
     return d
