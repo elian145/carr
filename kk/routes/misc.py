@@ -140,7 +140,13 @@ def listing_share_landing(listing_id: str):
         return Response(nf, 404, {"Content-Type": "text/html; charset=utf-8"})
 
     d = _with_media_compat(car)
-    title = escape((d.get("title") or "Listing").strip() or "Listing")
+    title_raw = (d.get("title") or "").strip() or "Listing"
+    title = escape(title_raw)
+    brand_raw = str(d.get("brand") or "").strip()
+    model_raw = str(d.get("model") or "").strip()
+    trim_raw = str(d.get("trim") or "").strip()
+    sub_parts_raw = [p for p in (brand_raw, model_raw, trim_raw) if p]
+    subline = escape(" · ".join(sub_parts_raw)) if sub_parts_raw else ""
     price = d.get("price")
     currency = escape(str(d.get("currency") or "").strip())
     try:
@@ -164,10 +170,32 @@ def listing_share_landing(listing_id: str):
     img_block = ""
     if img_url:
         esc_img = escape(img_url, quote=True)
-        img_block = f'<p class="hero"><img src="{esc_img}" alt="" loading="lazy"/></p>'
+        img_block = f'<div class="hero"><img src="{esc_img}" alt="" loading="lazy"/></div>'
 
     deep = f"carzo://listing?id={quote(raw, safe='')}"
     esc_deep = escape(deep, quote=True)
+    page_url = escape(request.url, quote=True)
+    og_desc = escape(
+        (desc[:200] + "…") if len(desc) > 200 else desc,
+        quote=True,
+    ) if desc else escape(f"{currency} {price_s}".strip(), quote=True)
+
+    app_store_id = (os.environ.get("IOS_APP_STORE_ID") or "").strip()
+    itunes_meta = ""
+    if app_store_id.isdigit():
+        arg = escape(deep, quote=True)
+        itunes_meta = (
+            f'<meta name="apple-itunes-app" '
+            f'content="app-id={escape(app_store_id, quote=True)}, app-argument={arg}"/>\n'
+        )
+
+    og_image_meta = ""
+    if img_url:
+        og_image_meta = (
+            f'  <meta property="og:image" content="{escape(img_url, quote=True)}"/>\n'
+        )
+
+    subline_html = f'<p class="subline">{subline}</p>' if subline else ""
 
     html = f"""<!DOCTYPE html>
 <html lang="en">
@@ -175,26 +203,125 @@ def listing_share_landing(listing_id: str):
   <meta charset="utf-8"/>
   <meta name="viewport" content="width=device-width, initial-scale=1"/>
   <title>{title} · CARZO</title>
-  <style>
-    body {{ margin: 0; font-family: system-ui, -apple-system, sans-serif; background: #f4f4f7; color: #111; }}
-    .wrap {{ max-width: 40rem; margin: 0 auto; padding: 1rem 1rem 2rem; }}
-    .hero img {{ width: 100%; border-radius: 12px; display: block; background: #ddd; }}
-    h1 {{ font-size: 1.35rem; margin: 0.75rem 0 0.25rem; }}
-    .meta {{ color: #555; font-size: 0.95rem; margin-bottom: 0.75rem; }}
-    .price {{ font-size: 1.35rem; font-weight: 700; color: #ff6b00; margin: 0.25rem 0 1rem; }}
-    .desc {{ line-height: 1.5; font-size: 0.95rem; color: #333; }}
-    .foot {{ margin-top: 1.5rem; padding-top: 1rem; border-top: 1px solid #ddd; font-size: 0.85rem; color: #666; }}
-    .foot a {{ color: #ff6b00; font-weight: 600; }}
+  <link rel="canonical" href="{page_url}"/>
+  <meta property="og:type" content="website"/>
+  <meta property="og:title" content="{title} · CARZO"/>
+  <meta property="og:description" content="{og_desc}"/>
+  <meta property="og:url" content="{page_url}"/>
+{og_image_meta}  <meta name="twitter:card" content="summary_large_image"/>
+{itunes_meta}  <style>
+    body {{
+      margin: 0;
+      font-family: system-ui, -apple-system, "Segoe UI", sans-serif;
+      background: #ececf0;
+      color: #111;
+    }}
+    .topbar {{
+      background: #111;
+      color: #fff;
+      padding: 0.65rem 1rem;
+      font-weight: 700;
+      font-size: 0.95rem;
+      letter-spacing: 0.02em;
+    }}
+    .wrap {{
+      max-width: 28rem;
+      margin: 0 auto;
+      padding: 1rem 1rem 2.5rem;
+    }}
+    .card {{
+      background: #fff;
+      border-radius: 18px;
+      box-shadow: 0 8px 32px rgba(0,0,0,0.08);
+      overflow: hidden;
+    }}
+    .hero img {{
+      width: 100%;
+      display: block;
+      background: #ddd;
+      aspect-ratio: 16/10;
+      object-fit: cover;
+    }}
+    .inner {{ padding: 1.1rem 1.15rem 1.25rem; }}
+    h1 {{
+      font-size: 1.25rem;
+      font-weight: 700;
+      margin: 0 0 0.35rem;
+      line-height: 1.25;
+    }}
+    .subline {{
+      margin: 0 0 0.5rem;
+      color: #555;
+      font-size: 0.9rem;
+      line-height: 1.35;
+    }}
+    .meta {{ color: #666; font-size: 0.88rem; margin: 0 0 0.75rem; }}
+    .price {{
+      font-size: 1.45rem;
+      font-weight: 800;
+      color: #e85f00;
+      margin: 0 0 0.85rem;
+    }}
+    .desc {{
+      line-height: 1.55;
+      font-size: 0.92rem;
+      color: #333;
+      margin-bottom: 1rem;
+    }}
+    .cta {{
+      display: block;
+      width: 100%;
+      box-sizing: border-box;
+      text-align: center;
+      padding: 0.95rem 1rem;
+      background: linear-gradient(180deg, #ff7a1a 0%, #e85f00 100%);
+      color: #fff !important;
+      font-weight: 700;
+      font-size: 1rem;
+      border-radius: 12px;
+      text-decoration: none;
+      margin: 0.25rem 0 0.5rem;
+      border: none;
+      cursor: pointer;
+      font-family: inherit;
+    }}
+    .hint {{
+      font-size: 0.8rem;
+      color: #666;
+      line-height: 1.45;
+      margin: 0 0 0.25rem;
+    }}
+    .foot {{
+      margin-top: 1rem;
+      padding-top: 1rem;
+      border-top: 1px solid #eee;
+      font-size: 0.8rem;
+      color: #888;
+    }}
+    .foot a {{ color: #e85f00; font-weight: 600; }}
   </style>
 </head>
 <body>
+  <div class="topbar">CARZO</div>
   <div class="wrap">
-    {img_block}
-    <h1>{title}</h1>
-    <p class="meta">{year} · {mile_s} · {loc}</p>
-    <p class="price">{currency} {price_s}</p>
-    <div class="desc">{desc_html}</div>
-    <p class="foot">Prefer the app? <a href="{esc_deep}">Open in CARZO</a></p>
+    <div class="card">
+      {img_block}
+      <div class="inner">
+        <h1>{title}</h1>
+        {subline_html}
+        <p class="meta">{year} · {mile_s} · {loc}</p>
+        <p class="price">{currency} {price_s}</p>
+        <div class="desc">{desc_html}</div>
+        <a class="cta" href="{esc_deep}">Open in CARZO app</a>
+        <p class="hint">
+          Opens this exact listing inside CARZO when the app is installed.
+          If you opened this page in Safari, use the button above or go back and tap the link again from Messages.
+        </p>
+        <p class="foot">
+          Web preview. With Universal Links set up, the same URL opens inside CARZO automatically.
+        </p>
+      </div>
+    </div>
   </div>
 </body>
 </html>"""
