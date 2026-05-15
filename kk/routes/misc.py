@@ -174,7 +174,9 @@ def listing_share_landing(listing_id: str):
 
     deep = f"carzo://listing?id={quote(raw, safe='')}"
     esc_deep = escape(deep, quote=True)
-    page_url = escape(request.url, quote=True)
+    canonical = request.url_root.rstrip("/") + f"/listing/{quote(raw, safe='')}"
+    skip_auto_open = request.args.get("web") == "1"
+    page_url_esc = escape(canonical, quote=True)
     og_desc = escape(
         (desc[:200] + "…") if len(desc) > 200 else desc,
         quote=True,
@@ -197,17 +199,59 @@ def listing_share_landing(listing_id: str):
 
     subline_html = f'<p class="subline">{subline}</p>' if subline else ""
 
+    deep_js = json.dumps(deep)
+    fallback_js = json.dumps(f"{canonical}?web=1")
+    id_js = json.dumps(raw)
+    auto_script = ""
+    shell_class = "visible"
+    if not skip_auto_open:
+        shell_class = ""
+        auto_script = f"""  <script>
+(function () {{
+  var deep = {deep_js};
+  var fallback = {fallback_js};
+  var id = {id_js};
+  var ua = navigator.userAgent || "";
+  var android = /Android/i.test(ua);
+  function reveal() {{
+    var el = document.getElementById("web-shell");
+    if (el) el.classList.add("visible");
+  }}
+  function tryOpen() {{
+    try {{
+      if (android) {{
+        var q = encodeURIComponent(id);
+        var fb = encodeURIComponent(fallback);
+        window.location.replace(
+          "intent://listing?id=" + q + "#Intent;scheme=carzo;package=com.carzo.app;S.browser_fallback_url=" + fb + ";end"
+        );
+      }} else {{
+        window.top.location.replace(deep);
+      }}
+    }} catch (e) {{
+      try {{ window.location.replace(deep); }} catch (e2) {{}}
+    }}
+    setTimeout(reveal, 700);
+  }}
+  if (document.readyState === "loading")
+    document.addEventListener("DOMContentLoaded", tryOpen);
+  else
+    tryOpen();
+}})();
+</script>
+"""
+
     html = f"""<!DOCTYPE html>
 <html lang="en">
 <head>
   <meta charset="utf-8"/>
   <meta name="viewport" content="width=device-width, initial-scale=1"/>
   <title>{title} · CARZO</title>
-  <link rel="canonical" href="{page_url}"/>
+  <link rel="canonical" href="{page_url_esc}"/>
   <meta property="og:type" content="website"/>
   <meta property="og:title" content="{title} · CARZO"/>
   <meta property="og:description" content="{og_desc}"/>
-  <meta property="og:url" content="{page_url}"/>
+  <meta property="og:url" content="{page_url_esc}"/>
 {og_image_meta}  <meta name="twitter:card" content="summary_large_image"/>
 {itunes_meta}  <style>
     body {{
@@ -299,9 +343,19 @@ def listing_share_landing(listing_id: str):
       color: #888;
     }}
     .foot a {{ color: #e85f00; font-weight: 600; }}
+    #web-shell {{
+      opacity: 0;
+      transition: opacity 0.2s ease;
+    }}
+    #web-shell.visible {{
+      opacity: 1;
+    }}
   </style>
 </head>
 <body>
+{auto_script}
+  <noscript><style>#web-shell {{ opacity: 1 !important; }}</style></noscript>
+  <div id="web-shell" class="{shell_class}">
   <div class="topbar">CARZO</div>
   <div class="wrap">
     <div class="card">
@@ -314,14 +368,16 @@ def listing_share_landing(listing_id: str):
         <div class="desc">{desc_html}</div>
         <a class="cta" href="{esc_deep}">Open in CARZO app</a>
         <p class="hint">
-          Opens this exact listing inside CARZO when the app is installed.
-          If you opened this page in Safari, use the button above or go back and tap the link again from Messages.
+          This page tries to open CARZO automatically when the app is installed.
+          If you are browsing without the app, use the button above.
         </p>
         <p class="foot">
-          Web preview. With Universal Links set up, the same URL opens inside CARZO automatically.
+          Universal Links open this URL in CARZO when iOS/Android is fully configured.
+          Web-only view: add <strong>?web=1</strong> to the URL to skip opening the app.
         </p>
       </div>
     </div>
+  </div>
   </div>
 </body>
 </html>"""
