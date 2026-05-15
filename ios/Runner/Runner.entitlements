@@ -5,6 +5,7 @@
 	<key>com.apple.developer.associated-domains</key>
 	<array>
 		<string>applinks:carr-5hrm.onrender.com</string>
+		<string>applinks:carr-5hrm.onrender.com?mode=developer</string>
 	</array>
 </dict>
 </plist>

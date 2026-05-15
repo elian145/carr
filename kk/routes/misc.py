@@ -77,30 +77,47 @@ def _is_in_app_browser(user_agent: str) -> bool:
 
 
 def _listing_in_app_bridge_html(listing_id: str) -> Response:
-    """Guide page for Snapchat / Instagram / etc. — their WebView blocks ``carzo://`` taps."""
+    """One-button fallback when the link opened inside a social app WebView."""
     ua = (request.headers.get("User-Agent") or "").lower()
     is_android = "android" in ua
     qid = quote(listing_id, safe="")
     deep = f"carzo://listing?id={qid}"
     https_url = request.url_root.rstrip("/") + f"/listing/{qid}"
     web_fallback = quote(f"{https_url}?web=1", safe="")
-    https_js = json.dumps(https_url)
     deep_js = json.dumps(deep)
     id_js = json.dumps(listing_id)
 
-    android_extra = ""
-    if is_android:
-        android_extra = """
-    <button type="button" class="btn" id="carzo-open">Try open in CARZO app</button>
-    <p class="muted">If nothing happens, use Copy link and open it in Chrome.</p>"""
-
-    ios_steps = """
-    <ol class="steps">
-      <li>Tap the <strong>compass</strong> icon at the bottom of this screen</li>
-      <li>Choose <strong>Open in Safari</strong></li>
-      <li>CARZO will open on this listing automatically</li>
-    </ol>
-    <p class="muted">Snapchat and similar apps block the &ldquo;open app&rdquo; button here — Safari is required once.</p>"""
+    open_script = f"""
+    var deep = {deep_js};
+    var listingId = {id_js};
+    var webFallback = {json.dumps(web_fallback)};
+    function openInCarzo() {{
+      if ({json.dumps(is_android)}) {{
+        window.location.href =
+          "intent://listing?id=" + encodeURIComponent(listingId) +
+          "#Intent;scheme=carzo;package=com.carzo.app;S.browser_fallback_url=" + webFallback + ";end";
+        return;
+      }}
+      try {{ window.location.href = deep; }} catch (e) {{}}
+      try {{
+        var a = document.createElement("a");
+        a.href = deep;
+        a.style.display = "none";
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
+      }} catch (e2) {{}}
+      try {{
+        var f = document.createElement("iframe");
+        f.style.display = "none";
+        f.src = deep;
+        document.body.appendChild(f);
+        setTimeout(function () {{ document.body.removeChild(f); }}, 2000);
+      }} catch (e3) {{}}
+    }}
+    var btn = document.getElementById("carzo-open");
+    if (btn) btn.addEventListener("click", function (e) {{ e.preventDefault(); openInCarzo(); }});
+"""
 
     html = f"""<!DOCTYPE html>
 <html lang="en">
@@ -109,6 +126,7 @@ def _listing_in_app_bridge_html(listing_id: str) -> Response:
   <meta name="viewport" content="width=device-width, initial-scale=1"/>
   <title>Open in CARZO</title>
   <style>
+    * {{ box-sizing: border-box; }}
     body {{
       margin: 0;
       min-height: 100vh;
@@ -116,103 +134,32 @@ def _listing_in_app_bridge_html(listing_id: str) -> Response:
       flex-direction: column;
       align-items: center;
       justify-content: center;
-      padding: 1.5rem 1.25rem 2rem;
+      padding: 1.5rem;
       font-family: -apple-system, BlinkMacSystemFont, sans-serif;
       background: #111;
       color: #fff;
       text-align: center;
     }}
-    h1 {{ font-size: 1.2rem; margin: 0 0 1rem; max-width: 22rem; }}
-    .steps {{
-      text-align: left;
-      max-width: 22rem;
-      margin: 0 0 1rem;
-      padding-left: 1.2rem;
-      color: #ddd;
-      font-size: 0.95rem;
-      line-height: 1.55;
-    }}
-    .steps li {{ margin-bottom: 0.5rem; }}
-    .muted {{ color: #999; font-size: 0.85rem; line-height: 1.45; max-width: 22rem; margin: 0.5rem 0; }}
     .btn {{
       display: block;
       width: 100%;
       max-width: 20rem;
-      margin: 0.75rem 0 0;
-      padding: 1rem;
-      background: #ff6b00;
+      padding: 1.1rem 1.25rem;
+      background: linear-gradient(180deg, #ff7a1a, #e85f00);
       color: #fff !important;
       font-weight: 700;
-      font-size: 1.05rem;
-      border-radius: 12px;
-      text-decoration: none;
+      font-size: 1.1rem;
+      border-radius: 14px;
       border: none;
       cursor: pointer;
       font-family: inherit;
+      -webkit-appearance: none;
     }}
-    .btn-secondary {{
-      background: #333;
-      color: #fff !important;
-      font-weight: 600;
-      font-size: 0.95rem;
-    }}
-    .link-box {{
-      margin-top: 0.75rem;
-      padding: 0.65rem 0.75rem;
-      background: #222;
-      border-radius: 8px;
-      font-size: 0.72rem;
-      color: #aaa;
-      word-break: break-all;
-      max-width: 20rem;
-    }}
-    #copied {{ color: #6fcf97; font-size: 0.85rem; min-height: 1.2rem; margin-top: 0.35rem; }}
   </style>
 </head>
 <body>
-  <h1>Open this listing in CARZO</h1>
-  {"" if is_android else ios_steps}
-  <button type="button" class="btn btn-secondary" id="copy-link">Copy link</button>
-  <p id="copied"></p>
-  <div class="link-box">{escape(https_url)}</div>
-  {android_extra}
-  <script>
-  (function () {{
-    var httpsUrl = {https_js};
-    var deep = {deep_js};
-    var copyBtn = document.getElementById("copy-link");
-    var copied = document.getElementById("copied");
-    function showCopied() {{
-      if (copied) copied.textContent = "Copied — paste in Safari address bar, or use the compass icon.";
-    }}
-    if (copyBtn) {{
-      copyBtn.addEventListener("click", function () {{
-        if (navigator.clipboard && navigator.clipboard.writeText) {{
-          navigator.clipboard.writeText(httpsUrl).then(showCopied).catch(function () {{
-            try {{
-              var ta = document.createElement("textarea");
-              ta.value = httpsUrl;
-              document.body.appendChild(ta);
-              ta.select();
-              document.execCommand("copy");
-              document.body.removeChild(ta);
-              showCopied();
-            }} catch (e) {{}}
-          }});
-        }}
-      }});
-    }}
-    var openBtn = document.getElementById("carzo-open");
-    if (openBtn) {{
-      openBtn.addEventListener("click", function () {{
-        var intent =
-          "intent://listing?id=" + encodeURIComponent({id_js}) +
-          "#Intent;scheme=carzo;package=com.carzo.app;S.browser_fallback_url={web_fallback};end";
-        window.location.href = intent;
-      }});
-    }}
-  }})();
-  </script>
+  <button type="button" class="btn" id="carzo-open">Open in CARZO app</button>
+  <script>{open_script}</script>
 </body>
 </html>"""
     return Response(
