@@ -376,46 +376,69 @@ def listing_share_landing(listing_id: str):
 
     subline_html = f'<p class="subline">{subline}</p>' if subline else ""
 
+    deep_js = json.dumps(deep)
     canonical_js = json.dumps(canonical)
     fallback_js = json.dumps(f"{canonical}?web=1")
     id_js = json.dumps(raw)
 
     cta_script = f"""  <script>
 (function () {{
+  var deep = {deep_js};
   var universal = {canonical_js};
   var fallback = {fallback_js};
   var id = {id_js};
-  function openCarzoFromShare(ev) {{
-    var ua = navigator.userAgent || "";
-    if (/Android/i.test(ua)) {{
-      if (ev) ev.preventDefault();
-      var q = encodeURIComponent(id);
-      var fb = encodeURIComponent(fallback);
-      var intent =
-        "intent://listing?id=" + q +
-        "#Intent;scheme=carzo;package=com.carzo.app;S.browser_fallback_url=" + fb + ";end";
-      try {{
-        window.top.location.href = intent;
-      }} catch (e1) {{
-        try {{ window.location.href = intent; }} catch (e2) {{}}
-      }}
-      return;
-    }}
-    /* iOS: same HTTPS URL as share link — Universal Links open CARZO (not carzo://). */
-    if (ev) ev.preventDefault();
-    var inApp = /Snapchat|Instagram|FBAN|FBAV|WhatsApp|TikTok|Twitter/i.test(ua);
+  var ua = navigator.userAgent || "";
+  var inAppWebView = /Snapchat|Instagram|FBAN|FBAV|TikTok|Musical_ly/i.test(ua);
+
+  function openAndroidIntent() {{
+    var q = encodeURIComponent(id);
+    var fb = encodeURIComponent(fallback);
+    var intent =
+      "intent://listing?id=" + q +
+      "#Intent;scheme=carzo;package=com.carzo.app;S.browser_fallback_url=" + fb + ";end";
     try {{
-      if (inApp) window.open(universal, "_blank");
-      else window.top.location.href = universal;
-    }} catch (e3) {{
-      try {{ window.location.href = universal; }} catch (e4) {{}}
+      window.top.location.href = intent;
+    }} catch (e1) {{
+      try {{ window.location.href = intent; }} catch (e2) {{}}
     }}
   }}
+
+  function openIosApp() {{
+    try {{
+      window.top.location.href = deep;
+    }} catch (e3) {{
+      try {{ window.location.href = deep; }} catch (e4) {{}}
+    }}
+  }}
+
+  function openCarzoFromShare(ev) {{
+    if (/Android/i.test(ua)) {{
+      if (ev) ev.preventDefault();
+      openAndroidIntent();
+      return;
+    }}
+  }}
+
+  function tryAutoOpen() {{
+    if (inAppWebView) return;
+    if (/Android/i.test(ua)) {{
+      openAndroidIntent();
+      return;
+    }}
+    if (/iPhone|iPad|iPod/i.test(ua)) {{
+      openIosApp();
+    }}
+  }}
+
   function bindCta() {{
     var b = document.getElementById("carzo-open-btn");
     if (!b) return;
-    b.addEventListener("click", openCarzoFromShare);
+    if (/Android/i.test(ua)) {{
+      b.addEventListener("click", openCarzoFromShare);
+    }}
   }}
+
+  tryAutoOpen();
   if (document.readyState === "loading")
     document.addEventListener("DOMContentLoaded", bindCta);
   else
@@ -542,9 +565,9 @@ def listing_share_landing(listing_id: str):
         <p class="meta">{year} · {mile_s} · {loc}</p>
         <p class="price">{currency} {price_s}</p>
         <div class="desc">{desc_html}</div>
-        <a href="{page_url_esc}" class="cta" id="carzo-open-btn" rel="noopener noreferrer">Open in CARZO app</a>
+        <a href="{esc_deep}" class="cta" id="carzo-open-btn" rel="noopener noreferrer">Open in CARZO app</a>
         <p class="hint">
-          Tap the button to open this listing in CARZO. In Snapchat or Instagram, it may open Safari first, then the app.
+          Opening CARZO… If nothing happens, tap the orange button above.
         </p>
         <p class="foot">
           Universal Links open this URL in CARZO when iOS/Android is fully configured.

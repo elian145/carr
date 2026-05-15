@@ -106,6 +106,8 @@ workflows:
           (cd "$TMP_DIR" && zip -qry Runner-unsigned.ipa Payload)
           mv "$TMP_DIR/Runner-unsigned.ipa" "$DEST_DIR/Runner-unsigned.ipa"
           echo "Built IPA: $DEST_DIR/Runner-unsigned.ipa — use with Sideloadly on your iPhone."
+          echo "--- Associated Domains (must be present for tap-to-open links) ---"
+          /usr/libexec/PlistBuddy -c 'Print :com.apple.developer.associated-domains' ios/Runner/Runner.entitlements 2>/dev/null || echo "WARNING: associated-domains missing from Runner.entitlements"
     artifacts:
       - build/ios/ipa/*.ipa
 
