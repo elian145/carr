@@ -77,11 +77,31 @@ def _is_in_app_browser(user_agent: str) -> bool:
 
 
 def _listing_in_app_bridge_html(listing_id: str) -> Response:
-    """Tiny page for in-app browsers — loads instantly; tap opens CARZO (no 302)."""
+    """Guide page for Snapchat / Instagram / etc. — their WebView blocks ``carzo://`` taps."""
+    ua = (request.headers.get("User-Agent") or "").lower()
+    is_android = "android" in ua
     qid = quote(listing_id, safe="")
     deep = f"carzo://listing?id={qid}"
-    esc_deep = escape(deep, quote=True)
+    https_url = request.url_root.rstrip("/") + f"/listing/{qid}"
+    web_fallback = quote(f"{https_url}?web=1", safe="")
+    https_js = json.dumps(https_url)
     deep_js = json.dumps(deep)
+    id_js = json.dumps(listing_id)
+
+    android_extra = ""
+    if is_android:
+        android_extra = """
+    <button type="button" class="btn" id="carzo-open">Try open in CARZO app</button>
+    <p class="muted">If nothing happens, use Copy link and open it in Chrome.</p>"""
+
+    ios_steps = """
+    <ol class="steps">
+      <li>Tap the <strong>compass</strong> icon at the bottom of this screen</li>
+      <li>Choose <strong>Open in Safari</strong></li>
+      <li>CARZO will open on this listing automatically</li>
+    </ol>
+    <p class="muted">Snapchat and similar apps block the &ldquo;open app&rdquo; button here — Safari is required once.</p>"""
+
     html = f"""<!DOCTYPE html>
 <html lang="en">
 <head>
@@ -96,19 +116,29 @@ def _listing_in_app_bridge_html(listing_id: str) -> Response:
       flex-direction: column;
       align-items: center;
       justify-content: center;
-      padding: 1.5rem;
+      padding: 1.5rem 1.25rem 2rem;
       font-family: -apple-system, BlinkMacSystemFont, sans-serif;
       background: #111;
       color: #fff;
       text-align: center;
     }}
-    h1 {{ font-size: 1.2rem; margin: 0 0 0.75rem; }}
-    p {{ color: #bbb; line-height: 1.5; font-size: 0.92rem; max-width: 20rem; }}
+    h1 {{ font-size: 1.2rem; margin: 0 0 1rem; max-width: 22rem; }}
+    .steps {{
+      text-align: left;
+      max-width: 22rem;
+      margin: 0 0 1rem;
+      padding-left: 1.2rem;
+      color: #ddd;
+      font-size: 0.95rem;
+      line-height: 1.55;
+    }}
+    .steps li {{ margin-bottom: 0.5rem; }}
+    .muted {{ color: #999; font-size: 0.85rem; line-height: 1.45; max-width: 22rem; margin: 0.5rem 0; }}
     .btn {{
       display: block;
       width: 100%;
       max-width: 20rem;
-      margin: 1.25rem 0 0.5rem;
+      margin: 0.75rem 0 0;
       padding: 1rem;
       background: #ff6b00;
       color: #fff !important;
@@ -120,19 +150,67 @@ def _listing_in_app_bridge_html(listing_id: str) -> Response:
       cursor: pointer;
       font-family: inherit;
     }}
-    .tip {{ font-size: 0.82rem; color: #888; max-width: 22rem; margin-top: 1rem; }}
+    .btn-secondary {{
+      background: #333;
+      color: #fff !important;
+      font-weight: 600;
+      font-size: 0.95rem;
+    }}
+    .link-box {{
+      margin-top: 0.75rem;
+      padding: 0.65rem 0.75rem;
+      background: #222;
+      border-radius: 8px;
+      font-size: 0.72rem;
+      color: #aaa;
+      word-break: break-all;
+      max-width: 20rem;
+    }}
+    #copied {{ color: #6fcf97; font-size: 0.85rem; min-height: 1.2rem; margin-top: 0.35rem; }}
   </style>
 </head>
 <body>
-  <h1>Open listing in CARZO</h1>
-  <p>This preview can&apos;t open the app automatically. Tap the button below.</p>
-  <button type="button" class="btn" id="carzo-open">Open in CARZO app</button>
-  <p class="tip">Still stuck? Tap the <strong>compass</strong> icon (open in Safari), then tap the shared link again — that opens the listing in the app.</p>
+  <h1>Open this listing in CARZO</h1>
+  {"" if is_android else ios_steps}
+  <button type="button" class="btn btn-secondary" id="copy-link">Copy link</button>
+  <p id="copied"></p>
+  <div class="link-box">{escape(https_url)}</div>
+  {android_extra}
   <script>
   (function () {{
-    var u = {deep_js};
-    var b = document.getElementById("carzo-open");
-    if (b) b.addEventListener("click", function () {{ window.location.href = u; }});
+    var httpsUrl = {https_js};
+    var deep = {deep_js};
+    var copyBtn = document.getElementById("copy-link");
+    var copied = document.getElementById("copied");
+    function showCopied() {{
+      if (copied) copied.textContent = "Copied — paste in Safari address bar, or use the compass icon.";
+    }}
+    if (copyBtn) {{
+      copyBtn.addEventListener("click", function () {{
+        if (navigator.clipboard && navigator.clipboard.writeText) {{
+          navigator.clipboard.writeText(httpsUrl).then(showCopied).catch(function () {{
+            try {{
+              var ta = document.createElement("textarea");
+              ta.value = httpsUrl;
+              document.body.appendChild(ta);
+              ta.select();
+              document.execCommand("copy");
+              document.body.removeChild(ta);
+              showCopied();
+            }} catch (e) {{}}
+          }});
+        }}
+      }});
+    }}
+    var openBtn = document.getElementById("carzo-open");
+    if (openBtn) {{
+      openBtn.addEventListener("click", function () {{
+        var intent =
+          "intent://listing?id=" + encodeURIComponent({id_js}) +
+          "#Intent;scheme=carzo;package=com.carzo.app;S.browser_fallback_url={web_fallback};end";
+        window.location.href = intent;
+      }});
+    }}
   }})();
   </script>
 </body>
