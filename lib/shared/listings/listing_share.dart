@@ -15,19 +15,18 @@ Rect? shareOriginFromContext(BuildContext context) {
 
 /// Opens the system share sheet with a link that opens this listing in CARZO.
 ///
-/// Uses the public **HTTPS** URL with [ShareParams.uri] so iOS/Android can hand off
-/// via Universal / App Links when the recipient taps the link (one tap → in-app listing).
+/// Shares ``carzo://listing?id=…`` so recipients can open the listing in one tap from
+/// chat apps that allow custom URL schemes. Does not use an HTTPS preview link,
+/// because that opens an in-app browser (e.g. Snapchat) where an "open app" button
+/// cannot work.
 Future<void> shareListingAsLinkOnly(
   String listingId, {
   BuildContext? context,
   String? listingTitle,
   Rect? sharePositionOrigin,
 }) async {
-  final id = listingId.trim();
-  if (id.isEmpty) return;
-
-  final web = listingWebShareLink(id)?.trim() ?? '';
-  final deep = listingDeepLink(id).trim();
+  final link = listingShareLinkOnly(listingId).trim();
+  if (link.isEmpty) return;
 
   Rect? origin = sharePositionOrigin;
   if (origin == null && context != null) {
@@ -37,26 +36,11 @@ Future<void> shareListingAsLinkOnly(
   final title = (listingTitle ?? '').trim();
   final sheetTitle = title.isNotEmpty ? 'CARZO – $title' : 'CARZO listing';
 
-  final parsedWeb = web.isNotEmpty ? Uri.tryParse(web) : null;
-  if (parsedWeb != null &&
-      parsedWeb.hasScheme &&
-      (parsedWeb.scheme == 'https' || parsedWeb.scheme == 'http')) {
-    await SharePlus.instance.share(
-      ShareParams(
-        uri: parsedWeb,
-        title: sheetTitle,
-        sharePositionOrigin: origin,
-      ),
-    );
-    return;
-  }
-
-  final fallback = deep.isNotEmpty ? deep : web;
-  if (fallback.isEmpty) return;
   await SharePlus.instance.share(
     ShareParams(
-      text: fallback,
+      text: link,
       title: sheetTitle,
+      subject: sheetTitle,
       sharePositionOrigin: origin,
     ),
   );

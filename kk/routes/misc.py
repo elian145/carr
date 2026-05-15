@@ -77,15 +77,28 @@ def _is_in_app_browser(user_agent: str) -> bool:
 
 
 def _listing_in_app_bridge_html(listing_id: str) -> Response:
-    """One-button fallback when the link opened inside a social app WebView."""
+    """Shown when an old HTTPS link opens inside Snapchat / Instagram (WebView).
+
+    Those browsers block ``carzo://`` — a button here cannot open the app on iOS.
+    """
     ua = (request.headers.get("User-Agent") or "").lower()
+    is_snapchat = "snapchat" in ua
     is_android = "android" in ua
     qid = quote(listing_id, safe="")
     deep = f"carzo://listing?id={qid}"
-    https_url = request.url_root.rstrip("/") + f"/listing/{qid}"
-    web_fallback = quote(f"{https_url}?web=1", safe="")
     deep_js = json.dumps(deep)
     id_js = json.dumps(listing_id)
+    web_fallback = quote(
+        request.url_root.rstrip("/") + f"/listing/{qid}?web=1",
+        safe="",
+    )
+
+    snap_note = ""
+    if is_snapchat:
+        snap_note = """
+    <p class="note"><strong>Snapchat cannot open CARZO from this screen.</strong>
+    Go back to the chat and tap the <strong>carzo://</strong> link in the message
+    (update CARZO and share again if you only see a web link).</p>"""
 
     open_script = f"""
     var deep = {deep_js};
@@ -98,22 +111,7 @@ def _listing_in_app_bridge_html(listing_id: str) -> Response:
           "#Intent;scheme=carzo;package=com.carzo.app;S.browser_fallback_url=" + webFallback + ";end";
         return;
       }}
-      try {{ window.location.href = deep; }} catch (e) {{}}
-      try {{
-        var a = document.createElement("a");
-        a.href = deep;
-        a.style.display = "none";
-        document.body.appendChild(a);
-        a.click();
-        document.body.removeChild(a);
-      }} catch (e2) {{}}
-      try {{
-        var f = document.createElement("iframe");
-        f.style.display = "none";
-        f.src = deep;
-        document.body.appendChild(f);
-        setTimeout(function () {{ document.body.removeChild(f); }}, 2000);
-      }} catch (e3) {{}}
+      window.location.href = deep;
     }}
     var btn = document.getElementById("carzo-open");
     if (btn) btn.addEventListener("click", function (e) {{ e.preventDefault(); openInCarzo(); }});
@@ -140,6 +138,13 @@ def _listing_in_app_bridge_html(listing_id: str) -> Response:
       color: #fff;
       text-align: center;
     }}
+    .note {{
+      max-width: 22rem;
+      color: #ccc;
+      font-size: 0.92rem;
+      line-height: 1.5;
+      margin: 0 0 1.25rem;
+    }}
     .btn {{
       display: block;
       width: 100%;
@@ -155,10 +160,19 @@ def _listing_in_app_bridge_html(listing_id: str) -> Response:
       font-family: inherit;
       -webkit-appearance: none;
     }}
+    .muted {{
+      max-width: 22rem;
+      margin-top: 1rem;
+      color: #888;
+      font-size: 0.82rem;
+      line-height: 1.45;
+    }}
   </style>
 </head>
 <body>
+  {snap_note}
   <button type="button" class="btn" id="carzo-open">Open in CARZO app</button>
+  <p class="muted">If the button does nothing, the chat app blocked it. Ask the sender to update CARZO and share again.</p>
   <script>{open_script}</script>
 </body>
 </html>"""

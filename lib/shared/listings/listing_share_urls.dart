@@ -73,11 +73,20 @@ String? listingWebShareLink(String listingId) {
   return '$normalized/$path/${Uri.encodeComponent(id)}';
 }
 
-/// Single URL for sharing: HTTPS when a web base is set or inferred, else `carzo://`.
+/// HTTPS URL for Universal Links / web preview (Messages, Safari, etc.).
+String? listingHttpsShareLink(String listingId) => listingWebShareLink(listingId);
+
+/// Link to put on the share sheet.
+///
+/// Uses ``carzo://listing?id=…`` so a tap in chat can open CARZO directly without a
+/// web page. Social in-app browsers (Snapchat, Instagram) cannot open the app from a
+/// button on that web page — the chat link must be the deep link.
 String listingShareLinkOnly(String listingId) {
+  final deep = listingDeepLink(listingId).trim();
+  if (deep.isNotEmpty) return deep;
   final web = listingWebShareLink(listingId);
   if (web != null && web.isNotEmpty) return web;
-  return listingDeepLink(listingId);
+  return '';
 }
 
 bool _isListingPublicId(String id) {
