@@ -52,19 +52,113 @@ def _listing_share_path_globs() -> list[str]:
     return out
 
 
-# In-app WebViews that block ``carzo://`` or hang on redirects (Snapchat, Instagram).
-# WhatsApp / Messages should use Universal Links and are not listed here.
+# In-app WebViews that block Universal Links and ``carzo://`` (Snapchat, Instagram, etc.).
 _IN_APP_BRIDGE_MARKERS = (
     "snapchat",
     "instagram",
     "tiktok",
     "musical_ly",
+    "fban",
+    "fbav",
+    "fb_iab",
+    "twitter",
 )
+
+
+def _is_ios_in_app_webkit(user_agent: str) -> bool:
+    """Instagram/Snapchat on iOS often use a generic WebKit UA without 'Safari'."""
+    ual = (user_agent or "").lower()
+    if not any(x in ual for x in ("iphone", "ipad", "ipod")):
+        return False
+    if "applewebkit" not in ual:
+        return False
+    if any(x in ual for x in ("safari", "crios", "fxios", "edgios")):
+        return False
+    return True
 
 
 def _needs_in_app_bridge(user_agent: str) -> bool:
     ua = (user_agent or "").lower()
-    return any(m in ua for m in _IN_APP_BRIDGE_MARKERS)
+    if any(m in ua for m in _IN_APP_BRIDGE_MARKERS):
+        return True
+    return _is_ios_in_app_webkit(user_agent)
+
+
+def _listing_handoff_script(listing_id: str, is_android: bool, *, auto_attempt: bool = True) -> str:
+    """JS to leave Snapchat/Instagram WebView and open CARZO (Safari or Android intent)."""
+    qid = quote(listing_id, safe="")
+    deep = f"carzo://listing?id={qid}"
+    canonical = _listing_canonical_https_url(listing_id)
+    id_js = json.dumps(listing_id)
+    canonical_js = json.dumps(canonical)
+    deep_js = json.dumps(deep)
+    web_fallback = quote(f"{canonical}?web=1", safe="")
+    auto_js = "true" if auto_attempt else "false"
+    return f"""
+(function () {{
+  var listingId = {id_js};
+  var universal = {canonical_js};
+  var deep = {deep_js};
+  var webFallback = {json.dumps(web_fallback)};
+  var isAndroid = {json.dumps(is_android)};
+  var autoAttempt = {auto_js};
+
+  window.carzoIsInAppWebView = function () {{
+    var ua = navigator.userAgent || "";
+    if (/Snapchat|Instagram|FBAN|FBAV|FB_IAB|Twitter|TikTok|Musical_ly|Line\\//i.test(ua)) return true;
+    if (!/iPhone|iPad|iPod/i.test(ua)) return false;
+    if (/CriOS|FxiOS|EdgiOS|Safari/i.test(ua)) return false;
+    return /AppleWebKit/i.test(ua);
+  }};
+
+  window.carzoOpenAndroidIntent = function () {{
+    window.location.href =
+      "intent://listing?id=" + encodeURIComponent(listingId) +
+      "#Intent;scheme=carzo;package=com.carzo.app;S.browser_fallback_url=" + webFallback + ";end";
+  }};
+
+  window.carzoOpenInSafari = function () {{
+    try {{
+      var w = window.open(universal, "_blank", "noopener,noreferrer");
+      if (w) return;
+    }} catch (e1) {{}}
+    try {{
+      var a = document.createElement("a");
+      a.href = universal;
+      a.target = "_blank";
+      a.rel = "noopener noreferrer";
+      document.body.appendChild(a);
+      a.click();
+      a.remove();
+    }} catch (e2) {{
+      window.location.href = universal;
+    }}
+  }};
+
+  window.carzoHandoffContinue = function (ev) {{
+    if (ev) ev.preventDefault();
+    if (isAndroid) window.carzoOpenAndroidIntent();
+    else window.carzoOpenInSafari();
+  }};
+
+  function wire(btnId) {{
+    var btn = document.getElementById(btnId);
+    if (btn) btn.addEventListener("click", window.carzoHandoffContinue);
+  }}
+
+  wire("carzo-open");
+  wire("carzo-handoff-btn");
+
+  if (!autoAttempt) return;
+  if (isAndroid) {{
+    setTimeout(window.carzoOpenAndroidIntent, 80);
+    return;
+  }}
+  if (window.carzoIsInAppWebView()) {{
+    setTimeout(window.carzoOpenInSafari, 120);
+  }}
+}})();
+"""
 
 
 def _listing_canonical_https_url(listing_id: str) -> str:
@@ -84,69 +178,7 @@ def _listing_in_app_bridge_html(listing_id: str) -> Response:
     canonical = _listing_canonical_https_url(listing_id)
     esc_href = escape(canonical, quote=True)
     esc_deep = escape(deep, quote=True)
-    id_js = json.dumps(listing_id)
-    canonical_js = json.dumps(canonical)
-    deep_js = json.dumps(deep)
-    web_fallback = quote(f"{canonical}?web=1", safe="")
-
-    open_script = f"""
-(function () {{
-  var listingId = {id_js};
-  var universal = {canonical_js};
-  var deep = {deep_js};
-  var webFallback = {json.dumps(web_fallback)};
-  var isAndroid = {json.dumps(is_android)};
-
-  function openAndroidIntent() {{
-    window.location.href =
-      "intent://listing?id=" + encodeURIComponent(listingId) +
-      "#Intent;scheme=carzo;package=com.carzo.app;S.browser_fallback_url=" + webFallback + ";end";
-  }}
-
-  function openInSafari() {{
-    try {{
-      var w = window.open(universal, "_blank", "noopener,noreferrer");
-      if (w) return true;
-    }} catch (e1) {{}}
-    try {{
-      var a = document.createElement("a");
-      a.href = universal;
-      a.target = "_blank";
-      a.rel = "noopener noreferrer";
-      a.style.display = "none";
-      document.body.appendChild(a);
-      a.click();
-      a.remove();
-      return true;
-    }} catch (e2) {{}}
-    try {{
-      window.top.location.href = universal;
-    }} catch (e3) {{
-      window.location.href = universal;
-    }}
-    return false;
-  }}
-
-  function onContinue(ev) {{
-    if (ev) ev.preventDefault();
-    if (isAndroid) {{
-      openAndroidIntent();
-      return;
-    }}
-    openInSafari();
-  }}
-
-  var btn = document.getElementById("carzo-open");
-  if (btn) btn.addEventListener("click", onContinue);
-
-  if (isAndroid) {{
-    setTimeout(openAndroidIntent, 80);
-    return;
-  }}
-  setTimeout(openInSafari, 80);
-  setTimeout(openInSafari, 600);
-}})();
-"""
+    open_script = _listing_handoff_script(listing_id, is_android, auto_attempt=True)
 
     html = f"""<!DOCTYPE html>
 <html lang="en">
@@ -437,76 +469,52 @@ def listing_share_landing(listing_id: str):
 
     subline_html = f'<p class="subline">{subline}</p>' if subline else ""
 
+    ua_lower = (request.headers.get("User-Agent") or "").lower()
+    page_is_android = "android" in ua_lower
+    handoff_js = _listing_handoff_script(raw, page_is_android, auto_attempt=False)
     deep_js = json.dumps(deep)
-    canonical_js = json.dumps(canonical)
-    fallback_js = json.dumps(f"{canonical}?web=1")
-    id_js = json.dumps(raw)
 
     cta_script = f"""  <script>
+{handoff_js}
 (function () {{
   var deep = {deep_js};
-  var universal = {canonical_js};
-  var fallback = {fallback_js};
-  var id = {id_js};
   var ua = navigator.userAgent || "";
-  var inAppWebView = /Snapchat|Instagram|FBAN|FBAV|TikTok|Musical_ly/i.test(ua);
-
-  function openAndroidIntent() {{
-    var q = encodeURIComponent(id);
-    var fb = encodeURIComponent(fallback);
-    var intent =
-      "intent://listing?id=" + q +
-      "#Intent;scheme=carzo;package=com.carzo.app;S.browser_fallback_url=" + fb + ";end";
-    try {{
-      window.top.location.href = intent;
-    }} catch (e1) {{
-      try {{ window.location.href = intent; }} catch (e2) {{}}
-    }}
-  }}
-
-  function openIosApp() {{
-    try {{
-      window.top.location.href = deep;
-    }} catch (e3) {{
-      try {{ window.location.href = deep; }} catch (e4) {{}}
-    }}
-  }}
-
-  function openCarzoFromShare(ev) {{
-    if (/Android/i.test(ua)) {{
-      if (ev) ev.preventDefault();
-      openAndroidIntent();
-      return;
-    }}
-  }}
 
   function tryAutoOpen() {{
-    if (inAppWebView) return;
+    if (window.carzoIsInAppWebView && window.carzoIsInAppWebView()) {{
+      var overlay = document.getElementById("carzo-handoff-overlay");
+      if (overlay) overlay.style.display = "flex";
+      return;
+    }}
     if (/Android/i.test(ua)) {{
-      openAndroidIntent();
+      window.carzoOpenAndroidIntent();
       return;
     }}
     if (/iPhone|iPad|iPod/i.test(ua)) {{
-      openIosApp();
+      try {{ window.top.location.href = deep; }} catch (e) {{ window.location.href = deep; }}
     }}
   }}
 
-  function bindCta() {{
-    var b = document.getElementById("carzo-open-btn");
-    if (!b) return;
-    if (/Android/i.test(ua)) {{
-      b.addEventListener("click", openCarzoFromShare);
-    }}
+  var mainBtn = document.getElementById("carzo-open-btn");
+  if (mainBtn) {{
+    mainBtn.addEventListener("click", function (ev) {{
+      if (window.carzoIsInAppWebView && window.carzoIsInAppWebView()) {{
+        window.carzoHandoffContinue(ev);
+      }}
+    }});
   }}
 
   tryAutoOpen();
-  if (document.readyState === "loading")
-    document.addEventListener("DOMContentLoaded", bindCta);
-  else
-    bindCta();
 }})();
 </script>
 """
+
+    handoff_overlay = """
+  <div id="carzo-handoff-overlay" style="display:none;position:fixed;inset:0;z-index:99999;background:#111;color:#fff;flex-direction:column;align-items:center;justify-content:center;padding:1.5rem;text-align:center;font-family:-apple-system,BlinkMacSystemFont,sans-serif;">
+    <p style="font-size:1rem;margin:0 0 1rem;max-width:20rem;line-height:1.5">Instagram and Snapchat cannot open CARZO directly.</p>
+    <button type="button" id="carzo-handoff-btn" style="display:block;width:100%;max-width:20rem;padding:1.1rem 1.25rem;background:linear-gradient(180deg,#ff7a1a,#e85f00);color:#fff;font-weight:700;font-size:1.1rem;border-radius:14px;border:none;cursor:pointer;-webkit-appearance:none;">Continue to CARZO</button>
+    <p style="margin-top:1rem;font-size:0.85rem;color:#aaa;max-width:22rem;line-height:1.45">Opens in Safari, then the app. Or use <strong>⋯</strong> → <strong>Open in Safari</strong>.</p>
+  </div>"""
 
     html = f"""<!DOCTYPE html>
 <html lang="en">
@@ -615,6 +623,7 @@ def listing_share_landing(listing_id: str):
   </style>
 </head>
 <body>
+{handoff_overlay}
   <div id="web-shell">
   <div class="topbar">CARZO</div>
   <div class="wrap">
