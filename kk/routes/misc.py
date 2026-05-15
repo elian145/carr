@@ -52,28 +52,19 @@ def _listing_share_path_globs() -> list[str]:
     return out
 
 
-# User-agents for social / messenger in-app browsers. A 302 to ``carzo://`` here often
-# leaves the WebView stuck on "Loading..." (Snapchat, Instagram, etc.).
-_IN_APP_BROWSER_MARKERS = (
+# In-app WebViews that block ``carzo://`` or hang on redirects (Snapchat, Instagram).
+# WhatsApp / Messages should use Universal Links and are not listed here.
+_IN_APP_BRIDGE_MARKERS = (
     "snapchat",
     "instagram",
-    "whatsapp",
-    "fbav",
-    "fban",
-    "facebook",
-    "twitter",
     "tiktok",
     "musical_ly",
-    "line/",
-    "linkedinapp",
-    "pinterest",
-    "gsa/",
 )
 
 
-def _is_in_app_browser(user_agent: str) -> bool:
+def _needs_in_app_bridge(user_agent: str) -> bool:
     ua = (user_agent or "").lower()
-    return any(m in ua for m in _IN_APP_BROWSER_MARKERS)
+    return any(m in ua for m in _IN_APP_BRIDGE_MARKERS)
 
 
 def _listing_canonical_https_url(listing_id: str) -> str:
@@ -197,7 +188,7 @@ def _listing_mobile_app_redirect(listing_id: str):
         )
         return redirect(intent, code=302)
 
-    if _is_in_app_browser(ua):
+    if _needs_in_app_bridge(ua):
         return None
 
     # iOS Safari / Chrome: Universal Links on tap — no server redirect.
@@ -205,30 +196,23 @@ def _listing_mobile_app_redirect(listing_id: str):
 
 
 def _apple_app_site_association_payload() -> dict:
+    """AASA for iOS Universal Links.
+
+    Keep this minimal (``appID`` + ``paths`` only). Mixing ``components`` with invalid
+    ``NOT`` path rules caused iOS to reject the whole file and stop opening the app.
+    """
     team = (os.environ.get("APPLE_TEAM_ID") or "").strip()
     if not team:
         raise ValueError("APPLE_TEAM_ID not set")
     app_id = f"{team}.com.carzo.app"
     path_patterns = _listing_share_path_globs()
-    components: list[dict] = [
-        {
-            "/": "/listing/*",
-            "?": {"web": "1"},
-            "exclude": True,
-            "comment": "Web-only preview; do not open app",
-        },
-    ]
-    for pattern in path_patterns:
-        components.append({"/": pattern, "comment": "CARZO listing share"})
-    paths = list(path_patterns) + ["NOT /listing/*?web=1", "NOT /listing/*?web=1&*"]
     return {
         "applinks": {
             "apps": [],
             "details": [
                 {
-                    "appIDs": [app_id],
-                    "paths": paths,
-                    "components": components,
+                    "appID": app_id,
+                    "paths": path_patterns,
                 }
             ],
         }
@@ -307,7 +291,7 @@ def listing_share_landing(listing_id: str):
         app_redirect = _listing_mobile_app_redirect(raw)
         if app_redirect is not None:
             return app_redirect
-        if _is_in_app_browser(ua):
+        if _needs_in_app_bridge(ua):
             return _listing_in_app_bridge_html(raw)
 
     car = (
