@@ -73,34 +73,79 @@ def _listing_canonical_https_url(listing_id: str) -> str:
 
 
 def _listing_in_app_bridge_html(listing_id: str) -> Response:
-    """Minimal page when Snapchat / Instagram open the link in an in-app WebView.
+    """Snapchat / Instagram in-app browsers cannot use Universal Links or ``carzo://``.
 
-    iOS blocks ``carzo://``. Use the same HTTPS Universal Link (real ``<a>``) so a tap can
-    hand off to Safari and open CARZO — same pattern as WhatsApp-style app links.
+    Hand off to Safari (iOS) or fire an Android intent so CARZO can open outside the WebView.
     """
     ua = (request.headers.get("User-Agent") or "").lower()
     is_android = "android" in ua
     qid = quote(listing_id, safe="")
+    deep = f"carzo://listing?id={qid}"
     canonical = _listing_canonical_https_url(listing_id)
     esc_href = escape(canonical, quote=True)
+    esc_deep = escape(deep, quote=True)
     id_js = json.dumps(listing_id)
+    canonical_js = json.dumps(canonical)
+    deep_js = json.dumps(deep)
     web_fallback = quote(f"{canonical}?web=1", safe="")
 
-    # iOS in-app WebViews: open HTTPS in a new context so Universal Links can run in Safari.
-    link_target = "_blank" if not is_android else "_top"
     open_script = f"""
-    var listingId = {id_js};
-    var webFallback = {json.dumps(web_fallback)};
-    var a = document.getElementById("carzo-open");
-    if (!a) return;
-    a.addEventListener("click", function (e) {{
-      if ({json.dumps(is_android)}) {{
-        e.preventDefault();
-        window.location.href =
-          "intent://listing?id=" + encodeURIComponent(listingId) +
-          "#Intent;scheme=carzo;package=com.carzo.app;S.browser_fallback_url=" + webFallback + ";end";
-      }}
-    }});
+(function () {{
+  var listingId = {id_js};
+  var universal = {canonical_js};
+  var deep = {deep_js};
+  var webFallback = {json.dumps(web_fallback)};
+  var isAndroid = {json.dumps(is_android)};
+
+  function openAndroidIntent() {{
+    window.location.href =
+      "intent://listing?id=" + encodeURIComponent(listingId) +
+      "#Intent;scheme=carzo;package=com.carzo.app;S.browser_fallback_url=" + webFallback + ";end";
+  }}
+
+  function openInSafari() {{
+    try {{
+      var w = window.open(universal, "_blank", "noopener,noreferrer");
+      if (w) return true;
+    }} catch (e1) {{}}
+    try {{
+      var a = document.createElement("a");
+      a.href = universal;
+      a.target = "_blank";
+      a.rel = "noopener noreferrer";
+      a.style.display = "none";
+      document.body.appendChild(a);
+      a.click();
+      a.remove();
+      return true;
+    }} catch (e2) {{}}
+    try {{
+      window.top.location.href = universal;
+    }} catch (e3) {{
+      window.location.href = universal;
+    }}
+    return false;
+  }}
+
+  function onContinue(ev) {{
+    if (ev) ev.preventDefault();
+    if (isAndroid) {{
+      openAndroidIntent();
+      return;
+    }}
+    openInSafari();
+  }}
+
+  var btn = document.getElementById("carzo-open");
+  if (btn) btn.addEventListener("click", onContinue);
+
+  if (isAndroid) {{
+    setTimeout(openAndroidIntent, 80);
+    return;
+  }}
+  setTimeout(openInSafari, 80);
+  setTimeout(openInSafari, 600);
+}})();
 """
 
     html = f"""<!DOCTYPE html>
@@ -110,9 +155,9 @@ def _listing_in_app_bridge_html(listing_id: str) -> Response:
   <meta name="viewport" content="width=device-width, initial-scale=1"/>
   <title>Open in CARZO</title>
   <meta property="og:url" content="{esc_href}"/>
-  <meta property="al:ios:url" content="{esc_href}"/>
+  <meta property="al:ios:url" content="{esc_deep}"/>
   <meta property="al:ios:app_name" content="CARZO"/>
-  <meta property="al:android:url" content="{escape(f"carzo://listing?id={qid}", quote=True)}"/>
+  <meta property="al:android:url" content="{esc_deep}"/>
   <meta property="al:android:package" content="com.carzo.app"/>
   <meta property="al:android:app_name" content="CARZO"/>
   <style>
@@ -130,6 +175,16 @@ def _listing_in_app_bridge_html(listing_id: str) -> Response:
       color: #fff;
       text-align: center;
     }}
+    .spinner {{
+      width: 2rem;
+      height: 2rem;
+      border: 3px solid #333;
+      border-top-color: #ff7a1a;
+      border-radius: 50%;
+      animation: spin 0.8s linear infinite;
+      margin-bottom: 1rem;
+    }}
+    @keyframes spin {{ to {{ transform: rotate(360deg); }} }}
     .btn {{
       display: block;
       width: 100%;
@@ -142,19 +197,25 @@ def _listing_in_app_bridge_html(listing_id: str) -> Response:
       border-radius: 14px;
       text-decoration: none;
       font-family: inherit;
+      border: none;
+      cursor: pointer;
+      -webkit-appearance: none;
     }}
     .muted {{
       max-width: 22rem;
       margin-top: 1rem;
-      color: #888;
-      font-size: 0.82rem;
-      line-height: 1.45;
+      color: #aaa;
+      font-size: 0.88rem;
+      line-height: 1.5;
     }}
   </style>
 </head>
 <body>
-  <a class="btn" id="carzo-open" href="{esc_href}" target="{link_target}" rel="noopener noreferrer">Open in CARZO</a>
-  <p class="muted">Opens this listing in the CARZO app.</p>
+  <div class="spinner" aria-hidden="true"></div>
+  <p class="muted" style="margin-bottom:1.25rem">Opening CARZO…</p>
+  <button type="button" class="btn" id="carzo-open">Continue to CARZO</button>
+  <p class="muted">Snapchat and Instagram cannot open apps directly. This opens Safari, then CARZO.<br/>
+  If nothing happens, tap <strong>⋯</strong> (menu) → <strong>Open in Safari</strong>, then tap the button again.</p>
   <script>{open_script}</script>
 </body>
 </html>"""
