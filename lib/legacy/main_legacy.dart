@@ -13648,7 +13648,11 @@ class _CarDetailsPageState extends State<CarDetailsPage> {
           ? listingPrimaryId(car!)
           : widget.carId.toString();
 
-      await shareListingAsLinkOnly(id);
+      await shareListingAsLinkOnly(
+        id,
+        context: context,
+        listingTitle: _displayCarTitle(context),
+      );
 
       // Track share for analytics
       await AnalyticsService.trackShare(widget.carId.toString());

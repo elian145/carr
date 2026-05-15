@@ -309,7 +309,12 @@ class _CarDetailPageState extends State<CarDetailPage> {
         : widget.carId;
 
     try {
-      await shareListingAsLinkOnly(id);
+      final title = (_car?['title'] ?? '').toString().trim();
+      await shareListingAsLinkOnly(
+        id,
+        context: context,
+        listingTitle: title.isNotEmpty ? title : null,
+      );
     } catch (_) {}
     try {
       await AnalyticsService.trackShare(id);
