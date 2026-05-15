@@ -3,20 +3,18 @@ import 'package:share_plus/share_plus.dart';
 
 import 'listing_share_urls.dart';
 
-/// Anchor for the iOS/iPadOS share sheet (required on some devices).
+/// Anchor for the iOS/iPadOS share sheet popover (optional).
 Rect? shareOriginFromContext(BuildContext context) {
   final ro = context.findRenderObject();
   if (ro is! RenderBox || !ro.hasSize) return null;
+  final size = ro.size;
+  if (size.width <= 0 || size.height <= 0) return null;
   final offset = ro.localToGlobal(Offset.zero);
-  return offset & ro.size;
+  return offset & size;
 }
 
 /// Opens the system share sheet (WhatsApp, Instagram, Snapchat, Messages, etc.)
-/// with the listing's public **HTTPS** URL so recipients get a normal tap-to-open link.
-///
-/// When Universal Links / App Links are configured for the share host, tapping the
-/// link opens this listing in CARZO (`/car_detail`). Otherwise the server page
-/// redirects to the app when possible.
+/// with the listing's public **HTTPS** URL.
 Future<void> shareListingAsLinkOnly(
   String listingId, {
   BuildContext? context,
@@ -26,36 +24,21 @@ Future<void> shareListingAsLinkOnly(
   final link = listingShareLinkOnly(listingId).trim();
   if (link.isEmpty) return;
 
-  final origin = sharePositionOrigin ??
-      (context != null ? shareOriginFromContext(context) : null);
-
-  final parsed = Uri.tryParse(link);
-  final isHttps =
-      parsed != null &&
-      parsed.hasScheme &&
-      (parsed.scheme == 'https' || parsed.scheme == 'http');
-
-  if (isHttps) {
-    final title = (listingTitle ?? '').trim();
-    final sheetTitle =
-        title.isNotEmpty ? 'CARZO – $title' : 'CARZO listing';
-    await SharePlus.instance.share(
-      ShareParams(
-        uri: parsed,
-        // Many social apps (WhatsApp, Instagram DMs, Snapchat) read `text`, not `uri`.
-        text: link,
-        title: sheetTitle,
-        subject: sheetTitle,
-        sharePositionOrigin: origin,
-      ),
-    );
-    return;
+  Rect? origin = sharePositionOrigin;
+  if (origin == null && context != null) {
+    origin = shareOriginFromContext(context);
   }
 
+  final title = (listingTitle ?? '').trim();
+  final sheetTitle = title.isNotEmpty ? 'CARZO – $title' : 'CARZO listing';
+
+  // share_plus 12: `uri` and `text` cannot both be set — use `text` with the
+  // HTTPS URL so WhatsApp, Instagram, Snapchat, etc. receive a normal link.
   await SharePlus.instance.share(
     ShareParams(
       text: link,
-      title: 'CARZO listing',
+      title: sheetTitle,
+      subject: sheetTitle,
       sharePositionOrigin: origin,
     ),
   );

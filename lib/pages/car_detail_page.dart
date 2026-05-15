@@ -315,7 +315,16 @@ class _CarDetailPageState extends State<CarDetailPage> {
         context: context,
         listingTitle: title.isNotEmpty ? title : null,
       );
-    } catch (_) {}
+    } catch (e) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(
+            AppLocalizations.of(context)?.errorTitle ?? 'Could not open share',
+          ),
+        ),
+      );
+    }
     try {
       await AnalyticsService.trackShare(id);
     } catch (_) {}
