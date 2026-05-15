@@ -5,7 +5,7 @@ import os
 import re
 import json
 
-from flask import Blueprint, Response, abort, current_app, jsonify, request, send_from_directory
+from flask import Blueprint, Response, abort, current_app, jsonify, redirect, request, send_from_directory
 from urllib.parse import quote
 from html import escape
 from werkzeug.utils import safe_join
@@ -52,20 +52,53 @@ def _listing_share_path_globs() -> list[str]:
     return out
 
 
+def _listing_mobile_app_redirect(listing_id: str):
+    """302 to native app when the link opened in a browser (not Universal Links).
+
+    Social in-app browsers (Instagram, WhatsApp, etc.) do not use Universal Links and
+    always load this URL in a WebView — redirecting to ``carzo://`` opens CARZO directly.
+    Desktop and ``?web=1`` skip this and get the HTML preview instead.
+    """
+    ua = (request.headers.get("User-Agent") or "").lower()
+    qid = quote(listing_id, safe="")
+    deep = f"carzo://listing?id={qid}"
+    canonical = request.url_root.rstrip("/") + f"/listing/{qid}"
+    web_fallback = quote(f"{canonical}?web=1", safe="")
+
+    if "android" in ua:
+        intent = (
+            f"intent://listing?id={qid}"
+            f"#Intent;scheme=carzo;package=com.carzo.app;"
+            f"S.browser_fallback_url={web_fallback};end"
+        )
+        return redirect(intent, code=302)
+
+    if any(x in ua for x in ("iphone", "ipad", "ipod")):
+        return redirect(deep, code=302)
+
+    return None
+
+
 @bp.route("/.well-known/apple-app-site-association", methods=["GET"])
 def apple_app_site_association():
     """iOS Universal Links — set ``APPLE_TEAM_ID`` (10-char) on the server."""
     team = (os.environ.get("APPLE_TEAM_ID") or "").strip()
     if not team:
         abort(404)
+    app_id = f"{team}.com.carzo.app"
+    paths = _listing_share_path_globs()
     data = {
         "applinks": {
             "apps": [],
             "details": [
                 {
-                    "appID": f"{team}.com.carzo.app",
-                    "paths": _listing_share_path_globs(),
-                }
+                    "appIDs": [app_id],
+                    "components": [{"/": p} for p in paths],
+                },
+                {
+                    "appID": app_id,
+                    "paths": paths,
+                },
             ],
         }
     }
@@ -139,6 +172,11 @@ def listing_share_landing(listing_id: str):
         nf = "<!DOCTYPE html><html><head><meta charset='utf-8'/><title>Not found</title></head><body><p>Listing not found.</p></body></html>"
         return Response(nf, 404, {"Content-Type": "text/html; charset=utf-8"})
 
+    if request.args.get("web") != "1":
+        app_redirect = _listing_mobile_app_redirect(raw)
+        if app_redirect is not None:
+            return app_redirect
+
     d = _with_media_compat(car)
     title_raw = (d.get("title") or "").strip() or "Listing"
     title = escape(title_raw)
@@ -175,7 +213,6 @@ def listing_share_landing(listing_id: str):
     deep = f"carzo://listing?id={quote(raw, safe='')}"
     esc_deep = escape(deep, quote=True)
     canonical = request.url_root.rstrip("/") + f"/listing/{quote(raw, safe='')}"
-    skip_auto_open = request.args.get("web") == "1"
     page_url_esc = escape(canonical, quote=True)
     og_desc = escape(
         (desc[:200] + "…") if len(desc) > 200 else desc,
@@ -202,44 +239,6 @@ def listing_share_landing(listing_id: str):
     deep_js = json.dumps(deep)
     fallback_js = json.dumps(f"{canonical}?web=1")
     id_js = json.dumps(raw)
-    auto_script = ""
-    shell_class = "visible"
-    if not skip_auto_open:
-        shell_class = ""
-        auto_script = f"""  <script>
-(function () {{
-  var deep = {deep_js};
-  var fallback = {fallback_js};
-  var id = {id_js};
-  var ua = navigator.userAgent || "";
-  var android = /Android/i.test(ua);
-  function reveal() {{
-    var el = document.getElementById("web-shell");
-    if (el) el.classList.add("visible");
-  }}
-  function tryOpen() {{
-    try {{
-      if (android) {{
-        var q = encodeURIComponent(id);
-        var fb = encodeURIComponent(fallback);
-        window.top.location.replace(
-          "intent://listing?id=" + q + "#Intent;scheme=carzo;package=com.carzo.app;S.browser_fallback_url=" + fb + ";end"
-        );
-      }} else {{
-        window.top.location.replace(deep);
-      }}
-    }} catch (e) {{
-      try {{ window.location.replace(deep); }} catch (e2) {{}}
-    }}
-    setTimeout(reveal, 700);
-  }}
-  if (document.readyState === "loading")
-    document.addEventListener("DOMContentLoaded", tryOpen);
-  else
-    tryOpen();
-}})();
-</script>
-"""
 
     cta_script = f"""  <script>
 (function () {{
@@ -387,19 +386,10 @@ def listing_share_landing(listing_id: str):
       color: #888;
     }}
     .foot a {{ color: #e85f00; font-weight: 600; }}
-    #web-shell {{
-      opacity: 0;
-      transition: opacity 0.2s ease;
-    }}
-    #web-shell.visible {{
-      opacity: 1;
-    }}
   </style>
 </head>
 <body>
-{auto_script}
-  <noscript><style>#web-shell {{ opacity: 1 !important; }}</style></noscript>
-  <div id="web-shell" class="{shell_class}">
+  <div id="web-shell">
   <div class="topbar">CARZO</div>
   <div class="wrap">
     <div class="card">
