@@ -9,6 +9,14 @@ packages:
       url: "https://pub.dev"
     source: hosted
     version: "1.3.63"
+  airbridge_flutter_sdk:
+    dependency: "direct main"
+    description:
+      name: airbridge_flutter_sdk
+      sha256: a23250b36e6531b6921e44d16999ef78c81934655c1d1bd50176461cd2c83950
+      url: "https://pub.dev"
+    source: hosted
+    version: "4.9.0"
   app_links:
     dependency: "direct main"
     description:

@@ -2,6 +2,7 @@ import Flutter
 import UIKit
 import Firebase
 import GoogleMaps
+import airbridge_flutter_sdk
 
 @main
 @objc class AppDelegate: FlutterAppDelegate {
@@ -22,14 +23,32 @@ import GoogleMaps
     let hasUnresolvedBuildVar = googleMapsApiKey.contains("$(IOS_GOOGLE_MAPS_API_KEY)")
     let isMissingOrPlaceholder = googleMapsApiKey.isEmpty || hasUnresolvedBuildVar
     NSLog("[Maps] bundleId=%@ keyLen=%d startsWithAIza=%@ unresolvedOrMissing=%@", bundleId, googleMapsApiKey.count, looksLikeApiKey ? "true" : "false", isMissingOrPlaceholder ? "true" : "false")
-    // The SDK can terminate the process if a GMSMapView is created without provideAPIKey being called.
-    // Call it unconditionally with a sentinel when missing to keep the app alive and surface a clear
-    // "invalid key" signal in logs rather than a hard crash.
     let effectiveKey = googleMapsApiKey.isEmpty ? "MISSING_GOOGLE_MAPS_IOS_KEY" : googleMapsApiKey
     GMSServices.provideAPIKey(effectiveKey)
 
+    let abName = (Bundle.main.object(forInfoDictionaryKey: "AirbridgeAppName") as? String ?? "")
+      .trimmingCharacters(in: .whitespacesAndNewlines)
+    let abTok = (Bundle.main.object(forInfoDictionaryKey: "AirbridgeAppToken") as? String ?? "")
+      .trimmingCharacters(in: .whitespacesAndNewlines)
+    if !abName.isEmpty && !abTok.isEmpty {
+      AirbridgeFlutter.initializeSDK(name: abName, token: abTok)
+    }
+
     GeneratedPluginRegistrant.register(with: self)
     return super.application(application, didFinishLaunchingWithOptions: launchOptions)
+  }
+
+  override func application(
+    _ app: UIApplication,
+    open url: URL,
+    options: [UIApplication.OpenURLOptionsKey: Any] = [:]
+  ) -> Bool {
+    let abName = (Bundle.main.object(forInfoDictionaryKey: "AirbridgeAppName") as? String ?? "")
+      .trimmingCharacters(in: .whitespacesAndNewlines)
+    if !abName.isEmpty {
+      AirbridgeFlutter.trackDeeplink(url: url)
+    }
+    return super.application(app, open: url, options: options)
   }
 
   override func application(
@@ -37,6 +56,11 @@ import GoogleMaps
     continue userActivity: NSUserActivity,
     restorationHandler: @escaping ([UIUserActivityRestoring]?) -> Void
   ) -> Bool {
+    let abName = (Bundle.main.object(forInfoDictionaryKey: "AirbridgeAppName") as? String ?? "")
+      .trimmingCharacters(in: .whitespacesAndNewlines)
+    if !abName.isEmpty {
+      AirbridgeFlutter.trackDeeplink(userActivity: userActivity)
+    }
     return super.application(
       application,
       continue: userActivity,

@@ -68,6 +68,11 @@
 	<string>$(IOS_GOOGLE_MAPS_API_KEY)</string>
 	<key>GOOGLE_PLACES_API_KEY</key>
 	<string>$(IOS_GOOGLE_PLACES_API_KEY)</string>
+	<!-- Airbridge native init (Settings → Tokens). Codemagic can PlistBuddy-set these. -->
+	<key>AirbridgeAppName</key>
+	<string></string>
+	<key>AirbridgeAppToken</key>
+	<string></string>
 	<!-- Release/Profile: ATS default (HTTPS only). Debug uses Info-Debug.plist. -->
 	<key>NSAppTransportSecurity</key>
 	<dict>

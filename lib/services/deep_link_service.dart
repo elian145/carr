@@ -1,7 +1,9 @@
 import 'dart:async';
+import 'package:airbridge_flutter_sdk/airbridge_flutter_sdk.dart';
 import 'package:app_links/app_links.dart';
 import 'package:flutter/material.dart';
 
+import 'config.dart';
 import '../shared/listings/listing_share_urls.dart';
 
 /// Handles app deep links (e.g. carzo://auth/reset-password?token=xxx).
@@ -39,6 +41,20 @@ class DeepLinkService {
       _linkSub = _appLinks.uriLinkStream.listen(_handleLink);
       if (initial != null) _handleLink(initial);
     });
+
+    if (kAirbridgeDartConfigured) {
+      Airbridge.setOnDeeplinkReceived((String url) {
+        if (_navigatorKey != navigatorKey) return;
+        _handleAirbridgeDeepLink(url);
+      });
+    }
+  }
+
+  /// Resolves Airbridge SDK callback to the same routes as HTTPS / [carzo] links.
+  void _handleAirbridgeDeepLink(String url) {
+    final uri = Uri.tryParse(url.trim());
+    if (uri == null) return;
+    _handleLink(uri);
   }
 
   /// True if we already started handling this URI recently (drops parallel duplicate deliveries).

@@ -28,6 +28,10 @@ android {
     compileSdk = flutter.compileSdkVersion
     ndkVersion = "27.0.12077973"
 
+    buildFeatures {
+        buildConfig = true
+    }
+
     compileOptions {
         sourceCompatibility = JavaVersion.VERSION_11
         targetCompatibility = JavaVersion.VERSION_11
@@ -44,6 +48,24 @@ android {
         versionName = flutter.versionName
         manifestPlaceholders["GOOGLE_MAPS_API_KEY"] = googleMapsApiKey
         manifestPlaceholders["appLinkHost"] = appLinkHost
+
+        val airbridgeAppName = (
+            localProperties.getProperty("AIRBRIDGE_APP_NAME")?.trim()
+                ?: System.getenv("AIRBRIDGE_APP_NAME")?.trim().orEmpty()
+            )
+        val airbridgeToken = (
+            localProperties.getProperty("AIRBRIDGE_APP_TOKEN")?.trim()
+                ?: System.getenv("AIRBRIDGE_APP_TOKEN")?.trim().orEmpty()
+            )
+        fun esc(s: String): String = s.replace("\\", "\\\\").replace("\"", "\\\"")
+        buildConfigField("String", "AIRBRIDGE_APP_NAME", "\"${esc(airbridgeAppName)}\"")
+        buildConfigField("String", "AIRBRIDGE_APP_TOKEN", "\"${esc(airbridgeToken)}\"")
+
+        val abHostBase = airbridgeAppName.trim()
+        val hostAbr = if (abHostBase.isNotEmpty()) "$abHostBase.abr.ge" else ""
+        val hostAbrio = if (abHostBase.isNotEmpty()) "$abHostBase.airbridge.io" else ""
+        manifestPlaceholders["airbridgeHostAbrGe"] = hostAbr.ifEmpty { "phony-abr.invalid" }
+        manifestPlaceholders["airbridgeHostAirbridgeIo"] = hostAbrio.ifEmpty { "phony-io.invalid" }
     }
 
     // Signing setup:

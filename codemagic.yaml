@@ -23,6 +23,8 @@ workflows:
       # - IOS_GOOGLE_MAPS_API_KEY  (iOS Maps SDK key, restricted to bundle id com.carzo.app)
       # - IOS_GOOGLE_PLACES_API_KEY (iOS Places key, restricted to bundle id com.carzo.app)
       # - ANDROID_GOOGLE_MAPS_API_KEY (Android Maps SDK key, restricted by package + SHA-1)
+      # - AIRBRIDGE_APP_NAME, AIRBRIDGE_APP_TOKEN (optional; Airbridge deep links + short share links)
+      # - AIRBRIDGE_LISTING_CHANNEL (optional; default listing_share — create this channel in Airbridge)
     cache:
       cache_paths:
         - "$FLUTTER_ROOT/.pub-cache"
@@ -77,6 +79,17 @@ workflows:
           else
             echo "IOS_GOOGLE_MAPS_API_KEY not set; maps will fail/blank on iOS builds."
           fi
+      - name: Inject Airbridge (optional)
+        script: |
+          if [ -n "$AIRBRIDGE_APP_NAME" ] && [ -n "$AIRBRIDGE_APP_TOKEN" ]; then
+            echo "Injecting Airbridge keys into Info.plist (values not printed)"
+            /usr/libexec/PlistBuddy -c "Set :AirbridgeAppName $AIRBRIDGE_APP_NAME" ios/Runner/Info.plist 2>/dev/null || \
+            /usr/libexec/PlistBuddy -c "Add :AirbridgeAppName string $AIRBRIDGE_APP_NAME" ios/Runner/Info.plist 2>/dev/null || true
+            /usr/libexec/PlistBuddy -c "Set :AirbridgeAppToken $AIRBRIDGE_APP_TOKEN" ios/Runner/Info.plist 2>/dev/null || \
+            /usr/libexec/PlistBuddy -c "Add :AirbridgeAppToken string $AIRBRIDGE_APP_TOKEN" ios/Runner/Info.plist 2>/dev/null || true
+          else
+            echo "AIRBRIDGE_APP_NAME / AIRBRIDGE_APP_TOKEN not set; listing shares use HTTPS only."
+          fi
       - name: Analyze + tests
         script: |
           flutter analyze
@@ -88,6 +101,9 @@ workflows:
             --dart-define=API_BASE="$API_BASE" \
             --dart-define=LISTING_SHARE_WEB_BASE="${LISTING_SHARE_WEB_BASE:-$API_BASE}" \
             --dart-define=LISTING_SHARE_URL_PATH="${LISTING_SHARE_URL_PATH:-listing}" \
+            --dart-define=AIRBRIDGE_APP_NAME="${AIRBRIDGE_APP_NAME:-}" \
+            --dart-define=AIRBRIDGE_APP_TOKEN="${AIRBRIDGE_APP_TOKEN:-}" \
+            --dart-define=AIRBRIDGE_LISTING_CHANNEL="${AIRBRIDGE_LISTING_CHANNEL:-listing_share}" \
             --dart-define=FORCE_SKIP_BLUR="$FORCE_SKIP_BLUR"
       - name: Package unsigned IPA for Sideloadly
         script: |
@@ -131,7 +147,10 @@ workflows:
           flutter build apk --release --flavor prod \
             --dart-define=API_BASE=${API_BASE} \
             --dart-define=LISTING_SHARE_WEB_BASE=${LISTING_SHARE_WEB_BASE} \
-            --dart-define=LISTING_SHARE_URL_PATH=${LISTING_SHARE_URL_PATH}
+            --dart-define=LISTING_SHARE_URL_PATH=${LISTING_SHARE_URL_PATH} \
+            --dart-define=AIRBRIDGE_APP_NAME="${AIRBRIDGE_APP_NAME:-}" \
+            --dart-define=AIRBRIDGE_APP_TOKEN="${AIRBRIDGE_APP_TOKEN:-}" \
+            --dart-define=AIRBRIDGE_LISTING_CHANNEL="${AIRBRIDGE_LISTING_CHANNEL:-listing_share}"
     artifacts:
       - build/app/outputs/flutter-apk/app-release.apk
 
@@ -199,6 +218,8 @@ workflows:
       # - CM_KEYSTORE_PASSWORD
       # - CM_KEY_ALIAS
       # - CM_KEY_PASSWORD
+      # - AIRBRIDGE_APP_NAME, AIRBRIDGE_APP_TOKEN (optional; native init + short listing links)
+      # - AIRBRIDGE_LISTING_CHANNEL (optional; default listing_share)
     cache:
       cache_paths:
         - $HOME/.pub-cache
@@ -220,6 +241,24 @@ workflows:
             fi
           else
             echo "ANDROID_GOOGLE_MAPS_API_KEY not set; maps will fail/blank on Android builds."
+          fi
+      - name: Inject Airbridge into android/local.properties (optional)
+        script: |
+          if [ -n "$AIRBRIDGE_APP_NAME" ] && [ -n "$AIRBRIDGE_APP_TOKEN" ]; then
+            touch android/local.properties
+            if grep -q "^AIRBRIDGE_APP_NAME=" android/local.properties; then
+              sed -i.bak "s/^AIRBRIDGE_APP_NAME=.*/AIRBRIDGE_APP_NAME=$AIRBRIDGE_APP_NAME/" android/local.properties
+            else
+              echo "" >> android/local.properties
+              echo "AIRBRIDGE_APP_NAME=$AIRBRIDGE_APP_NAME" >> android/local.properties
+            fi
+            if grep -q "^AIRBRIDGE_APP_TOKEN=" android/local.properties; then
+              sed -i.bak "s/^AIRBRIDGE_APP_TOKEN=.*/AIRBRIDGE_APP_TOKEN=$AIRBRIDGE_APP_TOKEN/" android/local.properties
+            else
+              echo "AIRBRIDGE_APP_TOKEN=$AIRBRIDGE_APP_TOKEN" >> android/local.properties
+            fi
+          else
+            echo "AIRBRIDGE_* not set; Airbridge native init skipped on Android."
           fi
       - name: Write Android signing files (optional)
         script: |
@@ -243,13 +282,19 @@ workflows:
           flutter build apk --release --no-pub --flavor "$FLAVOR" \
             --dart-define=API_BASE="$API_BASE" \
             --dart-define=LISTING_SHARE_WEB_BASE="${LISTING_SHARE_WEB_BASE:-$API_BASE}" \
-            --dart-define=LISTING_SHARE_URL_PATH="${LISTING_SHARE_URL_PATH:-listing}"
+            --dart-define=LISTING_SHARE_URL_PATH="${LISTING_SHARE_URL_PATH:-listing}" \
+            --dart-define=AIRBRIDGE_APP_NAME="${AIRBRIDGE_APP_NAME:-}" \
+            --dart-define=AIRBRIDGE_APP_TOKEN="${AIRBRIDGE_APP_TOKEN:-}" \
+            --dart-define=AIRBRIDGE_LISTING_CHANNEL="${AIRBRIDGE_LISTING_CHANNEL:-listing_share}"
       - name: Build App Bundle (release)
         script: |
           flutter build appbundle --release --no-pub --flavor "$FLAVOR" \
             --dart-define=API_BASE="$API_BASE" \
             --dart-define=LISTING_SHARE_WEB_BASE="${LISTING_SHARE_WEB_BASE:-$API_BASE}" \
-            --dart-define=LISTING_SHARE_URL_PATH="${LISTING_SHARE_URL_PATH:-listing}"
+            --dart-define=LISTING_SHARE_URL_PATH="${LISTING_SHARE_URL_PATH:-listing}" \
+            --dart-define=AIRBRIDGE_APP_NAME="${AIRBRIDGE_APP_NAME:-}" \
+            --dart-define=AIRBRIDGE_APP_TOKEN="${AIRBRIDGE_APP_TOKEN:-}" \
+            --dart-define=AIRBRIDGE_LISTING_CHANNEL="${AIRBRIDGE_LISTING_CHANNEL:-listing_share}"
     artifacts:
       - build/app/outputs/flutter-apk/*.apk
       - build/app/outputs/bundle/*/*.aab

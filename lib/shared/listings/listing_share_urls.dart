@@ -76,6 +76,15 @@ String? listingWebShareLink(String listingId) {
 /// HTTPS URL for Universal Links / web preview (Messages, Safari, etc.).
 String? listingHttpsShareLink(String listingId) => listingWebShareLink(listingId);
 
+/// Web listing URL with `?web=1` (HTML preview) — used as Airbridge fallbacks.
+String? listingWebShareLinkWebPreview(String listingId) {
+  final base = listingWebShareLink(listingId);
+  if (base == null || base.isEmpty) return null;
+  final u = Uri.tryParse(base);
+  if (u == null) return '$base?web=1';
+  return u.replace(queryParameters: {...u.queryParameters, 'web': '1'}).toString();
+}
+
 /// Link to put on the share sheet — always HTTPS when available.
 ///
 /// iOS/Android **Universal / App Links** open CARZO when the recipient taps this URL

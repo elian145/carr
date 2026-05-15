@@ -37,6 +37,29 @@ const String kListingShareUrlPath = String.fromEnvironment(
   'LISTING_SHARE_URL_PATH',
   defaultValue: 'listing',
 );
+
+/// Airbridge app name (short id from dashboard, e.g. `carzoapp`). Used with SDK + tracking links.
+/// Must match [AIRBRIDGE_APP_NAME] in `android/local.properties` (or env) for Android native init.
+const String kAirbridgeAppName = String.fromEnvironment(
+  'AIRBRIDGE_APP_NAME',
+  defaultValue: '',
+);
+
+/// Airbridge app SDK token from **Settings → Tokens** in the dashboard.
+const String kAirbridgeAppToken = String.fromEnvironment(
+  'AIRBRIDGE_APP_TOKEN',
+  defaultValue: '',
+);
+
+/// Tracking-link **channel** name — create the same channel in Airbridge (e.g. Tracking Links).
+const String kAirbridgeListingChannel = String.fromEnvironment(
+  'AIRBRIDGE_LISTING_CHANNEL',
+  defaultValue: 'listing_share',
+);
+
+/// True when Dart defines are set so listing shares can use Airbridge short links.
+bool get kAirbridgeDartConfigured =>
+    kAirbridgeAppName.trim().isNotEmpty && kAirbridgeAppToken.trim().isNotEmpty;
 /// Opt-in for insecure HTTP in *release* builds.
 ///
 /// This is intended ONLY for local development / emulator usage.
