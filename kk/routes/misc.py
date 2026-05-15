@@ -52,14 +52,111 @@ def _listing_share_path_globs() -> list[str]:
     return out
 
 
-def _listing_mobile_app_redirect(listing_id: str):
-    """302 to native app when the link opened in a browser (not Universal Links).
+# User-agents for social / messenger in-app browsers. A 302 to ``carzo://`` here often
+# leaves the WebView stuck on "Loading..." (Snapchat, Instagram, etc.).
+_IN_APP_BROWSER_MARKERS = (
+    "snapchat",
+    "instagram",
+    "whatsapp",
+    "fbav",
+    "fban",
+    "facebook",
+    "twitter",
+    "tiktok",
+    "musical_ly",
+    "line/",
+    "linkedinapp",
+    "pinterest",
+    "gsa/",
+)
 
-    Social in-app browsers (Instagram, WhatsApp, etc.) do not use Universal Links and
-    always load this URL in a WebView — redirecting to ``carzo://`` opens CARZO directly.
-    Desktop and ``?web=1`` skip this and get the HTML preview instead.
+
+def _is_in_app_browser(user_agent: str) -> bool:
+    ua = (user_agent or "").lower()
+    return any(m in ua for m in _IN_APP_BROWSER_MARKERS)
+
+
+def _listing_in_app_bridge_html(listing_id: str) -> Response:
+    """Tiny page for in-app browsers — loads instantly; tap opens CARZO (no 302)."""
+    qid = quote(listing_id, safe="")
+    deep = f"carzo://listing?id={qid}"
+    esc_deep = escape(deep, quote=True)
+    deep_js = json.dumps(deep)
+    html = f"""<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1"/>
+  <title>Open in CARZO</title>
+  <style>
+    body {{
+      margin: 0;
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      padding: 1.5rem;
+      font-family: -apple-system, BlinkMacSystemFont, sans-serif;
+      background: #111;
+      color: #fff;
+      text-align: center;
+    }}
+    h1 {{ font-size: 1.2rem; margin: 0 0 0.75rem; }}
+    p {{ color: #bbb; line-height: 1.5; font-size: 0.92rem; max-width: 20rem; }}
+    .btn {{
+      display: block;
+      width: 100%;
+      max-width: 20rem;
+      margin: 1.25rem 0 0.5rem;
+      padding: 1rem;
+      background: #ff6b00;
+      color: #fff !important;
+      font-weight: 700;
+      font-size: 1.05rem;
+      border-radius: 12px;
+      text-decoration: none;
+      border: none;
+      cursor: pointer;
+      font-family: inherit;
+    }}
+    .tip {{ font-size: 0.82rem; color: #888; max-width: 22rem; margin-top: 1rem; }}
+  </style>
+</head>
+<body>
+  <h1>Open listing in CARZO</h1>
+  <p>This preview can&apos;t open the app automatically. Tap the button below.</p>
+  <button type="button" class="btn" id="carzo-open">Open in CARZO app</button>
+  <p class="tip">Still stuck? Tap the <strong>compass</strong> icon (open in Safari), then tap the shared link again — that opens the listing in the app.</p>
+  <script>
+  (function () {{
+    var u = {deep_js};
+    var b = document.getElementById("carzo-open");
+    if (b) b.addEventListener("click", function () {{ window.location.href = u; }});
+  }})();
+  </script>
+</body>
+</html>"""
+    return Response(
+        html,
+        200,
+        headers={
+            "Content-Type": "text/html; charset=utf-8",
+            "Cache-Control": "no-store",
+        },
+    )
+
+
+def _listing_mobile_app_redirect(listing_id: str):
+    """302 to native app for mobile Safari/Chrome only (not in-app WebViews).
+
+    In-app browsers must not get a ``carzo://`` redirect — they hang on Loading.
+    Desktop and ``?web=1`` skip this and get the full HTML preview instead.
     """
     ua = (request.headers.get("User-Agent") or "").lower()
+    if _is_in_app_browser(ua):
+        return None
+
     qid = quote(listing_id, safe="")
     deep = f"carzo://listing?id={qid}"
     canonical = request.url_root.rstrip("/") + f"/listing/{qid}"
@@ -148,6 +245,10 @@ def listing_share_landing(listing_id: str):
     raw = (listing_id or "").strip()
     if not raw or not _LISTING_ID_RE.match(raw):
         abort(404)
+
+    ua = request.headers.get("User-Agent") or ""
+    if request.args.get("web") != "1" and _is_in_app_browser(ua):
+        return _listing_in_app_bridge_html(raw)
 
     car = (
         Car.query.options(
