@@ -222,7 +222,7 @@ def listing_share_landing(listing_id: str):
       if (android) {{
         var q = encodeURIComponent(id);
         var fb = encodeURIComponent(fallback);
-        window.location.replace(
+        window.top.location.replace(
           "intent://listing?id=" + q + "#Intent;scheme=carzo;package=com.carzo.app;S.browser_fallback_url=" + fb + ";end"
         );
       }} else {{
@@ -237,6 +237,48 @@ def listing_share_landing(listing_id: str):
     document.addEventListener("DOMContentLoaded", tryOpen);
   else
     tryOpen();
+}})();
+</script>
+"""
+
+    cta_script = f"""  <script>
+(function () {{
+  var deep = {deep_js};
+  var fallback = {fallback_js};
+  var id = {id_js};
+  function openCarzoFromShare() {{
+    var ua = navigator.userAgent || "";
+    if (/Android/i.test(ua)) {{
+      var q = encodeURIComponent(id);
+      var fb = encodeURIComponent(fallback);
+      var intent =
+        "intent://listing?id=" + q +
+        "#Intent;scheme=carzo;package=com.carzo.app;S.browser_fallback_url=" + fb + ";end";
+      try {{
+        window.top.location.href = intent;
+      }} catch (e1) {{
+        try {{ window.location.href = intent; }} catch (e2) {{}}
+      }}
+      return;
+    }}
+    try {{
+      window.top.location.href = deep;
+    }} catch (e3) {{
+      try {{ window.location.href = deep; }} catch (e4) {{}}
+    }}
+  }}
+  function bindCta() {{
+    var b = document.getElementById("carzo-open-btn");
+    if (!b) return;
+    b.addEventListener("click", function (ev) {{
+      ev.preventDefault();
+      openCarzoFromShare();
+    }});
+  }}
+  if (document.readyState === "loading")
+    document.addEventListener("DOMContentLoaded", bindCta);
+  else
+    bindCta();
 }})();
 </script>
 """
@@ -328,6 +370,8 @@ def listing_share_landing(listing_id: str):
       border: none;
       cursor: pointer;
       font-family: inherit;
+      -webkit-appearance: none;
+      appearance: none;
     }}
     .hint {{
       font-size: 0.8rem;
@@ -366,10 +410,14 @@ def listing_share_landing(listing_id: str):
         <p class="meta">{year} · {mile_s} · {loc}</p>
         <p class="price">{currency} {price_s}</p>
         <div class="desc">{desc_html}</div>
-        <a class="cta" href="{esc_deep}">Open in CARZO app</a>
+        <button type="button" class="cta" id="carzo-open-btn">Open in CARZO app</button>
+        <p class="hint">
+          If the button does nothing, you may be inside an in-app browser — use
+          <strong>Share → Open in Safari</strong> (iOS) or <strong>Open in Chrome</strong>, then tap the button again.
+          You can also copy <a href="{esc_deep}" target="_top" rel="noopener noreferrer">this link</a> and paste it into the address bar.
+        </p>
         <p class="hint">
           This page tries to open CARZO automatically when the app is installed.
-          If you are browsing without the app, use the button above.
         </p>
         <p class="foot">
           Universal Links open this URL in CARZO when iOS/Android is fully configured.
@@ -379,6 +427,7 @@ def listing_share_landing(listing_id: str):
     </div>
   </div>
   </div>
+{cta_script}
 </body>
 </html>"""
     return Response(html, 200, {"Content-Type": "text/html; charset=utf-8"})
