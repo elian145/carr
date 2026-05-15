@@ -118,9 +118,11 @@ def _listing_handoff_script(listing_id: str, is_android: bool, *, auto_attempt: 
   }};
 
   window.carzoOpenInSafari = function () {{
+    /* Never assign window.location = universal here: same URL in this WebView
+       reloads the bridge page → infinite loop and endless "Opening…" spinner. */
     try {{
       var w = window.open(universal, "_blank", "noopener,noreferrer");
-      if (w) return;
+      if (w) return true;
     }} catch (e1) {{}}
     try {{
       var a = document.createElement("a");
@@ -130,9 +132,15 @@ def _listing_handoff_script(listing_id: str, is_android: bool, *, auto_attempt: 
       document.body.appendChild(a);
       a.click();
       a.remove();
-    }} catch (e2) {{
-      window.location.href = universal;
+      return true;
+    }} catch (e2) {{}}
+    if (universal.indexOf("https://") === 0) {{
+      try {{
+        window.location.href = "x-safari-" + universal;
+        return true;
+      }} catch (e3) {{}}
     }}
+    return false;
   }};
 
   window.carzoHandoffContinue = function (ev) {{
@@ -154,9 +162,7 @@ def _listing_handoff_script(listing_id: str, is_android: bool, *, auto_attempt: 
     setTimeout(window.carzoOpenAndroidIntent, 80);
     return;
   }}
-  if (window.carzoIsInAppWebView()) {{
-    setTimeout(window.carzoOpenInSafari, 120);
-  }}
+  /* iOS in-app: do not auto-open — it often fails and same-URL navigation loops. */
 }})();
 """
 
@@ -178,7 +184,7 @@ def _listing_in_app_bridge_html(listing_id: str) -> Response:
     canonical = _listing_canonical_https_url(listing_id)
     esc_href = escape(canonical, quote=True)
     esc_deep = escape(deep, quote=True)
-    open_script = _listing_handoff_script(listing_id, is_android, auto_attempt=True)
+    open_script = _listing_handoff_script(listing_id, is_android, auto_attempt=is_android)
 
     html = f"""<!DOCTYPE html>
 <html lang="en">
@@ -207,16 +213,6 @@ def _listing_in_app_bridge_html(listing_id: str) -> Response:
       color: #fff;
       text-align: center;
     }}
-    .spinner {{
-      width: 2rem;
-      height: 2rem;
-      border: 3px solid #333;
-      border-top-color: #ff7a1a;
-      border-radius: 50%;
-      animation: spin 0.8s linear infinite;
-      margin-bottom: 1rem;
-    }}
-    @keyframes spin {{ to {{ transform: rotate(360deg); }} }}
     .btn {{
       display: block;
       width: 100%;
@@ -240,15 +236,40 @@ def _listing_in_app_bridge_html(listing_id: str) -> Response:
       font-size: 0.88rem;
       line-height: 1.5;
     }}
+    .steps {{
+      max-width: 22rem;
+      text-align: left;
+      color: #ccc;
+      font-size: 0.9rem;
+      line-height: 1.55;
+      margin: 0 0 1.25rem;
+    }}
+    .steps strong {{ color: #fff; }}
   </style>
 </head>
 <body>
-  <div class="spinner" aria-hidden="true"></div>
-  <p class="muted" style="margin-bottom:1.25rem">Opening CARZO…</p>
-  <button type="button" class="btn" id="carzo-open">Continue to CARZO</button>
-  <p class="muted">Snapchat and Instagram cannot open apps directly. This opens Safari, then CARZO.<br/>
-  If nothing happens, tap <strong>⋯</strong> (menu) → <strong>Open in Safari</strong>, then tap the button again.</p>
+  <p class="muted" style="margin-top:0;margin-bottom:0.75rem;font-size:1rem;color:#fff;font-weight:600">
+    Open this listing in CARZO
+  </p>
+  <ol class="steps">
+    <li><strong>Best:</strong> tap the <strong>compass</strong> icon in the bar below (Open in Safari).</li>
+    <li>Or tap <strong>⋯</strong> (top right) → <strong>Open in Safari</strong>.</li>
+    <li>In Safari, the page opens CARZO automatically (or tap &quot;Open in CARZO app&quot;).</li>
+  </ol>
+  <a class="btn" href="{esc_href}" target="_blank" rel="noopener noreferrer" id="carzo-open-safari">Try opening in Safari</a>
+  <button type="button" class="btn" id="carzo-open" style="margin-top:0.75rem;display:none">Open in CARZO (Android)</button>
+  <p class="muted">Instagram and Snapchat keep you inside their browser — Apple does not allow CARZO to open from here. Safari is required once.</p>
   <script>{open_script}</script>
+  <script>
+    (function () {{
+      if ({json.dumps(is_android)}) {{
+        var s = document.getElementById("carzo-open-safari");
+        if (s) s.style.display = "none";
+        var b = document.getElementById("carzo-open");
+        if (b) b.style.display = "block";
+      }}
+    }})();
+  </script>
 </body>
 </html>"""
     return Response(
@@ -484,6 +505,10 @@ def listing_share_landing(listing_id: str):
     if (window.carzoIsInAppWebView && window.carzoIsInAppWebView()) {{
       var overlay = document.getElementById("carzo-handoff-overlay");
       if (overlay) overlay.style.display = "flex";
+      var ab = document.getElementById("carzo-handoff-btn");
+      if (ab && /Android/i.test(ua)) ab.style.display = "block";
+      var sl = document.getElementById("carzo-handoff-link");
+      if (sl && /Android/i.test(ua)) sl.style.display = "none";
       return;
     }}
     if (/Android/i.test(ua)) {{
@@ -499,6 +524,7 @@ def listing_share_landing(listing_id: str):
   if (mainBtn) {{
     mainBtn.addEventListener("click", function (ev) {{
       if (window.carzoIsInAppWebView && window.carzoIsInAppWebView()) {{
+        ev.preventDefault();
         window.carzoHandoffContinue(ev);
       }}
     }});
@@ -509,11 +535,12 @@ def listing_share_landing(listing_id: str):
 </script>
 """
 
-    handoff_overlay = """
+    handoff_overlay = f"""
   <div id="carzo-handoff-overlay" style="display:none;position:fixed;inset:0;z-index:99999;background:#111;color:#fff;flex-direction:column;align-items:center;justify-content:center;padding:1.5rem;text-align:center;font-family:-apple-system,BlinkMacSystemFont,sans-serif;">
-    <p style="font-size:1rem;margin:0 0 1rem;max-width:20rem;line-height:1.5">Instagram and Snapchat cannot open CARZO directly.</p>
-    <button type="button" id="carzo-handoff-btn" style="display:block;width:100%;max-width:20rem;padding:1.1rem 1.25rem;background:linear-gradient(180deg,#ff7a1a,#e85f00);color:#fff;font-weight:700;font-size:1.1rem;border-radius:14px;border:none;cursor:pointer;-webkit-appearance:none;">Continue to CARZO</button>
-    <p style="margin-top:1rem;font-size:0.85rem;color:#aaa;max-width:22rem;line-height:1.45">Opens in Safari, then the app. Or use <strong>⋯</strong> → <strong>Open in Safari</strong>.</p>
+    <p style="font-size:1rem;margin:0 0 0.75rem;max-width:22rem;line-height:1.5">Instagram / Snapchat cannot open CARZO from here.</p>
+    <p style="font-size:0.88rem;margin:0 0 1rem;max-width:22rem;line-height:1.5;color:#bbb">Tap the <strong>compass</strong> at the bottom (Open in Safari), or <strong>⋯</strong> → Open in Safari.</p>
+    <a href="{page_url_esc}" target="_blank" rel="noopener noreferrer" id="carzo-handoff-link" style="display:block;width:100%;max-width:20rem;padding:1.1rem 1.25rem;background:linear-gradient(180deg,#ff7a1a,#e85f00);color:#fff;font-weight:700;font-size:1.1rem;border-radius:14px;text-decoration:none;-webkit-appearance:none;">Open in Safari</a>
+    <button type="button" id="carzo-handoff-btn" style="display:none;margin-top:0.75rem;width:100%;max-width:20rem;padding:1rem;background:#333;color:#fff;font-weight:600;font-size:1rem;border-radius:12px;border:1px solid #555">Open in app (Android)</button>
   </div>"""
 
     html = f"""<!DOCTYPE html>
