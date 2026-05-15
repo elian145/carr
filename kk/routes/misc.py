@@ -96,9 +96,9 @@ def _listing_in_app_bridge_html(listing_id: str) -> Response:
     snap_note = ""
     if is_snapchat:
         snap_note = """
-    <p class="note"><strong>Snapchat cannot open CARZO from this screen.</strong>
-    Go back to the chat and tap the <strong>carzo://</strong> link in the message
-    (update CARZO and share again if you only see a web link).</p>"""
+    <p class="note">You are inside Snapchat&apos;s browser. To open in CARZO, go back and
+    <strong>tap the link in the chat again</strong> (not this page). With Universal Links
+    enabled, that tap opens the app directly.</p>"""
 
     open_script = f"""
     var deep = {deep_js};
@@ -197,7 +197,6 @@ def _listing_mobile_app_redirect(listing_id: str):
         return None
 
     qid = quote(listing_id, safe="")
-    deep = f"carzo://listing?id={qid}"
     canonical = request.url_root.rstrip("/") + f"/listing/{qid}"
     web_fallback = quote(f"{canonical}?web=1", safe="")
 
@@ -209,41 +208,66 @@ def _listing_mobile_app_redirect(listing_id: str):
         )
         return redirect(intent, code=302)
 
-    if any(x in ua for x in ("iphone", "ipad", "ipod")):
-        return redirect(deep, code=302)
-
+    # iOS: do not 302 to carzo:// — Universal Links should open the app on tap.
+    # A server redirect breaks Snapchat and prevents the OS from handling the link.
     return None
 
 
-@bp.route("/.well-known/apple-app-site-association", methods=["GET"])
-def apple_app_site_association():
-    """iOS Universal Links — set ``APPLE_TEAM_ID`` (10-char) on the server."""
+def _apple_app_site_association_payload() -> dict:
     team = (os.environ.get("APPLE_TEAM_ID") or "").strip()
     if not team:
-        abort(404)
+        raise ValueError("APPLE_TEAM_ID not set")
     app_id = f"{team}.com.carzo.app"
-    paths = _listing_share_path_globs()
-    data = {
+    path_patterns = _listing_share_path_globs()
+    components: list[dict] = [
+        {
+            "/": "/listing/*",
+            "?": {"web": "1"},
+            "exclude": True,
+            "comment": "Web-only preview; do not open app",
+        },
+    ]
+    for pattern in path_patterns:
+        components.append({"/": pattern, "comment": "CARZO listing share"})
+    return {
         "applinks": {
             "apps": [],
             "details": [
                 {
                     "appIDs": [app_id],
-                    "components": [{"/": p} for p in paths],
-                },
-                {
-                    "appID": app_id,
-                    "paths": paths,
-                },
+                    "components": components,
+                }
             ],
         }
     }
+
+
+def _apple_app_site_association_response() -> Response:
+    try:
+        data = _apple_app_site_association_payload()
+    except ValueError:
+        abort(404)
     return Response(
-        json.dumps(data),
+        json.dumps(data, separators=(",", ":")),
         200,
         mimetype="application/json",
-        headers={"Cache-Control": "public, max-age=300"},
+        headers={
+            "Cache-Control": "public, max-age=300",
+            "Content-Type": "application/json",
+        },
     )
+
+
+@bp.route("/.well-known/apple-app-site-association", methods=["GET"])
+def apple_app_site_association_well_known():
+    """iOS Universal Links (``/.well-known/`` path)."""
+    return _apple_app_site_association_response()
+
+
+@bp.route("/apple-app-site-association", methods=["GET"])
+def apple_app_site_association_root():
+    """iOS Universal Links (root path — some crawlers use this)."""
+    return _apple_app_site_association_response()
 
 
 @bp.route("/.well-known/assetlinks.json", methods=["GET"])

@@ -13,12 +13,10 @@ Rect? shareOriginFromContext(BuildContext context) {
   return offset & size;
 }
 
-/// Opens the system share sheet with a link that opens this listing in CARZO.
+/// Opens the system share sheet with the listing HTTPS URL (Universal / App Links).
 ///
-/// Shares ``carzo://listing?id=…`` so recipients can open the listing in one tap from
-/// chat apps that allow custom URL schemes. Does not use an HTTPS preview link,
-/// because that opens an in-app browser (e.g. Snapchat) where an "open app" button
-/// cannot work.
+/// When configured, tapping the shared link in chat opens CARZO on this listing
+/// without a manual copy/paste step.
 Future<void> shareListingAsLinkOnly(
   String listingId, {
   BuildContext? context,
@@ -36,11 +34,24 @@ Future<void> shareListingAsLinkOnly(
   final title = (listingTitle ?? '').trim();
   final sheetTitle = title.isNotEmpty ? 'CARZO – $title' : 'CARZO listing';
 
+  final parsed = Uri.tryParse(link);
+  if (parsed != null &&
+      parsed.hasScheme &&
+      (parsed.scheme == 'https' || parsed.scheme == 'http')) {
+    await SharePlus.instance.share(
+      ShareParams(
+        uri: parsed,
+        title: sheetTitle,
+        sharePositionOrigin: origin,
+      ),
+    );
+    return;
+  }
+
   await SharePlus.instance.share(
     ShareParams(
       text: link,
       title: sheetTitle,
-      subject: sheetTitle,
       sharePositionOrigin: origin,
     ),
   );

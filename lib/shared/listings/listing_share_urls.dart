@@ -76,17 +76,15 @@ String? listingWebShareLink(String listingId) {
 /// HTTPS URL for Universal Links / web preview (Messages, Safari, etc.).
 String? listingHttpsShareLink(String listingId) => listingWebShareLink(listingId);
 
-/// Link to put on the share sheet.
+/// Link to put on the share sheet — always HTTPS when available.
 ///
-/// Uses ``carzo://listing?id=…`` so a tap in chat can open CARZO directly without a
-/// web page. Social in-app browsers (Snapchat, Instagram) cannot open the app from a
-/// button on that web page — the chat link must be the deep link.
+/// iOS/Android **Universal / App Links** open CARZO when the recipient taps this URL
+/// (one tap → listing in the app). Requires AASA on the server and Associated Domains
+/// in a properly signed build.
 String listingShareLinkOnly(String listingId) {
-  final deep = listingDeepLink(listingId).trim();
-  if (deep.isNotEmpty) return deep;
   final web = listingWebShareLink(listingId);
   if (web != null && web.isNotEmpty) return web;
-  return '';
+  return listingDeepLink(listingId);
 }
 
 bool _isListingPublicId(String id) {
