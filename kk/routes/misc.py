@@ -167,16 +167,25 @@ def _listing_handoff_script(listing_id: str, is_android: bool, *, auto_attempt: 
     if (btn) btn.addEventListener("click", window.carzoTryDeepLink);
   }}
 
-  wire("carzo-open");
-  wire("carzo-handoff-btn");
-  if (!isAndroid) wireTryApp("carzo-try-app-ios");
+  var soleOpenApp = document.getElementById("carzo-open-app");
+  if (soleOpenApp) {{
+    soleOpenApp.addEventListener("click", function (ev) {{
+      ev.preventDefault();
+      if (isAndroid) window.carzoOpenAndroidIntent();
+      else window.carzoTryDeepLink(ev);
+    }});
+  }} else {{
+    wire("carzo-open");
+    wire("carzo-handoff-btn");
+    if (!isAndroid) wireTryApp("carzo-try-app-ios");
+  }}
 
   if (!autoAttempt) return;
   if (isAndroid) {{
     setTimeout(window.carzoOpenAndroidIntent, 80);
     return;
   }}
-  /* iOS: auto-try custom scheme on load (same as tapping "Open in CARZO app"). Instagram may block; Safari button remains. */
+  /* iOS: auto-try custom scheme on load (same as tapping Open in CARZO app). May be blocked in some WebViews. */
   setTimeout(function () {{
     try {{ window.location.href = deep; }} catch (e4) {{}}
   }}, 120);
@@ -190,10 +199,7 @@ def _listing_canonical_https_url(listing_id: str) -> str:
 
 
 def _listing_in_app_bridge_html(listing_id: str) -> Response:
-    """Snapchat / Instagram in-app browsers cannot use Universal Links or ``carzo://``.
-
-    Hand off to Safari (iOS) or fire an Android intent so CARZO can open outside the WebView.
-    """
+    """Snapchat / Instagram in-app browsers: minimal page that opens CARZO (intent / ``carzo://``)."""
     ua = (request.headers.get("User-Agent") or "").lower()
     is_android = "android" in ua
     qid = quote(listing_id, safe="")
@@ -202,29 +208,6 @@ def _listing_in_app_bridge_html(listing_id: str) -> Response:
     esc_href = escape(canonical, quote=True)
     esc_deep = escape(deep, quote=True)
     open_script = _listing_handoff_script(listing_id, is_android, auto_attempt=True)
-
-    if is_android:
-        steps_html = (
-            "<ol class=\"steps\">"
-            "<li>Tap <strong>Open in CARZO app</strong> below (or wait a moment — we try automatically).</li>"
-            "<li>If nothing happens, use <strong>Open in Chrome</strong> or your browser’s menu to open this page outside Instagram.</li>"
-            "</ol>"
-        )
-        buttons_html = f"""
-  <button type="button" class="btn" id="carzo-open" style="margin-top:0">Open in CARZO app</button>
-  <a class="btn btn-secondary" href="{esc_href}" target="_blank" rel="noopener noreferrer" id="carzo-open-safari" style="margin-top:0.75rem">Continue in browser</a>
-"""
-    else:
-        steps_html = (
-            "<ol class=\"steps\">"
-            "<li>Tap <strong>Open in CARZO app</strong> below — same pattern as other apps (opens CARZO when this browser allows it).</li>"
-            "<li>If nothing happens, tap <strong>Continue in Safari</strong>. From Safari, the listing opens in CARZO (Universal Link).</li>"
-            "</ol>"
-        )
-        buttons_html = f"""
-  <button type="button" class="btn" id="carzo-try-app-ios" style="margin-top:0">Open in CARZO app</button>
-  <a class="btn btn-secondary" href="{esc_href}" target="_blank" rel="noopener noreferrer" id="carzo-open-safari" style="margin-top:0.75rem">Continue in Safari</a>
-"""
 
     html = f"""<!DOCTYPE html>
 <html lang="en">
@@ -269,37 +252,10 @@ def _listing_in_app_bridge_html(listing_id: str) -> Response:
       cursor: pointer;
       -webkit-appearance: none;
     }}
-    .btn-secondary {{
-      background: transparent;
-      color: #ff9a4a !important;
-      border: 2px solid #e85f00;
-      margin-top: 0.75rem;
-    }}
-    .muted {{
-      max-width: 22rem;
-      margin-top: 1rem;
-      color: #aaa;
-      font-size: 0.88rem;
-      line-height: 1.5;
-    }}
-    .steps {{
-      max-width: 22rem;
-      text-align: left;
-      color: #ccc;
-      font-size: 0.9rem;
-      line-height: 1.55;
-      margin: 0 0 1.25rem;
-    }}
-    .steps strong {{ color: #fff; }}
   </style>
 </head>
 <body>
-  <p class="muted" style="margin-top:0;margin-bottom:0.75rem;font-size:1rem;color:#fff;font-weight:600">
-    Open this listing in CARZO
-  </p>
-  {steps_html}
-  {buttons_html}
-  <p class="muted">Instagram opens links inside its own browser first — the buttons above are how other apps hand you off to the real app or to Safari.</p>
+  <button type="button" class="btn" id="carzo-open-app">Open in CARZO app</button>
   <script>{open_script}</script>
 </body>
 </html>"""
