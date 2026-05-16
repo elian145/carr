@@ -149,13 +149,27 @@ def _listing_handoff_script(listing_id: str, is_android: bool, *, auto_attempt: 
     else window.carzoOpenInSafari();
   }};
 
+  /** User-tap attempt to open the native app (custom scheme). May work outside strict WebViews; Instagram often blocks. */
+  window.carzoTryDeepLink = function (ev) {{
+    if (ev) ev.preventDefault();
+    try {{
+      window.location.href = deep;
+    }} catch (e0) {{}}
+  }};
+
   function wire(btnId) {{
     var btn = document.getElementById(btnId);
     if (btn) btn.addEventListener("click", window.carzoHandoffContinue);
   }}
 
+  function wireTryApp(btnId) {{
+    var btn = document.getElementById(btnId);
+    if (btn) btn.addEventListener("click", window.carzoTryDeepLink);
+  }}
+
   wire("carzo-open");
   wire("carzo-handoff-btn");
+  if (!isAndroid) wireTryApp("carzo-try-app-ios");
 
   if (!autoAttempt) return;
   if (isAndroid) {{
@@ -185,6 +199,29 @@ def _listing_in_app_bridge_html(listing_id: str) -> Response:
     esc_href = escape(canonical, quote=True)
     esc_deep = escape(deep, quote=True)
     open_script = _listing_handoff_script(listing_id, is_android, auto_attempt=is_android)
+
+    if is_android:
+        steps_html = (
+            "<ol class=\"steps\">"
+            "<li>Tap <strong>Open in CARZO app</strong> below (or wait a moment — we try automatically).</li>"
+            "<li>If nothing happens, use <strong>Open in Chrome</strong> or your browser’s menu to open this page outside Instagram.</li>"
+            "</ol>"
+        )
+        buttons_html = f"""
+  <button type="button" class="btn" id="carzo-open" style="margin-top:0">Open in CARZO app</button>
+  <a class="btn btn-secondary" href="{esc_href}" target="_blank" rel="noopener noreferrer" id="carzo-open-safari" style="margin-top:0.75rem">Continue in browser</a>
+"""
+    else:
+        steps_html = (
+            "<ol class=\"steps\">"
+            "<li>Tap <strong>Open in CARZO app</strong> below — same pattern as other apps (opens CARZO when this browser allows it).</li>"
+            "<li>If nothing happens, tap <strong>Continue in Safari</strong>. From Safari, the listing opens in CARZO (Universal Link).</li>"
+            "</ol>"
+        )
+        buttons_html = f"""
+  <button type="button" class="btn" id="carzo-try-app-ios" style="margin-top:0">Open in CARZO app</button>
+  <a class="btn btn-secondary" href="{esc_href}" target="_blank" rel="noopener noreferrer" id="carzo-open-safari" style="margin-top:0.75rem">Continue in Safari</a>
+"""
 
     html = f"""<!DOCTYPE html>
 <html lang="en">
@@ -229,6 +266,12 @@ def _listing_in_app_bridge_html(listing_id: str) -> Response:
       cursor: pointer;
       -webkit-appearance: none;
     }}
+    .btn-secondary {{
+      background: transparent;
+      color: #ff9a4a !important;
+      border: 2px solid #e85f00;
+      margin-top: 0.75rem;
+    }}
     .muted {{
       max-width: 22rem;
       margin-top: 1rem;
@@ -251,25 +294,10 @@ def _listing_in_app_bridge_html(listing_id: str) -> Response:
   <p class="muted" style="margin-top:0;margin-bottom:0.75rem;font-size:1rem;color:#fff;font-weight:600">
     Open this listing in CARZO
   </p>
-  <ol class="steps">
-    <li><strong>Best:</strong> tap the <strong>compass</strong> icon in the bar below (Open in Safari).</li>
-    <li>Or tap <strong>⋯</strong> (top right) → <strong>Open in Safari</strong>.</li>
-    <li>In Safari, the page opens CARZO automatically (or tap &quot;Open in CARZO app&quot;).</li>
-  </ol>
-  <a class="btn" href="{esc_href}" target="_blank" rel="noopener noreferrer" id="carzo-open-safari">Try opening in Safari</a>
-  <button type="button" class="btn" id="carzo-open" style="margin-top:0.75rem;display:none">Open in CARZO (Android)</button>
-  <p class="muted">Instagram and Snapchat keep you inside their browser — Apple does not allow CARZO to open from here. Safari is required once.</p>
+  {steps_html}
+  {buttons_html}
+  <p class="muted">Instagram opens links inside its own browser first — the buttons above are how other apps hand you off to the real app or to Safari.</p>
   <script>{open_script}</script>
-  <script>
-    (function () {{
-      if ({json.dumps(is_android)}) {{
-        var s = document.getElementById("carzo-open-safari");
-        if (s) s.style.display = "none";
-        var b = document.getElementById("carzo-open");
-        if (b) b.style.display = "block";
-      }}
-    }})();
-  </script>
 </body>
 </html>"""
     return Response(

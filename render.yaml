@@ -6,6 +6,10 @@
 #   SECRET_KEY=<long random string, e.g. openssl rand -hex 32>
 #   JWT_SECRET_KEY=<long random string>
 #   DATABASE_URL=<postgresql://...>  (or leave unset to use SQLite on ephemeral disk)
+#
+# Universal / App Links (listing shares → open app):
+#   APPLE_TEAM_ID=<10-char Team ID>
+#   ANDROID_SHA256_CERT_FINGERPRINTS=<sha256>[,<sha256>...]
 services:
   - type: web
     runtime: python
