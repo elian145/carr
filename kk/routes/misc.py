@@ -176,7 +176,10 @@ def _listing_handoff_script(listing_id: str, is_android: bool, *, auto_attempt: 
     setTimeout(window.carzoOpenAndroidIntent, 80);
     return;
   }}
-  /* iOS in-app: do not auto-open — it often fails and same-URL navigation loops. */
+  /* iOS: auto-try custom scheme on load (same as tapping "Open in CARZO app"). Instagram may block; Safari button remains. */
+  setTimeout(function () {{
+    try {{ window.location.href = deep; }} catch (e4) {{}}
+  }}, 120);
 }})();
 """
 
@@ -198,7 +201,7 @@ def _listing_in_app_bridge_html(listing_id: str) -> Response:
     canonical = _listing_canonical_https_url(listing_id)
     esc_href = escape(canonical, quote=True)
     esc_deep = escape(deep, quote=True)
-    open_script = _listing_handoff_script(listing_id, is_android, auto_attempt=is_android)
+    open_script = _listing_handoff_script(listing_id, is_android, auto_attempt=True)
 
     if is_android:
         steps_html = (
