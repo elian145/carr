@@ -4192,6 +4192,7 @@ class _HomePageState extends State<HomePage> {
   static List<Map<String, dynamic>> _homeFeedCache = <Map<String, dynamic>>[];
   static int _homeFeedCachePage = 1;
   static bool _homeFeedCacheHasNext = true;
+  static bool _homeDeleteHandlerRegistered = false;
 
   List<Map<String, dynamic>> cars = [];
   bool isLoading = true;
@@ -5286,6 +5287,10 @@ class _HomePageState extends State<HomePage> {
         _pruneHomeMotorFilterSelectionsIfInvalid();
       });
     });
+    if (!_homeDeleteHandlerRegistered) {
+      _homeDeleteHandlerRegistered = true;
+      ListingEvents.addDeleteHandler(_purgeDeletedFromHomeFeedCache);
+    }
     ListingEvents.deletedListingId.addListener(_onHomeListingDeleted);
     WidgetsBinding.instance.addPostFrameCallback((_) async {
       // Avoid network calls during `flutter test` runs.
@@ -5333,14 +5338,17 @@ class _HomePageState extends State<HomePage> {
     });
   }
 
-  @override
+  /// Runs on delete even when [HomePage] is disposed (tab uses route replacement).
+  static void _purgeDeletedFromHomeFeedCache(String id) {
+    _homeFeedCache.removeWhere((c) => listingMatchesId(c, id));
+  }
+
   void _onHomeListingDeleted() {
     final id = ListingEvents.deletedListingId.value;
     if (id == null || id.isEmpty || !mounted) return;
     setState(() {
       cars.removeWhere((c) => listingMatchesId(c, id));
     });
-    _homeFeedCache.removeWhere((c) => listingMatchesId(c, id));
   }
 
   void dispose() {
