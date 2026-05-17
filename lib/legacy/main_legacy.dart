@@ -26,6 +26,7 @@ import '../services/auth_service.dart';
 import '../models/analytics_model.dart';
 import '../shared/auth/token_store.dart';
 import '../shared/text/pretty_title_case.dart';
+import '../shared/listings/listing_events.dart';
 import '../shared/listings/listing_identity.dart';
 import '../shared/listings/listing_share.dart';
 import '../shared/prefs/listing_layout_prefs.dart';
@@ -5285,6 +5286,7 @@ class _HomePageState extends State<HomePage> {
         _pruneHomeMotorFilterSelectionsIfInvalid();
       });
     });
+    ListingEvents.deletedListingId.addListener(_onHomeListingDeleted);
     WidgetsBinding.instance.addPostFrameCallback((_) async {
       // Avoid network calls during `flutter test` runs.
       // `FLUTTER_TEST` isn't reliably set as a compile-time define for all builds,
@@ -5332,7 +5334,17 @@ class _HomePageState extends State<HomePage> {
   }
 
   @override
+  void _onHomeListingDeleted() {
+    final id = ListingEvents.deletedListingId.value;
+    if (id == null || id.isEmpty || !mounted) return;
+    setState(() {
+      cars.removeWhere((c) => listingMatchesId(c, id));
+    });
+    _homeFeedCache.removeWhere((c) => listingMatchesId(c, id));
+  }
+
   void dispose() {
+    ListingEvents.deletedListingId.removeListener(_onHomeListingDeleted);
     _sortDebounceTimer?.cancel();
     unawaited(_persistFilters());
     _minPriceController.dispose();
