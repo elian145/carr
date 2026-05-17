@@ -194,7 +194,7 @@ class _CarDetailPageState extends State<CarDetailPage> {
     if (carId.isEmpty) return;
     final deleted = await confirmAndDeleteListing(context, carId);
     if (!deleted || !mounted) return;
-    Navigator.pop(context);
+    Navigator.pop(context, {'deleted': true, 'carId': carId});
   }
 
   Future<void> _load() async {

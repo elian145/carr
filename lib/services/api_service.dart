@@ -861,7 +861,8 @@ class ApiService {
   }
 
   static Future<Map<String, dynamic>> deleteCar(String carId) async {
-    return await _makeAuthenticatedRequest('DELETE', '/cars/$carId');
+    final id = Uri.encodeComponent(carId.trim());
+    return await _makeAuthenticatedRequest('DELETE', '/cars/$id');
   }
 
   static Future<Map<String, dynamic>> uploadCarImages(

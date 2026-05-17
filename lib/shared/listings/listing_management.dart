@@ -5,6 +5,7 @@ import '../../l10n/app_localizations.dart';
 import '../../services/api_service.dart';
 import '../../services/auth_service.dart';
 import '../../shared/errors/user_error_text.dart';
+import 'listing_events.dart';
 import 'listing_identity.dart';
 import 'listing_to_sell_draft.dart';
 
@@ -41,6 +42,7 @@ Future<bool> confirmAndDeleteListing(
 
   try {
     await ApiService.deleteCar(carId);
+    ListingEvents.notifyDeleted(carId);
     if (!context.mounted) return false;
     ScaffoldMessenger.of(context).showSnackBar(
       const SnackBar(content: Text('Listing removed')),

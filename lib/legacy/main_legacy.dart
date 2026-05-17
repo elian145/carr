@@ -13171,7 +13171,7 @@ class _CarDetailsPageState extends State<CarDetailsPage> {
     if (id.isEmpty) return;
     final deleted = await confirmAndDeleteListing(context, id);
     if (!deleted || !mounted) return;
-    Navigator.pop(context);
+    Navigator.pop(context, {'deleted': true, 'carId': id});
   }
 
   Future<void> _toggleFavoriteOnServer() async {

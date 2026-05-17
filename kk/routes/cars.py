@@ -882,7 +882,7 @@ def get_my_listings():
         per_page = min(request.args.get("per_page", 10, type=int), 50)
 
         pagination = (
-            Car.query.filter_by(seller_id=current_user.id)
+            Car.query.filter_by(seller_id=current_user.id, is_active=True)
             .order_by(Car.created_at.desc())
             .paginate(page=page, per_page=per_page, error_out=False)
         )
@@ -916,7 +916,11 @@ def compat_my_listings():
         if not current_user:
             return jsonify({"message": "Unauthorized"}), 401
 
-        cars = Car.query.filter_by(seller_id=current_user.id).order_by(Car.created_at.desc()).all()
+        cars = (
+            Car.query.filter_by(seller_id=current_user.id, is_active=True)
+            .order_by(Car.created_at.desc())
+            .all()
+        )
         result = []
         for car in cars:
             d = _with_media_compat(car)

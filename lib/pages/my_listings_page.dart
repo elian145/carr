@@ -12,6 +12,7 @@ import '../services/auth_service.dart';
 import '../services/analytics_service.dart';
 import '../models/analytics_model.dart';
 import '../shared/errors/user_error_text.dart';
+import '../shared/listings/listing_events.dart';
 import '../shared/listings/listing_identity.dart';
 import '../shared/listings/listing_management.dart';
 import '../shared/prefs/sell_listing_draft_prefs.dart';
@@ -77,12 +78,28 @@ class _MyListingsPageState extends State<MyListingsPage> {
       }
     });
     WidgetsBinding.instance.addPostFrameCallback((_) => _fetch(refresh: true));
+    ListingEvents.deletedListingId.addListener(_onListingDeletedElsewhere);
   }
 
   @override
   void dispose() {
+    ListingEvents.deletedListingId.removeListener(_onListingDeletedElsewhere);
     _controller.dispose();
     super.dispose();
+  }
+
+  void _onListingDeletedElsewhere() {
+    final id = ListingEvents.deletedListingId.value;
+    if (id == null || id.isEmpty || !mounted) return;
+    setState(() {
+      _cars.removeWhere((c) => listingMatchesId(c, id));
+    });
+  }
+
+  void _removeListingFromList(String carId) {
+    setState(() {
+      _cars.removeWhere((c) => listingMatchesId(c, carId));
+    });
   }
 
   Future<void> _fetch({required bool refresh}) async {
@@ -487,9 +504,8 @@ class _MyListingsPageState extends State<MyListingsPage> {
   Future<void> _deleteListing(String carId) async {
     final deleted = await confirmAndDeleteListing(context, carId);
     if (!deleted || !mounted) return;
-    setState(() {
-      _cars.removeWhere((c) => listingMatchesId(c, carId));
-    });
+    _removeListingFromList(carId);
+    await _fetch(refresh: true);
   }
 
   Future<void> _editListing(Map<String, dynamic> car) async {
