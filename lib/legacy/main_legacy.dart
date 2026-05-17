@@ -58,6 +58,10 @@ import '../pages/admin_dealers_page.dart';
 import '../pages/dealer_profile_page.dart';
 import '../pages/dealers_directory_page.dart';
 import '../pages/edit_dealer_page.dart';
+import '../pages/my_listings_page.dart' as modern_listings;
+import '../pages/edit_listing_page.dart' as modern_edit;
+import '../shared/listings/listing_management.dart';
+import '../shared/listings/listing_owner.dart';
 import '../features/comparison/state/car_comparison_store.dart';
 import '../data/car_catalog.dart';
 import '../data/car_name_translations.dart';
@@ -3778,9 +3782,40 @@ class MyApp extends StatelessWidget {
                   final args =
                       ModalRoute.of(context)!.settings.arguments
                           as Map<String, dynamic>;
-                  return AuthGuard(child: EditListingPage(car: args['car']));
+                  final car = args['car'];
+                  if (car is! Map) {
+                    return Scaffold(
+                      appBar: AppBar(title: const Text('Navigation error')),
+                      body: const Center(child: Text('Missing listing data')),
+                    );
+                  }
+                  return AuthGuard(
+                    child: modern_edit.EditListingPage(
+                      car: Map<String, dynamic>.from(
+                        car.cast<String, dynamic>(),
+                      ),
+                    ),
+                  );
                 },
-                '/my_listings': (context) => AuthGuard(child: MyListingsPage()),
+                '/edit_listing': (context) {
+                  final args = ModalRoute.of(context)?.settings.arguments;
+                  final car = args is Map ? args['car'] : null;
+                  if (car is! Map) {
+                    return Scaffold(
+                      appBar: AppBar(title: const Text('Navigation error')),
+                      body: const Center(child: Text('Missing listing data')),
+                    );
+                  }
+                  return AuthGuard(
+                    child: modern_edit.EditListingPage(
+                      car: Map<String, dynamic>.from(
+                        car.cast<String, dynamic>(),
+                      ),
+                    ),
+                  );
+                },
+                '/my_listings': (context) =>
+                    AuthGuard(child: modern_listings.MyListingsPage()),
                 '/comparison': (context) => CarComparisonPage(),
                 '/analytics': (context) => AnalyticsPage(),
                 '/reset-password': (context) => ResetPasswordPage(),
@@ -13115,6 +13150,30 @@ class _CarDetailsPageState extends State<CarDetailsPage> {
     }
   }
 
+  bool get _isListingOwner {
+    final auth = Provider.of<AuthService>(context, listen: false);
+    return isListingOwner(car, auth.userId);
+  }
+
+  Future<void> _editOwnListing() async {
+    final current = car;
+    if (current == null) return;
+    final updated = await openEditListingPage(
+      context,
+      Map<String, dynamic>.from(current),
+    );
+    if (!mounted || updated == null) return;
+    setState(() => car = {...current, ...updated});
+  }
+
+  Future<void> _deleteOwnListing() async {
+    final id = listingPrimaryId(car ?? {});
+    if (id.isEmpty) return;
+    final deleted = await confirmAndDeleteListing(context, id);
+    if (!deleted || !mounted) return;
+    Navigator.pop(context);
+  }
+
   Future<void> _toggleFavoriteOnServer() async {
     try {
       final tok = ApiService.accessToken;
@@ -13825,10 +13884,25 @@ class _CarDetailsPageState extends State<CarDetailsPage> {
                     onPressed: () => Navigator.of(context).maybePop(),
                   ),
                   actions: [
+                    if (_isListingOwner) ...[
+                      IconButton(
+                        tooltip: AppLocalizations.of(context)!.editAction,
+                        onPressed: _editOwnListing,
+                        icon: const Icon(Icons.edit_outlined),
+                      ),
+                      IconButton(
+                        tooltip: AppLocalizations.of(context)!.deleteAction,
+                        onPressed: _deleteOwnListing,
+                        icon: Icon(
+                          Icons.delete_outline,
+                          color: Theme.of(context).colorScheme.error,
+                        ),
+                      ),
+                    ],
                     IconButton(
                       tooltip: AppLocalizations.of(context)!.shareAction,
                       onPressed: _shareCar,
-                      icon: Icon(Icons.share_outlined),
+                      icon: const Icon(Icons.share_outlined),
                     ),
                     IconButton(
                       onPressed: _toggleFavoriteOnServer,
@@ -16321,6 +16395,9 @@ class _SellCarPageState extends State<SellCarPage> {
   int _draftResumeToken = 0;
   String _currentDraftId = _newSellDraftId();
   bool _skipDraftPersistOnDispose = false;
+  String? _editListingId;
+
+  bool get _isEditMode => (_editListingId ?? '').trim().isNotEmpty;
 
   // Car data that will be passed between steps
   Map<String, dynamic> carData = {};
@@ -16456,6 +16533,7 @@ class _SellCarPageState extends State<SellCarPage> {
   }
 
   Future<void> _saveDraftCurrentStep() async {
+    if (_isEditMode) return;
     try {
       final sp = await SharedPreferences.getInstance();
       await sp.setInt(_draftCurrentStepKey, _effectivePersistedDraftStep());
@@ -16583,6 +16661,7 @@ class _SellCarPageState extends State<SellCarPage> {
   }
 
   Future<void> _saveSellDraftSnapshot() async {
+    if (_isEditMode) return;
     try {
       final sp = await SharedPreferences.getInstance();
       final hasExistingSnapshot =
@@ -16725,6 +16804,11 @@ class _SellCarPageState extends State<SellCarPage> {
     final isPlaceholder = snapshot['isPlaceholder'] == true;
     if (!_hasMeaningfulDraftValue(restoredCarData) && !isPlaceholder) return;
     _currentDraftId = (snapshot['draftId'] ?? _newSellDraftId()).toString();
+    final editId = (restoredCarData['_editListingId'] ?? '').toString().trim();
+    if (editId.isNotEmpty) {
+      _editListingId = editId;
+      _skipDraftPersistOnDispose = true;
+    }
 
     if (restoreCurrentStep) {
       currentStep = currentStepValue.clamp(0, _kSellStepCount - 1);
@@ -16950,7 +17034,11 @@ class _SellCarPageState extends State<SellCarPage> {
       child: Scaffold(
         backgroundColor: Theme.of(context).scaffoldBackgroundColor,
         appBar: AppBar(
-          title: Text(AppLocalizations.of(context)!.addListingTitle),
+          title: Text(
+            _isEditMode
+                ? AppLocalizations.of(context)!.editListingTitle
+                : AppLocalizations.of(context)!.addListingTitle,
+          ),
           backgroundColor: Color(0xFFFF6B00),
           foregroundColor: Colors.white,
           elevation: 0,
@@ -16965,7 +17053,7 @@ class _SellCarPageState extends State<SellCarPage> {
           ),
           child: Column(
             children: [
-              _buildDraftBanner(),
+              if (!_isEditMode) _buildDraftBanner(),
               // Progress indicator
               Container(
                 padding: EdgeInsets.all(16),
@@ -24228,7 +24316,48 @@ class _SellStep5PageState extends State<SellStep5Page> {
                                     return;
                                   }
                                   // Submit the listing
-                                  await _submitListing(carData);
+                                  final submittedId =
+                                      await _submitListing(carData);
+                                  if (!mounted) return;
+
+                                  if (parentState?._isEditMode == true) {
+                                    Map<String, dynamic> updatedCar =
+                                        Map<String, dynamic>.from(carData);
+                                    if ((submittedId ?? '').isNotEmpty) {
+                                      try {
+                                        final fresh = await ApiService.getCar(
+                                          submittedId!,
+                                        );
+                                        final inner = fresh['car'];
+                                        if (inner is Map) {
+                                          updatedCar =
+                                              Map<String, dynamic>.from(
+                                            inner.cast<String, dynamic>(),
+                                          );
+                                        }
+                                      } catch (_) {
+                                        updatedCar['id'] = submittedId;
+                                        updatedCar['public_id'] = submittedId;
+                                      }
+                                    }
+                                    try {
+                                      ScaffoldMessenger.of(context).showSnackBar(
+                                        SnackBar(
+                                          content: Text(
+                                            AppLocalizations.of(context)!
+                                                .saveChangesButton,
+                                          ),
+                                          backgroundColor: Colors.green,
+                                        ),
+                                      );
+                                    } catch (_) {}
+                                    Navigator.pop(
+                                      context,
+                                      {'car': updatedCar},
+                                    );
+                                    return;
+                                  }
+
                                   if (parentState != null) {
                                     await parentState._clearSubmittedDraftOnly(
                                       draftId: parentState._currentDraftId,
@@ -24348,7 +24477,11 @@ class _SellStep5PageState extends State<SellStep5Page> {
                                 ),
                               )
                             : Text(
-                                AppLocalizations.of(context)!.submitListing,
+                                parentState?._isEditMode == true
+                                    ? AppLocalizations.of(context)!
+                                        .saveChangesButton
+                                    : AppLocalizations.of(context)!
+                                        .submitListing,
                                 style: TextStyle(
                                   fontSize: 16,
                                   fontWeight: FontWeight.w600,
@@ -24364,6 +24497,84 @@ class _SellStep5PageState extends State<SellStep5Page> {
         ],
       ),
     );
+  }
+
+  /// PUT payload for editing an existing listing (matches backend updatable fields).
+  Map<String, dynamic> _buildCarUpdatePayload(Map<String, dynamic> carData) {
+    final brand = carData['brand']?.toString() ?? '';
+    final model = carData['model']?.toString() ?? '';
+    final trim = carData['trim']?.toString() ?? 'Base';
+    final year =
+        int.tryParse(carData['year']?.toString() ?? '') ?? DateTime.now().year;
+    final mileage = int.tryParse(carData['mileage']?.toString() ?? '0') ?? 0;
+    final condition =
+        (carData['condition']?.toString() ?? 'used').toLowerCase();
+    final transmission =
+        (carData['transmission']?.toString() ?? 'automatic').toLowerCase();
+    final fuelType =
+        (carData['fuel_type']?.toString() ?? 'gasoline').toLowerCase();
+    final color = (carData['color']?.toString() ?? 'black').toLowerCase();
+    final bodyType = (carData['body_type']?.toString() ?? 'sedan').toLowerCase();
+    final seating = int.tryParse(carData['seating']?.toString() ?? '5') ?? 5;
+    final driveType = (carData['drive_type']?.toString() ?? 'fwd').toLowerCase();
+    final regionSpecsRaw =
+        carData['region_specs']?.toString().trim().toLowerCase() ?? '';
+    final regionSpecs =
+        isValidCarRegionSpecCode(regionSpecsRaw) ? regionSpecsRaw : null;
+    final titleStatus =
+        (carData['title_status']?.toString() ?? 'clean').toLowerCase();
+    final damagedParts = titleStatus == 'damaged'
+        ? int.tryParse(carData['damaged_parts']?.toString() ?? '')
+        : null;
+    final cylinderCount = int.tryParse(
+      carData['cylinder_count']?.toString() ?? '',
+    );
+    final engineSizeRaw = (carData['engine_size']?.toString() ?? '').trim();
+    final engineSize = OnlineSpecVariant.parseLeadingEngineLiters(engineSizeRaw) ??
+        double.tryParse(engineSizeRaw);
+    final priceStr = (carData['price']?.toString() ?? '').replaceAll(
+      RegExp(r'[^0-9\.-]'),
+      '',
+    );
+    final dynamic priceValue = priceStr.isEmpty
+        ? null
+        : (int.tryParse(priceStr) ?? double.tryParse(priceStr));
+    final location = (carData['location']?.toString().trim().isNotEmpty == true)
+        ? carData['location'].toString().trim()
+        : (carData['city']?.toString().trim() ?? '');
+    final plateType =
+        (carData['plate_type']?.toString() ?? '').trim().toLowerCase();
+    final plateCity = (carData['plate_city']?.toString() ?? '').trim();
+    final fuelEconomy = (carData['fuel_economy']?.toString() ?? '').trim();
+    final description = (carData['description']?.toString() ?? '').trim();
+
+    return {
+      'title': '$brand $model $trim'.trim(),
+      'brand': brand.toLowerCase().replaceAll(' ', '-'),
+      'model': model,
+      'trim': trim,
+      'year': year,
+      'price': priceValue,
+      'mileage': mileage,
+      'condition': condition,
+      'transmission': transmission,
+      'engine_type': fuelType,
+      'fuel_type': fuelType,
+      'color': color,
+      'body_type': bodyType,
+      'seating': seating,
+      'drive_type': driveType,
+      'region_specs': regionSpecs,
+      'title_status': titleStatus,
+      'damaged_parts': damagedParts,
+      'cylinder_count': cylinderCount,
+      'engine_size': engineSize,
+      'location': location,
+      'plate_type': plateType.isNotEmpty ? plateType : null,
+      'plate_city': plateCity.isNotEmpty ? plateCity : null,
+      if (fuelEconomy.isNotEmpty) 'fuel_economy': fuelEconomy,
+      if (description.isNotEmpty) 'description': description,
+    }..removeWhere((k, v) => v == null || (v is String && v.trim().isEmpty));
   }
 
   /// Returns the created car id on success so caller can navigate to listing page; null otherwise.
@@ -24469,31 +24680,47 @@ class _SellStep5PageState extends State<SellStep5Page> {
     }..removeWhere((k, v) => v == null || (v is String && v.trim().isEmpty));
 
     try {
-      final url = Uri.parse('${getApiBase()}/api/cars');
       final headers = {
         'Content-Type': 'application/json',
         'Authorization': 'Bearer $existingToken',
       };
+      final editId = context
+              .findAncestorStateOfType<_SellCarPageState>()
+              ?._editListingId
+              ?.trim() ??
+          '';
 
-      final response = await http
-          .post(url, headers: headers, body: json.encode(payload))
-          .timeout(
-            const Duration(seconds: 25),
-            onTimeout: () {
-              throw Exception(
-                'Network timeout. Please check the server and try again.',
-              );
-            },
-          );
+      http.Response? response;
+      String carId = '';
+      if (editId.isNotEmpty) {
+        try {
+          await ApiService.updateCar(editId, _buildCarUpdatePayload(carData));
+          carId = editId;
+        } on ApiException catch (e) {
+          throw Exception(e.message);
+        }
+      } else {
+        final url = Uri.parse('${getApiBase()}/api/cars');
+        response = await http
+            .post(url, headers: headers, body: json.encode(payload))
+            .timeout(
+              const Duration(seconds: 25),
+              onTimeout: () {
+                throw Exception(
+                  'Network timeout. Please check the server and try again.',
+                );
+              },
+            );
+        if (response.statusCode == 201) {
+          final Map<String, dynamic> created = json.decode(response.body);
+          final dynamic carObj =
+              (created['car'] is Map) ? created['car'] : created;
+          carId = (carObj['id']?.toString() ?? '').toString();
+        }
+      }
 
-      if (response.statusCode == 201) {
-        // Success - listing created
-        final Map<String, dynamic> created = json.decode(response.body);
-        // Backend returns { message, car: {...} } where car.id is the public_id (string)
-        final dynamic carObj = (created['car'] is Map)
-            ? created['car']
-            : created;
-        final String carId = (carObj['id']?.toString() ?? '').toString();
+      if (carId.isNotEmpty) {
+        // Success - listing created or updated
         // Upload/attach images and wait for list refresh so the new listing has all image URLs before we show success
         try {
           final dynamic maybeImgs = carData['images'];
@@ -24710,18 +24937,29 @@ class _SellStep5PageState extends State<SellStep5Page> {
             );
           } catch (_) {}
         }
-        _debugLog('Listing created successfully');
+        _debugLog(
+          editId.isNotEmpty
+              ? 'Listing updated successfully'
+              : 'Listing created successfully',
+        );
         return carId;
-      } else if (response.statusCode == 401) {
+      }
+
+      // Edit failures throw via [ApiException] above; only create reaches here.
+      final createResponse = response;
+      if (createResponse == null) {
+        throw Exception('Failed to create listing');
+      }
+      if (createResponse.statusCode == 401) {
         _debugLog('Submission failed: Authentication failed');
         throw Exception('Authentication failed. Please log in again.');
       } else {
         _debugLog(
-          'Submission failed: ${response.statusCode} - ${response.body}',
+          'Submission failed: ${createResponse.statusCode} - ${createResponse.body}',
         );
         dynamic errorData;
         try {
-          errorData = json.decode(response.body);
+          errorData = json.decode(createResponse.body);
         } catch (_) {
           errorData = null;
         }

@@ -138,14 +138,27 @@ class ApiService {
     }
     try {
       final Map<String, dynamic> err = body.isNotEmpty
-          ? json.decode(body)
+          ? json.decode(body) as Map<String, dynamic>
           : <String, dynamic>{};
-      final msg = (err['message'] ?? err['error'] ?? '').toString().trim();
+      final messagePart =
+          (err['message'] ?? '').toString().trim();
+      final errorPart = (err['error'] ?? '').toString().trim();
+      String msg = messagePart;
+      if (errorPart.isNotEmpty &&
+          errorPart != messagePart &&
+          !messagePart.contains(errorPart)) {
+        msg = msg.isEmpty ? errorPart : '$msg ($errorPart)';
+      }
+      if (msg.isEmpty) {
+        msg = errorPart;
+      }
       throw ApiException(
         statusCode: code,
         message: msg.isNotEmpty ? msg : 'API request failed ($code)',
         body: err,
       );
+    } on ApiException {
+      rethrow;
     } catch (_) {
       throw ApiException(
         statusCode: code,
@@ -839,9 +852,10 @@ class ApiService {
     String carId,
     Map<String, dynamic> carData,
   ) async {
+    final id = Uri.encodeComponent(carId.trim());
     return await _makeAuthenticatedRequest(
       'PUT',
-      '/cars/$carId',
+      '/cars/$id',
       body: carData,
     );
   }

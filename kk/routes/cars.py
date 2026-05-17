@@ -202,6 +202,32 @@ def _safe_float(val, default=None):
         return default
 
 
+def _leading_float(val):
+    """Parse float values like '2.0', '2.0 T', '2.0L' (leading token)."""
+    if val is None:
+        return None
+    if isinstance(val, (int, float)):
+        try:
+            return float(val)
+        except Exception:
+            return None
+    s = str(val).strip()
+    if not s:
+        return None
+    try:
+        return float(s)
+    except Exception:
+        import re
+
+        m = re.match(r"^(\d+(?:\.\d+)?)", s)
+        if not m:
+            return None
+        try:
+            return float(m.group(1))
+        except Exception:
+            return None
+
+
 @bp.route("/api/cars", methods=["GET"])
 def get_cars():
     """Get all cars with filtering and pagination."""
@@ -639,6 +665,24 @@ def create_car():
         return jsonify({"message": f"Failed to create car listing: {str(e)}"}), 500
 
 
+def _resolve_car_for_user(car_id: str, user, *, require_owner: bool = True):
+    """Find car by public_id or numeric id; optional owner/admin check."""
+    car = Car.query.filter_by(public_id=car_id).first()
+    if not car and str(car_id).isdigit():
+        try:
+            car = Car.query.filter_by(id=int(car_id)).first()
+        except (TypeError, ValueError):
+            car = None
+    if not car:
+        return None, (jsonify({"message": "Car not found"}), 404)
+    if require_owner and car.seller_id != user.id and not user.is_admin:
+        return None, (
+            jsonify({"message": "Not authorized to update this listing"}),
+            403,
+        )
+    return car, None
+
+
 @bp.route("/api/cars/<car_id>", methods=["PUT"])
 @jwt_required()
 def update_car(car_id: str):
@@ -648,19 +692,75 @@ def update_car(car_id: str):
         if not current_user:
             return jsonify({"message": "User not found"}), 404
 
-        car = Car.query.filter_by(public_id=car_id).first()
-        if not car:
-            return jsonify({"message": "Car not found"}), 404
-        if car.seller_id != current_user.id and not current_user.is_admin:
-            return jsonify({"message": "Not authorized to update this listing"}), 403
+        car, err = _resolve_car_for_user(car_id, current_user)
+        if err:
+            return err
 
-        data = request.get_json(silent=True) or {}
+        raw = request.get_json(silent=True) or {}
+
+        def _s(val, default=""):
+            return (val if isinstance(val, str) else str(val or "")).strip() or default
+
+        def _i(val, default=0):
+            try:
+                return int(val)
+            except Exception:
+                try:
+                    return int(float(val))
+                except Exception:
+                    return default
+
+        def _f(val, default=0.0):
+            try:
+                return float(val)
+            except Exception:
+                return default
+
+        data = dict(raw)
+        if "brand" in data:
+            data["brand"] = _s(data.get("brand"), car.brand or "unknown").lower().replace(" ", "-")
+        if "model" in data:
+            data["model"] = _s(data.get("model"), car.model or "")
+        if "year" in data:
+            data["year"] = _i(data.get("year"), car.year or 0)
+        if "mileage" in data:
+            data["mileage"] = _i(data.get("mileage"), car.mileage or 0)
+        if "price" in data:
+            data["price"] = _f(data.get("price"), car.price or 0.0)
+        if "condition" in data:
+            data["condition"] = _s(data.get("condition"), car.condition or "used").lower()
+        if "transmission" in data:
+            data["transmission"] = _s(
+                data.get("transmission"), car.transmission or "automatic"
+            ).lower()
+        if "drive_type" in data:
+            data["drive_type"] = _s(data.get("drive_type"), car.drive_type or "fwd").lower()
+        if "body_type" in data:
+            data["body_type"] = _s(data.get("body_type"), car.body_type or "sedan").lower()
+        if "engine_type" in data:
+            data["engine_type"] = _s(
+                data.get("engine_type"), car.engine_type or "gasoline"
+            ).lower()
+        if "fuel_type" in data:
+            data["fuel_type"] = _s(data.get("fuel_type"), car.fuel_type or "gasoline").lower()
+        if "color" in data:
+            data["color"] = _s(data.get("color"), car.color or "white").lower()
+        if "location" in data:
+            data["location"] = _s(data.get("location"), car.location or "")
+        if "description" in data:
+            desc = _s(data.get("description"), "")
+            data["description"] = desc or None
+        if "title_status" in data:
+            ts = _s(data.get("title_status"), car.title_status or "clean").lower()
+            data["title_status"] = ts if ts in {"clean", "damaged"} else "clean"
+
         updatable_fields = [
             "brand",
             "model",
             "year",
             "mileage",
             "engine_type",
+            "fuel_type",
             "transmission",
             "drive_type",
             "condition",
@@ -680,32 +780,43 @@ def update_car(car_id: str):
             "plate_city",
         ]
         for field in updatable_fields:
-            if field in data:
-                val = data[field]
-                if field == "region_specs":
-                    rs = (str(val or "").strip().lower())
-                    val = rs if rs in _ALLOWED_REGION_SPECS else None
-                if field == "plate_type":
-                    pt = (str(val or "").strip().lower())
-                    val = pt if pt in _ALLOWED_PLATE_TYPES else None
-                if field == "engine_size" and val is not None:
-                    val = _leading_float(val)
-                if field == "cylinder_count" and val is not None:
-                    try:
-                        val = int(val)
-                    except (TypeError, ValueError):
-                        val = None
-                if field == "title_status":
-                    val = str(val or "").strip().lower()
-                    if val not in {"clean", "damaged"}:
-                        continue
-                if field == "damaged_parts":
-                    if (car.title_status or "").lower() != "damaged":
-                        continue
-                    val = _safe_int(val)
-                    if val is not None and val < 1:
-                        val = None
-                setattr(car, field, val)
+            if field not in data:
+                continue
+            val = data[field]
+            if field == "region_specs":
+                rs = (str(val or "").strip().lower())
+                val = rs if rs in _ALLOWED_REGION_SPECS else None
+            elif field == "plate_type":
+                pt = (str(val or "").strip().lower())
+                val = pt if pt in _ALLOWED_PLATE_TYPES else None
+            elif field == "engine_size" and val is not None:
+                val = _leading_float(val)
+            elif field == "cylinder_count" and val is not None:
+                val = _safe_int(val)
+                if val is not None and val < 1:
+                    val = None
+            elif field == "title_status":
+                val = str(val or "").strip().lower()
+                if val not in {"clean", "damaged"}:
+                    continue
+            elif field == "damaged_parts":
+                if (car.title_status or "").lower() != "damaged":
+                    continue
+                val = _safe_int(val)
+                if val is not None and val < 1:
+                    val = None
+            setattr(car, field, val)
+
+        if "trim" in data:
+            car.trim = _s(data.get("trim"), car.trim or "base").lower()
+        if "seating" in data:
+            seat = _safe_int(data.get("seating"))
+            if seat is not None and seat > 0:
+                car.seating = seat
+        if "title" in data:
+            car.title = _s(data.get("title"), car.title or "")[:200]
+        else:
+            car.title = f"{car.brand} {car.model} {car.trim or ''} {car.year or ''}".strip()[:200]
 
         if (car.title_status or "").lower() == "clean":
             car.damaged_parts = None
@@ -713,9 +824,27 @@ def update_car(car_id: str):
         car.updated_at = utcnow()
         db.session.commit()
         log_user_action(current_user, "update_listing", "car", car.public_id)
-        return jsonify({"message": "Car listing updated successfully", "car": car.to_dict()}), 200
-    except Exception:
-        return jsonify({"message": "Failed to update car listing"}), 500
+        try:
+            car_payload = car.to_dict()
+        except Exception as serialize_err:
+            current_app.logger.exception(
+                "update_car to_dict failed: %s", serialize_err
+            )
+            car_payload = {
+                "id": car.public_id if getattr(car, "public_id", None) else str(car.id),
+                "title": car.title,
+                "brand": car.brand,
+                "model": car.model,
+                "year": car.year,
+                "price": car.price,
+            }
+        return jsonify(
+            {"message": "Car listing updated successfully", "car": car_payload}
+        ), 200
+    except Exception as e:
+        db.session.rollback()
+        current_app.logger.exception("update_car failed: %s", e)
+        return jsonify({"message": "Failed to update car listing", "error": str(e)}), 500
 
 
 @bp.route("/api/cars/<car_id>", methods=["DELETE"])
@@ -727,11 +856,9 @@ def delete_car(car_id: str):
         if not current_user:
             return jsonify({"message": "User not found"}), 404
 
-        car = Car.query.filter_by(public_id=car_id).first()
-        if not car:
-            return jsonify({"message": "Car not found"}), 404
-        if car.seller_id != current_user.id and not current_user.is_admin:
-            return jsonify({"message": "Not authorized to delete this listing"}), 403
+        car, err = _resolve_car_for_user(car_id, current_user)
+        if err:
+            return err
 
         car.is_active = False
         car.updated_at = utcnow()
@@ -793,7 +920,8 @@ def compat_my_listings():
         result = []
         for car in cars:
             d = _with_media_compat(car)
-            d["id"] = car.id
+            # Keep public_id as `id` (from to_dict); expose numeric id for legacy clients.
+            d["numeric_id"] = car.id
             d["videos"] = [v.video_url for v in car.videos] if car.videos else []
             if not d.get("title"):
                 d["title"] = f"{(car.brand or '').title()} {(car.model or '').title()} {car.year or ''}".strip()

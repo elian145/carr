@@ -173,12 +173,13 @@ def log_user_action(user, action_type, target_type=None, target_id=None, metadat
             action_type=action_type,
             target_type=target_type,
             target_id=target_id,
-            metadata=metadata
+            action_metadata=metadata,
         )
-        
+
         db.session.add(action)
         db.session.commit()
     except Exception as e:
+        db.session.rollback()
         current_app.logger.error(f"Error logging user action: {str(e)}")
 
 def validate_user_input(data, required_fields=None):

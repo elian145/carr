@@ -1,4 +1,5 @@
 import 'dart:convert';
+import 'dart:io' show Platform;
 
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
@@ -12,6 +13,7 @@ import '../services/analytics_service.dart';
 import '../models/analytics_model.dart';
 import '../shared/errors/user_error_text.dart';
 import '../shared/listings/listing_identity.dart';
+import '../shared/listings/listing_management.dart';
 import '../shared/prefs/sell_listing_draft_prefs.dart';
 import '../shared/text/pretty_title_case.dart';
 import '../shared/prefs/listing_layout_prefs.dart';
@@ -483,151 +485,112 @@ class _MyListingsPageState extends State<MyListingsPage> {
   }
 
   Future<void> _deleteListing(String carId) async {
-    final loc = AppLocalizations.of(context);
-    final ok = await showDialog<bool>(
-      context: context,
-      builder: (context) => AlertDialog(
-        title: Text(loc?.deleteListingTitle ?? 'Delete listing?'),
-        content: Text(
-          loc?.deleteListingBody ?? 'This will remove it from public listings.',
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(context, false),
-            child: Text(loc?.cancelAction ?? 'Cancel'),
-          ),
-          TextButton(
-            onPressed: () => Navigator.pop(context, true),
-            child: Text(loc?.deleteAction ?? 'Delete'),
-          ),
-        ],
-      ),
-    );
-    if (ok != true) return;
-
-    try {
-      await ApiService.deleteCar(carId);
-      if (!mounted) return;
-      setState(() {
-        _cars.removeWhere((c) => listingMatchesId(c, carId));
-      });
-    } catch (e) {
-      if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text(
-            userErrorText(
-              context,
-              e,
-              fallback: AppLocalizations.of(context)?.errorTitle ?? 'Error',
-            ),
-          ),
-        ),
-      );
-    }
+    final deleted = await confirmAndDeleteListing(context, carId);
+    if (!deleted || !mounted) return;
+    setState(() {
+      _cars.removeWhere((c) => listingMatchesId(c, carId));
+    });
   }
 
   Future<void> _editListing(Map<String, dynamic> car) async {
     final carId = listingPrimaryId(car);
     if (carId.isEmpty) return;
 
-    final loc = AppLocalizations.of(context);
-    final title = (car['title'] ?? '').toString();
-    final priceController = TextEditingController(text: (car['price'] ?? '').toString());
-    final locationController = TextEditingController(text: (car['location'] ?? '').toString());
-    final descriptionController = TextEditingController(text: (car['description'] ?? '').toString());
+    final updated = await openEditListingPage(context, car);
+    if (!mounted || updated == null) return;
+    setState(() {
+      final idx = _cars.indexWhere((c) => listingMatchesId(c, carId));
+      if (idx >= 0) _cars[idx] = {..._cars[idx], ...updated};
+    });
+  }
 
-    try {
-      final saved = await showModalBottomSheet<bool>(
-        context: context,
-        isScrollControlled: true,
-        builder: (context) {
-          final bottom = MediaQuery.of(context).viewInsets.bottom;
-          return Padding(
-            padding: EdgeInsets.only(bottom: bottom),
-            child: SafeArea(
-              child: Padding(
-                padding: const EdgeInsets.all(16),
-                child: Column(
-                  mainAxisSize: MainAxisSize.min,
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      title.isEmpty ? (loc?.editListingTitle ?? 'Edit listing') : title,
-                      style: Theme.of(context).textTheme.titleMedium,
+  Widget _ownerOverlayIcon({
+    required IconData icon,
+    required String tooltip,
+    required VoidCallback onTap,
+    Color background = const Color(0xCC000000),
+  }) {
+    return Tooltip(
+      message: tooltip,
+      child: Material(
+        color: background,
+        shape: const CircleBorder(),
+        child: InkWell(
+          customBorder: const CircleBorder(),
+          onTap: onTap,
+          child: Padding(
+            padding: const EdgeInsets.all(6),
+            child: Icon(icon, size: 16, color: Colors.white),
+          ),
+        ),
+      ),
+    );
+  }
+
+  /// Same full-cell card as home, with compact owner controls overlaid on top.
+  Widget _buildOwnedListingTile({
+    required Map<String, dynamic> car,
+    required String id,
+    required Widget card,
+    required AppLocalizations? loc,
+  }) {
+    return Stack(
+      fit: StackFit.expand,
+      clipBehavior: Clip.none,
+      children: [
+        card,
+        if (id.isNotEmpty)
+          Positioned(
+            top: 6,
+            left: 6,
+            child: Material(
+              color: const Color(0xFFFF6B00),
+              borderRadius: BorderRadius.circular(6),
+              child: InkWell(
+                borderRadius: BorderRadius.circular(6),
+                onTap: () => _showListingAnalyticsPopup(car, id),
+                child: Padding(
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 10,
+                    vertical: 6,
+                  ),
+                  child: Text(
+                    loc?.analyticsTitle ?? 'Analytics',
+                    style: const TextStyle(
+                      color: Colors.white,
+                      fontWeight: FontWeight.w800,
+                      fontSize: 12,
+                      letterSpacing: 0.2,
                     ),
-                    const SizedBox(height: 12),
-                    TextField(
-                      controller: priceController,
-                      keyboardType: const TextInputType.numberWithOptions(decimal: true),
-                      decoration: InputDecoration(labelText: loc?.priceLabel ?? 'Price'),
-                    ),
-                    const SizedBox(height: 10),
-                    TextField(
-                      controller: locationController,
-                      decoration: InputDecoration(
-                        labelText: loc?.locationLabel ?? 'Location',
-                      ),
-                    ),
-                    const SizedBox(height: 10),
-                    TextField(
-                      controller: descriptionController,
-                      minLines: 2,
-                      maxLines: 5,
-                      decoration: InputDecoration(
-                        labelText: loc?.descriptionTitle ?? 'Description',
-                      ),
-                    ),
-                    const SizedBox(height: 14),
-                    Row(
-                      children: [
-                        Expanded(
-                          child: OutlinedButton(
-                            onPressed: () => Navigator.pop(context, false),
-                            child: Text(loc?.cancelAction ?? 'Cancel'),
-                          ),
-                        ),
-                        const SizedBox(width: 12),
-                        Expanded(
-                          child: ElevatedButton(
-                            onPressed: () => Navigator.pop(context, true),
-                            child: Text(loc?.save ?? 'Save'),
-                          ),
-                        ),
-                      ],
-                    ),
-                  ],
+                  ),
                 ),
               ),
             ),
-          );
-        },
-      );
-      if (saved != true) return;
-
-      final price = double.tryParse(priceController.text.trim());
-      final payload = <String, dynamic>{
-        if (price != null) 'price': price,
-        'location': locationController.text.trim(),
-        'description': descriptionController.text.trim().isEmpty ? null : descriptionController.text.trim(),
-      };
-
-      final res = await ApiService.updateCar(carId, payload);
-      final updated = (res['car'] is Map<String, dynamic>)
-          ? Map<String, dynamic>.from(res['car'])
-          : null;
-      if (!mounted) return;
-      if (updated != null) {
-        setState(() {
-          final idx = _cars.indexWhere((c) => listingMatchesId(c, carId));
-          if (idx >= 0) _cars[idx] = {..._cars[idx], ...updated};
-        });
-      }
-    } finally {
-      priceController.dispose();
-      locationController.dispose();
-      descriptionController.dispose();
-    }
+          ),
+        if (id.isNotEmpty)
+          Positioned(
+            top: 6,
+            right: 6,
+            child: Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                _ownerOverlayIcon(
+                  icon: Icons.edit_outlined,
+                  tooltip: loc?.editAction ?? 'Edit',
+                  onTap: () => _editListing(car),
+                ),
+                const SizedBox(width: 4),
+                _ownerOverlayIcon(
+                  icon: Icons.delete_outline,
+                  tooltip: loc?.deleteAction ?? 'Delete',
+                  background: const Color(0xCCB3261E),
+                  onTap: () => _deleteListing(id),
+                ),
+              ],
+            ),
+          ),
+      ],
+    );
   }
 
   Future<ListingAnalytics> _fetchListingAnalytics(
@@ -796,6 +759,7 @@ class _MyListingsPageState extends State<MyListingsPage> {
     final loc = AppLocalizations.of(context);
     final auth = context.watch<AuthService>();
 
+    final bottomInset = MediaQuery.paddingOf(context).bottom;
     final authenticatedBody = RefreshIndicator(
       onRefresh: () => _fetch(refresh: true),
       child: _loading
@@ -848,16 +812,17 @@ class _MyListingsPageState extends State<MyListingsPage> {
                               : GridView.builder(
                                   controller: _controller,
                                   padding: EdgeInsets.fromLTRB(
-                                    listingColumns == 1 ? 4 : 12,
-                                    12,
-                                    listingColumns == 1 ? 4 : 12,
-                                    12,
+                                    listingColumns == 1 ? 4 : 8,
+                                    8,
+                                    listingColumns == 1 ? 4 : 8,
+                                    8 + bottomInset,
                                   ),
                                   gridDelegate:
                                       SliverGridDelegateWithFixedCrossAxisCount(
                                     crossAxisCount: listingColumns,
-                                    childAspectRatio:
-                                        listingColumns == 2 ? 0.62 : 2.78,
+                                    childAspectRatio: listingColumns == 2
+                                        ? (Platform.isIOS ? 0.66 : 0.61)
+                                        : 2.78,
                                     crossAxisSpacing: 8,
                                     mainAxisSpacing: 8,
                                   ),
@@ -897,89 +862,11 @@ class _MyListingsPageState extends State<MyListingsPage> {
                                       listLayout: listingColumns == 1,
                                     );
 
-                                    return Stack(
-                                      clipBehavior: Clip.none,
-                                      children: [
-                                        card,
-                                        if (id.isNotEmpty)
-                                          Positioned(
-                                            top: 6,
-                                            left: 6,
-                                            child: Material(
-                                              color: const Color(0xFFFF6B00),
-                                              borderRadius:
-                                                  BorderRadius.circular(6),
-                                              child: InkWell(
-                                                borderRadius:
-                                                    BorderRadius.circular(6),
-                                                onTap: () =>
-                                                    _showListingAnalyticsPopup(
-                                                  car,
-                                                  id,
-                                                ),
-                                                child: Padding(
-                                                  padding:
-                                                      const EdgeInsets.symmetric(
-                                                    horizontal: 10,
-                                                    vertical: 6,
-                                                  ),
-                                                  child: Text(
-                                                    loc?.analyticsTitle ??
-                                                        'Analytics',
-                                                    style: const TextStyle(
-                                                      color: Colors.white,
-                                                      fontWeight:
-                                                          FontWeight.w800,
-                                                      fontSize: 12,
-                                                      letterSpacing: 0.2,
-                                                    ),
-                                                  ),
-                                                ),
-                                              ),
-                                            ),
-                                          ),
-                                        Positioned(
-                                          top: 6,
-                                          right: 6,
-                                          child: Material(
-                                            color: Colors.black54,
-                                            shape: const CircleBorder(),
-                                            child: PopupMenuButton<String>(
-                                              tooltip: _text(
-                                                'More',
-                                                ar: 'المزيد',
-                                                ku: 'زیاتر',
-                                              ),
-                                              onSelected: (v) {
-                                                if (v == 'edit') _editListing(car);
-                                                if (v == 'delete') _deleteListing(id);
-                                              },
-                                              itemBuilder: (context) => [
-                                                PopupMenuItem(
-                                                  value: 'edit',
-                                                  child: Text(
-                                                    loc?.editAction ?? 'Edit',
-                                                  ),
-                                                ),
-                                                PopupMenuItem(
-                                                  value: 'delete',
-                                                  child: Text(
-                                                    loc?.deleteAction ?? 'Delete',
-                                                  ),
-                                                ),
-                                              ],
-                                              icon: const Padding(
-                                                padding: EdgeInsets.all(6),
-                                                child: Icon(
-                                                  Icons.more_vert,
-                                                  color: Colors.white,
-                                                  size: 22,
-                                                ),
-                                              ),
-                                            ),
-                                          ),
-                                        ),
-                                      ],
+                                    return _buildOwnedListingTile(
+                                      car: car,
+                                      id: id,
+                                      card: card,
+                                      loc: loc,
                                     );
                                   },
                                 ),
@@ -990,29 +877,39 @@ class _MyListingsPageState extends State<MyListingsPage> {
                 ),
     );
 
+    final isLightShell = Theme.of(context).brightness == Brightness.light;
+    final bodyChild = !auth.isAuthenticated
+        ? Center(
+            child: Padding(
+              padding: const EdgeInsets.all(16),
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Text(loc?.loginRequired ?? 'Login required'),
+                  const SizedBox(height: 12),
+                  ElevatedButton(
+                    onPressed: () => Navigator.pushNamed(context, '/login'),
+                    child: Text(loc?.loginAction ?? 'Login'),
+                  ),
+                ],
+              ),
+            ),
+          )
+        : authenticatedBody;
+
     return Scaffold(
-      backgroundColor: Theme.of(context).scaffoldBackgroundColor,
+      backgroundColor: isLightShell ? Colors.white : null,
       appBar: AppBar(
         title: Text(loc?.myListingsTitle ?? 'My listings'),
       ),
-      body: !auth.isAuthenticated
-          ? Center(
-              child: Padding(
-                padding: const EdgeInsets.all(16),
-                child: Column(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    Text(loc?.loginRequired ?? 'Login required'),
-                    const SizedBox(height: 12),
-                    ElevatedButton(
-                      onPressed: () => Navigator.pushNamed(context, '/login'),
-                      child: Text(loc?.loginAction ?? 'Login'),
-                    ),
-                  ],
-                ),
+      body: isLightShell
+          ? bodyChild
+          : Container(
+              decoration: AppThemes.shellBackgroundDecoration(
+                Theme.of(context).brightness,
               ),
-            )
-          : authenticatedBody,
+              child: bodyChild,
+            ),
       floatingActionButton: auth.isAuthenticated
           ? FloatingActionButton(
               onPressed: () => Navigator.pushNamed(context, '/sell'),

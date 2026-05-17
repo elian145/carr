@@ -1,6 +1,7 @@
 import 'dart:convert';
 
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:url_launcher/url_launcher.dart';
 
@@ -8,10 +9,13 @@ import '../l10n/app_localizations.dart';
 import '../theme_provider.dart';
 import '../services/analytics_service.dart';
 import '../services/api_service.dart';
+import '../services/auth_service.dart';
 import '../services/config.dart';
 import '../shared/media/media_url.dart';
 import '../shared/errors/user_error_text.dart';
 import '../shared/listings/listing_identity.dart';
+import '../shared/listings/listing_management.dart';
+import '../shared/listings/listing_owner.dart';
 import '../shared/listings/listing_share.dart';
 import '../shared/text/pretty_title_case.dart';
 import 'listing_image_gallery_page.dart';
@@ -170,6 +174,27 @@ class _CarDetailPageState extends State<CarDetailPage> {
         ),
       ),
     );
+  }
+
+  bool get _isOwner {
+    final auth = Provider.of<AuthService>(context, listen: false);
+    return isListingOwner(_car, auth.userId);
+  }
+
+  Future<void> _editOwnListing() async {
+    final car = _car;
+    if (car == null) return;
+    final updated = await openEditListingPage(context, car);
+    if (!mounted || updated == null) return;
+    setState(() => _car = {...car, ...updated});
+  }
+
+  Future<void> _deleteOwnListing() async {
+    final carId = listingPrimaryId(_car ?? {});
+    if (carId.isEmpty) return;
+    final deleted = await confirmAndDeleteListing(context, carId);
+    if (!deleted || !mounted) return;
+    Navigator.pop(context);
   }
 
   Future<void> _load() async {
@@ -1448,6 +1473,21 @@ class _CarDetailPageState extends State<CarDetailPage> {
       appBar: AppBar(
         title: Text(loc?.listingTitle ?? 'Listing'),
         actions: [
+          if (_isOwner) ...[
+            IconButton(
+              tooltip: loc?.editAction ?? 'Edit',
+              onPressed: _editOwnListing,
+              icon: const Icon(Icons.edit_outlined),
+            ),
+            IconButton(
+              tooltip: loc?.deleteAction ?? 'Delete',
+              onPressed: _deleteOwnListing,
+              icon: Icon(
+                Icons.delete_outline,
+                color: Theme.of(context).colorScheme.error,
+              ),
+            ),
+          ],
           IconButton(
             tooltip: loc?.callAction ?? 'Call',
             onPressed: _callSeller,

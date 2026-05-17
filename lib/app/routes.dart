@@ -19,6 +19,7 @@ import '../pages/admin_dealers_page.dart';
 import '../pages/dealer_profile_page.dart';
 import '../pages/dealers_directory_page.dart';
 import '../pages/edit_dealer_page.dart';
+import '../pages/edit_listing_page.dart';
 
 class _RouteArgsErrorPage extends StatelessWidget {
   final String routeName;
@@ -89,6 +90,16 @@ Map<String, WidgetBuilder> buildAppRoutes() {
       );
     },
     '/my_listings': (context) => const mine.MyListingsPage(),
+    '/edit_listing': (context) {
+      final args = argsMap(context);
+      final car = args?['car'];
+      if (car is! Map) {
+        return const _RouteArgsErrorPage(routeName: '/edit_listing');
+      }
+      return EditListingPage(
+        car: Map<String, dynamic>.from(car.cast<String, dynamic>()),
+      );
+    },
     '/comparison': (context) => const comparison.ComparisonPage(),
     '/analytics': (context) => AnalyticsPage(),
     '/admin/dealers': (context) => const AdminDealersPage(),

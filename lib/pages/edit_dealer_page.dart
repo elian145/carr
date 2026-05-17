@@ -164,6 +164,109 @@ class _EditDealerPageState extends State<EditDealerPage> {
     );
   }
 
+  Widget _brandingMediaButton({
+    required VoidCallback? onPressed,
+    required IconData icon,
+    required String label,
+    bool selected = false,
+  }) {
+    final enabled = onPressed != null;
+    final borderColor = selected
+        ? _accent
+        : _accent.withValues(alpha: enabled ? 0.42 : 0.22);
+    // Keep short two-word labels on one line (e.g. "Change logo").
+    final displayLabel = label.contains(' ')
+        ? label.replaceFirst(' ', '\u00A0')
+        : label;
+
+    return Opacity(
+      opacity: enabled ? 1 : 0.5,
+      child: Material(
+        color: Colors.transparent,
+        borderRadius: BorderRadius.circular(6),
+        child: InkWell(
+          onTap: onPressed,
+          borderRadius: BorderRadius.circular(6),
+          splashColor: _accent.withValues(alpha: 0.12),
+          highlightColor: _accent.withValues(alpha: 0.06),
+          child: Ink(
+            height: 28,
+            decoration: BoxDecoration(
+              color: selected
+                  ? _accent.withValues(alpha: 0.1)
+                  : _accent.withValues(alpha: 0.035),
+              borderRadius: BorderRadius.circular(6),
+              border: Border.all(color: borderColor, width: 1),
+            ),
+            child: Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 6),
+              child: Row(
+                mainAxisAlignment: MainAxisAlignment.center,
+                mainAxisSize: MainAxisSize.max,
+                children: [
+                  Icon(icon, size: 13, color: _accent),
+                  const SizedBox(width: 3),
+                  Flexible(
+                    child: FittedBox(
+                      fit: BoxFit.scaleDown,
+                      alignment: Alignment.center,
+                      child: Text(
+                        displayLabel,
+                        maxLines: 1,
+                        softWrap: false,
+                        overflow: TextOverflow.ellipsis,
+                        style: const TextStyle(
+                          fontSize: 10.5,
+                          fontWeight: FontWeight.w600,
+                          color: _accent,
+                          height: 1.1,
+                          letterSpacing: 0.05,
+                        ),
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildBrandingCoverPreview(String coverUrl) {
+    if (_cover != null) {
+      return Image.file(
+        File(_cover!.path),
+        fit: BoxFit.cover,
+        width: double.infinity,
+        errorBuilder: (context, error, stackTrace) =>
+            Container(color: Colors.black12),
+      );
+    }
+    if (coverUrl.isNotEmpty) {
+      return Image.network(
+        coverUrl,
+        fit: BoxFit.cover,
+        width: double.infinity,
+        errorBuilder: (context, error, stackTrace) =>
+            Container(color: Colors.black12),
+      );
+    }
+    return Container(
+      color: Theme.of(context)
+          .colorScheme
+          .surfaceContainerHighest
+          .withValues(alpha: 0.55),
+      child: Center(
+        child: Icon(
+          Icons.image_outlined,
+          color: Theme.of(context).colorScheme.onSurfaceVariant,
+        ),
+      ),
+    );
+  }
+
   RoundedRectangleBorder _pageCardShape(Brightness brightness) {
     final isLightShell = brightness == Brightness.light;
     return RoundedRectangleBorder(
@@ -786,84 +889,64 @@ class _EditDealerPageState extends State<EditDealerPage> {
                           subtitle: _tr('Logo and cover image shown on your dealer page.', ar: 'يظهر الشعار وصورة الغلاف في صفحة الوكيل.', ku: 'لۆگۆ و وێنەی کاڤەر لە پەڕەی وەکیلت پیشان دەدرێت.'),
                         ),
                         const SizedBox(height: 12),
-                        SizedBox(
-                          height: 150,
-                          child: ClipRRect(
-                            borderRadius: BorderRadius.circular(14),
-                            child: _cover != null
-                                ? Image.file(
-                                    File(_cover!.path),
-                                    fit: BoxFit.cover,
-                                    errorBuilder: (context, error, stackTrace) =>
-                                        Container(color: Colors.black12),
-                                  )
-                                : (coverUrl.isNotEmpty
-                                    ? Image.network(
-                                        coverUrl,
-                                        fit: BoxFit.cover,
-                                        errorBuilder:
-                                            (context, error, stackTrace) =>
-                                                Container(color: Colors.black12),
-                                      )
-                                    : Container(
-                                        color: Theme.of(context)
-                                            .colorScheme
-                                            .surfaceContainerHighest
-                                            .withValues(alpha: 0.55),
-                                        child: Center(
-                                          child: Icon(
-                                            Icons.image_outlined,
-                                            color: Theme.of(context)
-                                                .colorScheme
-                                                .onSurfaceVariant,
-                                          ),
-                                        ),
-                                      )),
+                        ClipRRect(
+                          borderRadius: BorderRadius.circular(14),
+                          child: SizedBox(
+                            height: 132,
+                            width: double.infinity,
+                            child: _buildBrandingCoverPreview(coverUrl),
                           ),
                         ),
-                        const SizedBox(height: 10),
+                        const SizedBox(height: 12),
                         Row(
+                          crossAxisAlignment: CrossAxisAlignment.center,
                           children: [
-                            CircleAvatar(
-                              radius: 26,
-                              backgroundColor: Theme.of(context)
-                                  .colorScheme
-                                  .surfaceContainerHighest,
-                              backgroundImage: _logo != null
-                                  ? null
-                                  : (logoUrl.isNotEmpty ? NetworkImage(logoUrl) : null),
-                              child: _logo == null && logoUrl.isEmpty
-                                  ? const Icon(Icons.storefront_outlined)
-                                  : null,
+                            Material(
+                              elevation: 4,
+                              shadowColor: Colors.black38,
+                              shape: const CircleBorder(),
+                              color: Theme.of(context).colorScheme.surface,
+                              child: CircleAvatar(
+                                radius: 28,
+                                backgroundColor: Theme.of(context)
+                                    .colorScheme
+                                    .surfaceContainerHighest,
+                                backgroundImage: _logo != null
+                                    ? FileImage(File(_logo!.path))
+                                    : (logoUrl.isNotEmpty
+                                        ? NetworkImage(logoUrl)
+                                        : null),
+                                child: _logo == null && logoUrl.isEmpty
+                                    ? Icon(
+                                        Icons.storefront_outlined,
+                                        size: 26,
+                                        color: Theme.of(context)
+                                            .colorScheme
+                                            .onSurfaceVariant,
+                                      )
+                                    : null,
+                              ),
                             ),
-                            const SizedBox(width: 12),
+                            const SizedBox(width: 10),
                             Expanded(
-                              child: Row(
-                                children: [
-                                  Expanded(
-                                    child: OutlinedButton.icon(
-                                      onPressed: _saving ? null : _pickLogo,
-                                      style: _outlineAccentStyle(),
-                                      icon: const Icon(Icons.image_outlined),
-                                      label: Text(
-                                        _logo == null ? _tr('Change logo', ar: 'تغيير الشعار', ku: 'گۆڕینی لۆگۆ') : _tr('Logo selected', ar: 'تم اختيار الشعار', ku: 'لۆگۆ هەڵبژێردرا'),
-                                      ),
-                                    ),
-                                  ),
-                                  const SizedBox(width: 10),
-                                  Expanded(
-                                    child: OutlinedButton.icon(
-                                      onPressed: _saving ? null : _pickCover,
-                                      style: _outlineAccentStyle(),
-                                      icon: const Icon(Icons.photo_outlined),
-                                      label: Text(
-                                        _cover == null
-                                            ? _tr('Change cover', ar: 'تغيير الغلاف', ku: 'گۆڕینی کاڤەر')
-                                            : _tr('Cover selected', ar: 'تم اختيار الغلاف', ku: 'کاڤەر هەڵبژێردرا'),
-                                      ),
-                                    ),
-                                  ),
-                                ],
+                              child: _brandingMediaButton(
+                                onPressed: _saving ? null : _pickLogo,
+                                icon: Icons.image_outlined,
+                                selected: _logo != null,
+                                label: _logo == null
+                                    ? _tr('Change logo', ar: 'تغيير الشعار', ku: 'گۆڕینی لۆگۆ')
+                                    : _tr('Logo selected', ar: 'تم اختيار الشعار', ku: 'لۆگۆ هەڵبژێردرا'),
+                              ),
+                            ),
+                            const SizedBox(width: 8),
+                            Expanded(
+                              child: _brandingMediaButton(
+                                onPressed: _saving ? null : _pickCover,
+                                icon: Icons.photo_outlined,
+                                selected: _cover != null,
+                                label: _cover == null
+                                    ? _tr('Change cover', ar: 'تغيير الغلاف', ku: 'گۆڕینی کاڤەر')
+                                    : _tr('Cover selected', ar: 'تم اختيار الغلاف', ku: 'کاڤەر هەڵبژێردرا'),
                               ),
                             ),
                           ],
