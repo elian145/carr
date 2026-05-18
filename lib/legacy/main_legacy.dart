@@ -1939,10 +1939,12 @@ Widget buildGlobalCarCard(
         InkWell(
           borderRadius: BorderRadius.circular(20),
           onTap: () {
+            final carId = (car['id'] ?? '').toString().trim();
+            if (carId.isEmpty) return;
             Navigator.pushNamed(
               context,
               '/car_detail',
-              arguments: {'carId': car['id']},
+              arguments: {'carId': carId},
             );
           },
           child: listLayout
@@ -12146,6 +12148,44 @@ class _HomePageState extends State<HomePage> {
   }
 }
 
+/// Persist saved-search filters so [HomePage] can restore them after navigation.
+Future<void> persistSavedSearchFiltersForHome(
+  Map<String, dynamic> filters,
+) async {
+  try {
+    final sp = await SharedPreferences.getInstance();
+    final map = <String, dynamic>{
+      'brand': filters['brand'],
+      'model': filters['model'],
+      'trim': filters['trim'],
+      'price_min': filters['min_price'] ?? filters['price_min'],
+      'price_max': filters['max_price'] ?? filters['price_max'],
+      'year_min': filters['min_year'] ?? filters['year_min'],
+      'year_max': filters['max_year'] ?? filters['year_max'],
+      'min_mileage': filters['min_mileage'],
+      'max_mileage': filters['max_mileage'],
+      'condition': filters['condition'],
+      'transmission': filters['transmission'],
+      'fuel_type': filters['fuel_type'],
+      'body_type': filters['body_type'],
+      'color': filters['color'],
+      'drive_type': filters['drive_type'],
+      'region_specs': filters['region_specs'],
+      'cylinders': filters['cylinder_count'] ?? filters['cylinders'],
+      'seating': filters['seating'],
+      'engine_size': filters['engine_size'],
+      'city': filters['city'],
+      'plate_type': filters['plate_type'],
+      'plate_city': filters['plate_city'],
+      'title_status': filters['title_status'],
+      'damaged_parts': filters['damaged_parts'],
+      'sort_by': filters['sort_by'],
+    };
+    map.removeWhere((_, v) => v == null || v.toString().trim().isEmpty);
+    await sp.setString('home_filters_v1', json.encode(map));
+  } catch (_) {}
+}
+
 class SavedSearchesPage extends StatefulWidget {
   final dynamic parentState;
 
@@ -12584,74 +12624,78 @@ class _SavedSearchesPageState extends State<SavedSearchesPage> {
   }
 
   void _applySearch(Map<String, dynamic> filters) async {
-    // Navigate back to home page
-    Navigator.pop(context);
+    final normalized = SavedSearchService.normalizeFilters(filters);
+    await persistSavedSearchFiltersForHome(normalized);
 
-    // Apply the saved filters to the home page state
-    if (widget.parentState != null) {
-      widget.parentState!.setState(() {
-        // Clear all current filters first
-        widget.parentState!._resetAllFiltersInMemory();
+    if (!mounted) return;
+    final messenger = ScaffoldMessenger.of(context);
+    final successText = _trLegacyText(
+      context,
+      'Search applied successfully!',
+      ar: 'تم تطبيق البحث بنجاح!',
+      ku: 'گەڕان بە سەرکەوتوویی جێبەجێ کرا!',
+    );
 
-        // Apply saved filters
-        widget.parentState!.selectedBrand = filters['brand'];
-        widget.parentState!.selectedModel = filters['model'];
-        widget.parentState!.selectedTrim = filters['trim'];
-        widget.parentState!.selectedMinPrice = filters['min_price'];
-        widget.parentState!.selectedMaxPrice = filters['max_price'];
-        widget.parentState!.selectedMinYear = filters['min_year'];
-        widget.parentState!.selectedMaxYear = filters['max_year'];
-        widget.parentState!.selectedMinMileage = filters['min_mileage'];
-        widget.parentState!.selectedMaxMileage = filters['max_mileage'];
-        widget.parentState!.selectedCondition = filters['condition'];
-        widget.parentState!.selectedTransmission = filters['transmission'];
-        widget.parentState!.selectedFuelType = filters['fuel_type'];
-        widget.parentState!.selectedBodyType = filters['body_type'];
-        widget.parentState!.selectedColor = filters['color'];
-        widget.parentState!.selectedDriveType = filters['drive_type'];
-        final rsApply = filters['region_specs']
-            ?.toString()
-            .trim()
-            .toLowerCase();
-        widget.parentState!.selectedRegionSpecs =
+    final parent = widget.parentState;
+    if (parent != null && parent.mounted) {
+      Navigator.pop(context);
+      parent.setState(() {
+        parent._resetAllFiltersInMemory();
+        parent.selectedBrand = normalized['brand']?.toString();
+        parent.selectedModel = normalized['model']?.toString();
+        parent.selectedTrim = normalized['trim']?.toString();
+        parent.selectedMinPrice = normalized['min_price']?.toString();
+        parent.selectedMaxPrice = normalized['max_price']?.toString();
+        parent.selectedMinYear = normalized['min_year']?.toString();
+        parent.selectedMaxYear = normalized['max_year']?.toString();
+        parent.selectedMinMileage = normalized['min_mileage']?.toString();
+        parent.selectedMaxMileage = normalized['max_mileage']?.toString();
+        parent.selectedCondition = normalized['condition']?.toString();
+        parent.selectedTransmission = normalized['transmission']?.toString();
+        parent.selectedFuelType = normalized['fuel_type']?.toString();
+        parent.selectedBodyType = normalized['body_type']?.toString();
+        parent.selectedColor = normalized['color']?.toString();
+        parent.selectedDriveType = normalized['drive_type']?.toString();
+        final rsApply =
+            normalized['region_specs']?.toString().trim().toLowerCase();
+        parent.selectedRegionSpecs =
             (rsApply != null &&
                 rsApply.isNotEmpty &&
                 isValidCarRegionSpecCode(rsApply))
             ? rsApply
             : null;
-        widget.parentState!.selectedCylinderCount = filters['cylinder_count'];
-        widget.parentState!.selectedSeating = filters['seating'];
-        widget.parentState!.selectedEngineSize = filters['engine_size'];
-        widget.parentState!.selectedCity = filters['city'];
-        widget.parentState!.selectedPlateType = filters['plate_type'];
-        widget.parentState!.selectedPlateCity = filters['plate_city'];
-        widget.parentState!.selectedTitleStatus = filters['title_status'];
-        widget.parentState!.selectedDamagedParts = filters['damaged_parts'];
-        widget.parentState!.selectedSortBy = filters['sort_by'];
+        parent.selectedCylinderCount = normalized['cylinder_count']?.toString();
+        parent.selectedSeating = normalized['seating']?.toString();
+        parent.selectedEngineSize = normalized['engine_size']?.toString();
+        parent.selectedCity = normalized['city']?.toString();
+        parent.selectedPlateType = normalized['plate_type']?.toString();
+        parent.selectedPlateCity = normalized['plate_city']?.toString();
+        parent.selectedTitleStatus = normalized['title_status']?.toString();
+        parent.selectedDamagedParts = normalized['damaged_parts']?.toString();
+        parent.selectedSortBy = normalized['sort_by']?.toString();
       });
-
-      // Persist the applied filters
-      await widget.parentState!._persistFilters();
-
-      // Trigger filter change to fetch cars with applied filters
-      widget.parentState!.onFilterChanged();
-
-      // Show success message
-      ScaffoldMessenger.of(context).showSnackBar(
+      await parent._persistFilters();
+      parent.onFilterChanged();
+      messenger.showSnackBar(
         SnackBar(
-          content: Text(
-            _trLegacyText(
-              context,
-              'Search applied successfully!',
-              ar: 'تم تطبيق البحث بنجاح!',
-              ku: 'گەڕان بە سەرکەوتوویی جێبەجێ کرا!',
-            ),
-          ),
+          content: Text(successText),
           backgroundColor: Colors.green,
-          duration: Duration(seconds: 2),
+          duration: const Duration(seconds: 2),
         ),
       );
+      return;
     }
+
+    Navigator.pop(context);
+    if (!context.mounted) return;
+    navigateMainShellTab(context, '/');
+    messenger.showSnackBar(
+      SnackBar(
+        content: Text(successText),
+        backgroundColor: Colors.green,
+        duration: const Duration(seconds: 2),
+      ),
+    );
   }
 
   void _showFilterDetails(String searchName, Map<String, dynamic> filters) {
@@ -13546,9 +13590,11 @@ class _CarDetailsPageState extends State<CarDetailsPage> {
 
   Future<void> _trackView() async {
     try {
-      await AnalyticsService.trackView(widget.carId.toString());
+      final id = (car != null && listingPrimaryId(car!).isNotEmpty)
+          ? listingPrimaryId(car!)
+          : widget.carId.toString();
+      await AnalyticsService.trackView(id);
     } catch (e) {
-      // Silently fail - don't interrupt user experience
       _debugLog('Failed to track view: $e');
     }
   }

@@ -4,6 +4,7 @@ import '../l10n/app_localizations.dart';
 import '../legacy/main_legacy.dart'
     show buildGlobalCarCard, buildFloatingBottomNav, mapListingToGlobalCarCardData, navigateMainShellTab;
 import '../services/api_service.dart';
+import '../shared/auth/token_store.dart';
 import '../shared/errors/user_error_text.dart';
 import '../shared/prefs/listing_layout_prefs.dart';
 import '../theme_provider.dart';
@@ -33,7 +34,9 @@ class _RecentlyViewedPageState extends State<RecentlyViewedPage> {
       _error = null;
     });
     try {
-      final token = ApiService.accessToken;
+      await ApiService.initializeTokens();
+      await TokenStore.load();
+      final token = ApiService.accessToken ?? TokenStore.token;
       if (token == null || token.isEmpty) {
         if (!mounted) return;
         setState(() {

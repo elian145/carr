@@ -67,30 +67,13 @@ def _increment_views_best_effort(car: Car, current_user: User | None) -> None:
             return
         now = utcnow()
         if current_user:
-            exists = db.session.execute(
-                select(user_viewed_listings.c.user_id).where(
-                    user_viewed_listings.c.user_id == current_user.id,
-                    user_viewed_listings.c.car_id == car.id,
-                )
-            ).first()
-            if exists:
-                db.session.execute(
-                    update(user_viewed_listings)
-                    .where(
-                        user_viewed_listings.c.user_id == current_user.id,
-                        user_viewed_listings.c.car_id == car.id,
-                    )
-                    .values(viewed_at=now)
-                )
-                db.session.commit()
-                return
-            db.session.execute(
-                user_viewed_listings.insert().values(
-                    user_id=current_user.id,
-                    car_id=car.id,
-                    viewed_at=now,
-                )
+            from ..view_history import record_user_listing_view
+
+            _, is_first_view = record_user_listing_view(
+                current_user, car.public_id or str(car.id)
             )
+            if not is_first_view:
+                return
         else:
             ip = _client_ip()
             key = (ip, int(car.id))

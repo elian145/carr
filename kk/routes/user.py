@@ -72,6 +72,34 @@ def get_profile():
         return jsonify({"message": "Failed to get profile"}), 500
 
 
+@bp.route("/api/user/recently-viewed", methods=["POST"])
+@jwt_required()
+def record_recently_viewed():
+    """Record that the user viewed a listing (for Recently viewed screen)."""
+    try:
+        from ..view_history import record_user_listing_view
+
+        current_user = get_current_user()
+        if not current_user:
+            return jsonify({"message": "User not found"}), 404
+
+        data = validate_input_sanitization(request.get_json(silent=True) or {})
+        listing_id = str(
+            data.get("listing_id") or data.get("listingId") or data.get("car_id") or ""
+        ).strip()
+        if not listing_id:
+            return jsonify({"message": "listing_id required"}), 400
+
+        car, _is_first = record_user_listing_view(current_user, listing_id)
+        if not car:
+            return jsonify({"message": "Listing not found"}), 404
+
+        return jsonify({"success": True, "car_id": car.public_id}), 200
+    except Exception:
+        db.session.rollback()
+        return jsonify({"message": "Failed to record view"}), 500
+
+
 @bp.route("/api/user/recently-viewed", methods=["GET"])
 @jwt_required()
 def recently_viewed():

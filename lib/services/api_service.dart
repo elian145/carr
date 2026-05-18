@@ -1111,6 +1111,17 @@ class ApiService {
     );
   }
 
+  /// Record a listing view for the Recently viewed screen.
+  static Future<void> recordListingView(String listingId) async {
+    final id = listingId.trim();
+    if (id.isEmpty) return;
+    await _makeAuthenticatedRequest(
+      'POST',
+      '/user/recently-viewed',
+      body: {'listing_id': id},
+    );
+  }
+
   static Future<Map<String, dynamic>> getMyListings({
     int page = 1,
     int perPage = 20,

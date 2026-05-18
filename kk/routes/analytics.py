@@ -103,34 +103,11 @@ def _track_increment(listing_id: str, field: str, *, dedupe_view: bool = False):
     if not car or not car.is_active:
         return jsonify({"message": "Listing not found"}), 404
 
-    # Optional: dedupe views per user per listing (prevents spam).
+    # Recently viewed: commit separately so analytics failures still persist history.
     if dedupe_view:
-        exists = db.session.execute(
-            user_viewed_listings.select()
-            .with_only_columns(user_viewed_listings.c.user_id)
-            .where(
-                user_viewed_listings.c.user_id == current_user.id,
-                user_viewed_listings.c.car_id == car.id,
-            )
-        ).first()
-        if exists:
-            db.session.execute(
-                update(user_viewed_listings)
-                .where(
-                    user_viewed_listings.c.user_id == current_user.id,
-                    user_viewed_listings.c.car_id == car.id,
-                )
-                .values(viewed_at=utcnow())
-            )
-            db.session.commit()
-            return jsonify({"success": True, "deduped": True}), 200
-        db.session.execute(
-            user_viewed_listings.insert().values(
-                user_id=current_user.id,
-                car_id=car.id,
-                viewed_at=utcnow(),
-            )
-        )
+        from ..view_history import record_user_listing_view
+
+        record_user_listing_view(current_user, listing_id)
 
     a = ListingAnalytics.query.filter_by(car_id=car.id).first()
     if not a:

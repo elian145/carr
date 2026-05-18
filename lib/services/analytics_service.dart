@@ -172,6 +172,18 @@ class AnalyticsService {
 
   /// Track a view for a listing
   static Future<void> trackView(String listingId) async {
+    final id = listingId.trim();
+    if (id.isEmpty) return;
+
+    try {
+      await ApiService.recordListingView(id);
+    } catch (e) {
+      developer.log(
+        'Failed to record recently viewed: $e',
+        name: 'AnalyticsService',
+      );
+    }
+
     try {
       final token = ApiService.accessToken;
       if (token == null || token.isEmpty) return;
@@ -183,7 +195,7 @@ class AnalyticsService {
               'Authorization': 'Bearer $token',
               'Content-Type': 'application/json',
             },
-            body: json.encode({'listing_id': listingId}),
+            body: json.encode({'listing_id': id}),
           )
           .timeout(_timeout);
       if (response.statusCode < 200 || response.statusCode >= 300) {
@@ -193,7 +205,6 @@ class AnalyticsService {
         );
       }
     } catch (e) {
-      // Silently fail for tracking - don't interrupt user experience
       developer.log('Failed to track view: $e', name: 'AnalyticsService');
     }
   }
