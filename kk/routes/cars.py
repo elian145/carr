@@ -11,6 +11,7 @@ from sqlalchemy.orm import joinedload, selectinload
 
 from ..auth import get_current_user, log_user_action
 from ..models import Car, User, db, user_viewed_listings
+from ..retention_dispatch import dispatch_price_drop_alerts, dispatch_saved_search_alerts
 from ..time_utils import utcnow
 from .media import _normalize_car_image_kind, _pick_primary_listing_url
 
@@ -659,6 +660,11 @@ def create_car():
         db.session.add(car)
         db.session.commit()
         log_user_action(current_user, "create_listing", "car", car.public_id)
+        if car.is_active and (car.status or "active") == "active":
+            try:
+                dispatch_saved_search_alerts(car.id)
+            except Exception:
+                pass
         return jsonify({"message": "Car listing created successfully", "car": car.to_dict()}), 201
     except Exception as e:
         current_app.logger.exception("create_car failed: %s", e)
@@ -695,6 +701,8 @@ def update_car(car_id: str):
         car, err = _resolve_car_for_user(car_id, current_user)
         if err:
             return err
+
+        old_price = float(car.price or 0)
 
         raw = request.get_json(silent=True) or {}
 
@@ -824,6 +832,13 @@ def update_car(car_id: str):
         car.updated_at = utcnow()
         db.session.commit()
         log_user_action(current_user, "update_listing", "car", car.public_id)
+        if "price" in data:
+            new_price = float(car.price or 0)
+            if new_price < old_price and car.is_active:
+                try:
+                    dispatch_price_drop_alerts(car.id, old_price, new_price)
+                except Exception:
+                    pass
         try:
             car_payload = car.to_dict()
         except Exception as serialize_err:

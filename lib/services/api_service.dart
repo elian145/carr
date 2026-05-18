@@ -1045,6 +1045,72 @@ class ApiService {
     return (res['is_favorited'] == true) || (res['favorited'] == true);
   }
 
+  // Saved searches (alerts & retention)
+  static Future<Map<String, dynamic>> getSavedSearches() async {
+    return await _makeAuthenticatedRequest('GET', '/saved-searches');
+  }
+
+  static Future<Map<String, dynamic>> syncSavedSearches(
+    List<Map<String, dynamic>> items,
+  ) async {
+    return await _makeAuthenticatedRequest(
+      'POST',
+      '/saved-searches/sync',
+      body: {'items': items},
+    );
+  }
+
+  static Future<Map<String, dynamic>> createSavedSearch({
+    required String name,
+    required Map<String, dynamic> filters,
+    bool notify = true,
+    bool autoSaved = false,
+  }) async {
+    return await _makeAuthenticatedRequest(
+      'POST',
+      '/saved-searches',
+      body: {
+        'name': name,
+        'filters': filters,
+        'notify': notify,
+        'auto_saved': autoSaved,
+      },
+    );
+  }
+
+  static Future<Map<String, dynamic>> updateSavedSearch(
+    String searchId, {
+    String? name,
+    Map<String, dynamic>? filters,
+    bool? notify,
+    bool? autoSaved,
+  }) async {
+    final body = <String, dynamic>{};
+    if (name != null) body['name'] = name;
+    if (filters != null) body['filters'] = filters;
+    if (notify != null) body['notify'] = notify;
+    if (autoSaved != null) body['auto_saved'] = autoSaved;
+    return await _makeAuthenticatedRequest(
+      'PUT',
+      '/saved-searches/$searchId',
+      body: body,
+    );
+  }
+
+  static Future<void> deleteSavedSearch(String searchId) async {
+    await _makeAuthenticatedRequest('DELETE', '/saved-searches/$searchId');
+  }
+
+  static Future<Map<String, dynamic>> getRecentlyViewed({
+    int page = 1,
+    int perPage = 20,
+  }) async {
+    return await _makeAuthenticatedRequest(
+      'GET',
+      '/user/recently-viewed?page=$page&per_page=$perPage',
+    );
+  }
+
   static Future<Map<String, dynamic>> getMyListings({
     int page = 1,
     int perPage = 20,

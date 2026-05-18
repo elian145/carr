@@ -20,7 +20,12 @@ def make_celery() -> Celery:
         broker = (os.environ.get("CELERY_BROKER_URL") or "").strip() or "memory://"
         backend = (os.environ.get("CELERY_RESULT_BACKEND") or "").strip() or "cache+memory://"
 
-    c = Celery("kk", broker=broker, backend=backend, include=["kk.tasks.image_tasks"])
+    c = Celery(
+        "kk",
+        broker=broker,
+        backend=backend,
+        include=["kk.tasks.image_tasks", "kk.tasks.alert_tasks"],
+    )
     c.conf.update(
         task_serializer="json",
         accept_content=["json"],

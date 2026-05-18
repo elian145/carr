@@ -67,6 +67,8 @@ import '../features/comparison/state/car_comparison_store.dart';
 import '../data/car_catalog.dart';
 import '../data/car_name_translations.dart';
 import '../services/car_spec_index.dart';
+import '../services/saved_search_service.dart';
+import '../pages/recently_viewed_page.dart';
 import '../models/online_spec_variant.dart';
 import '../widgets/in_app_video_screen.dart';
 import '../pages/listing_image_gallery_page.dart';
@@ -3818,6 +3820,8 @@ class MyApp extends StatelessWidget {
                 '/my_listings': (context) =>
                     AuthGuard(child: modern_listings.MyListingsPage()),
                 '/comparison': (context) => CarComparisonPage(),
+                '/recently-viewed': (context) =>
+                    AuthGuard(child: const RecentlyViewedPage()),
                 '/analytics': (context) => AnalyticsPage(),
                 '/reset-password': (context) => ResetPasswordPage(),
                 '/verify-email': (context) {
@@ -4712,6 +4716,18 @@ class _HomePageState extends State<HomePage> {
       };
       current.insert(0, payload);
       await sp.setString(_savedSearchesKey, json.encode(current));
+      if (current.isNotEmpty) {
+        unawaited(SavedSearchService.pushItemToServer(
+          Map<String, dynamic>.from(current.first as Map),
+        ));
+        unawaited(SavedSearchService.persistLocal(
+          current
+              .map<Map<String, dynamic>>(
+                (e) => Map<String, dynamic>.from(e as Map),
+              )
+              .toList(),
+        ));
+      }
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(content: Text(AppLocalizations.of(context)!.saved)),
@@ -4766,6 +4782,11 @@ class _HomePageState extends State<HomePage> {
       }
 
       await sp.setString(_savedSearchesKey, json.encode(current));
+      if (current.isNotEmpty) {
+        unawaited(SavedSearchService.pushItemToServer(
+          Map<String, dynamic>.from(current.first as Map),
+        ));
+      }
       // Analytics tracking for auto-saved search
     } catch (_) {}
   }
@@ -12155,22 +12176,16 @@ class _SavedSearchesPageState extends State<SavedSearchesPage> {
   }
 
   Future<void> _load() async {
-    final sp = await SharedPreferences.getInstance();
-    final raw = sp.getString(_savedSearchesKey);
-    final list = (raw == null || raw.isEmpty)
-        ? []
-        : (json.decode(raw) as List).cast<dynamic>();
+    final merged = await SavedSearchService.loadMerged();
+    if (!mounted) return;
     setState(() {
-      _items = list
-          .map<Map<String, dynamic>>((e) => Map<String, dynamic>.from(e as Map))
-          .toList();
+      _items = merged;
       _loading = false;
     });
   }
 
   Future<void> _save() async {
-    final sp = await SharedPreferences.getInstance();
-    await sp.setString(_savedSearchesKey, json.encode(_items));
+    await SavedSearchService.persistLocal(_items);
   }
 
   void _rename(int index) async {
@@ -12201,14 +12216,17 @@ class _SavedSearchesPageState extends State<SavedSearchesPage> {
             : controller.text.trim();
       });
       await _save();
+      unawaited(SavedSearchService.pushItemToServer(_items[index]));
     }
   }
 
   void _delete(int index) async {
+    final id = (_items[index]['id'] ?? '').toString();
     setState(() {
       _items.removeAt(index);
     });
     await _save();
+    unawaited(SavedSearchService.deleteOnServer(id));
   }
 
   void _toggleNotify(int index, bool value) async {
@@ -12216,28 +12234,7 @@ class _SavedSearchesPageState extends State<SavedSearchesPage> {
       _items[index]['notify'] = value;
     });
     await _save();
-    // Optionally sync to backend if available
-    unawaited(_syncSavedSearchNotify(index));
-  }
-
-  Future<void> _syncSavedSearchNotify(int index) async {
-    try {
-      final sp = await SharedPreferences.getInstance();
-      final token = sp.getString('push_token');
-      if (token == null || token.isEmpty) return;
-      final body = {
-        'push_token': token,
-        'search_id': _items[index]['id'],
-        'notify': _items[index]['notify'] == true,
-        'filters': _items[index]['filters'] ?? {},
-      };
-      final url = Uri.parse('${getApiBase()}/api/saved_search/notify');
-      await http.post(
-        url,
-        headers: {'Content-Type': 'application/json'},
-        body: json.encode(body),
-      );
-    } catch (_) {}
+    unawaited(SavedSearchService.pushItemToServer(_items[index]));
   }
 
   @override
@@ -12310,6 +12307,24 @@ class _SavedSearchesPageState extends State<SavedSearchesPage> {
                     trailing: Row(
                       mainAxisSize: MainAxisSize.min,
                       children: [
+                        IconButton(
+                          icon: Icon(
+                            (item['notify'] == true)
+                                ? Icons.notifications_active
+                                : Icons.notifications_none,
+                            color: const Color(0xFFFF6B00),
+                          ),
+                          onPressed: () => _toggleNotify(
+                            index,
+                            item['notify'] != true,
+                          ),
+                          tooltip: _trLegacyText(
+                            context,
+                            'Alerts',
+                            ar: 'التنبيهات',
+                            ku: 'ئاگادارکردنەوە',
+                          ),
+                        ),
                         IconButton(
                           icon: Icon(Icons.search, color: Colors.green),
                           onPressed: () => _applySearch(filters),
@@ -29300,6 +29315,37 @@ class _ProfilePageState extends State<ProfilePage> {
                           return;
                         }
                         Navigator.pushNamed(context, '/my_listings');
+                      },
+                    ),
+                    SizedBox(height: 12),
+                    _buildActionButton(
+                      Icons.history,
+                      _trLegacyText(
+                        context,
+                        'Recently viewed',
+                        ar: 'شوهد مؤخراً',
+                        ku: 'دواتر بینراو',
+                      ),
+                      () {
+                        if (ApiService.accessToken == null ||
+                            ApiService.accessToken!.isEmpty) {
+                          _showAuthRequiredDialog(context);
+                          return;
+                        }
+                        Navigator.pushNamed(context, '/recently-viewed');
+                      },
+                    ),
+                    SizedBox(height: 12),
+                    _buildActionButton(
+                      Icons.bookmark_outline,
+                      AppLocalizations.of(context)!.savedSearchesTitle,
+                      () {
+                        Navigator.push(
+                          context,
+                          MaterialPageRoute(
+                            builder: (_) => const SavedSearchesPage(),
+                          ),
+                        );
                       },
                     ),
                     SizedBox(height: 12),

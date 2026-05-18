@@ -11,7 +11,7 @@ from sqlalchemy import or_
 from sqlalchemy.orm import selectinload
 
 from ..auth import get_current_user, log_user_action, validate_user_input
-from ..models import Car, User, db
+from ..models import Car, User, db, user_viewed_listings
 from ..security import generate_secure_filename, validate_file_upload
 from ..security import validate_input_sanitization
 from ..time_utils import utcnow
@@ -70,6 +70,61 @@ def get_profile():
 
     except Exception:
         return jsonify({"message": "Failed to get profile"}), 500
+
+
+@bp.route("/api/user/recently-viewed", methods=["GET"])
+@jwt_required()
+def recently_viewed():
+    """Listings the user recently viewed (newest first)."""
+    try:
+        from .cars import _with_media_compat
+
+        current_user = get_current_user()
+        if not current_user:
+            return jsonify({"message": "User not found"}), 404
+
+        page = max(1, request.args.get("page", 1, type=int))
+        per_page = min(50, max(1, request.args.get("per_page", 20, type=int)))
+
+        q = (
+            db.session.query(Car, user_viewed_listings.c.viewed_at)
+            .join(user_viewed_listings, user_viewed_listings.c.car_id == Car.id)
+            .filter(user_viewed_listings.c.user_id == current_user.id)
+            .filter(Car.is_active.is_(True))
+            .order_by(user_viewed_listings.c.viewed_at.desc())
+        )
+        pagination = q.paginate(page=page, per_page=per_page, error_out=False)
+
+        cars = []
+        for car, viewed_at in pagination.items:
+            d = _with_media_compat(car)
+            if viewed_at is not None:
+                try:
+                    d["viewed_at"] = viewed_at.isoformat()
+                except Exception:
+                    d["viewed_at"] = str(viewed_at)
+            if not d.get("city") and d.get("location"):
+                d["city"] = d["location"]
+            cars.append(d)
+
+        return (
+            jsonify(
+                {
+                    "cars": cars,
+                    "pagination": {
+                        "page": page,
+                        "per_page": per_page,
+                        "total": pagination.total,
+                        "pages": pagination.pages,
+                        "has_next": pagination.has_next,
+                        "has_prev": pagination.has_prev,
+                    },
+                }
+            ),
+            200,
+        )
+    except Exception:
+        return jsonify({"message": "Failed to get recently viewed listings"}), 500
 
 
 @bp.route("/api/user/profile", methods=["PUT"])

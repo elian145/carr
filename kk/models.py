@@ -15,7 +15,8 @@ from .time_utils import utcnow
 user_favorites = db.Table('user_favorites',
     db.Column('user_id', db.Integer, db.ForeignKey('user.id'), primary_key=True),
     db.Column('car_id', db.Integer, db.ForeignKey('car.id'), primary_key=True),
-    db.Column('created_at', db.DateTime, default=utcnow)
+    db.Column('created_at', db.DateTime, default=utcnow),
+    db.Column('price_at_favorite', db.Float, nullable=True),
 )
 
 user_viewed_listings = db.Table('user_viewed_listings',
@@ -610,6 +611,53 @@ class EmailVerification(db.Model):
     
     def __repr__(self):
         return f'<EmailVerification {self.token}>'
+
+class SavedSearch(db.Model):
+    __tablename__ = 'saved_search'
+
+    id = db.Column(db.Integer, primary_key=True)
+    public_id = db.Column(db.String(50), unique=True, default=lambda: str(uuid.uuid4()), index=True)
+    user_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False, index=True)
+    name = db.Column(db.String(200), nullable=False, default='')
+    filters = db.Column(db.JSON, nullable=False, default=dict)
+    notify = db.Column(db.Boolean, default=True, nullable=False)
+    auto_saved = db.Column(db.Boolean, default=False, nullable=False)
+    created_at = db.Column(db.DateTime, default=utcnow, index=True)
+    updated_at = db.Column(db.DateTime, default=utcnow, onupdate=utcnow)
+
+    user = db.relationship('User', backref=db.backref('saved_searches', lazy='dynamic'))
+
+    def to_dict(self):
+        return {
+            'id': self.public_id,
+            'name': self.name or '',
+            'filters': self.filters if isinstance(self.filters, dict) else {},
+            'notify': bool(self.notify),
+            'auto_saved': bool(self.auto_saved),
+            'created_at': self.created_at.isoformat() if self.created_at else None,
+            'updated_at': self.updated_at.isoformat() if self.updated_at else None,
+        }
+
+    def __repr__(self):
+        return f'<SavedSearch user={self.user_id} name={self.name!r}>'
+
+
+class SavedSearchAlert(db.Model):
+    """Records that a saved search already triggered an alert for a listing (dedupe)."""
+    __tablename__ = 'saved_search_alert'
+
+    id = db.Column(db.Integer, primary_key=True)
+    saved_search_id = db.Column(db.Integer, db.ForeignKey('saved_search.id'), nullable=False, index=True)
+    car_id = db.Column(db.Integer, db.ForeignKey('car.id'), nullable=False, index=True)
+    created_at = db.Column(db.DateTime, default=utcnow)
+
+    __table_args__ = (
+        db.UniqueConstraint('saved_search_id', 'car_id', name='uq_saved_search_alert'),
+    )
+
+    def __repr__(self):
+        return f'<SavedSearchAlert search={self.saved_search_id} car={self.car_id}>'
+
 
 class BlockedUser(db.Model):
     __tablename__ = 'blocked_user'

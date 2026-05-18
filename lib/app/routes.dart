@@ -20,6 +20,7 @@ import '../pages/dealer_profile_page.dart';
 import '../pages/dealers_directory_page.dart';
 import '../pages/edit_dealer_page.dart';
 import '../pages/edit_listing_page.dart';
+import '../pages/recently_viewed_page.dart';
 
 class _RouteArgsErrorPage extends StatelessWidget {
   final String routeName;
@@ -101,6 +102,7 @@ Map<String, WidgetBuilder> buildAppRoutes() {
       );
     },
     '/comparison': (context) => const comparison.ComparisonPage(),
+    '/recently-viewed': (context) => const RecentlyViewedPage(),
     '/analytics': (context) => AnalyticsPage(),
     '/admin/dealers': (context) => const AdminDealersPage(),
     '/dealers': (context) => const DealersDirectoryPage(),

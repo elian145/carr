@@ -9,6 +9,7 @@ from .jobs import bp as jobs_bp
 from .media import bp as media_bp
 from .user import bp as user_bp
 from .misc import bp as misc_bp
+from .saved_searches import bp as saved_searches_bp
 
 
 def register_blueprints(app) -> None:
@@ -23,4 +24,5 @@ def register_blueprints(app) -> None:
     app.register_blueprint(media_bp)
     app.register_blueprint(user_bp)
     app.register_blueprint(misc_bp)
+    app.register_blueprint(saved_searches_bp)
 

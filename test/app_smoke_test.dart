@@ -118,6 +118,13 @@ void main() {
               'cars': <dynamic>[],
               'pagination': {'has_next': false},
             });
+          case '/api/saved-searches':
+            return jsonOk({'saved_searches': <dynamic>[]});
+          case '/api/user/recently-viewed':
+            return jsonOk({
+              'cars': <dynamic>[],
+              'pagination': {'has_next': false},
+            });
           case '/api/auth/send_otp':
             return jsonOk({'sent': false, 'dev_code': '123456'});
           case '/api/auth/signup':
@@ -196,6 +203,7 @@ void main() {
     );
     await pushNamed('/my_listings');
     await pushNamed('/comparison');
+    await pushNamed('/recently-viewed');
     await pushNamed('/analytics');
 
     // Allow any SnackBar timers to complete so the test binding doesn't fail

@@ -2,9 +2,11 @@ from __future__ import annotations
 
 from flask import Blueprint, jsonify, request
 from flask_jwt_extended import jwt_required
+from sqlalchemy import update as sql_update
 
 from ..auth import get_current_user, log_user_action
 from ..models import Car, db, user_favorites
+from ..time_utils import utcnow
 
 bp = Blueprint("favorites", __name__)
 
@@ -88,6 +90,15 @@ def toggle_favorite(car_id):
             action = "removed"
         else:
             current_user.favorites.append(car)
+            db.session.flush()
+            db.session.execute(
+                sql_update(user_favorites)
+                .where(
+                    user_favorites.c.user_id == current_user.id,
+                    user_favorites.c.car_id == car.id,
+                )
+                .values(price_at_favorite=float(car.price or 0), created_at=utcnow())
+            )
             action = "added"
 
         db.session.commit()
