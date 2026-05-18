@@ -4,6 +4,7 @@ import '../l10n/app_localizations.dart';
 import '../legacy/main_legacy.dart'
     show buildGlobalCarCard, buildFloatingBottomNav, mapListingToGlobalCarCardData, navigateMainShellTab;
 import '../services/api_service.dart';
+import '../services/recently_viewed_service.dart';
 import '../shared/auth/token_store.dart';
 import '../shared/errors/user_error_text.dart';
 import '../shared/prefs/listing_layout_prefs.dart';
@@ -38,20 +39,18 @@ class _RecentlyViewedPageState extends State<RecentlyViewedPage> {
       await TokenStore.load();
       final token = ApiService.accessToken ?? TokenStore.token;
       if (token == null || token.isEmpty) {
+        final localOnly = await RecentlyViewedService.loadMerged();
         if (!mounted) return;
         setState(() {
+          _cars = localOnly;
           _loading = false;
-          _error = AppLocalizations.of(context)?.notLoggedIn ?? 'Not logged in';
+          _error = _cars.isEmpty
+              ? (AppLocalizations.of(context)?.notLoggedIn ?? 'Not logged in')
+              : null;
         });
         return;
       }
-      final data = await ApiService.getRecentlyViewed(page: 1, perPage: 40);
-      final raw = data['cars'];
-      final list = raw is List ? raw : const <dynamic>[];
-      final cars = list
-          .whereType<Map>()
-          .map((m) => Map<String, dynamic>.from(m.cast<String, dynamic>()))
-          .toList();
+      final cars = await RecentlyViewedService.loadMerged();
       if (!mounted) return;
       setState(() {
         _cars = cars;

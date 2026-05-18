@@ -58,11 +58,23 @@ def get_current_user():
         current_user_id = get_jwt_identity()
         if not current_user_id:
             return None
-        
-        user = User.query.filter_by(public_id=current_user_id).first()
+
+        ident = str(current_user_id).strip()
+        user = User.query.filter_by(public_id=ident).first()
+        if not user and ident.startswith("user:"):
+            try:
+                uid = int(ident.split(":", 1)[1])
+                user = User.query.filter_by(id=uid).first()
+            except Exception:
+                user = None
+        if not user and ident.isdigit():
+            try:
+                user = User.query.filter_by(id=int(ident)).first()
+            except Exception:
+                user = None
         if not user or not user.is_active:
             return None
-        
+
         return user
     except Exception as e:
         current_app.logger.error(f"Error getting current user: {str(e)}")

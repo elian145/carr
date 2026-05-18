@@ -85,11 +85,20 @@ class ApiService {
     _refreshToken = null;
   }
 
+  static Future<void> _ensureTokenLoaded() async {
+    if (_accessToken != null && _accessToken!.isNotEmpty) return;
+    await TokenStore.load();
+    final t = TokenStore.token;
+    if (t != null && t.isNotEmpty) {
+      _accessToken = t;
+    }
+  }
+
   // Get headers with authorization
   static Map<String, String> _getHeaders({bool includeAuth = true}) {
     Map<String, String> headers = {'Content-Type': 'application/json'};
 
-    if (includeAuth && _accessToken != null) {
+    if (includeAuth && _accessToken != null && _accessToken!.isNotEmpty) {
       headers['Authorization'] = 'Bearer $_accessToken';
     }
 
@@ -206,6 +215,7 @@ class ApiService {
     Map<String, dynamic>? body,
     Map<String, String>? headers,
   }) async {
+    await _ensureTokenLoaded();
     final url = Uri.parse('$baseUrl$endpoint');
     final requestHeaders = {..._getHeaders(), ...?headers};
 
@@ -832,10 +842,11 @@ class ApiService {
   }
 
   static Future<Map<String, dynamic>> getCar(String carId) async {
+    await _ensureTokenLoaded();
     final response = await http
         .get(
           Uri.parse('$baseUrl/cars/$carId'),
-          headers: _getHeaders(includeAuth: false),
+          headers: _getHeaders(includeAuth: true),
         )
         .timeout(_defaultTimeout);
 

@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:convert';
 
 import 'package:flutter/material.dart';
@@ -52,6 +53,7 @@ class _CarDetailPageState extends State<CarDetailPage> {
   @override
   void initState() {
     super.initState();
+    unawaited(AnalyticsService.trackView(widget.carId));
     _load();
   }
 
@@ -246,7 +248,10 @@ class _CarDetailPageState extends State<CarDetailPage> {
       final idForAnalytics = listingPrimaryId(car).isNotEmpty
           ? listingPrimaryId(car)
           : widget.carId;
-      await AnalyticsService.trackView(idForAnalytics);
+      await AnalyticsService.trackView(
+        idForAnalytics,
+        listingSnapshot: car,
+      );
 
       // Favorite status (best-effort).
       await _loadFavoriteStatus();

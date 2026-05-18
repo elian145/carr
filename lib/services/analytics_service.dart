@@ -5,6 +5,7 @@ import 'package:http/http.dart' as http;
 import '../models/analytics_model.dart';
 import 'api_service.dart';
 import 'config.dart';
+import 'recently_viewed_service.dart';
 
 class AnalyticsService {
   static String get _baseUrl => apiBaseApi();
@@ -171,12 +172,18 @@ class AnalyticsService {
   }
 
   /// Track a view for a listing
-  static Future<void> trackView(String listingId) async {
+  static Future<void> trackView(
+    String listingId, {
+    Map<String, dynamic>? listingSnapshot,
+  }) async {
     final id = listingId.trim();
     if (id.isEmpty) return;
 
     try {
-      await ApiService.recordListingView(id);
+      await RecentlyViewedService.recordView(
+        id,
+        snapshot: listingSnapshot,
+      );
     } catch (e) {
       developer.log(
         'Failed to record recently viewed: $e',

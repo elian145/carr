@@ -525,15 +525,8 @@ class KuWidgetsLocalizationsDelegate
 }
 
 String getApiBase() {
-  // Must match [effectiveApiBase] in config.dart — home feed uses raw [http.get]
-  // with this base, while [ApiService] uses [apiBaseApi] (already effective).
-  // If we only used [apiBase] here, an empty compile-time API_BASE yields '' and
-  // listing fetches break on device even though authenticated calls work.
-  final base = effectiveApiBase();
-  if (Platform.isAndroid && base == 'http://192.168.1.7:5003') {
-    return 'http://10.0.2.2:5000';
-  }
-  return base;
+  // Must match [effectiveApiBase] so listing fetches and [ApiService] hit the same host.
+  return effectiveApiBase();
 }
 
 // Normalize relative image path into a full URL that works across
@@ -13441,6 +13434,9 @@ class _CarDetailsPageState extends State<CarDetailsPage> {
     _listingColumnsPref = ListingLayoutPrefs.columns.value;
     ListingLayoutPrefs.load();
     ListingLayoutPrefs.columns.addListener(_onListingLayoutChanged);
+    unawaited(
+      AnalyticsService.trackView(widget.carId.toString()),
+    );
     _loadCar();
   }
 
@@ -13494,7 +13490,9 @@ class _CarDetailsPageState extends State<CarDetailsPage> {
       final cacheKey = 'cache_car_${widget.carId}';
       final url = Uri.parse('${getApiBase()}/api/cars/${widget.carId}');
       final headers = <String, String>{'Accept': 'application/json'};
-      final token = ApiService.accessToken;
+      await TokenStore.load();
+      await ApiService.initializeTokens();
+      final token = ApiService.accessToken ?? TokenStore.token;
       if (token != null && token.isNotEmpty) {
         headers['Authorization'] = 'Bearer $token';
       }
@@ -13560,6 +13558,7 @@ class _CarDetailsPageState extends State<CarDetailsPage> {
             }
             _precacheListingImages();
             unawaited(_loadFavoriteStatus());
+            unawaited(_trackView());
           } else if (data is List && data.isNotEmpty) {
             if (mounted) {
               setState(() {
@@ -13572,6 +13571,7 @@ class _CarDetailsPageState extends State<CarDetailsPage> {
             }
             _precacheListingImages();
             unawaited(_loadFavoriteStatus());
+            unawaited(_trackView());
           }
         } catch (_) {}
       }
@@ -13593,7 +13593,10 @@ class _CarDetailsPageState extends State<CarDetailsPage> {
       final id = (car != null && listingPrimaryId(car!).isNotEmpty)
           ? listingPrimaryId(car!)
           : widget.carId.toString();
-      await AnalyticsService.trackView(id);
+      final snap = car != null
+          ? Map<String, dynamic>.from(car!)
+          : null;
+      await AnalyticsService.trackView(id, listingSnapshot: snap);
     } catch (e) {
       _debugLog('Failed to track view: $e');
     }
