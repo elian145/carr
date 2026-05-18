@@ -164,5 +164,12 @@ bool forceSkipBlur() {
   return kForceSkipBlur;
 }
 
+/// Support / legal URLs (optional --dart-define overrides; else fetched from GET /api/config/trust).
+const String kSupportEmail = String.fromEnvironment('SUPPORT_EMAIL', defaultValue: '');
+const String kSupportPhone = String.fromEnvironment('SUPPORT_PHONE', defaultValue: '');
+const String kSupportWhatsapp = String.fromEnvironment('SUPPORT_WHATSAPP', defaultValue: '');
+const String kTermsUrl = String.fromEnvironment('TERMS_URL', defaultValue: '');
+const String kPrivacyUrl = String.fromEnvironment('PRIVACY_URL', defaultValue: '');
+
 // No third-party plate API keys are exposed to the client.
 // All license plate blurring is performed server-side via the backend.

@@ -30,6 +30,26 @@ def _listing_browser_image_url(rel: str) -> str:
     return f"{root}/static/{r}"
 
 
+def _trust_config_payload() -> dict:
+    """Public trust/support URLs for mobile clients (env-driven)."""
+    def _env(key: str, default: str = "") -> str:
+        return (os.environ.get(key) or default).strip()
+
+    return {
+        "support_email": _env("SUPPORT_EMAIL", "support@carlistings.com"),
+        "support_phone": _env("SUPPORT_PHONE", ""),
+        "support_whatsapp": _env("SUPPORT_WHATSAPP", ""),
+        "terms_url": _env("TERMS_URL", ""),
+        "privacy_url": _env("PRIVACY_URL", ""),
+    }
+
+
+@bp.route("/api/config/trust", methods=["GET"])
+def trust_config():
+    """Support contact + legal URLs for Help, signup, and settings."""
+    return jsonify(_trust_config_payload()), 200
+
+
 @bp.route("/health", methods=["GET"])
 def health():
     return jsonify({"status": "ok"}), 200

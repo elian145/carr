@@ -9,6 +9,9 @@ import '../shared/account/delete_account_dialog.dart';
 import '../shared/errors/user_error_text.dart';
 import '../state/locale_controller.dart';
 import '../theme_provider.dart';
+import 'help_center_page.dart';
+import 'legal_document_page.dart';
+import '../services/trust_config.dart';
 
 class SettingsPage extends StatefulWidget {
   const SettingsPage({super.key});
@@ -273,6 +276,49 @@ class _SettingsPageState extends State<SettingsPage> {
                       ? const Icon(Icons.edit_outlined)
                       : null,
                   onTap: allowRuntimeApiBaseOverride() ? _editApiBase : null,
+                ),
+                const Divider(height: 1),
+                ListTile(
+                  leading: const Icon(Icons.help_outline),
+                  title: Text(loc?.helpSupportTitle ?? 'Help & Support'),
+                  onTap: () => Navigator.push(
+                    context,
+                    MaterialPageRoute(builder: (_) => const HelpCenterPage()),
+                  ),
+                ),
+                ListTile(
+                  leading: const Icon(Icons.description_outlined),
+                  title: const Text('Terms of Service'),
+                  onTap: () async {
+                    final cfg = await TrustConfig.load();
+                    if (!context.mounted) return;
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                        builder: (_) => LegalDocumentPage(
+                          document: LegalDocument.terms,
+                          externalUrl: cfg.termsUrl,
+                        ),
+                      ),
+                    );
+                  },
+                ),
+                ListTile(
+                  leading: const Icon(Icons.privacy_tip_outlined),
+                  title: const Text('Privacy Policy'),
+                  onTap: () async {
+                    final cfg = await TrustConfig.load();
+                    if (!context.mounted) return;
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                        builder: (_) => LegalDocumentPage(
+                          document: LegalDocument.privacy,
+                          externalUrl: cfg.privacyUrl,
+                        ),
+                      ),
+                    );
+                  },
                 ),
                 const Divider(height: 1),
                 if (auth.isAuthenticated) ...[

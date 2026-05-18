@@ -3,9 +3,10 @@ from __future__ import annotations
 import logging
 
 from flask import Blueprint, jsonify, request
+from sqlalchemy.orm import joinedload
 
 from ..auth import admin_required, get_current_user, log_user_action
-from ..models import Car, Message, Notification, User, UserAction, db
+from ..models import Car, ListingReport, Message, Notification, User, UserAction, UserReport, db
 from ..time_utils import utcnow
 
 bp = Blueprint("admin", __name__, url_prefix="/api/admin")
@@ -346,4 +347,131 @@ def dealers_reject(user_public_id: str):
         db.session.rollback()
         logger.error("admin dealers_reject error: %s", e, exc_info=True)
         return jsonify({"message": "Failed to reject dealer application"}), 500
+
+
+_VALID_REPORT_STATUSES = frozenset({"pending", "reviewed", "resolved", "dismissed"})
+
+
+def _apply_report_status(report, status: str, admin_notes: str | None):
+    report.status = status
+    report.admin_notes = admin_notes
+    if status in ("resolved", "dismissed"):
+        report.resolved_at = utcnow()
+    else:
+        report.resolved_at = None
+
+
+@bp.route("/reports", methods=["GET"])
+@admin_required
+def list_reports():
+    """List user and listing reports for moderation."""
+    try:
+        page = request.args.get("page", 1, type=int)
+        per_page = min(max(request.args.get("per_page", 20, type=int), 1), 100)
+        status = (request.args.get("status") or "pending").strip().lower()
+        report_type = (request.args.get("type") or "all").strip().lower()
+
+        user_q = UserReport.query
+        listing_q = ListingReport.query
+        if status and status != "all":
+            user_q = user_q.filter_by(status=status)
+            listing_q = listing_q.filter_by(status=status)
+
+        user_reports = []
+        listing_reports = []
+        if report_type in ("all", "user"):
+            user_reports = (
+                user_q.options(
+                    joinedload(UserReport.reporter),
+                    joinedload(UserReport.reported),
+                )
+                .order_by(UserReport.created_at.desc())
+                .limit(200)
+                .all()
+            )
+        if report_type in ("all", "listing"):
+            listing_reports = (
+                listing_q.options(
+                    joinedload(ListingReport.reporter),
+                    joinedload(ListingReport.car),
+                )
+                .order_by(ListingReport.created_at.desc())
+                .limit(200)
+                .all()
+            )
+
+        combined = [r.to_admin_dict() for r in user_reports] + [
+            r.to_admin_dict() for r in listing_reports
+        ]
+        combined.sort(key=lambda x: x.get("created_at") or "", reverse=True)
+
+        total = len(combined)
+        start = (page - 1) * per_page
+        end = start + per_page
+        items = combined[start:end]
+        pages = max(1, (total + per_page - 1) // per_page)
+
+        return (
+            jsonify(
+                {
+                    "reports": items,
+                    "pagination": {
+                        "page": page,
+                        "per_page": per_page,
+                        "total": total,
+                        "pages": pages,
+                        "has_next": end < total,
+                        "has_prev": page > 1,
+                    },
+                }
+            ),
+            200,
+        )
+    except Exception as e:
+        logger.error("admin list_reports error: %s", e, exc_info=True)
+        return jsonify({"message": "Failed to list reports"}), 500
+
+
+@bp.route("/reports/user/<int:report_id>", methods=["PATCH"])
+@admin_required
+def update_user_report(report_id: int):
+    """Resolve or dismiss a user report."""
+    try:
+        report = UserReport.query.get(report_id)
+        if not report:
+            return jsonify({"message": "Report not found"}), 404
+        data = request.get_json(silent=True) or {}
+        status = (data.get("status") or "").strip().lower()
+        if status not in _VALID_REPORT_STATUSES:
+            return jsonify({"message": "Invalid status"}), 400
+        admin_notes = (data.get("admin_notes") or "").strip()[:2000] or None
+        _apply_report_status(report, status, admin_notes)
+        db.session.commit()
+        return jsonify({"report": report.to_admin_dict()}), 200
+    except Exception as e:
+        db.session.rollback()
+        logger.error("admin update_user_report error: %s", e, exc_info=True)
+        return jsonify({"message": "Failed to update report"}), 500
+
+
+@bp.route("/reports/listing/<int:report_id>", methods=["PATCH"])
+@admin_required
+def update_listing_report(report_id: int):
+    """Resolve or dismiss a listing report."""
+    try:
+        report = ListingReport.query.get(report_id)
+        if not report:
+            return jsonify({"message": "Report not found"}), 404
+        data = request.get_json(silent=True) or {}
+        status = (data.get("status") or "").strip().lower()
+        if status not in _VALID_REPORT_STATUSES:
+            return jsonify({"message": "Invalid status"}), 400
+        admin_notes = (data.get("admin_notes") or "").strip()[:2000] or None
+        _apply_report_status(report, status, admin_notes)
+        db.session.commit()
+        return jsonify({"report": report.to_admin_dict()}), 200
+    except Exception as e:
+        db.session.rollback()
+        logger.error("admin update_listing_report error: %s", e, exc_info=True)
+        return jsonify({"message": "Failed to update report"}), 500
 

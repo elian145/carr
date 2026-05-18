@@ -6,11 +6,12 @@ from datetime import datetime
 
 from flask import Blueprint, current_app, jsonify, request
 from flask_jwt_extended import jwt_required, verify_jwt_in_request
+from ..security import rate_limit
 from sqlalchemy import select, update
 from sqlalchemy.orm import joinedload, selectinload
 
 from ..auth import get_current_user, log_user_action
-from ..models import Car, User, db, user_viewed_listings
+from ..models import Car, ListingReport, User, db, user_viewed_listings
 from ..retention_dispatch import dispatch_price_drop_alerts, dispatch_saved_search_alerts
 from ..time_utils import utcnow
 from .media import _normalize_car_image_kind, _pick_primary_listing_url
@@ -663,7 +664,7 @@ def create_car():
         return jsonify({"message": f"Failed to create car listing: {str(e)}"}), 500
 
 
-def _resolve_car_for_user(car_id: str, user, *, require_owner: bool = True):
+def _resolve_car_for_user(car_id: str, user, *, require_owner: bool = True, require_active: bool = True):
     """Find car by public_id or numeric id; optional owner/admin check."""
     car = Car.query.filter_by(public_id=car_id).first()
     if not car and str(car_id).isdigit():
@@ -672,6 +673,8 @@ def _resolve_car_for_user(car_id: str, user, *, require_owner: bool = True):
         except (TypeError, ValueError):
             car = None
     if not car:
+        return None, (jsonify({"message": "Car not found"}), 404)
+    if require_active and not car.is_active and not getattr(user, "is_admin", False):
         return None, (jsonify({"message": "Car not found"}), 404)
     if require_owner and car.seller_id != user.id and not user.is_admin:
         return None, (
@@ -940,4 +943,46 @@ def compat_my_listings():
         return jsonify(result), 200
     except Exception:
         return jsonify({"message": "Failed to get your listings"}), 500
+
+
+@bp.route("/api/cars/<car_id>/report", methods=["POST"])
+@jwt_required()
+@rate_limit(max_requests=10, window_minutes=60, per_ip=False)
+def report_car(car_id: str):
+    """Report a listing for policy violations or fraud."""
+    try:
+        current_user = get_current_user()
+        if not current_user:
+            return jsonify({"message": "Unauthorized"}), 401
+
+        car, err = _resolve_car_for_user(
+            car_id, current_user, require_owner=False, require_active=False
+        )
+        if err:
+            return err
+
+        if car.seller_id == current_user.id:
+            return jsonify({"message": "Cannot report your own listing"}), 400
+
+        data = request.get_json(silent=True) or {}
+        reason = str(data.get("reason") or "").strip()
+        if not reason:
+            return jsonify({"message": "reason is required"}), 400
+        if len(reason) > 200:
+            reason = reason[:200]
+        details = str(data.get("details") or "").strip()[:2000] or None
+
+        db.session.add(
+            ListingReport(
+                reporter_id=current_user.id,
+                car_id=car.id,
+                reason=reason,
+                details=details,
+            )
+        )
+        db.session.commit()
+        return jsonify({"message": "Report submitted. Thank you."}), 201
+    except Exception:
+        db.session.rollback()
+        return jsonify({"message": "Failed to submit report"}), 500
 

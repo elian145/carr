@@ -1442,13 +1442,85 @@ class ApiService {
     required String reason,
     String? details,
   }) async {
+    final id = Uri.encodeComponent(userId.trim());
     await _makeAuthenticatedRequest(
       'POST',
-      '/users/$userId/report',
+      '/users/$id/report',
       body: {
         'reason': reason,
         if (details != null && details.trim().isNotEmpty)
           'details': details.trim(),
+      },
+    );
+  }
+
+  /// Report a listing.
+  static Future<void> reportListing(
+    String listingId, {
+    required String reason,
+    String? details,
+  }) async {
+    final id = Uri.encodeComponent(listingId.trim());
+    await _makeAuthenticatedRequest(
+      'POST',
+      '/cars/$id/report',
+      body: {
+        'reason': reason,
+        if (details != null && details.trim().isNotEmpty)
+          'details': details.trim(),
+      },
+    );
+  }
+
+  /// Admin: list user and listing reports.
+  static Future<Map<String, dynamic>> adminListReports({
+    String status = 'pending',
+    String type = 'all',
+    int page = 1,
+    int perPage = 20,
+  }) async {
+    final q = Uri(queryParameters: {
+      'status': status,
+      'type': type,
+      'page': '$page',
+      'per_page': '$perPage',
+    });
+    return await _makeAuthenticatedRequest(
+      'GET',
+      '/admin/reports${q.query.isEmpty ? '' : '?${q.query}'}',
+    );
+  }
+
+  /// Admin: update a user report status.
+  static Future<Map<String, dynamic>> adminUpdateUserReport(
+    int reportId, {
+    required String status,
+    String? adminNotes,
+  }) async {
+    return await _makeAuthenticatedRequest(
+      'PATCH',
+      '/admin/reports/user/$reportId',
+      body: {
+        'status': status,
+        if (adminNotes != null && adminNotes.trim().isNotEmpty)
+          'admin_notes': adminNotes.trim(),
+      },
+    );
+  }
+
+  /// Admin: update a listing report status.
+  static Future<Map<String, dynamic>> adminUpdateListingReport(
+    int reportId, {
+    required String status,
+    String? adminNotes,
+  }) async {
+    return await _makeAuthenticatedRequest(
+      'PATCH',
+      '/admin/reports/listing/$reportId',
+      body: {
+        'status': status,
+        if (adminNotes != null && adminNotes.trim().isNotEmpty)
+          'admin_notes': adminNotes.trim(),
       },
     );
   }

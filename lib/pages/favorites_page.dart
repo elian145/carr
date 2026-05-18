@@ -186,7 +186,9 @@ class _FavoritesPageState extends State<FavoritesPage> {
                                       SliverGridDelegateWithFixedCrossAxisCount(
                                     crossAxisCount: listingColumns,
                                     childAspectRatio:
-                                        listingColumns == 2 ? 0.62 : 2.78,
+                                        ListingLayoutPrefs.gridChildAspectRatio(
+                                      listingColumns,
+                                    ),
                                     crossAxisSpacing: 8,
                                     mainAxisSpacing: 8,
                                   ),

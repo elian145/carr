@@ -1,5 +1,3 @@
-import 'dart:io';
-
 import 'package:flutter/material.dart';
 
 import '../l10n/app_localizations.dart';
@@ -255,9 +253,8 @@ class _RecentlyViewedPageState extends State<RecentlyViewedPage> {
             crossAxisCount: listingColumns,
             crossAxisSpacing: 8,
             mainAxisSpacing: 8,
-            childAspectRatio: listingColumns == 2
-                ? (Platform.isIOS ? 0.66 : 0.61)
-                : 2.78,
+            childAspectRatio:
+                ListingLayoutPrefs.gridChildAspectRatio(listingColumns),
           ),
           itemCount: _cars.length,
           itemBuilder: (context, index) {

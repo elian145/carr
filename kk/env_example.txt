@@ -75,3 +75,11 @@ PLATE_BLUR_ENABLED=1
 PLATE_BLUR_EXPAND=0
 # If 1, also saves an "original_*" copy next to the blurred image
 PLATE_BLUR_KEEP_ORIGINAL=0
+
+# Trust & support (mobile Help / Terms / Contact)
+SUPPORT_EMAIL=support@carlistings.com
+SUPPORT_PHONE=
+# E.164 or wa.me link, e.g. https://wa.me/9647XXXXXXXX
+SUPPORT_WHATSAPP=
+TERMS_URL=
+PRIVACY_URL=

@@ -70,6 +70,10 @@ import '../services/car_spec_index.dart';
 import '../services/saved_search_service.dart';
 import '../services/recently_viewed_service.dart';
 import '../pages/recently_viewed_page.dart';
+import '../pages/help_center_page.dart';
+import '../pages/legal_document_page.dart';
+import '../pages/admin_reports_page.dart';
+import '../shared/trust/report_dialog.dart';
 import '../models/online_spec_variant.dart';
 import '../widgets/in_app_video_screen.dart';
 import '../pages/listing_image_gallery_page.dart';
@@ -3839,6 +3843,9 @@ class MyApp extends StatelessWidget {
                     auth_pages.ForgotPasswordPage(),
                 '/admin/dealers': (context) =>
                     AuthGuard(child: AdminDealersPage()),
+                '/admin/reports': (context) =>
+                    AuthGuard(child: const AdminReportsPage()),
+                '/help': (context) => const HelpCenterPage(),
                 '/dealer/edit': (context) =>
                     AuthGuard(child: EditDealerPage()),
                 '/dealer/profile': (context) {
@@ -13341,6 +13348,22 @@ class _CarDetailsPageState extends State<CarDetailsPage> {
     Navigator.pop(context, {'deleted': true, 'carId': id});
   }
 
+  void _onCarDetailMenuSelected(String value) {
+    final listingId = listingPrimaryId(car ?? {'id': widget.carId});
+    if (value == 'report_listing' && listingId.isNotEmpty) {
+      showReportListingDialog(context, listingId: listingId);
+      return;
+    }
+    if (value == 'report_user') {
+      final seller = _sellerMap();
+      final sellerId =
+          (seller?['id'] ?? seller?['user_id'] ?? '').toString().trim();
+      if (sellerId.isNotEmpty) {
+        showReportUserDialog(context, userPublicId: sellerId);
+      }
+    }
+  }
+
   Future<void> _toggleFavoriteOnServer() async {
     try {
       final tok = ApiService.accessToken;
@@ -14096,6 +14119,42 @@ class _CarDetailsPageState extends State<CarDetailsPage> {
                         isFavorite ? Icons.favorite : Icons.favorite_border,
                       ),
                     ),
+                    if (!_isListingOwner &&
+                        ApiService.accessToken != null &&
+                        ApiService.accessToken!.isNotEmpty)
+                      PopupMenuButton<String>(
+                        onSelected: _onCarDetailMenuSelected,
+                        itemBuilder: (ctx) => [
+                          PopupMenuItem(
+                            value: 'report_listing',
+                            child: Text(
+                              _trLegacyText(
+                                ctx,
+                                'Report listing',
+                                ar: 'الإبلاغ عن الإعلان',
+                                ku: 'ڕاپۆرتکردنی ڕیکلام',
+                              ),
+                            ),
+                          ),
+                          if ((_sellerMap()?['id'] ??
+                                  _sellerMap()?['user_id'] ??
+                                  '')
+                              .toString()
+                              .trim()
+                              .isNotEmpty)
+                            PopupMenuItem(
+                              value: 'report_user',
+                              child: Text(
+                                _trLegacyText(
+                                  ctx,
+                                  'Report seller',
+                                  ar: 'الإبلاغ عن البائع',
+                                  ku: 'ڕاپۆرتکردنی فرۆشیار',
+                                ),
+                              ),
+                            ),
+                        ],
+                      ),
                   ],
                   flexibleSpace: FlexibleSpaceBar(
                     background: Stack(
@@ -28150,6 +28209,7 @@ class _SignupPageState extends State<SignupPage> {
   bool _otpSent = false;
   String _authType = 'email'; // 'email' or 'phone'
   bool _isDealer = false;
+  bool _acceptedTerms = false;
 
   @override
   void dispose() {
@@ -28329,6 +28389,22 @@ class _SignupPageState extends State<SignupPage> {
   }
 
   Future<void> _signup() async {
+    if (!_acceptedTerms) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(
+            _trLegacyText(
+              context,
+              'Please accept the Terms and Privacy Policy',
+              ar: 'يرجى الموافقة على الشروط وسياسة الخصوصية',
+              ku: 'تکایە مەرج و سیاسەتی تایبەتمەندی قبوڵ بکە',
+            ),
+          ),
+        ),
+      );
+      return;
+    }
     if (!_formKey.currentState!.validate()) return;
     final username = _usernameController.text.trim();
     if (!_isDealer && username.isEmpty) {
@@ -28806,9 +28882,78 @@ class _SignupPageState extends State<SignupPage> {
                   return null;
                 },
               ),
-              SizedBox(height: 20),
+              SizedBox(height: 12),
+              CheckboxListTile(
+                value: _acceptedTerms,
+                onChanged: _loading
+                    ? null
+                    : (v) => setState(() => _acceptedTerms = v == true),
+                controlAffinity: ListTileControlAffinity.leading,
+                contentPadding: EdgeInsets.zero,
+                title: Wrap(
+                  crossAxisAlignment: WrapCrossAlignment.center,
+                  children: [
+                    Text(
+                      _trLegacyText(
+                        context,
+                        'I agree to the ',
+                        ar: 'أوافق على ',
+                        ku: 'ڕازیم بە ',
+                      ),
+                    ),
+                    GestureDetector(
+                      onTap: () => Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                          builder: (_) => const LegalDocumentPage(
+                            document: LegalDocument.terms,
+                          ),
+                        ),
+                      ),
+                      child: Text(
+                        _trLegacyText(
+                          context,
+                          'Terms',
+                          ar: 'الشروط',
+                          ku: 'مەرجەکان',
+                        ),
+                        style: TextStyle(
+                          color: Theme.of(context).colorScheme.primary,
+                          decoration: TextDecoration.underline,
+                        ),
+                      ),
+                    ),
+                    Text(
+                      _trLegacyText(context, ' and ', ar: ' و', ku: ' و'),
+                    ),
+                    GestureDetector(
+                      onTap: () => Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                          builder: (_) => const LegalDocumentPage(
+                            document: LegalDocument.privacy,
+                          ),
+                        ),
+                      ),
+                      child: Text(
+                        _trLegacyText(
+                          context,
+                          'Privacy Policy',
+                          ar: 'سياسة الخصوصية',
+                          ku: 'تایبەتمەندی',
+                        ),
+                        style: TextStyle(
+                          color: Theme.of(context).colorScheme.primary,
+                          decoration: TextDecoration.underline,
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              SizedBox(height: 12),
               ElevatedButton(
-                onPressed: _loading ? null : _signup,
+                onPressed: (_loading || !_acceptedTerms) ? null : _signup,
                 child: _loading
                     ? SizedBox(
                         width: 18,
@@ -29521,6 +29666,24 @@ class _ProfilePageState extends State<ProfilePage> {
                           Navigator.pushNamed(context, '/admin/dealers');
                         },
                       ),
+                      SizedBox(height: 12),
+                      _buildActionButton(
+                        Icons.flag_outlined,
+                        _trLegacyText(
+                          context,
+                          'Reports queue (admin)',
+                          ar: 'قائمة البلاغات (مسؤول)',
+                          ku: 'ڕیزبەندی ڕاپۆرت (بەڕێوەبەر)',
+                        ),
+                        () {
+                          if (ApiService.accessToken == null ||
+                              ApiService.accessToken!.isEmpty) {
+                            _showAuthRequiredDialog(context);
+                            return;
+                          }
+                          Navigator.pushNamed(context, '/admin/reports');
+                        },
+                      ),
                     ],
                     SizedBox(height: 12),
                     _buildActionButton(
@@ -29603,13 +29766,7 @@ class _ProfilePageState extends State<ProfilePage> {
                       Icons.contact_mail_outlined,
                       AppLocalizations.of(context)!.helpSupportTitle,
                       () {
-                        ScaffoldMessenger.of(context).showSnackBar(
-                          SnackBar(
-                            content: Text(
-                              AppLocalizations.of(context)!.helpSupportComingSoon,
-                            ),
-                          ),
-                        );
+                        Navigator.pushNamed(context, '/help');
                       },
                     ),
                     if (ApiService.accessToken != null &&

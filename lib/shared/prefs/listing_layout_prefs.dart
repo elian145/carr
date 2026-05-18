@@ -1,3 +1,5 @@
+import 'dart:io' show Platform;
+
 import 'package:flutter/foundation.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
@@ -34,6 +36,12 @@ class ListingLayoutPrefs {
       final sp = await SharedPreferences.getInstance();
       await sp.setInt(_key, v);
     } catch (_) {}
+  }
+
+  /// Grid cell aspect ratio (width / height) — matches Home feed so cards do not overflow.
+  static double gridChildAspectRatio(int listingColumns) {
+    if (listingColumns == 1) return 2.78;
+    return Platform.isIOS ? 0.66 : 0.61;
   }
 }
 

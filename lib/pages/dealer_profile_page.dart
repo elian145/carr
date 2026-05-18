@@ -18,6 +18,7 @@ import '../shared/errors/user_error_text.dart';
 import '../theme_provider.dart';
 import '../widgets/dealer_location_map_preview.dart';
 import 'edit_dealer_page.dart';
+import '../shared/trust/report_dialog.dart';
 
 class DealerProfilePage extends StatefulWidget {
   final String dealerPublicId;
@@ -496,7 +497,20 @@ class _DealerProfilePageState extends State<DealerProfilePage> {
     final isLightShell = Theme.of(context).brightness == Brightness.light;
 
     return Scaffold(
-      appBar: AppBar(title: Text(_tr('Dealer', ar: 'الوكيل', ku: 'وەکیل'))),
+      appBar: AppBar(
+        title: Text(_tr('Dealer', ar: 'الوكيل', ku: 'وەکیل')),
+        actions: [
+          if (auth.isAuthenticated && !isDealerOwner)
+            IconButton(
+              tooltip: _tr('Report user', ar: 'الإبلاغ عن المستخدم', ku: 'ڕاپۆرتکردنی بەکارهێنەر'),
+              icon: const Icon(Icons.flag_outlined),
+              onPressed: () => showReportUserDialog(
+                context,
+                userPublicId: widget.dealerPublicId,
+              ),
+            ),
+        ],
+      ),
       backgroundColor: isLightShell ? AppThemes.lightAppBackground : null,
       body: Stack(
         children: [
@@ -750,11 +764,12 @@ class _DealerProfilePageState extends State<DealerProfilePage> {
                                 gridDelegate:
                                     SliverGridDelegateWithFixedCrossAxisCount(
                                   crossAxisCount: listingColumns,
-                                  childAspectRatio: listingColumns == 2
-                                      ? 0.62
-                                      : 2.78,
-                                  crossAxisSpacing: 12,
-                                  mainAxisSpacing: 12,
+                                  childAspectRatio:
+                                      ListingLayoutPrefs.gridChildAspectRatio(
+                                    listingColumns,
+                                  ),
+                                  crossAxisSpacing: 8,
+                                  mainAxisSpacing: 8,
                                 ),
                                 itemCount: _listings.length,
                                 itemBuilder: (context, index) {

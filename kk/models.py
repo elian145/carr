@@ -683,11 +683,91 @@ class UserReport(db.Model):
     reported_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False, index=True)
     reason = db.Column(db.String(200), nullable=False)
     details = db.Column(db.Text, nullable=True)
-    status = db.Column(db.String(20), default='pending')  # pending, reviewed, resolved
+    status = db.Column(db.String(20), default='pending')  # pending, reviewed, resolved, dismissed
+    admin_notes = db.Column(db.Text, nullable=True)
     created_at = db.Column(db.DateTime, default=utcnow)
+    resolved_at = db.Column(db.DateTime, nullable=True)
+
+    reporter = db.relationship('User', foreign_keys=[reporter_id])
+    reported = db.relationship('User', foreign_keys=[reported_id])
+
+    def to_admin_dict(self) -> dict:
+        reporter = self.reporter
+        reported = self.reported
+        return {
+            'id': self.id,
+            'type': 'user',
+            'reason': self.reason,
+            'details': self.details,
+            'status': self.status,
+            'admin_notes': self.admin_notes,
+            'created_at': self.created_at.isoformat() if self.created_at else None,
+            'resolved_at': self.resolved_at.isoformat() if self.resolved_at else None,
+            'reporter': {
+                'id': reporter.public_id if reporter else None,
+                'username': reporter.username if reporter else None,
+            },
+            'reported_user': {
+                'id': reported.public_id if reported else None,
+                'username': reported.username if reported else None,
+                'account_type': getattr(reported, 'account_type', None) if reported else None,
+            },
+        }
 
     def __repr__(self):
         return f'<UserReport reporter={self.reporter_id} reported={self.reported_id}>'
+
+
+class ListingReport(db.Model):
+    __tablename__ = 'listing_report'
+
+    id = db.Column(db.Integer, primary_key=True)
+    reporter_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False, index=True)
+    car_id = db.Column(db.Integer, db.ForeignKey('car.id'), nullable=False, index=True)
+    reason = db.Column(db.String(200), nullable=False)
+    details = db.Column(db.Text, nullable=True)
+    status = db.Column(db.String(20), default='pending')  # pending, reviewed, resolved, dismissed
+    admin_notes = db.Column(db.Text, nullable=True)
+    created_at = db.Column(db.DateTime, default=utcnow)
+    resolved_at = db.Column(db.DateTime, nullable=True)
+
+    reporter = db.relationship('User', foreign_keys=[reporter_id])
+    car = db.relationship('Car', foreign_keys=[car_id])
+
+    def to_admin_dict(self) -> dict:
+        reporter = self.reporter
+        car = self.car
+        seller = User.query.get(car.seller_id) if car and car.seller_id else None
+        listing_id = None
+        if car:
+            listing_id = car.public_id if getattr(car, 'public_id', None) else str(car.id)
+        return {
+            'id': self.id,
+            'type': 'listing',
+            'reason': self.reason,
+            'details': self.details,
+            'status': self.status,
+            'admin_notes': self.admin_notes,
+            'created_at': self.created_at.isoformat() if self.created_at else None,
+            'resolved_at': self.resolved_at.isoformat() if self.resolved_at else None,
+            'reporter': {
+                'id': reporter.public_id if reporter else None,
+                'username': reporter.username if reporter else None,
+            },
+            'listing': {
+                'id': listing_id,
+                'title': car.title if car else None,
+                'brand': car.brand if car else None,
+                'model': car.model if car else None,
+            },
+            'seller': {
+                'id': seller.public_id if seller else None,
+                'username': seller.username if seller else None,
+            },
+        }
+
+    def __repr__(self):
+        return f'<ListingReport reporter={self.reporter_id} car={self.car_id}>'
 
 
 class TokenBlacklist(db.Model):
