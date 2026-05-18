@@ -1,3 +1,5 @@
+import 'dart:io';
+
 import 'package:flutter/material.dart';
 
 import '../l10n/app_localizations.dart';
@@ -7,6 +9,7 @@ import '../services/api_service.dart';
 import '../services/recently_viewed_service.dart';
 import '../shared/auth/token_store.dart';
 import '../shared/errors/user_error_text.dart';
+import '../shared/listings/listing_identity.dart';
 import '../shared/prefs/listing_layout_prefs.dart';
 
 class RecentlyViewedPage extends StatefulWidget {
@@ -96,9 +99,113 @@ class _RecentlyViewedPageState extends State<RecentlyViewedPage> {
     return en;
   }
 
-  double _listCardHeight(BuildContext context) {
-    final w = MediaQuery.sizeOf(context).width - 24;
-    return (w > 0 ? w : 360) / 2.78;
+  Future<void> _confirmClearAll() async {
+    final loc = AppLocalizations.of(context)!;
+    final ok = await showDialog<bool>(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        title: Text(
+          _tr(
+            'Clear recently viewed?',
+            ar: 'مسح السجل؟',
+            ku: 'مێژووی بینین پاک بکەیتەوە؟',
+          ),
+        ),
+        content: Text(
+          _tr(
+            'This removes all listings from your recently viewed history.',
+            ar: 'سيؤدي هذا إلى إزالة جميع الإعلانات من سجل المشاهدة الأخيرة.',
+            ku: 'ئەمە هەموو ڕیکلامەکان لە مێژووی بینینی دواتردا لادەبات.',
+          ),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(ctx, false),
+            child: Text(loc.cancelAction),
+          ),
+          TextButton(
+            onPressed: () => Navigator.pop(ctx, true),
+            child: Text(loc.clearAll),
+          ),
+        ],
+      ),
+    );
+    if (ok != true || !mounted) return;
+
+    setState(() => _loading = true);
+    await RecentlyViewedService.clearAll();
+    if (!mounted) return;
+    setState(() {
+      _cars = [];
+      _loading = false;
+      _error = null;
+    });
+    if (!mounted) return;
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text(
+          _tr(
+            'Recently viewed cleared',
+            ar: 'تم مسح السجل',
+            ku: 'مێژووی بینین پاککرایەوە',
+          ),
+        ),
+      ),
+    );
+  }
+
+  Future<void> _confirmRemoveListing(String listingId) async {
+    final loc = AppLocalizations.of(context)!;
+    final ok = await showDialog<bool>(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        title: Text(
+          _tr(
+            'Remove from recently viewed?',
+            ar: 'إزالة من السجل؟',
+            ku: 'لە مێژووی بینین لاببرێت؟',
+          ),
+        ),
+        content: Text(
+          _tr(
+            'This removes this listing from your recently viewed history.',
+            ar: 'سيؤدي هذا إلى إزالة هذا الإعلان من سجل المشاهدة الأخيرة.',
+            ku: 'ئەمە ئەم ڕیکلامە لە مێژووی بینینی دواتردا لادەبات.',
+          ),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(ctx, false),
+            child: Text(loc.cancelAction),
+          ),
+          TextButton(
+            onPressed: () => Navigator.pop(ctx, true),
+            child: Text(loc.removeAction),
+          ),
+        ],
+      ),
+    );
+    if (ok != true || !mounted) return;
+
+    await RecentlyViewedService.removeOne(listingId);
+    if (!mounted) return;
+    setState(() {
+      _cars = _cars
+          .where((c) => !listingMatchesId(c, listingId))
+          .toList();
+    });
+    if (!mounted) return;
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text(
+          _tr(
+            'Removed from recently viewed',
+            ar: 'تمت الإزالة من السجل',
+            ku: 'لە مێژووی بینین لابرا',
+          ),
+        ),
+      ),
+    );
   }
 
   Widget _buildEmptyState(String message) {
@@ -128,6 +235,76 @@ class _RecentlyViewedPageState extends State<RecentlyViewedPage> {
     );
   }
 
+  Widget _buildListingGrid() {
+    final loc = AppLocalizations.of(context)!;
+    return ValueListenableBuilder<int>(
+      valueListenable: ListingLayoutPrefs.columns,
+      builder: (context, cols, _) {
+        final listingColumns = (cols == 1) ? 1 : 2;
+        final horizontalPadding = listingColumns == 1 ? 4.0 : 8.0;
+
+        return GridView.builder(
+          physics: const AlwaysScrollableScrollPhysics(),
+          padding: EdgeInsets.fromLTRB(
+            horizontalPadding,
+            8,
+            horizontalPadding,
+            100,
+          ),
+          gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
+            crossAxisCount: listingColumns,
+            crossAxisSpacing: 8,
+            mainAxisSpacing: 8,
+            childAspectRatio: listingColumns == 2
+                ? (Platform.isIOS ? 0.66 : 0.61)
+                : 2.78,
+          ),
+          itemCount: _cars.length,
+          itemBuilder: (context, index) {
+            final car = Map<String, dynamic>.from(_cars[index]);
+            final cardData = mapListingToGlobalCarCardData(context, car);
+            final listingId = listingPrimaryId(car);
+            final card = buildGlobalCarCard(
+              context,
+              cardData,
+              listLayout: listingColumns == 1,
+            );
+            if (listingId.isEmpty) return card;
+            return Stack(
+              clipBehavior: Clip.none,
+              children: [
+                card,
+                Positioned(
+                  top: 6,
+                  right: 6,
+                  child: Material(
+                    color: Colors.black54,
+                    shape: const CircleBorder(),
+                    child: InkWell(
+                      customBorder: const CircleBorder(),
+                      onTap: () => _confirmRemoveListing(listingId),
+                      child: Tooltip(
+                        message: loc.deleteTooltip,
+                        child: const Padding(
+                          padding: EdgeInsets.all(6),
+                          child: Icon(
+                            Icons.close,
+                            color: Colors.white,
+                            size: 22,
+                          ),
+                        ),
+                      ),
+                    ),
+                  ),
+                ),
+              ],
+            );
+          },
+        );
+      },
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     final loc = AppLocalizations.of(context)!;
@@ -141,7 +318,6 @@ class _RecentlyViewedPageState extends State<RecentlyViewedPage> {
       ar: 'لم تشاهد أي إعلانات بعد.\nافتح إعلان سيارة لإضافته هنا.',
       ku: 'هێشتا هیچ ڕیکلامێکت نەبینيوە.\nڕیکلامێکی ئۆتۆمبێل بکەرەوە بۆ زیادکردنی لێرە.',
     );
-    final cardHeight = _listCardHeight(context);
 
     Widget body;
     if (_loading) {
@@ -168,30 +344,22 @@ class _RecentlyViewedPageState extends State<RecentlyViewedPage> {
     } else {
       body = RefreshIndicator(
         onRefresh: _fetch,
-        child: ListView.builder(
-          padding: const EdgeInsets.fromLTRB(12, 12, 12, 100),
-          itemCount: _cars.length,
-          itemBuilder: (context, index) {
-            final car = Map<String, dynamic>.from(_cars[index]);
-            final cardData = mapListingToGlobalCarCardData(context, car);
-            return Padding(
-              padding: const EdgeInsets.only(bottom: 12),
-              child: SizedBox(
-                height: cardHeight,
-                child: buildGlobalCarCard(
-                  context,
-                  cardData,
-                  listLayout: true,
-                ),
-              ),
-            );
-          },
-        ),
+        child: _buildListingGrid(),
       );
     }
 
     return Scaffold(
-      appBar: AppBar(title: Text(title)),
+      appBar: AppBar(
+        title: Text(title),
+        actions: [
+          if (_cars.isNotEmpty && !_loading)
+            IconButton(
+              icon: const Icon(Icons.delete_sweep),
+              tooltip: loc.clearAll,
+              onPressed: _confirmClearAll,
+            ),
+        ],
+      ),
       body: body,
       bottomNavigationBar: buildFloatingBottomNav(
         context,

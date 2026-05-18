@@ -1133,6 +1133,16 @@ class ApiService {
     );
   }
 
+  static Future<void> clearRecentlyViewed() async {
+    await _makeAuthenticatedRequest('DELETE', '/user/recently-viewed');
+  }
+
+  static Future<void> deleteRecentlyViewedListing(String listingId) async {
+    final id = Uri.encodeComponent(listingId.trim());
+    if (id.isEmpty) return;
+    await _makeAuthenticatedRequest('DELETE', '/user/recently-viewed/$id');
+  }
+
   static Future<Map<String, dynamic>> getMyListings({
     int page = 1,
     int perPage = 20,

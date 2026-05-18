@@ -4544,6 +4544,79 @@ class _HomePageState extends State<HomePage> {
     selectedSortBy = null;
   }
 
+  String? _filterStr(dynamic value) {
+    if (value == null) return null;
+    final s = value.toString().trim();
+    return s.isEmpty ? null : s;
+  }
+
+  /// Apply filters from a saved-search map (`min_price`, `cylinder_count`, etc.).
+  void applyFiltersFromSavedSearch(Map<String, dynamic> normalized) {
+    _resetAllFiltersInMemory();
+    selectedBrand = _filterStr(normalized['brand']);
+    selectedModel = _filterStr(normalized['model']);
+    selectedTrim = _filterStr(normalized['trim']);
+    selectedMinPrice = _filterStr(normalized['min_price']);
+    selectedMaxPrice = _filterStr(normalized['max_price']);
+    selectedMinYear = _filterStr(normalized['min_year']);
+    selectedMaxYear = _filterStr(normalized['max_year']);
+    selectedMinMileage = _filterStr(normalized['min_mileage']);
+    selectedMaxMileage = _filterStr(normalized['max_mileage']);
+    selectedCondition = _filterStr(normalized['condition']);
+    selectedTransmission = _filterStr(normalized['transmission']);
+    selectedFuelType = _filterStr(normalized['fuel_type']);
+    selectedBodyType = _filterStr(normalized['body_type']);
+    selectedColor = _filterStr(normalized['color']);
+    selectedDriveType = _filterStr(normalized['drive_type']);
+    final rsApply =
+        _filterStr(normalized['region_specs'])?.toLowerCase();
+    selectedRegionSpecs =
+        (rsApply != null && rsApply.isNotEmpty && isValidCarRegionSpecCode(rsApply))
+        ? rsApply
+        : null;
+    selectedCylinderCount = _filterStr(normalized['cylinder_count']);
+    selectedSeating = _filterStr(normalized['seating']);
+    selectedEngineSize = _filterStr(normalized['engine_size']);
+    selectedCity = _filterStr(normalized['city']);
+    selectedPlateType = _filterStr(normalized['plate_type']);
+    selectedPlateCity = _filterStr(normalized['plate_city']);
+    selectedTitleStatus = _filterStr(normalized['title_status']);
+    selectedDamagedParts = _filterStr(normalized['damaged_parts']);
+    selectedSortBy = _filterStr(normalized['sort_by']);
+    _syncHomeFilterTextControllersFromSelection();
+  }
+
+  /// Apply filters stored in [home_filters_v1] / one-time home persist shape.
+  void applyFiltersFromHomePersistMap(Map<String, dynamic> map) {
+    applyFiltersFromSavedSearch({
+      'brand': map['brand'],
+      'model': map['model'],
+      'trim': map['trim'],
+      'min_price': map['price_min'],
+      'max_price': map['price_max'],
+      'min_year': map['year_min'],
+      'max_year': map['year_max'],
+      'min_mileage': map['min_mileage'],
+      'max_mileage': map['max_mileage'],
+      'condition': map['condition'],
+      'transmission': map['transmission'],
+      'fuel_type': map['fuel_type'],
+      'body_type': map['body_type'],
+      'color': map['color'],
+      'drive_type': map['drive_type'],
+      'region_specs': map['region_specs'],
+      'cylinder_count': map['cylinders'],
+      'seating': map['seating'],
+      'engine_size': map['engine_size'],
+      'city': map['city'],
+      'plate_type': map['plate_type'],
+      'plate_city': map['plate_city'],
+      'title_status': map['title_status'],
+      'damaged_parts': map['damaged_parts'],
+      'sort_by': map['sort_by'],
+    });
+  }
+
   /// Clears only fields shown in the More Filters dialog (not brand/model/trim/sort).
   Future<void> _resetFiltersFromMoreFiltersDialog(
     VoidCallback refreshDialog,
@@ -5315,11 +5388,28 @@ class _HomePageState extends State<HomePage> {
       }
       await _restoreFilters();
       if (!mounted) return;
-      // If we already rehydrated listings from memory (tab return), do not run an
-      // immediate fetchCars(): the first-page API response would replace a deep
-      // scroll's many rows with ~20 items, collapse maxScrollExtent, and wipe the
-      // saved offset. User can pull-to-refresh or change filters to refetch.
-      if (cars.isEmpty) {
+      final oneTimeFilters = await _consumeOneTimeSavedSearchFilters();
+      final pendingSavedSearch = await _consumePendingSavedSearchFetch();
+      if (oneTimeFilters != null) {
+        setState(() {
+          applyFiltersFromHomePersistMap(oneTimeFilters);
+        });
+      }
+      if (pendingSavedSearch || oneTimeFilters != null) {
+        _homeFeedCache.clear();
+        if (mounted) {
+          setState(() {
+            cars = [];
+            _page = 1;
+            _hasNext = true;
+          });
+        }
+        fetchCars(bypassCache: true);
+      } else if (cars.isEmpty) {
+        // If we already rehydrated listings from memory (tab return), do not run an
+        // immediate fetchCars(): the first-page API response would replace a deep
+        // scroll's many rows with ~20 items, collapse maxScrollExtent, and wipe the
+        // saved offset. User can pull-to-refresh or change filters to refetch.
         fetchCars();
       }
       // Kick restoration once the first frame is mounted, instead of waiting
@@ -12148,7 +12238,44 @@ class _HomePageState extends State<HomePage> {
   }
 }
 
-/// Persist saved-search filters so [HomePage] can restore them after navigation.
+const String _homePendingSavedSearchFetchKey = 'home_pending_saved_search_fetch_v1';
+const String _homeOneTimeFiltersKey = 'home_apply_filters_once_v1';
+
+Future<void> _markPendingSavedSearchFetch() async {
+  try {
+    final sp = await SharedPreferences.getInstance();
+    await sp.setBool(_homePendingSavedSearchFetchKey, true);
+  } catch (_) {}
+}
+
+Future<bool> _consumePendingSavedSearchFetch() async {
+  try {
+    final sp = await SharedPreferences.getInstance();
+    final pending = sp.getBool(_homePendingSavedSearchFetchKey) ?? false;
+    if (pending) {
+      await sp.remove(_homePendingSavedSearchFetchKey);
+    }
+    return pending;
+  } catch (_) {
+    return false;
+  }
+}
+
+Future<Map<String, dynamic>?> _consumeOneTimeSavedSearchFilters() async {
+  try {
+    final sp = await SharedPreferences.getInstance();
+    final raw = sp.getString(_homeOneTimeFiltersKey);
+    if (raw == null || raw.isEmpty) return null;
+    await sp.remove(_homeOneTimeFiltersKey);
+    final decoded = json.decode(raw);
+    if (decoded is! Map) return null;
+    return Map<String, dynamic>.from(decoded.cast<String, dynamic>());
+  } catch (_) {
+    return null;
+  }
+}
+
+/// One-time saved-search apply (not restored on next app launch).
 Future<void> persistSavedSearchFiltersForHome(
   Map<String, dynamic> filters,
 ) async {
@@ -12182,7 +12309,9 @@ Future<void> persistSavedSearchFiltersForHome(
       'sort_by': filters['sort_by'],
     };
     map.removeWhere((_, v) => v == null || v.toString().trim().isEmpty);
-    await sp.setString('home_filters_v1', json.encode(map));
+    await sp.remove('home_filters_v1');
+    await sp.setString(_homeOneTimeFiltersKey, json.encode(map));
+    await _markPendingSavedSearchFetch();
   } catch (_) {}
 }
 
@@ -12640,42 +12769,9 @@ class _SavedSearchesPageState extends State<SavedSearchesPage> {
     if (parent != null && parent.mounted) {
       Navigator.pop(context);
       parent.setState(() {
-        parent._resetAllFiltersInMemory();
-        parent.selectedBrand = normalized['brand']?.toString();
-        parent.selectedModel = normalized['model']?.toString();
-        parent.selectedTrim = normalized['trim']?.toString();
-        parent.selectedMinPrice = normalized['min_price']?.toString();
-        parent.selectedMaxPrice = normalized['max_price']?.toString();
-        parent.selectedMinYear = normalized['min_year']?.toString();
-        parent.selectedMaxYear = normalized['max_year']?.toString();
-        parent.selectedMinMileage = normalized['min_mileage']?.toString();
-        parent.selectedMaxMileage = normalized['max_mileage']?.toString();
-        parent.selectedCondition = normalized['condition']?.toString();
-        parent.selectedTransmission = normalized['transmission']?.toString();
-        parent.selectedFuelType = normalized['fuel_type']?.toString();
-        parent.selectedBodyType = normalized['body_type']?.toString();
-        parent.selectedColor = normalized['color']?.toString();
-        parent.selectedDriveType = normalized['drive_type']?.toString();
-        final rsApply =
-            normalized['region_specs']?.toString().trim().toLowerCase();
-        parent.selectedRegionSpecs =
-            (rsApply != null &&
-                rsApply.isNotEmpty &&
-                isValidCarRegionSpecCode(rsApply))
-            ? rsApply
-            : null;
-        parent.selectedCylinderCount = normalized['cylinder_count']?.toString();
-        parent.selectedSeating = normalized['seating']?.toString();
-        parent.selectedEngineSize = normalized['engine_size']?.toString();
-        parent.selectedCity = normalized['city']?.toString();
-        parent.selectedPlateType = normalized['plate_type']?.toString();
-        parent.selectedPlateCity = normalized['plate_city']?.toString();
-        parent.selectedTitleStatus = normalized['title_status']?.toString();
-        parent.selectedDamagedParts = normalized['damaged_parts']?.toString();
-        parent.selectedSortBy = normalized['sort_by']?.toString();
+        parent.applyFiltersFromSavedSearch(normalized);
       });
-      await parent._persistFilters();
-      parent.onFilterChanged();
+      parent.fetchCars(bypassCache: true);
       messenger.showSnackBar(
         SnackBar(
           content: Text(successText),
@@ -12688,6 +12784,7 @@ class _SavedSearchesPageState extends State<SavedSearchesPage> {
 
     Navigator.pop(context);
     if (!context.mounted) return;
+    await _markPendingSavedSearchFetch();
     navigateMainShellTab(context, '/');
     messenger.showSnackBar(
       SnackBar(

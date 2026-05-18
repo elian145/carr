@@ -189,4 +189,46 @@ class RecentlyViewedService {
 
     return localDisplay;
   }
+
+  static Future<void> _removeLocal(String listingId) async {
+    final id = listingId.trim();
+    if (id.isEmpty) return;
+    try {
+      final sp = await SharedPreferences.getInstance();
+      final items = _decode(sp.getString(localKey));
+      final kept = items.where((e) => !_entryMatchesId(e, id)).toList();
+      await sp.setString(localKey, json.encode(kept));
+    } catch (_) {}
+  }
+
+  static Future<void> _clearLocal() async {
+    try {
+      final sp = await SharedPreferences.getInstance();
+      await sp.remove(localKey);
+    } catch (_) {}
+  }
+
+  /// Remove one listing from local cache and server (when logged in).
+  static Future<void> removeOne(String listingId) async {
+    final id = listingId.trim();
+    if (id.isEmpty) return;
+    await _removeLocal(id);
+    try {
+      await _ensureAuth();
+      final token = ApiService.accessToken ?? TokenStore.token;
+      if (token == null || token.isEmpty) return;
+      await ApiService.deleteRecentlyViewedListing(id);
+    } catch (_) {}
+  }
+
+  /// Clear all recently viewed history locally and on the server.
+  static Future<void> clearAll() async {
+    await _clearLocal();
+    try {
+      await _ensureAuth();
+      final token = ApiService.accessToken ?? TokenStore.token;
+      if (token == null || token.isEmpty) return;
+      await ApiService.clearRecentlyViewed();
+    } catch (_) {}
+  }
 }

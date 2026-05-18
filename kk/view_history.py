@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from sqlalchemy import update
+from sqlalchemy import delete, update
 
 from .models import Car, User, db, user_viewed_listings
 from .time_utils import utcnow
@@ -62,3 +62,28 @@ def record_user_listing_view(user: User, listing_id: str) -> tuple[Car | None, b
     )
     db.session.commit()
     return car, True
+
+
+def delete_user_listing_view(user: User, listing_id: str) -> bool:
+    """Remove one listing from the user's recently viewed history."""
+    car = _get_car_by_listing_id(listing_id)
+    if not car:
+        return False
+    db.session.execute(
+        delete(user_viewed_listings).where(
+            user_viewed_listings.c.user_id == user.id,
+            user_viewed_listings.c.car_id == car.id,
+        )
+    )
+    db.session.commit()
+    return True
+
+
+def clear_user_listing_views(user: User) -> None:
+    """Remove all recently viewed rows for the user."""
+    db.session.execute(
+        delete(user_viewed_listings).where(
+            user_viewed_listings.c.user_id == user.id,
+        )
+    )
+    db.session.commit()

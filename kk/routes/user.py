@@ -100,6 +100,48 @@ def record_recently_viewed():
         return jsonify({"message": "Failed to record view"}), 500
 
 
+@bp.route("/api/user/recently-viewed", methods=["DELETE"])
+@jwt_required()
+def clear_recently_viewed():
+    """Clear all recently viewed listings for the current user."""
+    try:
+        from ..view_history import clear_user_listing_views
+
+        current_user = get_current_user()
+        if not current_user:
+            return jsonify({"message": "User not found"}), 404
+
+        clear_user_listing_views(current_user)
+        return jsonify({"success": True, "message": "Recently viewed cleared"}), 200
+    except Exception:
+        db.session.rollback()
+        return jsonify({"message": "Failed to clear recently viewed"}), 500
+
+
+@bp.route("/api/user/recently-viewed/<listing_id>", methods=["DELETE"])
+@jwt_required()
+def delete_recently_viewed_one(listing_id: str):
+    """Remove one listing from recently viewed."""
+    try:
+        from ..view_history import delete_user_listing_view
+
+        current_user = get_current_user()
+        if not current_user:
+            return jsonify({"message": "User not found"}), 404
+
+        lid = (listing_id or "").strip()
+        if not lid:
+            return jsonify({"message": "listing_id required"}), 400
+
+        if not delete_user_listing_view(current_user, lid):
+            return jsonify({"message": "Listing not found"}), 404
+
+        return jsonify({"success": True}), 200
+    except Exception:
+        db.session.rollback()
+        return jsonify({"message": "Failed to remove recently viewed listing"}), 500
+
+
 @bp.route("/api/user/recently-viewed", methods=["GET"])
 @jwt_required()
 def recently_viewed():

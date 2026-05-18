@@ -47,6 +47,13 @@ Future<void> bootstrapAndRun(Widget app) async {
         await ApiService.initializeTokens();
       } catch (_) {}
 
+      // Drop orphaned one-time saved-search keys if the app was killed before Home mounted.
+      try {
+        final sp = await SharedPreferences.getInstance();
+        await sp.remove('home_apply_filters_once_v1');
+        await sp.remove('home_pending_saved_search_fetch_v1');
+      } catch (_) {}
+
       runApp(app);
 
       // Defer heavy initializations to post-frame to avoid blocking first paint.
