@@ -68,6 +68,7 @@ import '../data/car_catalog.dart';
 import '../data/car_name_translations.dart';
 import '../services/car_spec_index.dart';
 import '../services/saved_search_service.dart';
+import '../services/recently_viewed_service.dart';
 import '../pages/recently_viewed_page.dart';
 import '../models/online_spec_variant.dart';
 import '../widgets/in_app_video_screen.dart';
@@ -1934,6 +1935,12 @@ Widget buildGlobalCarCard(
           onTap: () {
             final carId = (car['id'] ?? '').toString().trim();
             if (carId.isEmpty) return;
+            unawaited(
+              RecentlyViewedService.recordView(
+                carId,
+                snapshot: Map<String, dynamic>.from(car),
+              ),
+            );
             Navigator.pushNamed(
               context,
               '/car_detail',

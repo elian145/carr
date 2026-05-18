@@ -61,9 +61,7 @@ class RecentlyViewedService {
       final items = _decode(sp.getString(localKey));
       final now = DateTime.now().toIso8601String();
 
-      final without = items
-          .where((e) => listingMatchesId(e, listingId) == false)
-          .toList();
+      final without = items.where((e) => !_entryMatchesId(e, listingId)).toList();
 
       final entry = <String, dynamic>{
         'id': listingId,
@@ -80,6 +78,26 @@ class RecentlyViewedService {
       }
       await sp.setString(localKey, json.encode(without));
     } catch (_) {}
+  }
+
+  static bool _entryMatchesId(Map<String, dynamic> entry, String listingId) {
+    if (listingMatchesId(entry, listingId)) return true;
+    final snap = entry['snapshot'];
+    if (snap is Map) {
+      return listingMatchesId(
+        Map<String, dynamic>.from(snap.cast<String, dynamic>()),
+        listingId,
+      );
+    }
+    return false;
+  }
+
+  /// Local entries only (no network).
+  static Future<List<Map<String, dynamic>>> loadLocalDisplayList() async {
+    final local = await _loadLocal();
+    if (local.isEmpty) return [];
+    final hydrated = await _hydrateIds(local);
+    return hydrated.isNotEmpty ? hydrated : local;
   }
 
   static Future<List<Map<String, dynamic>>> _loadLocal() async {
@@ -123,33 +141,52 @@ class RecentlyViewedService {
     return out;
   }
 
+  static String _carKey(Map<String, dynamic> car) {
+    final id = listingPrimaryId(car);
+    return id.isNotEmpty ? id : (car['id'] ?? '').toString();
+  }
+
+  static List<Map<String, dynamic>> _mergeById(
+    List<Map<String, dynamic>> primary,
+    List<Map<String, dynamic>> secondary,
+  ) {
+    final seen = <String>{};
+    final out = <Map<String, dynamic>>[];
+    for (final car in [...primary, ...secondary]) {
+      final key = _carKey(car);
+      if (key.isEmpty || seen.contains(key)) continue;
+      seen.add(key);
+      out.add(car);
+      if (out.length >= maxItems) break;
+    }
+    return out;
+  }
+
   /// Server list merged with local cache (newest first).
   static Future<List<Map<String, dynamic>>> loadMerged() async {
+    final localDisplay = await loadLocalDisplayList();
+
     await _ensureAuth();
     final token = ApiService.accessToken ?? TokenStore.token;
 
-    List<Map<String, dynamic>> serverCars = [];
-    if (token != null && token.isNotEmpty) {
-      try {
-        final data = await ApiService.getRecentlyViewed(page: 1, perPage: maxItems);
-        final raw = data['cars'];
-        if (raw is List) {
-          serverCars = raw
-              .whereType<Map>()
-              .map((m) => Map<String, dynamic>.from(m.cast<String, dynamic>()))
-              .toList();
+    if (token == null || token.isEmpty) {
+      return localDisplay;
+    }
+
+    try {
+      final data = await ApiService.getRecentlyViewed(page: 1, perPage: maxItems);
+      final raw = data['cars'];
+      if (raw is List) {
+        final serverCars = raw
+            .whereType<Map>()
+            .map((m) => Map<String, dynamic>.from(m.cast<String, dynamic>()))
+            .toList();
+        if (serverCars.isNotEmpty) {
+          return _mergeById(serverCars, localDisplay);
         }
-      } catch (_) {}
-    }
+      }
+    } catch (_) {}
 
-    if (serverCars.isNotEmpty) {
-      return serverCars;
-    }
-
-    final local = await _loadLocal();
-    if (local.isEmpty) return [];
-
-    final hydrated = await _hydrateIds(local);
-    return hydrated.isNotEmpty ? hydrated : local;
+    return localDisplay;
   }
 }
