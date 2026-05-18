@@ -176,7 +176,7 @@ class AnalyticsService {
       final token = ApiService.accessToken;
       if (token == null || token.isEmpty) return;
 
-      await http
+      final response = await http
           .post(
             Uri.parse('$_baseUrl/analytics/track/view'),
             headers: {
@@ -186,6 +186,12 @@ class AnalyticsService {
             body: json.encode({'listing_id': listingId}),
           )
           .timeout(_timeout);
+      if (response.statusCode < 200 || response.statusCode >= 300) {
+        developer.log(
+          'track view failed: ${response.statusCode} ${response.body}',
+          name: 'AnalyticsService',
+        );
+      }
     } catch (e) {
       // Silently fail for tracking - don't interrupt user experience
       developer.log('Failed to track view: $e', name: 'AnalyticsService');

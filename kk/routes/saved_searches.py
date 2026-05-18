@@ -1,5 +1,7 @@
 from __future__ import annotations
 
+import json
+
 from flask import Blueprint, jsonify, request
 from flask_jwt_extended import jwt_required
 
@@ -17,6 +19,19 @@ def _clean_filters(raw) -> dict:
     if isinstance(raw, dict):
         return {str(k): v for k, v in raw.items() if v is not None and str(v).strip() != ""}
     return {}
+
+
+def _filters_fingerprint(filters: dict) -> str:
+    cleaned = _clean_filters(filters)
+    return json.dumps(cleaned, sort_keys=True, separators=(",", ":"))
+
+
+def _find_by_filters(user_id: int, filters: dict) -> SavedSearch | None:
+    target = _filters_fingerprint(filters)
+    for row in SavedSearch.query.filter_by(user_id=user_id).all():
+        if _filters_fingerprint(row.filters or {}) == target:
+            return row
+    return None
 
 
 def _get_owned_search(user, public_id: str) -> SavedSearch | None:
@@ -61,6 +76,16 @@ def create_saved_search():
         if notify is None:
             notify = True
         auto_saved = _to_bool(data.get("auto_saved"))
+
+        existing = _find_by_filters(current_user.id, filters)
+        if existing:
+            if name and existing.name != name[:200]:
+                existing.name = name[:200]
+            existing.notify = bool(notify)
+            existing.auto_saved = auto_saved
+            existing.updated_at = utcnow()
+            db.session.commit()
+            return jsonify({"saved_search": existing.to_dict(), "existing": True}), 200
 
         row = SavedSearch(
             user_id=current_user.id,
@@ -166,12 +191,15 @@ def sync_saved_searches():
             auto_saved = _to_bool(raw.get("auto_saved"))
 
             row = existing.get(public_id) if public_id else None
+            if not row:
+                row = _find_by_filters(current_user.id, filters)
             if row:
                 row.name = name[:200]
                 row.filters = filters
                 row.notify = bool(notify)
                 row.auto_saved = auto_saved
                 row.updated_at = utcnow()
+                existing[row.public_id] = row
             else:
                 if SavedSearch.query.filter_by(user_id=current_user.id).count() >= _MAX_SAVED_SEARCHES:
                     continue

@@ -114,6 +114,15 @@ def _track_increment(listing_id: str, field: str, *, dedupe_view: bool = False):
             )
         ).first()
         if exists:
+            db.session.execute(
+                update(user_viewed_listings)
+                .where(
+                    user_viewed_listings.c.user_id == current_user.id,
+                    user_viewed_listings.c.car_id == car.id,
+                )
+                .values(viewed_at=utcnow())
+            )
+            db.session.commit()
             return jsonify({"success": True, "deduped": True}), 200
         db.session.execute(
             user_viewed_listings.insert().values(

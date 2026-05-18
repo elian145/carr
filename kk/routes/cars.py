@@ -74,6 +74,15 @@ def _increment_views_best_effort(car: Car, current_user: User | None) -> None:
                 )
             ).first()
             if exists:
+                db.session.execute(
+                    update(user_viewed_listings)
+                    .where(
+                        user_viewed_listings.c.user_id == current_user.id,
+                        user_viewed_listings.c.car_id == car.id,
+                    )
+                    .values(viewed_at=now)
+                )
+                db.session.commit()
                 return
             db.session.execute(
                 user_viewed_listings.insert().values(

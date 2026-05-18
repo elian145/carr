@@ -233,16 +233,6 @@ def proxy_car_photos(subpath: str):
 		logger.exception("Car photos proxy error")
 		return jsonify({"error": "ProxyError", "message": str(e)}), 502
 
-# No-op analytics endpoint to avoid 500s blocking UI if upstream lacks it
-@app.route("/api/analytics/track/view", methods=["POST"])
-def analytics_track_view_noop():
-	try:
-		payload = request.get_json(silent=True) or {}
-		logger.info(f"[analytics] view: {payload}")
-	except Exception:
-		pass
-	return jsonify({"ok": True}), 200
-
 def create_app():
 	return app
 

@@ -4704,29 +4704,67 @@ class _HomePageState extends State<HomePage> {
   Future<void> _saveCurrentSearch() async {
     try {
       final sp = await SharedPreferences.getInstance();
-      final List<dynamic> current = json.decode(
+      final List<dynamic> raw = json.decode(
         sp.getString(_savedSearchesKey) ?? '[]',
       );
-      final Map<String, dynamic> payload = {
-        'id': DateTime.now().millisecondsSinceEpoch,
-        'name': _generateSearchName(),
-        'filters': json.decode(sp.getString(_filtersKey) ?? '{}'),
-        'notify': true,
-        'created_at': DateTime.now().toIso8601String(),
-      };
-      current.insert(0, payload);
-      await sp.setString(_savedSearchesKey, json.encode(current));
-      if (current.isNotEmpty) {
-        unawaited(SavedSearchService.pushItemToServer(
-          Map<String, dynamic>.from(current.first as Map),
-        ));
-        unawaited(SavedSearchService.persistLocal(
-          current
-              .map<Map<String, dynamic>>(
-                (e) => Map<String, dynamic>.from(e as Map),
+      final currentFilters = SavedSearchService.normalizeFilters(
+        _getCurrentFilterState(),
+      );
+      final searchName = _generateSearchName();
+
+      Map<String, dynamic>? existing;
+      for (final item in raw) {
+        if (item is! Map) continue;
+        final filters = item['filters'] is Map
+            ? Map<String, dynamic>.from(
+                (item['filters'] as Map).cast<String, dynamic>(),
               )
-              .toList(),
+            : <String, dynamic>{};
+        if (SavedSearchService.filtersEqual(filters, currentFilters)) {
+          existing = Map<String, dynamic>.from(item.cast<String, dynamic>());
+          break;
+        }
+      }
+
+      final Map<String, dynamic> payload = existing != null
+          ? {
+              ...existing,
+              'name': searchName,
+              'filters': currentFilters,
+              'notify': existing['notify'] ?? true,
+              'created_at': DateTime.now().toIso8601String(),
+            }
+          : {
+              'id': DateTime.now().millisecondsSinceEpoch.toString(),
+              'name': searchName,
+              'filters': currentFilters,
+              'notify': true,
+              'created_at': DateTime.now().toIso8601String(),
+            };
+
+      final withoutDup = raw
+          .whereType<Map>()
+          .map((e) => Map<String, dynamic>.from(e.cast<String, dynamic>()))
+          .where(
+            (e) => !SavedSearchService.filtersEqual(
+              e['filters'] is Map
+                  ? Map<String, dynamic>.from(
+                      (e['filters'] as Map).cast<String, dynamic>(),
+                    )
+                  : null,
+              currentFilters,
+            ),
+          )
+          .toList();
+      withoutDup.insert(0, payload);
+      final deduped = SavedSearchService.dedupeByFilters(withoutDup);
+
+      await sp.setString(_savedSearchesKey, json.encode(deduped));
+      if (deduped.isNotEmpty) {
+        unawaited(SavedSearchService.pushItemToServer(
+          Map<String, dynamic>.from(deduped.first),
         ));
+        unawaited(SavedSearchService.persistLocal(deduped));
       }
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
@@ -4741,55 +4779,8 @@ class _HomePageState extends State<HomePage> {
     } catch (_) {}
   }
 
-  // Auto-save search when filters are applied
-  Future<void> _autoSaveSearch() async {
-    try {
-      // Only auto-save if there are meaningful filters applied
-      if (!_hasMeaningfulFilters()) return;
-
-      final sp = await SharedPreferences.getInstance();
-      final List<dynamic> current = json.decode(
-        sp.getString(_savedSearchesKey) ?? '[]',
-      );
-
-      // Get current filter state
-      final Map<String, dynamic> currentFilters = _getCurrentFilterState();
-
-      // Check if this search already exists (avoid duplicates)
-      final String searchName = _generateSearchName();
-      final bool exists = current.any(
-        (item) =>
-            item['name'] == searchName &&
-            _areFiltersEqual(item['filters'], currentFilters),
-      );
-
-      if (exists) return; // Don't save duplicate searches
-
-      final Map<String, dynamic> payload = {
-        'id': DateTime.now().millisecondsSinceEpoch,
-        'name': searchName,
-        'filters': currentFilters,
-        'notify': true,
-        'created_at': DateTime.now().toIso8601String(),
-        'auto_saved': true, // Mark as auto-saved
-      };
-
-      current.insert(0, payload);
-
-      // Keep only last 20 searches to prevent storage bloat
-      if (current.length > 20) {
-        current.removeRange(20, current.length);
-      }
-
-      await sp.setString(_savedSearchesKey, json.encode(current));
-      if (current.isNotEmpty) {
-        unawaited(SavedSearchService.pushItemToServer(
-          Map<String, dynamic>.from(current.first as Map),
-        ));
-      }
-      // Analytics tracking for auto-saved search
-    } catch (_) {}
-  }
+  // Intentionally disabled: auto-saving on every filter change created many duplicates.
+  Future<void> _autoSaveSearch() async {}
 
   // Check if current filters have meaningful values
   bool _hasMeaningfulFilters() {
@@ -13458,11 +13449,18 @@ class _CarDetailsPageState extends State<CarDetailsPage> {
       final sp = await SharedPreferences.getInstance();
       final cacheKey = 'cache_car_${widget.carId}';
       final url = Uri.parse('${getApiBase()}/api/cars/${widget.carId}');
+      final headers = <String, String>{'Accept': 'application/json'};
+      final token = ApiService.accessToken;
+      if (token != null && token.isNotEmpty) {
+        headers['Authorization'] = 'Bearer $token';
+      }
 
       // Prefer network first so new uploads (images/videos) are not hidden behind stale cache.
       bool appliedFromNetwork = false;
       try {
-        final resp = await http.get(url).timeout(const Duration(seconds: 20));
+        final resp = await http
+            .get(url, headers: headers)
+            .timeout(const Duration(seconds: 20));
         if (resp.statusCode == 200) {
           final data = json.decode(resp.body);
           if (data is List && data.isNotEmpty) {

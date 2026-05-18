@@ -21,13 +21,70 @@ class SavedSearchService {
     }
   }
 
+  static Map<String, dynamic> normalizeFilters(Map<String, dynamic>? raw) {
+    if (raw == null || raw.isEmpty) return {};
+    final out = <String, dynamic>{};
+    raw.forEach((key, value) {
+      if (value == null) return;
+      final s = value.toString().trim();
+      if (s.isEmpty || s.toLowerCase() == 'any') return;
+      out[key] = value;
+    });
+    return Map.fromEntries(
+      out.entries.toList()..sort((a, b) => a.key.compareTo(b.key)),
+    );
+  }
+
+  static bool filtersEqual(
+    Map<String, dynamic>? a,
+    Map<String, dynamic>? b,
+  ) {
+    return json.encode(normalizeFilters(a)) == json.encode(normalizeFilters(b));
+  }
+
+  /// One entry per unique filter set (prefers server UUID ids).
+  static List<Map<String, dynamic>> dedupeByFilters(
+    List<Map<String, dynamic>> items,
+  ) {
+    final out = <Map<String, dynamic>>[];
+    for (final item in items) {
+      final filters = item['filters'] is Map
+          ? Map<String, dynamic>.from(
+              (item['filters'] as Map).cast<String, dynamic>(),
+            )
+          : <String, dynamic>{};
+      final idx = out.indexWhere(
+        (e) => filtersEqual(
+          e['filters'] is Map
+              ? Map<String, dynamic>.from(
+                  (e['filters'] as Map).cast<String, dynamic>(),
+                )
+              : null,
+          filters,
+        ),
+      );
+      if (idx >= 0) {
+        final existingId = (out[idx]['id'] ?? '').toString();
+        final newId = (item['id'] ?? '').toString();
+        if (!_isServerId(existingId) && _isServerId(newId)) {
+          out[idx]['id'] = newId;
+        }
+        continue;
+      }
+      out.add(Map<String, dynamic>.from(item));
+    }
+    return out;
+  }
+
   static List<Map<String, dynamic>> _fromServerResponse(Map<String, dynamic> res) {
     final raw = res['saved_searches'];
     if (raw is! List) return [];
-    return raw
-        .whereType<Map>()
-        .map((e) => _serverItemToLocal(Map<String, dynamic>.from(e.cast<String, dynamic>())))
-        .toList();
+    return dedupeByFilters(
+      raw
+          .whereType<Map>()
+          .map((e) => _serverItemToLocal(Map<String, dynamic>.from(e.cast<String, dynamic>())))
+          .toList(),
+    );
   }
 
   static Map<String, dynamic> _serverItemToLocal(Map<String, dynamic> row) {
@@ -35,7 +92,9 @@ class SavedSearchService {
       'id': (row['id'] ?? '').toString(),
       'name': (row['name'] ?? '').toString(),
       'filters': row['filters'] is Map
-          ? Map<String, dynamic>.from((row['filters'] as Map).cast<String, dynamic>())
+          ? normalizeFilters(
+              Map<String, dynamic>.from((row['filters'] as Map).cast<String, dynamic>()),
+            )
           : <String, dynamic>{},
       'notify': row['notify'] != false,
       'auto_saved': row['auto_saved'] == true,
@@ -45,13 +104,13 @@ class SavedSearchService {
 
   static Future<void> persistLocal(List<Map<String, dynamic>> items) async {
     final sp = await SharedPreferences.getInstance();
-    await sp.setString(localKey, json.encode(items));
+    await sp.setString(localKey, json.encode(dedupeByFilters(items)));
   }
 
   /// Load saved searches: merge local with server when logged in.
   static Future<List<Map<String, dynamic>>> loadMerged() async {
     final sp = await SharedPreferences.getInstance();
-    final local = _decodeLocal(sp.getString(localKey));
+    final local = dedupeByFilters(_decodeLocal(sp.getString(localKey)));
     final token = ApiService.accessToken;
     if (token == null || token.isEmpty) {
       return local;
@@ -85,7 +144,9 @@ class SavedSearchService {
     final id = (item['id'] ?? '').toString();
     final name = (item['name'] ?? '').toString();
     final filters = item['filters'] is Map
-        ? Map<String, dynamic>.from((item['filters'] as Map).cast<String, dynamic>())
+        ? normalizeFilters(
+            Map<String, dynamic>.from((item['filters'] as Map).cast<String, dynamic>()),
+          )
         : <String, dynamic>{};
     final notify = item['notify'] != false;
     final autoSaved = item['auto_saved'] == true;
