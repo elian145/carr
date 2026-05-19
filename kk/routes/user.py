@@ -526,7 +526,10 @@ def dealer_profile(dealer_public_id: str):
             return jsonify({"message": "This seller is not a dealer"}), 400
 
         listings = (
-            Car.query.filter_by(seller_id=dealer.id, is_active=True)
+            Car.query.filter(
+                Car.seller_id == dealer.id,
+                Car.is_active.is_(True),
+            )
             .options(selectinload(Car.images), selectinload(Car.videos))
             .order_by(Car.is_featured.desc(), Car.created_at.desc())
             .all()

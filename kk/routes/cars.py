@@ -27,6 +27,12 @@ _ALLOWED_REGION_SPECS = frozenset(
 )
 
 _ALLOWED_PLATE_TYPES = frozenset({"private", "temporary", "commercial", "taxi"})
+_ALLOWED_LISTING_STATUSES = frozenset({"active", "sold"})
+
+
+def _public_listings_filter(query):
+    """Browseable listings only (not soft-deleted). Sold listings remain visible."""
+    return query.filter(Car.is_active.is_(True))
 
 # Best-effort anonymous view cooldown (in-memory, per process)
 _anon_view_cache: dict[tuple[str, int], float] = {}
@@ -260,9 +266,8 @@ def get_cars():
         plate_type = plate_type_raw if plate_type_raw in _ALLOWED_PLATE_TYPES else None
         plate_city = (request.args.get("plate_city") or request.args.get("plateCity") or "").strip() or None
 
-        query = (
-            Car.query.filter_by(is_active=True)
-            .options(
+        query = _public_listings_filter(
+            Car.query.options(
                 selectinload(Car.images),
                 selectinload(Car.videos),
                 joinedload(Car.seller),
@@ -418,9 +423,8 @@ def get_cars_alias():
         drive_type = request.args.get("drive_type")
         engine_type = request.args.get("engine_type")
 
-        query = (
-            Car.query.filter_by(is_active=True)
-            .options(
+        query = _public_listings_filter(
+            Car.query.options(
                 selectinload(Car.images),
                 selectinload(Car.videos),
                 joinedload(Car.seller),
@@ -821,6 +825,12 @@ def update_car(car_id: str):
         else:
             car.title = f"{car.brand} {car.model} {car.trim or ''} {car.year or ''}".strip()[:200]
 
+        if "status" in data:
+            st = (str(data.get("status") or "").strip().lower())
+            if st not in _ALLOWED_LISTING_STATUSES:
+                return jsonify({"message": "Invalid status"}), 400
+            car.status = st
+
         if (car.title_status or "").lower() == "clean":
             car.damaged_parts = None
 
@@ -877,6 +887,56 @@ def delete_car(car_id: str):
         return jsonify({"message": "Car listing deleted successfully"}), 200
     except Exception:
         return jsonify({"message": "Failed to delete car listing"}), 500
+
+
+@bp.route("/api/cars/<car_id>/mark-sold", methods=["POST"])
+@jwt_required()
+def mark_car_sold(car_id: str):
+    """Mark the owner's listing as sold while keeping it visible."""
+    try:
+        current_user = get_current_user()
+        if not current_user:
+            return jsonify({"message": "User not found"}), 404
+
+        car, err = _resolve_car_for_user(
+            car_id, current_user, require_active=False
+        )
+        if err:
+            return err
+
+        car.status = "sold"
+        car.updated_at = utcnow()
+        db.session.commit()
+        log_user_action(current_user, "mark_listing_sold", "car", car.public_id)
+        return jsonify({"message": "Listing marked as sold", "car": car.to_dict()}), 200
+    except Exception:
+        db.session.rollback()
+        return jsonify({"message": "Failed to mark listing as sold"}), 500
+
+
+@bp.route("/api/cars/<car_id>/mark-active", methods=["POST"])
+@jwt_required()
+def mark_car_active(car_id: str):
+    """Mark a sold listing as available again."""
+    try:
+        current_user = get_current_user()
+        if not current_user:
+            return jsonify({"message": "User not found"}), 404
+
+        car, err = _resolve_car_for_user(
+            car_id, current_user, require_active=False
+        )
+        if err:
+            return err
+
+        car.status = "active"
+        car.updated_at = utcnow()
+        db.session.commit()
+        log_user_action(current_user, "mark_listing_active", "car", car.public_id)
+        return jsonify({"message": "Listing marked as available", "car": car.to_dict()}), 200
+    except Exception:
+        db.session.rollback()
+        return jsonify({"message": "Failed to mark listing as available"}), 500
 
 
 @bp.route("/api/user/my-listings", methods=["GET"])

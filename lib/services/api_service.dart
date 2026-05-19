@@ -876,6 +876,16 @@ class ApiService {
     return await _makeAuthenticatedRequest('DELETE', '/cars/$id');
   }
 
+  static Future<Map<String, dynamic>> markListingSold(String carId) async {
+    final id = Uri.encodeComponent(carId.trim());
+    return await _makeAuthenticatedRequest('POST', '/cars/$id/mark-sold');
+  }
+
+  static Future<Map<String, dynamic>> markListingActive(String carId) async {
+    final id = Uri.encodeComponent(carId.trim());
+    return await _makeAuthenticatedRequest('POST', '/cars/$id/mark-active');
+  }
+
   static Future<Map<String, dynamic>> uploadCarImages(
     String carId,
     List<XFile> imageFiles, {

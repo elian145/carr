@@ -28,6 +28,8 @@ import '../shared/auth/token_store.dart';
 import '../shared/text/pretty_title_case.dart';
 import '../shared/listings/listing_events.dart';
 import '../shared/listings/listing_identity.dart';
+import '../shared/listings/listing_status.dart';
+import '../shared/listings/listing_sold_badge.dart';
 import '../shared/listings/listing_share.dart';
 import '../shared/prefs/listing_layout_prefs.dart';
 import '../state/locale_controller.dart' as app_state;
@@ -61,7 +63,12 @@ import '../pages/dealers_directory_page.dart';
 import '../pages/edit_dealer_page.dart';
 import '../pages/my_listings_page.dart' as modern_listings;
 import '../pages/edit_listing_page.dart' as modern_edit;
-import '../shared/listings/listing_management.dart';
+import '../shared/listings/listing_management.dart'
+    show
+        confirmAndDeleteListing,
+        confirmMarkListingSold,
+        openEditListingPage,
+        setListingSoldStatus;
 import '../shared/listings/listing_owner.dart';
 import '../features/comparison/state/car_comparison_store.dart';
 import '../data/car_catalog.dart';
@@ -1548,6 +1555,7 @@ Map<String, dynamic> mapListingToGlobalCarCardData(
     'images': listing['images'],
     'videos': listing['videos'],
     'is_quick_sell': listing['is_quick_sell'] ?? false,
+    'status': listing['status'],
     'created_at': listing['created_at'],
   };
 }
@@ -1878,6 +1886,7 @@ Widget buildGlobalCarCard(
   final trimLine = _localizedTrimForCard(context, car);
   final bool quickSell =
       car['is_quick_sell'] == true || car['is_quick_sell'] == 'true';
+  final bool sold = isListingSold(Map<String, dynamic>.from(car));
   final String yearRaw = (car['year'] ?? '').toString().trim();
   final String mileageRaw = (car['mileage'] ?? '').toString().trim();
   String? cityRaw;
@@ -1918,7 +1927,9 @@ Widget buildGlobalCarCard(
       ? const EdgeInsets.fromLTRB(8, 8, 8, 6)
       : const EdgeInsets.fromLTRB(12, 8, 12, 10);
 
-  return Container(
+  return Opacity(
+    opacity: sold ? 0.72 : 1.0,
+    child: Container(
     decoration: BoxDecoration(
       color: cardFill,
       borderRadius: BorderRadius.circular(20),
@@ -2143,7 +2154,14 @@ Widget buildGlobalCarCard(
             right: 12,
             child: _globalListingCardVideoCountBadge(car),
           ),
+        if (sold)
+          Positioned(
+            top: listLayout ? 8 : 12,
+            left: listLayout ? 8 : 12,
+            child: buildListingSoldBadge(context),
+          ),
       ],
+    ),
     ),
   );
 }
@@ -13348,6 +13366,39 @@ class _CarDetailsPageState extends State<CarDetailsPage> {
     Navigator.pop(context, {'deleted': true, 'carId': id});
   }
 
+  bool get _isListingSold => isListingSold(car);
+
+  Future<void> _toggleListingSoldStatus() async {
+    final id = listingPrimaryId(car ?? {});
+    if (id.isEmpty) return;
+    if (!_isListingSold) {
+      final ok = await confirmMarkListingSold(context);
+      if (!ok || !mounted) return;
+    }
+    final updated = await setListingSoldStatus(
+      context,
+      id,
+      sold: !_isListingSold,
+    );
+    if (!mounted || updated == null) return;
+    final nowSold = isListingSold(updated);
+    setState(() {
+      car = {...?car, ...updated};
+    });
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text(
+          _trLegacyText(
+            context,
+            nowSold ? 'Listing marked as sold' : 'Listing is available again',
+            ar: nowSold ? 'تم تحديد الإعلان كمباع' : 'الإعلان متاح مجدداً',
+            ku: nowSold ? 'ڕیکلام وەک فرۆشراو نیشانکرا' : 'ڕیکلام دووبارە بەردەستە',
+          ),
+        ),
+      ),
+    );
+  }
+
   void _onCarDetailMenuSelected(String value) {
     final listingId = listingPrimaryId(car ?? {'id': widget.carId});
     if (value == 'report_listing' && listingId.isNotEmpty) {
@@ -14095,6 +14146,27 @@ class _CarDetailsPageState extends State<CarDetailsPage> {
                   actions: [
                     if (_isListingOwner) ...[
                       IconButton(
+                        tooltip: _isListingSold
+                            ? _trLegacyText(
+                                context,
+                                'Mark as available',
+                                ar: 'متاح مجدداً',
+                                ku: 'بەردەست بکەرەوە',
+                              )
+                            : _trLegacyText(
+                                context,
+                                'Mark as sold',
+                                ar: 'تحديد كمباع',
+                                ku: 'وەک فرۆشراو',
+                              ),
+                        onPressed: _toggleListingSoldStatus,
+                        icon: Icon(
+                          _isListingSold
+                              ? Icons.undo_outlined
+                              : Icons.sell_outlined,
+                        ),
+                      ),
+                      IconButton(
                         tooltip: AppLocalizations.of(context)!.editAction,
                         onPressed: _editOwnListing,
                         icon: const Icon(Icons.edit_outlined),
@@ -14287,7 +14359,8 @@ class _CarDetailsPageState extends State<CarDetailsPage> {
                               ),
                             ),
                           ),
-                        // Removed title/price overlay to avoid blocking the image
+                        if (_isListingSold)
+                          Center(child: buildListingSoldBadge(context, large: true)),
                       ],
                     ),
                   ),
@@ -14311,6 +14384,41 @@ class _CarDetailsPageState extends State<CarDetailsPage> {
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
+                          if (_isListingSold)
+                            Container(
+                              width: double.infinity,
+                              padding: const EdgeInsets.symmetric(
+                                vertical: 12,
+                                horizontal: 16,
+                              ),
+                              margin: const EdgeInsets.only(bottom: 16),
+                              decoration: BoxDecoration(
+                                color: isLightShell
+                                    ? Colors.grey.shade200
+                                    : Colors.white12,
+                                borderRadius: BorderRadius.circular(12),
+                                border: Border.all(
+                                  color: isLightShell
+                                      ? Colors.grey.shade400
+                                      : Colors.white24,
+                                ),
+                              ),
+                              child: Text(
+                                _trLegacyText(
+                                  context,
+                                  'This vehicle has been sold.',
+                                  ar: 'تم بيع هذه المركبة.',
+                                  ku: 'ئەم ئۆتۆمبێلە فرۆشراوە.',
+                                ),
+                                textAlign: TextAlign.center,
+                                style: TextStyle(
+                                  fontWeight: FontWeight.w700,
+                                  color: isLightShell
+                                      ? Colors.grey.shade800
+                                      : Colors.white70,
+                                ),
+                              ),
+                            ),
                           // Quick Sell Banner
                           if (car!['is_quick_sell'] == true ||
                               car!['is_quick_sell'] == 'true')
@@ -14534,7 +14642,7 @@ class _CarDetailsPageState extends State<CarDetailsPage> {
                           Column(
                             mainAxisSize: MainAxisSize.min,
                             children: [
-                              if (_hasDialableSellerPhone) ...[
+                              if (!_isListingSold && _hasDialableSellerPhone) ...[
                                 Row(
                                   children: [
                                     Expanded(
@@ -14675,6 +14783,7 @@ class _CarDetailsPageState extends State<CarDetailsPage> {
                                 height: 46,
                                 child: ComparisonButton(car: car!),
                               ),
+                              if (!_isListingSold) ...[
                               SizedBox(height: 6),
                               SizedBox(
                                 width: double.infinity,
@@ -14705,6 +14814,7 @@ class _CarDetailsPageState extends State<CarDetailsPage> {
                                   ),
                                 ),
                               ),
+                              ],
                               _buildSellerProfileSection(),
                             ],
                           ),

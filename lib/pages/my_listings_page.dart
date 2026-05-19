@@ -15,6 +15,7 @@ import '../shared/errors/user_error_text.dart';
 import '../shared/listings/listing_events.dart';
 import '../shared/listings/listing_identity.dart';
 import '../shared/listings/listing_management.dart';
+import '../shared/listings/listing_status.dart';
 import '../shared/prefs/sell_listing_draft_prefs.dart';
 import '../shared/text/pretty_title_case.dart';
 import '../shared/prefs/listing_layout_prefs.dart';
@@ -508,6 +509,22 @@ class _MyListingsPageState extends State<MyListingsPage> {
     await _fetch(refresh: true);
   }
 
+  Future<void> _toggleSold(Map<String, dynamic> car) async {
+    final carId = listingPrimaryId(car);
+    if (carId.isEmpty) return;
+    final sold = isListingSold(car);
+    if (!sold) {
+      final ok = await confirmMarkListingSold(context);
+      if (!ok || !mounted) return;
+    }
+    final updated = await setListingSoldStatus(context, carId, sold: !sold);
+    if (!mounted || updated == null) return;
+    setState(() {
+      final idx = _cars.indexWhere((c) => listingMatchesId(c, carId));
+      if (idx >= 0) _cars[idx] = {..._cars[idx], ...updated};
+    });
+  }
+
   Future<void> _editListing(Map<String, dynamic> car) async {
     final carId = listingPrimaryId(car);
     if (carId.isEmpty) return;
@@ -590,6 +607,16 @@ class _MyListingsPageState extends State<MyListingsPage> {
             child: Row(
               mainAxisSize: MainAxisSize.min,
               children: [
+                _ownerOverlayIcon(
+                  icon: isListingSold(car)
+                      ? Icons.undo_outlined
+                      : Icons.sell_outlined,
+                  tooltip: isListingSold(car)
+                      ? _text('Mark available', ar: 'متاح', ku: 'بەردەست')
+                      : _text('Mark sold', ar: 'مباع', ku: 'فرۆشراو'),
+                  onTap: () => _toggleSold(car),
+                ),
+                const SizedBox(width: 4),
                 _ownerOverlayIcon(
                   icon: Icons.edit_outlined,
                   tooltip: loc?.editAction ?? 'Edit',
