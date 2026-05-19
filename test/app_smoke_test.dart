@@ -4,14 +4,14 @@ import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 
-import 'package:car_listing_app/legacy/main_legacy.dart' as legacy;
+import 'package:car_listing_app/app/app.dart';
 import 'package:car_listing_app/services/config.dart';
 
 /// A best-effort full-app smoke test.
 ///
 /// What it covers:
-/// - Boots the legacy app widget tree (`legacy.MyApp`) to match production UI
-/// - Navigates through every named route in the legacy app routes table
+/// - Boots the production app widget tree (`CarzoApp`)
+/// - Navigates through named routes in the production app routes table
 /// - Uses a local fake HTTP server so pages that load data on initState
 ///   don't hang or hit real networks during CI/dev tests
 ///
@@ -65,7 +65,8 @@ void main() {
       // Proxy-style API paths
       if (path.startsWith('/api/')) {
         // Handle car detail paths: /api/cars/<id>
-        if (path.startsWith('/api/cars/') && path.length > '/api/cars/'.length) {
+        if (path.startsWith('/api/cars/') &&
+            path.length > '/api/cars/'.length) {
           final id = path.substring('/api/cars/'.length);
           return jsonOk({
             'car': {
@@ -148,7 +149,7 @@ void main() {
   });
 
   testWidgets('Full app smoke: boot and visit all routes', (tester) async {
-    await tester.pumpWidget(const legacy.MyApp());
+    await tester.pumpWidget(const CarzoApp());
     // Avoid pumpAndSettle here: many screens contain indeterminate animations
     // (e.g. progress indicators) which would never "settle".
     await tester.pump();
@@ -181,25 +182,16 @@ void main() {
     await pushNamed('/chat');
     await pushNamed('/login');
     await pushNamed('/signup');
+    await pushNamed('/register');
     await pushNamed('/profile');
     await pushNamed('/edit-profile');
-    await pushNamed('/payment/history');
-    await pushNamed('/payment/initiate');
+    await pushNamed('/car_detail', args: {'carId': '1'});
+    await pushNamed('/chat/conversation', args: {'conversationId': '1'});
     await pushNamed(
-      '/car_detail',
-      args: {'carId': '1'},
-    );
-    await pushNamed(
-      '/chat/conversation',
-      args: {'conversationId': '1'},
-    );
-    await pushNamed(
-      '/payment/status',
-      args: {'paymentId': 'p_1'},
-    );
-    await pushNamed(
-      '/edit',
-      args: {'car': <String, dynamic>{'id': 1, 'title': 'Test car'}},
+      '/edit_listing',
+      args: {
+        'car': <String, dynamic>{'id': 1, 'title': 'Test car'},
+      },
     );
     await pushNamed('/my_listings');
     await pushNamed('/comparison');
@@ -211,4 +203,3 @@ void main() {
     await tester.pump(const Duration(seconds: 5));
   });
 }
-
