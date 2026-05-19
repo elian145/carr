@@ -69,8 +69,8 @@ android {
     }
 
     // Signing setup:
-    // - Default: release uses debug signing (local/dev friendly).
-    // - CI/Store: provide `signing.properties` at repo root to enable real release signing.
+    // - Store prod release builds require `signing.properties` at repo root.
+    // - Local/dev release builds can still use debug signing for smoke testing.
     //
     // signing.properties format:
     //   STORE_FILE=/path/to/keystore.jks
@@ -82,6 +82,11 @@ android {
     if (signingPropsFile.exists()) {
         signingPropsFile.inputStream().use { signingProps.load(it) }
     }
+    val hasReleaseSigning =
+        (signingProps.getProperty("STORE_FILE")?.trim().orEmpty().isNotEmpty()) &&
+        (signingProps.getProperty("STORE_PASSWORD")?.trim().orEmpty().isNotEmpty()) &&
+        (signingProps.getProperty("KEY_ALIAS")?.trim().orEmpty().isNotEmpty()) &&
+        (signingProps.getProperty("KEY_PASSWORD")?.trim().orEmpty().isNotEmpty())
 
     signingConfigs {
         create("releaseConfig") {
@@ -106,12 +111,6 @@ android {
 
     buildTypes {
         release {
-            val hasReleaseSigning =
-                (signingProps.getProperty("STORE_FILE")?.trim().orEmpty().isNotEmpty()) &&
-                (signingProps.getProperty("STORE_PASSWORD")?.trim().orEmpty().isNotEmpty()) &&
-                (signingProps.getProperty("KEY_ALIAS")?.trim().orEmpty().isNotEmpty()) &&
-                (signingProps.getProperty("KEY_PASSWORD")?.trim().orEmpty().isNotEmpty())
-
             signingConfig = if (hasReleaseSigning) {
                 signingConfigs.getByName("releaseConfig")
             } else {
@@ -136,6 +135,32 @@ android {
         }
         create("prod") {
             dimension = "env"
+        }
+    }
+}
+
+gradle.taskGraph.whenReady {
+    val allowDebugReleaseSigning =
+        System.getenv("ALLOW_DEBUG_RELEASE_SIGNING")?.equals("true", ignoreCase = true) == true
+    val isProdReleaseBuild = allTasks.any { task ->
+        task.name.contains("ProdRelease", ignoreCase = true)
+    }
+    if (isProdReleaseBuild && !allowDebugReleaseSigning) {
+        val props = Properties()
+        val propsFile = rootProject.file("signing.properties")
+        if (propsFile.exists()) {
+            propsFile.inputStream().use { props.load(it) }
+        }
+        val hasStoreSigning =
+            (props.getProperty("STORE_FILE")?.trim().orEmpty().isNotEmpty()) &&
+            (props.getProperty("STORE_PASSWORD")?.trim().orEmpty().isNotEmpty()) &&
+            (props.getProperty("KEY_ALIAS")?.trim().orEmpty().isNotEmpty()) &&
+            (props.getProperty("KEY_PASSWORD")?.trim().orEmpty().isNotEmpty())
+        if (!hasStoreSigning) {
+            throw GradleException(
+                "Prod release builds require signing.properties. " +
+                    "Set ALLOW_DEBUG_RELEASE_SIGNING=true only for local smoke-test builds."
+            )
         }
     }
 }

@@ -1,6 +1,7 @@
 import Flutter
 import UIKit
 import Firebase
+import FirebaseMessaging
 import GoogleMaps
 import airbridge_flutter_sdk
 
@@ -66,5 +67,13 @@ import airbridge_flutter_sdk
       continue: userActivity,
       restorationHandler: restorationHandler
     )
+  }
+
+  override func application(
+    _ application: UIApplication,
+    didRegisterForRemoteNotificationsWithDeviceToken deviceToken: Data
+  ) {
+    Messaging.messaging().apnsToken = deviceToken
+    super.application(application, didRegisterForRemoteNotificationsWithDeviceToken: deviceToken)
   }
 }

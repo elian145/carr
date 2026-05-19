@@ -137,6 +137,8 @@ workflows:
         API_BASE: "https://carr-5hrm.onrender.com"
         LISTING_SHARE_WEB_BASE: "https://carr-5hrm.onrender.com"
         LISTING_SHARE_URL_PATH: "listing"
+        # This workflow is intentionally for test APKs only; store builds must use real signing.
+        ALLOW_DEBUG_RELEASE_SIGNING: "true"
     scripts:
       - name: Flutter pub get
         script: |

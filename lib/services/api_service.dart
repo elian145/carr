@@ -176,6 +176,86 @@ class ApiService {
     }
   }
 
+  static Map<String, dynamic> _decodeMapBody(
+    String body, {
+    required int statusCode,
+    String fallbackMessage = 'API request failed',
+  }) {
+    if (body.trim().isEmpty) {
+      return <String, dynamic>{};
+    }
+    try {
+      final decoded = json.decode(body);
+      if (decoded is Map) {
+        return Map<String, dynamic>.from(decoded.cast<String, dynamic>());
+      }
+      throw ApiException(
+        statusCode: statusCode,
+        message: '$fallbackMessage ($statusCode)',
+      );
+    } on ApiException {
+      rethrow;
+    } catch (_) {
+      throw ApiException(
+        statusCode: statusCode,
+        message: body.trim().isNotEmpty
+            ? body.trim()
+            : '$fallbackMessage ($statusCode)',
+      );
+    }
+  }
+
+  static ApiException _uploadException(int statusCode, String responseBody) {
+    String message = 'Upload failed';
+    Map<String, dynamic>? body;
+    try {
+      final decoded = responseBody.trim().isNotEmpty
+          ? json.decode(responseBody)
+          : <String, dynamic>{};
+      if (decoded is Map) {
+        body = Map<String, dynamic>.from(decoded.cast<String, dynamic>());
+        final msg = (body['message'] ?? body['error'] ?? '').toString().trim();
+        if (msg.isNotEmpty) message = msg;
+      } else if (responseBody.trim().isNotEmpty) {
+        message = responseBody.trim();
+      }
+    } catch (_) {
+      if (responseBody.trim().isNotEmpty) message = responseBody.trim();
+    }
+    return ApiException(statusCode: statusCode, message: message, body: body);
+  }
+
+  static Future<Map<String, dynamic>> _sendAuthenticatedMultipart(
+    Future<http.MultipartRequest> Function() buildRequest,
+  ) async {
+    await _ensureTokenLoaded();
+
+    Future<http.Response> sendOnce() async {
+      final request = await buildRequest();
+      if (_accessToken != null && _accessToken!.isNotEmpty) {
+        request.headers['Authorization'] = 'Bearer $_accessToken';
+      }
+      final streamed = await request.send().timeout(_uploadTimeout);
+      return http.Response.fromStream(streamed);
+    }
+
+    var response = await sendOnce();
+    if (response.statusCode == 401 && await _refreshAccessToken()) {
+      response = await sendOnce();
+    }
+    if (response.statusCode >= 200 && response.statusCode < 300) {
+      return _decodeMapBody(
+        response.body,
+        statusCode: response.statusCode,
+        fallbackMessage: 'Upload failed',
+      );
+    }
+    if (response.statusCode == 401) {
+      await clearTokens();
+    }
+    throw _uploadException(response.statusCode, response.body);
+  }
+
   // Refresh access token
   static Future<bool> _refreshAccessToken() async {
     final rt = (_refreshToken ?? '').trim();
@@ -739,57 +819,31 @@ class ApiService {
   static Future<Map<String, dynamic>> uploadProfilePicture(
     XFile imageFile,
   ) async {
-    final request = http.MultipartRequest(
-      'POST',
-      Uri.parse('$baseUrl/user/upload-profile-picture'),
-    );
-
-    // Add authorization header
-    if (_accessToken != null) {
-      request.headers['Authorization'] = 'Bearer $_accessToken';
-    }
-
-    // Add file
-    request.files.add(
-      await http.MultipartFile.fromPath('file', imageFile.path),
-    );
-
-    final response = await request.send().timeout(_uploadTimeout);
-    final responseBody = await response.stream.bytesToString();
-
-    if (response.statusCode >= 200 && response.statusCode < 300) {
-      return json.decode(responseBody);
-    } else {
-      final error = json.decode(responseBody);
-      throw Exception(error['message'] ?? 'Upload failed');
-    }
+    return _sendAuthenticatedMultipart(() async {
+      final request = http.MultipartRequest(
+        'POST',
+        Uri.parse('$baseUrl/user/upload-profile-picture'),
+      );
+      request.files.add(
+        await http.MultipartFile.fromPath('file', imageFile.path),
+      );
+      return request;
+    });
   }
 
   static Future<Map<String, dynamic>> uploadDealerCoverPicture(
     XFile imageFile,
   ) async {
-    final request = http.MultipartRequest(
-      'POST',
-      Uri.parse('$baseUrl/user/upload-dealer-cover'),
-    );
-
-    if (_accessToken != null) {
-      request.headers['Authorization'] = 'Bearer $_accessToken';
-    }
-
-    request.files.add(
-      await http.MultipartFile.fromPath('file', imageFile.path),
-    );
-
-    final response = await request.send().timeout(_uploadTimeout);
-    final responseBody = await response.stream.bytesToString();
-
-    if (response.statusCode >= 200 && response.statusCode < 300) {
-      return json.decode(responseBody);
-    } else {
-      final error = json.decode(responseBody);
-      throw Exception(error['message'] ?? 'Upload failed');
-    }
+    return _sendAuthenticatedMultipart(() async {
+      final request = http.MultipartRequest(
+        'POST',
+        Uri.parse('$baseUrl/user/upload-dealer-cover'),
+      );
+      request.files.add(
+        await http.MultipartFile.fromPath('file', imageFile.path),
+      );
+      return request;
+    });
   }
 
   // Car listing methods
@@ -900,36 +954,23 @@ class ApiService {
     if (skipBlur) qp.add('skip_blur=1');
     if (imageKind.toLowerCase() == 'damage') qp.add('kind=damage');
     final String query = qp.isEmpty ? '' : '?${qp.join('&')}';
-    final request = http.MultipartRequest(
-      'POST',
-      Uri.parse('$baseUrl/cars/$carId/images$query'),
-    );
-
-    // Add authorization header
-    if (_accessToken != null) {
-      request.headers['Authorization'] = 'Bearer $_accessToken';
-    }
-
-    // Add files once under 'images' (backend accepts 'files', 'images', 'image', etc. and extends one list — do not send same file under multiple keys or backend gets duplicates)
-    for (final file in imageFiles) {
-      request.files.add(await http.MultipartFile.fromPath('images', file.path));
-    }
-
-    final response = await request.send().timeout(_uploadTimeout);
-    final responseBody = await response.stream.bytesToString();
-
-    if (response.statusCode >= 200 && response.statusCode < 300) {
-      // Backend compatibility: some endpoints return { uploaded: [...] }
-      // Normalize to { images: [...] } expected by UI services
-      final Map<String, dynamic> data = json.decode(responseBody);
-      if (!data.containsKey('images') && data.containsKey('uploaded')) {
-        data['images'] = List.from(data['uploaded'] as List);
+    final data = await _sendAuthenticatedMultipart(() async {
+      final request = http.MultipartRequest(
+        'POST',
+        Uri.parse('$baseUrl/cars/$carId/images$query'),
+      );
+      // Add files once under 'images' (backend accepts 'files', 'images', 'image', etc. and extends one list — do not send same file under multiple keys or backend gets duplicates)
+      for (final file in imageFiles) {
+        request.files.add(await http.MultipartFile.fromPath('images', file.path));
       }
-      return data;
-    } else {
-      final error = json.decode(responseBody);
-      throw Exception(error['message'] ?? 'Upload failed');
+      return request;
+    });
+    // Backend compatibility: some endpoints return { uploaded: [...] }
+    // Normalize to { images: [...] } expected by UI services
+    if (!data.containsKey('images') && data.containsKey('uploaded')) {
+      data['images'] = List.from(data['uploaded'] as List);
     }
+    return data;
   }
 
   static Future<Map<String, dynamic>> attachCarImages(
@@ -1014,36 +1055,22 @@ class ApiService {
     String carId,
     List<XFile> videoFiles,
   ) async {
-    final request = http.MultipartRequest(
-      'POST',
-      Uri.parse('$baseUrl/cars/$carId/videos'),
-    );
-
-    // Add authorization header
-    if (_accessToken != null) {
-      request.headers['Authorization'] = 'Bearer $_accessToken';
-    }
-
-    // Add files
-    // Backend expects `request.files["files"]` (list).
-    for (final file in videoFiles) {
-      request.files.add(await http.MultipartFile.fromPath('files', file.path));
-    }
-
-    final response = await request.send().timeout(_uploadTimeout);
-    final responseBody = await response.stream.bytesToString();
-
-    if (response.statusCode >= 200 && response.statusCode < 300) {
-      // Normalize { uploaded: [...] } -> { videos: [...] }
-      final Map<String, dynamic> data = json.decode(responseBody);
-      if (!data.containsKey('videos') && data.containsKey('uploaded')) {
-        data['videos'] = List.from(data['uploaded'] as List);
+    final data = await _sendAuthenticatedMultipart(() async {
+      final request = http.MultipartRequest(
+        'POST',
+        Uri.parse('$baseUrl/cars/$carId/videos'),
+      );
+      // Backend expects `request.files["files"]` (list).
+      for (final file in videoFiles) {
+        request.files.add(await http.MultipartFile.fromPath('files', file.path));
       }
-      return data;
-    } else {
-      final error = json.decode(responseBody);
-      throw Exception(error['message'] ?? 'Upload failed');
+      return request;
+    });
+    // Normalize { uploaded: [...] } -> { videos: [...] }
+    if (!data.containsKey('videos') && data.containsKey('uploaded')) {
+      data['videos'] = List.from(data['uploaded'] as List);
     }
+    return data;
   }
 
   // Favorites methods

@@ -3629,6 +3629,9 @@ class AuthGuard extends StatelessWidget {
         child is ProfilePage) {
       return child;
     }
+    if (auth.isLoading || ApiService.isAuthenticated) {
+      return const Scaffold(body: Center(child: CircularProgressIndicator()));
+    }
     if (child is SellCarPage) {
       return const _SellAuthPrompt();
     }
@@ -3668,6 +3671,22 @@ class MyApp extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    Map<String, dynamic>? routeArgs(BuildContext context) {
+      final args = ModalRoute.of(context)?.settings.arguments;
+      if (args is Map<String, dynamic>) return args;
+      if (args is Map) {
+        return args.map((key, value) => MapEntry(key.toString(), value));
+      }
+      return null;
+    }
+
+    Widget navigationError(String message) {
+      return Scaffold(
+        appBar: AppBar(title: const Text('Navigation error')),
+        body: Center(child: Text(message)),
+      );
+    }
+
     return MultiProvider(
       providers: [
         ChangeNotifierProvider(create: (context) => ThemeProvider()),
@@ -3758,16 +3777,16 @@ class MyApp extends StatelessWidget {
                 '/edit-profile': (context) =>
                     AuthGuard(child: EditProfilePage()),
                 '/car_detail': (context) {
-                  final args =
-                      ModalRoute.of(context)!.settings.arguments
-                          as Map<String, dynamic>;
-                  return CarDetailsPage(carId: args['carId'].toString());
+                  final args = routeArgs(context);
+                  final carId = (args?['carId'] ?? '').toString().trim();
+                  if (carId.isEmpty) {
+                    return navigationError('Missing listing id');
+                  }
+                  return CarDetailsPage(carId: carId);
                 },
                 '/chat/conversation': (context) {
-                  final args =
-                      ModalRoute.of(context)!.settings.arguments
-                          as Map<String, dynamic>;
-                  final rawId = (args['carId'] ?? args['conversationId'] ?? '')
+                  final args = routeArgs(context);
+                  final rawId = (args?['carId'] ?? args?['conversationId'] ?? '')
                       .toString()
                       .trim();
                   if (rawId.isEmpty) {
@@ -3781,11 +3800,11 @@ class MyApp extends StatelessWidget {
                   return AuthGuard(
                     child: carzo_chat.ChatConversationPage(
                       carId: rawId,
-                      receiverId: args['receiverId']?.toString(),
-                      initialDraft: args['initialDraft']?.toString(),
-                      initialListingPreview: args['listingPreview'] is Map
+                      receiverId: args?['receiverId']?.toString(),
+                      initialDraft: args?['initialDraft']?.toString(),
+                      initialListingPreview: args?['listingPreview'] is Map
                           ? Map<String, dynamic>.from(
-                              (args['listingPreview'] as Map)
+                              (args?['listingPreview'] as Map)
                                   .cast<String, dynamic>(),
                             )
                           : null,
@@ -3793,10 +3812,8 @@ class MyApp extends StatelessWidget {
                   );
                 },
                 '/edit': (context) {
-                  final args =
-                      ModalRoute.of(context)!.settings.arguments
-                          as Map<String, dynamic>;
-                  final car = args['car'];
+                  final args = routeArgs(context);
+                  final car = args?['car'];
                   if (car is! Map) {
                     return Scaffold(
                       appBar: AppBar(title: const Text('Navigation error')),
