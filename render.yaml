@@ -5,7 +5,7 @@
 #   APP_ENV=production
 #   SECRET_KEY=<long random string, e.g. openssl rand -hex 32>
 #   JWT_SECRET_KEY=<long random string>
-#   DATABASE_URL=<postgresql://...>  (or leave unset to use SQLite on ephemeral disk)
+#   DATABASE_URL=<postgresql://...>  (Render Postgres or another persistent PostgreSQL database)
 #
 # Universal / App Links (listing shares → open app):
 #   APPLE_TEAM_ID=<10-char Team ID>
