@@ -259,6 +259,7 @@ class _ProfilePageState extends State<ProfilePage> {
       // This is best-effort and safe even if already initialized.
       await auth.initialize();
     } catch (e) {
+      if (!mounted) return;
       _error = userErrorText(
         context,
         e,

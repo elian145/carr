@@ -102,8 +102,9 @@ Map<String, WidgetBuilder> buildAppRoutes() {
     '/car_detail': (context) {
       final args = argsMap(context);
       final carId = args?['carId'];
-      if (carId == null)
+      if (carId == null) {
         return const _RouteArgsErrorPage(routeName: '/car_detail');
+      }
       return details.CarDetailPage(carId: carId.toString());
     },
     '/chat/conversation': (context) {

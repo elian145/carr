@@ -46,6 +46,7 @@ class _AdminDealersPageState extends State<AdminDealersPage> {
           .map((m) => Map<String, dynamic>.from(m.cast<String, dynamic>()))
           .toList();
     } catch (e) {
+      if (!mounted) return;
       _error = userErrorText(
         context,
         e,

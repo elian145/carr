@@ -50,6 +50,7 @@ class _AdminReportsPageState extends State<AdminReportsPage> {
               .toList()
           : [];
     } catch (e) {
+      if (!mounted) return;
       _error = userErrorText(
         context,
         e,
