@@ -45,7 +45,17 @@ Map<String, WidgetBuilder> buildAppRoutes() {
 
   return {
     '/': (context) => const modern.HomePage(),
-    '/sell': (context) => const sell.SellPage(),
+    '/sell': (context) {
+      final args = argsMap(context);
+      final draftSnapshot = args?['draftSnapshot'];
+      return sell.SellPage(
+        startFresh: args?['startFresh'] == true,
+        initialDraftSnapshot: draftSnapshot is Map
+            ? Map<String, dynamic>.from(draftSnapshot.cast<String, dynamic>())
+            : null,
+        editListing: args?['editListing'] == true,
+      );
+    },
     '/settings': (context) => const settings.SettingsPage(),
     '/favorites': (context) => const favorites.FavoritesPage(),
     '/chat': (context) => const chat.ChatListPage(),
@@ -66,7 +76,8 @@ Map<String, WidgetBuilder> buildAppRoutes() {
     '/car_detail': (context) {
       final args = argsMap(context);
       final carId = args?['carId'];
-      if (carId == null) return const _RouteArgsErrorPage(routeName: '/car_detail');
+      if (carId == null)
+        return const _RouteArgsErrorPage(routeName: '/car_detail');
       return details.CarDetailPage(carId: carId.toString());
     },
     '/chat/conversation': (context) {

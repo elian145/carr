@@ -177,6 +177,28 @@ void main() {
 
     // Build coverage for all named routes we ship.
     await pushNamed('/sell');
+    await pushNamed('/sell', args: {'startFresh': true});
+    await pushNamed(
+      '/sell',
+      args: {
+        'editListing': true,
+        'draftSnapshot': {
+          'currentStep': 4,
+          'isEditMode': true,
+          'carData': {
+            '_editListingId': '1',
+            'brand': 'Toyota',
+            'model': 'Camry',
+            'trim': 'Base',
+            'year': '2020',
+            'mileage': '10000',
+            'price': '10000',
+            'currency': 'USD',
+            'location': 'Erbil',
+          },
+        },
+      },
+    );
     await pushNamed('/settings');
     await pushNamed('/favorites');
     await pushNamed('/chat');

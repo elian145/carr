@@ -16,7 +16,16 @@ import '../shared/listings/listing_identity.dart';
 import '../shared/prefs/sell_listing_draft_prefs.dart';
 
 class SellPage extends StatefulWidget {
-  const SellPage({super.key});
+  const SellPage({
+    super.key,
+    this.initialDraftSnapshot,
+    this.startFresh = false,
+    this.editListing = false,
+  });
+
+  final Map<String, dynamic>? initialDraftSnapshot;
+  final bool startFresh;
+  final bool editListing;
 
   @override
   State<SellPage> createState() => _SellPageState();
@@ -44,10 +53,12 @@ class _SellPageState extends State<SellPage> {
 
   CarSpecIndex? _specIndex;
   String? _specLoadError;
+
   /// True after [CarSpecIndex.loadWithResult] finishes (success or failure).
   bool _specDbLoadDone = false;
   int? _datasetModelId;
   int? _catalogYear;
+
   /// Bumps so dropdowns rebuild after catalog apply (Material dropdown cache).
   int _specDropdownKey = 0;
 
@@ -80,6 +91,8 @@ class _SellPageState extends State<SellPage> {
   bool _draftIsComplete = false;
   Map<String, dynamic>? _draftPreviewData;
   String? _draftOwnerKey;
+  String? _editListingId;
+  bool _skipDraftSaveOnDispose = false;
 
   /// When the bundled catalog provides 2+ distinct values, the matching field becomes a dropdown
   /// limited to these options (cleared when applying catalog specs).
@@ -111,7 +124,13 @@ class _SellPageState extends State<SellPage> {
     _fuelEconomyCtl.addListener(_onDraftFieldChanged);
     _seatingCtl.addListener(_onDraftFieldChanged);
     _damagedParts.addListener(_onDraftFieldChanged);
-    unawaited(_loadDraftPreview());
+    if (widget.startFresh) {
+      unawaited(_startFreshFromRoute());
+    } else if (widget.initialDraftSnapshot != null) {
+      unawaited(_loadInitialDraftSnapshot(widget.initialDraftSnapshot!));
+    } else {
+      unawaited(_loadDraftPreview());
+    }
     CarSpecIndex.loadWithResult().then((r) {
       if (!mounted) return;
       setState(() {
@@ -126,7 +145,9 @@ class _SellPageState extends State<SellPage> {
   @override
   void dispose() {
     _draftSaveTimer?.cancel();
-    unawaited(_saveDraft(immediate: true));
+    if (!_skipDraftSaveOnDispose) {
+      unawaited(_saveDraft(immediate: true));
+    }
     _year.removeListener(_onListingYearChanged);
     _mileage.removeListener(_onDraftFieldChanged);
     _price.removeListener(_onDraftFieldChanged);
@@ -173,14 +194,99 @@ class _SellPageState extends State<SellPage> {
 
   String _buildDraftOwnerKey() {
     final user = AuthService().currentUser;
-    final raw = (user?['public_id'] ??
-            user?['id'] ??
-            user?['username'] ??
-            user?['email'] ??
-            'guest')
+    final raw =
+        (user?['public_id'] ??
+                user?['id'] ??
+                user?['username'] ??
+                user?['email'] ??
+                'guest')
+            .toString()
+            .trim();
+    return raw.isEmpty ? 'guest' : raw;
+  }
+
+  String _normalizeChoice(
+    dynamic raw,
+    Iterable<String> allowed,
+    String fallback,
+  ) {
+    final value = raw?.toString().trim() ?? '';
+    if (value.isEmpty) return fallback;
+    final normalized = value.toLowerCase().replaceAll('_', '-');
+    for (final option in allowed) {
+      if (option.toLowerCase() == normalized) return option;
+    }
+    return fallback;
+  }
+
+  String _normalizeCatalogValue(dynamic raw, Iterable<String> allowed) {
+    final value = raw?.toString().trim() ?? '';
+    if (value.isEmpty) return '';
+    for (final option in allowed) {
+      if (option.toLowerCase() == value.toLowerCase()) return option;
+    }
+    return '';
+  }
+
+  Map<String, dynamic> _draftFromRouteSnapshot(Map<String, dynamic> snapshot) {
+    final rawCarData = snapshot['carData'];
+    final data = rawCarData is Map
+        ? Map<String, dynamic>.from(rawCarData.cast<String, dynamic>())
+        : Map<String, dynamic>.from(snapshot);
+
+    final editId = (data['_editListingId'] ?? data['id'] ?? data['carId'] ?? '')
         .toString()
         .trim();
-    return raw.isEmpty ? 'guest' : raw;
+    if (editId.isNotEmpty &&
+        (widget.editListing || snapshot['isEditMode'] == true)) {
+      data['_editListingId'] = editId;
+    }
+
+    if (data['image_paths'] == null && data['images'] is List) {
+      data['image_paths'] = data['images'];
+    }
+    if (data['video_paths'] == null && data['videos'] is List) {
+      data['video_paths'] = data['videos'];
+    }
+    if (data['damage_image_paths'] == null && data['damage_images'] is List) {
+      data['damage_image_paths'] = data['damage_images'];
+    }
+    data['complete'] ??= snapshot['currentStep'] == 4;
+    data['updated_at'] ??= DateTime.now().toIso8601String();
+    return data;
+  }
+
+  Future<void> _startFreshFromRoute() async {
+    final owner = _draftOwnerKey ??= _buildDraftOwnerKey();
+    await SellListingDraftPrefs.clear(owner);
+    if (!mounted) return;
+    setState(() {
+      _editListingId = null;
+      _draftLoaded = true;
+      _draftExists = false;
+      _draftIsComplete = false;
+      _draftPreviewData = null;
+    });
+  }
+
+  Future<void> _loadInitialDraftSnapshot(Map<String, dynamic> snapshot) async {
+    final owner = _draftOwnerKey ??= _buildDraftOwnerKey();
+    final draft = _draftFromRouteSnapshot(snapshot);
+    if (!_hasMeaningfulDraftData(draft)) {
+      await _loadDraftPreview();
+      return;
+    }
+    await SellListingDraftPrefs.save(owner, draft);
+    if (!mounted) return;
+    final editId = (draft['_editListingId'] ?? '').toString().trim();
+    setState(() {
+      _editListingId = editId.isEmpty ? null : editId;
+      _draftLoaded = true;
+      _draftExists = true;
+      _draftIsComplete = draft['complete'] == true;
+      _draftPreviewData = draft;
+    });
+    await _restoreDraft();
   }
 
   void _onDraftFieldChanged() {
@@ -213,8 +319,10 @@ class _SellPageState extends State<SellPage> {
         (data['cylinder_count'] ?? '').toString().trim().isNotEmpty ||
         (data['fuel_economy'] ?? '').toString().trim().isNotEmpty ||
         (data['seating'] ?? '').toString().trim().isNotEmpty ||
-        (data['image_paths'] is List && (data['image_paths'] as List).isNotEmpty) ||
-        (data['video_paths'] is List && (data['video_paths'] as List).isNotEmpty) ||
+        (data['image_paths'] is List &&
+            (data['image_paths'] as List).isNotEmpty) ||
+        (data['video_paths'] is List &&
+            (data['video_paths'] as List).isNotEmpty) ||
         (data['engine_type'] ?? 'gasoline') != 'gasoline' ||
         (data['fuel_type'] ?? 'gasoline') != 'gasoline' ||
         (data['transmission'] ?? 'automatic') != 'automatic' ||
@@ -270,9 +378,7 @@ class _SellPageState extends State<SellPage> {
     if (_currency != 'USD') return true;
     if (_titleStatus != 'clean') return true;
     if (_damagedParts.text.trim().isNotEmpty) return true;
-    return _images.isNotEmpty ||
-        _videos.isNotEmpty ||
-        _damageImages.isNotEmpty;
+    return _images.isNotEmpty || _videos.isNotEmpty || _damageImages.isNotEmpty;
   }
 
   bool _isListingComplete() {
@@ -298,6 +404,8 @@ class _SellPageState extends State<SellPage> {
 
   Map<String, dynamic> _buildDraftData() {
     return <String, dynamic>{
+      if ((_editListingId ?? '').trim().isNotEmpty)
+        '_editListingId': _editListingId!.trim(),
       'brand': _selectedBrand,
       'model': _selectedModel,
       'trim': _selectedTrim,
@@ -375,6 +483,7 @@ class _SellPageState extends State<SellPage> {
         _draftLoaded = true;
         _draftExists = false;
         _draftIsComplete = false;
+        _editListingId = null;
       });
       return;
     }
@@ -383,42 +492,98 @@ class _SellPageState extends State<SellPage> {
     try {
       final imagePaths = (draft['image_paths'] is List)
           ? (draft['image_paths'] as List)
-              .map((e) => e.toString())
-              .where((path) => path.trim().isNotEmpty && File(path).existsSync())
-              .toList()
+                .map((e) => e.toString())
+                .where(
+                  (path) => path.trim().isNotEmpty && File(path).existsSync(),
+                )
+                .toList()
           : <String>[];
       final videoPaths = (draft['video_paths'] is List)
           ? (draft['video_paths'] as List)
-              .map((e) => e.toString())
-              .where((path) => path.trim().isNotEmpty && File(path).existsSync())
-              .toList()
+                .map((e) => e.toString())
+                .where(
+                  (path) => path.trim().isNotEmpty && File(path).existsSync(),
+                )
+                .toList()
           : <String>[];
       final damageImagePaths = (draft['damage_image_paths'] is List)
           ? (draft['damage_image_paths'] as List)
-              .map((e) => e.toString())
-              .where((path) => path.trim().isNotEmpty && File(path).existsSync())
-              .toList()
+                .map((e) => e.toString())
+                .where(
+                  (path) => path.trim().isNotEmpty && File(path).existsSync(),
+                )
+                .toList()
           : <String>[];
 
-      final draftTitleStatus = (draft['title_status'] ?? 'clean').toString().toLowerCase();
-      final normalizedTitle = draftTitleStatus == 'damaged' ? 'damaged' : 'clean';
+      final draftTitleStatus = (draft['title_status'] ?? 'clean')
+          .toString()
+          .toLowerCase();
+      final normalizedTitle = draftTitleStatus == 'damaged'
+          ? 'damaged'
+          : 'clean';
+      final brand = _normalizeCatalogValue(draft['brand'], CarCatalog.brands);
+      final model = brand.isEmpty
+          ? ''
+          : _normalizeCatalogValue(
+              draft['model'],
+              CarCatalog.models[brand] ?? const <String>[],
+            );
+      final trim = (brand.isEmpty || model.isEmpty)
+          ? ''
+          : _normalizeCatalogValue(
+              draft['trim'],
+              CarCatalog.trimsFor(brand, model),
+            );
 
       final loadedDraft = <String, dynamic>{
-        'brand': (draft['brand'] ?? '').toString().trim(),
-        'model': (draft['model'] ?? '').toString().trim(),
-        'trim': (draft['trim'] ?? '').toString().trim(),
+        'brand': brand,
+        'model': model,
+        'trim': trim,
         'year': (draft['year'] ?? '').toString().trim(),
         'mileage': (draft['mileage'] ?? '').toString().trim(),
         'price': (draft['price'] ?? '').toString().trim(),
-        'currency': (draft['currency'] ?? 'USD').toString(),
+        'currency': _normalizeChoice(draft['currency'], const [
+          'USD',
+          'IQD',
+        ], 'USD'),
         'location': (draft['location'] ?? '').toString().trim(),
         'description': (draft['description'] ?? '').toString().trim(),
-        'engine_type': (draft['engine_type'] ?? 'gasoline').toString(),
-        'fuel_type': (draft['fuel_type'] ?? 'gasoline').toString(),
-        'transmission': (draft['transmission'] ?? 'automatic').toString(),
-        'drive_type': (draft['drive_type'] ?? 'fwd').toString(),
-        'condition': (draft['condition'] ?? 'used').toString(),
-        'body_type': (draft['body_type'] ?? 'sedan').toString(),
+        'engine_type': _normalizeChoice(
+          draft['engine_type'] ?? draft['fuel_type'],
+          const ['gasoline', 'diesel', 'hybrid', 'electric'],
+          'gasoline',
+        ),
+        'fuel_type': _normalizeChoice(
+          draft['fuel_type'] ?? draft['engine_type'],
+          const ['gasoline', 'diesel', 'hybrid', 'electric'],
+          'gasoline',
+        ),
+        'transmission': _normalizeChoice(draft['transmission'], const [
+          'automatic',
+          'manual',
+          'cvt',
+          'semi-automatic',
+        ], 'automatic'),
+        'drive_type': _normalizeChoice(draft['drive_type'], const [
+          'fwd',
+          'rwd',
+          'awd',
+          '4wd',
+        ], 'fwd'),
+        'condition': _normalizeChoice(draft['condition'], const [
+          'new',
+          'used',
+        ], 'used'),
+        'body_type': _normalizeChoice(draft['body_type'], const [
+          'sedan',
+          'suv',
+          'hatchback',
+          'coupe',
+          'pickup',
+          'van',
+          'convertible',
+          'wagon',
+        ], 'sedan'),
         'engine_size': (draft['engine_size'] ?? '').toString().trim(),
         'cylinder_count': (draft['cylinder_count'] ?? '').toString().trim(),
         'fuel_economy': (draft['fuel_economy'] ?? '').toString().trim(),
@@ -429,35 +594,38 @@ class _SellPageState extends State<SellPage> {
         'damaged_parts': (draft['damaged_parts'] ?? '').toString().trim(),
         'damage_image_paths': damageImagePaths,
       };
-      final hasMeaningfulContent = loadedDraft.entries.any((entry) {
-        final value = entry.value;
-        if (value is String) return value.trim().isNotEmpty;
-        if (value is List) return value.isNotEmpty;
-        return value != null;
-      }) && (loadedDraft['brand'].toString().isNotEmpty ||
-          loadedDraft['model'].toString().isNotEmpty ||
-          loadedDraft['trim'].toString().isNotEmpty ||
-          loadedDraft['year'].toString().isNotEmpty ||
-          loadedDraft['mileage'].toString().isNotEmpty ||
-          loadedDraft['price'].toString().isNotEmpty ||
-          loadedDraft['location'].toString().isNotEmpty ||
-          loadedDraft['description'].toString().isNotEmpty ||
-          loadedDraft['engine_size'].toString().isNotEmpty ||
-          loadedDraft['cylinder_count'].toString().isNotEmpty ||
-          loadedDraft['fuel_economy'].toString().isNotEmpty ||
-          loadedDraft['seating'].toString().isNotEmpty ||
-          imagePaths.isNotEmpty ||
-          videoPaths.isNotEmpty ||
-          loadedDraft['engine_type'] != 'gasoline' ||
-          loadedDraft['fuel_type'] != 'gasoline' ||
-          loadedDraft['transmission'] != 'automatic' ||
-          loadedDraft['drive_type'] != 'fwd' ||
-          loadedDraft['condition'] != 'used' ||
-          loadedDraft['body_type'] != 'sedan' ||
-          loadedDraft['currency'] != 'USD' ||
-          loadedDraft['title_status'] != 'clean' ||
-          loadedDraft['damaged_parts'].toString().trim().isNotEmpty ||
-          damageImagePaths.isNotEmpty);
+      final editId = (draft['_editListingId'] ?? '').toString().trim();
+      final hasMeaningfulContent =
+          loadedDraft.entries.any((entry) {
+            final value = entry.value;
+            if (value is String) return value.trim().isNotEmpty;
+            if (value is List) return value.isNotEmpty;
+            return value != null;
+          }) &&
+          (loadedDraft['brand'].toString().isNotEmpty ||
+              loadedDraft['model'].toString().isNotEmpty ||
+              loadedDraft['trim'].toString().isNotEmpty ||
+              loadedDraft['year'].toString().isNotEmpty ||
+              loadedDraft['mileage'].toString().isNotEmpty ||
+              loadedDraft['price'].toString().isNotEmpty ||
+              loadedDraft['location'].toString().isNotEmpty ||
+              loadedDraft['description'].toString().isNotEmpty ||
+              loadedDraft['engine_size'].toString().isNotEmpty ||
+              loadedDraft['cylinder_count'].toString().isNotEmpty ||
+              loadedDraft['fuel_economy'].toString().isNotEmpty ||
+              loadedDraft['seating'].toString().isNotEmpty ||
+              imagePaths.isNotEmpty ||
+              videoPaths.isNotEmpty ||
+              loadedDraft['engine_type'] != 'gasoline' ||
+              loadedDraft['fuel_type'] != 'gasoline' ||
+              loadedDraft['transmission'] != 'automatic' ||
+              loadedDraft['drive_type'] != 'fwd' ||
+              loadedDraft['condition'] != 'used' ||
+              loadedDraft['body_type'] != 'sedan' ||
+              loadedDraft['currency'] != 'USD' ||
+              loadedDraft['title_status'] != 'clean' ||
+              loadedDraft['damaged_parts'].toString().trim().isNotEmpty ||
+              damageImagePaths.isNotEmpty);
       if (!hasMeaningfulContent) {
         await SellListingDraftPrefs.clear(owner);
         if (!mounted) return;
@@ -465,6 +633,7 @@ class _SellPageState extends State<SellPage> {
           _draftLoaded = true;
           _draftExists = false;
           _draftIsComplete = false;
+          _editListingId = null;
         });
         return;
       }
@@ -498,7 +667,9 @@ class _SellPageState extends State<SellPage> {
         _titleStatus = loadedDraft['title_status'] as String;
         _damagedParts.text = loadedDraft['damaged_parts'] as String;
         _catalogYear = int.tryParse((draft['catalog_year'] ?? '').toString());
-        _datasetModelId = int.tryParse((draft['dataset_model_id'] ?? '').toString());
+        _datasetModelId = int.tryParse(
+          (draft['dataset_model_id'] ?? '').toString(),
+        );
         _images
           ..clear()
           ..addAll(imagePaths.map((path) => XFile(path)));
@@ -512,6 +683,7 @@ class _SellPageState extends State<SellPage> {
         _draftIsComplete = draft['complete'] == true || _isListingComplete();
         _draftLoaded = true;
         _draftPreviewData = draft;
+        _editListingId = editId.isEmpty ? null : editId;
       });
       _scheduleRefreshDataset();
     } finally {
@@ -561,6 +733,7 @@ class _SellPageState extends State<SellPage> {
         _draftExists = false;
         _draftIsComplete = false;
         _draftLoaded = true;
+        _editListingId = null;
       });
     } finally {
       _restoringDraft = false;
@@ -760,10 +933,13 @@ class _SellPageState extends State<SellPage> {
       _engineSizeCtl.text = specFields.engineSizeLiters != null
           ? '${specFields.engineSizeLiters!.toStringAsFixed(1)}${specFields.displacementSuffix}'
           : '';
-      _cylinderCtl.text =
-          specFields.cylinderCount != null ? '${specFields.cylinderCount}' : '';
+      _cylinderCtl.text = specFields.cylinderCount != null
+          ? '${specFields.cylinderCount}'
+          : '';
       _fuelEconomyCtl.text = specFields.fuelEconomy ?? '';
-      _seatingCtl.text = specFields.seating != null ? '${specFields.seating}' : '';
+      _seatingCtl.text = specFields.seating != null
+          ? '${specFields.seating}'
+          : '';
       _year.text = '${_catalogYear!}';
       _syncConstrainedSelectionsAfterCatalogApply();
     });
@@ -821,9 +997,7 @@ class _SellPageState extends State<SellPage> {
   Future<void> _pickVideo() async {
     try {
       final picker = ImagePicker();
-      final picked = await picker.pickVideo(
-        source: ImageSource.gallery,
-      );
+      final picked = await picker.pickVideo(source: ImageSource.gallery);
       if (picked == null) return;
       if (!mounted) return;
       setState(() {
@@ -914,7 +1088,11 @@ class _SellPageState extends State<SellPage> {
             uploadUrl.isEmpty ||
             publicUrl == null ||
             publicUrl.isEmpty) {
-          await ApiService.uploadCarImages(carId, _damageImages, imageKind: 'damage');
+          await ApiService.uploadCarImages(
+            carId,
+            _damageImages,
+            imageKind: 'damage',
+          );
           return;
         }
         await ApiService.uploadToSignedUpload(uploadUrl, file);
@@ -923,12 +1101,20 @@ class _SellPageState extends State<SellPage> {
       await ApiService.attachCarImageUrls(carId, publicUrls, kind: 'damage');
     } on ApiException catch (e) {
       if (e.statusCode == 503) {
-        await ApiService.uploadCarImages(carId, _damageImages, imageKind: 'damage');
+        await ApiService.uploadCarImages(
+          carId,
+          _damageImages,
+          imageKind: 'damage',
+        );
       } else {
         rethrow;
       }
     } catch (_) {
-      await ApiService.uploadCarImages(carId, _damageImages, imageKind: 'damage');
+      await ApiService.uploadCarImages(
+        carId,
+        _damageImages,
+        imageKind: 'damage',
+      );
     }
   }
 
@@ -944,7 +1130,11 @@ class _SellPageState extends State<SellPage> {
     if (!auth.isAuthenticated) {
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text(AppLocalizations.of(context)?.loginRequired ?? 'Login required')),
+        SnackBar(
+          content: Text(
+            AppLocalizations.of(context)?.loginRequired ?? 'Login required',
+          ),
+        ),
       );
       Navigator.pushNamed(context, '/login');
       return;
@@ -954,7 +1144,8 @@ class _SellPageState extends State<SellPage> {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
           content: Text(
-            loc?.pleaseFixHighlightedFields ?? 'Please fix the highlighted fields',
+            loc?.pleaseFixHighlightedFields ??
+                'Please fix the highlighted fields',
           ),
         ),
       );
@@ -965,9 +1156,14 @@ class _SellPageState extends State<SellPage> {
     final int mileage = int.tryParse(_mileage.text.trim()) ?? 0;
     final double price = double.tryParse(_price.text.trim()) ?? 0;
 
+    final editListingId = (_editListingId ?? '').trim();
+    final isEditing = editListingId.isNotEmpty;
+
     setState(() {
       _submitting = true;
-      _stage = loc?.creatingListing ?? 'Creating listing...';
+      _stage = isEditing
+          ? 'Updating listing...'
+          : (loc?.creatingListing ?? 'Creating listing...');
     });
     try {
       final body = <String, dynamic>{
@@ -985,7 +1181,9 @@ class _SellPageState extends State<SellPage> {
         'price': price,
         'currency': _currency,
         'location': _location.text.trim(),
-        'description': _description.text.trim().isEmpty ? null : _description.text.trim(),
+        'description': _description.text.trim().isEmpty
+            ? null
+            : _description.text.trim(),
         'title_status': _titleStatus,
       };
       final eng = OnlineSpecVariant.parseLeadingEngineLiters(
@@ -1003,14 +1201,16 @@ class _SellPageState extends State<SellPage> {
         if (dp != null && dp > 0) body['damaged_parts'] = dp;
       }
 
-      final created = await ApiService.createCar(body);
+      final saved = isEditing
+          ? await ApiService.updateCar(editListingId, body)
+          : await ApiService.createCar(body);
 
-      final car = (created['car'] is Map<String, dynamic>)
-          ? Map<String, dynamic>.from(created['car'])
+      final car = (saved['car'] is Map<String, dynamic>)
+          ? Map<String, dynamic>.from(saved['car'])
           : <String, dynamic>{};
-      final carId = listingPrimaryId(car);
+      final carId = isEditing ? editListingId : listingPrimaryId(car);
       if (carId.isEmpty) {
-        throw StateError('Car created but missing id');
+        throw StateError('Car saved but missing id');
       }
 
       if (_images.isNotEmpty) {
@@ -1019,7 +1219,8 @@ class _SellPageState extends State<SellPage> {
       }
       if (_damageImages.isNotEmpty) {
         setState(
-          () => _stage = loc?.uploadingDamagePhotos ?? 'Uploading damage photos...',
+          () => _stage =
+              loc?.uploadingDamagePhotos ?? 'Uploading damage photos...',
         );
         await _uploadDamageImages(carId);
       }
@@ -1029,12 +1230,27 @@ class _SellPageState extends State<SellPage> {
       }
 
       if (!mounted) return;
-      await SellListingDraftPrefs.clear(_draftOwnerKey ?? _buildDraftOwnerKey());
+      await SellListingDraftPrefs.clear(
+        _draftOwnerKey ?? _buildDraftOwnerKey(),
+      );
+      _skipDraftSaveOnDispose = true;
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text(loc?.listingCreated ?? 'Listing created')),
+        SnackBar(
+          content: Text(
+            isEditing
+                ? 'Listing updated'
+                : (loc?.listingCreated ?? 'Listing created'),
+          ),
+        ),
       );
       if (!mounted) return;
+      if (isEditing) {
+        Navigator.pop(context, {
+          'car': car.isNotEmpty ? car : <String, dynamic>{...body, 'id': carId},
+        });
+        return;
+      }
       Navigator.pushReplacementNamed(
         context,
         '/car_detail',
@@ -1144,9 +1360,9 @@ class _SellPageState extends State<SellPage> {
                 const SizedBox(height: 10),
                 Text(
                   sample,
-                  style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                        fontWeight: FontWeight.w600,
-                      ),
+                  style: Theme.of(
+                    context,
+                  ).textTheme.bodySmall?.copyWith(fontWeight: FontWeight.w600),
                 ),
               ],
               if (hints.length > 12)
@@ -1183,13 +1399,13 @@ class _SellPageState extends State<SellPage> {
 
     final CatalogSpecFields? preview = _catalogYear != null
         ? idx
-            .representativeForCatalogSell(
-              brand,
-              model,
-              CarSpecIndex.catalogAutofillModelOnly,
-              _catalogYear!,
-            )
-            ?.fields
+              .representativeForCatalogSell(
+                brand,
+                model,
+                CarSpecIndex.catalogAutofillModelOnly,
+                _catalogYear!,
+              )
+              ?.fields
         : null;
     final unionPreview = _catalogYear != null
         ? idx.sellFieldOptionsUnion(
@@ -1222,19 +1438,17 @@ class _SellPageState extends State<SellPage> {
               const SizedBox(height: 12),
               Container(
                 width: double.infinity,
-                padding:
-                    const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 12,
+                  vertical: 10,
+                ),
                 decoration: BoxDecoration(
-                  color: Theme.of(context)
-                      .colorScheme
-                      .primary
-                      .withOpacity(0.1),
+                  color: Theme.of(context).colorScheme.primary.withOpacity(0.1),
                   borderRadius: BorderRadius.circular(8),
                   border: Border.all(
-                    color: Theme.of(context)
-                        .colorScheme
-                        .primary
-                        .withOpacity(0.28),
+                    color: Theme.of(
+                      context,
+                    ).colorScheme.primary.withOpacity(0.28),
                   ),
                 ),
                 child: Text(
@@ -1246,10 +1460,10 @@ class _SellPageState extends State<SellPage> {
                         ..sort((a, b) {
                           final la =
                               OnlineSpecVariant.parseLeadingEngineLiters(a) ??
-                                  0;
+                              0;
                           final lb =
                               OnlineSpecVariant.parseLeadingEngineLiters(b) ??
-                                  0;
+                              0;
                           final c = la.compareTo(lb);
                           if (c != 0) return c;
                           return a.compareTo(b);
@@ -1265,10 +1479,10 @@ class _SellPageState extends State<SellPage> {
                   }(),
                   softWrap: true,
                   style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                        fontWeight: FontWeight.w600,
-                        height: 1.35,
-                        color: Theme.of(context).colorScheme.primary,
-                      ),
+                    fontWeight: FontWeight.w600,
+                    height: 1.35,
+                    color: Theme.of(context).colorScheme.primary,
+                  ),
                 ),
               ),
             ] else if (_catalogYear != null && years.isNotEmpty) ...[
@@ -1276,8 +1490,8 @@ class _SellPageState extends State<SellPage> {
               Text(
                 'No spec row for this year — try another year or variant.',
                 style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                      color: Theme.of(context).colorScheme.error,
-                    ),
+                  color: Theme.of(context).colorScheme.error,
+                ),
               ),
             ],
             if (years.isNotEmpty) ...[
@@ -1291,12 +1505,7 @@ class _SellPageState extends State<SellPage> {
                   labelText: loc?.yearLabel ?? 'Model year (catalog)',
                 ),
                 items: years
-                    .map(
-                      (y) => DropdownMenuItem(
-                        value: y,
-                        child: Text('$y'),
-                      ),
-                    )
+                    .map((y) => DropdownMenuItem(value: y, child: Text('$y')))
                     .toList(),
                 onChanged: (y) {
                   if (y == null) return;
@@ -1308,7 +1517,8 @@ class _SellPageState extends State<SellPage> {
             ],
             const SizedBox(height: 12),
             ElevatedButton.icon(
-              onPressed: (_catalogYear != null &&
+              onPressed:
+                  (_catalogYear != null &&
                       (preview != null || unionPreview != null) &&
                       !_submitting)
                   ? _applyCatalogSpecs
@@ -1383,10 +1593,7 @@ class _SellPageState extends State<SellPage> {
     if ((eng == null || eng.isEmpty) && (fuel == null || fuel.isEmpty)) {
       return null;
     }
-    if (eng != null &&
-        eng.isNotEmpty &&
-        fuel != null &&
-        fuel.isNotEmpty) {
+    if (eng != null && eng.isNotEmpty && fuel != null && fuel.isNotEmpty) {
       final out = <String>[];
       final seen = <String>{};
       for (final x in [...eng, ...fuel]) {
@@ -1440,10 +1647,12 @@ class _SellPageState extends State<SellPage> {
   }) {
     final vs = _onlineSpecVariants;
     if (vs == null || vs.isEmpty) return;
-    final fe = fuelEconomy ?? () {
-      final t = _fuelEconomyCtl.text.trim();
-      return t.isEmpty ? null : t;
-    }();
+    final fe =
+        fuelEconomy ??
+        () {
+          final t = _fuelEconomyCtl.text.trim();
+          return t.isEmpty ? null : t;
+        }();
     final m = OnlineSpecVariant.matchBestAnchored(
       vs,
       anchors,
@@ -1488,7 +1697,8 @@ class _SellPageState extends State<SellPage> {
       final t = _engineSizeCtl.text.trim();
       final exact = t.isNotEmpty && opts.contains(t);
       final p = OnlineSpecVariant.parseLeadingEngineLiters(t);
-      final fuzzy = p != null &&
+      final fuzzy =
+          p != null &&
           opts.any((o) {
             final oL = OnlineSpecVariant.parseLeadingEngineLiters(o);
             return oL != null && (oL - p).abs() < 0.06;
@@ -1524,13 +1734,13 @@ class _SellPageState extends State<SellPage> {
         : _engineType;
     final items = constrained != null
         ? constrained
-            .map(
-              (k) => DropdownMenuItem<String>(
-                value: k,
-                child: Text(_kEngineTypeLabels[k] ?? k),
-              ),
-            )
-            .toList()
+              .map(
+                (k) => DropdownMenuItem<String>(
+                  value: k,
+                  child: Text(_kEngineTypeLabels[k] ?? k),
+                ),
+              )
+              .toList()
         : const [
             DropdownMenuItem(value: 'gasoline', child: Text('Gasoline')),
             DropdownMenuItem(value: 'diesel', child: Text('Diesel')),
@@ -1538,7 +1748,9 @@ class _SellPageState extends State<SellPage> {
             DropdownMenuItem(value: 'electric', child: Text('Electric')),
           ];
     return DropdownButtonFormField<String>(
-      key: ValueKey<String>('eng_$_specDropdownKey$value${constrained?.join() ?? 'full'}'),
+      key: ValueKey<String>(
+        'eng_$_specDropdownKey$value${constrained?.join() ?? 'full'}',
+      ),
       value: value,
       isExpanded: true,
       decoration: InputDecoration(
@@ -1567,44 +1779,45 @@ class _SellPageState extends State<SellPage> {
   Widget _transmissionField(AppLocalizations? loc) {
     final constrained =
         _transmissionOptions != null && _transmissionOptions!.isNotEmpty
-            ? _transmissionOptions!
-            : null;
+        ? _transmissionOptions!
+        : null;
     final value = constrained != null
         ? _coerceInList(_transmission, constrained)
         : _transmission;
     final items = constrained != null
         ? constrained
-            .map(
-              (k) => DropdownMenuItem<String>(
-                value: k,
-                child: Text(k == 'automatic' ? 'Automatic' : 'Manual'),
-              ),
-            )
-            .toList()
+              .map(
+                (k) => DropdownMenuItem<String>(
+                  value: k,
+                  child: Text(k == 'automatic' ? 'Automatic' : 'Manual'),
+                ),
+              )
+              .toList()
         : const [
             DropdownMenuItem(value: 'automatic', child: Text('Automatic')),
             DropdownMenuItem(value: 'manual', child: Text('Manual')),
           ];
     return DropdownButtonFormField<String>(
-      key: ValueKey<String>('tr_$_specDropdownKey$value${constrained?.join() ?? 'full'}'),
+      key: ValueKey<String>(
+        'tr_$_specDropdownKey$value${constrained?.join() ?? 'full'}',
+      ),
       value: value,
       isExpanded: true,
       decoration: InputDecoration(
         labelText: loc?.transmissionLabel ?? 'Transmission',
         helperText: constrained != null && constrained.length >= 2
             ? constrained
-                .map((k) => k == 'automatic' ? 'Automatic' : 'Manual')
-                .join(' · ')
+                  .map((k) => k == 'automatic' ? 'Automatic' : 'Manual')
+                  .join(' · ')
             : null,
       ),
       items: items,
       onChanged: (v) {
         setState(() {
           _transmission = v ?? _transmission;
-          _syncCorrelatedFromOnlineVariants(
-            {'tr'},
-            transmission: _transmission,
-          );
+          _syncCorrelatedFromOnlineVariants({
+            'tr',
+          }, transmission: _transmission);
         });
         _scheduleDraftSave();
       },
@@ -1614,19 +1827,20 @@ class _SellPageState extends State<SellPage> {
   Widget _driveTypeField(AppLocalizations? loc) {
     final constrained =
         _drivetrainOptions != null && _drivetrainOptions!.isNotEmpty
-            ? _drivetrainOptions!
-            : null;
-    final value =
-        constrained != null ? _coerceInList(_driveType, constrained) : _driveType;
+        ? _drivetrainOptions!
+        : null;
+    final value = constrained != null
+        ? _coerceInList(_driveType, constrained)
+        : _driveType;
     final items = constrained != null
         ? constrained
-            .map(
-              (k) => DropdownMenuItem<String>(
-                value: k,
-                child: Text(_kDriveLabels[k] ?? k.toUpperCase()),
-              ),
-            )
-            .toList()
+              .map(
+                (k) => DropdownMenuItem<String>(
+                  value: k,
+                  child: Text(_kDriveLabels[k] ?? k.toUpperCase()),
+                ),
+              )
+              .toList()
         : const [
             DropdownMenuItem(value: 'fwd', child: Text('FWD')),
             DropdownMenuItem(value: 'rwd', child: Text('RWD')),
@@ -1634,7 +1848,9 @@ class _SellPageState extends State<SellPage> {
             DropdownMenuItem(value: '4wd', child: Text('4WD')),
           ];
     return DropdownButtonFormField<String>(
-      key: ValueKey<String>('drv_$_specDropdownKey$value${constrained?.join() ?? 'full'}'),
+      key: ValueKey<String>(
+        'drv_$_specDropdownKey$value${constrained?.join() ?? 'full'}',
+      ),
       value: value,
       isExpanded: true,
       decoration: InputDecoration(
@@ -1647,10 +1863,7 @@ class _SellPageState extends State<SellPage> {
       onChanged: (v) {
         setState(() {
           _driveType = v ?? _driveType;
-          _syncCorrelatedFromOnlineVariants(
-            {'drv'},
-            drivetrain: _driveType,
-          );
+          _syncCorrelatedFromOnlineVariants({'drv'}, drivetrain: _driveType);
         });
         _scheduleDraftSave();
       },
@@ -1658,21 +1871,21 @@ class _SellPageState extends State<SellPage> {
   }
 
   Widget _bodyTypeField(AppLocalizations? loc) {
-    final constrained =
-        _bodyTypeOptions != null && _bodyTypeOptions!.isNotEmpty
-            ? _bodyTypeOptions!
-            : null;
-    final value =
-        constrained != null ? _coerceInList(_bodyType, constrained) : _bodyType;
+    final constrained = _bodyTypeOptions != null && _bodyTypeOptions!.isNotEmpty
+        ? _bodyTypeOptions!
+        : null;
+    final value = constrained != null
+        ? _coerceInList(_bodyType, constrained)
+        : _bodyType;
     final items = constrained != null
         ? constrained
-            .map(
-              (k) => DropdownMenuItem<String>(
-                value: k,
-                child: Text(_kBodyLabels[k] ?? k),
-              ),
-            )
-            .toList()
+              .map(
+                (k) => DropdownMenuItem<String>(
+                  value: k,
+                  child: Text(_kBodyLabels[k] ?? k),
+                ),
+              )
+              .toList()
         : const [
             DropdownMenuItem(value: 'sedan', child: Text('Sedan')),
             DropdownMenuItem(value: 'suv', child: Text('SUV')),
@@ -1682,7 +1895,9 @@ class _SellPageState extends State<SellPage> {
             DropdownMenuItem(value: 'van', child: Text('Van')),
           ];
     return DropdownButtonFormField<String>(
-      key: ValueKey<String>('body_$_specDropdownKey$value${constrained?.join() ?? 'full'}'),
+      key: ValueKey<String>(
+        'body_$_specDropdownKey$value${constrained?.join() ?? 'full'}',
+      ),
       value: value,
       isExpanded: true,
       decoration: InputDecoration(
@@ -1695,10 +1910,7 @@ class _SellPageState extends State<SellPage> {
       onChanged: (v) {
         setState(() {
           _bodyType = v ?? _bodyType;
-          _syncCorrelatedFromOnlineVariants(
-            {'body'},
-            bodyType: _bodyType,
-          );
+          _syncCorrelatedFromOnlineVariants({'body'}, bodyType: _bodyType);
         });
         _scheduleDraftSave();
       },
@@ -1718,22 +1930,14 @@ class _SellPageState extends State<SellPage> {
           helperText: opts.length < 2 ? null : opts.join(' · '),
         ),
         items: opts
-            .map(
-              (e) => DropdownMenuItem<String>(
-                value: e,
-                child: Text(e),
-              ),
-            )
+            .map((e) => DropdownMenuItem<String>(value: e, child: Text(e)))
             .toList(),
         onChanged: (x) {
           if (x == null) return;
           setState(() {
             _engineSizeCtl.text = x;
             final lit = OnlineSpecVariant.parseLeadingEngineLiters(x);
-            _syncCorrelatedFromOnlineVariants(
-              {'e'},
-              engineLiters: lit,
-            );
+            _syncCorrelatedFromOnlineVariants({'e'}, engineLiters: lit);
           });
           _scheduleDraftSave();
         },
@@ -1743,9 +1947,7 @@ class _SellPageState extends State<SellPage> {
       controller: _engineSizeCtl,
       keyboardType: const TextInputType.numberWithOptions(decimal: true),
       textInputAction: TextInputAction.next,
-      decoration: const InputDecoration(
-        labelText: 'Engine size (L)',
-      ),
+      decoration: const InputDecoration(labelText: 'Engine size (L)'),
     );
   }
 
@@ -1760,23 +1962,17 @@ class _SellPageState extends State<SellPage> {
         isExpanded: true,
         decoration: InputDecoration(
           labelText: 'Cylinders',
-          helperText: opts.length < 2 ? null : opts.map((n) => '$n').join(' · '),
+          helperText: opts.length < 2
+              ? null
+              : opts.map((n) => '$n').join(' · '),
         ),
         items: opts
-            .map(
-              (n) => DropdownMenuItem<int>(
-                value: n,
-                child: Text('$n'),
-              ),
-            )
+            .map((n) => DropdownMenuItem<int>(value: n, child: Text('$n')))
             .toList(),
         onChanged: (x) {
           if (x == null) return;
           setState(() {
-            _syncCorrelatedFromOnlineVariants(
-              {'c'},
-              cylinders: x,
-            );
+            _syncCorrelatedFromOnlineVariants({'c'}, cylinders: x);
           });
           _scheduleDraftSave();
         },
@@ -1786,9 +1982,7 @@ class _SellPageState extends State<SellPage> {
       controller: _cylinderCtl,
       keyboardType: TextInputType.number,
       textInputAction: TextInputAction.next,
-      decoration: const InputDecoration(
-        labelText: 'Cylinders',
-      ),
+      decoration: const InputDecoration(labelText: 'Cylinders'),
     );
   }
 
@@ -1803,7 +1997,9 @@ class _SellPageState extends State<SellPage> {
         isExpanded: true,
         decoration: InputDecoration(
           labelText: 'Fuel economy',
-          helperText: opts.length < 2 ? null : '${opts.length} EPA values — pick one',
+          helperText: opts.length < 2
+              ? null
+              : '${opts.length} EPA values — pick one',
         ),
         items: opts
             .map(
@@ -1821,10 +2017,7 @@ class _SellPageState extends State<SellPage> {
         onChanged: (x) {
           if (x == null) return;
           setState(() {
-            _syncCorrelatedFromOnlineVariants(
-              {'mpg'},
-              fuelEconomy: x,
-            );
+            _syncCorrelatedFromOnlineVariants({'mpg'}, fuelEconomy: x);
           });
           _scheduleDraftSave();
         },
@@ -1833,9 +2026,7 @@ class _SellPageState extends State<SellPage> {
     return TextFormField(
       controller: _fuelEconomyCtl,
       textInputAction: TextInputAction.next,
-      decoration: const InputDecoration(
-        labelText: 'Fuel economy',
-      ),
+      decoration: const InputDecoration(labelText: 'Fuel economy'),
     );
   }
 
@@ -1850,23 +2041,17 @@ class _SellPageState extends State<SellPage> {
         isExpanded: true,
         decoration: InputDecoration(
           labelText: 'Seating',
-          helperText: opts.length < 2 ? null : opts.map((n) => '$n').join(' · '),
+          helperText: opts.length < 2
+              ? null
+              : opts.map((n) => '$n').join(' · '),
         ),
         items: opts
-            .map(
-              (n) => DropdownMenuItem<int>(
-                value: n,
-                child: Text('$n'),
-              ),
-            )
+            .map((n) => DropdownMenuItem<int>(value: n, child: Text('$n')))
             .toList(),
         onChanged: (x) {
           if (x == null) return;
           setState(() {
-            _syncCorrelatedFromOnlineVariants(
-              {'seat'},
-              seating: x,
-            );
+            _syncCorrelatedFromOnlineVariants({'seat'}, seating: x);
           });
           _scheduleDraftSave();
         },
@@ -1876,24 +2061,21 @@ class _SellPageState extends State<SellPage> {
       controller: _seatingCtl,
       keyboardType: TextInputType.number,
       textInputAction: TextInputAction.next,
-      decoration: const InputDecoration(
-        labelText: 'Seating',
-      ),
+      decoration: const InputDecoration(labelText: 'Seating'),
     );
   }
 
   @override
   Widget build(BuildContext context) {
     final loc = AppLocalizations.of(context);
-    final modelList =
-        (_selectedBrand != null) ? (CarCatalog.models[_selectedBrand!] ?? []) : <String>[];
+    final modelList = (_selectedBrand != null)
+        ? (CarCatalog.models[_selectedBrand!] ?? [])
+        : <String>[];
     final trimList = CarCatalog.trimsFor(_selectedBrand, _selectedModel);
 
     return Scaffold(
       backgroundColor: Theme.of(context).scaffoldBackgroundColor,
-      appBar: AppBar(
-        title: Text(loc?.sellTitle ?? 'Sell'),
-      ),
+      appBar: AppBar(title: Text(loc?.sellTitle ?? 'Sell')),
       body: SafeArea(
         child: Form(
           key: _formKey,
@@ -1942,10 +2124,9 @@ class _SellPageState extends State<SellPage> {
               ],
               if (_draftLoaded && _draftExists) ...[
                 Card(
-                  color: Theme.of(context)
-                      .colorScheme
-                      .primary
-                      .withValues(alpha: 0.08),
+                  color: Theme.of(
+                    context,
+                  ).colorScheme.primary.withValues(alpha: 0.08),
                   child: Padding(
                     padding: const EdgeInsets.all(12),
                     child: Row(
@@ -1964,14 +2145,14 @@ class _SellPageState extends State<SellPage> {
                             children: [
                               Text(
                                 'Draft in progress',
-                                style: Theme.of(context)
-                                    .textTheme
-                                    .titleSmall
+                                style: Theme.of(context).textTheme.titleSmall
                                     ?.copyWith(fontWeight: FontWeight.w700),
                               ),
                               const SizedBox(height: 4),
                               Text(
-                                _draftTitle(_draftPreviewData ?? _buildDraftData()),
+                                _draftTitle(
+                                  _draftPreviewData ?? _buildDraftData(),
+                                ),
                                 style: Theme.of(context).textTheme.bodySmall,
                                 maxLines: 2,
                                 overflow: TextOverflow.ellipsis,
@@ -2025,7 +2206,9 @@ class _SellPageState extends State<SellPage> {
               ],
               DropdownButtonFormField<String>(
                 value: _selectedBrand,
-                decoration: InputDecoration(labelText: loc?.brandLabel ?? 'Brand'),
+                decoration: InputDecoration(
+                  labelText: loc?.brandLabel ?? 'Brand',
+                ),
                 hint: Text(loc?.pleaseSelectBrand ?? 'Select brand'),
                 items: CarCatalog.brands
                     .map((b) => DropdownMenuItem(value: b, child: Text(b)))
@@ -2042,13 +2225,16 @@ class _SellPageState extends State<SellPage> {
                   _scheduleRefreshDataset();
                   _scheduleDraftSave();
                 },
-                validator: (v) =>
-                    (v ?? '').trim().isEmpty ? (loc?.requiredField ?? 'Required') : null,
+                validator: (v) => (v ?? '').trim().isEmpty
+                    ? (loc?.requiredField ?? 'Required')
+                    : null,
               ),
               const SizedBox(height: 10),
               DropdownButtonFormField<String>(
                 value: _selectedModel,
-                decoration: InputDecoration(labelText: loc?.modelLabel ?? 'Model'),
+                decoration: InputDecoration(
+                  labelText: loc?.modelLabel ?? 'Model',
+                ),
                 hint: Text(loc?.selectBrandFirst ?? 'Select model'),
                 items: modelList
                     .map((m) => DropdownMenuItem(value: m, child: Text(m)))
@@ -2066,8 +2252,9 @@ class _SellPageState extends State<SellPage> {
                         _scheduleRefreshDataset();
                         _scheduleDraftSave();
                       },
-                validator: (v) =>
-                    (v ?? '').trim().isEmpty ? (loc?.requiredField ?? 'Required') : null,
+                validator: (v) => (v ?? '').trim().isEmpty
+                    ? (loc?.requiredField ?? 'Required')
+                    : null,
               ),
               const SizedBox(height: 10),
               DropdownButtonFormField<String>(
@@ -2088,8 +2275,9 @@ class _SellPageState extends State<SellPage> {
                         _scheduleRefreshDataset();
                         _scheduleDraftSave();
                       },
-                validator: (v) =>
-                    (v ?? '').trim().isEmpty ? (loc?.requiredField ?? 'Required') : null,
+                validator: (v) => (v ?? '').trim().isEmpty
+                    ? (loc?.requiredField ?? 'Required')
+                    : null,
               ),
               const SizedBox(height: 10),
               _trimDependentCatalogSection(loc),
@@ -2100,7 +2288,9 @@ class _SellPageState extends State<SellPage> {
                       controller: _year,
                       keyboardType: TextInputType.number,
                       textInputAction: TextInputAction.next,
-                      decoration: InputDecoration(labelText: loc?.yearLabel ?? 'Year'),
+                      decoration: InputDecoration(
+                        labelText: loc?.yearLabel ?? 'Year',
+                      ),
                       validator: (v) {
                         final n = int.tryParse((v ?? '').trim());
                         if (n == null) return loc?.requiredField ?? 'Required';
@@ -2136,9 +2326,13 @@ class _SellPageState extends State<SellPage> {
                   Expanded(
                     child: TextFormField(
                       controller: _price,
-                      keyboardType: const TextInputType.numberWithOptions(decimal: true),
+                      keyboardType: const TextInputType.numberWithOptions(
+                        decimal: true,
+                      ),
                       textInputAction: TextInputAction.next,
-                      decoration: InputDecoration(labelText: loc?.priceLabel ?? 'Price'),
+                      decoration: InputDecoration(
+                        labelText: loc?.priceLabel ?? 'Price',
+                      ),
                       validator: (v) {
                         final n = double.tryParse((v ?? '').trim());
                         if (n == null) return loc?.requiredField ?? 'Required';
@@ -2174,8 +2368,9 @@ class _SellPageState extends State<SellPage> {
                 decoration: InputDecoration(
                   labelText: loc?.locationLabel ?? 'Location',
                 ),
-                validator: (v) =>
-                    (v ?? '').trim().isEmpty ? (loc?.requiredField ?? 'Required') : null,
+                validator: (v) => (v ?? '').trim().isEmpty
+                    ? (loc?.requiredField ?? 'Required')
+                    : null,
               ),
               const SizedBox(height: 10),
               _engineTypeField(loc),
@@ -2186,7 +2381,9 @@ class _SellPageState extends State<SellPage> {
               const SizedBox(height: 10),
               DropdownButtonFormField<String>(
                 value: _condition,
-                decoration: InputDecoration(labelText: loc?.conditionLabel ?? 'Condition'),
+                decoration: InputDecoration(
+                  labelText: loc?.conditionLabel ?? 'Condition',
+                ),
                 items: const [
                   DropdownMenuItem(value: 'new', child: Text('New')),
                   DropdownMenuItem(value: 'used', child: Text('Used')),
@@ -2266,7 +2463,8 @@ class _SellPageState extends State<SellPage> {
                 minLines: 3,
                 maxLines: 6,
                 decoration: InputDecoration(
-                  labelText: loc?.descriptionOptionalLabel ?? 'Description (optional)',
+                  labelText:
+                      loc?.descriptionOptionalLabel ?? 'Description (optional)',
                 ),
               ),
               const SizedBox(height: 14),
@@ -2321,11 +2519,13 @@ class _SellPageState extends State<SellPage> {
                               fit: BoxFit.cover,
                               errorBuilder: (context, error, stackTrace) =>
                                   Container(
-                                width: 92,
-                                height: 92,
-                                color: Colors.black12,
-                                child: const Icon(Icons.image_not_supported),
-                              ),
+                                    width: 92,
+                                    height: 92,
+                                    color: Colors.black12,
+                                    child: const Icon(
+                                      Icons.image_not_supported,
+                                    ),
+                                  ),
                             ),
                           ),
                           Positioned(
@@ -2394,11 +2594,13 @@ class _SellPageState extends State<SellPage> {
                               fit: BoxFit.cover,
                               errorBuilder: (context, error, stackTrace) =>
                                   Container(
-                                width: 92,
-                                height: 92,
-                                color: Colors.black12,
-                                child: const Icon(Icons.image_not_supported),
-                              ),
+                                    width: 92,
+                                    height: 92,
+                                    color: Colors.black12,
+                                    child: const Icon(
+                                      Icons.image_not_supported,
+                                    ),
+                                  ),
                             ),
                           ),
                           Positioned(
@@ -2438,8 +2640,12 @@ class _SellPageState extends State<SellPage> {
                 onPressed: _submitting ? null : _submit,
                 child: Text(
                   _submitting
-                      ? (loc?.creatingListing ?? 'Creating listing...')
-                      : (loc?.createListingButton ?? 'Create listing'),
+                      ? ((_editListingId ?? '').trim().isNotEmpty
+                            ? 'Updating listing...'
+                            : (loc?.creatingListing ?? 'Creating listing...'))
+                      : ((_editListingId ?? '').trim().isNotEmpty
+                            ? (loc?.saveChangesButton ?? 'Save changes')
+                            : (loc?.createListingButton ?? 'Create listing')),
                 ),
               ),
               const SizedBox(height: 10),
