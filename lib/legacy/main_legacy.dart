@@ -14927,8 +14927,6 @@ class _CarDetailsPageState extends State<CarDetailsPage> {
                 ]) ??
                 '')
             .trim();
-    final String username =
-        (_getFirstNonEmpty(seller, ['username', 'handle']) ?? '').trim();
     final String phone =
         (_getFirstNonEmpty(seller, ['phone_number', 'phone', 'mobile']) ??
                 _sellerPhoneRawForContact() ??
@@ -15008,22 +15006,20 @@ class _CarDetailsPageState extends State<CarDetailsPage> {
     final bool canOpenDealerPage =
         isApprovedDealer && dealerPublicId.isNotEmpty;
 
-    final String displayName = (isApprovedDealer && dealershipName.isNotEmpty)
-        ? dealershipName
-        : (name.isNotEmpty
-              ? name
-              : (fullName.isNotEmpty
-                    ? fullName
-                    : (isDealerSeller
-                          ? _trLegacyText(context, 'Dealer', ar: 'وكيل', ku: 'وەکیل')
-                          : (username.isNotEmpty
-                                ? username
-                                : _trLegacyText(
-                                    context,
-                                    'Seller',
-                                    ar: 'البائع',
-                                    ku: 'فرۆشیار',
-                                  )))));
+    final String displayName = isDealerSeller
+        ? ((isApprovedDealer && dealershipName.isNotEmpty)
+              ? dealershipName
+              : (name.isNotEmpty
+                    ? name
+                    : (fullName.isNotEmpty
+                          ? fullName
+                          : _trLegacyText(
+                              context,
+                              'Dealer',
+                              ar: 'وكيل',
+                              ku: 'وەکیل',
+                            ))))
+        : sellerTypeLabel;
 
     final String locationShown =
         (isApprovedDealer && dealershipLocation.isNotEmpty)
@@ -15125,17 +15121,19 @@ class _CarDetailsPageState extends State<CarDetailsPage> {
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        Text(
-                          sellerTypeLabel,
-                          maxLines: 1,
-                          overflow: TextOverflow.ellipsis,
-                          style: TextStyle(
-                            fontSize: 12,
-                            fontWeight: FontWeight.w600,
-                            color: isLight ? Colors.black54 : Colors.white60,
+                        if (isDealerSeller) ...[
+                          Text(
+                            sellerTypeLabel,
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                            style: TextStyle(
+                              fontSize: 12,
+                              fontWeight: FontWeight.w600,
+                              color: isLight ? Colors.black54 : Colors.white60,
+                            ),
                           ),
-                        ),
-                        const SizedBox(height: 2),
+                          const SizedBox(height: 2),
+                        ],
                         Text(
                           displayName,
                           maxLines: 1,
@@ -15148,14 +15146,6 @@ class _CarDetailsPageState extends State<CarDetailsPage> {
                                 : Colors.white,
                           ),
                         ),
-                        if (username.isNotEmpty && !isDealerSeller)
-                          Text(
-                            '@$username',
-                            style: TextStyle(
-                              fontSize: 12,
-                              color: isLight ? Colors.black54 : Colors.white60,
-                            ),
-                          ),
                       ],
                     ),
                   ),

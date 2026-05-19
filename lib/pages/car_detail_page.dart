@@ -560,7 +560,6 @@ class _CarDetailPageState extends State<CarDetailPage> {
     final fullName = '$firstName $lastName'.trim();
 
     final name = _firstNonEmptyFromMap(seller, ['name', 'display_name']);
-    final username = _firstNonEmptyFromMap(seller, ['username', 'handle']);
     final phone = _firstNonEmptyFromMap(seller, [
       'phone_number',
       'phone',
@@ -603,15 +602,15 @@ class _CarDetailPageState extends State<CarDetailPage> {
         ? _tr('Dealership', ar: 'معرض', ku: 'نمایشگا')
         : _tr('Private seller', ar: 'بائع فردي', ku: 'فرۆشیاری تاک');
 
-    final displayName = (isApprovedDealer && dealershipName.isNotEmpty)
-        ? dealershipName
-        : (name.isNotEmpty
-              ? name
-              : (fullName.isNotEmpty
-                    ? fullName
-                    : (isDealerSeller
-                          ? _tr('Dealer', ar: 'وكيل', ku: 'وەکیل')
-                          : (username.isNotEmpty ? username : _tr('Seller', ar: 'البائع', ku: 'فرۆشیار')))));
+    final displayName = isDealerSeller
+        ? ((isApprovedDealer && dealershipName.isNotEmpty)
+              ? dealershipName
+              : (name.isNotEmpty
+                    ? name
+                    : (fullName.isNotEmpty
+                          ? fullName
+                          : _tr('Dealer', ar: 'وكيل', ku: 'وەکیل'))))
+        : sellerTypeLabel;
 
     final locationShown =
         (isApprovedDealer && dealershipLocation.isNotEmpty)
@@ -726,16 +725,18 @@ class _CarDetailPageState extends State<CarDetailPage> {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Text(
-                      sellerTypeLabel,
-                      maxLines: 1,
-                      overflow: TextOverflow.ellipsis,
-                      style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                        color: Theme.of(context).colorScheme.onSurfaceVariant,
-                        fontWeight: FontWeight.w600,
+                    if (isDealerSeller) ...[
+                      Text(
+                        sellerTypeLabel,
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                        style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                          color: Theme.of(context).colorScheme.onSurfaceVariant,
+                          fontWeight: FontWeight.w600,
+                        ),
                       ),
-                    ),
-                    const SizedBox(height: 2),
+                      const SizedBox(height: 2),
+                    ],
                     Text(
                       displayName,
                       maxLines: 1,
@@ -744,15 +745,6 @@ class _CarDetailPageState extends State<CarDetailPage> {
                         fontWeight: FontWeight.w700,
                       ),
                     ),
-                    if (username.isNotEmpty && !isDealerSeller) ...[
-                      const SizedBox(height: 2),
-                      Text(
-                        '@$username',
-                        style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                          color: Theme.of(context).colorScheme.onSurfaceVariant,
-                        ),
-                      ),
-                    ],
                   ],
                 ),
               ),
