@@ -11,16 +11,16 @@ This checklist is the final gate before uploading Android AAB/APK or iOS builds.
 ## 2) Required secrets/configuration
 
 - `android/signing.properties` exists for release builds.
-- Android Firebase files exist for all flavors:
-  - `android/app/src/dev/google-services.json`
-  - `android/app/src/stage/google-services.json`
-  - `android/app/src/prod/google-services.json`
+- Android Firebase config exists for the production package:
+  - `android/app/google-services.json` with `package_name: com.carzo.app`
 - iOS Firebase config exists:
   - `ios/Runner/GoogleService-Info.plist`
 - iOS map keys are provided at build time:
   - `IOS_GOOGLE_MAPS_API_KEY`
   - `IOS_GOOGLE_PLACES_API_KEY`
 - Android map key is provided in `android/local.properties` as `GOOGLE_MAPS_API_KEY` or injected by CI.
+- Render/backend environment contains `ANDROID_SHA256_CERT_FINGERPRINTS`, so `/.well-known/assetlinks.json` returns 200.
+- Render/backend environment contains `APPLE_TEAM_ID`, so `/.well-known/apple-app-site-association` returns 200.
 
 ## 3) Network and runtime safety
 
@@ -45,3 +45,4 @@ This checklist is the final gate before uploading Android AAB/APK or iOS builds.
 - Data safety / privacy nutrition labels are completed based on actual app behavior.
 - Support email/contact is available in store listing.
 - App screenshots, icon, and release notes are finalized.
+- See `docs/STORE_SUBMISSION.md` for permission justifications and data safety/privacy label inputs.
