@@ -3757,10 +3757,6 @@ class MyApp extends StatelessWidget {
                 '/profile': (context) => AuthGuard(child: ProfilePage()),
                 '/edit-profile': (context) =>
                     AuthGuard(child: EditProfilePage()),
-                '/payment/history': (context) =>
-                    AuthGuard(child: PaymentHistoryPage()),
-                '/payment/initiate': (context) =>
-                    AuthGuard(child: PaymentInitiatePage()),
                 '/car_detail': (context) {
                   final args =
                       ModalRoute.of(context)!.settings.arguments
@@ -3795,12 +3791,6 @@ class MyApp extends StatelessWidget {
                           : null,
                     ),
                   );
-                },
-                '/payment/status': (context) {
-                  final args =
-                      ModalRoute.of(context)!.settings.arguments
-                          as Map<String, dynamic>;
-                  return PaymentStatusPage(paymentId: args['paymentId']);
                 },
                 '/edit': (context) {
                   final args =
@@ -30175,111 +30165,6 @@ class _ProfilePageState extends State<ProfilePage> {
               break;
           }
         },
-      ),
-    );
-  }
-}
-
-class PaymentHistoryPage extends StatefulWidget {
-  const PaymentHistoryPage({super.key});
-
-  @override
-  _PaymentHistoryPageState createState() => _PaymentHistoryPageState();
-}
-
-class _PaymentHistoryPageState extends State<PaymentHistoryPage> {
-  @override
-  Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(
-        title: Text(AppLocalizations.of(context)!.paymentHistoryTitle),
-      ),
-      body: Center(
-        child: Text(AppLocalizations.of(context)!.paymentHistoryTitle),
-      ),
-      extendBody: true,
-      bottomNavigationBar: buildFloatingBottomNav(
-        context,
-        currentIndex: 0,
-        onTap: (idx) {
-          switch (idx) {
-            case 0:
-              _switchMainTabNoAnimation(context, '/');
-              break;
-            case 1:
-              _switchMainTabNoAnimation(context, '/favorites');
-              break;
-            case 2:
-              _switchMainTabNoAnimation(context, '/dealers');
-              break;
-            case 3:
-              Navigator.pushReplacementNamed(context, '/login');
-              break;
-          }
-        },
-      ),
-    );
-  }
-}
-
-class PaymentInitiatePage extends StatefulWidget {
-  const PaymentInitiatePage({super.key});
-
-  @override
-  _PaymentInitiatePageState createState() => _PaymentInitiatePageState();
-}
-
-class _PaymentInitiatePageState extends State<PaymentInitiatePage> {
-  @override
-  Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(
-        title: Text(AppLocalizations.of(context)!.paymentInitiateTitle),
-      ),
-      body: Center(
-        child: Text(AppLocalizations.of(context)!.paymentInitiateTitle),
-      ),
-    );
-  }
-}
-
-class ChatConversationPage extends StatefulWidget {
-  final String conversationId;
-  const ChatConversationPage({super.key, required this.conversationId});
-  @override
-  _ChatConversationPageState createState() => _ChatConversationPageState();
-}
-
-class _ChatConversationPageState extends State<ChatConversationPage> {
-  @override
-  Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(
-        title: Text(AppLocalizations.of(context)!.chatConversationTitle),
-      ),
-      body: Center(
-        child: Text(AppLocalizations.of(context)!.chatConversationTitle),
-      ),
-    );
-  }
-}
-
-class PaymentStatusPage extends StatefulWidget {
-  final String paymentId;
-  const PaymentStatusPage({super.key, required this.paymentId});
-  @override
-  _PaymentStatusPageState createState() => _PaymentStatusPageState();
-}
-
-class _PaymentStatusPageState extends State<PaymentStatusPage> {
-  @override
-  Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(
-        title: Text(AppLocalizations.of(context)!.paymentStatusTitle),
-      ),
-      body: Center(
-        child: Text(AppLocalizations.of(context)!.paymentStatusTitle),
       ),
     );
   }
