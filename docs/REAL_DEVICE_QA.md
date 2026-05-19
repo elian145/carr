@@ -12,7 +12,7 @@ Run this checklist on a production-like Android build and an iOS TestFlight/App 
 - Android: production AAB or APK built with `--flavor prod` and `API_BASE=https://carr-5hrm.onrender.com`.
 - iOS: App Store/TestFlight build with `API_BASE=https://carr-5hrm.onrender.com`.
 - Backend: Render production service with `DATABASE_URL`, email provider, upload storage, `APPLE_TEAM_ID`, and `ANDROID_SHA256_CERT_FINGERPRINTS`.
-- Firebase: Android `google-services.json` and iOS `GoogleService-Info.plist`.
+- Firebase: Android `android/app/src/prod/google-services.json` and iOS `GoogleService-Info.plist`.
 
 ## Smoke Flow
 
@@ -68,6 +68,6 @@ Run this checklist on a production-like Android build and an iOS TestFlight/App 
 ## Store Submission Blockers
 
 - Do not submit until Android App Links return 200 for `assetlinks.json`.
-- Do not submit until Android Firebase config is present.
+- Do not submit until Android Firebase prod config is present and targets `com.carzo.app`.
 - Do not submit until privacy policy and support URLs are live.
 - Do not submit until at least one physical Android device and one physical iPhone/TestFlight run pass this checklist.

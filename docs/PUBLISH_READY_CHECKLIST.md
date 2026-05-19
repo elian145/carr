@@ -12,7 +12,7 @@ This checklist is the final gate before uploading Android AAB/APK or iOS builds.
 
 - `android/signing.properties` exists for release builds.
 - Android Firebase config exists for the production package:
-  - `android/app/google-services.json` with `package_name: com.carzo.app`
+  - `android/app/src/prod/google-services.json` with `package_name: com.carzo.app`
 - iOS Firebase config exists:
   - `ios/Runner/GoogleService-Info.plist`
 - iOS map keys are provided at build time:
