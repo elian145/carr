@@ -207,6 +207,7 @@ void main() {
     await pushNamed('/register');
     await pushNamed('/profile');
     await pushNamed('/edit-profile');
+    await pushNamed('/change-password');
     await pushNamed('/car_detail', args: {'carId': '1'});
     await pushNamed('/chat/conversation', args: {'conversationId': '1'});
     await pushNamed(

@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
 
 import '../pages/analytics_page.dart';
 import '../pages/auth_pages.dart' as auth;
@@ -21,6 +22,29 @@ import '../pages/dealers_directory_page.dart';
 import '../pages/edit_dealer_page.dart';
 import '../pages/edit_listing_page.dart';
 import '../pages/recently_viewed_page.dart';
+import '../services/auth_service.dart';
+
+class _AuthRequiredPage extends StatelessWidget {
+  const _AuthRequiredPage({required this.child});
+
+  final Widget child;
+
+  @override
+  Widget build(BuildContext context) {
+    final auth = context.watch<AuthService>();
+    if (auth.isAuthenticated) return child;
+    if (auth.isLoading) {
+      return const Scaffold(body: Center(child: CircularProgressIndicator()));
+    }
+
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (context.mounted) {
+        Navigator.pushReplacementNamed(context, '/login');
+      }
+    });
+    return const Scaffold(body: Center(child: CircularProgressIndicator()));
+  }
+}
 
 class _RouteArgsErrorPage extends StatelessWidget {
   final String routeName;
@@ -70,9 +94,11 @@ Map<String, WidgetBuilder> buildAppRoutes() {
       final token = args != null ? (args['token'] ?? '').toString().trim() : '';
       return VerifyEmailPage(initialToken: token.isNotEmpty ? token : null);
     },
-    '/change-password': (context) => const ChangePasswordPage(),
+    '/change-password': (context) =>
+        const _AuthRequiredPage(child: ChangePasswordPage()),
     '/profile': (context) => const profile.ProfilePage(),
-    '/edit-profile': (context) => EditProfilePage(),
+    '/edit-profile': (context) =>
+        const _AuthRequiredPage(child: EditProfilePage()),
     '/car_detail': (context) {
       final args = argsMap(context);
       final carId = args?['carId'];
