@@ -15102,10 +15102,16 @@ class _CarDetailsPageState extends State<CarDetailsPage> {
                   CircleAvatar(
                     radius: 22,
                     backgroundColor: const Color(0x26FF6B00),
-                    backgroundImage: avatarUrl.isNotEmpty
+                    backgroundImage: isDealerSeller && avatarUrl.isNotEmpty
                         ? NetworkImage(avatarUrl)
                         : null,
-                    child: avatarUrl.isEmpty
+                    child: !isDealerSeller
+                        ? const Icon(
+                            Icons.person,
+                            color: Color(0xFFFF6B00),
+                            size: 26,
+                          )
+                        : avatarUrl.isEmpty
                         ? Text(
                             initials,
                             style: const TextStyle(

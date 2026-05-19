@@ -706,10 +706,16 @@ class _CarDetailPageState extends State<CarDetailPage> {
                 backgroundColor: Theme.of(
                   context,
                 ).colorScheme.primary.withOpacity(0.14),
-                backgroundImage: avatarUrl.isNotEmpty
+                backgroundImage: isDealerSeller && avatarUrl.isNotEmpty
                     ? NetworkImage(avatarUrl)
                     : null,
-                child: avatarUrl.isEmpty
+                child: !isDealerSeller
+                    ? Icon(
+                        Icons.person,
+                        size: 28,
+                        color: Theme.of(context).colorScheme.primary,
+                      )
+                    : avatarUrl.isEmpty
                     ? Text(
                         initials,
                         style: Theme.of(context).textTheme.titleMedium
