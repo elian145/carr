@@ -12,7 +12,7 @@ def get_app_env() -> str:
     Determine the runtime environment.
 
     Preferred: APP_ENV=development|production|testing
-    Fallbacks: FLASK_ENV (legacy), then development.
+    Fallbacks: FLASK_ENV (legacy), then production.
     """
     env = (os.environ.get("APP_ENV") or os.environ.get("FLASK_ENV") or "").strip().lower()
     # SECURITY: default to production if unset, so accidental deploys
@@ -133,5 +133,5 @@ config = {
     'development': DevelopmentConfig,
     'production': ProductionConfig,
     'testing': TestingConfig,
-    'default': DevelopmentConfig
+    'default': ProductionConfig
 }

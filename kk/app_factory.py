@@ -135,7 +135,13 @@ def create_app():
         pass
 
     env_name = get_app_env()
-    app.config.from_object(config.get(env_name, config["development"]))
+    selected_config = config.get(env_name)
+    if selected_config is None:
+        raise RuntimeError(
+            f"Unsupported APP_ENV/FLASK_ENV value '{env_name}'. "
+            "Use one of: development, production, testing."
+        )
+    app.config.from_object(selected_config)
     validate_required_secrets(env_name)
 
     configure_logging(app)

@@ -60,6 +60,10 @@ releases_windows.json
 android/.kotlin/
 android/.gradle/
 
+# Android SDK/plugin generated assets
+android/app/src/main/assets/airbridge.json
+android/app/src/main/assets/libraryInfo.json
+
 # Android signing and local machine paths (never commit)
 signing.properties
 android/signing.properties
