@@ -7,7 +7,7 @@ String listingSoldLabel(BuildContext context) {
   return 'SOLD';
 }
 
-/// Compact badge for listing cards and detail hero.
+/// Compact transparent red badge for sold listings.
 Widget buildListingSoldBadge(
   BuildContext context, {
   bool large = false,
@@ -19,14 +19,14 @@ Widget buildListingSoldBadge(
       vertical: large ? 6 : 4,
     ),
     decoration: BoxDecoration(
-      color: const Color(0xE6000000),
+      color: const Color(0x22D32F2F),
       borderRadius: BorderRadius.circular(large ? 8 : 6),
-      border: Border.all(color: Colors.white24),
+      border: Border.all(color: const Color(0x99D32F2F)),
     ),
     child: Text(
       label,
       style: TextStyle(
-        color: Colors.white,
+        color: const Color(0xDDD32F2F),
         fontWeight: FontWeight.w800,
         fontSize: large ? 16 : 11,
         letterSpacing: 1.1,

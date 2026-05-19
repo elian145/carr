@@ -1927,9 +1927,7 @@ Widget buildGlobalCarCard(
       ? const EdgeInsets.fromLTRB(8, 8, 8, 6)
       : const EdgeInsets.fromLTRB(12, 8, 12, 10);
 
-  return Opacity(
-    opacity: sold ? 0.72 : 1.0,
-    child: Container(
+  return Container(
     decoration: BoxDecoration(
       color: cardFill,
       borderRadius: BorderRadius.circular(20),
@@ -2161,7 +2159,6 @@ Widget buildGlobalCarCard(
             child: buildListingSoldBadge(context),
           ),
       ],
-    ),
     ),
   );
 }
@@ -14359,8 +14356,6 @@ class _CarDetailsPageState extends State<CarDetailsPage> {
                               ),
                             ),
                           ),
-                        if (_isListingSold)
-                          Center(child: buildListingSoldBadge(context, large: true)),
                       ],
                     ),
                   ),
@@ -14387,35 +14382,12 @@ class _CarDetailsPageState extends State<CarDetailsPage> {
                           if (_isListingSold)
                             Container(
                               width: double.infinity,
-                              padding: const EdgeInsets.symmetric(
-                                vertical: 12,
-                                horizontal: 16,
-                              ),
+                              padding: const EdgeInsets.symmetric(vertical: 12),
                               margin: const EdgeInsets.only(bottom: 16),
-                              decoration: BoxDecoration(
-                                color: isLightShell
-                                    ? Colors.grey.shade200
-                                    : Colors.white12,
-                                borderRadius: BorderRadius.circular(12),
-                                border: Border.all(
-                                  color: isLightShell
-                                      ? Colors.grey.shade400
-                                      : Colors.white24,
-                                ),
-                              ),
-                              child: Text(
-                                _trLegacyText(
+                              child: Center(
+                                child: buildListingSoldBadge(
                                   context,
-                                  'This vehicle has been sold.',
-                                  ar: 'تم بيع هذه المركبة.',
-                                  ku: 'ئەم ئۆتۆمبێلە فرۆشراوە.',
-                                ),
-                                textAlign: TextAlign.center,
-                                style: TextStyle(
-                                  fontWeight: FontWeight.w700,
-                                  color: isLightShell
-                                      ? Colors.grey.shade800
-                                      : Colors.white70,
+                                  large: true,
                                 ),
                               ),
                             ),
