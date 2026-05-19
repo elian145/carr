@@ -14382,8 +14382,7 @@ class _CarDetailsPageState extends State<CarDetailsPage> {
                           if (_isListingSold)
                             Container(
                               width: double.infinity,
-                              padding: const EdgeInsets.symmetric(vertical: 12),
-                              margin: const EdgeInsets.only(bottom: 16),
+                              padding: const EdgeInsets.only(bottom: 8),
                               child: Center(
                                 child: buildListingSoldBadge(
                                   context,
