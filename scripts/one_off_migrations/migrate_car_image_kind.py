@@ -1,17 +1,12 @@
-"""
-Add car_image.kind for listing vs damage/crash disclosure photos (SQLite).
+"""Add car_image.kind for listing vs damage photos (legacy SQLite)."""
+from __future__ import annotations
 
-Run from repo root: python migrate_car_image_kind.py
-
-Imports must use the `kk` package (not `sys.path` + `import app_new`) so
-`kk/app_new.py` relative imports like `from .app_factory` resolve correctly.
-"""
 import sys
 from pathlib import Path
 
-_ROOT = Path(__file__).resolve().parent
-if str(_ROOT) not in sys.path:
-    sys.path.insert(0, str(_ROOT))
+_REPO_ROOT = Path(__file__).resolve().parents[2]
+if str(_REPO_ROOT) not in sys.path:
+    sys.path.insert(0, str(_REPO_ROOT))
 
 from kk.app_new import app  # noqa: E402
 from kk.models import db  # noqa: E402

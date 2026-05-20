@@ -41,6 +41,7 @@ This checklist is the final gate before uploading Android AAB/APK or iOS builds.
 
 ## 5) Store compliance
 
+- Root `LICENSE` (MIT) is present and matches README.
 - Privacy Policy URL and Terms URL are ready.
 - Data safety / privacy nutrition labels are completed based on actual app behavior.
 - Support email/contact is available in store listing.

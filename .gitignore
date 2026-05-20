@@ -88,3 +88,11 @@ Process
 tatus
 tash list
 e -Name*
+analyze.txt
+*_files.txt
+current_files.txt
+recovered_files.txt
+restored_*_files.txt
+main_files.txt
+test_connectivity.jpg
+visual_test.jpg
