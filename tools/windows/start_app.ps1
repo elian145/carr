@@ -11,7 +11,7 @@ Set-Location $repoRoot
 
 # 1) Start backend (kk :5000, proxy :5003)
 Write-Host 'Starting backend servers... (Close any old server windows so images load correctly.)'
-& "$repoRoot\start_servers.ps1"
+& "$repoRoot\scripts\dev\start_servers.ps1"
 # Wait for kk to bind so listing images don't fail with "Connection closed while receiving data"
 Start-Sleep -Seconds 8
 

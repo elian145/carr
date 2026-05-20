@@ -1,4 +1,5 @@
 @echo off
+cd /d "%~dp0..\.."
 echo 🚗 Car Listings App - Complete Setup
 echo ====================================
 

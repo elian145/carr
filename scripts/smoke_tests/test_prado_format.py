@@ -3,9 +3,12 @@
 Test Prado license plate format detection
 """
 import sys
-sys.path.append('kk')
+from pathlib import Path
 
-from ai_service import car_analysis_service
+_REPO_ROOT = Path(__file__).resolve().parents[2]
+sys.path.insert(0, str(_REPO_ROOT / "kk"))
+
+from ai_service import car_analysis_service  # noqa: E402
 
 # Test various formats that OCR might detect
 test_cases = [

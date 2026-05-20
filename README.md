@@ -87,7 +87,7 @@ A comprehensive car listing application with real-time chat, notifications, user
 If the app shows "Loading listings..." forever or "Failed to load listings":
 
 1. **Start both servers** (from repo root):
-   - Windows: `.\start_servers.ps1`
+   - Windows: `.\scripts\dev\start_servers.ps1`
    - Or manually: start **kk** on port **5000** (`python -m kk.app_new`), then **proxy** on **5003** (`python backend/server.py` from repo root; needs `backend/env.local` with `PORT=5003` and `LISTINGS_API_BASE=http://127.0.0.1:5000`).
 
 2. **Check API URL**: The app calls `http://<API_BASE>/api/cars`. Default is `http://192.168.1.7:5003`. Your PC must be reachable at that IP:

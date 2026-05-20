@@ -2,17 +2,23 @@
 """
 Factory-backed backend smoke tests (no server required).
 
-Run:
-  python test_backend_factory_smoke.py
+Run (from repo root):
+  python scripts/smoke_tests/test_backend_factory_smoke.py
 """
 
 from __future__ import annotations
 
 import io
 import os
+import sys
 import tempfile
 import unittest
 import uuid
+from pathlib import Path
+
+_REPO_ROOT = Path(__file__).resolve().parents[2]
+if str(_REPO_ROOT) not in sys.path:
+    sys.path.insert(0, str(_REPO_ROOT))
 
 
 class BackendFactorySmokeTest(unittest.TestCase):

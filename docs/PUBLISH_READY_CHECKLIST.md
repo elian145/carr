@@ -28,7 +28,11 @@ This checklist is the final gate before uploading Android AAB/APK or iOS builds.
 - `flutter build ... --dart-define=API_BASE=https://your-api-domain` is used for production artifacts.
 - No local IP or localhost release builds are uploaded.
 
-## 4) QA and validation commands
+## 4) Production backend (Render)
+
+- See [`DEPLOY_ENV_CHECKLIST.md`](DEPLOY_ENV_CHECKLIST.md) for required env vars (Postgres, R2 or persistent disk, app links).
+
+## 5) QA and validation commands
 
 - `flutter clean`
 - `flutter pub get`
@@ -39,11 +43,12 @@ This checklist is the final gate before uploading Android AAB/APK or iOS builds.
   - `flutter build appbundle --release --flavor prod --dart-define=API_BASE=https://your-api-domain`
 - iOS release/TestFlight build uses release plist and production API base.
 
-## 5) Store compliance
+## 6) Store compliance
 
 - Root `LICENSE` (MIT) is present and matches README.
 - Privacy Policy URL and Terms URL are ready.
 - Data safety / privacy nutrition labels are completed based on actual app behavior.
 - Support email/contact is available in store listing.
+- Launcher icons generated: `dart run flutter_launcher_icons` (source: `assets/icon/app_icon.png`).
 - App screenshots, icon, and release notes are finalized.
 - See `docs/STORE_SUBMISSION.md` for permission justifications and data safety/privacy label inputs.
