@@ -43,11 +43,11 @@ workflows:
           # Allow HTTP for LAN testing when API_BASE is http://...
           /usr/libexec/PlistBuddy -c 'Set :NSAppTransportSecurity:NSAllowsArbitraryLoads bool YES' ios/Runner/Info.plist 2>/dev/null || \
           /usr/libexec/PlistBuddy -c 'Add :NSAppTransportSecurity:NSAllowsArbitraryLoads bool YES' ios/Runner/Info.plist 2>/dev/null || true
-          # Remove capabilities that can break Sideloadly installs (ignore if file missing)
-          for key in com.apple.security.application-groups keychain-access-groups aps-environment; do
+          # Keep aps-environment + remote-notification for push (see docs/IOS_TESTING.md).
+          # Only strip entitlements that often break free-account Sideloadly installs.
+          for key in com.apple.security.application-groups keychain-access-groups; do
             /usr/libexec/PlistBuddy -c "Delete :$key" ios/Runner/Runner.entitlements 2>/dev/null || true
           done
-          /usr/libexec/PlistBuddy -c 'Delete :UIBackgroundModes' ios/Runner/Info.plist 2>/dev/null || true
       - name: Inject iOS Google Maps key (CI)
         script: |
           if [ -n "$IOS_GOOGLE_MAPS_API_KEY" ]; then

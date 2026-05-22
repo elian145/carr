@@ -49,11 +49,9 @@ Future<void> bootstrapAndRun(Widget app) async {
 
       // Defer heavy initializations to post-frame to avoid blocking first paint.
       Future.microtask(() async {
-        if (!(kSideloadBuild && Platform.isIOS)) {
-          try {
-            await PushNotificationService.initialize();
-          } catch (_) {}
-        }
+        try {
+          await PushNotificationService.initialize();
+        } catch (_) {}
         try {
           await LocaleController.loadSavedLocale();
         } catch (_) {}

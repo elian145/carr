@@ -82,6 +82,27 @@ On Render’s free tier the service sleeps after ~15 minutes of no traffic. The 
 
 After that, the app is ready to test on your iPhone.
 
+## 7. Push notifications (chat alerts)
+
+**Sideloadly + free Apple ID usually cannot receive iPhone push notifications.** Apple only allows push for apps signed with a **paid Apple Developer** profile that includes the Push Notifications capability. Sideloadly re-signs the IPA with your personal Apple ID, which does not include that.
+
+What still works on Sideloadly:
+
+- Chat while the app is **open**
+- Listing browse, login, etc. (when `https://carr-5hrm.onrender.com/health` works in Safari)
+
+What you need for **banner push on iPhone** (no Mac required):
+
+1. **Paid Apple Developer Program** ($99/year) — enroll at [developer.apple.com](https://developer.apple.com).
+2. Upload your **APNs .p8 key** in Firebase → Project settings → Cloud Messaging → `com.carzo.app`.
+3. In **Codemagic**, connect **App Store Connect** (API key) and run a **signed** iOS workflow that produces a **TestFlight** build (see `ios-codemagic.yaml` workflow **Car Listing App iOS**, or add signing to your Codemagic app).
+4. Install from the **TestFlight** app on your iPhone (not Sideloadly).
+5. Log in, allow notifications, put the app in the **background**, send a chat from another account.
+
+**Without a Mac**, TestFlight + Codemagic is the standard path. Sideloadly is for quick UI/API testing, not push.
+
+**Android (Windows PC):** You can test push on a real Android phone with `flutter run --flavor prod --dart-define=API_BASE=https://carr-5hrm.onrender.com` and a Google Play system image emulator or physical device.
+
 ---
 
 **Note:** The repo also has `ios/ExportOptions.plist` (method: ad-hoc) for **signed** IPA builds (e.g. with Codemagic’s App Store Connect integration). For Sideloadly you use the **unsigned** IPA from the **iOS (IPA for Sideloadly)** workflow; Sideloadly re-signs the app with your Apple ID. If you later set up Ad Hoc distribution, replace `YOUR_TEAM_ID` in `ExportOptions.plist` with your Apple Developer Team ID.
