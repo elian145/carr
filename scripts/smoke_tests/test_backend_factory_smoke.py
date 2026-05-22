@@ -193,6 +193,13 @@ class BackendFactorySmokeTest(unittest.TestCase):
         self.assertIn("refresh_token", data)
         self.assertIn("user", data)
 
+    def test_public_dealers_list(self):
+        r = self.client.get("/api/dealers?page=1&per_page=5")
+        self.assertEqual(r.status_code, 200, r.data)
+        body = r.get_json() or {}
+        self.assertIn("dealers", body)
+        self.assertIn("pagination", body)
+
     def test_well_known_app_links_require_env(self):
         """Without store env vars, deep-link files must 404 (not serve invalid stubs)."""
         for path in (

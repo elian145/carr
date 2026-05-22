@@ -16,6 +16,8 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 - `scripts/verify_production_host.py` and weekly/manual GitHub workflow for deployed API checks.
 - `docs/PAYMENTS.md` (off-platform payments; no production payment gateway).
 - `signing.properties.example` for Play upload setup.
+- `scripts/print_android_app_link_sha.py` for Render `ANDROID_SHA256_CERT_FINGERPRINTS`.
+- `scripts/run_local_checks.ps1` to mirror CI locally.
 
 ### Changed
 
