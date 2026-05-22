@@ -8,6 +8,16 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ### Added
 
+- Flutter tests boot production `legacy.MyApp` with shared `test/fake_api_server.dart`.
+- `test/carzo_app_smoke_test.dart` for the refactor `CarzoApp` shell.
+- `scripts/verify_publish_ready.py` static store preflight (CI on Flutter + backend).
+- Backend smoke coverage for `/api/config/trust`, `/terms`, and `/privacy`.
+- CI prod `appbundle` build (`--flavor prod`).
+
+### Changed
+
+- Support/legal defaults use `support@carzo.app` (removed `support@carlistings.com` client fallback).
+
 - MIT `LICENSE` file (README previously referenced it without the file).
 - `scripts/one_off_migrations/` for legacy SQLite repair scripts (moved from repo root).
 - `scripts/dev/` and `scripts/smoke_tests/` for local tooling and CI smoke tests.
