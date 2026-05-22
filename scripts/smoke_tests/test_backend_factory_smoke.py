@@ -65,7 +65,19 @@ class BackendFactorySmokeTest(unittest.TestCase):
             )
             viewer.set_password("Aa123456")
 
-            db.session.add_all([seller, viewer])
+            admin = User(
+                username="admin",
+                phone_number="07000000003",
+                first_name="A",
+                last_name="D",
+                email="admin@test.example",
+                is_active=True,
+                is_admin=True,
+                public_id="pa",
+            )
+            admin.set_password("Aa123456")
+
+            db.session.add_all([seller, viewer, admin])
             db.session.commit()
 
             car = Car(
@@ -93,6 +105,7 @@ class BackendFactorySmokeTest(unittest.TestCase):
 
         self.seller_token = self._login("seller", "Aa123456")
         self.viewer_token = self._login("viewer", "Aa123456")
+        self.admin_token = self._login("admin", "Aa123456")
 
     def tearDown(self):
         try:
@@ -192,6 +205,29 @@ class BackendFactorySmokeTest(unittest.TestCase):
         self.assertIn("access_token", data)
         self.assertIn("refresh_token", data)
         self.assertIn("user", data)
+
+    def test_admin_endpoints_require_admin(self):
+        dash = self.client.get("/api/admin/dashboard", headers=self._auth(self.viewer_token))
+        self.assertEqual(dash.status_code, 403, dash.data)
+
+        dash_ok = self.client.get("/api/admin/dashboard", headers=self._auth(self.admin_token))
+        self.assertEqual(dash_ok.status_code, 200, dash_ok.data)
+        self.assertIn("stats", dash_ok.get_json() or {})
+
+        pending = self.client.get(
+            "/api/admin/dealers/pending",
+            headers=self._auth(self.admin_token),
+        )
+        self.assertEqual(pending.status_code, 200, pending.data)
+        self.assertIn("dealers", pending.get_json() or {})
+
+        reports = self.client.get(
+            "/api/admin/reports?status=pending&type=all",
+            headers=self._auth(self.admin_token),
+        )
+        self.assertEqual(reports.status_code, 200, reports.data)
+        body = reports.get_json() or {}
+        self.assertIn("reports", body)
 
     def test_public_dealers_list(self):
         r = self.client.get("/api/dealers?page=1&per_page=5")
