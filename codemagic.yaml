@@ -174,7 +174,12 @@ workflows:
         script: |
           flutter analyze
           flutter test
-      - name: Apply code signing profiles
+      - name: Set up keychain for code signing
+        script: keychain initialize
+      - name: Fetch App Store provisioning profile (create if missing)
+        script: |
+          app-store-connect fetch-signing-files "com.carzo.app" --type IOS_APP_STORE --create
+      - name: Apply code signing profiles to Xcode project
         script: xcode-project use-profiles
       - name: Verify push entitlement in IPA build
         script: |

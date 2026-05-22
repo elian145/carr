@@ -40,14 +40,45 @@ In **Codemagic** → your app → **Teams** (or account) → **Integrations** �
 - Add the API key (Issuer ID, Key ID, upload `.p8`).
 - Remember the **integration name** (e.g. `Carzo ASC`).
 
-### B. Apple Developer Portal (code signing)
+### B. Apple Developer Portal (code signing) — required
 
-Codemagic → **Integrations** → **Developer Portal**:
+Codemagic → **Team settings** (not only the app) → **Integrations** → **Developer Portal**:
 
-- Connect with Apple ID that has access to your team.
-- Codemagic will create/fetch distribution certs and profiles for **com.carzo.app**.
+- Connect with the **same** Apple ID that owns your paid developer team.
+- Role must be **Admin** or **App Manager** so profiles can be created.
 
-## 5) Fix workflow integration name
+### C. Register the bundle ID in Apple (if missing)
+
+1. [developer.apple.com → Identifiers](https://developer.apple.com/account/resources/identifiers/list)
+2. **+** → **App IDs** → bundle ID **`com.carzo.app`** (exact spelling).
+3. Enable **Push Notifications** (and **Associated Domains** if you use universal links).
+4. Save.
+
+### D. App in App Store Connect
+
+App Store Connect → **Apps** → app with bundle ID **`com.carzo.app`** must exist (you created CARZO + SKU earlier).
+
+## 5) Fix “No matching profiles found for com.carzo.app”
+
+That error means Codemagic could not download or create an **App Store** provisioning profile.
+
+Checklist:
+
+| Step | Where | What to verify |
+|------|--------|----------------|
+| 1 | developer.apple.com | App ID **com.carzo.app** exists |
+| 2 | App Store Connect | App uses **com.carzo.app** |
+| 3 | Codemagic **Team** → Integrations | **Developer Portal** connected (green) |
+| 4 | Codemagic **Team** → Integrations | **App Store Connect** API key added |
+| 5 | Codemagic app → **Distribution** / signing | Team selected, automatic signing enabled |
+| 6 | `codemagic.yaml` | `integrations.app_store_connect` name matches UI exactly |
+| 7 | Rebuild | Workflow **iOS TestFlight (signed, push enabled)** |
+
+After fixing, the build log should show **Fetch App Store provisioning profile** succeeding, then **Apply code signing profiles**.
+
+If it still fails: Codemagic → Developer Portal → **Manage certificates** → revoke old **iOS Distribution** certs and let the next build create new ones (only if Apple shows duplicate/expired certs).
+
+## 6) Fix workflow integration name
 
 Open `codemagic.yaml` → workflow **`ios-testflight`**.
 
@@ -60,21 +91,21 @@ integrations:
 
 Commit and push if you change the name.
 
-## 6) Run the TestFlight build
+## 7) Run the TestFlight build
 
 1. Codemagic → **Workflows** → **iOS TestFlight (signed, push enabled)**.
 2. Branch **main** → **Start new build**.
 3. Wait until green (first time may take ~15–25 min).
 4. Build uploads to App Store Connect automatically (`submit_to_testflight: true`).
 
-## 7) Install on iPhone
+## 8) Install on iPhone
 
 1. Install **TestFlight** from the App Store.
 2. App Store Connect → your app → **TestFlight** → wait for build **Processing** → **Ready to test** (often 10–30 min after upload).
 3. Add yourself as **Internal testing** tester (same Apple ID as developer team).
 4. Open TestFlight on iPhone → install **CARZO**.
 
-## 8) Test push
+## 9) Test push
 
 1. Open CARZO (TestFlight build, **not** Sideloadly) → log in → allow **notifications**.
 2. Log out and log in once (registers FCM token on server).
