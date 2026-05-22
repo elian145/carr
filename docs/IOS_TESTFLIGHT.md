@@ -60,23 +60,33 @@ App Store Connect → **Apps** → app with bundle ID **`com.carzo.app`** must e
 
 ## 5) Fix “No matching profiles found for com.carzo.app”
 
-That error means Codemagic could not download or create an **App Store** provisioning profile.
+Often shows at **Initializing build** — Codemagic has no App Store profile yet.
 
-Checklist:
+### A. Add App Store Connect API key (required)
 
-| Step | Where | What to verify |
-|------|--------|----------------|
-| 1 | developer.apple.com | App ID **com.carzo.app** exists |
-| 2 | App Store Connect | App uses **com.carzo.app** |
-| 3 | Codemagic **Team** → Integrations | **Developer Portal** connected (green) |
-| 4 | Codemagic **Team** → Integrations | **App Store Connect** API key added |
-| 5 | Codemagic app → **Distribution** / signing | Team selected, automatic signing enabled |
-| 6 | `codemagic.yaml` | `integrations.app_store_connect` name matches UI exactly |
-| 7 | Rebuild | Workflow **iOS TestFlight (signed, push enabled)** |
+1. [Create API key](https://appstoreconnect.apple.com/access/integrations/api) (role **App Manager**).
+2. Codemagic → **Teams** → **Team integrations** → **Developer Portal** → **Manage keys** → **Add key**
+3. Issuer ID + Key ID + upload **.p8**
+4. Name must match `codemagic.yaml`: `app_store_connect: App Store Connect` (or change yaml to your name)
 
-After fixing, the build log should show **Fetch App Store provisioning profile** succeeding, then **Apply code signing profiles**.
+### B. Create signing in Codemagic UI (do once)
 
-If it still fails: Codemagic → Developer Portal → **Manage certificates** → revoke old **iOS Distribution** certs and let the next build create new ones (only if Apple shows duplicate/expired certs).
+**Team settings** → **codemagic.yaml settings** → **Code signing identities**
+
+1. **iOS certificates** → **Generate certificate** → **Apple Distribution** → your API key
+2. **iOS provisioning profiles** → **Fetch profiles** → **App Store** → **com.carzo.app** → **Download selected**
+
+### C. Apple
+
+- App ID **com.carzo.app** with **Push Notifications**
+- App Store Connect app with same bundle ID
+
+### D. Rebuild **iOS TestFlight (signed, push enabled)**
+
+Log must pass: **Fetch App Store signing files** → **Add certificates to keychain** → **Apply code signing profiles**
+
+- **401 / invalid key** → fix API key in step A
+- **Too many distribution certificates** → revoke old at [developer.apple.com](https://developer.apple.com/account/resources/certificates/list), generate again in Codemagic
 
 ## 6) Fix workflow integration name
 
