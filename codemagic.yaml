@@ -17,6 +17,8 @@ workflows:
         LISTING_SHARE_WEB_BASE: "https://carr-5hrm.onrender.com"
         LISTING_SHARE_URL_PATH: "listing"
         FORCE_SKIP_BLUR: "false"
+        # Apple Team ID (matches AASA / App Store). Required for Flutter iOS device builds.
+        APPLE_TEAM_ID: "LN3R46L4H8"
       # Share links: https://carr-5hrm.onrender.com/listing/<id> (Universal / App Links → in-app listing).
       # On Render set APPLE_TEAM_ID (iOS) and ANDROID_SHA256_CERT_FINGERPRINTS (Android).
       # Configure these in Codemagic UI (Environment variables / Secure):
@@ -94,10 +96,9 @@ workflows:
         script: |
           flutter analyze
           flutter test
-      - name: Prepare unsigned iOS build (CI)
-        script: bash scripts/ios_ci_prepare_unsigned.sh
       - name: Build iOS app (no codesign)
         script: |
+          bash scripts/ios_ci_prepare_unsigned.sh
           flutter build ios --release --no-codesign \
             --dart-define=SIDELOAD_BUILD=true \
             --dart-define=API_BASE="$API_BASE" \
