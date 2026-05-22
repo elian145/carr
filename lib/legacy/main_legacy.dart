@@ -29786,17 +29786,11 @@ class _ProfilePageState extends State<ProfilePage> {
                       badgeCount: _unreadChatCount,
                     ),
                     SizedBox(height: 12),
-                    Consumer<CarComparisonStore>(
-                      builder: (context, comparisonStore, child) {
-                        return _buildActionButton(
-                          Icons.compare_arrows,
-                          AppLocalizations.of(context)!.carComparisonCount(
-                            comparisonStore.comparisonCount,
-                          ),
-                          () {
-                            Navigator.pushNamed(context, '/comparison');
-                          },
-                        );
+                    _buildActionButton(
+                      Icons.compare_arrows,
+                      AppLocalizations.of(context)!.carComparisonCount,
+                      () {
+                        Navigator.pushNamed(context, '/comparison');
                       },
                     ),
                     SizedBox(height: 12),
@@ -30435,22 +30429,6 @@ class _SettingsPageState extends State<SettingsPage> {
                 color: isLightShell ? Colors.grey.shade700 : Colors.white70,
               ),
               onTap: theme.toggleTheme,
-            ),
-            Divider(height: 1, color: dividerColor),
-            rowTile(
-              icon: Icons.bookmark_outline,
-              title: loc.savedSearchesTitle,
-              subtitle: loc.savedSearchesHint,
-              trailing: Icon(
-                Icons.chevron_right,
-                color: isLightShell ? Colors.grey.shade700 : Colors.white70,
-              ),
-              onTap: () {
-                Navigator.push(
-                  context,
-                  MaterialPageRoute(builder: (_) => const SavedSearchesPage()),
-                );
-              },
             ),
             Divider(height: 1, color: dividerColor),
             rowTile(

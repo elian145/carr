@@ -1164,9 +1164,7 @@ class AppLocalizationsEn extends AppLocalizations {
   String get helpSupportComingSoon => 'Help & Support feature coming soon!';
 
   @override
-  String carComparisonCount(Object count) {
-    return 'Car Comparison ($count)';
-  }
+  String get carComparisonCount => 'Car Comparison';
 
   @override
   String get addNewButton => 'Add New +';

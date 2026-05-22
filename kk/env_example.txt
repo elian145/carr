@@ -81,5 +81,9 @@ SUPPORT_EMAIL=support@carlistings.com
 SUPPORT_PHONE=
 # E.164 or wa.me link, e.g. https://wa.me/9647XXXXXXXX
 SUPPORT_WHATSAPP=
+# Public API origin (recommended on Render). Used for default legal URLs when TERMS_URL/PRIVACY_URL are unset.
+# PUBLIC_BASE_URL=https://carr-5hrm.onrender.com
+# Optional overrides (defaults: {PUBLIC_BASE_URL or request host}/terms and /privacy)
 TERMS_URL=
 PRIVACY_URL=
+# LEGAL_EFFECTIVE_DATE=May 22, 2026

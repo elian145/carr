@@ -6,6 +6,8 @@ import re
 import json
 
 from flask import Blueprint, Response, abort, current_app, jsonify, redirect, request, send_from_directory
+
+from ..legal_pages import default_privacy_url, default_terms_url, privacy_response, terms_response
 from urllib.parse import quote
 from html import escape
 from werkzeug.utils import safe_join
@@ -39,8 +41,8 @@ def _trust_config_payload() -> dict:
         "support_email": _env("SUPPORT_EMAIL", "support@carlistings.com"),
         "support_phone": _env("SUPPORT_PHONE", ""),
         "support_whatsapp": _env("SUPPORT_WHATSAPP", ""),
-        "terms_url": _env("TERMS_URL", ""),
-        "privacy_url": _env("PRIVACY_URL", ""),
+        "terms_url": _env("TERMS_URL", "") or default_terms_url(),
+        "privacy_url": _env("PRIVACY_URL", "") or default_privacy_url(),
     }
 
 
@@ -48,6 +50,18 @@ def _trust_config_payload() -> dict:
 def trust_config():
     """Support contact + legal URLs for Help, signup, and settings."""
     return jsonify(_trust_config_payload()), 200
+
+
+@bp.route("/terms", methods=["GET"])
+def terms_of_service():
+    """Public Terms of Service (store listing + in-app “Open in browser”)."""
+    return terms_response()
+
+
+@bp.route("/privacy", methods=["GET"])
+def privacy_policy():
+    """Public Privacy Policy (required for app stores)."""
+    return privacy_response()
 
 
 @bp.route("/health", methods=["GET"])

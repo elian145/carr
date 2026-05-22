@@ -1,0 +1,116 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>CARZO — Privacy Policy</title>
+  <style>
+    :root { --brand: #e85f00; --text: #1a1a1a; --muted: #555; --bg: #fafafa; --card: #fff; }
+    * { box-sizing: border-box; }
+    body { margin: 0; font-family: system-ui, -apple-system, Segoe UI, Roboto, sans-serif; background: var(--bg); color: var(--text); line-height: 1.6; }
+    .topbar { background: var(--brand); color: #fff; padding: 14px 20px; font-weight: 700; letter-spacing: 0.04em; }
+    .wrap { max-width: 720px; margin: 0 auto; padding: 24px 20px 48px; }
+    .card { background: var(--card); border-radius: 12px; padding: 28px 24px; box-shadow: 0 1px 4px rgba(0,0,0,.08); }
+    h1 { font-size: 1.5rem; margin: 0 0 8px; }
+    .meta { color: var(--muted); font-size: 0.9rem; margin-bottom: 24px; }
+    h2 { font-size: 1.1rem; margin: 28px 0 10px; color: var(--brand); }
+    p, li { font-size: 0.95rem; }
+    ul { padding-left: 1.25rem; }
+    a { color: var(--brand); }
+    table { width: 100%; border-collapse: collapse; font-size: 0.9rem; margin: 12px 0; }
+    th, td { border: 1px solid #e5e5e5; padding: 8px 10px; text-align: left; vertical-align: top; }
+    th { background: #f5f5f5; }
+    .note { font-size: 0.85rem; color: var(--muted); border-top: 1px solid #eee; margin-top: 32px; padding-top: 16px; }
+    nav.links { margin-top: 20px; font-size: 0.9rem; }
+  </style>
+</head>
+<body>
+  <div class="topbar">CARZO</div>
+  <div class="wrap">
+    <div class="card">
+      <h1>Privacy Policy</h1>
+      <p class="meta">Effective: {{EFFECTIVE_DATE}} · App: CARZO (com.carzo.app)</p>
+
+      <p>This Privacy Policy explains how CARZO (“we,” “us”) collects, uses, shares, and protects personal information when you use the CARZO mobile application and related services (the “Service”).</p>
+
+      <h2>1. Information we collect</h2>
+      <table>
+        <thead><tr><th>Category</th><th>Examples</th><th>Purpose</th></tr></thead>
+        <tbody>
+          <tr><td>Account</td><td>Username, name, email, phone, password (stored hashed on our servers)</td><td>Registration, login, account recovery</td></tr>
+          <tr><td>Listings</td><td>Vehicle details, price, photos, videos, location text</td><td>Marketplace listings and search</td></tr>
+          <tr><td>User content</td><td>Chat messages, reports, favorites, saved searches, profile/dealer content</td><td>Core app features</td></tr>
+          <tr><td>Device &amp; app</td><td>Push notification token, language/theme preferences, diagnostic logs</td><td>Notifications, personalization, reliability</td></tr>
+          <tr><td>Location-related</td><td>Map/place selections, dealer or listing location fields you enter</td><td>Maps and location display</td></tr>
+          <tr><td>Payments</td><td>Payment-related data if you use paid features (processed per payment provider rules)</td><td>Billing where enabled</td></tr>
+        </tbody>
+      </table>
+
+      <h2>2. How we use information</h2>
+      <ul>
+        <li>Operate the marketplace (listings, search, messaging, notifications)</li>
+        <li>Authenticate users and prevent abuse</li>
+        <li>Improve performance, fix errors, and analyze aggregated usage</li>
+        <li>Comply with law and enforce our <a href="{{TERMS_URL}}">Terms of Service</a></li>
+        <li>Communicate service updates and support responses</li>
+      </ul>
+
+      <h2>3. What we do not do</h2>
+      <p><strong>We do not sell your personal information.</strong> We do not use your data for unrelated third-party marketing without your consent where required by law.</p>
+
+      <h2>4. Sharing with service providers</h2>
+      <p>We share data with vendors that help us run the Service, under contracts that limit use to providing services to us, such as:</p>
+      <ul>
+        <li>Cloud hosting and API infrastructure (e.g. Render or your production host)</li>
+        <li>Database hosting (e.g. PostgreSQL provider)</li>
+        <li>Media/object storage (local persistent disk, Cloudflare R2, or S3-compatible storage when configured)</li>
+        <li>Firebase (push notifications and platform configuration)</li>
+        <li>Google Maps / Places (map display and place lookup)</li>
+        <li>Email and SMS providers (verification, password reset, support)</li>
+        <li>Airbridge or similar (only if configured for attribution/deep links)</li>
+        <li>Payment processors (when payment features are enabled)</li>
+        <li>Error monitoring (e.g. Sentry, if configured on backend)</li>
+      </ul>
+
+      <h2>5. Permissions (mobile app)</h2>
+      <ul>
+        <li><strong>Camera</strong> — VIN scanning and listing photos/videos</li>
+        <li><strong>Photos &amp; videos</strong> — Selecting listing and profile media</li>
+        <li><strong>Microphone</strong> — Audio when recording listing videos</li>
+        <li><strong>Notifications</strong> — Chat, listing, and account alerts</li>
+        <li><strong>Internet</strong> — API, maps, uploads, push, and deep links</li>
+      </ul>
+
+      <h2>6. Retention</h2>
+      <p>We retain information while your account is active and as needed to operate the Service, resolve disputes, and meet legal obligations. When you delete your account, we delete or anonymize associated personal data within a reasonable period, except where we must retain records for legal, security, or backup reasons.</p>
+
+      <h2>7. Security</h2>
+      <p>Production API traffic uses HTTPS (encryption in transit). Passwords are stored using strong one-way hashing on the server. No method of transmission or storage is 100% secure; please use a strong, unique password.</p>
+
+      <h2>8. Your choices and rights</h2>
+      <ul>
+        <li><strong>Access &amp; update</strong> — Edit profile information in the app where available.</li>
+        <li><strong>Delete account</strong> — In the app: <strong>Settings → Delete account</strong> (or Profile). This permanently removes your account and associated data such as listings, messages, and favorites, subject to legal retention limits.</li>
+        <li><strong>Notifications</strong> — Manage notification permissions in device settings.</li>
+        <li><strong>Regional rights</strong> — Depending on your location (e.g. GDPR, CCPA), you may have rights to access, correct, delete, or port data. Contact us to exercise these rights.</li>
+      </ul>
+
+      <h2>9. Children</h2>
+      <p>The Service is not directed to children under 16 (or the minimum age in your region). We do not knowingly collect personal information from children.</p>
+
+      <h2>10. International transfers</h2>
+      <p>Your information may be processed in countries where we or our providers operate. We take steps designed to protect data consistent with this policy.</p>
+
+      <h2>11. Changes</h2>
+      <p>We may update this policy. The effective date at the top will change when we do. Continued use after updates means you accept the revised policy where permitted by law.</p>
+
+      <h2>12. Contact</h2>
+      <p>Privacy questions or requests: <a href="{{SUPPORT_MAILTO}}">{{SUPPORT_EMAIL}}</a></p>
+
+      <nav class="links"><a href="{{TERMS_URL}}">Terms of Service</a></nav>
+
+      <p class="note">Align Google Play Data Safety and Apple App Privacy answers with the categories above. Update this page if you enable new integrations (payments, analytics, etc.).</p>
+    </div>
+  </div>
+</body>
+</html>

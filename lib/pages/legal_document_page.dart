@@ -34,7 +34,7 @@ class LegalDocumentPage extends StatelessWidget {
         'provide accurate information, and comply with local laws. We may remove '
         'listings or accounts that violate our policies. Fees and promotions may '
         'change with notice where required by law.\n\n'
-        'For the full terms, use “Open in browser” when a URL is configured by your operator.',
+        'For the full terms, tap “Open in browser” below.',
         ar: 'باستخدام هذا التطبيق فإنك توافق على نشر الإعلانات والتصفح بمسؤولية '
             'وتقديم معلومات دقيقة والامتثال للقوانين المحلية. قد نزيل الإعلانات أو '
             'الحسابات التي تنتهك سياساتنا.',
@@ -48,7 +48,7 @@ class LegalDocumentPage extends StatelessWidget {
       'including contact details you provide, device tokens for notifications, '
       'and usage analytics to improve the service. We do not sell your personal '
       'data. You may request account deletion from Settings.\n\n'
-      'For the full privacy policy, use “Open in browser” when a URL is configured.',
+      'For the full privacy policy, tap “Open in browser” below.',
       ar: 'نجمع بيانات الحساب والإعلانات اللازمة لتشغيل السوق، بما في ذلك '
           'بيانات الاتصال ورموز الإشعارات والتحليلات لتحسين الخدمة. لا نبيع بياناتك الشخصية.',
       ku: 'ئێمە داتای هەژمار و ڕیکلام کۆدەکەینەوە بۆ کارپێکردنی بازاڕەکە. '

@@ -2317,8 +2317,8 @@ abstract class AppLocalizations {
   /// No description provided for @carComparisonCount.
   ///
   /// In en, this message translates to:
-  /// **'Car Comparison ({count})'**
-  String carComparisonCount(Object count);
+  /// **'Car Comparison'**
+  String get carComparisonCount;
 
   /// No description provided for @addNewButton.
   ///

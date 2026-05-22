@@ -1165,9 +1165,7 @@ class AppLocalizationsKu extends AppLocalizations {
       'تایبەتمەندی یارمەتی و پشتگیری بەم زووانە!';
 
   @override
-  String carComparisonCount(Object count) {
-    return 'بەراوردی ئۆتۆمبێل ($count)';
-  }
+  String get carComparisonCount => 'بەراوردی ئۆتۆمبێل';
 
   @override
   String get addNewButton => 'زیادکردنی نوێ +';

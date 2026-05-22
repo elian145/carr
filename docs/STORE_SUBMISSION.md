@@ -8,8 +8,8 @@ Use this document when completing Google Play Data Safety, Apple App Privacy, an
 - Bundle/package ID: `com.carzo.app`
 - Category: Auto & Vehicles / Shopping marketplace
 - Support email: replace the current fallback `support@carlistings.com` with the real monitored support email before submission.
-- Privacy policy URL: required before submission.
-- Terms URL: recommended before submission.
+- Privacy policy URL: required before submission. Hosted at `{API_BASE}/privacy` after deploy (or set `PRIVACY_URL`).
+- Terms URL: recommended before submission. Hosted at `{API_BASE}/terms` after deploy (or set `TERMS_URL`).
 - Production API base: `https://carr-5hrm.onrender.com` unless a custom domain replaces it.
 
 ## Permission Justifications
