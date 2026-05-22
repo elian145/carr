@@ -20,6 +20,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 - `scripts/run_local_checks.ps1` to mirror CI locally.
 - `lib/legacy/home_page_legacy.dart` — HomePage extracted as a `part` of `main_legacy.dart` (same library, smaller main file).
 - `lib/legacy/sell_flow_legacy.dart` — sell flow (steps 1–5, drafts) extracted as a `part` file.
+- `lib/legacy/car_detail_legacy.dart` — listing detail page extracted as a `part` file.
 
 ### Changed
 

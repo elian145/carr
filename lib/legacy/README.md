@@ -6,9 +6,10 @@ Production UI entry: `main_legacy.dart` → `MyApp` (used from `lib/main.dart`).
 
 | File | Role |
 |------|------|
-| `main_legacy.dart` | App shell, routing, sell flow, profile, chat list, etc. |
+| `main_legacy.dart` | App shell, routing, auth, saved searches, profile, chat, settings (~11k lines) |
 | `home_page_legacy.dart` | `part` file — home feed, filters, and listing grid (~8k lines) |
 | `sell_flow_legacy.dart` | `part` file — sell entry, drafts, steps 1–5, preview (~9k lines) |
+| `car_detail_legacy.dart` | `part` file — listing detail screen + spec cards (~2.9k lines) |
 
 All part files are one library with `main_legacy.dart`. Shared imports live in `main_legacy.dart` only.
 
