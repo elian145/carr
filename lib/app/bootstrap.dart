@@ -10,7 +10,6 @@ import '../services/auth_service.dart';
 import '../services/config.dart';
 import '../services/push_notification_service.dart';
 import '../state/locale_controller.dart';
-import 'build_flags.dart';
 
 const String _apiBaseOverrideKey = 'api_base_override';
 

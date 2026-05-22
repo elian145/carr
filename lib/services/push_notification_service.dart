@@ -7,8 +7,8 @@ import 'package:flutter/foundation.dart';
 import 'package:permission_handler/permission_handler.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
-import '../app/build_flags.dart';
 import 'api_service.dart';
+import 'config.dart';
 
 /// Registers the device FCM token with the backend after auth is ready.
 class PushNotificationService {
