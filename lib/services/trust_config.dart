@@ -28,7 +28,7 @@ class TrustConfig {
     } catch (_) {}
 
     _cached = TrustConfigData(
-      supportEmail: _pick(kSupportEmail, fromApi.supportEmail, 'support@carlistings.com'),
+      supportEmail: _pick(kSupportEmail, fromApi.supportEmail),
       supportPhone: _pick(kSupportPhone, fromApi.supportPhone),
       supportWhatsapp: _pick(kSupportWhatsapp, fromApi.supportWhatsapp),
       termsUrl: _pick(kTermsUrl, fromApi.termsUrl),

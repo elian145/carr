@@ -38,7 +38,7 @@ def _trust_config_payload() -> dict:
         return (os.environ.get(key) or default).strip()
 
     return {
-        "support_email": _env("SUPPORT_EMAIL", "support@carlistings.com"),
+        "support_email": _env("SUPPORT_EMAIL", "support@carzo.app"),
         "support_phone": _env("SUPPORT_PHONE", ""),
         "support_whatsapp": _env("SUPPORT_WHATSAPP", ""),
         "terms_url": _env("TERMS_URL", "") or default_terms_url(),

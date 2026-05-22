@@ -40,7 +40,7 @@ def default_privacy_url() -> str:
 
 
 def _support_email() -> str:
-    return (os.environ.get("SUPPORT_EMAIL") or "support@carlistings.com").strip()
+    return (os.environ.get("SUPPORT_EMAIL") or "support@carzo.app").strip()
 
 
 def _effective_date() -> str:
