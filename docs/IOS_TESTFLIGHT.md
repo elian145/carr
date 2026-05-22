@@ -163,6 +163,16 @@ The workflow on `main` uses `--export-options-plist="$HOME/export_options.plist"
 3. Re-run the workflow after the latest `main` (the build step **fails** if no `.ipa` is produced).
 4. Still check [App Store Connect → TestFlight](https://appstoreconnect.apple.com) in case an older build is processing.
 
+## 7b) App Encryption Documentation (App Store Connect popup)
+
+If TestFlight asks what encryption your app uses, choose:
+
+**None of the algorithms mentioned above**
+
+CARZO only uses standard HTTPS/TLS and Apple’s built-in crypto (API calls, Firebase, etc.) — not custom/proprietary encryption.
+
+For **future uploads**, `ios/Runner/Info.plist` includes `ITSAppUsesNonExemptEncryption` = `false` so Apple usually skips this dialog.
+
 ## 8) Install on iPhone
 
 1. Install **TestFlight** from the App Store.
