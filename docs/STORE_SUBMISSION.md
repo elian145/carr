@@ -27,7 +27,7 @@ Use this document when completing Google Play Data Safety, Apple App Privacy, an
 - User-generated content: chat messages, reports, favorites, saved searches, viewed listings, profile/dealer content.
 - Device/app data: push notification token, app locale/theme preferences, diagnostic/server logs.
 - Location-related data: dealer/listing location fields and map/place selections entered by users.
-- Payments: payment screens/routes exist, but confirm the final payment provider and data flow before marking payment data as collected.
+- Payments: **not collected in-app** — deals are arranged off-platform. See [`PAYMENTS.md`](PAYMENTS.md). Do not mark payment card / IAP data as collected.
 
 ## Data Sharing And Disclosure
 
