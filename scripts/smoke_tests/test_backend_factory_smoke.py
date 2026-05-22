@@ -193,6 +193,15 @@ class BackendFactorySmokeTest(unittest.TestCase):
         self.assertIn("refresh_token", data)
         self.assertIn("user", data)
 
+    def test_well_known_app_links_require_env(self):
+        """Without store env vars, deep-link files must 404 (not serve invalid stubs)."""
+        for path in (
+            "/.well-known/assetlinks.json",
+            "/.well-known/apple-app-site-association",
+        ):
+            r = self.client.get(path)
+            self.assertEqual(r.status_code, 404, (path, r.data))
+
     def test_trust_config_and_legal_pages(self):
         trust = self.client.get("/api/config/trust")
         self.assertEqual(trust.status_code, 200, trust.data)
@@ -208,6 +217,19 @@ class BackendFactorySmokeTest(unittest.TestCase):
         privacy = self.client.get("/privacy")
         self.assertEqual(privacy.status_code, 200, privacy.data)
         self.assertIn(b"CARZO", privacy.data)
+
+    def test_delete_account(self):
+        r = self.client.delete(
+            "/api/auth/delete-account",
+            headers=self._auth(self.viewer_token),
+            json={"password": "Aa123456"},
+        )
+        self.assertEqual(r.status_code, 200, r.data)
+        body = r.get_json() or {}
+        self.assertIn("message", body)
+
+        me = self.client.get("/api/auth/me", headers=self._auth(self.viewer_token))
+        self.assertIn(me.status_code, (401, 404, 422))
 
     def test_email_signup_and_login(self):
         u = f"e_{uuid.uuid4().hex[:8]}"

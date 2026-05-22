@@ -102,6 +102,13 @@ class FakeApiServer {
           return jsonOk({'saved_searches': <dynamic>[]});
         case '/api/auth/send_otp':
           return jsonOk({'sent': false, 'message': 'stub'});
+        case '/api/auth/delete-account':
+          return jsonOk({'message': 'Account deleted successfully'});
+        case '/api/auth/refresh':
+          return jsonOk({
+            'access_token': 'test_access_token',
+            'refresh_token': 'test_refresh_token',
+          });
         case '/api/config/trust':
           return jsonOk({
             'support_email': 'support@test.example',
