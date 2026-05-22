@@ -193,7 +193,7 @@ workflows:
       - name: Analyze
         script: flutter analyze
       - name: Tests
-        script: flutter test --no-pub --dart-define=API_BASE=http://127.0.0.1:8081
+        script: flutter test --no-pub
       - name: Build APK (debug)
         script: flutter build apk --debug --no-pub --flavor "$FLAVOR"
     artifacts:
@@ -278,7 +278,9 @@ workflows:
       - name: Analyze
         script: flutter analyze
       - name: Tests
-        script: flutter test --no-pub --dart-define=API_BASE=http://127.0.0.1:8081
+        script: flutter test --no-pub
+      - name: Publish preflight (static)
+        script: python scripts/verify_publish_ready.py
       - name: Build APK (release)
         script: |
           flutter build apk --release --no-pub --flavor "$FLAVOR" \
