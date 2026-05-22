@@ -7,7 +7,7 @@ set -euo pipefail
 ROOT="$(cd "$(dirname "$0")/.." && pwd)"
 cd "$ROOT"
 
-MARKER="# CI unsigned build (appended by scripts/ios_ci_prepare_unsigned.sh)"
+MARKER="// CI unsigned build (scripts/ios_ci_prepare_unsigned.sh)"
 for cfg in ios/Flutter/Release.xcconfig ios/Flutter/Debug.xcconfig; do
   if [ -f "$cfg" ] && ! grep -qF "$MARKER" "$cfg" 2>/dev/null; then
     cat >>"$cfg" <<EOF
