@@ -74,6 +74,13 @@ void main() {
     await pushNamed('/help');
     await pushNamed('/reset-password');
     await pushNamed('/verify-email', args: {'token': 'test-token'});
+    await pushNamed(
+      '/dealer/profile',
+      args: {'dealerPublicId': 'dealer_test_1'},
+    );
+    await pushNamed('/dealer/edit');
+    await pushNamed('/admin/dealers');
+    await pushNamed('/admin/reports');
 
     await tester.pump(const Duration(seconds: 5));
   });
