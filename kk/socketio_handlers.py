@@ -1,6 +1,9 @@
 from __future__ import annotations
 
+import logging
 from datetime import datetime
+
+logger = logging.getLogger(__name__)
 
 from flask import current_app, request
 from flask_jwt_extended import decode_token, get_jwt_identity, verify_jwt_in_request
@@ -286,11 +289,21 @@ def register_socketio_handlers(socketio) -> None:
             fcm_token = getattr(receiver, "firebase_token", None)
             if fcm_token:
                 sender_name = f"{me.first_name} {me.last_name}".strip() or "Someone"
-                send_push(
+                ok = send_push(
                     fcm_token,
                     title=f"New message from {sender_name}",
                     body=content[:200],
                     data={"car_id": car.public_id, "sender_id": me.public_id, "type": "chat_message"},
+                )
+                if not ok:
+                    logger.info(
+                        "FCM send failed for receiver %s (check FIREBASE_SERVICE_ACCOUNT / APNs)",
+                        receiver.public_id,
+                    )
+            else:
+                logger.info(
+                    "FCM skipped: receiver %s has no firebase_token (re-login on device to register)",
+                    receiver.public_id,
                 )
         except Exception:
             pass

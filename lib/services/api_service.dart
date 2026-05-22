@@ -1191,7 +1191,8 @@ class ApiService {
   }
 
   // Check if user is authenticated
-  static bool get isAuthenticated => _accessToken != null;
+  static bool get isAuthenticated =>
+      _accessToken != null && _accessToken!.isNotEmpty;
 
   // Get current access token
   static String? get accessToken => _accessToken;
@@ -1455,11 +1456,17 @@ class ApiService {
   }
 
   /// Register FCM push notification token with the backend.
-  static Future<void> registerPushToken(String token) async {
+  /// Pass [enabled: false] to clear the stored token (user disabled push).
+  static Future<void> registerPushToken(
+    String token, {
+    bool enabled = true,
+  }) async {
     await _makeAuthenticatedRequest(
       'POST',
       '/users/push_token',
-      body: {'token': token},
+      body: {
+        if (!enabled) 'enabled': false else 'token': token.trim(),
+      },
     );
   }
 

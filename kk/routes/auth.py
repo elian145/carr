@@ -684,6 +684,10 @@ def logout():
         current_user = get_current_user()
         if current_user:
             log_user_action(current_user, "logout")
+            try:
+                current_user.firebase_token = None
+            except Exception:
+                pass
 
         # Blacklist the current token
         jti = get_jwt()["jti"]

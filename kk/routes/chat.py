@@ -928,6 +928,11 @@ def register_push_token():
             return jsonify({"message": "Unauthorized"}), 401
 
         data = request.get_json(silent=True) or {}
+        if data.get("enabled") is False:
+            me.firebase_token = None
+            db.session.commit()
+            return jsonify({"message": "Push disabled"}), 200
+
         token = str(data.get("token") or "").strip()
         if not token:
             return jsonify({"message": "token is required"}), 400

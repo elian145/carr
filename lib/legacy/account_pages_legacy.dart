@@ -1159,22 +1159,11 @@ class _SettingsPageState extends State<SettingsPage> {
   }
 
   Future<void> _togglePush(bool v) async {
-    final sp = await SharedPreferences.getInstance();
-    await sp.setBool('push_enabled', v);
+    await PushNotificationService.setPushEnabled(v);
     if (!mounted) return;
     setState(() {
       _pushEnabled = v;
     });
-    final token = sp.getString('push_token');
-    if (token != null && token.isNotEmpty) {
-      try {
-        await http.post(
-          Uri.parse('${getApiBase()}/api/push/preferences'),
-          headers: {'Content-Type': 'application/json'},
-          body: json.encode({'push_token': token, 'enabled': v}),
-        );
-      } catch (_) {}
-    }
   }
 
   @override

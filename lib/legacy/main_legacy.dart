@@ -49,6 +49,7 @@ import '../services/config.dart';
 import '../services/ai_service.dart';
 import '../services/car_service.dart';
 import '../services/deep_link_service.dart';
+import '../services/push_notification_service.dart';
 import '../services/websocket_service.dart';
 import 'package:mime/mime.dart';
 import 'package:http_parser/http_parser.dart';

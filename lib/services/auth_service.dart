@@ -1,6 +1,7 @@
 import 'package:flutter/foundation.dart';
 import 'dart:developer' as developer;
 import 'api_service.dart';
+import 'push_notification_service.dart';
 import 'websocket_service.dart';
 
 class AuthService extends ChangeNotifier {
@@ -27,6 +28,7 @@ class AuthService extends ChangeNotifier {
       if (ApiService.isAuthenticated) {
         await _loadUserProfile();
         await WebSocketService.connect();
+        await PushNotificationService.syncTokenWithBackend();
       }
     } catch (e) {
       developer.log('Auth initialization error: $e', name: 'AuthService');
@@ -100,6 +102,7 @@ class AuthService extends ChangeNotifier {
         _currentUser = Map<String, dynamic>.from(data['user']);
         _isAuthenticated = true;
         await WebSocketService.connect();
+        await PushNotificationService.syncTokenWithBackend();
         notifyListeners();
       }
       return data;
@@ -137,6 +140,7 @@ class AuthService extends ChangeNotifier {
 
       // Connect to WebSocket
       await WebSocketService.connect();
+      await PushNotificationService.syncTokenWithBackend();
 
       notifyListeners();
       return response;

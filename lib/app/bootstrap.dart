@@ -8,17 +8,9 @@ import 'package:shared_preferences/shared_preferences.dart';
 import '../services/api_service.dart';
 import '../services/auth_service.dart';
 import '../services/config.dart';
+import '../services/push_notification_service.dart';
 import '../state/locale_controller.dart';
-
-// Firebase is optional for sideload builds.
-import 'package:firebase_core/firebase_core.dart';
-import 'package:firebase_messaging/firebase_messaging.dart';
-
-// Sideload build flag to disable services that require entitlements on iOS
-const bool kSideloadBuild = bool.fromEnvironment(
-  'SIDELOAD_BUILD',
-  defaultValue: false,
-);
+import 'build_flags.dart';
 
 const String _apiBaseOverrideKey = 'api_base_override';
 
@@ -60,10 +52,7 @@ Future<void> bootstrapAndRun(Widget app) async {
       Future.microtask(() async {
         if (!(kSideloadBuild && Platform.isIOS)) {
           try {
-            await Firebase.initializeApp();
-          } catch (_) {}
-          try {
-            await _initPushToken();
+            await PushNotificationService.initialize();
           } catch (_) {}
         }
         try {
@@ -71,6 +60,10 @@ Future<void> bootstrapAndRun(Widget app) async {
         } catch (_) {}
         try {
           await AuthService().initialize();
+        } catch (_) {}
+        // Auth must finish before syncing FCM token to the backend.
+        try {
+          await PushNotificationService.syncTokenWithBackend();
         } catch (_) {}
       });
     },
@@ -85,51 +78,4 @@ Future<void> bootstrapAndRun(Widget app) async {
       }
     },
   );
-}
-
-Future<void> _initPushToken() async {
-  try {
-    final sp = await SharedPreferences.getInstance();
-    final enabled = sp.getBool('push_enabled') ?? true;
-    if (!enabled) return;
-
-    final messaging = FirebaseMessaging.instance;
-    final settings = await messaging.requestPermission(
-      alert: true,
-      badge: true,
-      sound: true,
-      provisional: false,
-    );
-    if (settings.authorizationStatus == AuthorizationStatus.authorized ||
-        settings.authorizationStatus == AuthorizationStatus.provisional) {
-      final token = await messaging.getToken();
-      if (token != null && token.isNotEmpty) {
-        await sp.setString('push_token', token);
-        // Register token with backend for push notifications.
-        if (ApiService.isAuthenticated) {
-          try {
-            await ApiService.registerPushToken(token);
-          } catch (_) {}
-        }
-      }
-
-      // Re-register on token refresh.
-      messaging.onTokenRefresh.listen((newToken) async {
-        if (newToken.isNotEmpty && ApiService.isAuthenticated) {
-          try {
-            await sp.setString('push_token', newToken);
-            await ApiService.registerPushToken(newToken);
-          } catch (_) {}
-        }
-      });
-    }
-
-    // Handle foreground messages.
-    FirebaseMessaging.onMessage.listen((RemoteMessage message) {
-      if (kDebugMode) {
-        // ignore: avoid_print
-        print('FCM foreground: ${message.notification?.title}');
-      }
-    });
-  } catch (_) {}
 }
