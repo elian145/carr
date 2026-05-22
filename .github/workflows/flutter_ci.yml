@@ -52,4 +52,9 @@ jobs:
       - name: Build APK (debug, dev flavor)
         run: flutter build apk --debug --no-pub --flavor dev
 
+      - name: Build App Bundle (prod release, unsigned fallback signing)
+        run: |
+          flutter build appbundle --release --no-pub --flavor prod \
+            --dart-define=API_BASE=https://carr-5hrm.onrender.com
+
 

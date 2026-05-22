@@ -27,6 +27,9 @@ jobs:
       - name: Compile backend
         run: python -m compileall kk
 
+      - name: Publish preflight (static)
+        run: python scripts/verify_publish_ready.py
+
       - name: Run backend smoke tests
         env:
           APP_ENV: development
