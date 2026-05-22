@@ -34,6 +34,7 @@ This checklist is the final gate before uploading Android AAB/APK or iOS builds.
 
 ## 5) QA and validation commands
 
+- `python scripts/verify_publish_ready.py` (static file/bundle-id checks; runs in CI)
 - `flutter clean`
 - `flutter pub get`
 - `flutter analyze`

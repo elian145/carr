@@ -43,6 +43,9 @@ jobs:
       - name: Analyze
         run: flutter analyze
 
+      - name: Publish preflight (static)
+        run: python scripts/verify_publish_ready.py
+
       - name: Run tests
         run: flutter test --no-pub
 
