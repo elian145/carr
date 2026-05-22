@@ -151,9 +151,11 @@ workflows:
         # Must match Reference names in Codemagic → Code signing identities (see IOS_TESTFLIGHT.md)
         CM_CERTIFICATE_REF: "carzo_distribution"
         CM_PROFILE_REF: "carzo_appstore"
+      # Uses uploaded App Store profile for com.carzo.app + carzo_distribution cert.
+      # If build says profile ref not found, re-upload .mobileprovision (see IOS_TESTFLIGHT.md).
       ios_signing:
-        provisioning_profiles:
-          - carzo_appstore
+        distribution_type: app_store
+        bundle_identifier: com.carzo.app
         certificates:
           - carzo_distribution
     cache:

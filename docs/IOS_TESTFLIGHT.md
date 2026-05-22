@@ -91,17 +91,13 @@ Often shows at **Initializing build** — Codemagic has no App Store profile yet
    - **Reference name:** `carzo_appstore` (must match `codemagic.yaml`)
    - **Download selected**
 
-Reference names in `codemagic.yaml` must match exactly:
+The profile must be **saved in Codemagic** with a **green certificate** link. If the table shows **Certificate: Not uploaded**, Codemagic will **not** register `carzo_appstore` and the build says:
 
-```yaml
-ios_signing:
-  certificates:
-    - carzo_distribution
-  provisioning_profiles:
-    - carzo_appstore
-```
+`No provisioning profile with reference 'carzo_appstore' were found … Available options are: carzo_distribution`
 
-If you used different names in the UI, change the yaml to match (or re-download with these names).
+**Fix:** recreate App Store profile on Apple using the **May 23, 2027** Distribution cert, re-upload `.mobileprovision`, confirm **Certificate = OK**, then rebuild.
+
+`codemagic.yaml` uses `distribution_type: app_store` + `bundle_identifier: com.carzo.app` so any valid uploaded App Store profile for that bundle is picked up (not only the name `carzo_appstore`).
 
 ### B2. Optional: upload `.p12` instead of Generate
 
