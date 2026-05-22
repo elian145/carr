@@ -46,6 +46,8 @@ Verify:
 - `https://<your-host>/.well-known/assetlinks.json` → 200
 - `https://<your-host>/.well-known/apple-app-site-association` → 200
 
+Or run: `python scripts/verify_production_host.py --host https://<your-host> --require-app-links`
+
 ## Recommended
 
 | Variable | Notes |

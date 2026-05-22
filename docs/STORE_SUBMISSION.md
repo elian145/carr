@@ -56,6 +56,7 @@ Use this document when completing Google Play Data Safety, Apple App Privacy, an
 ## Hard Blockers Before Upload
 
 - `android/app/src/prod/google-services.json` must exist and target `com.carzo.app`.
-- `https://carr-5hrm.onrender.com/.well-known/assetlinks.json` must return 200 with the Play App Signing SHA-256 fingerprint.
+- `https://<your-host>/.well-known/assetlinks.json` must return 200 with the Play App Signing SHA-256 fingerprint (`ANDROID_SHA256_CERT_FINGERPRINTS` on Render). Until set, the file returns 404 by design.
+- `https://<your-host>/.well-known/apple-app-site-association` must return 200 (`APPLE_TEAM_ID` on Render).
 - Privacy policy URL and support contact must be real and reachable.
 - Final screenshots and app icon/splash assets must be approved.

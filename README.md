@@ -5,25 +5,29 @@
 keytool -genkey -v -keystore release-keystore.jks -keyalg RSA -keysize 2048 -validity 10000 -alias upload
 ```
 
-2. Create `signing.properties` in the project root:
+2. Copy `signing.properties.example` to `signing.properties` in the project root and fill in real paths/passwords (file is gitignored).
+
+3. After Play App Signing is enabled, add the release **SHA-256** to Render as `ANDROID_SHA256_CERT_FINGERPRINTS` (comma-separated). List fingerprints with:
 ```
-STORE_FILE=/absolute/path/to/release-keystore.jks
-STORE_PASSWORD=your_store_password
-KEY_ALIAS=upload
-KEY_PASSWORD=your_key_password
+keytool -list -v -keystore release-keystore.jks -alias upload
 ```
 
-3. Add `android/signing.properties` (the release signing block is already enabled in `android/app/build.gradle.kts`).
-
-4. Build a signed release:
+4. Build a signed release (production API required):
 ```
-flutter build apk --flavor prod --release
+flutter build apk --flavor prod --release --dart-define=API_BASE=https://your-api-host
 ```
 
 5. For Google Play App Bundle:
 ```
-flutter build appbundle --flavor prod --release
+flutter build appbundle --flavor prod --release --dart-define=API_BASE=https://your-api-host
 ```
+
+6. Before upload, run:
+```
+python scripts/verify_publish_ready.py
+python scripts/verify_production_host.py --host https://your-api-host --require-app-links
+```
+See `docs/PUBLISH_READY_CHECKLIST.md`.
 
 Use `--flavor dev` or `--flavor stage` for other environments.
 

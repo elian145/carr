@@ -13,10 +13,14 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 - `scripts/verify_publish_ready.py` static store preflight (CI on Flutter + backend).
 - Backend smoke coverage for `/api/config/trust`, `/terms`, and `/privacy`.
 - CI prod `appbundle` build (`--flavor prod`).
+- `scripts/verify_production_host.py` and weekly/manual GitHub workflow for deployed API checks.
+- `docs/PAYMENTS.md` (off-platform payments; no production payment gateway).
+- `signing.properties.example` for Play upload setup.
 
 ### Changed
 
 - Support/legal defaults use `support@carzo.app` (removed `support@carlistings.com` client fallback).
+- README release steps reference verify scripts and `--dart-define=API_BASE`.
 
 - MIT `LICENSE` file (README previously referenced it without the file).
 - `scripts/one_off_migrations/` for legacy SQLite repair scripts (moved from repo root).

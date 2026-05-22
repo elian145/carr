@@ -4,7 +4,9 @@
 # Generate keystore (one time):
 #   keytool -genkey -v -keystore release-keystore.jks -keyalg RSA -keysize 2048 -validity 10000 -alias upload
 #
-# Then paste SHA-256 into Render env ANDROID_SHA256_CERT_FINGERPRINTS for App Links.
+# List SHA-256 for Render env ANDROID_SHA256_CERT_FINGERPRINTS (App Links):
+#   keytool -list -v -keystore release-keystore.jks -alias upload
+# Use the Play App Signing certificate fingerprint after enrolling in Play Console.
 
 STORE_FILE=/absolute/path/to/release-keystore.jks
 STORE_PASSWORD=your_store_password
