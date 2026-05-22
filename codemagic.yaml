@@ -143,9 +143,7 @@ workflows:
       cocoapods: default
       groups:
         - a
-      ios_signing:
-        distribution_type: app_store
-        bundle_identifier: com.carzo.app
+      # Signing is fetched in scripts (ios_signing here fails at init if nothing uploaded yet).
       vars:
         API_BASE: "https://carr-5hrm.onrender.com"
         LISTING_SHARE_WEB_BASE: "https://carr-5hrm.onrender.com"
@@ -176,11 +174,20 @@ workflows:
           flutter test
       - name: Set up keychain for code signing
         script: keychain initialize
-      - name: Fetch App Store provisioning profile (create if missing)
+      - name: Fetch App Store signing files (cert + profile, create if missing)
         script: |
-          app-store-connect fetch-signing-files "com.carzo.app" --type IOS_APP_STORE --create
+          app-store-connect fetch-signing-files "com.carzo.app" \
+            --platform IOS \
+            --type IOS_APP_STORE \
+            --create \
+            --delete-stale-profiles
+      - name: Add certificates to keychain
+        script: keychain add-certificates
       - name: Apply code signing profiles to Xcode project
-        script: xcode-project use-profiles
+        script: |
+          xcode-project use-profiles \
+            --archive-method app-store \
+            --code-signing-setup-verbose-logging
       - name: Verify push entitlement in IPA build
         script: |
           /usr/libexec/PlistBuddy -c 'Print :aps-environment' ios/Runner/Runner.entitlements
