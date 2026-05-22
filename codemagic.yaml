@@ -143,7 +143,8 @@ workflows:
       cocoapods: default
       groups:
         - a
-      # Signing is fetched in scripts (ios_signing here fails at init if nothing uploaded yet).
+        # Optional: add secret CERTIFICATE_PRIVATE_KEY (RSA PEM) for --create in fetch step.
+        # Easier: generate cert in Codemagic UI first — see docs/IOS_TESTFLIGHT.md
       vars:
         API_BASE: "https://carr-5hrm.onrender.com"
         LISTING_SHARE_WEB_BASE: "https://carr-5hrm.onrender.com"
@@ -174,13 +175,24 @@ workflows:
           flutter test
       - name: Set up keychain for code signing
         script: keychain initialize
-      - name: Fetch App Store signing files (cert + profile, create if missing)
+      - name: Fetch App Store signing files
         script: |
-          app-store-connect fetch-signing-files "com.carzo.app" \
-            --platform IOS \
-            --type IOS_APP_STORE \
-            --create \
-            --delete-stale-profiles
+          set -e
+          # --create needs CERTIFICATE_PRIVATE_KEY (Codemagic secret) OR cert generated in UI first.
+          if [ -n "${CERTIFICATE_PRIVATE_KEY:-}" ]; then
+            echo "Creating/fetching signing files with CERTIFICATE_PRIVATE_KEY"
+            app-store-connect fetch-signing-files "com.carzo.app" \
+              --platform IOS \
+              --type IOS_APP_STORE \
+              --create \
+              --delete-stale-profiles
+          else
+            echo "No CERTIFICATE_PRIVATE_KEY — fetching existing team certs/profiles from Codemagic UI"
+            app-store-connect fetch-signing-files "com.carzo.app" \
+              --platform IOS \
+              --type IOS_APP_STORE \
+              --delete-stale-profiles
+          fi
       - name: Add certificates to keychain
         script: keychain add-certificates
       - name: Apply code signing profiles to Xcode project

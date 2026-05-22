@@ -69,12 +69,31 @@ Often shows at **Initializing build** — Codemagic has no App Store profile yet
 3. Issuer ID + Key ID + upload **.p8**
 4. Name must match `codemagic.yaml`: `app_store_connect: App Store Connect` (or change yaml to your name)
 
-### B. Create signing in Codemagic UI (do once)
+### B. Create signing in Codemagic UI (do once) — fixes “without certificate private key”
 
 **Team settings** → **codemagic.yaml settings** → **Code signing identities**
 
-1. **iOS certificates** → **Generate certificate** → **Apple Distribution** → your API key
-2. **iOS provisioning profiles** → **Fetch profiles** → **App Store** → **com.carzo.app** → **Download selected**
+1. **iOS certificates** tab → **Generate certificate**
+   - Type: **Apple Distribution**
+   - Pick your **App Store Connect API key**
+   - Reference name: e.g. `carzo_distribution`
+   - **Download** the `.p12` if offered (backup only; Codemagic keeps the private key)
+2. **iOS provisioning profiles** tab → **Fetch profiles**
+   - Category: **App Store profiles**
+   - Select **com.carzo.app**
+   - Reference name: e.g. `carzo_appstore` → **Download selected**
+
+> Do **not** only create a certificate on [developer.apple.com](https://developer.apple.com) — Codemagic cannot use it without the **private key**. Always **Generate** in Codemagic UI (or paste `CERTIFICATE_PRIVATE_KEY` below).
+
+### B2. Optional: `CERTIFICATE_PRIVATE_KEY` env var (advanced)
+
+Only if you prefer CLI `--create` on every build:
+
+1. On a PC (once): `openssl genpkey -algorithm RSA -out ios_distribution_private_key.pem -pkeyopt rsa_keygen_bits:2048`
+2. Codemagic → app → **Environment variables** → group `code-signing` → secret **`CERTIFICATE_PRIVATE_KEY`** = entire `.pem` file (including `BEGIN` / `END` lines)
+3. Add group `code-signing` to the TestFlight workflow in Codemagic UI if not in yaml
+
+Use the **same** key every time or Apple will create extra distribution certificates (max 3).
 
 ### C. Apple
 
