@@ -234,10 +234,6 @@ workflows:
           fi
           echo "=== Locating .ipa files under build/ios ==="
           find build/ios -name '*.ipa' -type f -ls || true
-          mkdir -p build/ios/ipa
-          while IFS= read -r ipa; do
-            cp -f "$ipa" "build/ios/ipa/$(basename "$ipa")"
-          done < <(find build/ios -name '*.ipa' -type f)
           ls -la build/ios/ipa/ || true
           if ! compgen -G "build/ios/ipa/*.ipa" > /dev/null; then
             echo "ERROR: Archive built but export produced no .ipa."
