@@ -193,6 +193,22 @@ class BackendFactorySmokeTest(unittest.TestCase):
         self.assertIn("refresh_token", data)
         self.assertIn("user", data)
 
+    def test_trust_config_and_legal_pages(self):
+        trust = self.client.get("/api/config/trust")
+        self.assertEqual(trust.status_code, 200, trust.data)
+        payload = trust.get_json() or {}
+        self.assertEqual(payload.get("support_email"), "support@carzo.app")
+        self.assertTrue((payload.get("privacy_url") or "").strip())
+        self.assertTrue((payload.get("terms_url") or "").strip())
+
+        terms = self.client.get("/terms")
+        self.assertEqual(terms.status_code, 200, terms.data)
+        self.assertIn(b"CARZO", terms.data)
+
+        privacy = self.client.get("/privacy")
+        self.assertEqual(privacy.status_code, 200, privacy.data)
+        self.assertIn(b"CARZO", privacy.data)
+
     def test_email_signup_and_login(self):
         u = f"e_{uuid.uuid4().hex[:8]}"
         signup = self.client.post(

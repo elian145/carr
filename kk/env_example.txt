@@ -77,7 +77,7 @@ PLATE_BLUR_EXPAND=0
 PLATE_BLUR_KEEP_ORIGINAL=0
 
 # Trust & support (mobile Help / Terms / Contact)
-SUPPORT_EMAIL=support@carlistings.com
+SUPPORT_EMAIL=support@carzo.app
 SUPPORT_PHONE=
 # E.164 or wa.me link, e.g. https://wa.me/9647XXXXXXXX
 SUPPORT_WHATSAPP=
