@@ -190,6 +190,10 @@ workflows:
           echo "  certificate: ${CM_CERTIFICATE_REF}"
           echo "  profile: ${CM_PROFILE_REF}"
           echo "If this fails, use Generate certificate (not Fetch) in Codemagic UI — see docs/IOS_TESTFLIGHT.md"
+      - name: Install CocoaPods dependencies
+        script: |
+          set -e
+          find ios -name Podfile -execdir pod install \;
       - name: Apply code signing profiles to Xcode project
         script: |
           xcode-project use-profiles \
@@ -200,6 +204,7 @@ workflows:
           /usr/libexec/PlistBuddy -c 'Print :aps-environment' ios/Runner/Runner.entitlements
       - name: Build IPA for TestFlight
         script: |
+          set -euo pipefail
           flutter build ipa --release \
             --export-options-plist=ios/ExportOptions.plist \
             --dart-define=API_BASE="$API_BASE" \
@@ -208,8 +213,24 @@ workflows:
             --dart-define=AIRBRIDGE_APP_NAME="${AIRBRIDGE_APP_NAME:-}" \
             --dart-define=AIRBRIDGE_APP_TOKEN="${AIRBRIDGE_APP_TOKEN:-}" \
             --dart-define=AIRBRIDGE_LISTING_CHANNEL="${AIRBRIDGE_LISTING_CHANNEL:-listing_share}"
+          echo "=== Locating .ipa files under build/ios ==="
+          find build/ios -name '*.ipa' -type f -ls || true
+          mkdir -p build/ios/ipa
+          while IFS= read -r ipa; do
+            cp -f "$ipa" "build/ios/ipa/$(basename "$ipa")"
+          done < <(find build/ios -name '*.ipa' -type f)
+          ls -la build/ios/ipa/ || true
+          if ! compgen -G "build/ios/ipa/*.ipa" > /dev/null; then
+            echo "ERROR: flutter build ipa finished but no .ipa was produced."
+            echo "Open this step's log above for archive/export errors."
+            ls -laR build/ios 2>/dev/null | head -120 || true
+            exit 1
+          fi
+          echo "IPA artifact(s) ready: build/ios/ipa/"
     artifacts:
       - build/ios/ipa/*.ipa
+      - $CM_BUILD_DIR/build/ios/ipa/*.ipa
+      - /tmp/xcodebuild_logs/*.log
     publishing:
       app_store_connect:
         auth: integration
