@@ -6,13 +6,22 @@ Production UI entry: `main_legacy.dart` → `MyApp` (used from `lib/main.dart`).
 
 | File | Role |
 |------|------|
-| `main_legacy.dart` | App shell, routing, auth, saved searches, profile, chat, settings (~11k lines) |
-| `home_page_legacy.dart` | `part` file — home feed, filters, and listing grid (~8k lines) |
-| `sell_flow_legacy.dart` | `part` file — sell entry, drafts, steps 1–5, preview (~9k lines) |
-| `car_detail_legacy.dart` | `part` file — listing detail screen + spec cards (~2.9k lines) |
+| `main_legacy.dart` | Imports, app shell, routing, shared widgets, galleries, search (~4.2k lines) |
+| `home_page_legacy.dart` | Home feed, filters, listing grid |
+| `saved_searches_legacy.dart` | Saved searches screen |
+| `car_detail_legacy.dart` | Listing detail + spec cards |
+| `sell_flow_legacy.dart` | Sell entry, drafts, steps 1–5, preview |
+| `comparison_legacy.dart` | Car comparison screen |
+| `auth_pages_legacy.dart` | Favorites, chat list, login, signup |
+| `account_pages_legacy.dart` | Profile, settings, my listings, edit listing |
 
-All part files are one library with `main_legacy.dart`. Shared imports live in `main_legacy.dart` only.
+All `part` files share one library with `main_legacy.dart` (imports only in the main file).
 
 ## Refactor direction
 
-Prefer new screens under `lib/pages/` and wire them in `MyApp` routes gradually. The modern `lib/pages/home_page.dart` is a separate experiment; `/` still uses legacy `HomePage` until parity is complete.
+Prefer new screens under `lib/pages/` and wire them in `MyApp` routes gradually. The modern `lib/pages/home_page.dart` is separate; `/` still uses legacy `HomePage` until parity is complete.
+
+## Tooling
+
+- `tools/split_legacy_part.py` — extract a 1-based line range into a new part file
+- `tools/restore_legacy_parts_from_git.py` — recover a part from git `f353456` if a split goes wrong
