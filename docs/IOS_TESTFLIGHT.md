@@ -150,11 +150,17 @@ Commit and push if you change the name.
 3. Wait until green (first time may take ~15–25 min).
 4. Build uploads to App Store Connect automatically (`submit_to_testflight: true`).
 
+### Archive built but no `.ipa` (only `Runner.xcarchive` in logs)
+
+Codemagic must export with **`$HOME/export_options.plist`** created by **`xcode-project use-profiles`**. Do **not** use `ios/ExportOptions.plist` on CI — it lacks provisioning profile mappings, so archive succeeds and export fails.
+
+The workflow on `main` uses `--export-options-plist="$HOME/export_options.plist"` and retries `xcodebuild -exportArchive` if needed.
+
 ### Build green but no `.ipa` download?
 
 1. On the build page, scroll to **Artifacts** (below the step list). If empty, open **Build IPA for TestFlight** and search the log for `Built IPA to` or `export`.
 2. **Publishing** under 1 second usually means no IPA was found — nothing was uploaded to TestFlight yet.
-3. Re-run the workflow after the latest `main` (the build step now **fails** if no `.ipa` is produced, instead of finishing silently).
+3. Re-run the workflow after the latest `main` (the build step **fails** if no `.ipa` is produced).
 4. Still check [App Store Connect → TestFlight](https://appstoreconnect.apple.com) in case an older build is processing.
 
 ## 8) Install on iPhone
