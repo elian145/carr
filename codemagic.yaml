@@ -143,13 +143,19 @@ workflows:
       cocoapods: default
       groups:
         - a
-        # Optional: add secret CERTIFICATE_PRIVATE_KEY (RSA PEM) for --create in fetch step.
-        # Easier: generate cert in Codemagic UI first — see docs/IOS_TESTFLIGHT.md
       vars:
         API_BASE: "https://carr-5hrm.onrender.com"
         LISTING_SHARE_WEB_BASE: "https://carr-5hrm.onrender.com"
         LISTING_SHARE_URL_PATH: "listing"
         APPLE_TEAM_ID: "LN3R46L4H8"
+        # Must match Reference names in Codemagic → Code signing identities (see IOS_TESTFLIGHT.md)
+        CM_CERTIFICATE_REF: "carzo_distribution"
+        CM_PROFILE_REF: "carzo_appstore"
+      ios_signing:
+        provisioning_profiles:
+          - carzo_appstore
+        certificates:
+          - carzo_distribution
     cache:
       cache_paths:
         - "$FLUTTER_ROOT/.pub-cache"
@@ -173,28 +179,15 @@ workflows:
         script: |
           flutter analyze
           flutter test
-      - name: Set up keychain for code signing
-        script: keychain initialize
-      - name: Fetch App Store signing files
+      - name: Set up keychain and apply UI signing files
         script: |
           set -e
-          # --create needs CERTIFICATE_PRIVATE_KEY (Codemagic secret) OR cert generated in UI first.
-          if [ -n "${CERTIFICATE_PRIVATE_KEY:-}" ]; then
-            echo "Creating/fetching signing files with CERTIFICATE_PRIVATE_KEY"
-            app-store-connect fetch-signing-files "com.carzo.app" \
-              --platform IOS \
-              --type IOS_APP_STORE \
-              --create \
-              --delete-stale-profiles
-          else
-            echo "No CERTIFICATE_PRIVATE_KEY — fetching existing team certs/profiles from Codemagic UI"
-            app-store-connect fetch-signing-files "com.carzo.app" \
-              --platform IOS \
-              --type IOS_APP_STORE \
-              --delete-stale-profiles
-          fi
-      - name: Add certificates to keychain
-        script: keychain add-certificates
+          keychain initialize
+          keychain add-certificates
+          echo "Using certificates/profiles from Codemagic Code signing identities:"
+          echo "  certificate: ${CM_CERTIFICATE_REF}"
+          echo "  profile: ${CM_PROFILE_REF}"
+          echo "If this fails, use Generate certificate (not Fetch) in Codemagic UI — see docs/IOS_TESTFLIGHT.md"
       - name: Apply code signing profiles to Xcode project
         script: |
           xcode-project use-profiles \

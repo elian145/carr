@@ -73,19 +73,44 @@ Often shows at **Initializing build** — Codemagic has no App Store profile yet
 
 **Team settings** → **codemagic.yaml settings** → **Code signing identities**
 
-1. **iOS certificates** tab → **Generate certificate**
+#### Certificates — use **Generate**, NOT **Fetch**
+
+**Fetch certificates** from Apple **does not** download the private key → builds fail with  
+`Cannot save Signing Certificates without certificate private key`.
+
+1. **iOS certificates** → **Generate certificate** (not Fetch)
    - Type: **Apple Distribution**
-   - Pick your **App Store Connect API key**
-   - Reference name: e.g. `carzo_distribution`
-   - **Download** the `.p12` if offered (backup only; Codemagic keeps the private key)
-2. **iOS provisioning profiles** tab → **Fetch profiles**
-   - Category: **App Store profiles**
-   - Select **com.carzo.app**
-   - Reference name: e.g. `carzo_appstore` → **Download selected**
+   - App Store Connect API key: yours
+   - **Reference name:** `carzo_distribution` (must match `codemagic.yaml`)
+2. If you already used **Fetch certificates**, remove them under **Available certificates** and **Generate** a new one instead.
 
-> Do **not** only create a certificate on [developer.apple.com](https://developer.apple.com) — Codemagic cannot use it without the **private key**. Always **Generate** in Codemagic UI (or paste `CERTIFICATE_PRIVATE_KEY` below).
+#### Provisioning profile
 
-### B2. Optional: `CERTIFICATE_PRIVATE_KEY` env var (advanced)
+3. **iOS provisioning profiles** → **Fetch profiles**
+   - **App Store profiles** → **com.carzo.app**
+   - **Reference name:** `carzo_appstore` (must match `codemagic.yaml`)
+   - **Download selected**
+
+Reference names in `codemagic.yaml` must match exactly:
+
+```yaml
+ios_signing:
+  certificates:
+    - carzo_distribution
+  provisioning_profiles:
+    - carzo_appstore
+```
+
+If you used different names in the UI, change the yaml to match (or re-download with these names).
+
+### B2. Optional: upload `.p12` instead of Generate
+
+If you have a **Distribution .p12** that includes a private key (exported from a Mac):
+
+1. **Code signing identities** → **iOS certificates** → **Upload**
+2. Reference name: `carzo_distribution`
+
+### B3. Optional: `CERTIFICATE_PRIVATE_KEY` env var (advanced)
 
 Only if you prefer CLI `--create` on every build:
 
@@ -102,9 +127,10 @@ Use the **same** key every time or Apple will create extra distribution certific
 
 ### D. Rebuild **iOS TestFlight (signed, push enabled)**
 
-Log must pass: **Fetch App Store signing files** → **Add certificates to keychain** → **Apply code signing profiles**
+Log must pass: **Set up keychain and apply UI signing files** → **Apply code signing profiles** → **Build IPA**
 
-- **Cannot save Signing Certificates without certificate private key** → do **section B** (Generate certificate in Codemagic UI), then rebuild
+- **Cannot save Signing Certificates without certificate private key** → you used **Fetch certificates**; delete those and **Generate certificate** (section B), reference name `carzo_distribution`
+- **No matching profiles** at init → profile `carzo_appstore` missing or wrong reference name in yaml
 - **401 / invalid key** → fix API key in step A
 - **Too many distribution certificates** → revoke old at [developer.apple.com](https://developer.apple.com/account/resources/certificates/list), generate again in Codemagic
 
