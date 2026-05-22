@@ -12,3 +12,5 @@
 |--------|---------|
 | [`verify_publish_ready.py`](verify_publish_ready.py) | Static checks (Firebase, icon, bundle id) — runs in CI |
 | [`verify_production_host.py`](verify_production_host.py) | HTTP checks against deployed API (health, trust, legal, optional app links) |
+| [`print_android_app_link_sha.py`](print_android_app_link_sha.py) | Print `ANDROID_SHA256_CERT_FINGERPRINTS` for Render from upload keystore |
+| [`run_local_checks.ps1`](run_local_checks.ps1) | Flutter tests + static preflight + backend smoke (Windows) |

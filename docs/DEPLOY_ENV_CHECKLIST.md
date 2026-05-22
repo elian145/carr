@@ -39,7 +39,7 @@ See [`kk/docs/UPLOAD_PERSISTENCE.md`](../kk/docs/UPLOAD_PERSISTENCE.md).
 | Variable | Notes |
 |----------|-------|
 | `APPLE_TEAM_ID` | 10-character Apple Team ID |
-| `ANDROID_SHA256_CERT_FINGERPRINTS` | Release keystore SHA-256 (comma-separated) |
+| `ANDROID_SHA256_CERT_FINGERPRINTS` | Release keystore SHA-256 (comma-separated). Generate locally: `python scripts/print_android_app_link_sha.py` |
 
 Verify:
 
