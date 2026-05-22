@@ -35,6 +35,7 @@ This checklist is the final gate before uploading Android AAB/APK or iOS builds.
 ## 5) QA and validation commands
 
 - `python scripts/verify_publish_ready.py` (static file/bundle-id checks; runs in CI)
+- `python scripts/verify_production_host.py --host https://<your-api-host>` (deployed API; add `--require-app-links` before store upload)
 - `flutter clean`
 - `flutter pub get`
 - `flutter analyze`

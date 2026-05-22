@@ -1,0 +1,34 @@
+name: Verify production host
+
+on:
+  workflow_dispatch:
+    inputs:
+      host:
+        description: "API origin (no /api suffix)"
+        required: false
+        default: "https://carr-5hrm.onrender.com"
+      require_app_links:
+        description: "Fail if app link well-known files are missing"
+        type: boolean
+        default: false
+  schedule:
+    # Weekly smoke against production (non-blocking for merges)
+    - cron: "0 6 * * 1"
+
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Verify deployed API
+        run: |
+          ARGS="--host ${{ github.event.inputs.host || 'https://carr-5hrm.onrender.com' }}"
+          if [ "${{ github.event.inputs.require_app_links }}" = "true" ]; then
+            ARGS="$ARGS --require-app-links"
+          fi
+          python scripts/verify_production_host.py $ARGS
