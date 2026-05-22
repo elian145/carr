@@ -52,8 +52,16 @@ Run this checklist on a production-like Android build and an iOS TestFlight/App 
 
 ## Deep Links
 
+Automated check (from a PC):
+
+```bash
+python scripts/verify_production_host.py --host https://carr-5hrm.onrender.com --require-app-links
+```
+
+Manual on device:
+
 1. Open `https://carr-5hrm.onrender.com/.well-known/apple-app-site-association`; it must return JSON.
-2. Open `https://carr-5hrm.onrender.com/.well-known/assetlinks.json`; it must return JSON, not 404.
+2. Open `https://carr-5hrm.onrender.com/.well-known/assetlinks.json`; it must return JSON, not 404 (requires `ANDROID_SHA256_CERT_FINGERPRINTS` on Render).
 3. Send `https://carr-5hrm.onrender.com/listing/<valid-listing-id>` to the device.
 4. Tap the link from Messages/email/browser and confirm it opens the app listing.
 5. Test `carzo://listing?id=<valid-listing-id>` for fallback behavior.
