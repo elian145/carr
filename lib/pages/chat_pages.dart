@@ -183,6 +183,17 @@ bool _isIgnorableSocketError(String err) {
       text.contains('transport=websocket');
 }
 
+String _formatSocketErrorForUser(String err) {
+  final text = err.toLowerCase();
+  if (text.contains('failed host lookup') ||
+      text.contains('no address associated with hostname') ||
+      text.contains('network is unreachable')) {
+    return 'Cannot reach CARZO server. Check Wi‑Fi or mobile data, then open '
+        'https://carr-5hrm.onrender.com in Safari.';
+  }
+  return err;
+}
+
 class _ChatVideoPlayer extends StatefulWidget {
   final String source;
   final bool autoplay;
@@ -494,9 +505,12 @@ class _ChatListPageState extends State<ChatListPage>
       if (!mounted) return;
       if (err.trim().isEmpty) return;
       if (_isIgnorableSocketError(err)) return;
-      ScaffoldMessenger.of(
-        context,
-      ).showSnackBar(SnackBar(content: Text(err), backgroundColor: Colors.red));
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(_formatSocketErrorForUser(err)),
+          backgroundColor: Colors.red,
+        ),
+      );
     });
   }
 
@@ -1451,9 +1465,12 @@ class _ChatConversationPageState extends State<ChatConversationPage>
       if (!mounted) return;
       if (err.trim().isEmpty) return;
       if (_isIgnorableSocketError(err)) return;
-      ScaffoldMessenger.of(
-        context,
-      ).showSnackBar(SnackBar(content: Text(err), backgroundColor: Colors.red));
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(_formatSocketErrorForUser(err)),
+          backgroundColor: Colors.red,
+        ),
+      );
     });
   }
 

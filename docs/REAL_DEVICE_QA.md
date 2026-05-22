@@ -42,6 +42,11 @@ Run this checklist on a production-like Android build and an iOS TestFlight/App 
 4. Save dealer location/profile.
 5. Reopen profile and verify saved fields.
 
+## Network (do this before push testing)
+
+1. On the device, open Safari and load `https://carr-5hrm.onrender.com/health` — it must load (not “server not found”).
+2. If the app shows a socket/DNS error, fix Wi‑Fi or cellular data first; push and chat cannot work offline.
+
 ## Chat And Push
 
 1. Use two accounts.
