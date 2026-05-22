@@ -104,6 +104,7 @@ Use the **same** key every time or Apple will create extra distribution certific
 
 Log must pass: **Fetch App Store signing files** → **Add certificates to keychain** → **Apply code signing profiles**
 
+- **Cannot save Signing Certificates without certificate private key** → do **section B** (Generate certificate in Codemagic UI), then rebuild
 - **401 / invalid key** → fix API key in step A
 - **Too many distribution certificates** → revoke old at [developer.apple.com](https://developer.apple.com/account/resources/certificates/list), generate again in Codemagic
 
