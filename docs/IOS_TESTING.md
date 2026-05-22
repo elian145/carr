@@ -91,15 +91,9 @@ What still works on Sideloadly:
 - Chat while the app is **open**
 - Listing browse, login, etc. (when `https://carr-5hrm.onrender.com/health` works in Safari)
 
-What you need for **banner push on iPhone** (no Mac required):
+**You have paid Apple Developer?** Follow **[IOS_TESTFLIGHT.md](IOS_TESTFLIGHT.md)** — Codemagic workflow **`iOS TestFlight (signed, push enabled)`** on `main`. No Mac required.
 
-1. **Paid Apple Developer Program** ($99/year) — enroll at [developer.apple.com](https://developer.apple.com).
-2. Upload your **APNs .p8 key** in Firebase → Project settings → Cloud Messaging → `com.carzo.app`.
-3. In **Codemagic**, connect **App Store Connect** (API key) and run a **signed** iOS workflow that produces a **TestFlight** build (see `ios-codemagic.yaml` workflow **Car Listing App iOS**, or add signing to your Codemagic app).
-4. Install from the **TestFlight** app on your iPhone (not Sideloadly).
-5. Log in, allow notifications, put the app in the **background**, send a chat from another account.
-
-**Without a Mac**, TestFlight + Codemagic is the standard path. Sideloadly is for quick UI/API testing, not push.
+Sideloadly is for quick UI/API testing only, **not push**.
 
 **Android (Windows PC):** You can test push on a real Android phone with `flutter run --flavor prod --dart-define=API_BASE=https://carr-5hrm.onrender.com` and a Google Play system image emulator or physical device.
 

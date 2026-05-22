@@ -1,4 +1,4 @@
-# iOS testing: see docs/IOS_TESTING.md for Codemagic + Sideloadly steps.
+# iOS: Sideloadly → docs/IOS_TESTING.md | TestFlight + push → docs/IOS_TESTFLIGHT.md
 workflows:
   ios-sideloadly:
     name: iOS (IPA for Sideloadly)
@@ -129,6 +129,72 @@ workflows:
           /usr/libexec/PlistBuddy -c 'Print :com.apple.developer.associated-domains' ios/Runner/Runner.entitlements 2>/dev/null || echo "WARNING: associated-domains missing from Runner.entitlements"
     artifacts:
       - build/ios/ipa/*.ipa
+
+  ios-testflight:
+    name: iOS TestFlight (signed, push enabled)
+    max_build_duration: 120
+    instance_type: mac_mini_m1
+    # Set to the exact name of your App Store Connect API key integration in Codemagic UI.
+    integrations:
+      app_store_connect: App Store Connect
+    environment:
+      flutter: stable
+      xcode: latest
+      cocoapods: default
+      groups:
+        - a
+      ios_signing:
+        distribution_type: app_store
+        bundle_identifier: com.carzo.app
+      vars:
+        API_BASE: "https://carr-5hrm.onrender.com"
+        LISTING_SHARE_WEB_BASE: "https://carr-5hrm.onrender.com"
+        LISTING_SHARE_URL_PATH: "listing"
+        APPLE_TEAM_ID: "LN3R46L4H8"
+    cache:
+      cache_paths:
+        - "$FLUTTER_ROOT/.pub-cache"
+        - "~/.pub-cache"
+    scripts:
+      - name: Flutter pub get
+        script: |
+          flutter --version
+          flutter pub get
+      - name: Inject iOS Google Maps key (CI)
+        script: |
+          if [ -n "$IOS_GOOGLE_MAPS_API_KEY" ]; then
+            /usr/libexec/PlistBuddy -c "Set :GMSApiKey $IOS_GOOGLE_MAPS_API_KEY" ios/Runner/Info.plist 2>/dev/null || \
+            /usr/libexec/PlistBuddy -c "Add :GMSApiKey string $IOS_GOOGLE_MAPS_API_KEY" ios/Runner/Info.plist 2>/dev/null || true
+            if [ -n "$IOS_GOOGLE_PLACES_API_KEY" ]; then
+              /usr/libexec/PlistBuddy -c "Set :GOOGLE_PLACES_API_KEY $IOS_GOOGLE_PLACES_API_KEY" ios/Runner/Info.plist 2>/dev/null || \
+              /usr/libexec/PlistBuddy -c "Add :GOOGLE_PLACES_API_KEY string $IOS_GOOGLE_PLACES_API_KEY" ios/Runner/Info.plist 2>/dev/null || true
+            fi
+          fi
+      - name: Analyze + tests
+        script: |
+          flutter analyze
+          flutter test
+      - name: Apply code signing profiles
+        script: xcode-project use-profiles
+      - name: Verify push entitlement in IPA build
+        script: |
+          /usr/libexec/PlistBuddy -c 'Print :aps-environment' ios/Runner/Runner.entitlements
+      - name: Build IPA for TestFlight
+        script: |
+          flutter build ipa --release \
+            --export-options-plist=ios/ExportOptions.plist \
+            --dart-define=API_BASE="$API_BASE" \
+            --dart-define=LISTING_SHARE_WEB_BASE="${LISTING_SHARE_WEB_BASE:-$API_BASE}" \
+            --dart-define=LISTING_SHARE_URL_PATH="${LISTING_SHARE_URL_PATH:-listing}" \
+            --dart-define=AIRBRIDGE_APP_NAME="${AIRBRIDGE_APP_NAME:-}" \
+            --dart-define=AIRBRIDGE_APP_TOKEN="${AIRBRIDGE_APP_TOKEN:-}" \
+            --dart-define=AIRBRIDGE_LISTING_CHANNEL="${AIRBRIDGE_LISTING_CHANNEL:-listing_share}"
+    artifacts:
+      - build/ios/ipa/*.ipa
+    publishing:
+      app_store_connect:
+        auth: integration
+        submit_to_testflight: true
 
   android_release_unsigned:
     name: Android APK (release, unsigned)
