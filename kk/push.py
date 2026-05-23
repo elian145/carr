@@ -1,19 +1,21 @@
 """
 Push notification utilities (FCM via firebase-admin).
 
-Supports two ways to provide the service account credentials:
-    1. GOOGLE_APPLICATION_CREDENTIALS env var pointing to a JSON file path.
-    2. FIREBASE_SERVICE_ACCOUNT env var containing the raw JSON string
-       (useful on PaaS like Render where the filesystem is ephemeral).
+Supports service account credentials via:
+    1. GOOGLE_APPLICATION_CREDENTIALS — path to JSON (Render Secret File works).
+    2. FIREBASE_SERVICE_ACCOUNT — raw JSON string (one line).
+    3. FIREBASE_SERVICE_ACCOUNT_BASE64 — base64(JSON) one line (best for Render UI paste).
 
 Falls back to a no-op when firebase-admin is not installed or credentials are absent.
 """
 from __future__ import annotations
 
+import base64
 import json
 import logging
 import os
 import tempfile
+from pathlib import Path
 
 logger = logging.getLogger(__name__)
 
@@ -24,14 +26,48 @@ _oauth_checked = False
 _oauth_ok = False
 
 
+def _load_service_account_json() -> str | None:
+    """Load Firebase service account JSON from env (raw, base64, or file path)."""
+    b64 = (os.environ.get("FIREBASE_SERVICE_ACCOUNT_BASE64") or "").strip()
+    if b64:
+        try:
+            return base64.b64decode(b64).decode("utf-8")
+        except Exception as exc:
+            logger.error("FIREBASE_SERVICE_ACCOUNT_BASE64 decode failed: %s", exc)
+            return None
+
+    raw = (os.environ.get("FIREBASE_SERVICE_ACCOUNT") or "").strip()
+    if raw:
+        return raw
+
+    path = (os.environ.get("GOOGLE_APPLICATION_CREDENTIALS") or "").strip()
+    if path and os.path.isfile(path):
+        try:
+            return Path(path).read_text(encoding="utf-8")
+        except Exception as exc:
+            logger.error("GOOGLE_APPLICATION_CREDENTIALS read failed (%s): %s", path, exc)
+            return None
+
+    return None
+
+
+def _credentials_configured() -> bool:
+    if (os.environ.get("FIREBASE_SERVICE_ACCOUNT_BASE64") or "").strip():
+        return True
+    if (os.environ.get("FIREBASE_SERVICE_ACCOUNT") or "").strip():
+        return True
+    path = (os.environ.get("GOOGLE_APPLICATION_CREDENTIALS") or "").strip()
+    return bool(path and os.path.isfile(path))
+
+
 def _service_account_oauth_ok() -> bool:
-    """True when FIREBASE_SERVICE_ACCOUNT can obtain a Google OAuth token."""
+    """True when service account JSON can obtain a Google OAuth token."""
     global _oauth_checked, _oauth_ok
     if _oauth_checked:
         return _oauth_ok
     _oauth_checked = True
 
-    creds_json = (os.environ.get("FIREBASE_SERVICE_ACCOUNT") or "").strip()
+    creds_json = _load_service_account_json()
     if not creds_json:
         _oauth_ok = False
         return False
@@ -85,8 +121,7 @@ def fcm_is_configured() -> bool:
 
 def fcm_public_status() -> dict:
     """Safe status for /health/push (no secrets)."""
-    creds_json = (os.environ.get("FIREBASE_SERVICE_ACCOUNT") or "").strip()
-    creds_path = (os.environ.get("GOOGLE_APPLICATION_CREDENTIALS") or "").strip()
+    creds_json = _load_service_account_json()
     project_id = None
     json_ok = False
     if creds_json:
@@ -95,9 +130,7 @@ def fcm_public_status() -> dict:
             json_ok = True
         except json.JSONDecodeError:
             json_ok = False
-    elif creds_path:
-        json_ok = True
-    oauth_ok = _service_account_oauth_ok() if creds_json else None
+    oauth_ok = _service_account_oauth_ok() if _credentials_configured() else None
     ready = fcm_is_configured()
     if ready and project_id is None:
         try:
@@ -109,7 +142,16 @@ def fcm_public_status() -> dict:
     return {
         "fcm_ready": ready,
         "credentials_oauth_ok": oauth_ok,
-        "credentials_present": bool(creds_json or creds_path),
+        "credentials_present": _credentials_configured(),
+        "credentials_source": (
+            "base64"
+            if (os.environ.get("FIREBASE_SERVICE_ACCOUNT_BASE64") or "").strip()
+            else "json"
+            if (os.environ.get("FIREBASE_SERVICE_ACCOUNT") or "").strip()
+            else "file"
+            if (os.environ.get("GOOGLE_APPLICATION_CREDENTIALS") or "").strip()
+            else None
+        ),
         "credentials_json_valid": json_ok if creds_json else None,
         "firebase_project": project_id,
     }
@@ -120,7 +162,8 @@ def log_fcm_startup_status() -> None:
     status = fcm_public_status()
     if not status["credentials_present"]:
         logger.warning(
-            "Push disabled: set FIREBASE_SERVICE_ACCOUNT on Render (minified JSON, one line)."
+            "Push disabled: set FIREBASE_SERVICE_ACCOUNT_BASE64, FIREBASE_SERVICE_ACCOUNT, "
+            "or GOOGLE_APPLICATION_CREDENTIALS on Render."
         )
         return
     if status.get("credentials_json_valid") is False:
@@ -148,21 +191,20 @@ def _ensure_firebase():
         return _firebase_app
     _init_attempted = True
 
-    creds_path = (os.environ.get("GOOGLE_APPLICATION_CREDENTIALS") or "").strip()
-    creds_json = (os.environ.get("FIREBASE_SERVICE_ACCOUNT") or "").strip()
+    creds_json = _load_service_account_json()
 
-    if not creds_path and not creds_json:
-        logger.info("FCM disabled: neither GOOGLE_APPLICATION_CREDENTIALS nor FIREBASE_SERVICE_ACCOUNT is set.")
+    if not creds_json:
+        logger.info(
+            "FCM disabled: set FIREBASE_SERVICE_ACCOUNT_BASE64, FIREBASE_SERVICE_ACCOUNT, "
+            "or GOOGLE_APPLICATION_CREDENTIALS."
+        )
         return None
 
     try:
         import firebase_admin  # type: ignore
         from firebase_admin import credentials  # type: ignore
 
-        if creds_json:
-            cred = credentials.Certificate(json.loads(creds_json))
-        else:
-            cred = credentials.Certificate(creds_path)
+        cred = credentials.Certificate(json.loads(creds_json))
 
         _firebase_app = firebase_admin.initialize_app(cred)
         logger.info("Firebase Admin SDK initialised for push notifications.")
@@ -240,8 +282,8 @@ def fcm_send_error_hint(exc: BaseException | None = None) -> str:
             return (
                 "Server Firebase credentials are invalid on Render. Download a new service "
                 "account JSON from Firebase → Project settings → Service accounts → Generate "
-                "new private key, then set FIREBASE_SERVICE_ACCOUNT using "
-                "scripts/format_firebase_service_account_json.py (do not edit private_key by hand)."
+                "new private key, then set FIREBASE_SERVICE_ACCOUNT_BASE64 on Render "
+                "(see scripts/format_firebase_service_account_json.py)."
             )
         return (
             "Firebase cannot reach Apple (APNs). In Firebase Console → carzo-prod → "
