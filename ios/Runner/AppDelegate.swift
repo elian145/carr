@@ -36,6 +36,10 @@ import airbridge_flutter_sdk
     }
 
     GeneratedPluginRegistrant.register(with: self)
+
+    // FirebaseAppDelegateProxyEnabled is false — register for APNs explicitly.
+    application.registerForRemoteNotifications()
+
     return super.application(application, didFinishLaunchingWithOptions: launchOptions)
   }
 

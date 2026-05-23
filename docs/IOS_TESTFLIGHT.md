@@ -183,9 +183,20 @@ For **future uploads**, `ios/Runner/Info.plist` includes `ITSAppUsesNonExemptEnc
 ## 9) Test push
 
 1. Open CARZO (TestFlight build, **not** Sideloadly) → log in → allow **notifications**.
-2. Log out and log in once (registers FCM token on server).
-3. On a **second** account/device, send a chat message.
-4. On the receiver iPhone: app **in background** or **closed** → you should see a **banner**.
+2. **Log out → log in again** on the iPhone (registers FCM token on the server).
+3. Put the iPhone app in the **background** (home screen) or **force-quit** it — do not keep the chat screen open while testing.
+4. From another account (emulator is fine), send a chat message **to the iPhone account**.
+5. You should see a **banner** on the iPhone within a few seconds.
+
+### Still no push?
+
+| Check | What to do |
+|--------|------------|
+| **Firebase APNs** | [Firebase Console](https://console.firebase.google.com) → **carzo-prod** → Project settings → Cloud Messaging → Apple app **com.carzo.app** → **APNs Authentication Key (.p8)** uploaded |
+| **Render backend** | Render → **carr-5hrm** → Environment → **`FIREBASE_SERVICE_ACCOUNT`** = full Firebase Admin JSON (one line). Redeploy after adding. |
+| **Token on server** | iPhone user must **re-login** after TestFlight install so `firebase_token` is saved. |
+| **Render logs** | After sending a message, look for `FCM send failed` or `FCM skipped: … no firebase_token` |
+| **Foreground** | Banners while the app is open require the latest build; background test is the reliable check |
 
 If no banner: Render logs for `firebase_token` / `FCM send failed`; confirm APNs key in Firebase.
 

@@ -60,6 +60,15 @@ class PushNotificationService {
         return;
       }
 
+      if (Platform.isIOS) {
+        await messaging.setForegroundNotificationPresentationOptions(
+          alert: true,
+          badge: true,
+          sound: true,
+        );
+        await _waitForApnsToken(messaging);
+      }
+
       final token = await messaging.getToken();
       if (token != null && token.isNotEmpty) {
         await sp.setString('push_token', token);
@@ -83,6 +92,11 @@ class PushNotificationService {
         });
       }
 
+      // iOS often links APNs to FCM after the first getToken(); retry backend sync.
+      if (Platform.isIOS) {
+        unawaited(_scheduleIosBackendSyncRetries());
+      }
+
       FirebaseMessaging.onMessage.listen((RemoteMessage message) {
         if (kDebugMode) {
           // ignore: avoid_print
@@ -96,6 +110,22 @@ class PushNotificationService {
         // ignore: avoid_print
         print('PushNotificationService: setup failed: $e');
       }
+    }
+  }
+
+  /// Wait until APNs token is available (TestFlight/production builds).
+  static Future<void> _waitForApnsToken(FirebaseMessaging messaging) async {
+    for (var attempt = 0; attempt < 15; attempt++) {
+      final apns = await messaging.getAPNSToken();
+      if (apns != null && apns.isNotEmpty) return;
+      await Future<void>.delayed(const Duration(seconds: 1));
+    }
+  }
+
+  static Future<void> _scheduleIosBackendSyncRetries() async {
+    for (final delay in [const Duration(seconds: 5), const Duration(seconds: 20)]) {
+      await Future<void>.delayed(delay);
+      await syncTokenWithBackend();
     }
   }
 

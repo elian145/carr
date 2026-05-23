@@ -64,10 +64,21 @@ def send_push(token: str, *, title: str, body: str, data: dict | None = None) ->
     try:
         from firebase_admin import messaging  # type: ignore
 
+        data_payload = {k: str(v) for k, v in (data or {}).items()}
         message = messaging.Message(
             notification=messaging.Notification(title=title, body=body),
-            data={k: str(v) for k, v in (data or {}).items()},
+            data=data_payload,
             token=token,
+            android=messaging.AndroidConfig(priority="high"),
+            apns=messaging.APNSConfig(
+                headers={"apns-priority": "10"},
+                payload=messaging.APNSPayload(
+                    aps=messaging.Aps(
+                        alert=messaging.ApsAlert(title=title, body=body),
+                        sound="default",
+                    ),
+                ),
+            ),
         )
         messaging.send(message, app=app)
         return True
