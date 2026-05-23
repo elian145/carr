@@ -988,7 +988,10 @@ def push_test():
     if not fcm_is_configured():
         return jsonify(
             {
-                "message": "Server FCM not configured. Set FIREBASE_SERVICE_ACCOUNT on Render.",
+                "message": (
+                    "Server FCM not configured. On Render set FIREBASE_SERVICE_ACCOUNT_BASE64 "
+                    "(or redeploy latest API from main)."
+                ),
             }
         ), 503
     ok = send_push(
