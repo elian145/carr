@@ -190,15 +190,24 @@ For **future uploads**, `ios/Runner/Info.plist` includes `ITSAppUsesNonExemptEnc
 4. From another account (emulator is fine), send a chat message **to the iPhone account**.
 5. You should see a **banner** on the iPhone within a few seconds.
 
-### Still no push?
+### Still no push? (use in-app diagnostics)
+
+On the latest build: **Profile → Settings** (while logged in on the **iPhone**):
+
+1. **Sync push token** — subtitle should say `Push token registered on server.`  
+   If it says token not on server → **log out → log in** again.
+2. **Send test notification** — put the app in the **background** (Home button), then tap this.  
+   - If you get **CARZO test** banner → push works; chat issue is account/receiver mismatch.  
+   - If the snackbar says **Server FCM not configured** → add **`FIREBASE_SERVICE_ACCOUNT`** on Render and redeploy.  
+   - If **FCM send failed** → upload **APNs .p8** in Firebase (carzo-prod → Cloud Messaging → iOS).
 
 | Check | What to do |
 |--------|------------|
 | **Firebase APNs** | [Firebase Console](https://console.firebase.google.com) → **carzo-prod** → Project settings → Cloud Messaging → Apple app **com.carzo.app** → **APNs Authentication Key (.p8)** uploaded |
-| **Render backend** | Render → **carr-5hrm** → Environment → **`FIREBASE_SERVICE_ACCOUNT`** = full Firebase Admin JSON (one line). Redeploy after adding. |
-| **Token on server** | iPhone user must **re-login** after TestFlight install so `firebase_token` is saved. |
-| **Render logs** | After sending a message, look for `FCM send failed` or `FCM skipped: … no firebase_token` |
-| **Foreground** | Banners while the app is open require the latest build; background test is the reliable check |
+| **Render backend** | Render → **carr-5hrm** → Environment → **`FIREBASE_SERVICE_ACCOUNT`** = full Firebase Admin JSON (one line). **Redeploy** after adding. |
+| **Token on server** | iPhone: Settings → **Sync push token**, or log out / log in |
+| **Render logs** | After a test message, search `FCM send failed` or `no firebase_token` |
+| **Foreground** | Background the app before testing banners |
 
 If no banner: Render logs for `firebase_token` / `FCM send failed`; confirm APNs key in Firebase.
 

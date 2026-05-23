@@ -1470,6 +1470,16 @@ class ApiService {
     );
   }
 
+  /// Whether this account has an FCM token stored and the server can send push.
+  static Future<Map<String, dynamic>> getPushStatus() async {
+    return _makeAuthenticatedRequest('GET', '/users/push_status');
+  }
+
+  /// Ask the server to send a test notification to this device.
+  static Future<Map<String, dynamic>> sendTestPush() async {
+    return _makeAuthenticatedRequest('POST', '/users/push_test');
+  }
+
   /// Block a user.
   static Future<void> blockUser(String userId) async {
     await _makeAuthenticatedRequest('POST', '/users/$userId/block');

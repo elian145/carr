@@ -1131,6 +1131,7 @@ class SettingsPage extends StatefulWidget {
 
 class _SettingsPageState extends State<SettingsPage> {
   bool _pushEnabled = true;
+  String? _pushDiagSubtitle;
   final GlobalKey<PopupMenuButtonState<String?>> _languageMenuKey =
       GlobalKey<PopupMenuButtonState<String?>>();
 
@@ -1153,9 +1154,13 @@ class _SettingsPageState extends State<SettingsPage> {
   Future<void> _load() async {
     final sp = await SharedPreferences.getInstance();
     if (!mounted) return;
+    final enabled = sp.getBool('push_enabled') ?? true;
     setState(() {
-      _pushEnabled = sp.getBool('push_enabled') ?? true;
+      _pushEnabled = enabled;
     });
+    if (enabled) {
+      await _refreshPushDiagnostics();
+    }
   }
 
   Future<void> _togglePush(bool v) async {
@@ -1164,6 +1169,30 @@ class _SettingsPageState extends State<SettingsPage> {
     setState(() {
       _pushEnabled = v;
     });
+    if (v) {
+      await _refreshPushDiagnostics();
+    }
+  }
+
+  Future<void> _refreshPushDiagnostics() async {
+    final msg = await PushNotificationService.syncNowForDiagnostics();
+    if (!mounted) return;
+    setState(() => _pushDiagSubtitle = msg);
+  }
+
+  Future<void> _sendTestPush() async {
+    try {
+      final msg = await PushNotificationService.sendTestPush();
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text(msg)),
+      );
+    } catch (e) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text(e.toString())),
+      );
+    }
   }
 
   @override
@@ -1338,7 +1367,8 @@ class _SettingsPageState extends State<SettingsPage> {
             rowTile(
               icon: Icons.notifications_active_outlined,
               title: loc.settingsEnablePush,
-              subtitle: _pushEnabled ? loc.enabledLabel : loc.disabledLabel,
+              subtitle: _pushDiagSubtitle ??
+                  (_pushEnabled ? loc.enabledLabel : loc.disabledLabel),
               trailing: Switch.adaptive(
                 value: _pushEnabled,
                 activeColor: const Color(0xFFFF6B00),
@@ -1346,6 +1376,22 @@ class _SettingsPageState extends State<SettingsPage> {
               ),
               onTap: () => _togglePush(!_pushEnabled),
             ),
+            if (_pushEnabled) ...[
+              Divider(height: 1, color: dividerColor),
+              rowTile(
+                icon: Icons.sync,
+                title: 'Sync push token',
+                subtitle: 'Register this iPhone with the server',
+                onTap: _refreshPushDiagnostics,
+              ),
+              Divider(height: 1, color: dividerColor),
+              rowTile(
+                icon: Icons.science_outlined,
+                title: 'Send test notification',
+                subtitle: 'Background the app first, then tap here',
+                onTap: _sendTestPush,
+              ),
+            ],
           ],
         ),
       ],

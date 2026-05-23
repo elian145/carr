@@ -286,6 +286,7 @@ def register_socketio_handlers(socketio) -> None:
 
         # FCM push notification (best-effort).
         try:
+            db.session.refresh(receiver)
             fcm_token = getattr(receiver, "firebase_token", None)
             if fcm_token:
                 sender_name = f"{me.first_name} {me.last_name}".strip() or "Someone"

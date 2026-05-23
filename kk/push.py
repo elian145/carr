@@ -21,6 +21,11 @@ _firebase_app = None
 _init_attempted = False
 
 
+def fcm_is_configured() -> bool:
+    """True when Firebase Admin SDK is available and credentials loaded."""
+    return _ensure_firebase() is not None
+
+
 def _ensure_firebase():
     """Lazy-init Firebase Admin SDK (once)."""
     global _firebase_app, _init_attempted
@@ -71,7 +76,10 @@ def send_push(token: str, *, title: str, body: str, data: dict | None = None) ->
             token=token,
             android=messaging.AndroidConfig(priority="high"),
             apns=messaging.APNSConfig(
-                headers={"apns-priority": "10"},
+                headers={
+                    "apns-priority": "10",
+                    "apns-push-type": "alert",
+                },
                 payload=messaging.APNSPayload(
                     aps=messaging.Aps(
                         alert=messaging.ApsAlert(title=title, body=body),
@@ -83,5 +91,10 @@ def send_push(token: str, *, title: str, body: str, data: dict | None = None) ->
         messaging.send(message, app=app)
         return True
     except Exception as exc:
-        logger.warning("FCM send failed (token=%s…): %s", token[:12] if token else "?", exc)
+        logger.warning(
+            "FCM send failed (token=%s…): %s: %s",
+            token[:12] if token else "?",
+            type(exc).__name__,
+            exc,
+        )
         return False

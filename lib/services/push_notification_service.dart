@@ -7,7 +7,7 @@ import 'package:flutter/foundation.dart';
 import 'package:permission_handler/permission_handler.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
-import 'api_service.dart';
+import 'api_service.dart' show ApiException, ApiService;
 import 'config.dart';
 
 /// Registers the device FCM token with the backend after auth is ready.
@@ -20,7 +20,9 @@ class PushNotificationService {
     if (kSideloadBuild && Platform.isIOS) return;
 
     try {
-      await Firebase.initializeApp();
+      if (Firebase.apps.isEmpty) {
+        await Firebase.initializeApp();
+      }
     } catch (e) {
       if (kDebugMode) {
         // ignore: avoid_print
@@ -72,9 +74,13 @@ class PushNotificationService {
       final token = await messaging.getToken();
       if (token != null && token.isNotEmpty) {
         await sp.setString('push_token', token);
+        await sp.remove('push_last_sync_error');
         if (kDebugMode) {
           // ignore: avoid_print
           print('PushNotificationService: FCM token cached (${token.length} chars)');
+        }
+        if (ApiService.isAuthenticated) {
+          await syncTokenWithBackend();
         }
       } else if (kDebugMode) {
         // ignore: avoid_print
@@ -123,7 +129,11 @@ class PushNotificationService {
   }
 
   static Future<void> _scheduleIosBackendSyncRetries() async {
-    for (final delay in [const Duration(seconds: 5), const Duration(seconds: 20)]) {
+    for (final delay in [
+      const Duration(seconds: 5),
+      const Duration(seconds: 20),
+      const Duration(seconds: 45),
+    ]) {
       await Future<void>.delayed(delay);
       await syncTokenWithBackend();
     }
@@ -148,15 +158,50 @@ class PushNotificationService {
       if (token.isEmpty) return;
 
       await ApiService.registerPushToken(token);
+      await sp.setString('push_last_sync_ok', DateTime.now().toIso8601String());
+      await sp.remove('push_last_sync_error');
       if (kDebugMode) {
         // ignore: avoid_print
         print('PushNotificationService: token registered with backend');
       }
     } catch (e) {
+      final sp = await SharedPreferences.getInstance();
+      await sp.setString('push_last_sync_error', e.toString());
       if (kDebugMode) {
         // ignore: avoid_print
         print('PushNotificationService: backend register failed: $e');
       }
+    }
+  }
+
+  /// Force FCM token refresh + backend registration (Settings troubleshooting).
+  static Future<String> syncNowForDiagnostics() async {
+    await initialize();
+    await syncTokenWithBackend();
+    try {
+      final status = await ApiService.getPushStatus();
+      final registered = status['registered'] == true;
+      final serverReady = status['server_fcm_ready'] == true;
+      if (!registered) {
+        return 'Token not on server — log out and log in again after allowing notifications.';
+      }
+      if (!serverReady) {
+        return 'Server cannot send push (FIREBASE_SERVICE_ACCOUNT missing on Render).';
+      }
+      return 'Push token registered on server.';
+    } catch (e) {
+      final sp = await SharedPreferences.getInstance();
+      final err = sp.getString('push_last_sync_error');
+      return err?.isNotEmpty == true ? err! : e.toString();
+    }
+  }
+
+  static Future<String> sendTestPush() async {
+    try {
+      final result = await ApiService.sendTestPush();
+      return (result['message'] ?? 'Test sent').toString();
+    } on ApiException catch (e) {
+      return e.message;
     }
   }
 

@@ -13,7 +13,7 @@ from werkzeug.exceptions import RequestEntityTooLarge
 from ..auth import get_current_user
 from ..extensions import socketio
 from ..models import BlockedUser, Car, Message, User, UserReport, db
-from ..push import send_push
+from ..push import fcm_is_configured, send_push
 from ..security import rate_limit, validate_input_sanitization
 
 bp = Blueprint("chat", __name__)
@@ -414,6 +414,7 @@ def send_message(conversation_id: str):
 
         # Best-effort FCM push to receiver's device.
         try:
+            db.session.refresh(receiver)
             fcm_token = getattr(receiver, "firebase_token", None)
             if fcm_token:
                 sender_name = f"{me.first_name} {me.last_name}".strip() or "Someone"
@@ -662,6 +663,7 @@ def send_media_group_message(conversation_id: str):
         db.session.refresh(msg)
 
         try:
+            db.session.refresh(receiver)
             fcm_token = getattr(receiver, "firebase_token", None)
             if fcm_token:
                 sender_name = f"{me.first_name} {me.last_name}".strip() or "Someone"
@@ -931,6 +933,7 @@ def register_push_token():
         if data.get("enabled") is False:
             me.firebase_token = None
             db.session.commit()
+            current_app.logger.info("Push disabled for user %s", me.public_id)
             return jsonify({"message": "Push disabled"}), 200
 
         token = str(data.get("token") or "").strip()
@@ -939,10 +942,68 @@ def register_push_token():
 
         me.firebase_token = token
         db.session.commit()
-        return jsonify({"message": "Token registered"}), 200
+        current_app.logger.info(
+            "Push token registered for user %s (prefix %s…)",
+            me.public_id,
+            token[:12],
+        )
+        return jsonify({"message": "Token registered", "registered": True}), 200
     except Exception:
         db.session.rollback()
         return jsonify({"message": "Failed to register token"}), 500
+
+
+@bp.route("/api/users/push_status", methods=["GET"])
+@jwt_required()
+def push_status():
+    """Whether the current user has an FCM token stored and server can send."""
+    me = get_current_user()
+    if not me:
+        return jsonify({"message": "Unauthorized"}), 401
+    token = (getattr(me, "firebase_token", None) or "").strip()
+    return jsonify(
+        {
+            "registered": bool(token),
+            "token_prefix": token[:16] if token else None,
+            "server_fcm_ready": fcm_is_configured(),
+        }
+    ), 200
+
+
+@bp.route("/api/users/push_test", methods=["POST"])
+@jwt_required()
+@rate_limit(max_requests=10, window_minutes=30, per_ip=False)
+def push_test():
+    """Send a test FCM notification to the current user's device."""
+    me = get_current_user()
+    if not me:
+        return jsonify({"message": "Unauthorized"}), 401
+    token = (getattr(me, "firebase_token", None) or "").strip()
+    if not token:
+        return jsonify(
+            {
+                "message": "No push token on server. Open CARZO, allow notifications, log out, log in again.",
+            }
+        ), 400
+    if not fcm_is_configured():
+        return jsonify(
+            {
+                "message": "Server FCM not configured. Set FIREBASE_SERVICE_ACCOUNT on Render.",
+            }
+        ), 503
+    ok = send_push(
+        token,
+        title="CARZO test",
+        body="If you see this, push notifications are working.",
+        data={"type": "push_test"},
+    )
+    if not ok:
+        return jsonify(
+            {
+                "message": "FCM send failed. Check Render logs, Firebase APNs .p8 key, and re-login on device.",
+            }
+        ), 503
+    return jsonify({"message": "Test notification sent"}), 200
 
 
 @bp.route("/api/users/blocked", methods=["GET"])
