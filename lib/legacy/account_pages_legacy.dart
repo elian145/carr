@@ -384,7 +384,9 @@ class _ProfilePageState extends State<ProfilePage> {
                             ? CircleAvatar(
                                 radius: 24,
                                 backgroundImage: NetworkImage(
-                                  '${getApiBase()}/static/${me!['profile_picture']}',
+                                  _buildFullImageUrl(
+                                    me!['profile_picture'].toString(),
+                                  ),
                                 ),
                                 backgroundColor: isLightShell
                                     ? Colors.grey[200]

@@ -20,11 +20,67 @@ logger = logging.getLogger(__name__)
 _firebase_app = None
 _init_attempted = False
 _last_send_error: BaseException | None = None
+_oauth_checked = False
+_oauth_ok = False
+
+
+def _service_account_oauth_ok() -> bool:
+    """True when FIREBASE_SERVICE_ACCOUNT can obtain a Google OAuth token."""
+    global _oauth_checked, _oauth_ok
+    if _oauth_checked:
+        return _oauth_ok
+    _oauth_checked = True
+
+    creds_json = (os.environ.get("FIREBASE_SERVICE_ACCOUNT") or "").strip()
+    if not creds_json:
+        _oauth_ok = False
+        return False
+
+    try:
+        info = json.loads(creds_json)
+        pk = str(info.get("private_key") or "")
+        if "BEGIN PRIVATE KEY" not in pk:
+            logger.error(
+                "FIREBASE_SERVICE_ACCOUNT: private_key missing PEM header — "
+                "re-paste JSON using scripts/format_firebase_service_account_json.py"
+            )
+            _oauth_ok = False
+            return False
+
+        from google.oauth2 import service_account  # type: ignore
+        from google.auth.transport.requests import Request  # type: ignore
+
+        creds = service_account.Credentials.from_service_account_info(
+            info,
+            scopes=[
+                "https://www.googleapis.com/auth/firebase.messaging",
+                "https://www.googleapis.com/auth/cloud-platform",
+            ],
+        )
+        creds.refresh(Request())
+        _oauth_ok = bool(creds.token)
+        if not _oauth_ok:
+            logger.error("FIREBASE_SERVICE_ACCOUNT: OAuth refresh returned no access token")
+        return _oauth_ok
+    except json.JSONDecodeError as exc:
+        logger.error("FIREBASE_SERVICE_ACCOUNT is not valid JSON: %s", exc)
+        _oauth_ok = False
+        return False
+    except Exception as exc:
+        logger.error(
+            "FIREBASE_SERVICE_ACCOUNT OAuth failed (re-download key from Firebase, "
+            "format with scripts/format_firebase_service_account_json.py): %s",
+            exc,
+        )
+        _oauth_ok = False
+        return False
 
 
 def fcm_is_configured() -> bool:
-    """True when Firebase Admin SDK is available and credentials loaded."""
-    return _ensure_firebase() is not None
+    """True when Firebase Admin SDK is available and credentials can authenticate."""
+    if _ensure_firebase() is None:
+        return False
+    return _service_account_oauth_ok()
 
 
 def fcm_public_status() -> dict:
@@ -41,6 +97,7 @@ def fcm_public_status() -> dict:
             json_ok = False
     elif creds_path:
         json_ok = True
+    oauth_ok = _service_account_oauth_ok() if creds_json else None
     ready = fcm_is_configured()
     if ready and project_id is None:
         try:
@@ -51,6 +108,7 @@ def fcm_public_status() -> dict:
             pass
     return {
         "fcm_ready": ready,
+        "credentials_oauth_ok": oauth_ok,
         "credentials_present": bool(creds_json or creds_path),
         "credentials_json_valid": json_ok if creds_json else None,
         "firebase_project": project_id,
@@ -72,6 +130,11 @@ def log_fcm_startup_status() -> None:
         return
     if status["fcm_ready"]:
         logger.info("Push ready: FCM configured for project %s", status.get("firebase_project"))
+    elif status.get("credentials_oauth_ok") is False:
+        logger.error(
+            "Push disabled: FIREBASE_SERVICE_ACCOUNT cannot authenticate — "
+            "re-paste JSON using scripts/format_firebase_service_account_json.py"
+        )
     else:
         logger.warning(
             "Push disabled: credentials present but firebase-admin init failed (see warnings above)."
@@ -173,10 +236,17 @@ def fcm_send_error_hint(exc: BaseException | None = None) -> str:
     """User-facing hint when send_push fails."""
     name = type(exc).__name__ if exc else ""
     if name == "ThirdPartyAuthError":
+        if not _service_account_oauth_ok():
+            return (
+                "Server Firebase credentials are invalid on Render. Download a new service "
+                "account JSON from Firebase → Project settings → Service accounts → Generate "
+                "new private key, then set FIREBASE_SERVICE_ACCOUNT using "
+                "scripts/format_firebase_service_account_json.py (do not edit private_key by hand)."
+            )
         return (
             "Firebase cannot reach Apple (APNs). In Firebase Console → carzo-prod → "
             "Cloud Messaging → com.carzo.app: delete and re-upload your APNs .p8 key "
-            "(Team LN3R46L4H8). In Apple Developer, ensure the key has Push Notifications enabled."
+            "(Team LN3R46L4H8). Also enable Firebase Cloud Messaging API in Google Cloud."
         )
     return (
         "FCM send failed. Check Render FIREBASE_SERVICE_ACCOUNT, Firebase APNs .p8, and re-login on device."

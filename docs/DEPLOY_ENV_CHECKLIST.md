@@ -52,7 +52,7 @@ Or run: `python scripts/verify_production_host.py --host https://<your-host> --r
 
 | Variable | Notes |
 |----------|-------|
-| `FIREBASE_SERVICE_ACCOUNT` | Full Firebase Admin JSON (one line) on Render — required for FCM sends |
+| `FIREBASE_SERVICE_ACCOUNT` | Full Firebase Admin JSON (one line) on Render — required for FCM sends. Format with `python scripts/format_firebase_service_account_json.py service-account.json` (do not strip `private_key` newlines manually). After deploy, `/health/push` must show `"credentials_oauth_ok": true`. |
 | Firebase Console → Project Settings → Cloud Messaging | Upload **Apple APNs key** (.p8) so FCM can deliver to iPhones |
 
 If chat works in-app but no phone banner: check Render logs for `no firebase_token` (user must open app while logged in after this fix) or `FCM send failed` (bad credentials / APNs).
