@@ -1,12 +1,13 @@
 import Flutter
 import UIKit
+import UserNotifications
 import Firebase
 import FirebaseMessaging
 import GoogleMaps
 import airbridge_flutter_sdk
 
 @main
-@objc class AppDelegate: FlutterAppDelegate {
+@objc class AppDelegate: FlutterAppDelegate, MessagingDelegate {
   override func application(
     _ application: UIApplication,
     didFinishLaunchingWithOptions launchOptions: [UIApplication.LaunchOptionsKey: Any]?
@@ -37,7 +38,8 @@ import airbridge_flutter_sdk
 
     GeneratedPluginRegistrant.register(with: self)
 
-    // FirebaseAppDelegateProxyEnabled is false — register for APNs explicitly.
+    UNUserNotificationCenter.current().delegate = self
+    Messaging.messaging().delegate = self
     application.registerForRemoteNotifications()
 
     return super.application(application, didFinishLaunchingWithOptions: launchOptions)
@@ -79,5 +81,9 @@ import airbridge_flutter_sdk
   ) {
     Messaging.messaging().apnsToken = deviceToken
     super.application(application, didRegisterForRemoteNotificationsWithDeviceToken: deviceToken)
+  }
+
+  func messaging(_ messaging: Messaging, didReceiveRegistrationToken fcmToken: String?) {
+    NSLog("FCM registration token available (len=%d)", fcmToken?.count ?? 0)
   }
 }

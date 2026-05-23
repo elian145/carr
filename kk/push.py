@@ -26,6 +26,57 @@ def fcm_is_configured() -> bool:
     return _ensure_firebase() is not None
 
 
+def fcm_public_status() -> dict:
+    """Safe status for /health/push (no secrets)."""
+    creds_json = (os.environ.get("FIREBASE_SERVICE_ACCOUNT") or "").strip()
+    creds_path = (os.environ.get("GOOGLE_APPLICATION_CREDENTIALS") or "").strip()
+    project_id = None
+    json_ok = False
+    if creds_json:
+        try:
+            project_id = json.loads(creds_json).get("project_id")
+            json_ok = True
+        except json.JSONDecodeError:
+            json_ok = False
+    elif creds_path:
+        json_ok = True
+    ready = fcm_is_configured()
+    if ready and project_id is None:
+        try:
+            import firebase_admin  # type: ignore
+
+            project_id = firebase_admin.get_app().project_id
+        except Exception:
+            pass
+    return {
+        "fcm_ready": ready,
+        "credentials_present": bool(creds_json or creds_path),
+        "credentials_json_valid": json_ok if creds_json else None,
+        "firebase_project": project_id,
+    }
+
+
+def log_fcm_startup_status() -> None:
+    """Log push readiness once at app startup (Render logs)."""
+    status = fcm_public_status()
+    if not status["credentials_present"]:
+        logger.warning(
+            "Push disabled: set FIREBASE_SERVICE_ACCOUNT on Render (minified JSON, one line)."
+        )
+        return
+    if status.get("credentials_json_valid") is False:
+        logger.error(
+            "Push disabled: FIREBASE_SERVICE_ACCOUNT is not valid JSON — re-paste from Firebase."
+        )
+        return
+    if status["fcm_ready"]:
+        logger.info("Push ready: FCM configured for project %s", status.get("firebase_project"))
+    else:
+        logger.warning(
+            "Push disabled: credentials present but firebase-admin init failed (see warnings above)."
+        )
+
+
 def _ensure_firebase():
     """Lazy-init Firebase Admin SDK (once)."""
     global _firebase_app, _init_attempted

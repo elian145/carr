@@ -1,6 +1,7 @@
 import 'dart:async';
 import 'dart:io';
 
+import 'package:firebase_messaging/firebase_messaging.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
@@ -8,7 +9,8 @@ import 'package:shared_preferences/shared_preferences.dart';
 import '../services/api_service.dart';
 import '../services/auth_service.dart';
 import '../services/config.dart';
-import '../services/push_notification_service.dart';
+import '../services/push_notification_service.dart'
+    show PushNotificationService, firebaseMessagingBackgroundHandler;
 import '../state/locale_controller.dart';
 
 const String _apiBaseOverrideKey = 'api_base_override';
@@ -17,6 +19,12 @@ Future<void> bootstrapAndRun(Widget app) async {
   runZonedGuarded(
     () async {
       WidgetsFlutterBinding.ensureInitialized();
+
+      if (!kSideloadBuild || !Platform.isIOS) {
+        FirebaseMessaging.onBackgroundMessage(
+          firebaseMessagingBackgroundHandler,
+        );
+      }
 
       FlutterError.onError = (FlutterErrorDetails details) async {
         try {

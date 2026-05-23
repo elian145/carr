@@ -404,6 +404,13 @@ def create_app():
     register_blueprints(app)
     register_socketio_handlers(socketio)
 
+    try:
+        from .push import log_fcm_startup_status
+
+        log_fcm_startup_status()
+    except Exception:
+        pass
+
     @app.after_request
     def _security_headers(response):
         # Minimal safe headers for APIs and static content.

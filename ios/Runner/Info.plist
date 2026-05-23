@@ -57,7 +57,7 @@
 		<string>remote-notification</string>
 	</array>
 	<key>FirebaseAppDelegateProxyEnabled</key>
-	<false/>
+	<true/>
 	<key>NSCameraUsageDescription</key>
 	<string>Camera access is needed to scan VIN codes and take photos of cars.</string>
 	<key>NSPhotoLibraryUsageDescription</key>

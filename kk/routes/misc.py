@@ -69,6 +69,17 @@ def health():
     return jsonify({"status": "ok"}), 200
 
 
+@bp.route("/health/push", methods=["GET"])
+def health_push():
+    """Whether the API can send FCM (no auth; safe for ops checks)."""
+    try:
+        from ..push import fcm_public_status
+
+        return jsonify(fcm_public_status()), 200
+    except Exception:
+        return jsonify({"fcm_ready": False, "credentials_present": False}), 200
+
+
 @bp.route("/", methods=["GET"])
 def root():
     return jsonify({"status": "ok"}), 200

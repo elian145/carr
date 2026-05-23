@@ -4,16 +4,80 @@ import 'dart:io';
 import 'package:firebase_core/firebase_core.dart';
 import 'package:firebase_messaging/firebase_messaging.dart';
 import 'package:flutter/foundation.dart';
+import 'package:flutter_local_notifications/flutter_local_notifications.dart';
 import 'package:permission_handler/permission_handler.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 import 'api_service.dart' show ApiException, ApiService;
 import 'config.dart';
 
+const AndroidNotificationChannel _chatChannel = AndroidNotificationChannel(
+  'carzo_chat',
+  'Chat messages',
+  description: 'New chat message alerts',
+  importance: Importance.high,
+);
+
+final FlutterLocalNotificationsPlugin _localNotifications =
+    FlutterLocalNotificationsPlugin();
+
+bool _localNotificationsReady = false;
+
+/// Background FCM handler (must be top-level).
+@pragma('vm:entry-point')
+Future<void> firebaseMessagingBackgroundHandler(RemoteMessage message) async {
+  if (Firebase.apps.isEmpty) {
+    await Firebase.initializeApp();
+  }
+}
+
 /// Registers the device FCM token with the backend after auth is ready.
 class PushNotificationService {
   static bool _messagingReady = false;
   static bool _refreshListenerAttached = false;
+
+  static Future<void> _ensureLocalNotifications() async {
+    if (_localNotificationsReady) return;
+    const initSettings = InitializationSettings(
+      android: AndroidInitializationSettings('@mipmap/ic_launcher'),
+      iOS: DarwinInitializationSettings(),
+    );
+    await _localNotifications.initialize(settings: initSettings);
+    if (Platform.isAndroid) {
+      await _localNotifications
+          .resolvePlatformSpecificImplementation<
+            AndroidFlutterLocalNotificationsPlugin
+          >()
+          ?.createNotificationChannel(_chatChannel);
+    }
+    _localNotificationsReady = true;
+  }
+
+  static Future<void> _showLocalNotification(RemoteMessage message) async {
+    final notification = message.notification;
+    if (notification == null) return;
+    await _ensureLocalNotifications();
+    final id = message.hashCode & 0x7fffffff;
+    await _localNotifications.show(
+      id,
+      notification.title,
+      notification.body,
+      NotificationDetails(
+        android: AndroidNotificationDetails(
+          _chatChannel.id,
+          _chatChannel.name,
+          channelDescription: _chatChannel.description,
+          importance: Importance.high,
+          priority: Priority.high,
+        ),
+        iOS: const DarwinNotificationDetails(
+          presentAlert: true,
+          presentBadge: true,
+          presentSound: true,
+        ),
+      ),
+    );
+  }
 
   /// Firebase + permission + local token cache. Safe to call multiple times.
   static Future<void> initialize() async {
@@ -35,6 +99,8 @@ class PushNotificationService {
     _messagingReady = true;
 
     try {
+      await _ensureLocalNotifications();
+
       final sp = await SharedPreferences.getInstance();
       if (!(sp.getBool('push_enabled') ?? true)) return;
 
@@ -98,12 +164,12 @@ class PushNotificationService {
         });
       }
 
-      // iOS often links APNs to FCM after the first getToken(); retry backend sync.
       if (Platform.isIOS) {
         unawaited(_scheduleIosBackendSyncRetries());
       }
 
-      FirebaseMessaging.onMessage.listen((RemoteMessage message) {
+      FirebaseMessaging.onMessage.listen((RemoteMessage message) async {
+        await _showLocalNotification(message);
         if (kDebugMode) {
           // ignore: avoid_print
           print(
@@ -186,7 +252,7 @@ class PushNotificationService {
         return 'Token not on server — log out and log in again after allowing notifications.';
       }
       if (!serverReady) {
-        return 'Server cannot send push (FIREBASE_SERVICE_ACCOUNT missing on Render).';
+        return 'Server cannot send push (FIREBASE_SERVICE_ACCOUNT missing or invalid on Render).';
       }
       return 'Push token registered on server.';
     } catch (e) {
