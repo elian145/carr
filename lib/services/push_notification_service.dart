@@ -42,7 +42,7 @@ class PushNotificationService {
       android: AndroidInitializationSettings('@mipmap/ic_launcher'),
       iOS: DarwinInitializationSettings(),
     );
-    await _localNotifications.initialize(settings: initSettings);
+    await _localNotifications.initialize(initSettings);
     if (Platform.isAndroid) {
       await _localNotifications
           .resolvePlatformSpecificImplementation<
