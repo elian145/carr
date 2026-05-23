@@ -150,6 +150,8 @@ Commit and push if you change the name.
 3. Wait until green (first time may take ~15–25 min).
 4. Build uploads to App Store Connect automatically (`submit_to_testflight: true`).
 
+**Upload error “bundle version must be higher than previously uploaded version: 1”** — Apple already has build **1**. Each new upload needs a higher **CFBundleVersion**. The workflow uses Codemagic **`CM_BUILD_ID`** as the iOS build number so this does not repeat.
+
 ### Archive built but no `.ipa` (only `Runner.xcarchive` in logs)
 
 Codemagic must export with **`$HOME/export_options.plist`** created by **`xcode-project use-profiles`**. Do **not** use `ios/ExportOptions.plist` on CI — it lacks provisioning profile mappings, so archive succeeds and export fails.

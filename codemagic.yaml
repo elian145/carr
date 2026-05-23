@@ -214,7 +214,12 @@ workflows:
           echo "Using export options from use-profiles:"
           /usr/libexec/PlistBuddy -c 'Print :method' "$EXPORT_PLIST" || true
           /usr/libexec/PlistBuddy -c 'Print :provisioningProfiles' "$EXPORT_PLIST" 2>/dev/null || true
+          # Apple requires CFBundleVersion to increase on every upload (CM_BUILD_ID is unique per build).
+          BUILD_NUM="${CM_BUILD_ID:-2}"
+          echo "iOS build number (CFBundleVersion): $BUILD_NUM"
           flutter build ipa --release \
+            --build-name="1.0.0" \
+            --build-number="$BUILD_NUM" \
             --export-options-plist="$EXPORT_PLIST" \
             --dart-define=API_BASE="$API_BASE" \
             --dart-define=LISTING_SHARE_WEB_BASE="${LISTING_SHARE_WEB_BASE:-$API_BASE}" \
