@@ -19,6 +19,7 @@ logger = logging.getLogger(__name__)
 
 _firebase_app = None
 _init_attempted = False
+_last_send_error: BaseException | None = None
 
 
 def fcm_is_configured() -> bool:
@@ -113,6 +114,8 @@ def send_push(token: str, *, title: str, body: str, data: dict | None = None) ->
 
     Returns True on success, False on failure or when FCM is not configured.
     """
+    global _last_send_error
+    _last_send_error = None
     app = _ensure_firebase()
     if app is None:
         return False
@@ -142,10 +145,39 @@ def send_push(token: str, *, title: str, body: str, data: dict | None = None) ->
         messaging.send(message, app=app)
         return True
     except Exception as exc:
-        logger.warning(
-            "FCM send failed (token=%s…): %s: %s",
-            token[:12] if token else "?",
-            type(exc).__name__,
-            exc,
-        )
+        _last_send_error = exc
+        exc_name = type(exc).__name__
+        if exc_name == "ThirdPartyAuthError":
+            logger.warning(
+                "FCM/APNs auth failed (token=%s…): %s. "
+                "Re-upload the APNs .p8 key in Firebase → Project settings → Cloud Messaging → "
+                "iOS app com.carzo.app (Key ID + Team ID LN3R46L4H8 must match Apple Developer).",
+                token[:12] if token else "?",
+                exc,
+            )
+        else:
+            logger.warning(
+                "FCM send failed (token=%s…): %s: %s",
+                token[:12] if token else "?",
+                exc_name,
+                exc,
+            )
         return False
+
+
+def last_fcm_send_error() -> BaseException | None:
+    return _last_send_error
+
+
+def fcm_send_error_hint(exc: BaseException | None = None) -> str:
+    """User-facing hint when send_push fails."""
+    name = type(exc).__name__ if exc else ""
+    if name == "ThirdPartyAuthError":
+        return (
+            "Firebase cannot reach Apple (APNs). In Firebase Console → carzo-prod → "
+            "Cloud Messaging → com.carzo.app: delete and re-upload your APNs .p8 key "
+            "(Team LN3R46L4H8). In Apple Developer, ensure the key has Push Notifications enabled."
+        )
+    return (
+        "FCM send failed. Check Render FIREBASE_SERVICE_ACCOUNT, Firebase APNs .p8, and re-login on device."
+    )

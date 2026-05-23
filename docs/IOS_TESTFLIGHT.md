@@ -203,7 +203,7 @@ On the latest build: **Profile → Settings** (while logged in on the **iPhone**
 
 | Check | What to do |
 |--------|------------|
-| **Firebase APNs** | [Firebase Console](https://console.firebase.google.com) → **carzo-prod** → Project settings → Cloud Messaging → Apple app **com.carzo.app** → **APNs Authentication Key (.p8)** uploaded |
+| **Firebase APNs** | [Firebase Console](https://console.firebase.google.com) → **carzo-prod** → Project settings → Cloud Messaging → Apple app **com.carzo.app** → **APNs Authentication Key (.p8)** uploaded. If Render logs show `ThirdPartyAuthError`, **delete** both APNs keys in Firebase and **re-upload** the `.p8` from [Apple Keys](https://developer.apple.com/account/resources/authkeys/list) (must have **Apple Push Notifications service (APNs)** enabled; Team **LN3R46L4H8**). |
 | **Render backend** | Render → **carr-5hrm** → Environment → **`FIREBASE_SERVICE_ACCOUNT`** = full Firebase Admin JSON (one line). **Redeploy** after adding. |
 | **Token on server** | iPhone: Settings → **Sync push token**, or log out / log in |
 | **Render logs** | After a test message, search `FCM send failed` or `no firebase_token` |

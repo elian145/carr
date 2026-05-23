@@ -13,7 +13,7 @@ from werkzeug.exceptions import RequestEntityTooLarge
 from ..auth import get_current_user
 from ..extensions import socketio
 from ..models import BlockedUser, Car, Message, User, UserReport, db
-from ..push import fcm_is_configured, send_push
+from ..push import fcm_is_configured, fcm_send_error_hint, last_fcm_send_error, send_push
 from ..security import rate_limit, validate_input_sanitization
 
 bp = Blueprint("chat", __name__)
@@ -998,11 +998,8 @@ def push_test():
         data={"type": "push_test"},
     )
     if not ok:
-        return jsonify(
-            {
-                "message": "FCM send failed. Check Render logs, Firebase APNs .p8 key, and re-login on device.",
-            }
-        ), 503
+        hint = fcm_send_error_hint(last_fcm_send_error())
+        return jsonify({"message": hint}), 503
     return jsonify({"message": "Test notification sent"}), 200
 
 
