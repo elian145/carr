@@ -171,6 +171,21 @@ String _chatText(BuildContext context, String en, {String? ar, String? ku}) {
   return en;
 }
 
+String _chatEditedLabel(BuildContext context) =>
+    _chatText(context, 'Edited', ar: 'معدّل', ku: 'دەستکاری کراو');
+
+String _chatMessageDeletedText(BuildContext context) => _chatText(
+      context,
+      'This message was deleted',
+      ar: 'تم حذف هذه الرسالة',
+      ku: 'ئەم پەیامە سڕایەوە',
+    );
+
+String _chatDisplayContent(BuildContext context, ChatMessage message) {
+  if (message.isDeleted) return _chatMessageDeletedText(context);
+  return message.content;
+}
+
 /// Listing title in the active app language (brand/model translated; trim kept in English).
 String localizedListingTitle(BuildContext context, Map<String, dynamic> car) {
   final brand = (car['brand'] ?? '').toString().trim();
@@ -1463,8 +1478,10 @@ class _ChatConversationPageState extends State<ChatConversationPage>
   }
 
   String _replyPreviewLabel(ChatMessage message) {
-    if (message.isDeleted) return 'This message was deleted';
-    if (message.listingPreview != null) return 'Listing';
+    if (message.isDeleted) return _chatMessageDeletedText(context);
+    if (message.listingPreview != null) {
+      return AppLocalizations.of(context)?.listingTitle ?? 'Listing';
+    }
     if (_isAudioMessage(message)) {
       return _chatText(
         context,
@@ -1476,11 +1493,17 @@ class _ChatConversationPageState extends State<ChatConversationPage>
     if (message.attachments.isNotEmpty) {
       final hasVideo = message.attachments.any((item) => item.type == 'video');
       if (message.attachments.length > 1) {
-        return hasVideo ? 'Media group' : 'Photos';
+        return hasVideo
+            ? _chatText(context, 'Media', ar: 'وسائط', ku: 'میدیا')
+            : _chatText(context, 'Photos', ar: 'صور', ku: 'وێنەکان');
       }
-      return hasVideo ? 'Video' : 'Photo';
+      return hasVideo
+          ? _chatText(context, 'Video', ar: 'فيديو', ku: 'ڤیدیۆ')
+          : _chatText(context, 'Photo', ar: 'صورة', ku: 'وێنە');
     }
-    return message.content.trim().isEmpty ? 'Message' : message.content.trim();
+    return message.content.trim().isEmpty
+        ? _chatText(context, 'Message', ar: 'رسالة', ku: 'پەیام')
+        : message.content.trim();
   }
 
   String _temporaryMessageId() {
@@ -2414,19 +2437,25 @@ class _ChatConversationPageState extends State<ChatConversationPage>
             if (!message.isDeleted)
               ListTile(
                 leading: const Icon(Icons.reply),
-                title: const Text('Reply'),
+                title: Text(
+                  _chatText(context, 'Reply', ar: 'رد', ku: 'وەڵام'),
+                ),
                 onTap: () => Navigator.pop(context, 'reply'),
               ),
             if (_canEditMessage(message, isMe))
               ListTile(
                 leading: const Icon(Icons.edit_outlined),
-                title: const Text('Edit'),
+                title: Text(
+                  AppLocalizations.of(context)?.editAction ?? 'Edit',
+                ),
                 onTap: () => Navigator.pop(context, 'edit'),
               ),
             if (_canDeleteMessage(message, isMe))
               ListTile(
                 leading: const Icon(Icons.delete_outline),
-                title: const Text('Delete'),
+                title: Text(
+                  AppLocalizations.of(context)?.deleteAction ?? 'Delete',
+                ),
                 onTap: () => Navigator.pop(context, 'delete'),
               ),
           ],
@@ -2543,7 +2572,19 @@ class _ChatConversationPageState extends State<ChatConversationPage>
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(
-                  isEditMode ? 'Editing message' : 'Replying to message',
+                  isEditMode
+                      ? _chatText(
+                          context,
+                          'Editing message',
+                          ar: 'تعديل الرسالة',
+                          ku: 'دەستکاریکردنی پەیام',
+                        )
+                      : _chatText(
+                          context,
+                          'Replying to message',
+                          ar: 'الرد على الرسالة',
+                          ku: 'وەڵامدانەوەی پەیام',
+                        ),
                   style: Theme.of(
                     context,
                   ).textTheme.bodySmall?.copyWith(fontWeight: FontWeight.w600),
@@ -3533,7 +3574,7 @@ class _ChatConversationPageState extends State<ChatConversationPage>
 
     final bodyWidth = _measureMultilineMaxLineWidth(
       context,
-      message.content,
+      _chatDisplayContent(context, message),
       bodyStyle,
       maxInnerWidth,
     );
@@ -3545,7 +3586,7 @@ class _ChatConversationPageState extends State<ChatConversationPage>
     );
     if (message.editedAt != null && !message.isDeleted) {
       metaLeftWidth +=
-          6 + _measureLineTextWidth(context, 'Edited', metaStyle);
+          6 + _measureLineTextWidth(context, _chatEditedLabel(context), metaStyle);
     }
 
     final contentWidth = !isMe
@@ -3818,7 +3859,7 @@ class _ChatConversationPageState extends State<ChatConversationPage>
                                     ),
                                 ] else
                                   Text(
-                                    message.content,
+                                    _chatDisplayContent(context, message),
                                     style: TextStyle(
                                       color: bubbleOnStrong,
                                       fontStyle: message.isDeleted
@@ -3840,7 +3881,7 @@ class _ChatConversationPageState extends State<ChatConversationPage>
                                                 right: 6,
                                               ),
                                               child: Text(
-                                                'Edited',
+                                                _chatEditedLabel(context),
                                                 style: TextStyle(
                                                   color: bubbleOnMuted,
                                                   fontSize: 12,
@@ -3877,7 +3918,7 @@ class _ChatConversationPageState extends State<ChatConversationPage>
                                             right: 6,
                                           ),
                                           child: Text(
-                                            'Edited',
+                                            _chatEditedLabel(context),
                                             style: TextStyle(
                                               color: bubbleOnMuted,
                                               fontSize: 12,

@@ -121,14 +121,12 @@ class _SavedSearchesPageState extends State<SavedSearchesPage> {
                   margin: EdgeInsets.symmetric(horizontal: 8, vertical: 4),
                   child: ListTile(
                     onTap: () => _showFilterDetails(
-                      item['name']?.toString() ??
-                          AppLocalizations.of(context)!.unnamedSearch,
+                      _localizedSearchTitle(context, item),
                       filters,
                     ),
                     leading: Icon(Icons.bookmark, color: Color(0xFFFF6B00)),
                     title: Text(
-                      item['name']?.toString() ??
-                          AppLocalizations.of(context)!.unnamedSearch,
+                      _localizedSearchTitle(context, item),
                       style: TextStyle(fontWeight: FontWeight.bold),
                     ),
                     subtitle: Column(
@@ -195,6 +193,28 @@ class _SavedSearchesPageState extends State<SavedSearchesPage> {
     );
   }
 
+  String _localizedSearchTitle(
+    BuildContext context,
+    Map<String, dynamic> item,
+  ) {
+    final filters = item['filters'] as Map<String, dynamic>? ?? {};
+    final brand = filters['brand']?.toString().trim() ?? '';
+    final model = filters['model']?.toString().trim() ?? '';
+    final parts = <String>[];
+    if (brand.isNotEmpty) {
+      parts.add(CarNameTranslations.getLocalizedBrand(context, brand));
+    }
+    if (model.isNotEmpty) {
+      parts.add(
+        CarNameTranslations.getLocalizedModel(context, brand, model),
+      );
+    }
+    if (parts.isNotEmpty) return parts.join(' • ');
+    final stored = item['name']?.toString().trim() ?? '';
+    if (stored.isNotEmpty) return stored;
+    return AppLocalizations.of(context)!.unnamedSearch;
+  }
+
   Widget _buildFilterChips(BuildContext context, Map<String, dynamic> filters) {
     final chips = <Widget>[];
     final l = AppLocalizations.of(context)!;
@@ -203,12 +223,27 @@ class _SavedSearchesPageState extends State<SavedSearchesPage> {
 
     if (filters['brand'] != null) {
       chips.add(
-        _buildFilterChip(context, l.brandLabel, filters['brand'].toString()),
+        _buildFilterChip(
+          context,
+          l.brandLabel,
+          CarNameTranslations.getLocalizedBrand(
+            context,
+            filters['brand'].toString(),
+          ),
+        ),
       );
     }
     if (filters['model'] != null) {
       chips.add(
-        _buildFilterChip(context, l.modelLabel, filters['model'].toString()),
+        _buildFilterChip(
+          context,
+          l.modelLabel,
+          CarNameTranslations.getLocalizedModel(
+            context,
+            filters['brand']?.toString(),
+            filters['model'].toString(),
+          ),
+        ),
       );
     }
     if (filters['trim'] != null) {
@@ -314,7 +349,7 @@ class _SavedSearchesPageState extends State<SavedSearchesPage> {
         _buildFilterChip(
           context,
           l.regionSpecsLabel,
-          carRegionSpecDisplayLabel(code),
+          carRegionSpecDisplayLabelLocalized(context, code),
         ),
       );
     }
@@ -563,49 +598,69 @@ class _SavedSearchesPageState extends State<SavedSearchesPage> {
   }
 
   Widget _buildDetailedFilterList(Map<String, dynamic> filters) {
+    final l = AppLocalizations.of(context)!;
+    final any = l.anyOption;
+    String tr(String? v) =>
+        _translateValueGlobal(context, v?.toString()) ?? v ?? '';
     final List<Widget> filterItems = [];
 
     // Vehicle Information
     if (filters['brand'] != null) {
       filterItems.add(
-        _buildFilterDetailItem('Brand', filters['brand'].toString()),
+        _buildFilterDetailItem(
+          l.brandLabel,
+          CarNameTranslations.getLocalizedBrand(
+            context,
+            filters['brand'].toString(),
+          ),
+        ),
       );
     }
     if (filters['model'] != null) {
       filterItems.add(
-        _buildFilterDetailItem('Model', filters['model'].toString()),
+        _buildFilterDetailItem(
+          l.modelLabel,
+          CarNameTranslations.getLocalizedModel(
+            context,
+            filters['brand']?.toString(),
+            filters['model'].toString(),
+          ),
+        ),
       );
     }
     if (filters['trim'] != null) {
       filterItems.add(
-        _buildFilterDetailItem('Trim', filters['trim'].toString()),
+        _buildFilterDetailItem(l.trimLabel, filters['trim'].toString()),
       );
     }
 
     // Price Range
     if (filters['min_price'] != null || filters['max_price'] != null) {
-      final minPrice = filters['min_price']?.toString() ?? 'Any';
-      final maxPrice = filters['max_price']?.toString() ?? 'Any';
+      final minPrice = filters['min_price']?.toString() ?? any;
+      final maxPrice = filters['max_price']?.toString() ?? any;
       filterItems.add(
-        _buildFilterDetailItem('Price Range', '$minPrice - $maxPrice'),
+        _buildFilterDetailItem(l.priceLabel, '$minPrice - $maxPrice'),
       );
     }
 
     // Year Range
     if (filters['min_year'] != null || filters['max_year'] != null) {
-      final minYear = filters['min_year']?.toString() ?? 'Any';
-      final maxYear = filters['max_year']?.toString() ?? 'Any';
+      final minYear = filters['min_year']?.toString() ?? any;
+      final maxYear = filters['max_year']?.toString() ?? any;
       filterItems.add(
-        _buildFilterDetailItem('Year Range', '$minYear - $maxYear'),
+        _buildFilterDetailItem(l.yearLabel, '$minYear - $maxYear'),
       );
     }
 
     // Mileage Range
     if (filters['min_mileage'] != null || filters['max_mileage'] != null) {
-      final minMileage = filters['min_mileage']?.toString() ?? 'Any';
-      final maxMileage = filters['max_mileage']?.toString() ?? 'Any';
+      final minMileage = filters['min_mileage']?.toString() ?? any;
+      final maxMileage = filters['max_mileage']?.toString() ?? any;
       filterItems.add(
-        _buildFilterDetailItem('Mileage Range', '$minMileage - $maxMileage km'),
+        _buildFilterDetailItem(
+          l.mileageLabel,
+          '$minMileage - $maxMileage ${l.unit_km}',
+        ),
       );
     }
 
@@ -613,48 +668,48 @@ class _SavedSearchesPageState extends State<SavedSearchesPage> {
     if (filters['condition'] != null) {
       filterItems.add(
         _buildFilterDetailItem(
-          'Condition',
-          _capitalizeFirst(filters['condition'].toString()),
+          l.conditionLabel,
+          tr(filters['condition'].toString()),
         ),
       );
     }
     if (filters['transmission'] != null) {
       filterItems.add(
         _buildFilterDetailItem(
-          'Transmission',
-          _capitalizeFirst(filters['transmission'].toString()),
+          l.transmissionLabel,
+          tr(filters['transmission'].toString()),
         ),
       );
     }
     if (filters['fuel_type'] != null) {
       filterItems.add(
         _buildFilterDetailItem(
-          'Fuel Type',
-          _capitalizeFirst(filters['fuel_type'].toString()),
+          l.fuelTypeLabel,
+          tr(filters['fuel_type'].toString()),
         ),
       );
     }
     if (filters['body_type'] != null) {
       filterItems.add(
         _buildFilterDetailItem(
-          'Body Type',
-          _capitalizeFirst(filters['body_type'].toString()),
+          l.bodyTypeLabel,
+          tr(filters['body_type'].toString()),
         ),
       );
     }
     if (filters['color'] != null) {
       filterItems.add(
         _buildFilterDetailItem(
-          'Color',
-          _capitalizeFirst(filters['color'].toString()),
+          l.colorLabel,
+          tr(filters['color'].toString()),
         ),
       );
     }
     if (filters['drive_type'] != null) {
       filterItems.add(
         _buildFilterDetailItem(
-          'Drive Type',
-          filters['drive_type'].toString().toUpperCase(),
+          l.driveType,
+          tr(filters['drive_type'].toString()),
         ),
       );
     }
@@ -662,15 +717,15 @@ class _SavedSearchesPageState extends State<SavedSearchesPage> {
       final code = filters['region_specs'].toString().trim().toLowerCase();
       filterItems.add(
         _buildFilterDetailItem(
-          AppLocalizations.of(context)!.regionSpecsLabel,
-          carRegionSpecDisplayLabel(code),
+          l.regionSpecsLabel,
+          carRegionSpecDisplayLabelLocalized(context, code),
         ),
       );
     }
     if (filters['cylinder_count'] != null) {
       filterItems.add(
         _buildFilterDetailItem(
-          'Cylinder Count',
+          l.cylinderCount,
           filters['cylinder_count'].toString(),
         ),
       );
@@ -678,8 +733,8 @@ class _SavedSearchesPageState extends State<SavedSearchesPage> {
     if (filters['seating'] != null) {
       filterItems.add(
         _buildFilterDetailItem(
-          'Seating',
-          '${filters['seating'].toString()} seats',
+          l.seating,
+          filters['seating'].toString(),
         ),
       );
     }
@@ -687,7 +742,10 @@ class _SavedSearchesPageState extends State<SavedSearchesPage> {
       final es = filters['engine_size'].toString().trim();
       final plain = double.tryParse(es) != null;
       filterItems.add(
-        _buildFilterDetailItem('Engine Size', plain ? '${es}L' : es),
+        _buildFilterDetailItem(
+          l.engineSizeL,
+          _engineSizeChipLabel(context, es),
+        ),
       );
     }
 
@@ -695,23 +753,28 @@ class _SavedSearchesPageState extends State<SavedSearchesPage> {
     if (filters['city'] != null) {
       filterItems.add(
         _buildFilterDetailItem(
-          'City',
-          _capitalizeFirst(filters['city'].toString()),
+          l.cityLabel,
+          tr(filters['city'].toString()),
         ),
       );
     }
     if (filters['title_status'] != null) {
       filterItems.add(
         _buildFilterDetailItem(
-          'Title Status',
-          _capitalizeFirst(filters['title_status'].toString()),
+          l.status,
+          tr(filters['title_status'].toString()),
         ),
       );
     }
     if (filters['damaged_parts'] != null) {
       filterItems.add(
         _buildFilterDetailItem(
-          'Damaged Parts',
+          _trLegacyText(
+            context,
+            'Damaged Parts',
+            ar: 'الأجزاء التالفة',
+            ku: 'پارچە زیان‌لێکەوتووەکان',
+          ),
           filters['damaged_parts'].toString(),
         ),
       );
@@ -719,27 +782,39 @@ class _SavedSearchesPageState extends State<SavedSearchesPage> {
     if (filters['sort_by'] != null) {
       filterItems.add(
         _buildFilterDetailItem(
-          'Sort By',
-          _capitalizeFirst(filters['sort_by'].toString()),
+          l.sortBy,
+          tr(filters['sort_by'].toString()),
         ),
       );
     }
     if (filters['owners'] != null) {
       filterItems.add(
         _buildFilterDetailItem(
-          'Number of Owners',
+          _trLegacyText(
+            context,
+            'Owners',
+            ar: 'المالكون',
+            ku: 'خاوەنەکان',
+          ),
           filters['owners'].toString(),
         ),
       );
     }
     if (filters['vin'] != null) {
-      filterItems.add(_buildFilterDetailItem('VIN', filters['vin'].toString()));
+      filterItems.add(
+        _buildFilterDetailItem('VIN', filters['vin'].toString()),
+      );
     }
     if (filters['accident_history'] != null) {
       filterItems.add(
         _buildFilterDetailItem(
-          'Accident History',
-          _capitalizeFirst(filters['accident_history'].toString()),
+          _trLegacyText(
+            context,
+            'Accident History',
+            ar: 'سجل الحوادث',
+            ku: 'مێژووی ڕووداو',
+          ),
+          tr(filters['accident_history'].toString()),
         ),
       );
     }
@@ -757,7 +832,7 @@ class _SavedSearchesPageState extends State<SavedSearchesPage> {
             Icon(Icons.info_outline, color: Colors.grey[400], size: 20),
             SizedBox(width: 8),
             Text(
-              'No filters applied to this search.',
+              l.noFiltersApplied,
               style: TextStyle(
                 color: Colors.grey[400],
                 fontStyle: FontStyle.italic,

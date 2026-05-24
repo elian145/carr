@@ -691,7 +691,7 @@ class _EditDealerPageState extends State<EditDealerPage> {
         if (!mounted) return;
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: Text('${_tr('Please select both From and To for', ar: 'يرجى اختيار وقت من وإلى ليوم', ku: 'تکایە کاتی لە و بۆ هەڵبژێرە بۆ')} ${d.label}.'),
+            content: Text('${_tr('Please select both From and To for', ar: 'يرجى اختيار وقت من وإلى ليوم', ku: 'تکایە کاتی لە و بۆ هەڵبژێرە بۆ')} ${_dayLabel(d.key)}.'),
             backgroundColor: Colors.orange,
           ),
         );

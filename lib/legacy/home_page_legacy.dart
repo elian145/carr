@@ -851,8 +851,20 @@ class _HomePageState extends State<HomePage> {
 
   String _generateSearchName() {
     final parts = <String>[];
-    if (selectedBrand?.isNotEmpty == true) parts.add(selectedBrand!);
-    if (selectedModel?.isNotEmpty == true) parts.add(selectedModel!);
+    if (selectedBrand?.isNotEmpty == true) {
+      parts.add(
+        CarNameTranslations.getLocalizedBrand(context, selectedBrand!),
+      );
+    }
+    if (selectedModel?.isNotEmpty == true) {
+      parts.add(
+        CarNameTranslations.getLocalizedModel(
+          context,
+          selectedBrand,
+          selectedModel!,
+        ),
+      );
+    }
     if (selectedCity?.isNotEmpty == true) {
       parts.add(_translateValueGlobal(context, selectedCity) ?? selectedCity!);
     }
@@ -3289,7 +3301,10 @@ class _HomePageState extends State<HomePage> {
       chips.add(
         _buildFilterChip(
           AppLocalizations.of(context)!.regionSpecsLabel,
-          carRegionSpecDisplayLabel(selectedRegionSpecs!),
+          carRegionSpecDisplayLabelLocalized(
+            context,
+            selectedRegionSpecs!,
+          ),
           'regionSpecs',
           Icons.public,
           Colors.blueGrey,
@@ -6995,7 +7010,8 @@ class _HomePageState extends State<HomePage> {
                                                             ) => DropdownMenuItem(
                                                               value: code,
                                                               child: Text(
-                                                                carRegionSpecDisplayLabel(
+                                                                carRegionSpecDisplayLabelLocalized(
+                                                                  context,
                                                                   code,
                                                                 ),
                                                               ),
@@ -7366,21 +7382,41 @@ class _HomePageState extends State<HomePage> {
                                                               ),
                                                             ),
                                                           ),
-                                                          const DropdownMenuItem(
+                                                          DropdownMenuItem(
                                                             value: 'private',
-                                                            child: Text('Private'),
+                                                            child: Text(
+                                                              _translatePlateTypeLegacy(
+                                                                context,
+                                                                'private',
+                                                              ),
+                                                            ),
                                                           ),
-                                                          const DropdownMenuItem(
+                                                          DropdownMenuItem(
                                                             value: 'temporary',
-                                                            child: Text('Temporary'),
+                                                            child: Text(
+                                                              _translatePlateTypeLegacy(
+                                                                context,
+                                                                'temporary',
+                                                              ),
+                                                            ),
                                                           ),
-                                                          const DropdownMenuItem(
+                                                          DropdownMenuItem(
                                                             value: 'commercial',
-                                                            child: Text('Commercial'),
+                                                            child: Text(
+                                                              _translatePlateTypeLegacy(
+                                                                context,
+                                                                'commercial',
+                                                              ),
+                                                            ),
                                                           ),
-                                                          const DropdownMenuItem(
+                                                          DropdownMenuItem(
                                                             value: 'taxi',
-                                                            child: Text('Taxi'),
+                                                            child: Text(
+                                                              _translatePlateTypeLegacy(
+                                                                context,
+                                                                'taxi',
+                                                              ),
+                                                            ),
                                                           ),
                                                         ],
                                                         onChanged: (value) {
