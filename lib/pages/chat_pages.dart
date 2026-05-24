@@ -1985,8 +1985,42 @@ class _ChatConversationPageState extends State<ChatConversationPage>
   }
 
   Future<bool> _ensureMicPermission() async {
-    final status = await Permission.microphone.request();
-    return status.isGranted;
+    // Use the record plugin's native iOS permission (AVCaptureDevice audio).
+    // permission_handler's microphone API is disabled unless PERMISSION_MICROPHONE
+    // is set in ios/Podfile — using it alone never shows the system dialog.
+    if (await _voiceRecorder.hasPermission(request: true)) {
+      return true;
+    }
+    return false;
+  }
+
+  void _showMicPermissionDenied() {
+    if (!mounted) return;
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text(
+          _chatText(
+            context,
+            'Allow microphone access in Settings to send voice messages.',
+            ar: 'اسمح بالوصول إلى الميكروفون من الإعدادات لإرسال الرسائل الصوتية.',
+            ku: 'لە ڕێکخستنەکان مۆڵەتی مایکرۆفۆن بدە بۆ ناردنی پەیامی دەنگی.',
+          ),
+        ),
+        action: SnackBarAction(
+          label: _chatText(
+            context,
+            'Settings',
+            ar: 'الإعدادات',
+            ku: 'ڕێکخستنەکان',
+          ),
+          onPressed: () {
+            openAppSettings();
+          },
+        ),
+        duration: const Duration(seconds: 6),
+        backgroundColor: Colors.orange,
+      ),
+    );
   }
 
   Future<void> _takePhotoAndSend() async {
@@ -2046,20 +2080,7 @@ class _ChatConversationPageState extends State<ChatConversationPage>
   Future<void> _startVoiceRecording() async {
     if (_isSending || _editingMessageId != null || _isRecordingVoice) return;
     if (!await _ensureMicPermission()) {
-      if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text(
-            _chatText(
-              context,
-              'Microphone permission is required to record voice messages.',
-              ar: 'يلزم إذن الميكروفون لتسجيل الرسائل الصوتية.',
-              ku: 'مۆڵەتی مایکرۆفۆن پێویستە بۆ تۆمارکردنی پەیامی دەنگی.',
-            ),
-          ),
-          backgroundColor: Colors.orange,
-        ),
-      );
+      _showMicPermissionDenied();
       return;
     }
     try {
