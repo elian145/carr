@@ -59,13 +59,13 @@
 	<key>FirebaseAppDelegateProxyEnabled</key>
 	<true/>
 	<key>NSCameraUsageDescription</key>
-	<string>Camera access is needed to scan VIN codes and take photos of cars.</string>
+	<string>Camera access is needed to scan VIN codes, take photos of cars, and send photos in chat.</string>
 	<key>NSPhotoLibraryUsageDescription</key>
 	<string>Photo library access is needed to select car photos.</string>
 	<key>NSPhotoLibraryAddUsageDescription</key>
 	<string>We need permission to save car photos.</string>
 	<key>NSMicrophoneUsageDescription</key>
-	<string>Microphone access is needed for video capture when adding listings.</string>
+	<string>Microphone access is needed for voice messages in chat and video capture when adding listings.</string>
 	<key>GMSApiKey</key>
 	<string>$(IOS_GOOGLE_MAPS_API_KEY)</string>
 	<key>GOOGLE_PLACES_API_KEY</key>

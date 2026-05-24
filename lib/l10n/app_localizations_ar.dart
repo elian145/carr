@@ -1478,4 +1478,121 @@ class AppLocalizationsAr extends AppLocalizations {
 
   @override
   String get deleteTooltip => 'حذف';
+
+  @override
+  String get verifiedDealerLabel => 'وكيل معتمد';
+
+  @override
+  String get dealerApplicationPendingLabel => 'طلب الوكالة قيد المراجعة';
+
+  @override
+  String get dealerApplicationDeclinedLabel => 'تم رفض طلب الوكالة';
+
+  @override
+  String get personalAccountLabel => 'حساب شخصي';
+
+  @override
+  String get dealershipLabel => 'المعرض';
+
+  @override
+  String get dealerFallbackLabel => 'وكيل';
+
+  @override
+  String get openInGoogleMapsAction => 'فتح في Google Maps';
+
+  @override
+  String get logoutConfirmMessage => 'هل أنت متأكد أنك تريد تسجيل الخروج؟';
+
+  @override
+  String get accountInformationTitle => 'معلومات الحساب';
+
+  @override
+  String get termsOfServiceTitle => 'شروط الخدمة';
+
+  @override
+  String get privacyPolicyTitle => 'سياسة الخصوصية';
+
+  @override
+  String get helpHowCanWeHelp => 'كيف يمكننا مساعدتك؟';
+
+  @override
+  String get helpBuyingSection => 'الشراء';
+
+  @override
+  String get helpSellingSection => 'البيع';
+
+  @override
+  String get helpDealersSection => 'الوكلاء';
+
+  @override
+  String get helpPaymentsSection => 'المدفوعات';
+
+  @override
+  String get helpContactSupport => 'اتصل بالدعم';
+
+  @override
+  String get helpFaqContactSellerQuestion => 'كيف أتواصل مع البائع؟';
+
+  @override
+  String get helpFaqContactSellerAnswer =>
+      'افتح الإعلان واستخدم اتصال أو واتساب أو الدردشة في صفحة التفاصيل.';
+
+  @override
+  String get helpFaqListingsVerifiedQuestion => 'هل الإعلانات موثقة؟';
+
+  @override
+  String get helpFaqListingsVerifiedAnswer =>
+      'الوكلاء الذين لديهم شارة معتمدة يراجعهم فريقنا. افحص المركبة شخصياً قبل الدفع.';
+
+  @override
+  String get helpFaqPostListingQuestion => 'كيف أنشر إعلاناً؟';
+
+  @override
+  String get helpFaqPostListingAnswer =>
+      'سجّل الدخول، اضغط بيع، واتبع الخطوات لإضافة الصور والسعر والتفاصيل.';
+
+  @override
+  String get helpFaqEditDeleteListingQuestion => 'كيف أعدّل أو أحذف إعلاني؟';
+
+  @override
+  String get helpFaqEditDeleteListingAnswer =>
+      'افتح إعلانك من إعلاناتي أو من صفحة الإعلان (أدوات المالك) للتعديل أو الحذف.';
+
+  @override
+  String get helpFaqRegisterDealerQuestion => 'كيف أسجل كوكيل؟';
+
+  @override
+  String get helpFaqRegisterDealerAnswer =>
+      'اختر تسجيل وكيل وأرسل تفاصيل المعرض. قد تستغرق الموافقة 1–2 أيام عمل.';
+
+  @override
+  String get helpFaqPaymentsQuestion => 'هل التطبيق يتولى المدفوعات؟';
+
+  @override
+  String get helpFaqPaymentsAnswer =>
+      'يتم الاتفاق على الدفع مباشرة بين المشتري والبائع. لا ترسل المال قبل رؤية المركبة.';
+
+  @override
+  String get helpCouldNotOpenLink => 'تعذر فتح الرابط';
+
+  @override
+  String get whatsappAction => 'واتساب';
+
+  @override
+  String get chatSendPhotosVideosTitle => 'إرسال صور/فيديو';
+
+  @override
+  String get chatSendPhotosVideosSubtitle => 'اختر عدة صور وفيديوهات';
+
+  @override
+  String get chatSendImageTitle => 'إرسال صورة';
+
+  @override
+  String get chatSendImageSubtitle => 'اختر عدة صور';
+
+  @override
+  String get chatSendVideoTitle => 'إرسال فيديو';
+
+  @override
+  String get chatSendVideoSubtitle => 'اختر عدة فيديوهات';
 }

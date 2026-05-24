@@ -80,6 +80,7 @@ import '../services/recently_viewed_service.dart';
 import '../pages/recently_viewed_page.dart';
 import '../pages/help_center_page.dart';
 import '../pages/legal_document_page.dart';
+import '../shared/account/delete_account_dialog.dart';
 import '../pages/admin_reports_page.dart';
 import '../shared/trust/report_dialog.dart';
 import '../models/online_spec_variant.dart';

@@ -21,6 +21,7 @@ bp = Blueprint("chat", __name__)
 
 _CHAT_IMAGE_EXTENSIONS = {".jpg", ".jpeg", ".png", ".gif", ".webp"}
 _CHAT_VIDEO_EXTENSIONS = {".mp4", ".mov", ".avi", ".mkv", ".webm"}
+_CHAT_AUDIO_EXTENSIONS = {".m4a", ".aac", ".mp3", ".wav", ".ogg", ".webm", ".amr", ".3gp"}
 _CHAT_ATTACHMENT_EXTENSIONS = _CHAT_IMAGE_EXTENSIONS | _CHAT_VIDEO_EXTENSIONS
 
 
@@ -160,6 +161,25 @@ def _upload_chat_media_item(file_storage) -> dict[str, str]:
                     ".avi": "video/x-msvideo",
                     ".mkv": "video/x-matroska",
                     ".webm": "video/webm",
+                },
+            ),
+        }
+    if ext in _CHAT_AUDIO_EXTENSIONS:
+        return {
+            "type": "audio",
+            "url": _upload_chat_attachment(
+                file_storage,
+                allowed_extensions=_CHAT_AUDIO_EXTENSIONS,
+                subdir="chat_audio",
+                content_types={
+                    ".m4a": "audio/mp4",
+                    ".aac": "audio/aac",
+                    ".mp3": "audio/mpeg",
+                    ".wav": "audio/wav",
+                    ".ogg": "audio/ogg",
+                    ".webm": "audio/webm",
+                    ".amr": "audio/amr",
+                    ".3gp": "audio/3gpp",
                 },
             ),
         }
@@ -609,11 +629,105 @@ def send_video_message(conversation_id: str):
         return jsonify({"message": "Failed to send video message"}), 500
 
 
+@bp.route("/api/chat/<conversation_id>/send_audio", methods=["POST"])
+@jwt_required()
+@rate_limit(max_requests=30, window_minutes=10, per_ip=False)
+def send_audio_message(conversation_id: str):
+    """Send a voice message. The audio file is uploaded to R2 (or stored locally)."""
+    try:
+        me = get_current_user()
+        if not me:
+            return jsonify({"message": "Unauthorized"}), 401
+
+        car = _get_car_by_any_id(str(conversation_id))
+        if not car:
+            return jsonify({"message": "Listing not found"}), 404
+
+        file = None
+        for key in ("file", "audio", "attachment", "voice"):
+            if key in request.files:
+                file = request.files[key]
+                break
+        if not file or not file.filename:
+            return jsonify({"message": "No audio file provided"}), 400
+
+        receiver_public = (
+            request.form.get("receiver_id") or request.form.get("receiverId") or ""
+        ).strip()
+        reply_to_public = (
+            request.form.get("reply_to_message_id")
+            or request.form.get("replyToMessageId")
+            or ""
+        ).strip()
+        receiver = _resolve_chat_receiver(me, car, receiver_public)
+        if receiver is None:
+            return jsonify({"message": "receiver_id required"}), 400
+
+        reply_to = _resolve_reply_target(me, car, reply_to_public)
+        if reply_to_public and reply_to is None:
+            return jsonify({"message": "Reply target not found"}), 404
+
+        try:
+            attachment_url = _upload_chat_attachment(
+                file,
+                allowed_extensions=_CHAT_AUDIO_EXTENSIONS,
+                subdir="chat_audio",
+                content_types={
+                    ".m4a": "audio/mp4",
+                    ".aac": "audio/aac",
+                    ".mp3": "audio/mpeg",
+                    ".wav": "audio/wav",
+                    ".ogg": "audio/ogg",
+                    ".webm": "audio/webm",
+                    ".amr": "audio/amr",
+                    ".3gp": "audio/3gpp",
+                },
+            )
+        except ValueError:
+            return jsonify({"message": "Unsupported audio format"}), 400
+
+        content = (request.form.get("content") or "").strip() or "[Voice message]"
+
+        msg = Message(
+            sender_id=me.id,
+            receiver_id=receiver.id,
+            car_id=car.id,
+            reply_to_id=reply_to.id if reply_to else None,
+            reply_to=reply_to,
+            content=content,
+            message_type="audio",
+            attachment_url=attachment_url,
+            is_read=False,
+        )
+        db.session.add(msg)
+        db.session.commit()
+        db.session.refresh(msg)
+
+        try:
+            db.session.refresh(receiver)
+            fcm_token = getattr(receiver, "firebase_token", None)
+            if fcm_token:
+                sender_name = f"{me.first_name} {me.last_name}".strip() or "Someone"
+                send_push(
+                    fcm_token,
+                    title=f"New message from {sender_name}",
+                    body=content[:200],
+                    data={"car_id": car.public_id, "sender_id": me.public_id, "type": "chat_message"},
+                )
+        except Exception:
+            pass
+
+        return jsonify({"success": True, "message": msg.to_dict()}), 201
+    except Exception:
+        db.session.rollback()
+        return jsonify({"message": "Failed to send audio message"}), 500
+
+
 @bp.route("/api/chat/<conversation_id>/send_media_group", methods=["POST"])
 @jwt_required()
 @rate_limit(max_requests=20, window_minutes=10, per_ip=False)
 def send_media_group_message(conversation_id: str):
-    """Send multiple images/videos as one grouped chat message."""
+    """Send multiple images/videos/audio as one grouped chat message."""
     try:
         me = get_current_user()
         if not me:
@@ -667,7 +781,17 @@ def send_media_group_message(conversation_id: str):
             except ValueError:
                 return jsonify({"message": "Unsupported attachment format"}), 400
 
-        content = (request.form.get("content") or "").strip() or _default_media_group_content(len(attachments))
+        content = (request.form.get("content") or "").strip()
+        if not content:
+            if len(attachments) == 1 and attachments[0].get("type") == "audio":
+                content = "[Voice message]"
+            else:
+                content = _default_media_group_content(len(attachments))
+
+        if len(attachments) == 1:
+            message_type = attachments[0].get("type") or "image"
+        else:
+            message_type = "media_group"
 
         msg = Message(
             sender_id=me.id,
@@ -676,7 +800,7 @@ def send_media_group_message(conversation_id: str):
             reply_to_id=reply_to.id if reply_to else None,
             reply_to=reply_to,
             content=content,
-            message_type="media_group",
+            message_type=message_type,
             attachment_url=attachments[0]["url"] if attachments else None,
             attachments=attachments,
             listing_preview=listing_preview,
@@ -741,7 +865,7 @@ def edit_chat_message(message_id: str):
         existing_items: list[dict] = []
         if isinstance(msg.attachments, list):
             existing_items.extend([x for x in msg.attachments if isinstance(x, dict)])
-        if not existing_items and msg.attachment_url and msg.message_type in ("image", "video"):
+        if not existing_items and msg.attachment_url and msg.message_type in ("image", "video", "audio"):
             existing_items.append({"type": msg.message_type, "url": msg.attachment_url})
 
         existing_url_to_type: dict[str, str] = {}
@@ -749,7 +873,7 @@ def edit_chat_message(message_id: str):
             url = str(item.get("url") or "").strip()
             typ = str(item.get("type") or "").strip().lower()
             if url:
-                existing_url_to_type[url] = typ if typ in ("image", "video") else "image"
+                existing_url_to_type[url] = typ if typ in ("image", "video", "audio") else "image"
 
         keep_raw = data.get("attachments", None)
         keep_items: list[dict] | None = None
@@ -766,7 +890,7 @@ def edit_chat_message(message_id: str):
                 if not url or url not in existing_url_to_type:
                     return jsonify({"message": "Invalid attachment url"}), 400
                 typ = str(raw.get("type") or "").strip().lower()
-                if typ not in ("image", "video"):
+                if typ not in ("image", "video", "audio"):
                     typ = existing_url_to_type.get(url) or "image"
                 keep_items.append({"type": typ, "url": url})
 

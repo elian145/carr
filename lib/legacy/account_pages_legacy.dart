@@ -454,25 +454,29 @@ class _ProfilePageState extends State<ProfilePage> {
                           late final Color bg;
                           late final Color fg;
                           if (isVerifiedDealer) {
-                            label = 'Verified dealer';
+                            label = AppLocalizations.of(context)!
+                                .verifiedDealerLabel;
                             bg = Colors.green.withValues(alpha: 0.15);
                             fg = isLightShell
                                 ? Colors.green.shade800
                                 : Colors.green.shade200;
                           } else if (isPending) {
-                            label = 'Dealer application pending';
+                            label = AppLocalizations.of(context)!
+                                .dealerApplicationPendingLabel;
                             bg = Colors.orange.withValues(alpha: 0.15);
                             fg = isLightShell
                                 ? Colors.orange.shade800
                                 : Colors.orange.shade200;
                           } else if (isRejected) {
-                            label = 'Dealer application declined';
+                            label = AppLocalizations.of(context)!
+                                .dealerApplicationDeclinedLabel;
                             bg = Colors.red.withValues(alpha: 0.12);
                             fg = isLightShell
                                 ? Colors.red.shade800
                                 : Colors.red.shade200;
                           } else {
-                            label = 'Personal account';
+                            label = AppLocalizations.of(context)!
+                                .personalAccountLabel;
                             if (isLightShell) {
                               bg = Colors.grey.shade200;
                               fg = Colors.grey.shade700;
@@ -515,7 +519,7 @@ class _ProfilePageState extends State<ProfilePage> {
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       Text(
-                        'Account Information',
+                        AppLocalizations.of(context)!.accountInformationTitle,
                         style: TextStyle(
                           fontSize: 18,
                           fontWeight: FontWeight.bold,
@@ -567,7 +571,7 @@ class _ProfilePageState extends State<ProfilePage> {
                           rows.add(
                             _buildInfoRow(
                               Icons.storefront_outlined,
-                              'Dealership',
+                              loc.dealershipLabel,
                               dealership,
                             ),
                           );
@@ -938,9 +942,39 @@ class _ProfilePageState extends State<ProfilePage> {
     );
   }
 
-  void _showDeleteAccountDialog(BuildContext context) {
-    final passwordController = TextEditingController();
-    showDialog<void>(
+  Future<void> _showDeleteAccountDialog(BuildContext context) async {
+    final loc = AppLocalizations.of(context)!;
+    final password = await showDeleteAccountPasswordDialog(context);
+    if (password == null || !context.mounted) return;
+    try {
+      await AuthService().deleteAccount(
+        password: password.isEmpty ? null : password,
+      );
+      if (!context.mounted) return;
+      Navigator.pushNamedAndRemoveUntil(
+        context,
+        '/login',
+        (route) => false,
+      );
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text(loc.accountDeletedSnackbar)),
+      );
+    } catch (e) {
+      if (!context.mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(
+            e.toString().replaceFirst('Exception: ', ''),
+          ),
+          backgroundColor: Colors.red,
+        ),
+      );
+    }
+  }
+
+  void _showLogoutDialog(BuildContext context) {
+    final loc = AppLocalizations.of(context)!;
+    showDialog(
       context: context,
       builder: (ctx) {
         return AlertDialog(
@@ -948,97 +982,21 @@ class _ProfilePageState extends State<ProfilePage> {
             borderRadius: BorderRadius.circular(16),
           ),
           title: Text(
-            'Delete account',
-            style: TextStyle(fontWeight: FontWeight.bold),
+            loc.logout,
+            style: const TextStyle(fontWeight: FontWeight.bold),
           ),
-          content: SingleChildScrollView(
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  'This will permanently delete your account and all your data (listings, messages, favorites). This cannot be undone.',
-                ),
-                SizedBox(height: 16),
-                TextField(
-                  controller: passwordController,
-                  decoration: InputDecoration(
-                    labelText: 'Password (optional)',
-                    hintText: 'Confirm with password if you have one',
-                    border: OutlineInputBorder(),
-                  ),
-                  obscureText: true,
-                  autocorrect: false,
-                ),
-              ],
-            ),
-          ),
+          content: Text(loc.logoutConfirmMessage),
           actions: [
             TextButton(
               onPressed: () => Navigator.of(ctx).pop(),
-              child: Text('Cancel', style: TextStyle(color: Colors.grey[600])),
-            ),
-            TextButton(
-              onPressed: () async {
-                final password = passwordController.text.trim();
-                Navigator.of(ctx).pop();
-                try {
-                  await AuthService().deleteAccount(
-                    password: password.isEmpty ? null : password,
-                  );
-                  if (!context.mounted) return;
-                  Navigator.pushNamedAndRemoveUntil(
-                    context,
-                    '/login',
-                    (route) => false,
-                  );
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    SnackBar(content: Text('Your account has been deleted')),
-                  );
-                } catch (e) {
-                  if (!context.mounted) return;
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    SnackBar(
-                      content: Text(
-                        e.toString().replaceFirst('Exception: ', ''),
-                      ),
-                      backgroundColor: Colors.red,
-                    ),
-                  );
-                }
-              },
               child: Text(
-                'Delete my account',
-                style: TextStyle(
-                  color: Colors.red,
-                  fontWeight: FontWeight.w600,
-                ),
+                loc.cancelAction,
+                style: TextStyle(color: Colors.grey[600]),
               ),
-            ),
-          ],
-        );
-      },
-    );
-  }
-
-  void _showLogoutDialog(BuildContext context) {
-    showDialog(
-      context: context,
-      builder: (BuildContext context) {
-        return AlertDialog(
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(16),
-          ),
-          title: Text('Logout', style: TextStyle(fontWeight: FontWeight.bold)),
-          content: Text('Are you sure you want to logout?'),
-          actions: [
-            TextButton(
-              onPressed: () => Navigator.of(context).pop(),
-              child: Text('Cancel', style: TextStyle(color: Colors.grey[600])),
             ),
             ElevatedButton(
               onPressed: () {
-                Navigator.of(context).pop();
+                Navigator.of(ctx).pop();
                 _logout();
               },
               style: ElevatedButton.styleFrom(
@@ -1048,7 +1006,7 @@ class _ProfilePageState extends State<ProfilePage> {
                   borderRadius: BorderRadius.circular(8),
                 ),
               ),
-              child: Text('Logout'),
+              child: Text(loc.logout),
             ),
           ],
         );

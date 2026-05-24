@@ -3,11 +3,11 @@ import 'package:flutter/material.dart';
 import '../../l10n/app_localizations.dart';
 
 Future<String?> showDeleteAccountPasswordDialog(BuildContext context) {
+  final loc = AppLocalizations.of(context)!;
   return showDialog<String?>(
     context: context,
     builder: (ctx) {
       final passwordController = TextEditingController();
-      final loc = AppLocalizations.of(ctx)!;
       return AlertDialog(
         title: Text(loc.deleteAccountTitle),
         content: SingleChildScrollView(
@@ -38,7 +38,7 @@ Future<String?> showDeleteAccountPasswordDialog(BuildContext context) {
             onPressed: () => Navigator.pop(ctx, passwordController.text.trim()),
             child: Text(
               loc.deleteMyAccount,
-              style: TextStyle(color: Theme.of(context).colorScheme.error),
+              style: TextStyle(color: Theme.of(ctx).colorScheme.error),
             ),
           ),
         ],

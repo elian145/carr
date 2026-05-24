@@ -2925,6 +2925,228 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Delete'**
   String get deleteTooltip;
+
+  /// No description provided for @verifiedDealerLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'Verified dealer'**
+  String get verifiedDealerLabel;
+
+  /// No description provided for @dealerApplicationPendingLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'Dealer application pending'**
+  String get dealerApplicationPendingLabel;
+
+  /// No description provided for @dealerApplicationDeclinedLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'Dealer application declined'**
+  String get dealerApplicationDeclinedLabel;
+
+  /// No description provided for @personalAccountLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'Personal account'**
+  String get personalAccountLabel;
+
+  /// No description provided for @dealershipLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'Dealership'**
+  String get dealershipLabel;
+
+  /// No description provided for @dealerFallbackLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'Dealer'**
+  String get dealerFallbackLabel;
+
+  /// No description provided for @openInGoogleMapsAction.
+  ///
+  /// In en, this message translates to:
+  /// **'Open in Google Maps'**
+  String get openInGoogleMapsAction;
+
+  /// No description provided for @logoutConfirmMessage.
+  ///
+  /// In en, this message translates to:
+  /// **'Are you sure you want to logout?'**
+  String get logoutConfirmMessage;
+
+  /// No description provided for @accountInformationTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Account Information'**
+  String get accountInformationTitle;
+
+  /// No description provided for @termsOfServiceTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Terms of Service'**
+  String get termsOfServiceTitle;
+
+  /// No description provided for @privacyPolicyTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Privacy Policy'**
+  String get privacyPolicyTitle;
+
+  /// No description provided for @helpHowCanWeHelp.
+  ///
+  /// In en, this message translates to:
+  /// **'How can we help?'**
+  String get helpHowCanWeHelp;
+
+  /// No description provided for @helpBuyingSection.
+  ///
+  /// In en, this message translates to:
+  /// **'Buying'**
+  String get helpBuyingSection;
+
+  /// No description provided for @helpSellingSection.
+  ///
+  /// In en, this message translates to:
+  /// **'Selling'**
+  String get helpSellingSection;
+
+  /// No description provided for @helpDealersSection.
+  ///
+  /// In en, this message translates to:
+  /// **'Dealers'**
+  String get helpDealersSection;
+
+  /// No description provided for @helpPaymentsSection.
+  ///
+  /// In en, this message translates to:
+  /// **'Payments'**
+  String get helpPaymentsSection;
+
+  /// No description provided for @helpContactSupport.
+  ///
+  /// In en, this message translates to:
+  /// **'Contact support'**
+  String get helpContactSupport;
+
+  /// No description provided for @helpFaqContactSellerQuestion.
+  ///
+  /// In en, this message translates to:
+  /// **'How do I contact a seller?'**
+  String get helpFaqContactSellerQuestion;
+
+  /// No description provided for @helpFaqContactSellerAnswer.
+  ///
+  /// In en, this message translates to:
+  /// **'Open a listing and use Call, WhatsApp, or Chat on the detail page.'**
+  String get helpFaqContactSellerAnswer;
+
+  /// No description provided for @helpFaqListingsVerifiedQuestion.
+  ///
+  /// In en, this message translates to:
+  /// **'Are listings verified?'**
+  String get helpFaqListingsVerifiedQuestion;
+
+  /// No description provided for @helpFaqListingsVerifiedAnswer.
+  ///
+  /// In en, this message translates to:
+  /// **'Dealers with an approved badge are reviewed by our team. Always inspect a vehicle in person before paying.'**
+  String get helpFaqListingsVerifiedAnswer;
+
+  /// No description provided for @helpFaqPostListingQuestion.
+  ///
+  /// In en, this message translates to:
+  /// **'How do I post a listing?'**
+  String get helpFaqPostListingQuestion;
+
+  /// No description provided for @helpFaqPostListingAnswer.
+  ///
+  /// In en, this message translates to:
+  /// **'Sign in, tap Sell, and follow the steps to add photos, price, and details.'**
+  String get helpFaqPostListingAnswer;
+
+  /// No description provided for @helpFaqEditDeleteListingQuestion.
+  ///
+  /// In en, this message translates to:
+  /// **'How do I edit or delete my listing?'**
+  String get helpFaqEditDeleteListingQuestion;
+
+  /// No description provided for @helpFaqEditDeleteListingAnswer.
+  ///
+  /// In en, this message translates to:
+  /// **'Open your listing from My Listings or the listing page (owner tools) to edit or delete.'**
+  String get helpFaqEditDeleteListingAnswer;
+
+  /// No description provided for @helpFaqRegisterDealerQuestion.
+  ///
+  /// In en, this message translates to:
+  /// **'How do I register as a dealer?'**
+  String get helpFaqRegisterDealerQuestion;
+
+  /// No description provided for @helpFaqRegisterDealerAnswer.
+  ///
+  /// In en, this message translates to:
+  /// **'Choose dealer signup and submit your dealership details. Approval may take 1–2 business days.'**
+  String get helpFaqRegisterDealerAnswer;
+
+  /// No description provided for @helpFaqPaymentsQuestion.
+  ///
+  /// In en, this message translates to:
+  /// **'Does the app handle payments?'**
+  String get helpFaqPaymentsQuestion;
+
+  /// No description provided for @helpFaqPaymentsAnswer.
+  ///
+  /// In en, this message translates to:
+  /// **'Payments are arranged directly between buyer and seller. Never send money before seeing the vehicle.'**
+  String get helpFaqPaymentsAnswer;
+
+  /// No description provided for @helpCouldNotOpenLink.
+  ///
+  /// In en, this message translates to:
+  /// **'Could not open link'**
+  String get helpCouldNotOpenLink;
+
+  /// No description provided for @whatsappAction.
+  ///
+  /// In en, this message translates to:
+  /// **'WhatsApp'**
+  String get whatsappAction;
+
+  /// No description provided for @chatSendPhotosVideosTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Send photos/videos'**
+  String get chatSendPhotosVideosTitle;
+
+  /// No description provided for @chatSendPhotosVideosSubtitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Select multiple images and videos'**
+  String get chatSendPhotosVideosSubtitle;
+
+  /// No description provided for @chatSendImageTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Send image'**
+  String get chatSendImageTitle;
+
+  /// No description provided for @chatSendImageSubtitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Select multiple images'**
+  String get chatSendImageSubtitle;
+
+  /// No description provided for @chatSendVideoTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Send video'**
+  String get chatSendVideoTitle;
+
+  /// No description provided for @chatSendVideoSubtitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Select multiple videos'**
+  String get chatSendVideoSubtitle;
 }
 
 class _AppLocalizationsDelegate

@@ -4,7 +4,7 @@ import 'package:image_picker/image_picker.dart';
 
 import 'api_service.dart';
 
-enum OutgoingChatSendKind { mediaGroup, textMessage }
+enum OutgoingChatSendKind { mediaGroup, textMessage, audio }
 
 /// Snapshot of a media upload still in progress (survives leaving the chat screen).
 class InFlightMediaSend {
@@ -176,6 +176,83 @@ class OutgoingChatSendService {
       ));
     } finally {
       _inFlightMediaByTempId.remove(tempMessageId);
+    }
+  }
+
+  void startAudioSend({
+    required String conversationId,
+    required XFile audioFile,
+    required String tempMessageId,
+    required DateTime startedAt,
+    String? receiverId,
+    String? replyToMessageId,
+    required XFile restoreFile,
+  }) {
+    unawaited(_runAudioSend(
+      conversationId: conversationId,
+      audioFile: audioFile,
+      tempMessageId: tempMessageId,
+      receiverId: receiverId,
+      replyToMessageId: replyToMessageId,
+      restoreFile: restoreFile,
+    ));
+  }
+
+  Future<void> _runAudioSend({
+    required String conversationId,
+    required XFile audioFile,
+    required String tempMessageId,
+    String? receiverId,
+    String? replyToMessageId,
+    required XFile restoreFile,
+  }) async {
+    try {
+      Map<String, dynamic> response;
+      try {
+        response = await ApiService.sendChatAudio(
+          conversationId: conversationId,
+          audioFile: audioFile,
+          receiverId: receiverId,
+          replyToMessageId: replyToMessageId,
+        );
+      } on ApiException catch (e) {
+        // Older APIs expose voice via send_media_group only.
+        if (e.statusCode != 404) rethrow;
+        response = await ApiService.sendChatMediaGroup(
+          conversationId: conversationId,
+          files: [audioFile],
+          receiverId: receiverId,
+          replyToMessageId: replyToMessageId,
+        );
+      }
+      final msg = response['message'];
+      if (msg is Map<String, dynamic>) {
+        _emit(OutgoingChatSendEvent(
+          kind: OutgoingChatSendKind.audio,
+          conversationId: conversationId,
+          success: true,
+          tempMessageId: tempMessageId,
+          messageJson: msg,
+        ));
+      } else {
+        _emit(OutgoingChatSendEvent(
+          kind: OutgoingChatSendKind.audio,
+          conversationId: conversationId,
+          success: false,
+          tempMessageId: tempMessageId,
+          error: 'Invalid response',
+          restoreFiles: [restoreFile],
+        ));
+      }
+    } catch (e) {
+      _emit(OutgoingChatSendEvent(
+        kind: OutgoingChatSendKind.audio,
+        conversationId: conversationId,
+        success: false,
+        tempMessageId: tempMessageId,
+        error: e.toString(),
+        restoreFiles: [restoreFile],
+      ));
     }
   }
 

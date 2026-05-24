@@ -66,6 +66,9 @@ dependencies:
   google_places_autocomplete: ^1.0.0
   auto_size_text: ^3.0.0
   airbridge_flutter_sdk: 4.9.0
+  record: ^6.2.1
+  audioplayers: ^6.6.0
+  path_provider: ^2.1.5
 
 dev_dependencies:
   flutter_test:

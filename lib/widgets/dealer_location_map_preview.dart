@@ -4,6 +4,8 @@ import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:google_maps_flutter/google_maps_flutter.dart';
 
+import '../l10n/app_localizations.dart';
+
 /// Read-only mini map with a transparent tap layer to open external maps.
 class DealerLocationMapPreview extends StatelessWidget {
   const DealerLocationMapPreview({
@@ -20,6 +22,9 @@ class DealerLocationMapPreview extends StatelessWidget {
   final double height;
 
   Widget _fallbackNoSdk(BuildContext context) {
+    final openMapsLabel =
+        AppLocalizations.of(context)?.openInGoogleMapsAction ??
+            'Open in Google Maps';
     return Material(
       color: Theme.of(context).colorScheme.surfaceContainerHighest,
       borderRadius: BorderRadius.circular(12),
@@ -39,7 +44,7 @@ class DealerLocationMapPreview extends StatelessWidget {
                   color: Theme.of(context).colorScheme.primary,
                 ),
                 const SizedBox(height: 8),
-                const Text('Open in Google Maps'),
+                Text(openMapsLabel),
                 const SizedBox(height: 4),
                 Text(
                   '${latitude.toStringAsFixed(5)}, ${longitude.toStringAsFixed(5)}',
@@ -54,6 +59,9 @@ class DealerLocationMapPreview extends StatelessWidget {
   }
 
   Widget _googleMapStack(BuildContext context) {
+    final openMapsLabel =
+        AppLocalizations.of(context)?.openInGoogleMapsAction ??
+            'Open in Google Maps';
     final target = LatLng(latitude, longitude);
     final lite = !kIsWeb && Platform.isAndroid;
 
@@ -86,20 +94,23 @@ class DealerLocationMapPreview extends StatelessWidget {
               color: Colors.black.withOpacity(0.03),
               child: InkWell(
                 onTap: onOpenInGoogleMaps,
-                child: const Center(
+                child: Center(
                   child: DecoratedBox(
-                    decoration: BoxDecoration(
+                    decoration: const BoxDecoration(
                       color: Color(0xE6FFFFFF),
                       borderRadius: BorderRadius.all(Radius.circular(20)),
                     ),
                     child: Padding(
-                      padding: EdgeInsets.symmetric(horizontal: 14, vertical: 8),
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 14,
+                        vertical: 8,
+                      ),
                       child: Row(
                         mainAxisSize: MainAxisSize.min,
                         children: [
-                          Icon(Icons.open_in_new, size: 18),
-                          SizedBox(width: 8),
-                          Text('Open in Google Maps'),
+                          const Icon(Icons.open_in_new, size: 18),
+                          const SizedBox(width: 8),
+                          Text(openMapsLabel),
                         ],
                       ),
                     ),

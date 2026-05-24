@@ -1487,4 +1487,122 @@ class AppLocalizationsKu extends AppLocalizations {
 
   @override
   String get deleteTooltip => 'سڕینەوە';
+
+  @override
+  String get verifiedDealerLabel => 'نمایشگای پشتڕاستکراو';
+
+  @override
+  String get dealerApplicationPendingLabel => 'داواکاری نمایشگا چاوەڕوانە';
+
+  @override
+  String get dealerApplicationDeclinedLabel => 'داواکاری نمایشگا ڕەتکرایەوە';
+
+  @override
+  String get personalAccountLabel => 'هەژماری کەسی';
+
+  @override
+  String get dealershipLabel => 'نمایشگا';
+
+  @override
+  String get dealerFallbackLabel => 'نمایشگا';
+
+  @override
+  String get openInGoogleMapsAction => 'بکەرەوە لە Google Maps';
+
+  @override
+  String get logoutConfirmMessage => 'دڵنیایت دەتەوێت بچیتە دەرەوە؟';
+
+  @override
+  String get accountInformationTitle => 'زانیاری هەژمار';
+
+  @override
+  String get termsOfServiceTitle => 'مەرجەکانی خزمەتگوزاری';
+
+  @override
+  String get privacyPolicyTitle => 'سیاسەتی تایبەتمەندی';
+
+  @override
+  String get helpHowCanWeHelp => 'چۆن دەتوانین یارمەتیت بدەین؟';
+
+  @override
+  String get helpBuyingSection => 'کڕین';
+
+  @override
+  String get helpSellingSection => 'فرۆشتن';
+
+  @override
+  String get helpDealersSection => 'وەکیلەکان';
+
+  @override
+  String get helpPaymentsSection => 'پارەدان';
+
+  @override
+  String get helpContactSupport => 'پەیوەندی بە پشتیوانی';
+
+  @override
+  String get helpFaqContactSellerQuestion => 'چۆن پەیوەندی بە فرۆشیار بکەم؟';
+
+  @override
+  String get helpFaqContactSellerAnswer =>
+      'ڕێکلامێک بکەرەوە و پەیوەندی، واتساپ، یان چات لە پەڕەی وردەکاری بەکاربهێنە.';
+
+  @override
+  String get helpFaqListingsVerifiedQuestion => 'ئایا ڕێکلامەکان پشتڕاستکراون؟';
+
+  @override
+  String get helpFaqListingsVerifiedAnswer =>
+      'وەکیلە پەسندکراوەکان لەلایەن تیمەکەمانەوە پێداچوونەوەیان بۆ دەکرێت. هەمیشە پێش پارەدان ئۆتۆمبێلەکە بە چاو بینە.';
+
+  @override
+  String get helpFaqPostListingQuestion => 'چۆن ڕێکلام دابنێم؟';
+
+  @override
+  String get helpFaqPostListingAnswer =>
+      'بچۆرە ژوورەوە، فرۆشتن دابگرە، و هەنگاوەکان بەدوادا بچۆ بۆ زیادکردنی وێنە، نرخ، و وردەکاری.';
+
+  @override
+  String get helpFaqEditDeleteListingQuestion =>
+      'چۆن ڕێکلامەکەم دەستکاری یان بسڕمەوە؟';
+
+  @override
+  String get helpFaqEditDeleteListingAnswer =>
+      'ڕێکلامەکەت لە ڕێکلامەکانم یان پەڕەی ڕێکلام (ئامرازەکانی خاوەن) بکەرەوە بۆ دەستکاری یان سڕینەوە.';
+
+  @override
+  String get helpFaqRegisterDealerQuestion => 'چۆن وەک وەکیل تۆمار ببم؟';
+
+  @override
+  String get helpFaqRegisterDealerAnswer =>
+      'تۆمارکردنی وەکیل هەڵبژێرە و وردەکاری نمایشگاکەت بنێرە. پەسندکردن لەوانەیە ١–٢ ڕۆژی کار بخایەنێت.';
+
+  @override
+  String get helpFaqPaymentsQuestion => 'ئایا ئەپ پارەدان دەکات؟';
+
+  @override
+  String get helpFaqPaymentsAnswer =>
+      'پارەدان ڕاستەوخۆ لە نێوان کڕیار و فرۆشیار ڕێکدەخرێت. هەرگیز پێش بینینی ئۆتۆمبێل پارە مەنێرە.';
+
+  @override
+  String get helpCouldNotOpenLink => 'نەتوانرا بەستەر بکرێتەوە';
+
+  @override
+  String get whatsappAction => 'واتساپ';
+
+  @override
+  String get chatSendPhotosVideosTitle => 'ناردنی وێنە/ڤیدیۆ';
+
+  @override
+  String get chatSendPhotosVideosSubtitle => 'چەند وێنە و ڤیدیۆ هەڵبژێرە';
+
+  @override
+  String get chatSendImageTitle => 'ناردنی وێنە';
+
+  @override
+  String get chatSendImageSubtitle => 'چەند وێنە هەڵبژێرە';
+
+  @override
+  String get chatSendVideoTitle => 'ناردنی ڤیدیۆ';
+
+  @override
+  String get chatSendVideoSubtitle => 'چەند ڤیدیۆ هەڵبژێرە';
 }

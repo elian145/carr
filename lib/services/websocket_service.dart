@@ -416,7 +416,9 @@ class ChatMessage {
     if (attachments.isEmpty &&
         attachmentUrl != null &&
         attachmentUrl.isNotEmpty &&
-        (messageType == 'image' || messageType == 'video')) {
+        (messageType == 'image' ||
+            messageType == 'video' ||
+            messageType == 'audio')) {
       attachments.add(ChatAttachment(type: messageType, url: attachmentUrl));
     }
     return ChatMessage(

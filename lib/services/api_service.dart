@@ -1333,6 +1333,22 @@ class ApiService {
     );
   }
 
+  static Future<Map<String, dynamic>> sendChatAudio({
+    required String conversationId,
+    required XFile audioFile,
+    String? receiverId,
+    String? replyToMessageId,
+  }) async {
+    return _sendChatAttachment(
+      conversationId: conversationId,
+      endpointSuffix: 'send_audio',
+      fieldName: 'audio',
+      file: audioFile,
+      receiverId: receiverId,
+      replyToMessageId: replyToMessageId,
+    );
+  }
+
   static Future<Map<String, dynamic>> sendChatMediaGroup({
     required String conversationId,
     required List<XFile> files,

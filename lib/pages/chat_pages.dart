@@ -2,9 +2,13 @@ import 'dart:io';
 import 'dart:math' as math;
 import 'package:flutter/material.dart';
 import 'dart:async';
+import 'package:audioplayers/audioplayers.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:mime/mime.dart';
 import 'package:auto_size_text/auto_size_text.dart';
+import 'package:path_provider/path_provider.dart';
+import 'package:permission_handler/permission_handler.dart';
+import 'package:record/record.dart';
 import 'package:provider/provider.dart';
 import 'package:video_player/video_player.dart';
 import '../l10n/app_localizations.dart';
@@ -163,6 +167,168 @@ String _chatText(BuildContext context, String en, {String? ar, String? ku}) {
   if (code == 'ar') return ar ?? en;
   if (code == 'ku' || code == 'ckb') return ku ?? en;
   return en;
+}
+
+String _formatVoiceDuration(Duration duration) {
+  final totalSeconds = duration.inSeconds;
+  final minutes = totalSeconds ~/ 60;
+  final seconds = totalSeconds % 60;
+  return '${minutes.toString().padLeft(2, '0')}:${seconds.toString().padLeft(2, '0')}';
+}
+
+bool _isAudioMessage(ChatMessage message) {
+  if (message.messageType.toLowerCase() == 'audio') return true;
+  if (message.attachments.length == 1 &&
+      message.attachments.first.type.toLowerCase() == 'audio') {
+    return true;
+  }
+  return false;
+}
+
+class _ChatVoiceBubble extends StatefulWidget {
+  final ChatMessage message;
+  final Color iconColor;
+  final Color textColor;
+  final Color progressColor;
+
+  const _ChatVoiceBubble({
+    required this.message,
+    required this.iconColor,
+    required this.textColor,
+    required this.progressColor,
+  });
+
+  @override
+  State<_ChatVoiceBubble> createState() => _ChatVoiceBubbleState();
+}
+
+class _ChatVoiceBubbleState extends State<_ChatVoiceBubble> {
+  final AudioPlayer _player = AudioPlayer();
+  bool _playing = false;
+  Duration _position = Duration.zero;
+  Duration _duration = Duration.zero;
+  StreamSubscription<Duration>? _positionSub;
+  StreamSubscription<Duration>? _durationSub;
+  StreamSubscription<PlayerState>? _stateSub;
+
+  @override
+  void initState() {
+    super.initState();
+    _stateSub = _player.onPlayerStateChanged.listen((state) {
+      if (!mounted) return;
+      setState(() => _playing = state == PlayerState.playing);
+    });
+    _positionSub = _player.onPositionChanged.listen((position) {
+      if (!mounted) return;
+      setState(() => _position = position);
+    });
+    _durationSub = _player.onDurationChanged.listen((duration) {
+      if (!mounted) return;
+      setState(() => _duration = duration);
+    });
+  }
+
+  String _audioSource() {
+    if (widget.message.attachments.isNotEmpty) {
+      final attachment = widget.message.attachments.first;
+      if (attachment.isLocal) return attachment.url;
+      return buildMediaUrl(attachment.url);
+    }
+    final url = (widget.message.attachmentUrl ?? '').trim();
+    if (url.isEmpty) return '';
+    if (url.startsWith('/') || !url.startsWith('http')) return url;
+    return buildMediaUrl(url);
+  }
+
+  Future<void> _togglePlay() async {
+    if (widget.message.isPending) return;
+    if (_playing) {
+      await _player.pause();
+      return;
+    }
+    final source = _audioSource();
+    if (source.isEmpty) return;
+    final attachment = widget.message.attachments.isNotEmpty
+        ? widget.message.attachments.first
+        : null;
+    if (attachment != null && attachment.isLocal) {
+      await _player.play(DeviceFileSource(source));
+      return;
+    }
+    await _player.play(UrlSource(source));
+  }
+
+  @override
+  void dispose() {
+    _positionSub?.cancel();
+    _durationSub?.cancel();
+    _stateSub?.cancel();
+    unawaited(_player.dispose());
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final displayDuration = _duration.inMilliseconds > 0
+        ? _duration
+        : (_position.inMilliseconds > 0 ? _position : Duration.zero);
+    final progress = displayDuration.inMilliseconds > 0
+        ? (_position.inMilliseconds / displayDuration.inMilliseconds).clamp(
+            0.0,
+            1.0,
+          )
+        : 0.0;
+
+    return SizedBox(
+      width: 220,
+      child: Row(
+        children: [
+          IconButton(
+            onPressed: widget.message.isPending ? null : _togglePlay,
+            icon: Icon(
+              _playing ? Icons.pause_circle_filled : Icons.play_circle_filled,
+            ),
+            color: widget.iconColor,
+            iconSize: 36,
+            padding: EdgeInsets.zero,
+            constraints: const BoxConstraints(minWidth: 40, minHeight: 40),
+          ),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                ClipRRect(
+                  borderRadius: BorderRadius.circular(4),
+                  child: LinearProgressIndicator(
+                    value: widget.message.isPending ? null : progress,
+                    color: widget.progressColor,
+                    backgroundColor: widget.progressColor.withValues(alpha: 0.25),
+                    minHeight: 4,
+                  ),
+                ),
+                const SizedBox(height: 4),
+                Text(
+                  widget.message.isPending
+                      ? _chatText(
+                          context,
+                          'Sending...',
+                          ar: 'جارٍ الإرسال...',
+                          ku: 'لە ناردندایە...',
+                        )
+                      : _formatVoiceDuration(
+                          _playing || _position.inMilliseconds > 0
+                              ? _position
+                              : displayDuration,
+                        ),
+                  style: TextStyle(color: widget.textColor, fontSize: 12),
+                ),
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
 }
 
 /// Chat list row inks when chat UI is light ([ChatUiThemeController]).
@@ -919,6 +1085,11 @@ class _ChatConversationPageState extends State<ChatConversationPage>
   String? _editingMessageId;
   String? _highlightMessageId;
   Timer? _highlightTimer;
+  final AudioRecorder _voiceRecorder = AudioRecorder();
+  bool _isRecordingVoice = false;
+  Duration _voiceRecordDuration = Duration.zero;
+  Timer? _voiceRecordTimer;
+  String? _voiceRecordPath;
 
   @override
   void initState() {
@@ -1059,6 +1230,34 @@ class _ChatConversationPageState extends State<ChatConversationPage>
               _scrollComposerToTop();
             });
           }
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text(e.error ?? 'Send failed'),
+              backgroundColor: Colors.red,
+            ),
+          );
+        }
+        finishSending();
+        break;
+      case OutgoingChatSendKind.audio:
+        if (e.success && e.tempMessageId != null && e.messageJson != null) {
+          setState(() {
+            if (_discardedOutgoingIds.remove(e.tempMessageId!)) {
+              // User removed before upload finished.
+            } else {
+              _replaceMessage(
+                e.tempMessageId!,
+                ChatMessage.fromJson(e.messageJson!),
+              );
+            }
+            _replyingToMessage = null;
+            _pendingInitialListingContext = false;
+          });
+          _scrollToBottom();
+        } else if (!e.success && e.tempMessageId != null) {
+          setState(() {
+            _removeMessage(e.tempMessageId!);
+          });
           ScaffoldMessenger.of(context).showSnackBar(
             SnackBar(
               content: Text(e.error ?? 'Send failed'),
@@ -1298,7 +1497,7 @@ class _ChatConversationPageState extends State<ChatConversationPage>
     if (message.attachments.isNotEmpty) return message.attachments;
     final url = (message.attachmentUrl ?? '').trim();
     final typ = message.messageType.trim().toLowerCase();
-    if (url.isNotEmpty && (typ == 'image' || typ == 'video')) {
+    if (url.isNotEmpty && (typ == 'image' || typ == 'video' || typ == 'audio')) {
       return [ChatAttachment(type: typ, url: url)];
     }
     return const <ChatAttachment>[];
@@ -1314,6 +1513,14 @@ class _ChatConversationPageState extends State<ChatConversationPage>
   String _replyPreviewLabel(ChatMessage message) {
     if (message.isDeleted) return 'This message was deleted';
     if (message.listingPreview != null) return 'Listing';
+    if (_isAudioMessage(message)) {
+      return _chatText(
+        context,
+        'Voice message',
+        ar: 'رسالة صوتية',
+        ku: 'پەیامی دەنگی',
+      );
+    }
     if (message.attachments.isNotEmpty) {
       final hasVideo = message.attachments.any((item) => item.type == 'video');
       if (message.attachments.length > 1) {
@@ -1335,7 +1542,11 @@ class _ChatConversationPageState extends State<ChatConversationPage>
   bool _isAttachmentPlaceholder(String content) {
     final normalized = content.trim().toLowerCase();
     if (normalized.isEmpty) return true;
-    if (normalized == '[image]' || normalized == '[video]') return true;
+    if (normalized == '[image]' ||
+        normalized == '[video]' ||
+        normalized == '[voice message]') {
+      return true;
+    }
     return RegExp(r'^\[\d+\s+attachments?\]$').hasMatch(normalized);
   }
 
@@ -1437,6 +1648,48 @@ class _ChatConversationPageState extends State<ChatConversationPage>
           )
           .toList(),
       listingPreview: listingPreview,
+      isRead: true,
+      createdAt: at,
+      isPending: true,
+    );
+  }
+
+  ChatMessage _buildPendingAudioMessage(
+    XFile file, {
+    String? tempId,
+    DateTime? createdAt,
+  }) {
+    final authService = Provider.of<AuthService>(context, listen: false);
+    final replyTo = _replyingToMessage;
+    final effectiveReply = replyTo == null
+        ? null
+        : ChatReplyPreview(
+            id: replyTo.id,
+            senderId: replyTo.senderId,
+            senderName: replyTo.senderName,
+            content: _replyPreviewLabel(replyTo),
+            messageType: replyTo.messageType,
+            isDeleted: replyTo.isDeleted,
+          );
+    final at = createdAt ?? DateTime.now();
+    return ChatMessage(
+      id: tempId ?? _temporaryMessageId(),
+      senderId: authService.userId ?? '',
+      receiverId: widget.receiverId ?? '',
+      carId: widget.carId,
+      replyToMessageId: replyTo?.id,
+      replyToMessage: effectiveReply,
+      content: _chatText(
+        context,
+        '[Voice message]',
+        ar: '[رسالة صوتية]',
+        ku: '[پەیامی دەنگی]',
+      ),
+      messageType: 'audio',
+      attachmentUrl: file.path,
+      attachments: [
+        ChatAttachment(type: 'audio', url: file.path, isLocal: true),
+      ],
       isRead: true,
       createdAt: at,
       isPending: true,
@@ -1680,34 +1933,6 @@ class _ChatConversationPageState extends State<ChatConversationPage>
     });
   }
 
-  Future<void> _pickAndSendImages() async {
-    if (_isSending || _editingMessageId != null) return;
-    try {
-      final picker = ImagePicker();
-      final picked = await picker.pickMultiImage(
-        maxWidth: 1200,
-        maxHeight: 1200,
-        imageQuality: 80,
-      );
-      if (picked.isEmpty || !mounted) return;
-      _addDraftAttachments(picked);
-    } catch (e) {
-      if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text(
-            userErrorText(
-              context,
-              e,
-              fallback: AppLocalizations.of(context)?.errorTitle ?? 'Error',
-            ),
-          ),
-          backgroundColor: Colors.red,
-        ),
-      );
-    }
-  }
-
   bool _isImageFile(XFile file) {
     final mime = lookupMimeType(file.path) ?? '';
     if (mime.startsWith('image/')) return true;
@@ -1759,30 +1984,112 @@ class _ChatConversationPageState extends State<ChatConversationPage>
     }
   }
 
-  Future<void> _pickAndSendVideos() async {
-    if (_isSending || _editingMessageId != null) return;
+  Future<bool> _ensureMicPermission() async {
+    final status = await Permission.microphone.request();
+    return status.isGranted;
+  }
+
+  Future<void> _takePhotoAndSend() async {
+    if (_isSending || _editingMessageId != null || _isRecordingVoice) return;
     try {
-      final picker = ImagePicker();
-      final picked = await picker.pickMultipleMedia(limit: 10);
-      if (picked.isEmpty || !mounted) return;
-      final videos = picked.where(_isVideoFile).toList();
-      if (videos.isEmpty) {
+      final picked = await ImagePicker().pickImage(
+        source: ImageSource.camera,
+        maxWidth: 1200,
+        maxHeight: 1200,
+        imageQuality: 80,
+      );
+      if (picked == null || !mounted) return;
+      setState(() => _isSending = true);
+      final ok = await _sendMediaGroup([picked]);
+      if (!ok && mounted) {
+        setState(() => _isSending = false);
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text('Please select one or more videos.'),
-            backgroundColor: Colors.orange,
+          SnackBar(
+            content: Text(
+              _chatText(
+                context,
+                'Could not send photo.',
+                ar: 'تعذر إرسال الصورة.',
+                ku: 'نەتوانرا وێنە بنێردرێت.',
+              ),
+            ),
+            backgroundColor: Colors.red,
           ),
         );
-        return;
       }
-      if (videos.length != picked.length) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text('Only video files were added to this group.'),
+    } catch (e) {
+      if (!mounted) return;
+      setState(() => _isSending = false);
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(
+            userErrorText(
+              context,
+              e,
+              fallback: AppLocalizations.of(context)?.errorTitle ?? 'Error',
+            ),
           ),
-        );
-      }
-      _addDraftAttachments(videos);
+          backgroundColor: Colors.red,
+        ),
+      );
+    }
+  }
+
+  Future<void> _toggleVoiceRecording() async {
+    if (_isRecordingVoice) {
+      await _stopAndSendVoiceRecording();
+      return;
+    }
+    await _startVoiceRecording();
+  }
+
+  Future<void> _startVoiceRecording() async {
+    if (_isSending || _editingMessageId != null || _isRecordingVoice) return;
+    if (!await _ensureMicPermission()) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(
+            _chatText(
+              context,
+              'Microphone permission is required to record voice messages.',
+              ar: 'يلزم إذن الميكروفون لتسجيل الرسائل الصوتية.',
+              ku: 'مۆڵەتی مایکرۆفۆن پێویستە بۆ تۆمارکردنی پەیامی دەنگی.',
+            ),
+          ),
+          backgroundColor: Colors.orange,
+        ),
+      );
+      return;
+    }
+    try {
+      final dir = await getTemporaryDirectory();
+      final path =
+          '${dir.path}/voice_${DateTime.now().millisecondsSinceEpoch}.m4a';
+      await _voiceRecorder.start(
+        const RecordConfig(
+          encoder: AudioEncoder.aacLc,
+          bitRate: 128000,
+          sampleRate: 44100,
+        ),
+        path: path,
+      );
+      if (!mounted) return;
+      setState(() {
+        _isRecordingVoice = true;
+        _voiceRecordPath = path;
+        _voiceRecordDuration = Duration.zero;
+      });
+      _voiceRecordTimer?.cancel();
+      _voiceRecordTimer = Timer.periodic(const Duration(seconds: 1), (_) {
+        if (!mounted || !_isRecordingVoice) return;
+        setState(() {
+          _voiceRecordDuration += const Duration(seconds: 1);
+        });
+        if (_voiceRecordDuration.inSeconds >= 300) {
+          unawaited(_stopAndSendVoiceRecording());
+        }
+      });
     } catch (e) {
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
@@ -1798,6 +2105,87 @@ class _ChatConversationPageState extends State<ChatConversationPage>
         ),
       );
     }
+  }
+
+  Future<void> _cancelVoiceRecording() async {
+    if (!_isRecordingVoice) return;
+    _voiceRecordTimer?.cancel();
+    try {
+      await _voiceRecorder.stop();
+    } catch (_) {}
+    final path = _voiceRecordPath;
+    if (!mounted) return;
+    setState(() {
+      _isRecordingVoice = false;
+      _voiceRecordPath = null;
+      _voiceRecordDuration = Duration.zero;
+    });
+    if (path != null) {
+      try {
+        await File(path).delete();
+      } catch (_) {}
+    }
+  }
+
+  Future<void> _stopAndSendVoiceRecording() async {
+    if (!_isRecordingVoice) return;
+    _voiceRecordTimer?.cancel();
+    String? effectivePath;
+    try {
+      effectivePath = await _voiceRecorder.stop();
+    } catch (_) {}
+    effectivePath ??= _voiceRecordPath;
+    final recordedFor = _voiceRecordDuration;
+    if (!mounted) return;
+    setState(() {
+      _isRecordingVoice = false;
+      _voiceRecordPath = null;
+      _voiceRecordDuration = Duration.zero;
+    });
+    if (effectivePath == null || effectivePath.isEmpty) return;
+    if (recordedFor.inSeconds < 1) {
+      try {
+        await File(effectivePath).delete();
+      } catch (_) {}
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(
+            _chatText(
+              context,
+              'Hold to record at least 1 second.',
+              ar: 'سجّل لمدة ثانية واحدة على الأقل.',
+              ku: 'لانیکەم ١ چرکە تۆمار بکە.',
+            ),
+          ),
+          backgroundColor: Colors.orange,
+        ),
+      );
+      return;
+    }
+    await _sendVoiceMessage(XFile(effectivePath));
+  }
+
+  Future<void> _sendVoiceMessage(XFile file) async {
+    if (_isSending) return;
+    setState(() => _isSending = true);
+    final replyToMessageId = _replyingToMessage?.id;
+    final startedAt = DateTime.now();
+    final pendingMessage = _buildPendingAudioMessage(file, createdAt: startedAt);
+    final restoreFile = XFile(file.path);
+    setState(() {
+      _messages.add(pendingMessage);
+    });
+    _scrollToBottom();
+    OutgoingChatSendService.instance.startAudioSend(
+      conversationId: widget.carId,
+      audioFile: file,
+      tempMessageId: pendingMessage.id,
+      startedAt: startedAt,
+      receiverId: widget.receiverId,
+      replyToMessageId: replyToMessageId,
+      restoreFile: restoreFile,
+    );
   }
 
   Future<bool> _sendMediaGroup(List<XFile> files, {String? caption}) async {
@@ -2309,46 +2697,6 @@ class _ChatConversationPageState extends State<ChatConversationPage>
     );
   }
 
-  Future<void> _showAttachmentPicker() async {
-    await showModalBottomSheet<void>(
-      context: context,
-      builder: (context) => SafeArea(
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            ListTile(
-              leading: const Icon(Icons.photo_library_outlined),
-              title: const Text('Send photos/videos'),
-              subtitle: const Text('Select multiple images and videos'),
-              onTap: () {
-                Navigator.pop(context);
-                _pickAndSendMultipleMedia();
-              },
-            ),
-            ListTile(
-              leading: const Icon(Icons.image),
-              title: const Text('Send image'),
-              subtitle: const Text('Select multiple images'),
-              onTap: () {
-                Navigator.pop(context);
-                _pickAndSendImages();
-              },
-            ),
-            ListTile(
-              leading: const Icon(Icons.videocam),
-              title: const Text('Send video'),
-              subtitle: const Text('Select multiple videos'),
-              onTap: () {
-                Navigator.pop(context);
-                _pickAndSendVideos();
-              },
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-
   Future<void> _sendMessage() async {
     if (_isSending) return;
     final content = _messageController.text.trim();
@@ -2491,6 +2839,11 @@ class _ChatConversationPageState extends State<ChatConversationPage>
     _typingDebounce?.cancel();
     _scrollRetryTimer?.cancel();
     _highlightTimer?.cancel();
+    _voiceRecordTimer?.cancel();
+    if (_isRecordingVoice) {
+      unawaited(_voiceRecorder.stop());
+    }
+    unawaited(_voiceRecorder.dispose());
     if (_isTyping) {
       WebSocketService.sendTypingStop(widget.carId);
     }
@@ -2985,6 +3338,67 @@ class _ChatConversationPageState extends State<ChatConversationPage>
     );
   }
 
+  Widget _buildVoiceMessageBubble(
+    BuildContext context,
+    ChatMessage message, {
+    required Color iconColor,
+    required Color textColor,
+    required Color progressColor,
+  }) {
+    return Stack(
+      children: [
+        _ChatVoiceBubble(
+          message: message,
+          iconColor: iconColor,
+          textColor: textColor,
+          progressColor: progressColor,
+        ),
+        if (message.isPending)
+          Positioned.fill(
+            child: Container(
+              decoration: BoxDecoration(
+                color: Colors.black26,
+                borderRadius: BorderRadius.circular(12),
+              ),
+            ),
+          ),
+      ],
+    );
+  }
+
+  Widget _buildVoiceRecordingBanner(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+      margin: const EdgeInsets.only(bottom: 8),
+      decoration: BoxDecoration(
+        color: Colors.red.withValues(alpha: 0.08),
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(color: Colors.red.withValues(alpha: 0.35)),
+      ),
+      child: Row(
+        children: [
+          const Icon(Icons.fiber_manual_record, color: Colors.red, size: 14),
+          const SizedBox(width: 8),
+          Text(
+            _formatVoiceDuration(_voiceRecordDuration),
+            style: const TextStyle(fontWeight: FontWeight.w600),
+          ),
+          const Spacer(),
+          TextButton(
+            onPressed: _cancelVoiceRecording,
+            child: Text(AppLocalizations.of(context)?.cancelAction ?? 'Cancel'),
+          ),
+          TextButton(
+            onPressed: _stopAndSendVoiceRecording,
+            child: Text(
+              _chatText(context, 'Send', ar: 'إرسال', ku: 'ناردن'),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
   Widget _buildMediaGroupBubble(BuildContext context, ChatMessage message) {
     final attachments = message.attachments;
     final previewCount = attachments.length > 4 ? 4 : attachments.length;
@@ -3297,7 +3711,8 @@ class _ChatConversationPageState extends State<ChatConversationPage>
                                 ? Colors.white.withValues(alpha: 0.85)
                                 : Colors.white70;
                             final bubbleMaxWidth =
-                                message.attachments.isNotEmpty
+                                message.attachments.isNotEmpty ||
+                                    _isAudioMessage(message)
                                 ? 240.0
                                 : message.listingPreview != null
                                 ? 280.0
@@ -3307,7 +3722,8 @@ class _ChatConversationPageState extends State<ChatConversationPage>
                                   );
                             final shrinkWrapBubble =
                                 message.attachments.isEmpty &&
-                                message.listingPreview == null;
+                                message.listingPreview == null &&
+                                !_isAudioMessage(message);
                             final maxInnerWidth =
                                 bubbleMaxWidth - _kBubbleHorizontalPadding;
                             final isHighlighted =
@@ -3340,7 +3756,15 @@ class _ChatConversationPageState extends State<ChatConversationPage>
                                       message.replyToMessage!.id,
                                     ),
                                   ),
-                                if (message.attachments.isNotEmpty) ...[
+                                if (_isAudioMessage(message)) ...[
+                                  _buildVoiceMessageBubble(
+                                    context,
+                                    message,
+                                    iconColor: bubbleOnStrong,
+                                    textColor: bubbleOnStrong,
+                                    progressColor: bubbleOnStrong,
+                                  ),
+                                ] else if (message.attachments.isNotEmpty) ...[
                                   _buildMediaGroupBubble(
                                     context,
                                     message,
@@ -3542,6 +3966,8 @@ class _ChatConversationPageState extends State<ChatConversationPage>
                     mainAxisSize: MainAxisSize.min,
                     children: [
                       _buildComposerActionBanner(context),
+                      if (_isRecordingVoice)
+                        _buildVoiceRecordingBanner(context),
                       if (_editingMessageId != null &&
                           _editingKeepAttachments.isNotEmpty)
                         _buildEditingAttachmentsPreview(context)
@@ -3551,15 +3977,52 @@ class _ChatConversationPageState extends State<ChatConversationPage>
                       Row(
                         children: [
                           IconButton(
-                            onPressed: (_isSending || _editingMessageId != null)
+                            onPressed: (_isSending ||
+                                    _editingMessageId != null ||
+                                    _isRecordingVoice)
                                 ? null
-                                : _showAttachmentPicker,
+                                : _pickAndSendMultipleMedia,
                             icon: const Icon(Icons.attach_file),
                             tooltip: _chatText(
                               context,
                               'Send attachment',
                               ar: 'إرسال مرفق',
                               ku: 'ناردنی پاشکۆ',
+                            ),
+                          ),
+                          IconButton(
+                            onPressed: (_isSending ||
+                                    _editingMessageId != null ||
+                                    _isRecordingVoice)
+                                ? null
+                                : _takePhotoAndSend,
+                            icon: const Icon(Icons.camera_alt_outlined),
+                            tooltip: _chatText(
+                              context,
+                              'Take photo',
+                              ar: 'التقاط صورة',
+                              ku: 'وێنە بگرە',
+                            ),
+                          ),
+                          IconButton(
+                            onPressed: (_isSending || _editingMessageId != null)
+                                ? null
+                                : _toggleVoiceRecording,
+                            icon: Icon(
+                              _isRecordingVoice ? Icons.stop_circle : Icons.mic,
+                              color: _isRecordingVoice ? Colors.red : null,
+                            ),
+                            tooltip: _chatText(
+                              context,
+                              _isRecordingVoice
+                                  ? 'Stop and send voice message'
+                                  : 'Record voice message',
+                              ar: _isRecordingVoice
+                                  ? 'إيقاف وإرسال الرسالة الصوتية'
+                                  : 'تسجيل رسالة صوتية',
+                              ku: _isRecordingVoice
+                                  ? 'وەستان و ناردنی پەیامی دەنگی'
+                                  : 'تۆمارکردنی پەیامی دەنگی',
                             ),
                           ),
                           Expanded(
@@ -3696,7 +4159,9 @@ class _ChatConversationPageState extends State<ChatConversationPage>
                           ),
                           const SizedBox(width: 8),
                           IconButton(
-                            onPressed: _isSending ? null : _sendMessage,
+                            onPressed: (_isSending || _isRecordingVoice)
+                                ? null
+                                : _sendMessage,
                             icon: const Icon(Icons.send),
                             style: IconButton.styleFrom(
                               backgroundColor: Theme.of(context).primaryColor,

@@ -415,7 +415,9 @@ class _ProfilePageState extends State<ProfilePage> {
                                     if (isDealerAccount && fullName.isNotEmpty) {
                                       return fullName;
                                     }
-                                    if (isDealerAccount) return 'Dealer';
+                                    if (isDealerAccount) {
+                                      return loc?.dealerFallbackLabel ?? 'Dealer';
+                                    }
                                     return fullName.isEmpty ? username : fullName;
                                   }(),
                                   style: Theme.of(context).textTheme.titleMedium
@@ -446,19 +448,24 @@ class _ProfilePageState extends State<ProfilePage> {
                                     late final Color bg;
                                     late final Color fg;
                                     if (isVerifiedDealer) {
-                                      label = 'Verified dealer';
+                                      label = loc?.verifiedDealerLabel ??
+                                          'Verified dealer';
                                       bg = Colors.green.withValues(alpha: 0.15);
                                       fg = Colors.green.shade800;
                                     } else if (isPending) {
-                                      label = 'Dealer application pending';
+                                      label = loc?.dealerApplicationPendingLabel ??
+                                          'Dealer application pending';
                                       bg = Colors.orange.withValues(alpha: 0.15);
                                       fg = Colors.orange.shade800;
                                     } else if (isRejected) {
-                                      label = 'Dealer application declined';
+                                      label =
+                                          loc?.dealerApplicationDeclinedLabel ??
+                                              'Dealer application declined';
                                       bg = Colors.red.withValues(alpha: 0.12);
                                       fg = Colors.red.shade800;
                                     } else {
-                                      label = 'Personal account';
+                                      label = loc?.personalAccountLabel ??
+                                          'Personal account';
                                       bg = Theme.of(context)
                                           .colorScheme
                                           .surfaceContainerHighest
@@ -534,7 +541,7 @@ class _ProfilePageState extends State<ProfilePage> {
                         if (dealershipName.isNotEmpty)
                           ListTile(
                             leading: const Icon(Icons.storefront_outlined),
-                            title: const Text('Dealership'),
+                            title: Text(loc?.dealershipLabel ?? 'Dealership'),
                             subtitle: Text(dealershipName),
                           ),
                         if (!isVerified && (realEmail || phone.isNotEmpty)) ...[

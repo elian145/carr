@@ -288,7 +288,7 @@ class _SettingsPageState extends State<SettingsPage> {
                 ),
                 ListTile(
                   leading: const Icon(Icons.description_outlined),
-                  title: const Text('Terms of Service'),
+                  title: Text(loc?.termsOfServiceTitle ?? 'Terms of Service'),
                   onTap: () async {
                     final cfg = await TrustConfig.load();
                     if (!context.mounted) return;
@@ -305,7 +305,7 @@ class _SettingsPageState extends State<SettingsPage> {
                 ),
                 ListTile(
                   leading: const Icon(Icons.privacy_tip_outlined),
-                  title: const Text('Privacy Policy'),
+                  title: Text(loc?.privacyPolicyTitle ?? 'Privacy Policy'),
                   onTap: () async {
                     final cfg = await TrustConfig.load();
                     if (!context.mounted) return;

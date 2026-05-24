@@ -1486,4 +1486,123 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get deleteTooltip => 'Delete';
+
+  @override
+  String get verifiedDealerLabel => 'Verified dealer';
+
+  @override
+  String get dealerApplicationPendingLabel => 'Dealer application pending';
+
+  @override
+  String get dealerApplicationDeclinedLabel => 'Dealer application declined';
+
+  @override
+  String get personalAccountLabel => 'Personal account';
+
+  @override
+  String get dealershipLabel => 'Dealership';
+
+  @override
+  String get dealerFallbackLabel => 'Dealer';
+
+  @override
+  String get openInGoogleMapsAction => 'Open in Google Maps';
+
+  @override
+  String get logoutConfirmMessage => 'Are you sure you want to logout?';
+
+  @override
+  String get accountInformationTitle => 'Account Information';
+
+  @override
+  String get termsOfServiceTitle => 'Terms of Service';
+
+  @override
+  String get privacyPolicyTitle => 'Privacy Policy';
+
+  @override
+  String get helpHowCanWeHelp => 'How can we help?';
+
+  @override
+  String get helpBuyingSection => 'Buying';
+
+  @override
+  String get helpSellingSection => 'Selling';
+
+  @override
+  String get helpDealersSection => 'Dealers';
+
+  @override
+  String get helpPaymentsSection => 'Payments';
+
+  @override
+  String get helpContactSupport => 'Contact support';
+
+  @override
+  String get helpFaqContactSellerQuestion => 'How do I contact a seller?';
+
+  @override
+  String get helpFaqContactSellerAnswer =>
+      'Open a listing and use Call, WhatsApp, or Chat on the detail page.';
+
+  @override
+  String get helpFaqListingsVerifiedQuestion => 'Are listings verified?';
+
+  @override
+  String get helpFaqListingsVerifiedAnswer =>
+      'Dealers with an approved badge are reviewed by our team. Always inspect a vehicle in person before paying.';
+
+  @override
+  String get helpFaqPostListingQuestion => 'How do I post a listing?';
+
+  @override
+  String get helpFaqPostListingAnswer =>
+      'Sign in, tap Sell, and follow the steps to add photos, price, and details.';
+
+  @override
+  String get helpFaqEditDeleteListingQuestion =>
+      'How do I edit or delete my listing?';
+
+  @override
+  String get helpFaqEditDeleteListingAnswer =>
+      'Open your listing from My Listings or the listing page (owner tools) to edit or delete.';
+
+  @override
+  String get helpFaqRegisterDealerQuestion => 'How do I register as a dealer?';
+
+  @override
+  String get helpFaqRegisterDealerAnswer =>
+      'Choose dealer signup and submit your dealership details. Approval may take 1–2 business days.';
+
+  @override
+  String get helpFaqPaymentsQuestion => 'Does the app handle payments?';
+
+  @override
+  String get helpFaqPaymentsAnswer =>
+      'Payments are arranged directly between buyer and seller. Never send money before seeing the vehicle.';
+
+  @override
+  String get helpCouldNotOpenLink => 'Could not open link';
+
+  @override
+  String get whatsappAction => 'WhatsApp';
+
+  @override
+  String get chatSendPhotosVideosTitle => 'Send photos/videos';
+
+  @override
+  String get chatSendPhotosVideosSubtitle =>
+      'Select multiple images and videos';
+
+  @override
+  String get chatSendImageTitle => 'Send image';
+
+  @override
+  String get chatSendImageSubtitle => 'Select multiple images';
+
+  @override
+  String get chatSendVideoTitle => 'Send video';
+
+  @override
+  String get chatSendVideoSubtitle => 'Select multiple videos';
 }
