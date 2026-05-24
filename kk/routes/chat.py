@@ -15,12 +15,33 @@ from ..extensions import socketio
 from ..models import BlockedUser, Car, Message, User, UserReport, db
 from ..push import fcm_is_configured, fcm_send_error_hint, last_fcm_send_error, send_push
 from ..security import rate_limit, validate_input_sanitization
+from .media import _pick_primary_listing_url
 
 bp = Blueprint("chat", __name__)
 
 _CHAT_IMAGE_EXTENSIONS = {".jpg", ".jpeg", ".png", ".gif", ".webp"}
 _CHAT_VIDEO_EXTENSIONS = {".mp4", ".mov", ".avi", ".mkv", ".webm"}
 _CHAT_ATTACHMENT_EXTENSIONS = _CHAT_IMAGE_EXTENSIONS | _CHAT_VIDEO_EXTENSIONS
+
+
+def _first_car_image_rel_path(car: Car | None) -> str | None:
+    """Primary listing photo path/URL for chat list avatars (same rules as car list API)."""
+    if not car:
+        return None
+    raw = _pick_primary_listing_url(car)
+    if not raw and car.images:
+        raw = car.images[0].image_url
+    if not raw:
+        return None
+    raw = str(raw).strip()
+    if raw.startswith("http://") or raw.startswith("https://"):
+        return raw
+    norm = raw.lstrip("/").replace("\\", "/")
+    if norm.startswith("uploads/"):
+        return norm
+    if norm.startswith("car_photos/"):
+        return f"uploads/{norm}"
+    return norm
 
 
 def _resolve_chat_receiver(me: User, car: Car, receiver_public: str | None) -> User | None:
@@ -241,16 +262,19 @@ def list_chats():
             )
 
             car_title = None
+            car_image_url = None
             if car:
                 car_title = getattr(car, "title", None) or ""
                 if not car_title.strip():
                     car_title = f"{car.brand} {car.model} {car.year}".strip()
+                car_image_url = _first_car_image_rel_path(car)
 
             chats.append(
                 {
                     "conversation_id": int(m.car_id or 0),
                     "car_id": car.public_id if car else None,
                     "car_title": car_title,
+                    "car_image_url": car_image_url,
                     "other_user": {
                         "id": other.public_id if other else None,
                         "name": (f"{other.first_name} {other.last_name}".strip() if other else None),

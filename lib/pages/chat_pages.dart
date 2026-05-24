@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import 'dart:async';
 import 'package:image_picker/image_picker.dart';
 import 'package:mime/mime.dart';
+import 'package:auto_size_text/auto_size_text.dart';
 import 'package:provider/provider.dart';
 import 'package:video_player/video_player.dart';
 import '../l10n/app_localizations.dart';
@@ -43,6 +44,61 @@ String _digitsLocalized(BuildContext context, String input) {
     return out;
   }
   return input;
+}
+
+Widget buildChatListingAvatar(
+  BuildContext context, {
+  String? imageUrl,
+  double radius = 24,
+}) {
+  final cs = Theme.of(context).colorScheme;
+  final resolved = (imageUrl ?? '').trim();
+  final size = radius * 2;
+  final fallback = Container(
+    width: size,
+    height: size,
+    decoration: BoxDecoration(
+      color: cs.primary.withAlpha(30),
+      shape: BoxShape.circle,
+    ),
+    alignment: Alignment.center,
+    child: Icon(
+      Icons.directions_car,
+      color: cs.primary,
+      size: radius * 0.85,
+    ),
+  );
+  if (resolved.isEmpty) return fallback;
+  return SizedBox(
+    width: size,
+    height: size,
+    child: ClipOval(
+      child: Image.network(
+        resolved,
+        width: size,
+        height: size,
+        fit: BoxFit.cover,
+        errorBuilder: (_, _, _) => fallback,
+        loadingBuilder: (context, child, loadingProgress) {
+          if (loadingProgress == null) return child;
+          return Container(
+            width: size,
+            height: size,
+            color: cs.primary.withAlpha(30),
+            alignment: Alignment.center,
+            child: SizedBox(
+              width: radius,
+              height: radius,
+              child: CircularProgressIndicator(
+                strokeWidth: 2,
+                color: cs.primary,
+              ),
+            ),
+          );
+        },
+      ),
+    ),
+  );
 }
 
 String _relativeTime(BuildContext context, DateTime dateTime) {
@@ -514,10 +570,36 @@ class _ChatListPageState extends State<ChatListPage>
     });
   }
 
+  Future<void> _enrichChatsMissingImages(
+    List<Map<String, dynamic>> chats,
+  ) async {
+    final tasks = <Future<void>>[];
+    for (final chat in chats) {
+      final hasImage = (chat['car_image_url'] ?? '').toString().trim().isNotEmpty;
+      final carId = (chat['car_id'] ?? chat['conversation_id'] ?? '')
+          .toString()
+          .trim();
+      if (hasImage || carId.isEmpty) continue;
+      tasks.add(() async {
+        try {
+          final car = await ApiService.getCar(carId);
+          final image = listingImageUrlFromMap(car);
+          if (image.isNotEmpty) {
+            chat['car_image_url'] = image;
+          }
+        } catch (_) {}
+      }());
+    }
+    if (tasks.isNotEmpty) {
+      await Future.wait(tasks);
+    }
+  }
+
   Future<void> _loadChats() async {
     setState(() => _loading = true);
     try {
       final data = await ApiService.getChats();
+      await _enrichChatsMissingImages(data);
       data.sort((a, b) {
         final aTime =
             (a['last_message'] is Map ? a['last_message']['created_at'] : null)
@@ -619,10 +701,15 @@ class _ChatListPageState extends State<ChatListPage>
                                     '')
                                 .toString();
                         final receiverId = (other['id'] ?? '').toString();
-                        final name = (other['name'] ?? '').toString().trim();
                         final carTitle = (c['car_title'] ?? '')
                             .toString()
                             .trim();
+                        final carImageUrl = resolveListingImageUrl(
+                          (c['car_image_url'] ??
+                                  c['image_url'] ??
+                                  '')
+                              .toString(),
+                        );
                         final preview = (last['content'] ?? '')
                             .toString()
                             .trim();
@@ -694,8 +781,10 @@ class _ChatListPageState extends State<ChatListPage>
                                         'carId': carId,
                                         if (receiverId.isNotEmpty)
                                           'receiverId': receiverId,
-                                        if (name.isNotEmpty)
-                                          'receiverName': name,
+                                        if (carTitle.isNotEmpty)
+                                          'carTitle': carTitle,
+                                        if (carImageUrl.isNotEmpty)
+                                          'carImageUrl': carImageUrl,
                                       },
                                     );
                                     if (mounted) _loadChats();
@@ -708,13 +797,9 @@ class _ChatListPageState extends State<ChatListPage>
                               child: Row(
                                 crossAxisAlignment: CrossAxisAlignment.start,
                                 children: [
-                                  CircleAvatar(
-                                    backgroundColor: cs.primary.withAlpha(30),
-                                    child: Icon(
-                                      Icons.directions_car,
-                                      color: cs.primary,
-                                      size: 20,
-                                    ),
+                                  buildChatListingAvatar(
+                                    context,
+                                    imageUrl: carImageUrl,
                                   ),
                                   const SizedBox(width: 12),
                                   Expanded(
@@ -723,26 +808,13 @@ class _ChatListPageState extends State<ChatListPage>
                                           CrossAxisAlignment.start,
                                       children: [
                                         Text(
-                                          name.isEmpty
-                                              ? AppLocalizations.of(
+                                          carTitle.isNotEmpty
+                                              ? carTitle
+                                              : AppLocalizations.of(
                                                   context,
-                                                )!.unknownSender
-                                              : name,
+                                                )!.listingTitle,
                                           style: nameStyle,
                                         ),
-                                        if (carTitle.isNotEmpty) ...[
-                                          const SizedBox(height: 2),
-                                          Text(
-                                            carTitle,
-                                            maxLines: 1,
-                                            overflow: TextOverflow.ellipsis,
-                                            style: TextStyle(
-                                              fontSize: 12,
-                                              color: cs.primary,
-                                              fontWeight: FontWeight.w500,
-                                            ),
-                                          ),
-                                        ],
                                         const SizedBox(height: 2),
                                         Text(
                                           preview.isEmpty ? '...' : preview,
@@ -789,6 +861,8 @@ class ChatConversationPage extends StatefulWidget {
   final String carId;
   final String? receiverId;
   final String? receiverName;
+  final String? carTitle;
+  final String? carImageUrl;
   final String? initialDraft;
   final Map<String, dynamic>? initialListingPreview;
 
@@ -797,6 +871,8 @@ class ChatConversationPage extends StatefulWidget {
     required this.carId,
     this.receiverId,
     this.receiverName,
+    this.carTitle,
+    this.carImageUrl,
     this.initialDraft,
     this.initialListingPreview,
   });
@@ -830,7 +906,8 @@ class _ChatConversationPageState extends State<ChatConversationPage>
   Timer? _scrollRetryTimer;
   bool _isTyping = false;
   String? _otherUserTypingName;
-  String? _receiverName;
+  String? _carDisplayTitle;
+  String? _carImageUrl;
   Map<String, dynamic>? _listingPreview;
   bool _pendingInitialListingContext = false;
 
@@ -846,10 +923,23 @@ class _ChatConversationPageState extends State<ChatConversationPage>
   @override
   void initState() {
     super.initState();
-    _receiverName = widget.receiverName?.trim();
+    _carDisplayTitle = widget.carTitle?.trim();
+    _carImageUrl = resolveListingImageUrl(widget.carImageUrl);
     _listingPreview = widget.initialListingPreview == null
         ? null
         : Map<String, dynamic>.from(widget.initialListingPreview!);
+    if ((_carDisplayTitle ?? '').isEmpty && _listingPreview != null) {
+      final fromPreview = _listingTitle(_listingPreview!).trim();
+      if (fromPreview.isNotEmpty) {
+        _carDisplayTitle = fromPreview;
+      }
+    }
+    if ((_carImageUrl ?? '').isEmpty && _listingPreview != null) {
+      final fromPreview = listingImageUrlFromMap(_listingPreview!);
+      if (fromPreview.isNotEmpty) {
+        _carImageUrl = fromPreview;
+      }
+    }
     _pendingInitialListingContext = _listingPreview != null;
     final initialDraft = widget.initialDraft?.trim() ?? '';
     if (initialDraft.isNotEmpty) {
@@ -1017,7 +1107,7 @@ class _ChatConversationPageState extends State<ChatConversationPage>
         _messages.sort((a, b) => a.createdAt.compareTo(b.createdAt));
         _currentPage = nextPage;
         _hasMoreMessages = result['has_more'] == true;
-        _refreshReceiverNameFromMessages();
+        _refreshCarListingMeta();
       });
 
       WidgetsBinding.instance.addPostFrameCallback((_) {
@@ -1063,7 +1153,7 @@ class _ChatConversationPageState extends State<ChatConversationPage>
             .isNotEmpty) {
           _isSending = true;
         }
-        _refreshReceiverNameFromMessages();
+        _refreshCarListingMeta();
       });
       if (_messages.length > hadMessages) {
         _scrollToBottom();
@@ -1249,17 +1339,57 @@ class _ChatConversationPageState extends State<ChatConversationPage>
     return RegExp(r'^\[\d+\s+attachments?\]$').hasMatch(normalized);
   }
 
-  void _refreshReceiverNameFromMessages() {
-    final authService = Provider.of<AuthService>(context, listen: false);
-    final myId = authService.userId ?? '';
+  void _refreshCarListingMeta() {
+    if (_listingPreview != null) {
+      final fromPreview = _listingTitle(_listingPreview!).trim();
+      if (fromPreview.isNotEmpty) {
+        _carDisplayTitle = fromPreview;
+      }
+      if ((_carImageUrl ?? '').isEmpty) {
+        final image = listingImageUrlFromMap(_listingPreview!);
+        if (image.isNotEmpty) _carImageUrl = image;
+      }
+    }
     for (final message in _messages.reversed) {
-      if (message.senderId == myId) continue;
-      final candidate = (message.senderName ?? '').trim();
-      if (candidate.isNotEmpty) {
-        _receiverName = candidate;
+      final preview = message.listingPreview;
+      if (preview == null || preview.isEmpty) continue;
+      if ((_carDisplayTitle ?? '').trim().isEmpty) {
+        final candidate = _listingTitle(preview).trim();
+        if (candidate.isNotEmpty) {
+          _carDisplayTitle = candidate;
+        }
+      }
+      if ((_carImageUrl ?? '').isEmpty) {
+        final image = listingImageUrlFromMap(preview);
+        if (image.isNotEmpty) {
+          _carImageUrl = image;
+          return;
+        }
+      }
+      if ((_carDisplayTitle ?? '').trim().isNotEmpty &&
+          (_carImageUrl ?? '').trim().isNotEmpty) {
         return;
       }
     }
+  }
+
+  Future<void> _ensureCarListingMeta() async {
+    _refreshCarListingMeta();
+    if ((_carDisplayTitle ?? '').trim().isNotEmpty &&
+        (_carImageUrl ?? '').trim().isNotEmpty) {
+      return;
+    }
+    try {
+      final car = await ApiService.getCar(widget.carId);
+      if (!mounted) return;
+      final title = _listingTitle(car).trim();
+      final image = listingImageUrlFromMap(car);
+      if (title.isEmpty && image.isEmpty) return;
+      setState(() {
+        if (title.isNotEmpty) _carDisplayTitle = title;
+        if (image.isNotEmpty) _carImageUrl = image;
+      });
+    } catch (_) {}
   }
 
   ChatMessage _buildPendingMediaGroupMessage(
@@ -1425,7 +1555,7 @@ class _ChatConversationPageState extends State<ChatConversationPage>
       if (!mounted) return;
       setState(() {
         _addMessageIfMissing(ChatMessage.fromJson(message));
-        _refreshReceiverNameFromMessages();
+        _refreshCarListingMeta();
       });
       _scrollToBottom();
     });
@@ -1504,8 +1634,9 @@ class _ChatConversationPageState extends State<ChatConversationPage>
         }
         _currentPage = 1;
         _hasMoreMessages = result['has_more'] == true;
-        _refreshReceiverNameFromMessages();
+        _refreshCarListingMeta();
       });
+      await _ensureCarListingMeta();
       _scrollToBottom(jump: true);
     } catch (_) {
       // Keep the page usable even if history fetch fails.
@@ -2677,16 +2808,8 @@ class _ChatConversationPageState extends State<ChatConversationPage>
     return currency.isEmpty ? price : '$price $currency';
   }
 
-  String _listingImageUrl(Map<String, dynamic> car) {
-    final images = car['images'];
-    if (images is List && images.isNotEmpty) {
-      final first = images.first?.toString() ?? '';
-      if (first.trim().isNotEmpty) return buildMediaUrl(first);
-    }
-    final primary = (car['image_url'] ?? '').toString().trim();
-    if (primary.isNotEmpty) return buildMediaUrl(primary);
-    return '';
-  }
+  String _listingImageUrl(Map<String, dynamic> car) =>
+      listingImageUrlFromMap(car);
 
   Widget _buildListingCard(BuildContext context, Map<String, dynamic> car) {
     final scheme = Theme.of(context).colorScheme;
@@ -2933,6 +3056,100 @@ class _ChatConversationPageState extends State<ChatConversationPage>
     );
   }
 
+  static const double _kOutgoingMetaMinGap = 14;
+  static const double _kBubbleHorizontalPadding = 32;
+
+  double _measureLineTextWidth(
+    BuildContext context,
+    String text,
+    TextStyle style,
+  ) {
+    final normalized = text.trim();
+    if (normalized.isEmpty) return 0;
+    final painter = TextPainter(
+      text: TextSpan(text: normalized, style: style),
+      maxLines: 1,
+      textDirection: Directionality.of(context),
+      textScaler: MediaQuery.textScalerOf(context),
+    )..layout();
+    return painter.width.ceilToDouble();
+  }
+
+  double _measureMultilineMaxLineWidth(
+    BuildContext context,
+    String text,
+    TextStyle style,
+    double maxWidth,
+  ) {
+    final normalized = text.trim();
+    if (normalized.isEmpty) return 0;
+    final painter = TextPainter(
+      text: TextSpan(text: normalized, style: style),
+      textDirection: Directionality.of(context),
+      textScaler: MediaQuery.textScalerOf(context),
+    )..layout(maxWidth: maxWidth);
+    var widest = 0.0;
+    for (final line in painter.computeLineMetrics()) {
+      widest = math.max(widest, line.width);
+    }
+    final width = widest > 0 ? widest : painter.width;
+    return width.ceilToDouble();
+  }
+
+  double _bubbleBorderInset({
+    required bool isMe,
+    required bool isHighlighted,
+  }) {
+    if (isHighlighted) return 4;
+    if (!isMe) return 2;
+    return 0;
+  }
+
+  double _shrinkWrapBubbleInnerWidth(
+    BuildContext context, {
+    required ChatMessage message,
+    required double maxInnerWidth,
+    required bool isMe,
+    required bool isHighlighted,
+    required Color bubbleOnStrong,
+    required Color bubbleOnMuted,
+  }) {
+    final bodyStyle = DefaultTextStyle.of(context).style.copyWith(
+      color: bubbleOnStrong,
+      fontStyle: message.isDeleted ? FontStyle.italic : FontStyle.normal,
+    );
+    final metaStyle = Theme.of(context).textTheme.bodySmall?.copyWith(
+          color: bubbleOnMuted,
+          fontSize: 12,
+        ) ??
+        TextStyle(color: bubbleOnMuted, fontSize: 12);
+
+    final bodyWidth = _measureMultilineMaxLineWidth(
+      context,
+      message.content,
+      bodyStyle,
+      maxInnerWidth,
+    );
+
+    var metaLeftWidth = _measureLineTextWidth(
+      context,
+      _relativeTime(context, message.createdAt),
+      metaStyle,
+    );
+    if (message.editedAt != null && !message.isDeleted) {
+      metaLeftWidth +=
+          6 + _measureLineTextWidth(context, 'Edited', metaStyle);
+    }
+
+    final contentWidth = !isMe
+        ? math.max(bodyWidth, metaLeftWidth)
+        : math.max(
+            bodyWidth,
+            metaLeftWidth + _kOutgoingMetaMinGap + 18,
+          );
+    return contentWidth + _bubbleBorderInset(isMe: isMe, isHighlighted: isHighlighted);
+  }
+
   Widget _buildMessageStatusIndicator(
     BuildContext context,
     ChatMessage message,
@@ -2948,123 +3165,51 @@ class _ChatConversationPageState extends State<ChatConversationPage>
     );
   }
 
-  double _measureSingleLineTextWidth(
-    BuildContext context,
-    String text,
-    TextStyle? style,
-  ) {
-    final normalized = text.trim();
-    if (normalized.isEmpty) return 0;
-    final painter = TextPainter(
-      text: TextSpan(text: normalized, style: style),
-      maxLines: 1,
-      textDirection: Directionality.of(context),
-    )..layout();
-    return painter.width;
-  }
-
-  double _estimateTextBubbleWidth(
-    BuildContext context,
-    ChatMessage message, {
-    required bool isMe,
-  }) {
-    final maxBubbleWidth = math.min(
-      MediaQuery.of(context).size.width * 0.58,
-      280.0,
-    );
-    // Me: white on primary; peer: white on home listing-card style bubble.
-    final bodyStyle = DefaultTextStyle.of(
-      context,
-    ).style.copyWith(color: Colors.white);
-    const timeStyle = TextStyle(color: Colors.white70, fontSize: 12);
-    final senderStyle =
-        Theme.of(context).textTheme.bodySmall?.copyWith(
-          color: Colors.white,
-          fontWeight: FontWeight.w600,
-        ) ??
-        const TextStyle(
-          color: Colors.white,
-          fontSize: 12,
-          fontWeight: FontWeight.w600,
-        );
-    final reply = message.replyToMessage;
-
-    final bodyWidth = message.content
-        .split('\n')
-        .map((line) => _measureSingleLineTextWidth(context, line, bodyStyle))
-        .fold<double>(0, math.max);
-    final timeWidth = _measureSingleLineTextWidth(
-      context,
-      _relativeTime(context, message.createdAt),
-      timeStyle,
-    );
-    final senderWidth = !isMe
-        ? _measureSingleLineTextWidth(
-            context,
-            message.senderName ?? AppLocalizations.of(context)!.unknownSender,
-            senderStyle,
-          )
-        : 0.0;
-
-    double replyBlockWidth = 0.0;
-    if (reply != null) {
-      final replyNameStyle =
-          (Theme.of(context).textTheme.bodySmall ?? const TextStyle()).copyWith(
-            fontWeight: FontWeight.w600,
-            color: Colors.white,
-          );
-      final replyBodyStyle =
-          (Theme.of(context).textTheme.bodySmall ?? const TextStyle()).copyWith(
-            color: Colors.white70,
-          );
-
-      final replySenderText = (reply.senderName ?? 'Message').trim().isNotEmpty
-          ? reply.senderName!.trim()
-          : 'Message';
-      final replyContentText = reply.content.trim().isEmpty
-          ? 'Message'
-          : reply.content.trim();
-
-      final replySenderWidth = _measureSingleLineTextWidth(
-        context,
-        replySenderText,
-        replyNameStyle,
-      );
-      final replyContentWidth = _measureSingleLineTextWidth(
-        context,
-        replyContentText,
-        replyBodyStyle,
-      );
-
-      // Reply preview card adds padding + a left border inside the bubble.
-      // (This is in addition to the bubble's own padding, which we add below.)
-      const replyInnerPadding = 20.0; // horizontal 10 * 2
-      const replyLeftBorder = 3.0;
-      replyBlockWidth =
-          math.max(replySenderWidth, replyContentWidth) +
-          replyInnerPadding +
-          replyLeftBorder;
-    }
-
-    final editedLabelWidth = (message.editedAt != null && !message.isDeleted)
-        ? _measureSingleLineTextWidth(context, 'Edited', timeStyle) + 6
-        : 0.0;
-    final footerWidth = editedLabelWidth + timeWidth + (isMe ? 24 : 0);
-    final contentWidth = math.max(
-      math.max(bodyWidth, math.max(senderWidth, footerWidth)),
-      replyBlockWidth,
-    );
-    return math.min(maxBubbleWidth, contentWidth + 32);
-  }
-
   @override
   Widget build(BuildContext context) {
-    final conversationTitle = (_receiverName ?? '').trim().isNotEmpty
-        ? _receiverName!.trim()
-        : AppLocalizations.of(context)!.chatTitle;
+    final conversationTitle = (_carDisplayTitle ?? '').trim().isNotEmpty
+        ? _carDisplayTitle!.trim()
+        : AppLocalizations.of(context)!.listingTitle;
     return Scaffold(
             appBar: AppBar(
-              title: Text(conversationTitle),
+              centerTitle: false,
+              toolbarHeight: 64,
+              leading: BackButton(
+                color: Theme.of(context).appBarTheme.foregroundColor,
+                onPressed: () => Navigator.maybePop(context),
+              ),
+              title: Row(
+                children: [
+                  buildChatListingAvatar(
+                    context,
+                    imageUrl: _carImageUrl,
+                    radius: 18,
+                  ),
+                  const SizedBox(width: 10),
+                  Expanded(
+                    child: AutoSizeText(
+                      conversationTitle,
+                      maxLines: 3,
+                      minFontSize: 10,
+                      stepGranularity: 0.5,
+                      softWrap: true,
+                      overflow: TextOverflow.clip,
+                      style: Theme.of(context).appBarTheme.titleTextStyle
+                              ?.copyWith(
+                            fontSize: 15,
+                            fontWeight: FontWeight.w600,
+                            height: 1.2,
+                          ) ??
+                          const TextStyle(
+                            fontSize: 15,
+                            fontWeight: FontWeight.w600,
+                            height: 1.2,
+                            color: Colors.white,
+                          ),
+                    ),
+                  ),
+                ],
+              ),
               actions: [
                 if (widget.receiverId != null && widget.receiverId!.isNotEmpty)
                   PopupMenuButton<String>(
@@ -3151,9 +3296,6 @@ class _ChatConversationPageState extends State<ChatConversationPage>
                             final bubbleOnMuted = isMe
                                 ? Colors.white.withValues(alpha: 0.85)
                                 : Colors.white70;
-                            final isTextOnlyMessage =
-                                message.attachments.isEmpty &&
-                                message.listingPreview == null;
                             final bubbleMaxWidth =
                                 message.attachments.isNotEmpty
                                 ? 240.0
@@ -3163,136 +3305,98 @@ class _ChatConversationPageState extends State<ChatConversationPage>
                                     MediaQuery.of(context).size.width * 0.58,
                                     280.0,
                                   );
-                            final textBubbleWidth = isTextOnlyMessage
-                                ? _estimateTextBubbleWidth(
+                            final shrinkWrapBubble =
+                                message.attachments.isEmpty &&
+                                message.listingPreview == null;
+                            final maxInnerWidth =
+                                bubbleMaxWidth - _kBubbleHorizontalPadding;
+                            final isHighlighted =
+                                message.id == _highlightMessageId;
+                            final shrinkInnerWidth = shrinkWrapBubble
+                                ? _shrinkWrapBubbleInnerWidth(
                                     context,
-                                    message,
+                                    message: message,
+                                    maxInnerWidth: maxInnerWidth,
                                     isMe: isMe,
+                                    isHighlighted: isHighlighted,
+                                    bubbleOnStrong: bubbleOnStrong,
+                                    bubbleOnMuted: bubbleOnMuted,
                                   )
                                 : null;
-
                             // Ensure each message has a stable key so we can jump to it from reply previews.
                             _keyForMessageId(message.id);
-                            return Align(
-                              alignment: isMe
-                                  ? Alignment.centerRight
-                                  : Alignment.centerLeft,
-                              child: GestureDetector(
-                                onLongPress: message.isDeleted
-                                    ? null
-                                    : () => _showMessageActions(message, isMe),
-                                child: Container(
-                                  key: _messageKeys[message.id],
-                                  constraints: BoxConstraints(
-                                    minWidth: textBubbleWidth ?? 0,
-                                    maxWidth: textBubbleWidth ?? bubbleMaxWidth,
+                            final bubbleBody = Column(
+                              mainAxisSize: MainAxisSize.min,
+                              crossAxisAlignment: isMe
+                                  ? CrossAxisAlignment.stretch
+                                  : CrossAxisAlignment.start,
+                              children: [
+                                if (message.replyToMessage != null)
+                                  _buildReplyPreviewCard(
+                                    context,
+                                    message.replyToMessage!,
+                                    isMe: true,
+                                    onTap: () => _jumpToMessageId(
+                                      message.replyToMessage!.id,
+                                    ),
                                   ),
-                                  margin: const EdgeInsets.symmetric(
-                                    vertical: 4,
+                                if (message.attachments.isNotEmpty) ...[
+                                  _buildMediaGroupBubble(
+                                    context,
+                                    message,
                                   ),
-                                  padding: const EdgeInsets.symmetric(
-                                    horizontal: 16,
-                                    vertical: 12,
+                                  if (!_isAttachmentPlaceholder(
+                                    message.content,
+                                  ))
+                                    Padding(
+                                      padding: const EdgeInsets.only(
+                                        top: 6,
+                                      ),
+                                      child: Text(
+                                        message.content,
+                                        style: TextStyle(
+                                          color: bubbleOnStrong,
+                                        ),
+                                      ),
+                                    ),
+                                ] else if (message.listingPreview != null) ...[
+                                  ConstrainedBox(
+                                    constraints: const BoxConstraints(
+                                      maxWidth: 280,
+                                    ),
+                                    child: _buildListingCard(
+                                      context,
+                                      message.listingPreview!,
+                                    ),
                                   ),
-                                  decoration: BoxDecoration(
-                                    color: bubbleColor,
-                                    borderRadius: BorderRadius.circular(20),
-                                    border: message.id == _highlightMessageId
-                                        ? Border.all(
-                                            color: Colors.amberAccent,
-                                            width: 2,
-                                          )
-                                        : !isMe
-                                        ? Border.all(
-                                            color: Colors.white.withValues(
-                                              alpha: 0.12,
-                                            ),
-                                          )
-                                        : null,
+                                  if (message.content.isNotEmpty)
+                                    Padding(
+                                      padding: const EdgeInsets.only(
+                                        top: 8,
+                                      ),
+                                      child: Text(
+                                        message.content,
+                                        style: TextStyle(
+                                          color: bubbleOnStrong,
+                                        ),
+                                      ),
+                                    ),
+                                ] else
+                                  Text(
+                                    message.content,
+                                    style: TextStyle(
+                                      color: bubbleOnStrong,
+                                      fontStyle: message.isDeleted
+                                          ? FontStyle.italic
+                                          : FontStyle.normal,
+                                    ),
                                   ),
-                                  child: Column(
-                                    mainAxisSize: MainAxisSize.min,
-                                    crossAxisAlignment:
-                                        CrossAxisAlignment.start,
+                                const SizedBox(height: 4),
+                                if (isMe)
+                                  Row(
                                     children: [
-                                      if (!isMe)
-                                        Text(
-                                          message.senderName ??
-                                              AppLocalizations.of(
-                                                context,
-                                              )!.unknownSender,
-                                          style: Theme.of(context)
-                                              .textTheme
-                                              .bodySmall
-                                              ?.copyWith(
-                                                color: bubbleOnStrong,
-                                                fontWeight: FontWeight.w600,
-                                              ),
-                                        ),
-                                      if (message.replyToMessage != null)
-                                        _buildReplyPreviewCard(
-                                          context,
-                                          message.replyToMessage!,
-                                          isMe: true,
-                                          onTap: () => _jumpToMessageId(
-                                            message.replyToMessage!.id,
-                                          ),
-                                        ),
-                                      if (message.attachments.isNotEmpty) ...[
-                                        _buildMediaGroupBubble(
-                                          context,
-                                          message,
-                                        ),
-                                        if (!_isAttachmentPlaceholder(
-                                          message.content,
-                                        ))
-                                          Padding(
-                                            padding: const EdgeInsets.only(
-                                              top: 6,
-                                            ),
-                                            child: Text(
-                                              message.content,
-                                              style: TextStyle(
-                                                color: bubbleOnStrong,
-                                              ),
-                                            ),
-                                          ),
-                                      ] else if (message.listingPreview !=
-                                          null) ...[
-                                        ConstrainedBox(
-                                          constraints: const BoxConstraints(
-                                            maxWidth: 280,
-                                          ),
-                                          child: _buildListingCard(
-                                            context,
-                                            message.listingPreview!,
-                                          ),
-                                        ),
-                                        if (message.content.isNotEmpty)
-                                          Padding(
-                                            padding: const EdgeInsets.only(
-                                              top: 8,
-                                            ),
-                                            child: Text(
-                                              message.content,
-                                              style: TextStyle(
-                                                color: bubbleOnStrong,
-                                              ),
-                                            ),
-                                          ),
-                                      ] else
-                                        Text(
-                                          message.content,
-                                          style: TextStyle(
-                                            color: bubbleOnStrong,
-                                            fontStyle: message.isDeleted
-                                                ? FontStyle.italic
-                                                : FontStyle.normal,
-                                          ),
-                                        ),
-                                      const SizedBox(height: 4),
                                       Row(
-                                        mainAxisSize: MainAxisSize.max,
+                                        mainAxisSize: MainAxisSize.min,
                                         children: [
                                           if (message.editedAt != null &&
                                               !message.isDeleted)
@@ -3318,19 +3422,93 @@ class _ChatConversationPageState extends State<ChatConversationPage>
                                               fontSize: 12,
                                             ),
                                           ),
-                                          if (isMe) ...[
-                                            const Spacer(),
-                                            _buildMessageStatusIndicator(
-                                              context,
-                                              message,
-                                            ),
-                                          ],
                                         ],
+                                      ),
+                                      const Spacer(),
+                                      _buildMessageStatusIndicator(
+                                        context,
+                                        message,
+                                      ),
+                                    ],
+                                  )
+                                else
+                                  Row(
+                                    mainAxisSize: MainAxisSize.min,
+                                    children: [
+                                      if (message.editedAt != null &&
+                                          !message.isDeleted)
+                                        Padding(
+                                          padding: const EdgeInsets.only(
+                                            right: 6,
+                                          ),
+                                          child: Text(
+                                            'Edited',
+                                            style: TextStyle(
+                                              color: bubbleOnMuted,
+                                              fontSize: 12,
+                                            ),
+                                          ),
+                                        ),
+                                      Text(
+                                        _relativeTime(
+                                          context,
+                                          message.createdAt,
+                                        ),
+                                        style: TextStyle(
+                                          color: bubbleOnMuted,
+                                          fontSize: 12,
+                                        ),
                                       ),
                                     ],
                                   ),
+                              ],
+                            );
+                            final bubble = GestureDetector(
+                              onLongPress: message.isDeleted
+                                  ? null
+                                  : () => _showMessageActions(message, isMe),
+                              child: Container(
+                                key: _messageKeys[message.id],
+                                constraints: BoxConstraints(
+                                  maxWidth: bubbleMaxWidth,
                                 ),
+                                margin: const EdgeInsets.symmetric(
+                                  vertical: 4,
+                                ),
+                                padding: const EdgeInsets.symmetric(
+                                  horizontal: 16,
+                                  vertical: 12,
+                                ),
+                                decoration: BoxDecoration(
+                                  color: bubbleColor,
+                                  borderRadius: BorderRadius.circular(20),
+                                  border: isHighlighted
+                                      ? Border.all(
+                                          color: Colors.amberAccent,
+                                          width: 2,
+                                        )
+                                      : !isMe
+                                      ? Border.all(
+                                          color: Colors.white.withValues(
+                                            alpha: 0.12,
+                                          ),
+                                          width: 1,
+                                        )
+                                      : null,
+                                ),
+                                child: shrinkInnerWidth != null
+                                    ? SizedBox(
+                                        width: shrinkInnerWidth,
+                                        child: bubbleBody,
+                                      )
+                                    : bubbleBody,
                               ),
+                            );
+                            return Align(
+                              alignment: isMe
+                                  ? Alignment.centerRight
+                                  : Alignment.centerLeft,
+                              child: bubble,
                             );
                           },
                         ),

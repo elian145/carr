@@ -1275,6 +1275,7 @@ class _CarDetailPageState extends State<CarDetailPage> {
                   final listingId = listingPrimaryId(car).isNotEmpty
                       ? listingPrimaryId(car)
                       : widget.carId;
+                  final chatImageUrl = listingImageUrlFromMap(car);
                   Navigator.pushNamed(
                     context,
                     '/chat/conversation',
@@ -1284,6 +1285,8 @@ class _CarDetailPageState extends State<CarDetailPage> {
                         'receiverId': receiverId,
                       if (receiverName != null && receiverName.isNotEmpty)
                         'receiverName': receiverName,
+                      if (title.isNotEmpty) 'carTitle': title,
+                      if (chatImageUrl.isNotEmpty) 'carImageUrl': chatImageUrl,
                       'initialDraft': starterMessage,
                       'listingPreview': {
                         'id': listingId,

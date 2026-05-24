@@ -36,3 +36,30 @@ String buildMediaUrl(String rel) {
   return '$base/static/uploads/$s';
 }
 
+String resolveListingImageUrl(String? rel) {
+  final trimmed = (rel ?? '').trim();
+  if (trimmed.isEmpty) return '';
+  if (trimmed.startsWith('http://') || trimmed.startsWith('https://')) {
+    return trimmed;
+  }
+  return buildMediaUrl(trimmed);
+}
+
+String listingImageUrlFromMap(Map<String, dynamic> car) {
+  final primary = (car['image_url'] ?? '').toString().trim();
+  if (primary.isNotEmpty) return resolveListingImageUrl(primary);
+  final images = car['images'];
+  if (images is List) {
+    for (final item in images) {
+      String rel = '';
+      if (item is Map) {
+        rel = (item['image_url'] ?? '').toString().trim();
+      } else {
+        rel = item?.toString().trim() ?? '';
+      }
+      if (rel.isNotEmpty) return resolveListingImageUrl(rel);
+    }
+  }
+  return '';
+}
+

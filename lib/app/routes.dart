@@ -120,6 +120,8 @@ Map<String, WidgetBuilder> buildAppRoutes() {
         carId: raw,
         receiverId: args['receiverId']?.toString(),
         receiverName: args['receiverName']?.toString(),
+        carTitle: args['carTitle']?.toString(),
+        carImageUrl: args['carImageUrl']?.toString(),
         initialDraft: args['initialDraft']?.toString(),
         initialListingPreview: args['listingPreview'] is Map
             ? Map<String, dynamic>.from(
