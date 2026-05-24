@@ -1,3 +1,12 @@
+/// Unwraps `GET /api/cars/:id` payloads (`{ "car": { ... } }` or flat map).
+Map<String, dynamic> unwrapCarApiPayload(Map<String, dynamic> payload) {
+  final inner = payload['car'];
+  if (inner is Map) {
+    return Map<String, dynamic>.from(inner.cast<String, dynamic>());
+  }
+  return Map<String, dynamic>.from(payload);
+}
+
 String listingPrimaryId(Map<String, dynamic> listing) {
   final publicId = (listing['public_id'] ?? '').toString().trim();
   if (publicId.isNotEmpty) return publicId;

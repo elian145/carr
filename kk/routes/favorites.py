@@ -30,7 +30,10 @@ def get_favorites():
                 user_favorites.c.created_at.label("favorited_at"),
             )
             .join(user_favorites, user_favorites.c.car_id == Car.id)
-            .filter(user_favorites.c.user_id == current_user.id)
+            .filter(
+                user_favorites.c.user_id == current_user.id,
+                Car.is_active.is_(True),
+            )
             .order_by(user_favorites.c.created_at.desc())
         )
         pagination = q.paginate(page=page, per_page=per_page, error_out=False)

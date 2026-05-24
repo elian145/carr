@@ -7,6 +7,7 @@ import '../services/api_service.dart';
 import '../services/recently_viewed_service.dart';
 import '../shared/auth/token_store.dart';
 import '../shared/errors/user_error_text.dart';
+import '../shared/listings/listing_events.dart';
 import '../shared/listings/listing_identity.dart';
 import '../shared/prefs/listing_layout_prefs.dart';
 
@@ -28,6 +29,21 @@ class _RecentlyViewedPageState extends State<RecentlyViewedPage> {
     ListingLayoutPrefs.load();
     _loadLocalFirst();
     WidgetsBinding.instance.addPostFrameCallback((_) => _fetch());
+    ListingEvents.deletedListingId.addListener(_onListingDeletedElsewhere);
+  }
+
+  @override
+  void dispose() {
+    ListingEvents.deletedListingId.removeListener(_onListingDeletedElsewhere);
+    super.dispose();
+  }
+
+  void _onListingDeletedElsewhere() {
+    final id = ListingEvents.deletedListingId.value;
+    if (id == null || id.isEmpty || !mounted) return;
+    setState(() {
+      _cars.removeWhere((c) => listingMatchesId(c, id));
+    });
   }
 
   Future<void> _loadLocalFirst() async {

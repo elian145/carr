@@ -10,7 +10,6 @@ import 'package:path_provider/path_provider.dart';
 import 'package:permission_handler/permission_handler.dart';
 import 'package:record/record.dart';
 import 'package:provider/provider.dart';
-import 'package:video_player/video_player.dart';
 import '../l10n/app_localizations.dart';
 import '../services/websocket_service.dart';
 import '../services/auth_service.dart';
@@ -19,8 +18,11 @@ import '../services/outgoing_chat_send_service.dart';
 import '../shared/errors/user_error_text.dart';
 import '../shared/listings/listing_identity.dart';
 import '../shared/media/media_url.dart';
+import '../shared/text/pretty_title_case.dart';
+import '../data/car_name_translations.dart';
 import '../theme_provider.dart';
 import '../widgets/theme_toggle_widget.dart';
+import '../widgets/in_app_video_screen.dart';
 
 const Color _kComposerOutlineOrange = Color(0xFFFF7A00);
 
@@ -167,6 +169,90 @@ String _chatText(BuildContext context, String en, {String? ar, String? ku}) {
   if (code == 'ar') return ar ?? en;
   if (code == 'ku' || code == 'ckb') return ku ?? en;
   return en;
+}
+
+/// Listing title in the active app language (brand/model translated; trim kept in English).
+String localizedListingTitle(BuildContext context, Map<String, dynamic> car) {
+  final brand = (car['brand'] ?? '').toString().trim();
+  final model = (car['model'] ?? '').toString().trim();
+  if (brand.isNotEmpty && model.isNotEmpty) {
+    final base = CarNameTranslations.getLocalizedCarTitleNoYear(context, car);
+    final trim = (car['trim'] ?? '').toString().trim();
+    final year = (car['year'] ?? '').toString().trim();
+    final parts = <String>[
+      if (base.isNotEmpty) base,
+      if (trim.isNotEmpty && trim.toLowerCase() != 'base') prettyTitleCase(trim),
+      if (year.isNotEmpty) year,
+    ];
+    final built = parts.join(' ').trim();
+    if (built.isNotEmpty) {
+      // Avoid Latin title-casing on Arabic/Kurdish text.
+      return built;
+    }
+  }
+
+  final localized =
+      CarNameTranslations.getLocalizedCarTitle(context, car).trim();
+  if (localized.isNotEmpty) {
+    return RegExp(r'[A-Za-z]').hasMatch(localized)
+        ? prettyTitleCase(localized)
+        : localized;
+  }
+  final fallback = (car['title'] ?? '').toString().trim();
+  if (fallback.isNotEmpty) return prettyTitleCase(fallback);
+  return '';
+}
+
+/// Build car map for [localizedListingTitle] from a chat list row or route args.
+Map<String, dynamic> listingMetaFromChatRow(Map<String, dynamic> source) {
+  final brand =
+      (source['car_brand'] ?? source['brand'] ?? '').toString().trim();
+  final model =
+      (source['car_model'] ?? source['model'] ?? '').toString().trim();
+  final hasIdentity = brand.isNotEmpty && model.isNotEmpty;
+
+  return {
+    if (brand.isNotEmpty) 'brand': brand,
+    if (model.isNotEmpty) 'model': model,
+    if ((source['car_trim'] ?? source['trim'] ?? '').toString().trim().isNotEmpty)
+      'trim': (source['car_trim'] ?? source['trim']).toString(),
+    if ((source['car_year'] ?? source['year'] ?? '').toString().trim().isNotEmpty)
+      'year': (source['car_year'] ?? source['year']).toString(),
+    if (!hasIdentity &&
+        (source['car_title'] ?? source['title'] ?? '').toString().trim().isNotEmpty)
+      'title': (source['car_title'] ?? source['title']).toString(),
+  };
+}
+
+String _chatLastMessagePreview(
+  BuildContext context,
+  Map<String, dynamic> last,
+) {
+  final content = (last['content'] ?? '').toString().trim();
+  final type = (last['message_type'] ?? '').toString().toLowerCase();
+
+  if (type == 'audio' ||
+      content.toLowerCase() == '[voice message]') {
+    return _chatText(
+      context,
+      'Voice message',
+      ar: 'رسالة صوتية',
+      ku: 'پەیامی دەنگی',
+    );
+  }
+  if (type == 'image' || content.toLowerCase() == '[image]') {
+    return _chatText(context, 'Photo', ar: 'صورة', ku: 'وێنە');
+  }
+  if (type == 'video' || content.toLowerCase() == '[video]') {
+    return _chatText(context, 'Video', ar: 'فيديو', ku: 'ڤیدیۆ');
+  }
+  if (type == 'media_group' ||
+      RegExp(r'^\[\d+\s+attachments?\]$', caseSensitive: false)
+          .hasMatch(content)) {
+    return _chatText(context, 'Media', ar: 'وسائط', ku: 'میدیا');
+  }
+  if (content.isEmpty) return '...';
+  return content;
 }
 
 String _formatVoiceDuration(Duration duration) {
@@ -370,35 +456,6 @@ void _showFullImage(BuildContext context, String url) {
   );
 }
 
-void _showVideoPlayerDialog(BuildContext context, String url) {
-  Navigator.of(context).push(
-    MaterialPageRoute<void>(
-      builder: (_) => Scaffold(
-        backgroundColor: Colors.black,
-        body: SafeArea(
-          child: Stack(
-            children: [
-              Positioned.fill(
-                child: Center(
-                  child: _ChatVideoPlayer(source: url, autoplay: true),
-                ),
-              ),
-              Positioned(
-                top: 8,
-                right: 8,
-                child: IconButton(
-                  icon: const Icon(Icons.close, color: Colors.white, size: 30),
-                  onPressed: () => Navigator.of(context).pop(),
-                ),
-              ),
-            ],
-          ),
-        ),
-      ),
-    ),
-  );
-}
-
 bool _isIgnorableSocketError(String err) {
   final text = err.toLowerCase();
   return text.contains('was not upgraded to websocket') ||
@@ -414,115 +471,6 @@ String _formatSocketErrorForUser(String err) {
         'https://carr-5hrm.onrender.com in Safari.';
   }
   return err;
-}
-
-class _ChatVideoPlayer extends StatefulWidget {
-  final String source;
-  final bool autoplay;
-  final bool isLocal;
-
-  const _ChatVideoPlayer({
-    required this.source,
-    this.autoplay = false,
-    this.isLocal = false,
-  });
-
-  @override
-  State<_ChatVideoPlayer> createState() => _ChatVideoPlayerState();
-}
-
-class _ChatVideoPlayerState extends State<_ChatVideoPlayer> {
-  VideoPlayerController? _controller;
-  Future<void>? _initFuture;
-
-  @override
-  void initState() {
-    super.initState();
-    final controller = widget.isLocal
-        ? VideoPlayerController.file(File(widget.source))
-        : VideoPlayerController.networkUrl(Uri.parse(widget.source));
-    _controller = controller;
-    _initFuture = controller.initialize().then((_) {
-      controller.setLooping(false);
-      if (widget.autoplay) {
-        controller.play();
-      }
-      if (mounted) setState(() {});
-    });
-  }
-
-  @override
-  void dispose() {
-    _controller?.dispose();
-    super.dispose();
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    final controller = _controller;
-    if (controller == null) {
-      return const SizedBox(
-        height: 180,
-        child: Center(child: CircularProgressIndicator()),
-      );
-    }
-    return FutureBuilder<void>(
-      future: _initFuture,
-      builder: (context, snapshot) {
-        if (snapshot.connectionState != ConnectionState.done) {
-          return const SizedBox(
-            height: 180,
-            child: Center(child: CircularProgressIndicator()),
-          );
-        }
-        if (!controller.value.isInitialized) {
-          return const SizedBox(
-            height: 180,
-            child: Center(child: Icon(Icons.broken_image)),
-          );
-        }
-        return Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            AspectRatio(
-              aspectRatio: controller.value.aspectRatio == 0
-                  ? 16 / 9
-                  : controller.value.aspectRatio,
-              child: Stack(
-                alignment: Alignment.center,
-                children: [
-                  VideoPlayer(controller),
-                  IconButton(
-                    onPressed: () {
-                      setState(() {
-                        if (controller.value.isPlaying) {
-                          controller.pause();
-                        } else {
-                          controller.play();
-                        }
-                      });
-                    },
-                    icon: Icon(
-                      controller.value.isPlaying
-                          ? Icons.pause_circle_filled
-                          : Icons.play_circle_fill,
-                      size: 54,
-                      color: Colors.white,
-                    ),
-                  ),
-                ],
-              ),
-            ),
-            VideoProgressIndicator(
-              controller,
-              allowScrubbing: true,
-              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-            ),
-          ],
-        );
-      },
-    );
-  }
 }
 
 String _resolveAttachmentUrl(ChatAttachment attachment) {
@@ -593,12 +541,9 @@ class _ChatMediaGroupViewerState extends State<_ChatMediaGroupViewer> {
                   final entry = widget.entries[index];
                   final attachment = entry.attachment;
                   if (attachment.type == 'video') {
-                    return Center(
-                      child: _ChatVideoPlayer(
-                        source: _resolveAttachmentUrl(attachment),
-                        isLocal: attachment.isLocal,
-                        autoplay: true,
-                      ),
+                    return GalleryEmbeddedVideoPlayer(
+                      videoUrl: _resolveAttachmentUrl(attachment),
+                      isActive: index == _currentIndex,
                     );
                   }
                   return Center(
@@ -644,9 +589,9 @@ class _ChatMediaGroupViewerState extends State<_ChatMediaGroupViewer> {
               ),
             ),
             Positioned(
-              left: 16,
-              right: 16,
-              bottom: 16,
+              top: 12,
+              left: 72,
+              right: 56,
               child: DecoratedBox(
                 decoration: BoxDecoration(
                   color: Colors.black54,
@@ -659,6 +604,9 @@ class _ChatMediaGroupViewerState extends State<_ChatMediaGroupViewer> {
                   ),
                   child: Text(
                     widget.entries[_currentIndex].senderName,
+                    textAlign: TextAlign.center,
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
                     style: const TextStyle(
                       color: Colors.white,
                       fontWeight: FontWeight.w600,
@@ -736,19 +684,22 @@ class _ChatListPageState extends State<ChatListPage>
     });
   }
 
-  Future<void> _enrichChatsMissingImages(
-    List<Map<String, dynamic>> chats,
-  ) async {
+  Future<void> _enrichChatsFromCars(List<Map<String, dynamic>> chats) async {
     final tasks = <Future<void>>[];
     for (final chat in chats) {
-      final hasImage = (chat['car_image_url'] ?? '').toString().trim().isNotEmpty;
-      final carId = (chat['car_id'] ?? chat['conversation_id'] ?? '')
-          .toString()
-          .trim();
-      if (hasImage || carId.isEmpty) continue;
+      final carId = (chat['car_id'] ?? '').toString().trim();
+      if (carId.isEmpty) continue;
       tasks.add(() async {
         try {
           final car = await ApiService.getCar(carId);
+          final brand = (car['brand'] ?? '').toString().trim();
+          final model = (car['model'] ?? '').toString().trim();
+          if (brand.isNotEmpty) chat['car_brand'] = brand;
+          if (model.isNotEmpty) chat['car_model'] = model;
+          final trim = (car['trim'] ?? '').toString().trim();
+          if (trim.isNotEmpty) chat['car_trim'] = trim;
+          final year = (car['year'] ?? '').toString().trim();
+          if (year.isNotEmpty) chat['car_year'] = year;
           final image = listingImageUrlFromMap(car);
           if (image.isNotEmpty) {
             chat['car_image_url'] = image;
@@ -765,7 +716,7 @@ class _ChatListPageState extends State<ChatListPage>
     setState(() => _loading = true);
     try {
       final data = await ApiService.getChats();
-      await _enrichChatsMissingImages(data);
+      await _enrichChatsFromCars(data);
       data.sort((a, b) {
         final aTime =
             (a['last_message'] is Map ? a['last_message']['created_at'] : null)
@@ -867,18 +818,17 @@ class _ChatListPageState extends State<ChatListPage>
                                     '')
                                 .toString();
                         final receiverId = (other['id'] ?? '').toString();
-                        final carTitle = (c['car_title'] ?? '')
-                            .toString()
-                            .trim();
+                        final carTitle = localizedListingTitle(
+                          context,
+                          listingMetaFromChatRow(c),
+                        );
                         final carImageUrl = resolveListingImageUrl(
                           (c['car_image_url'] ??
                                   c['image_url'] ??
                                   '')
                               .toString(),
                         );
-                        final preview = (last['content'] ?? '')
-                            .toString()
-                            .trim();
+                        final preview = _chatLastMessagePreview(context, last);
                         final ts = _rawChatListTimestamp(last, c);
                         DateTime? dt;
                         try {
@@ -1075,6 +1025,7 @@ class _ChatConversationPageState extends State<ChatConversationPage>
   String? _carDisplayTitle;
   String? _carImageUrl;
   Map<String, dynamic>? _listingPreview;
+  Map<String, dynamic>? _fetchedCarMeta;
   bool _pendingInitialListingContext = false;
 
   /// Temp ids of outgoing messages the user removed or recalled before the send finished.
@@ -1100,7 +1051,8 @@ class _ChatConversationPageState extends State<ChatConversationPage>
         ? null
         : Map<String, dynamic>.from(widget.initialListingPreview!);
     if ((_carDisplayTitle ?? '').isEmpty && _listingPreview != null) {
-      final fromPreview = _listingTitle(_listingPreview!).trim();
+      final fromPreview =
+          localizedListingTitle(context, _listingPreview!).trim();
       if (fromPreview.isNotEmpty) {
         _carDisplayTitle = fromPreview;
       }
@@ -1550,9 +1502,36 @@ class _ChatConversationPageState extends State<ChatConversationPage>
     return RegExp(r'^\[\d+\s+attachments?\]$').hasMatch(normalized);
   }
 
+  Map<String, dynamic> _mergedListingMeta() {
+    final out = <String, dynamic>{};
+    void merge(Map<String, dynamic>? source) {
+      if (source == null || source.isEmpty) return;
+      for (final entry in source.entries) {
+        final value = entry.value;
+        if (value == null) continue;
+        final text = value.toString().trim();
+        if (text.isEmpty) continue;
+        out[entry.key] = value;
+      }
+    }
+
+    merge(_fetchedCarMeta);
+    merge(_listingPreview);
+    if (out.isEmpty && (widget.carTitle ?? '').trim().isNotEmpty) {
+      out['title'] = widget.carTitle!.trim();
+    }
+    return out;
+  }
+
+  bool _listingMetaHasTranslatableIdentity(Map<String, dynamic> car) {
+    return (car['brand'] ?? '').toString().trim().isNotEmpty &&
+        (car['model'] ?? '').toString().trim().isNotEmpty;
+  }
+
   void _refreshCarListingMeta() {
     if (_listingPreview != null) {
-      final fromPreview = _listingTitle(_listingPreview!).trim();
+      final fromPreview =
+          localizedListingTitle(context, _listingPreview!).trim();
       if (fromPreview.isNotEmpty) {
         _carDisplayTitle = fromPreview;
       }
@@ -1565,7 +1544,7 @@ class _ChatConversationPageState extends State<ChatConversationPage>
       final preview = message.listingPreview;
       if (preview == null || preview.isEmpty) continue;
       if ((_carDisplayTitle ?? '').trim().isEmpty) {
-        final candidate = _listingTitle(preview).trim();
+        final candidate = localizedListingTitle(context, preview).trim();
         if (candidate.isNotEmpty) {
           _carDisplayTitle = candidate;
         }
@@ -1586,17 +1565,20 @@ class _ChatConversationPageState extends State<ChatConversationPage>
 
   Future<void> _ensureCarListingMeta() async {
     _refreshCarListingMeta();
-    if ((_carDisplayTitle ?? '').trim().isNotEmpty &&
-        (_carImageUrl ?? '').trim().isNotEmpty) {
+    final merged = _mergedListingMeta();
+    final hasTranslatable = _listingMetaHasTranslatableIdentity(merged);
+    if (hasTranslatable && (_carImageUrl ?? '').trim().isNotEmpty) {
+      if (mounted) setState(() {});
       return;
     }
     try {
       final car = await ApiService.getCar(widget.carId);
       if (!mounted) return;
-      final title = _listingTitle(car).trim();
+      final title = localizedListingTitle(context, car).trim();
       final image = listingImageUrlFromMap(car);
       if (title.isEmpty && image.isEmpty) return;
       setState(() {
+        _fetchedCarMeta = Map<String, dynamic>.from(car);
         if (title.isNotEmpty) _carDisplayTitle = title;
         if (image.isNotEmpty) _carImageUrl = image;
       });
@@ -3156,18 +3138,8 @@ class _ChatConversationPageState extends State<ChatConversationPage>
     );
   }
 
-  String _listingTitle(Map<String, dynamic> car) {
-    final title = (car['title'] ?? '').toString().trim();
-    if (title.isNotEmpty) return title;
-    final details = [
-      (car['brand'] ?? '').toString().trim(),
-      (car['model'] ?? '').toString().trim(),
-      (car['trim'] ?? '').toString().trim(),
-    ].where((value) => value.isNotEmpty).join(' ');
-    if (details.isNotEmpty) return details;
-    return '${car['brand'] ?? ''} ${car['model'] ?? ''} ${car['year'] ?? ''}'
-        .trim();
-  }
+  String _listingTitle(BuildContext context, Map<String, dynamic> car) =>
+      localizedListingTitle(context, car);
 
   String _listingPrice(Map<String, dynamic> car) {
     dynamic raw = car['price'];
@@ -3188,7 +3160,7 @@ class _ChatConversationPageState extends State<ChatConversationPage>
   Widget _buildListingCard(BuildContext context, Map<String, dynamic> car) {
     final scheme = Theme.of(context).colorScheme;
     final imageUrl = _listingImageUrl(car);
-    final title = _listingTitle(car);
+    final title = _listingTitle(context, car);
     final price = _listingPrice(car);
     final location = (car['location'] ?? car['city'] ?? '').toString().trim();
 
@@ -3602,9 +3574,13 @@ class _ChatConversationPageState extends State<ChatConversationPage>
 
   @override
   Widget build(BuildContext context) {
-    final conversationTitle = (_carDisplayTitle ?? '').trim().isNotEmpty
-        ? _carDisplayTitle!.trim()
-        : AppLocalizations.of(context)!.listingTitle;
+    final mergedMeta = _mergedListingMeta();
+    final localizedFromMeta = localizedListingTitle(context, mergedMeta).trim();
+    final conversationTitle = localizedFromMeta.isNotEmpty
+        ? localizedFromMeta
+        : ((_carDisplayTitle ?? '').trim().isNotEmpty
+            ? _carDisplayTitle!.trim()
+            : AppLocalizations.of(context)!.listingTitle);
     return Scaffold(
             appBar: AppBar(
               centerTitle: false,
@@ -3613,37 +3589,51 @@ class _ChatConversationPageState extends State<ChatConversationPage>
                 color: Theme.of(context).appBarTheme.foregroundColor,
                 onPressed: () => Navigator.maybePop(context),
               ),
-              title: Row(
-                children: [
-                  buildChatListingAvatar(
+              title: InkWell(
+                onTap: () {
+                  final listingId = listingPrimaryId(_mergedListingMeta());
+                  final carId = listingId.isNotEmpty
+                      ? listingId
+                      : widget.carId.trim();
+                  if (carId.isEmpty) return;
+                  Navigator.pushNamed(
                     context,
-                    imageUrl: _carImageUrl,
-                    radius: 18,
-                  ),
-                  const SizedBox(width: 10),
-                  Expanded(
-                    child: AutoSizeText(
-                      conversationTitle,
-                      maxLines: 3,
-                      minFontSize: 10,
-                      stepGranularity: 0.5,
-                      softWrap: true,
-                      overflow: TextOverflow.clip,
-                      style: Theme.of(context).appBarTheme.titleTextStyle
-                              ?.copyWith(
-                            fontSize: 15,
-                            fontWeight: FontWeight.w600,
-                            height: 1.2,
-                          ) ??
-                          const TextStyle(
-                            fontSize: 15,
-                            fontWeight: FontWeight.w600,
-                            height: 1.2,
-                            color: Colors.white,
-                          ),
+                    '/car_detail',
+                    arguments: {'carId': carId},
+                  );
+                },
+                child: Row(
+                  children: [
+                    buildChatListingAvatar(
+                      context,
+                      imageUrl: _carImageUrl,
+                      radius: 18,
                     ),
-                  ),
-                ],
+                    const SizedBox(width: 10),
+                    Expanded(
+                      child: AutoSizeText(
+                        conversationTitle,
+                        maxLines: 3,
+                        minFontSize: 10,
+                        stepGranularity: 0.5,
+                        softWrap: true,
+                        overflow: TextOverflow.clip,
+                        style: Theme.of(context).appBarTheme.titleTextStyle
+                                ?.copyWith(
+                              fontSize: 15,
+                              fontWeight: FontWeight.w600,
+                              height: 1.2,
+                            ) ??
+                            const TextStyle(
+                              fontSize: 15,
+                              fontWeight: FontWeight.w600,
+                              height: 1.2,
+                              color: Colors.white,
+                            ),
+                      ),
+                    ),
+                  ],
+                ),
               ),
               actions: [
                 if (widget.receiverId != null && widget.receiverId!.isNotEmpty)

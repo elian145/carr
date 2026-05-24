@@ -4,12 +4,22 @@ import 'package:shared_preferences/shared_preferences.dart';
 
 import 'api_service.dart';
 import '../shared/auth/token_store.dart';
+import '../shared/listings/listing_events.dart';
 import '../shared/listings/listing_identity.dart';
 
 /// Local cache + server sync for recently viewed listings.
 class RecentlyViewedService {
   static const String localKey = 'recently_viewed_local_v1';
   static const int maxItems = 40;
+  static bool _deleteHandlerRegistered = false;
+
+  static void _ensureDeleteHandlerRegistered() {
+    if (_deleteHandlerRegistered) return;
+    _deleteHandlerRegistered = true;
+    ListingEvents.addDeleteHandler((carId) {
+      _removeLocal(carId);
+    });
+  }
 
   static Future<void> _ensureAuth() async {
     await TokenStore.load();
@@ -39,6 +49,7 @@ class RecentlyViewedService {
     String listingId, {
     Map<String, dynamic>? snapshot,
   }) async {
+    _ensureDeleteHandlerRegistered();
     final id = listingId.trim();
     if (id.isEmpty) return;
 
@@ -94,6 +105,7 @@ class RecentlyViewedService {
 
   /// Local entries only (no network).
   static Future<List<Map<String, dynamic>>> loadLocalDisplayList() async {
+    _ensureDeleteHandlerRegistered();
     final local = await _loadLocal();
     if (local.isEmpty) return [];
     final hydrated = await _hydrateIds(local);
@@ -164,6 +176,7 @@ class RecentlyViewedService {
 
   /// Server list merged with local cache (newest first).
   static Future<List<Map<String, dynamic>>> loadMerged() async {
+    _ensureDeleteHandlerRegistered();
     final localDisplay = await loadLocalDisplayList();
 
     await _ensureAuth();

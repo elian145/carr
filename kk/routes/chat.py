@@ -294,6 +294,10 @@ def list_chats():
                     "conversation_id": int(m.car_id or 0),
                     "car_id": car.public_id if car else None,
                     "car_title": car_title,
+                    "car_brand": car.brand if car else None,
+                    "car_model": car.model if car else None,
+                    "car_trim": getattr(car, "trim", None) if car else None,
+                    "car_year": car.year if car else None,
                     "car_image_url": car_image_url,
                     "other_user": {
                         "id": other.public_id if other else None,
@@ -302,6 +306,7 @@ def list_chats():
                     "last_message": {
                         "id": m.public_id,
                         "content": m.content,
+                        "message_type": m.message_type,
                         "created_at": m.created_at.isoformat() if m.created_at else None,
                         "sender_id": m.sender.public_id if m.sender else None,
                     },

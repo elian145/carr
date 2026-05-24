@@ -4,6 +4,7 @@ import 'package:http/http.dart' as http;
 import 'package:image_picker/image_picker.dart';
 import 'config.dart';
 import '../shared/auth/token_store.dart';
+import '../shared/listings/listing_identity.dart';
 import '../shared/phone/phone_normalizer.dart';
 
 class ApiException implements Exception {
@@ -904,7 +905,7 @@ class ApiService {
         )
         .timeout(_defaultTimeout);
 
-    return _handleResponse(response);
+    return unwrapCarApiPayload(_handleResponse(response));
   }
 
   static Future<Map<String, dynamic>> createCar(

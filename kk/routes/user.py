@@ -159,7 +159,10 @@ def recently_viewed():
         q = (
             db.session.query(Car, user_viewed_listings.c.viewed_at)
             .join(user_viewed_listings, user_viewed_listings.c.car_id == Car.id)
-            .filter(user_viewed_listings.c.user_id == current_user.id)
+            .filter(
+                user_viewed_listings.c.user_id == current_user.id,
+                Car.is_active.is_(True),
+            )
             .order_by(user_viewed_listings.c.viewed_at.desc())
         )
         pagination = q.paginate(page=page, per_page=per_page, error_out=False)

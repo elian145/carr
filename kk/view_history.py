@@ -87,3 +87,13 @@ def clear_user_listing_views(user: User) -> None:
         )
     )
     db.session.commit()
+
+
+def remove_listing_from_all_view_history(car_id: int) -> int:
+    """Remove a listing from every user's recently viewed (e.g. when deleted)."""
+    if not car_id:
+        return 0
+    result = db.session.execute(
+        delete(user_viewed_listings).where(user_viewed_listings.c.car_id == car_id)
+    )
+    return int(result.rowcount or 0)

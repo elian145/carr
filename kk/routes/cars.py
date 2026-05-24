@@ -11,6 +11,8 @@ from sqlalchemy import select, update
 from sqlalchemy.orm import joinedload, selectinload
 
 from ..auth import get_current_user, log_user_action
+from ..favorites_cleanup import remove_listing_from_all_favorites
+from ..view_history import remove_listing_from_all_view_history
 from ..models import Car, ListingReport, User, db, user_viewed_listings
 from ..retention_dispatch import dispatch_price_drop_alerts, dispatch_saved_search_alerts
 from ..time_utils import utcnow
@@ -880,6 +882,8 @@ def delete_car(car_id: str):
         if err:
             return err
 
+        remove_listing_from_all_favorites(car.id)
+        remove_listing_from_all_view_history(car.id)
         car.is_active = False
         car.updated_at = utcnow()
         db.session.commit()

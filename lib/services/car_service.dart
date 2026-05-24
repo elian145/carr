@@ -96,7 +96,7 @@ class CarService extends ChangeNotifier {
 
     try {
       final response = await ApiService.getCar(carId);
-      _currentCar = response['car'];
+      _currentCar = response;
     } catch (e) {
       developer.log('Get car error: $e', name: 'CarService');
       rethrow;
