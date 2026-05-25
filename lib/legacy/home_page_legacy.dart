@@ -4507,16 +4507,19 @@ class _HomePageState extends State<HomePage> {
                                                         MainAxisSize.min,
                                                     children: [
                                                       // Price Filter
-                                                      Text(
-                                                        AppLocalizations.of(
-                                                          context,
-                                                        )!.priceRange,
-                                                        style: TextStyle(
-                                                          color:
-                                                              moreFiltersOnSurface,
-                                                          fontWeight:
-                                                              FontWeight.bold,
-                                                          fontSize: 18,
+                                                      Align(
+                                                        alignment: AlignmentDirectional.centerStart,
+                                                        child: Text(
+                                                          AppLocalizations.of(
+                                                            context,
+                                                          )!.priceRange,
+                                                          style: TextStyle(
+                                                            color:
+                                                                moreFiltersOnSurface,
+                                                            fontWeight:
+                                                                FontWeight.bold,
+                                                            fontSize: 18,
+                                                          ),
                                                         ),
                                                       ),
                                                       SizedBox(height: 12),
@@ -4942,16 +4945,19 @@ class _HomePageState extends State<HomePage> {
                                                             moreFiltersFieldGap,
                                                       ),
                                                       // Year Filter
-                                                      Text(
-                                                        AppLocalizations.of(
-                                                          context,
-                                                        )!.yearRange,
-                                                        style: TextStyle(
-                                                          color:
-                                                              moreFiltersOnSurface,
-                                                          fontWeight:
-                                                              FontWeight.bold,
-                                                          fontSize: 18,
+                                                      Align(
+                                                        alignment: AlignmentDirectional.centerStart,
+                                                        child: Text(
+                                                          AppLocalizations.of(
+                                                            context,
+                                                          )!.yearRange,
+                                                          style: TextStyle(
+                                                            color:
+                                                                moreFiltersOnSurface,
+                                                            fontWeight:
+                                                                FontWeight.bold,
+                                                            fontSize: 18,
+                                                          ),
                                                         ),
                                                       ),
                                                       SizedBox(height: 12),
@@ -5381,16 +5387,19 @@ class _HomePageState extends State<HomePage> {
                                                             moreFiltersFieldGap,
                                                       ),
                                                       // Mileage Filter
-                                                      Text(
-                                                        AppLocalizations.of(
-                                                          context,
-                                                        )!.mileageRangeLabel,
-                                                        style: TextStyle(
-                                                          color:
-                                                              moreFiltersOnSurface,
-                                                          fontWeight:
-                                                              FontWeight.bold,
-                                                          fontSize: 18,
+                                                      Align(
+                                                        alignment: AlignmentDirectional.centerStart,
+                                                        child: Text(
+                                                          AppLocalizations.of(
+                                                            context,
+                                                          )!.mileageRangeLabel,
+                                                          style: TextStyle(
+                                                            color:
+                                                                moreFiltersOnSurface,
+                                                            fontWeight:
+                                                                FontWeight.bold,
+                                                            fontSize: 18,
+                                                          ),
                                                         ),
                                                       ),
                                                       SizedBox(height: 12),
@@ -5836,76 +5845,64 @@ class _HomePageState extends State<HomePage> {
                                                         height:
                                                             moreFiltersFieldGap,
                                                       ),
-                                                      DropdownButtonFormField<
-                                                        String
-                                                      >(
-                                                        initialValue:
-                                                            selectedTitleStatus ??
-                                                            '',
-                                                        decoration: InputDecoration(
-                                                          labelText:
-                                                              AppLocalizations.of(
-                                                                context,
-                                                              )!.titleStatus,
-                                                          filled: true,
-                                                          fillColor:
-                                                              moreFiltersFieldFill,
-                                                          labelStyle: TextStyle(
-                                                            color:
-                                                                moreFiltersOnSurface,
-                                                            fontSize: 16,
-                                                          ),
-                                                          border: OutlineInputBorder(
-                                                            borderRadius:
-                                                                BorderRadius.circular(
-                                                                  12,
-                                                                ),
+                                                      Align(
+                                                        alignment: AlignmentDirectional.centerStart,
+                                                        child: Text(
+                                                          AppLocalizations.of(context)!.titleStatus,
+                                                          style: TextStyle(
+                                                            color: moreFiltersOnSurface,
+                                                            fontSize: 18,
+                                                            fontWeight: FontWeight.w600,
                                                           ),
                                                         ),
-                                                        items: [
-                                                          DropdownMenuItem(
-                                                            value: '',
-                                                            child: Text(
-                                                              AppLocalizations.of(
-                                                                context,
-                                                              )!.any,
-                                                              style: TextStyle(
-                                                                color:
-                                                                    moreFiltersAnyOrange,
+                                                      ),
+                                                      const SizedBox(height: 8),
+                                                      Align(
+                                                        alignment: AlignmentDirectional.centerStart,
+                                                        child: Wrap(
+                                                          spacing: 8,
+                                                          runSpacing: 8,
+                                                          children: [
+                                                            for (final entry in <String, String>{
+                                                              '': AppLocalizations.of(context)!.any,
+                                                              'clean': AppLocalizations.of(context)!.value_title_clean,
+                                                              'damaged': AppLocalizations.of(context)!.value_title_damaged,
+                                                            }.entries)
+                                                              ChoiceChip(
+                                                                label: Text(entry.value),
+                                                                selected: (selectedTitleStatus ?? '') == entry.key,
+                                                                selectedColor: entry.key == ''
+                                                                    ? moreFiltersAnyOrange
+                                                                    : Theme.of(context).colorScheme.primary,
+                                                                backgroundColor: moreFiltersFieldFill,
+                                                                labelStyle: TextStyle(
+                                                                  color: (selectedTitleStatus ?? '') == entry.key
+                                                                      ? Colors.white
+                                                                      : moreFiltersOnSurface,
+                                                                  fontWeight: (selectedTitleStatus ?? '') == entry.key
+                                                                      ? FontWeight.bold
+                                                                      : FontWeight.normal,
+                                                                ),
+                                                                shape: RoundedRectangleBorder(
+                                                                  borderRadius: BorderRadius.circular(12),
+                                                                  side: BorderSide(
+                                                                    color: (selectedTitleStatus ?? '') == entry.key
+                                                                        ? Colors.transparent
+                                                                        : moreFiltersOnSurface.withOpacity(0.2),
+                                                                  ),
+                                                                ),
+                                                                onSelected: (_) {
+                                                                  setState(() {
+                                                                    selectedTitleStatus = entry.key == '' ? null : entry.key;
+                                                                    if (selectedTitleStatus != 'damaged') {
+                                                                      selectedDamagedParts = null;
+                                                                    }
+                                                                  });
+                                                                  setStateDialog(() {});
+                                                                },
                                                               ),
-                                                            ),
-                                                          ),
-                                                          DropdownMenuItem(
-                                                            value: 'clean',
-                                                            child: Text(
-                                                              AppLocalizations.of(
-                                                                context,
-                                                              )!.value_title_clean,
-                                                            ),
-                                                          ),
-                                                          DropdownMenuItem(
-                                                            value: 'damaged',
-                                                            child: Text(
-                                                              AppLocalizations.of(
-                                                                context,
-                                                              )!.value_title_damaged,
-                                                            ),
-                                                          ),
-                                                        ],
-                                                        onChanged: (value) {
-                                                          setState(() {
-                                                            selectedTitleStatus =
-                                                                value == ''
-                                                                ? null
-                                                                : value;
-                                                            if (selectedTitleStatus !=
-                                                                'damaged') {
-                                                              selectedDamagedParts =
-                                                                  null;
-                                                            }
-                                                          });
-                                                          setStateDialog(() {});
-                                                        },
+                                                          ],
+                                                        ),
                                                       ),
                                                       if (selectedTitleStatus ==
                                                           'damaged')
@@ -5931,7 +5928,8 @@ class _HomePageState extends State<HomePage> {
                                                               labelStyle: TextStyle(
                                                                 color:
                                                                     moreFiltersOnSurface,
-                                                                fontSize: 16,
+                                                                fontSize: 18,
+                                                                fontWeight: FontWeight.bold,
                                                               ),
                                                               border: OutlineInputBorder(
                                                                 borderRadius:
@@ -5987,140 +5985,119 @@ class _HomePageState extends State<HomePage> {
                                                         height:
                                                             moreFiltersFieldGap,
                                                       ),
-                                                      DropdownButtonFormField<
-                                                        String
-                                                      >(
-                                                        initialValue:
-                                                            conditions.contains(
-                                                              selectedCondition,
-                                                            )
-                                                            ? (selectedCondition ??
-                                                                  'Any')
-                                                            : conditions.first,
-                                                        decoration: InputDecoration(
-                                                          labelText:
-                                                              AppLocalizations.of(
-                                                                context,
-                                                              )!.conditionLabel,
-                                                          filled: true,
-                                                          fillColor:
-                                                              moreFiltersFieldFill,
-                                                          labelStyle: TextStyle(
-                                                            color:
-                                                                moreFiltersOnSurface,
-                                                            fontSize: 16,
-                                                          ),
-                                                          border: OutlineInputBorder(
-                                                            borderRadius:
-                                                                BorderRadius.circular(
-                                                                  12,
-                                                                ),
+                                                      Align(
+                                                        alignment: AlignmentDirectional.centerStart,
+                                                        child: Text(
+                                                          AppLocalizations.of(context)!.conditionLabel,
+                                                          style: TextStyle(
+                                                            color: moreFiltersOnSurface,
+                                                            fontSize: 18,
+                                                            fontWeight: FontWeight.w600,
                                                           ),
                                                         ),
-                                                        items: conditions
-                                                            .map(
-                                                              (
-                                                                c,
-                                                              ) => DropdownMenuItem(
-                                                                value: c,
-                                                                child: Text(
-                                                                  _translateValueGlobal(
-                                                                        context,
-                                                                        c,
-                                                                      ) ??
-                                                                      c,
-                                                                  style: TextStyle(
-                                                                    color:
-                                                                        c ==
-                                                                            'Any'
-                                                                        ? moreFiltersAnyOrange
-                                                                        : null,
-                                                                  ),
+                                                      ),
+                                                      const SizedBox(height: 8),
+                                                      Align(
+                                                        alignment: AlignmentDirectional.centerStart,
+                                                        child: Wrap(
+                                                          spacing: 8,
+                                                          runSpacing: 8,
+                                                          children: conditions.map((c) {
+                                                            final isSelected = (selectedCondition ?? 'Any') == c;
+                                                            return ChoiceChip(
+                                                              label: Text(
+                                                                _translateValueGlobal(context, c) ?? c,
+                                                              ),
+                                                              selected: isSelected,
+                                                              selectedColor: c == 'Any'
+                                                                  ? moreFiltersAnyOrange
+                                                                  : Theme.of(context).colorScheme.primary,
+                                                              backgroundColor: moreFiltersFieldFill,
+                                                              labelStyle: TextStyle(
+                                                                color: isSelected
+                                                                    ? Colors.white
+                                                                    : moreFiltersOnSurface,
+                                                                fontWeight: isSelected
+                                                                    ? FontWeight.bold
+                                                                    : FontWeight.normal,
+                                                              ),
+                                                              shape: RoundedRectangleBorder(
+                                                                borderRadius: BorderRadius.circular(12),
+                                                                side: BorderSide(
+                                                                  color: isSelected
+                                                                      ? Colors.transparent
+                                                                      : moreFiltersOnSurface.withOpacity(0.2),
                                                                 ),
                                                               ),
-                                                            )
-                                                            .toList(),
-                                                        onChanged: (value) =>
-                                                            setState(
-                                                              () =>
-                                                                  selectedCondition =
-                                                                      value ==
-                                                                          'Any'
-                                                                      ? 'Any'
-                                                                      : value,
-                                                            ),
+                                                              onSelected: (_) {
+                                                                setState(() {
+                                                                  selectedCondition = c == 'Any' ? 'Any' : c;
+                                                                });
+                                                                setStateDialog(() {});
+                                                              },
+                                                            );
+                                                          }).toList(),
+                                                        ),
                                                       ),
                                                       SizedBox(
                                                         height:
                                                             moreFiltersFieldGap,
                                                       ),
-                                                      DropdownButtonFormField<
-                                                        String
-                                                      >(
-                                                        initialValue:
-                                                            _getValidTransmissionValue(),
-                                                        decoration: InputDecoration(
-                                                          labelText:
-                                                              AppLocalizations.of(
-                                                                context,
-                                                              )!.transmissionLabel,
-                                                          filled: true,
-                                                          fillColor:
-                                                              moreFiltersFieldFill,
-                                                          labelStyle: TextStyle(
-                                                            color:
-                                                                moreFiltersOnSurface,
-                                                            fontSize: 16,
-                                                          ),
-                                                          border: OutlineInputBorder(
-                                                            borderRadius:
-                                                                BorderRadius.circular(
-                                                                  12,
-                                                                ),
+                                                      Align(
+                                                        alignment: AlignmentDirectional.centerStart,
+                                                        child: Text(
+                                                          AppLocalizations.of(context)!.transmissionLabel,
+                                                          style: TextStyle(
+                                                            color: moreFiltersOnSurface,
+                                                            fontSize: 18,
+                                                            fontWeight: FontWeight.w600,
                                                           ),
                                                         ),
-                                                        items: [
-                                                          DropdownMenuItem(
-                                                            value: '',
-                                                            child: Text(
-                                                              AppLocalizations.of(
-                                                                context,
-                                                              )!.any,
-                                                              style: TextStyle(
-                                                                color:
-                                                                    moreFiltersAnyOrange,
-                                                              ),
-                                                            ),
-                                                          ),
-                                                          ...getAvailableTransmissions()
-                                                              .where(
-                                                                (t) =>
-                                                                    t != 'Any',
-                                                              )
-                                                              .map(
-                                                                (
-                                                                  t,
-                                                                ) => DropdownMenuItem(
-                                                                  value: t,
-                                                                  child: Text(
-                                                                    _translateValueGlobal(
-                                                                          context,
-                                                                          t,
-                                                                        ) ??
-                                                                        t,
+                                                      ),
+                                                      const SizedBox(height: 8),
+                                                      Align(
+                                                        alignment: AlignmentDirectional.centerStart,
+                                                        child: Wrap(
+                                                          spacing: 8,
+                                                          runSpacing: 8,
+                                                          children: [
+                                                            for (final t in ['Any', ...getAvailableTransmissions().where((t) => t != 'Any')])
+                                                              ChoiceChip(
+                                                                label: Text(
+                                                                  t == 'Any'
+                                                                      ? AppLocalizations.of(context)!.any
+                                                                      : _translateValueGlobal(context, t) ?? t,
+                                                                ),
+                                                                selected: (selectedTransmission ?? 'Any') == t,
+                                                                selectedColor: t == 'Any'
+                                                                    ? moreFiltersAnyOrange
+                                                                    : Theme.of(context).colorScheme.primary,
+                                                                backgroundColor: moreFiltersFieldFill,
+                                                                labelStyle: TextStyle(
+                                                                  color: (selectedTransmission ?? 'Any') == t
+                                                                      ? Colors.white
+                                                                      : moreFiltersOnSurface,
+                                                                  fontWeight: (selectedTransmission ?? 'Any') == t
+                                                                      ? FontWeight.bold
+                                                                      : FontWeight.normal,
+                                                                ),
+                                                                shape: RoundedRectangleBorder(
+                                                                  borderRadius: BorderRadius.circular(12),
+                                                                  side: BorderSide(
+                                                                    color: (selectedTransmission ?? 'Any') == t
+                                                                        ? Colors.transparent
+                                                                        : moreFiltersOnSurface.withOpacity(0.2),
                                                                   ),
                                                                 ),
+                                                                onSelected: (_) {
+                                                                  setState(() {
+                                                                    selectedTransmission = t == 'Any' ? 'Any' : t;
+                                                                  });
+                                                                  setStateDialog(() {});
+                                                                },
                                                               ),
-                                                        ],
-                                                        onChanged: (value) =>
-                                                            setState(
-                                                              () =>
-                                                                  selectedTransmission =
-                                                                      value ==
-                                                                          ''
-                                                                      ? 'Any'
-                                                                      : value,
-                                                            ),
+                                                          ],
+                                                        ),
                                                       ),
                                                       SizedBox(
                                                         height:
@@ -6142,7 +6119,8 @@ class _HomePageState extends State<HomePage> {
                                                           labelStyle: TextStyle(
                                                             color:
                                                                 moreFiltersOnSurface,
-                                                            fontSize: 16,
+                                                            fontSize: 18,
+                                                            fontWeight: FontWeight.bold,
                                                           ),
                                                           border: OutlineInputBorder(
                                                             borderRadius:
@@ -6228,7 +6206,8 @@ class _HomePageState extends State<HomePage> {
                                                           labelStyle: TextStyle(
                                                             color:
                                                                 moreFiltersOnSurface,
-                                                            fontSize: 16,
+                                                            fontSize: 18,
+                                                            fontWeight: FontWeight.bold,
                                                           ),
                                                           border: OutlineInputBorder(
                                                             borderRadius:
@@ -6603,7 +6582,8 @@ class _HomePageState extends State<HomePage> {
                                                           labelStyle: TextStyle(
                                                             color:
                                                                 moreFiltersOnSurface,
-                                                            fontSize: 16,
+                                                            fontSize: 18,
+                                                            fontWeight: FontWeight.bold,
                                                           ),
                                                           border: OutlineInputBorder(
                                                             borderRadius:
@@ -6909,7 +6889,8 @@ class _HomePageState extends State<HomePage> {
                                                           labelStyle: TextStyle(
                                                             color:
                                                                 moreFiltersOnSurface,
-                                                            fontSize: 16,
+                                                            fontSize: 18,
+                                                            fontWeight: FontWeight.bold,
                                                           ),
                                                           border: OutlineInputBorder(
                                                             borderRadius:
@@ -6982,7 +6963,8 @@ class _HomePageState extends State<HomePage> {
                                                           labelStyle: TextStyle(
                                                             color:
                                                                 moreFiltersOnSurface,
-                                                            fontSize: 16,
+                                                            fontSize: 18,
+                                                            fontWeight: FontWeight.bold,
                                                           ),
                                                           border: OutlineInputBorder(
                                                             borderRadius:
@@ -7048,7 +7030,8 @@ class _HomePageState extends State<HomePage> {
                                                           labelStyle: TextStyle(
                                                             color:
                                                                 moreFiltersOnSurface,
-                                                            fontSize: 16,
+                                                            fontSize: 18,
+                                                            fontWeight: FontWeight.bold,
                                                           ),
                                                           border: OutlineInputBorder(
                                                             borderRadius:
@@ -7122,7 +7105,8 @@ class _HomePageState extends State<HomePage> {
                                                           labelStyle: TextStyle(
                                                             color:
                                                                 moreFiltersOnSurface,
-                                                            fontSize: 16,
+                                                            fontSize: 18,
+                                                            fontWeight: FontWeight.bold,
                                                           ),
                                                           border: OutlineInputBorder(
                                                             borderRadius:
@@ -7198,6 +7182,8 @@ class _HomePageState extends State<HomePage> {
                                                                           TextStyle(
                                                                             color:
                                                                                 moreFiltersOnSurface,
+                                                                            fontSize: 18,
+                                                                            fontWeight: FontWeight.bold,
                                                                           ),
                                                                       border: OutlineInputBorder(
                                                                         borderRadius:
@@ -7271,6 +7257,8 @@ class _HomePageState extends State<HomePage> {
                                                                           TextStyle(
                                                                             color:
                                                                                 moreFiltersOnSurface,
+                                                                            fontSize: 18,
+                                                                            fontWeight: FontWeight.bold,
                                                                           ),
                                                                       border: OutlineInputBorder(
                                                                         borderRadius:
@@ -7360,7 +7348,8 @@ class _HomePageState extends State<HomePage> {
                                                           labelStyle: TextStyle(
                                                             color:
                                                                 moreFiltersOnSurface,
-                                                            fontSize: 16,
+                                                            fontSize: 18,
+                                                            fontWeight: FontWeight.bold,
                                                           ),
                                                           border: OutlineInputBorder(
                                                             borderRadius:
@@ -7446,7 +7435,8 @@ class _HomePageState extends State<HomePage> {
                                                           labelStyle: TextStyle(
                                                             color:
                                                                 moreFiltersOnSurface,
-                                                            fontSize: 16,
+                                                            fontSize: 18,
+                                                            fontWeight: FontWeight.bold,
                                                           ),
                                                           border: OutlineInputBorder(
                                                             borderRadius:

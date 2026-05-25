@@ -5747,6 +5747,9 @@ class _SellStep3PageState extends State<SellStep3Page> {
                               ),
                               style: _sellFlowManualFieldTextStyle(context),
                               keyboardType: TextInputType.number,
+                              inputFormatters: [
+                                services.FilteringTextInputFormatter.digitsOnly,
+                              ],
                               onChanged: (value) {
                                 setState(() {
                                   // Store the full price with currency prefix
@@ -6458,6 +6461,7 @@ class _SellStep4PageState extends State<SellStep4Page> {
           }
         }
       }
+      _videosHydratedFromParent = true;
       _imagesProcessed = parentState?.carData['images_processed'] == true || _imagesProcessed;
       _isProcessingImages = false;
     });

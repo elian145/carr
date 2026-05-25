@@ -667,49 +667,49 @@ abstract class AppLocalizations {
   /// No description provided for @value_condition_new.
   ///
   /// In en, this message translates to:
-  /// **'new'**
+  /// **'New'**
   String get value_condition_new;
 
   /// No description provided for @value_condition_used.
   ///
   /// In en, this message translates to:
-  /// **'used'**
+  /// **'Used'**
   String get value_condition_used;
 
   /// No description provided for @value_transmission_automatic.
   ///
   /// In en, this message translates to:
-  /// **'automatic'**
+  /// **'Automatic'**
   String get value_transmission_automatic;
 
   /// No description provided for @value_transmission_manual.
   ///
   /// In en, this message translates to:
-  /// **'manual'**
+  /// **'Manual'**
   String get value_transmission_manual;
 
   /// No description provided for @value_fuel_gasoline.
   ///
   /// In en, this message translates to:
-  /// **'gasoline'**
+  /// **'Gasoline'**
   String get value_fuel_gasoline;
 
   /// No description provided for @value_fuel_diesel.
   ///
   /// In en, this message translates to:
-  /// **'diesel'**
+  /// **'Diesel'**
   String get value_fuel_diesel;
 
   /// No description provided for @value_fuel_electric.
   ///
   /// In en, this message translates to:
-  /// **'electric'**
+  /// **'Electric'**
   String get value_fuel_electric;
 
   /// No description provided for @value_fuel_hybrid.
   ///
   /// In en, this message translates to:
-  /// **'hybrid'**
+  /// **'Hybrid'**
   String get value_fuel_hybrid;
 
   /// No description provided for @value_fuel_lpg.
@@ -721,7 +721,7 @@ abstract class AppLocalizations {
   /// No description provided for @value_fuel_plugin_hybrid.
   ///
   /// In en, this message translates to:
-  /// **'plug-in hybrid'**
+  /// **'Plug-in Hybrid'**
   String get value_fuel_plugin_hybrid;
 
   /// No description provided for @value_title_clean.
@@ -775,151 +775,151 @@ abstract class AppLocalizations {
   /// No description provided for @value_drive_fwd.
   ///
   /// In en, this message translates to:
-  /// **'fwd'**
+  /// **'FWD'**
   String get value_drive_fwd;
 
   /// No description provided for @value_drive_rwd.
   ///
   /// In en, this message translates to:
-  /// **'rwd'**
+  /// **'RWD'**
   String get value_drive_rwd;
 
   /// No description provided for @value_drive_awd.
   ///
   /// In en, this message translates to:
-  /// **'awd'**
+  /// **'AWD'**
   String get value_drive_awd;
 
   /// No description provided for @value_drive_4wd.
   ///
   /// In en, this message translates to:
-  /// **'4wd'**
+  /// **'4WD'**
   String get value_drive_4wd;
 
   /// No description provided for @value_body_sedan.
   ///
   /// In en, this message translates to:
-  /// **'sedan'**
+  /// **'Sedan'**
   String get value_body_sedan;
 
   /// No description provided for @value_body_suv.
   ///
   /// In en, this message translates to:
-  /// **'suv'**
+  /// **'SUV'**
   String get value_body_suv;
 
   /// No description provided for @value_body_hatchback.
   ///
   /// In en, this message translates to:
-  /// **'hatchback'**
+  /// **'Hatchback'**
   String get value_body_hatchback;
 
   /// No description provided for @value_body_coupe.
   ///
   /// In en, this message translates to:
-  /// **'coupe'**
+  /// **'Coupe'**
   String get value_body_coupe;
 
   /// No description provided for @value_body_pickup.
   ///
   /// In en, this message translates to:
-  /// **'pickup'**
+  /// **'Pickup'**
   String get value_body_pickup;
 
   /// No description provided for @value_body_van.
   ///
   /// In en, this message translates to:
-  /// **'van'**
+  /// **'Van'**
   String get value_body_van;
 
   /// No description provided for @value_body_minivan.
   ///
   /// In en, this message translates to:
-  /// **'minivan'**
+  /// **'Minivan'**
   String get value_body_minivan;
 
   /// No description provided for @value_body_motorcycle.
   ///
   /// In en, this message translates to:
-  /// **'motorcycle'**
+  /// **'Motorcycle'**
   String get value_body_motorcycle;
 
   /// No description provided for @value_body_truck.
   ///
   /// In en, this message translates to:
-  /// **'truck'**
+  /// **'Truck'**
   String get value_body_truck;
 
   /// No description provided for @value_body_cabriolet.
   ///
   /// In en, this message translates to:
-  /// **'cabriolet'**
+  /// **'Cabriolet'**
   String get value_body_cabriolet;
 
   /// No description provided for @value_body_roadster.
   ///
   /// In en, this message translates to:
-  /// **'roadster'**
+  /// **'Roadster'**
   String get value_body_roadster;
 
   /// No description provided for @value_body_micro.
   ///
   /// In en, this message translates to:
-  /// **'micro'**
+  /// **'Micro'**
   String get value_body_micro;
 
   /// No description provided for @value_body_cuv.
   ///
   /// In en, this message translates to:
-  /// **'cuv'**
+  /// **'CUV'**
   String get value_body_cuv;
 
   /// No description provided for @value_body_wagon.
   ///
   /// In en, this message translates to:
-  /// **'wagon'**
+  /// **'Wagon'**
   String get value_body_wagon;
 
   /// No description provided for @value_body_minitruck.
   ///
   /// In en, this message translates to:
-  /// **'minitruck'**
+  /// **'Minitruck'**
   String get value_body_minitruck;
 
   /// No description provided for @value_body_bigtruck.
   ///
   /// In en, this message translates to:
-  /// **'bigtruck'**
+  /// **'Bigtruck'**
   String get value_body_bigtruck;
 
   /// No description provided for @value_body_supercar.
   ///
   /// In en, this message translates to:
-  /// **'supercar'**
+  /// **'Supercar'**
   String get value_body_supercar;
 
   /// No description provided for @value_body_utv.
   ///
   /// In en, this message translates to:
-  /// **'utv'**
+  /// **'UTV'**
   String get value_body_utv;
 
   /// No description provided for @value_body_atv.
   ///
   /// In en, this message translates to:
-  /// **'atv'**
+  /// **'ATV'**
   String get value_body_atv;
 
   /// No description provided for @value_body_scooter.
   ///
   /// In en, this message translates to:
-  /// **'scooter'**
+  /// **'Scooter'**
   String get value_body_scooter;
 
   /// No description provided for @value_body_super_bike.
   ///
   /// In en, this message translates to:
-  /// **'super bike'**
+  /// **'Super Bike'**
   String get value_body_super_bike;
 
   /// No description provided for @unit_km.
@@ -2713,7 +2713,7 @@ abstract class AppLocalizations {
   /// No description provided for @value_transmission_semi_automatic.
   ///
   /// In en, this message translates to:
-  /// **'semi-automatic'**
+  /// **'Semi-automatic'**
   String get value_transmission_semi_automatic;
 
   /// No description provided for @value_transmission_cvt.

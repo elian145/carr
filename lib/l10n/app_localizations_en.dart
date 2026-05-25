@@ -291,34 +291,34 @@ class AppLocalizationsEn extends AppLocalizations {
   String get detail_seating => 'Seating';
 
   @override
-  String get value_condition_new => 'new';
+  String get value_condition_new => 'New';
 
   @override
-  String get value_condition_used => 'used';
+  String get value_condition_used => 'Used';
 
   @override
-  String get value_transmission_automatic => 'automatic';
+  String get value_transmission_automatic => 'Automatic';
 
   @override
-  String get value_transmission_manual => 'manual';
+  String get value_transmission_manual => 'Manual';
 
   @override
-  String get value_fuel_gasoline => 'gasoline';
+  String get value_fuel_gasoline => 'Gasoline';
 
   @override
-  String get value_fuel_diesel => 'diesel';
+  String get value_fuel_diesel => 'Diesel';
 
   @override
-  String get value_fuel_electric => 'electric';
+  String get value_fuel_electric => 'Electric';
 
   @override
-  String get value_fuel_hybrid => 'hybrid';
+  String get value_fuel_hybrid => 'Hybrid';
 
   @override
   String get value_fuel_lpg => 'LPG';
 
   @override
-  String get value_fuel_plugin_hybrid => 'plug-in hybrid';
+  String get value_fuel_plugin_hybrid => 'Plug-in Hybrid';
 
   @override
   String get value_title_clean => 'Clean';
@@ -349,79 +349,79 @@ class AppLocalizationsEn extends AppLocalizations {
   String get uploadingDamagePhotos => 'Uploading damage photos...';
 
   @override
-  String get value_drive_fwd => 'fwd';
+  String get value_drive_fwd => 'FWD';
 
   @override
-  String get value_drive_rwd => 'rwd';
+  String get value_drive_rwd => 'RWD';
 
   @override
-  String get value_drive_awd => 'awd';
+  String get value_drive_awd => 'AWD';
 
   @override
-  String get value_drive_4wd => '4wd';
+  String get value_drive_4wd => '4WD';
 
   @override
-  String get value_body_sedan => 'sedan';
+  String get value_body_sedan => 'Sedan';
 
   @override
-  String get value_body_suv => 'suv';
+  String get value_body_suv => 'SUV';
 
   @override
-  String get value_body_hatchback => 'hatchback';
+  String get value_body_hatchback => 'Hatchback';
 
   @override
-  String get value_body_coupe => 'coupe';
+  String get value_body_coupe => 'Coupe';
 
   @override
-  String get value_body_pickup => 'pickup';
+  String get value_body_pickup => 'Pickup';
 
   @override
-  String get value_body_van => 'van';
+  String get value_body_van => 'Van';
 
   @override
-  String get value_body_minivan => 'minivan';
+  String get value_body_minivan => 'Minivan';
 
   @override
-  String get value_body_motorcycle => 'motorcycle';
+  String get value_body_motorcycle => 'Motorcycle';
 
   @override
-  String get value_body_truck => 'truck';
+  String get value_body_truck => 'Truck';
 
   @override
-  String get value_body_cabriolet => 'cabriolet';
+  String get value_body_cabriolet => 'Cabriolet';
 
   @override
-  String get value_body_roadster => 'roadster';
+  String get value_body_roadster => 'Roadster';
 
   @override
-  String get value_body_micro => 'micro';
+  String get value_body_micro => 'Micro';
 
   @override
-  String get value_body_cuv => 'cuv';
+  String get value_body_cuv => 'CUV';
 
   @override
-  String get value_body_wagon => 'wagon';
+  String get value_body_wagon => 'Wagon';
 
   @override
-  String get value_body_minitruck => 'minitruck';
+  String get value_body_minitruck => 'Minitruck';
 
   @override
-  String get value_body_bigtruck => 'bigtruck';
+  String get value_body_bigtruck => 'Bigtruck';
 
   @override
-  String get value_body_supercar => 'supercar';
+  String get value_body_supercar => 'Supercar';
 
   @override
-  String get value_body_utv => 'utv';
+  String get value_body_utv => 'UTV';
 
   @override
-  String get value_body_atv => 'atv';
+  String get value_body_atv => 'ATV';
 
   @override
-  String get value_body_scooter => 'scooter';
+  String get value_body_scooter => 'Scooter';
 
   @override
-  String get value_body_super_bike => 'super bike';
+  String get value_body_super_bike => 'Super Bike';
 
   @override
   String get unit_km => 'km';
@@ -1373,7 +1373,7 @@ class AppLocalizationsEn extends AppLocalizations {
   String get sellButton => 'Sell';
 
   @override
-  String get value_transmission_semi_automatic => 'semi-automatic';
+  String get value_transmission_semi_automatic => 'Semi-automatic';
 
   @override
   String get value_transmission_cvt => 'CVT';

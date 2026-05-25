@@ -821,8 +821,8 @@ Color _sellFlowManualFieldFill(BuildContext context) =>
 
 TextStyle _sellFlowManualFieldLabelStyle(BuildContext context) =>
     Theme.of(context).brightness == Brightness.dark
-    ? const TextStyle(color: Colors.white)
-    : TextStyle(color: Colors.grey[800]!);
+    ? const TextStyle(color: Colors.white, fontSize: 15, fontWeight: FontWeight.w700)
+    : TextStyle(color: Colors.grey[800]!, fontSize: 15, fontWeight: FontWeight.w700);
 
 TextStyle _sellFlowManualFieldHintStyle(BuildContext context) =>
     Theme.of(context).brightness == Brightness.dark
@@ -1028,7 +1028,10 @@ Widget buildFancySelector(
           value.trim().toLowerCase() == 'any' ||
           value == loc.any ||
           value == loc.anyOption);
-  final Color valueColor = (value == null || value.isEmpty)
+  final bool isPlaceholder = value == null ||
+      value.isEmpty ||
+      value == loc.tapToSelect;
+  final Color valueColor = isPlaceholder
       ? (isError ? Colors.redAccent : (isDark ? Colors.white38 : Colors.grey))
       : (isError
             ? Colors.redAccent
@@ -1086,9 +1089,9 @@ Widget buildFancySelector(
               Text(
                 label,
                 style: TextStyle(
-                  fontSize: 12,
+                  fontSize: 15,
                   color: labelColor,
-                  fontWeight: FontWeight.w600,
+                  fontWeight: FontWeight.w700,
                 ),
               ),
               const SizedBox(height: 2),
