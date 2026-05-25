@@ -898,7 +898,7 @@ class _HomePageState extends State<HomePage> {
   ];
   final List<String> conditions = ['Any', 'New', 'Used'];
   // Same options as sell page (with 'Any' for filter)
-  final List<String> transmissions = ['Any', 'Automatic', 'Manual', 'CVT'];
+  final List<String> transmissions = ['Any', 'Automatic', 'Manual'];
   final List<String> fuelTypes = [
     'Any',
     'Gasoline',

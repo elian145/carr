@@ -1258,7 +1258,7 @@ String? _convertSortToApiValue(BuildContext context, String? sortOption) {
 /// Options removed from filter UI; still used to drop spec-driven list entries.
 bool _isExcludedTransmissionFilter(String value) {
   final compact = value.trim().toLowerCase().replaceAll(RegExp(r'[\s_-]+'), '');
-  return compact == 'semiautomatic' || compact == 'semiauto';
+  return compact == 'semiautomatic' || compact == 'semiauto' || compact == 'cvt';
 }
 
 String? _translateValueGlobal(BuildContext context, String? raw) {

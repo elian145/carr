@@ -22,6 +22,10 @@ class _CarDetailsPageState extends State<CarDetailsPage> {
   int _currentImageIndex = 0;
   int _listingColumnsPref = 2;
 
+  final ScrollController _scrollController = ScrollController();
+  final GlobalKey _contactButtonsKey = GlobalKey();
+  bool _showStickyButtons = true;
+
   void _onListingLayoutChanged() {
     if (!mounted) return;
     setState(() {
@@ -364,12 +368,25 @@ class _CarDetailsPageState extends State<CarDetailsPage> {
     );
   }
 
+  void _onScroll() {
+    final keyContext = _contactButtonsKey.currentContext;
+    if (keyContext == null) return;
+    final box = keyContext.findRenderObject() as RenderBox?;
+    if (box == null || !box.attached) return;
+    final pos = box.localToGlobal(Offset.zero);
+    final screenH = MediaQuery.of(context).size.height;
+    final visible = pos.dy < screenH;
+    if (visible == !_showStickyButtons) return;
+    setState(() => _showStickyButtons = !visible);
+  }
+
   @override
   void initState() {
     super.initState();
     _listingColumnsPref = ListingLayoutPrefs.columns.value;
     ListingLayoutPrefs.load();
     ListingLayoutPrefs.columns.addListener(_onListingLayoutChanged);
+    _scrollController.addListener(_onScroll);
     unawaited(
       AnalyticsService.trackView(widget.carId.toString()),
     );
@@ -381,6 +398,8 @@ class _CarDetailsPageState extends State<CarDetailsPage> {
     try {
       ListingLayoutPrefs.columns.removeListener(_onListingLayoutChanged);
     } catch (_) {}
+    _scrollController.removeListener(_onScroll);
+    _scrollController.dispose();
     _imagePageController.dispose();
     _similarSnapController.dispose();
     _relatedSnapController.dispose();
@@ -536,6 +555,88 @@ class _CarDetailsPageState extends State<CarDetailsPage> {
     } catch (e) {
       _debugLog('Failed to track view: $e');
     }
+  }
+
+  Widget _buildContactButtonsRow() {
+    return Row(
+      children: [
+        Expanded(
+          child: SizedBox(
+            height: 46,
+            child: ElevatedButton.icon(
+              style: ElevatedButton.styleFrom(
+                backgroundColor: const Color(0xFF25D366),
+                foregroundColor: Colors.white,
+                elevation: 2,
+                shadowColor: Colors.black26,
+                padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
+                minimumSize: const Size(0, 46),
+                tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(17),
+                ),
+              ),
+              icon: const Icon(Icons.chat, size: 19),
+              label: Text(
+                AppLocalizations.of(context)!.chatOnWhatsApp,
+                style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w600),
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+              ),
+              onPressed: _openWhatsAppToSeller,
+            ),
+          ),
+        ),
+        const SizedBox(width: 6),
+        Expanded(
+          child: SizedBox(
+            height: 46,
+            child: ElevatedButton.icon(
+              style: ElevatedButton.styleFrom(
+                backgroundColor: const Color(0xFF007AFF),
+                foregroundColor: Colors.white,
+                elevation: 2,
+                shadowColor: Colors.black26,
+                padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
+                minimumSize: const Size(0, 46),
+                tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(17),
+                ),
+              ),
+              icon: const Icon(Icons.phone, size: 19),
+              label: Text(
+                _trLegacyText(context, 'Call Seller', ar: 'اتصل بالبائع', ku: 'پەیوەندی بە فرۆشیار'),
+                style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w600),
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+              ),
+              onPressed: () async {
+                final String raw = _sellerPhoneRawForContact() ?? '';
+                final String digits = raw.replaceAll(RegExp(r'[^0-9]'), '');
+                if (digits.isEmpty) {
+                  if (mounted) {
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      SnackBar(content: Text(AppLocalizations.of(context)!.sellerPhoneNotAvailable)),
+                    );
+                  }
+                  return;
+                }
+                final Uri callUri = Uri.parse('tel:$digits');
+                bool launched = await launchUrl(callUri, mode: LaunchMode.externalApplication).catchError((_) => false);
+                if (launched) {
+                  await AnalyticsService.trackCall(widget.carId.toString());
+                } else if (mounted) {
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    const SnackBar(content: Text('Unable to make call')),
+                  );
+                }
+              },
+            ),
+          ),
+        ),
+      ],
+    );
   }
 
   /// Listing phone for WhatsApp/call: `contact_phone` or nested `seller.*` (API shape varies).
@@ -884,13 +985,18 @@ class _CarDetailsPageState extends State<CarDetailsPage> {
   @override
   Widget build(BuildContext context) {
     final isLightShell = Theme.of(context).brightness == Brightness.light;
+    final stickyButtons = (!loading && car != null && !_isListingSold && _hasDialableSellerPhone && _showStickyButtons);
+
     return Scaffold(
       backgroundColor: isLightShell ? Colors.white : null,
-      body: loading
+      body: Stack(
+        children: [
+          loading
           ? Center(child: CircularProgressIndicator())
           : car == null
           ? Center(child: Text(AppLocalizations.of(context)!.carNotFound))
           : CustomScrollView(
+              controller: _scrollController,
               slivers: [
                 SliverAppBar(
                   pinned: true,
@@ -1117,6 +1223,36 @@ class _CarDetailsPageState extends State<CarDetailsPage> {
                               ),
                             ),
                           ),
+                        if (_isListingSold)
+                          Positioned.fill(
+                            child: IgnorePointer(
+                              child: Center(
+                                child: Container(
+                                  padding: const EdgeInsets.symmetric(
+                                    horizontal: 28,
+                                    vertical: 12,
+                                  ),
+                                  decoration: BoxDecoration(
+                                    color: const Color(0xCCD32F2F),
+                                    borderRadius: BorderRadius.circular(12),
+                                    border: Border.all(
+                                      color: Colors.white54,
+                                      width: 2,
+                                    ),
+                                  ),
+                                  child: Text(
+                                    listingSoldLabel(context),
+                                    style: const TextStyle(
+                                      color: Colors.white,
+                                      fontWeight: FontWeight.w900,
+                                      fontSize: 26,
+                                      letterSpacing: 2.0,
+                                    ),
+                                  ),
+                                ),
+                              ),
+                            ),
+                          ),
                       ],
                     ),
                   ),
@@ -1140,17 +1276,6 @@ class _CarDetailsPageState extends State<CarDetailsPage> {
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
-                          if (_isListingSold)
-                            Container(
-                              width: double.infinity,
-                              padding: const EdgeInsets.only(bottom: 8),
-                              child: Center(
-                                child: buildListingSoldBadge(
-                                  context,
-                                  large: true,
-                                ),
-                              ),
-                            ),
                           // Quick Sell Banner
                           if (car!['is_quick_sell'] == true ||
                               car!['is_quick_sell'] == 'true')
@@ -1375,138 +1500,9 @@ class _CarDetailsPageState extends State<CarDetailsPage> {
                             mainAxisSize: MainAxisSize.min,
                             children: [
                               if (!_isListingSold && _hasDialableSellerPhone) ...[
-                                Row(
-                                  children: [
-                                    Expanded(
-                                      child: SizedBox(
-                                        height: 46,
-                                        child: ElevatedButton.icon(
-                                          style: ElevatedButton.styleFrom(
-                                            backgroundColor: Color(0xFF25D366),
-                                            foregroundColor: Colors.white,
-                                            elevation: 2,
-                                            shadowColor: Colors.black26,
-                                            padding: EdgeInsets.symmetric(
-                                              horizontal: 10,
-                                              vertical: 8,
-                                            ),
-                                            minimumSize: Size(0, 46),
-                                            tapTargetSize: MaterialTapTargetSize
-                                                .shrinkWrap,
-                                            shape: RoundedRectangleBorder(
-                                              borderRadius:
-                                                  BorderRadius.circular(17),
-                                            ),
-                                          ),
-                                          icon: Icon(Icons.chat, size: 19),
-                                          label: Text(
-                                            AppLocalizations.of(
-                                              context,
-                                            )!.chatOnWhatsApp,
-                                            style: TextStyle(
-                                              fontSize: 13,
-                                              fontWeight: FontWeight.w600,
-                                            ),
-                                            maxLines: 1,
-                                            overflow: TextOverflow.ellipsis,
-                                          ),
-                                          onPressed: _openWhatsAppToSeller,
-                                        ),
-                                      ),
-                                    ),
-                                    SizedBox(width: 6),
-                                    Expanded(
-                                      child: SizedBox(
-                                        height: 46,
-                                        child: ElevatedButton.icon(
-                                          style: ElevatedButton.styleFrom(
-                                            backgroundColor: Color(0xFF007AFF),
-                                            foregroundColor: Colors.white,
-                                            elevation: 2,
-                                            shadowColor: Colors.black26,
-                                            padding: EdgeInsets.symmetric(
-                                              horizontal: 10,
-                                              vertical: 8,
-                                            ),
-                                            minimumSize: Size(0, 46),
-                                            tapTargetSize: MaterialTapTargetSize
-                                                .shrinkWrap,
-                                            shape: RoundedRectangleBorder(
-                                              borderRadius:
-                                                  BorderRadius.circular(17),
-                                            ),
-                                          ),
-                                          icon: Icon(Icons.phone, size: 19),
-                                          label: Text(
-                                            _trLegacyText(
-                                              context,
-                                              'Call Seller',
-                                              ar: 'اتصل بالبائع',
-                                              ku: 'پەیوەندی بە فرۆشیار',
-                                            ),
-                                            style: TextStyle(
-                                              fontSize: 13,
-                                              fontWeight: FontWeight.w600,
-                                            ),
-                                            maxLines: 1,
-                                            overflow: TextOverflow.ellipsis,
-                                          ),
-                                          onPressed: () async {
-                                            final String raw =
-                                                _sellerPhoneRawForContact() ??
-                                                '';
-                                            final String digits = raw
-                                                .replaceAll(
-                                                  RegExp(r'[^0-9]'),
-                                                  '',
-                                                );
-                                            if (digits.isEmpty) {
-                                              if (mounted) {
-                                                ScaffoldMessenger.of(
-                                                  context,
-                                                ).showSnackBar(
-                                                  SnackBar(
-                                                    content: Text(
-                                                      AppLocalizations.of(
-                                                        context,
-                                                      )!.sellerPhoneNotAvailable,
-                                                    ),
-                                                  ),
-                                                );
-                                              }
-                                              return;
-                                            }
-
-                                            final Uri callUri = Uri.parse(
-                                              'tel:$digits',
-                                            );
-
-                                            bool launched = await launchUrl(
-                                              callUri,
-                                              mode: LaunchMode
-                                                  .externalApplication,
-                                            ).catchError((_) => false);
-
-                                            if (launched) {
-                                              await AnalyticsService.trackCall(
-                                                widget.carId.toString(),
-                                              );
-                                            } else if (mounted) {
-                                              ScaffoldMessenger.of(
-                                                context,
-                                              ).showSnackBar(
-                                                SnackBar(
-                                                  content: Text(
-                                                    'Unable to make call',
-                                                  ),
-                                                ),
-                                              );
-                                            }
-                                          },
-                                        ),
-                                      ),
-                                    ),
-                                  ],
+                                Container(
+                                  key: _contactButtonsKey,
+                                  child: _buildContactButtonsRow(),
                                 ),
                                 SizedBox(height: 6),
                               ],
@@ -1626,6 +1622,15 @@ class _CarDetailsPageState extends State<CarDetailsPage> {
                 ),
               ],
             ),
+          if (stickyButtons)
+            Positioned(
+              left: 16,
+              right: 16,
+              bottom: MediaQuery.of(context).padding.bottom + 12,
+              child: _buildContactButtonsRow(),
+            ),
+        ],
+      ),
     );
   }
 
