@@ -2707,6 +2707,32 @@ Widget buildCarListingSpecsGrid(
               );
             },
     ),
+    if ((car['vin'] ?? '').toString().trim().isNotEmpty)
+      GestureDetector(
+        onLongPress: () {
+          final vin = car['vin'].toString().trim();
+          services.Clipboard.setData(services.ClipboardData(text: vin));
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text(
+                _trLegacyText(context, 'VIN copied', ar: 'تم نسخ رقم الهيكل', ku: 'ژمارەی شاسی کۆپی کرا'),
+              ),
+            ),
+          );
+        },
+        child: detailRowSpec(
+          icon: Icons.pin_outlined,
+          label: 'VIN',
+          value: car['vin'].toString().trim(),
+          onTap: () async {
+            final vin = car['vin'].toString().trim();
+            final url = Uri.parse('https://www.vindecoderz.com/EN/check-lookup/$vin');
+            if (await canLaunchUrl(url)) {
+              await launchUrl(url, mode: LaunchMode.externalApplication);
+            }
+          },
+        ),
+      ),
     detailRowSpec(
       icon: Icons.drive_eta,
       label: AppLocalizations.of(context)!.detail_drive,

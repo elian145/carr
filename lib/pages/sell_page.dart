@@ -77,6 +77,7 @@ class _SellPageState extends State<SellPage> {
 
   String _titleStatus = 'clean';
   final _damagedParts = TextEditingController();
+  final _vin = TextEditingController();
   final List<XFile> _damageImages = <XFile>[];
 
   final List<XFile> _images = <XFile>[];
@@ -124,6 +125,7 @@ class _SellPageState extends State<SellPage> {
     _fuelEconomyCtl.addListener(_onDraftFieldChanged);
     _seatingCtl.addListener(_onDraftFieldChanged);
     _damagedParts.addListener(_onDraftFieldChanged);
+    _vin.addListener(_onDraftFieldChanged);
     if (widget.startFresh) {
       unawaited(_startFreshFromRoute());
     } else if (widget.initialDraftSnapshot != null) {
@@ -158,6 +160,7 @@ class _SellPageState extends State<SellPage> {
     _fuelEconomyCtl.removeListener(_onDraftFieldChanged);
     _seatingCtl.removeListener(_onDraftFieldChanged);
     _damagedParts.removeListener(_onDraftFieldChanged);
+    _vin.removeListener(_onDraftFieldChanged);
     _year.dispose();
     _mileage.dispose();
     _price.dispose();
@@ -168,6 +171,7 @@ class _SellPageState extends State<SellPage> {
     _fuelEconomyCtl.dispose();
     _seatingCtl.dispose();
     _damagedParts.dispose();
+    _vin.dispose();
     super.dispose();
   }
 
@@ -332,7 +336,8 @@ class _SellPageState extends State<SellPage> {
         (data['currency'] ?? 'USD') != 'USD' ||
         (data['title_status'] ?? 'clean').toString().toLowerCase() != 'clean' ||
         (data['damage_image_paths'] is List &&
-            (data['damage_image_paths'] as List).isNotEmpty);
+            (data['damage_image_paths'] as List).isNotEmpty) ||
+        (data['vin'] ?? '').toString().trim().isNotEmpty;
   }
 
   Future<void> _loadDraftPreview() async {
@@ -378,6 +383,7 @@ class _SellPageState extends State<SellPage> {
     if (_currency != 'USD') return true;
     if (_titleStatus != 'clean') return true;
     if (_damagedParts.text.trim().isNotEmpty) return true;
+    if (_vin.text.trim().isNotEmpty) return true;
     return _images.isNotEmpty || _videos.isNotEmpty || _damageImages.isNotEmpty;
   }
 
@@ -432,6 +438,7 @@ class _SellPageState extends State<SellPage> {
       'title_status': _titleStatus,
       'damaged_parts': _damagedParts.text.trim(),
       'damage_image_paths': _damageImages.map((file) => file.path).toList(),
+      'vin': _vin.text.trim(),
       'complete': _isListingComplete(),
       'updated_at': DateTime.now().toIso8601String(),
     };
@@ -593,6 +600,7 @@ class _SellPageState extends State<SellPage> {
         'title_status': normalizedTitle,
         'damaged_parts': (draft['damaged_parts'] ?? '').toString().trim(),
         'damage_image_paths': damageImagePaths,
+        'vin': (draft['vin'] ?? '').toString().trim(),
       };
       final editId = (draft['_editListingId'] ?? '').toString().trim();
       final hasMeaningfulContent =
@@ -625,7 +633,8 @@ class _SellPageState extends State<SellPage> {
               loadedDraft['currency'] != 'USD' ||
               loadedDraft['title_status'] != 'clean' ||
               loadedDraft['damaged_parts'].toString().trim().isNotEmpty ||
-              damageImagePaths.isNotEmpty);
+              damageImagePaths.isNotEmpty ||
+              loadedDraft['vin'].toString().trim().isNotEmpty);
       if (!hasMeaningfulContent) {
         await SellListingDraftPrefs.clear(owner);
         if (!mounted) return;
@@ -666,6 +675,7 @@ class _SellPageState extends State<SellPage> {
         _seatingCtl.text = loadedDraft['seating'];
         _titleStatus = loadedDraft['title_status'] as String;
         _damagedParts.text = loadedDraft['damaged_parts'] as String;
+        _vin.text = loadedDraft['vin'] as String;
         _catalogYear = int.tryParse((draft['catalog_year'] ?? '').toString());
         _datasetModelId = int.tryParse(
           (draft['dataset_model_id'] ?? '').toString(),
@@ -726,6 +736,7 @@ class _SellPageState extends State<SellPage> {
         _currency = 'USD';
         _titleStatus = 'clean';
         _damagedParts.clear();
+        _vin.clear();
         _images.clear();
         _videos.clear();
         _damageImages.clear();
@@ -1186,6 +1197,8 @@ class _SellPageState extends State<SellPage> {
             : _description.text.trim(),
         'title_status': _titleStatus,
       };
+      final vinText = _vin.text.trim();
+      if (vinText.isNotEmpty) body['vin'] = vinText;
       final eng = OnlineSpecVariant.parseLeadingEngineLiters(
         _engineSizeCtl.text.trim(),
       );
@@ -2319,6 +2332,32 @@ class _SellPageState extends State<SellPage> {
                     ),
                   ),
                 ],
+              ),
+              const SizedBox(height: 10),
+              TextFormField(
+                controller: _vin,
+                textInputAction: TextInputAction.next,
+                textCapitalization: TextCapitalization.characters,
+                decoration: InputDecoration(
+                  labelText: _text(
+                    'VIN (optional)',
+                    ar: 'رقم الهيكل (اختياري)',
+                    ku: 'ژمارەی شاسی (ئارەزوومەندانە)',
+                  ),
+                  hintText: 'e.g. 1HGBH41JXMN109186',
+                ),
+                validator: (v) {
+                  final trimmed = (v ?? '').trim();
+                  if (trimmed.isEmpty) return null;
+                  if (trimmed.length != 17) {
+                    return _text(
+                      'VIN must be 17 characters',
+                      ar: 'رقم الهيكل يجب أن يكون 17 حرفاً',
+                      ku: 'ژمارەی شاسی دەبێت ١٧ پیت بێت',
+                    );
+                  }
+                  return null;
+                },
               ),
               const SizedBox(height: 10),
               Row(

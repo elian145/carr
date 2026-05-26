@@ -3042,6 +3042,7 @@ class _SellStep2PageState extends State<SellStep2Page> {
   String? selectedCylinderCount;
   String? selectedTitleStatus;
   String? selectedDamagedParts;
+  String? selectedVin;
   bool errMileage = false;
   bool errCondition = false;
   bool errTransmission = false;
@@ -3071,12 +3072,14 @@ class _SellStep2PageState extends State<SellStep2Page> {
   // Controllers for manual inputs
   late TextEditingController _mileageController;
   late TextEditingController _engineSizeController;
+  late TextEditingController _vinController;
 
   @override
   void initState() {
     super.initState();
     _mileageController = TextEditingController();
     _engineSizeController = TextEditingController();
+    _vinController = TextEditingController();
     _resetStep2();
     _hydrateFromParentCarData();
     WidgetsBinding.instance.addPostFrameCallback((_) {
@@ -3214,6 +3217,11 @@ class _SellStep2PageState extends State<SellStep2Page> {
         selectedTitleStatus = rawTitle;
       }
       selectedDamagedParts = d['damaged_parts']?.toString();
+      final rawVin = d['vin']?.toString().trim();
+      if (rawVin != null && rawVin.isNotEmpty) {
+        selectedVin = rawVin;
+        _vinController.text = rawVin;
+      }
       takeScalarOrOnlineOpt(
         'cylinder_count',
         '_online_opts_cylinder',
@@ -3287,6 +3295,7 @@ class _SellStep2PageState extends State<SellStep2Page> {
     _engineSizeFocusNode.dispose();
     _mileageController.dispose();
     _engineSizeController.dispose();
+    _vinController.dispose();
     super.dispose();
   }
 
@@ -3313,6 +3322,8 @@ class _SellStep2PageState extends State<SellStep2Page> {
         selectedCylinderCount = data['selectedCylinderCount']?.toString();
         selectedTitleStatus = data['selectedTitleStatus']?.toString();
         selectedDamagedParts = data['selectedDamagedParts']?.toString();
+        selectedVin = data['selectedVin']?.toString();
+        _vinController.text = selectedVin ?? '';
         errMileage = data['errMileage'] == true;
         errCondition = data['errCondition'] == true;
         errTransmission = data['errTransmission'] == true;
@@ -3348,6 +3359,7 @@ class _SellStep2PageState extends State<SellStep2Page> {
         parentState.carData['cylinder_count'] = selectedCylinderCount;
         parentState.carData['title_status'] = selectedTitleStatus;
         parentState.carData['damaged_parts'] = selectedDamagedParts;
+        parentState.carData['vin'] = selectedVin;
         parentState.setState(() {});
       }
       _hydrateFromParentCarData(force: true);
@@ -3373,6 +3385,7 @@ class _SellStep2PageState extends State<SellStep2Page> {
           'selectedCylinderCount': selectedCylinderCount,
           'selectedTitleStatus': selectedTitleStatus,
           'selectedDamagedParts': selectedDamagedParts,
+          'selectedVin': selectedVin,
           'errMileage': errMileage,
           'errCondition': errCondition,
           'errTransmission': errTransmission,
@@ -3415,6 +3428,7 @@ class _SellStep2PageState extends State<SellStep2Page> {
     selectedCylinderCount = null;
     selectedTitleStatus = null;
     selectedDamagedParts = null;
+    selectedVin = null;
   }
 
   void _dismissKeyboard() {
@@ -3867,6 +3881,9 @@ class _SellStep2PageState extends State<SellStep2Page> {
     parentState.carData['cylinder_count'] = selectedCylinderCount;
     parentState.carData['title_status'] = selectedTitleStatus;
     parentState.carData['damaged_parts'] = selectedDamagedParts;
+    final vinText = _vinController.text.trim();
+    selectedVin = vinText.isNotEmpty ? vinText : null;
+    parentState.carData['vin'] = selectedVin;
     unawaited(parentState._saveSellDraftSnapshot());
   }
 
@@ -5032,6 +5049,54 @@ class _SellStep2PageState extends State<SellStep2Page> {
                   ),
                 ),
               ),
+            SizedBox(height: 16),
+
+            // VIN (optional)
+            Container(
+              decoration: BoxDecoration(
+                color: Color(0xFF1A1A1A),
+                borderRadius: BorderRadius.circular(12),
+                border: Border.all(color: Color(0xFFFF6B00).withOpacity(0.3)),
+              ),
+              padding: EdgeInsets.symmetric(horizontal: 16, vertical: 4),
+              child: TextFormField(
+                controller: _vinController,
+                textCapitalization: TextCapitalization.characters,
+                style: TextStyle(color: Colors.white),
+                decoration: InputDecoration(
+                  icon: Icon(Icons.pin_outlined, color: Color(0xFFFF6B00)),
+                  labelText: _trLegacyText(
+                    context,
+                    'VIN (optional)',
+                    ar: 'رقم الهيكل (اختياري)',
+                    ku: 'ژمارەی شاسی (ئارەزوومەندانە)',
+                  ),
+                  labelStyle: TextStyle(color: Colors.white70),
+                  hintText: 'e.g. 1HGBH41JXMN109186',
+                  hintStyle: TextStyle(color: Colors.white38),
+                  border: InputBorder.none,
+                  enabledBorder: InputBorder.none,
+                  focusedBorder: InputBorder.none,
+                ),
+                onChanged: (value) {
+                  selectedVin = value.trim().isEmpty ? null : value.trim();
+                  _syncStep2DraftToParent();
+                },
+                validator: (v) {
+                  final trimmed = (v ?? '').trim();
+                  if (trimmed.isEmpty) return null;
+                  if (trimmed.length != 17) {
+                    return _trLegacyText(
+                      context,
+                      'VIN must be 17 characters',
+                      ar: 'رقم الهيكل يجب أن يكون 17 حرفاً',
+                      ku: 'ژمارەی شاسی دەبێت ١٧ پیت بێت',
+                    );
+                  }
+                  return null;
+                },
+              ),
+            ),
             SizedBox(height: 32),
             // Navigation Buttons
             Row(
@@ -5235,6 +5300,9 @@ class _SellStep2PageState extends State<SellStep2Page> {
                               selectedTitleStatus;
                           parentState.carData['damaged_parts'] =
                               selectedDamagedParts;
+                          final vinText = _vinController.text.trim();
+                          parentState.carData['vin'] =
+                              vinText.isNotEmpty ? vinText : null;
                           setState(() {
                             errMileage = errCondition = errTransmission =
                                 errFuelType = errBodyType = errColor =
@@ -7712,6 +7780,11 @@ class _ListingPreviewWidgetState extends State<ListingPreviewWidget> {
         label: loc.phoneLabel,
         value: _getFirstNonEmpty(data, ['contact_phone']),
       ),
+      _detailRow(
+        icon: Icons.pin_outlined,
+        label: 'VIN',
+        value: _getFirstNonEmpty(data, ['vin']),
+      ),
     ];
     final primItems = primary
         .where((i) => i.value != null && i.value!.isNotEmpty)
@@ -8798,6 +8871,8 @@ class _SellStep5PageState extends State<SellStep5Page> {
       'plate_city': plateCity.isNotEmpty ? plateCity : null,
       if (fuelEconomy.isNotEmpty) 'fuel_economy': fuelEconomy,
       if (description.isNotEmpty) 'description': description,
+      if ((carData['vin']?.toString() ?? '').trim().isNotEmpty)
+        'vin': carData['vin'].toString().trim(),
     }..removeWhere((k, v) => v == null || (v is String && v.trim().isEmpty));
   }
 
@@ -8901,6 +8976,8 @@ class _SellStep5PageState extends State<SellStep5Page> {
       'contact_phone': (carData['contact_phone']?.toString() ?? '').trim(),
       'description': (carData['description']?.toString() ?? '').trim(),
       'is_quick_sell': carData['is_quick_sell'] ?? false,
+      if ((carData['vin']?.toString() ?? '').trim().isNotEmpty)
+        'vin': carData['vin'].toString().trim(),
     }..removeWhere((k, v) => v == null || (v is String && v.trim().isEmpty));
 
     try {

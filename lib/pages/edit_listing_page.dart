@@ -26,6 +26,7 @@ class _EditListingPageState extends State<EditListingPage> {
   late final TextEditingController _location;
   late final TextEditingController _description;
   late final TextEditingController _color;
+  late final TextEditingController _vin;
 
   late String _condition;
   bool _saving = false;
@@ -50,6 +51,7 @@ class _EditListingPageState extends State<EditListingPage> {
     _description =
         TextEditingController(text: (car['description'] ?? '').toString());
     _color = TextEditingController(text: (car['color'] ?? '').toString());
+    _vin = TextEditingController(text: (car['vin'] ?? '').toString());
     final cond = (car['condition'] ?? 'used').toString().trim().toLowerCase();
     _condition = cond == 'new' ? 'new' : 'used';
   }
@@ -64,6 +66,7 @@ class _EditListingPageState extends State<EditListingPage> {
     _location.dispose();
     _description.dispose();
     _color.dispose();
+    _vin.dispose();
     super.dispose();
   }
 
@@ -91,6 +94,7 @@ class _EditListingPageState extends State<EditListingPage> {
             : _description.text.trim(),
         'color': _color.text.trim().isEmpty ? null : _color.text.trim(),
         'condition': _condition,
+        if (_vin.text.trim().isNotEmpty) 'vin': _vin.text.trim(),
       };
 
       final res = await ApiService.updateCar(carId, payload);
@@ -256,6 +260,31 @@ class _EditListingPageState extends State<EditListingPage> {
               decoration: InputDecoration(
                 labelText: loc?.colorLabel ?? 'Color',
               ),
+            ),
+            const SizedBox(height: 12),
+            TextFormField(
+              controller: _vin,
+              textCapitalization: TextCapitalization.characters,
+              decoration: InputDecoration(
+                labelText: _text(
+                  'VIN (optional)',
+                  ar: 'رقم الهيكل (اختياري)',
+                  ku: 'ژمارەی شاسی (ئارەزوومەندانە)',
+                ),
+                hintText: 'e.g. 1HGBH41JXMN109186',
+              ),
+              validator: (v) {
+                final trimmed = (v ?? '').trim();
+                if (trimmed.isEmpty) return null;
+                if (trimmed.length != 17) {
+                  return _text(
+                    'VIN must be 17 characters',
+                    ar: 'رقم الهيكل يجب أن يكون 17 حرفاً',
+                    ku: 'ژمارەی شاسی دەبێت ١٧ پیت بێت',
+                  );
+                }
+                return null;
+              },
             ),
             const SizedBox(height: 12),
             DropdownButtonFormField<String>(
