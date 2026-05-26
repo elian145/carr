@@ -27,13 +27,11 @@ class TikTokScrollPage extends StatefulWidget {
 class _TikTokScrollPageState extends State<TikTokScrollPage> {
   late final PageController _pageController;
   late List<Map<String, dynamic>> _cars;
-  int _currentIndex = 0;
 
   @override
   void initState() {
     super.initState();
     _cars = List.from(widget.cars);
-    _currentIndex = widget.initialIndex;
     _pageController = PageController(initialPage: widget.initialIndex);
   }
 
@@ -47,29 +45,10 @@ class _TikTokScrollPageState extends State<TikTokScrollPage> {
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: Colors.black,
-      extendBodyBehindAppBar: true,
-      appBar: AppBar(
-        backgroundColor: Colors.transparent,
-        elevation: 0,
-        leading: IconButton(
-          icon: const Icon(Icons.arrow_back, color: Colors.white),
-          onPressed: () => Navigator.pop(context),
-        ),
-        title: Text(
-          '${_currentIndex + 1} / ${_cars.length}',
-          style: const TextStyle(color: Colors.white, fontSize: 14),
-        ),
-        centerTitle: true,
-      ),
       body: PageView.builder(
         controller: _pageController,
         scrollDirection: Axis.vertical,
         itemCount: _cars.length,
-        onPageChanged: (index) {
-          setState(() {
-            _currentIndex = index;
-          });
-        },
         itemBuilder: (context, index) {
           final car = _cars[index];
           return _TikTokListingCard(car: car);
@@ -266,30 +245,36 @@ class _TikTokListingCardState extends State<_TikTokListingCard> {
             ),
           ),
 
-          // Image dots indicator
+          // Back button
+          Positioned(
+            top: MediaQuery.of(context).padding.top + 8,
+            left: 8,
+            child: IconButton(
+              icon: const Icon(Icons.arrow_back, color: Colors.white, size: 26),
+              onPressed: () => Navigator.pop(context),
+            ),
+          ),
+
+          // Image counter
           if (_imageUrls.length > 1)
             Positioned(
-              top: MediaQuery.of(context).padding.top + 56,
+              top: MediaQuery.of(context).padding.top + 16,
               left: 0,
               right: 0,
               child: Center(
-                child: Row(
-                  mainAxisSize: MainAxisSize.min,
-                  children: List.generate(
-                    _imageUrls.length > 8 ? 8 : _imageUrls.length,
-                    (i) {
-                      final active = i == _imageIndex;
-                      return AnimatedContainer(
-                        duration: const Duration(milliseconds: 200),
-                        margin: const EdgeInsets.symmetric(horizontal: 3),
-                        width: active ? 8 : 6,
-                        height: active ? 8 : 6,
-                        decoration: BoxDecoration(
-                          color: active ? Colors.white : Colors.white54,
-                          shape: BoxShape.circle,
-                        ),
-                      );
-                    },
+                child: Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                  decoration: BoxDecoration(
+                    color: Colors.black54,
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                  child: Text(
+                    '${_imageIndex + 1} / ${_imageUrls.length}',
+                    style: const TextStyle(
+                      color: Colors.white,
+                      fontSize: 13,
+                      fontWeight: FontWeight.w500,
+                    ),
                   ),
                 ),
               ),
