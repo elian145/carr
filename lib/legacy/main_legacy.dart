@@ -86,6 +86,7 @@ import '../shared/trust/report_dialog.dart';
 import '../models/online_spec_variant.dart';
 import '../widgets/in_app_video_screen.dart';
 import '../pages/listing_image_gallery_page.dart';
+import '../pages/tiktok_scroll_page.dart';
 import '../widgets/network_video_thumbnail.dart';
 import '../widgets/edge_swipe_back.dart';
 part 'home_page_legacy.dart';
@@ -3795,6 +3796,19 @@ class MyApp extends StatelessWidget {
                     return navigationError('Missing listing id');
                   }
                   return CarDetailsPage(carId: carId);
+                },
+                '/tiktok_scroll': (context) {
+                  final args = routeArgs(context);
+                  final cars = (args?['cars'] as List?)
+                          ?.whereType<Map>()
+                          .map((m) => Map<String, dynamic>.from(m))
+                          .toList() ??
+                      <Map<String, dynamic>>[];
+                  final initialIndex = (args?['initialIndex'] as int?) ?? 0;
+                  return TikTokScrollPage(
+                    cars: cars,
+                    initialIndex: initialIndex,
+                  );
                 },
                 '/chat/conversation': (context) {
                   final args = routeArgs(context);

@@ -7701,16 +7701,18 @@ class _HomePageState extends State<HomePage> {
                               isSelected: [
                                 listingColumns == 1,
                                 listingColumns == 2,
+                                listingColumns == 3,
                               ],
                               onPressed: (index) {
                                 setState(() {
-                                  listingColumns = index == 0 ? 1 : 2;
+                                  listingColumns = index == 0 ? 1 : (index == 1 ? 2 : 3);
                                 });
                                 ListingLayoutPrefs.setColumns(listingColumns);
                               },
                               children: const [
                                 Icon(Icons.view_agenda),
                                 Icon(Icons.grid_view),
+                                Icon(Icons.swipe_vertical),
                               ],
                             ),
                           ],
@@ -7784,14 +7786,14 @@ class _HomePageState extends State<HomePage> {
                       ),
                       sliver: SliverGrid(
                         gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
-                          crossAxisCount: listingColumns,
+                          crossAxisCount: listingColumns == 1 ? 1 : 2,
                           // Slightly taller cells than 0.65 so listing cards (image + content) don’t overflow
                           // One column: horizontal row — wider vs tall to match strip layout.
                           // One column: horizontal card. Larger ratio => shorter cell height
                           // so the text column is not left with a tall empty band under the last row.
-                          childAspectRatio: listingColumns == 2
-                              ? (Platform.isIOS ? 0.66 : 0.61)
-                              : 2.78,
+                          childAspectRatio: listingColumns == 1
+                              ? 2.78
+                              : (Platform.isIOS ? 0.66 : 0.61),
                           crossAxisSpacing: 8,
                           mainAxisSpacing: 8,
                         ),
@@ -7807,6 +7809,28 @@ class _HomePageState extends State<HomePage> {
                             );
                           }
                           final car = cars[index];
+                          if (listingColumns == 3) {
+                            return GestureDetector(
+                              onTap: () {
+                                Navigator.pushNamed(
+                                  context,
+                                  '/tiktok_scroll',
+                                  arguments: {
+                                    'cars': cars,
+                                    'initialIndex': index,
+                                  },
+                                );
+                              },
+                              child: AbsorbPointer(
+                                child: buildGlobalCarCard(
+                                  context,
+                                  car,
+                                  listLayout: false,
+                                  carouselResetSeed: _homeCarouselResetSeed,
+                                ),
+                              ),
+                            );
+                          }
                           return buildGlobalCarCard(
                             context,
                             car,
