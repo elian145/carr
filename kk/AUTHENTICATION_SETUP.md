@@ -153,7 +153,7 @@ CREATE TABLE car (
     description TEXT,
     color VARCHAR(30),
     fuel_economy VARCHAR(20),
-    vin VARCHAR(17) UNIQUE,
+    vin VARCHAR(17),
     is_active BOOLEAN DEFAULT TRUE,
     is_featured BOOLEAN DEFAULT FALSE,
     views_count INTEGER DEFAULT 0,

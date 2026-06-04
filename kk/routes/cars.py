@@ -7,8 +7,7 @@ from datetime import datetime
 from flask import Blueprint, current_app, jsonify, request
 from flask_jwt_extended import jwt_required, verify_jwt_in_request
 from ..security import rate_limit
-from sqlalchemy import func, select, update
-from sqlalchemy.exc import IntegrityError
+from sqlalchemy import select, update
 from sqlalchemy.orm import joinedload, selectinload
 
 from ..auth import get_current_user, log_user_action
@@ -32,44 +31,13 @@ _ALLOWED_REGION_SPECS = frozenset(
 _ALLOWED_PLATE_TYPES = frozenset({"private", "temporary", "commercial", "taxi"})
 _ALLOWED_LISTING_STATUSES = frozenset({"active", "sold"})
 
-_VIN_ALREADY_EXISTS_MESSAGE = (
-    "This VIN is already used on another listing. "
-    "Use a different VIN or edit your existing listing."
-)
-
-
 def _normalize_vin(val) -> str | None:
     v = (val if isinstance(val, str) else str(val or "")).strip().upper()
     return v if v else None
 
 
-def _vin_used_by_other_listing(vin: str, *, exclude_car_id: int | None = None) -> bool:
-    q = Car.query.filter(func.upper(Car.vin) == vin.upper())
-    if exclude_car_id is not None:
-        q = q.filter(Car.id != exclude_car_id)
-    return q.first() is not None
-
-
-def _vin_conflict_response():
-    return (
-        jsonify(
-            {
-                "message": _VIN_ALREADY_EXISTS_MESSAGE,
-                "errors": {"vin": "already_exists"},
-            }
-        ),
-        409,
-    )
-
-
 def _listing_db_error_response(exc, *, action: str):
     db.session.rollback()
-    err = str(exc).lower()
-    if isinstance(exc, IntegrityError) and (
-        "car_vin_key" in err
-        or ("unique" in err and "vin" in err and "duplicate" in err)
-    ):
-        return _vin_conflict_response()
     current_app.logger.exception("%s failed: %s", action, exc)
     return jsonify({"message": f"Failed to {action}"}), 500
 
@@ -666,9 +634,6 @@ def create_car():
         if not brand or not model:
             return jsonify({"message": "Validation failed", "errors": {"brand/model": "required"}}), 400
 
-        if vin and _vin_used_by_other_listing(vin):
-            return _vin_conflict_response()
-
         car = Car(
             seller_id=current_user.id,
             title=(f"{brand.title()} {model.title()} {year or ''}".strip() or f"{brand.title()} {model.title()}").strip(),
@@ -884,8 +849,6 @@ def update_car(car_id: str):
 
         if car.vin:
             car.vin = _normalize_vin(car.vin)
-            if _vin_used_by_other_listing(car.vin, exclude_car_id=car.id):
-                return _vin_conflict_response()
 
         car.updated_at = utcnow()
         db.session.commit()

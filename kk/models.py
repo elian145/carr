@@ -221,7 +221,7 @@ class Car(db.Model):
     description = db.Column(db.Text, nullable=True)
     color = db.Column(db.String(30), nullable=True)
     fuel_economy = db.Column(db.String(20), nullable=True)  # MPG or L/100km
-    vin = db.Column(db.String(17), nullable=True, unique=True)
+    vin = db.Column(db.String(17), nullable=True)
     engine_size = db.Column(db.Float, nullable=True)  # liters
     cylinder_count = db.Column(db.Integer, nullable=True)
     # Market / homologation region (e.g. us, gcc, eu); see app filter `region_specs`.
