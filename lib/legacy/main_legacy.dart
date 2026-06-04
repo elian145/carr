@@ -27,6 +27,7 @@ import '../models/analytics_model.dart';
 import '../shared/auth/token_store.dart';
 import '../shared/text/pretty_title_case.dart';
 import '../shared/vin/open_vin_search.dart';
+import '../shared/errors/user_error_text.dart';
 import '../shared/listings/listing_events.dart';
 import '../shared/listings/listing_identity.dart';
 import '../shared/listings/listing_status.dart';

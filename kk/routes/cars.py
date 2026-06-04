@@ -7,7 +7,8 @@ from datetime import datetime
 from flask import Blueprint, current_app, jsonify, request
 from flask_jwt_extended import jwt_required, verify_jwt_in_request
 from ..security import rate_limit
-from sqlalchemy import select, update
+from sqlalchemy import func, select, update
+from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import joinedload, selectinload
 
 from ..auth import get_current_user, log_user_action
@@ -30,6 +31,47 @@ _ALLOWED_REGION_SPECS = frozenset(
 
 _ALLOWED_PLATE_TYPES = frozenset({"private", "temporary", "commercial", "taxi"})
 _ALLOWED_LISTING_STATUSES = frozenset({"active", "sold"})
+
+_VIN_ALREADY_EXISTS_MESSAGE = (
+    "This VIN is already used on another listing. "
+    "Use a different VIN or edit your existing listing."
+)
+
+
+def _normalize_vin(val) -> str | None:
+    v = (val if isinstance(val, str) else str(val or "")).strip().upper()
+    return v if v else None
+
+
+def _vin_used_by_other_listing(vin: str, *, exclude_car_id: int | None = None) -> bool:
+    q = Car.query.filter(func.upper(Car.vin) == vin.upper())
+    if exclude_car_id is not None:
+        q = q.filter(Car.id != exclude_car_id)
+    return q.first() is not None
+
+
+def _vin_conflict_response():
+    return (
+        jsonify(
+            {
+                "message": _VIN_ALREADY_EXISTS_MESSAGE,
+                "errors": {"vin": "already_exists"},
+            }
+        ),
+        409,
+    )
+
+
+def _listing_db_error_response(exc, *, action: str):
+    db.session.rollback()
+    err = str(exc).lower()
+    if isinstance(exc, IntegrityError) and (
+        "car_vin_key" in err
+        or ("unique" in err and "vin" in err and "duplicate" in err)
+    ):
+        return _vin_conflict_response()
+    current_app.logger.exception("%s failed: %s", action, exc)
+    return jsonify({"message": f"Failed to {action}"}), 500
 
 
 def _public_listings_filter(query):
@@ -589,7 +631,7 @@ def create_car():
         description = _s(raw.get("description"), None) or None
         color = _s(raw.get("color"), "white")
         fuel_economy = _s(raw.get("fuel_economy"), None) or None
-        vin = _s(raw.get("vin"), None) or None
+        vin = _normalize_vin(_s(raw.get("vin"), None) or None)
         currency = _s(raw.get("currency"), "USD")[:3] or "USD"
         trim = _s(raw.get("trim"), "base")
         seating = _i(raw.get("seating"), 5)
@@ -623,6 +665,9 @@ def create_car():
 
         if not brand or not model:
             return jsonify({"message": "Validation failed", "errors": {"brand/model": "required"}}), 400
+
+        if vin and _vin_used_by_other_listing(vin):
+            return _vin_conflict_response()
 
         car = Car(
             seller_id=current_user.id,
@@ -666,8 +711,7 @@ def create_car():
                 pass
         return jsonify({"message": "Car listing created successfully", "car": car.to_dict()}), 201
     except Exception as e:
-        current_app.logger.exception("create_car failed: %s", e)
-        return jsonify({"message": f"Failed to create car listing: {str(e)}"}), 500
+        return _listing_db_error_response(e, action="create car listing")
 
 
 def _resolve_car_for_user(car_id: str, user, *, require_owner: bool = True, require_active: bool = True):
@@ -814,6 +858,8 @@ def update_car(car_id: str):
                 val = _safe_int(val)
                 if val is not None and val < 1:
                     val = None
+            elif field == "vin":
+                val = _normalize_vin(val) if val not in (None, "") else None
             setattr(car, field, val)
 
         if "trim" in data:
@@ -835,6 +881,11 @@ def update_car(car_id: str):
 
         if (car.title_status or "").lower() == "clean":
             car.damaged_parts = None
+
+        if car.vin:
+            car.vin = _normalize_vin(car.vin)
+            if _vin_used_by_other_listing(car.vin, exclude_car_id=car.id):
+                return _vin_conflict_response()
 
         car.updated_at = utcnow()
         db.session.commit()
@@ -864,9 +915,7 @@ def update_car(car_id: str):
             {"message": "Car listing updated successfully", "car": car_payload}
         ), 200
     except Exception as e:
-        db.session.rollback()
-        current_app.logger.exception("update_car failed: %s", e)
-        return jsonify({"message": "Failed to update car listing", "error": str(e)}), 500
+        return _listing_db_error_response(e, action="update car listing")
 
 
 @bp.route("/api/cars/<car_id>", methods=["DELETE"])

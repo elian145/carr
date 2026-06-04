@@ -209,6 +209,7 @@
   "listingUploadPartialFail": "تم إنشاء الإعلان، لكن فشل رفع الصور ({code}).",
   "failedToSubmitListing": "فشل إرسال الإعلان: {msg}",
   "couldNotSubmitListing": "تعذر إرسال الإعلان. حاول مرة أخرى.",
+  "listingVinAlreadyExists": "رقم الهيكل (VIN) مستخدم في إعلان آخر. استخدم رقمًا مختلفًا أو عدّل إعلانك الحالي.",
   "errorTitle": "خطأ",
   "okAction": "حسناً",
   "createAccount": "إنشاء حساب",

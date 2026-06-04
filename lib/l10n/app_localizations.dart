@@ -1210,6 +1210,12 @@ abstract class AppLocalizations {
   /// **'Could not submit listing. Please try again.'**
   String get couldNotSubmitListing;
 
+  /// No description provided for @listingVinAlreadyExists.
+  ///
+  /// In en, this message translates to:
+  /// **'This VIN is already used on another listing. Use a different VIN or edit your existing listing.'**
+  String get listingVinAlreadyExists;
+
   /// No description provided for @errorTitle.
   ///
   /// In en, this message translates to:

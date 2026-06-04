@@ -581,6 +581,10 @@ class AppLocalizationsKu extends AppLocalizations {
       'نەتوانرا ڕێکلام بنێدرێت. تکایە هەوڵ بدەوە.';
 
   @override
+  String get listingVinAlreadyExists =>
+      'ئەم ژمارەی شاسییە پێشتر لە ڕێکلامێکی تر بەکارهاتووە. ژمارەیەکی تر بەکاربهێنە یان ڕێکلامی خۆت دەستکاری بکە.';
+
+  @override
   String get errorTitle => 'هەڵە';
 
   @override

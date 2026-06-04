@@ -209,6 +209,7 @@
   "listingUploadPartialFail": "Listing created, but photo upload failed ({code}).",
   "failedToSubmitListing": "Failed to submit listing: {msg}",
   "couldNotSubmitListing": "Could not submit listing. Please try again.",
+  "listingVinAlreadyExists": "This VIN is already used on another listing. Use a different VIN or edit your existing listing.",
   "errorTitle": "Error",
   "okAction": "OK",
   "createAccount": "Create account",

@@ -581,6 +581,10 @@ class AppLocalizationsEn extends AppLocalizations {
       'Could not submit listing. Please try again.';
 
   @override
+  String get listingVinAlreadyExists =>
+      'This VIN is already used on another listing. Use a different VIN or edit your existing listing.';
+
+  @override
   String get errorTitle => 'Error';
 
   @override

@@ -579,6 +579,10 @@ class AppLocalizationsAr extends AppLocalizations {
   String get couldNotSubmitListing => 'تعذر إرسال الإعلان. حاول مرة أخرى.';
 
   @override
+  String get listingVinAlreadyExists =>
+      'رقم الهيكل (VIN) مستخدم في إعلان آخر. استخدم رقمًا مختلفًا أو عدّل إعلانك الحالي.';
+
+  @override
   String get errorTitle => 'خطأ';
 
   @override

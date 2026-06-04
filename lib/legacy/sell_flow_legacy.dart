@@ -8728,22 +8728,13 @@ class _SellStep5PageState extends State<SellStep5Page> {
                                   ScaffoldMessenger.of(context).showSnackBar(
                                     SnackBar(
                                       content: Text(
-                                        (e is Exception
-                                                    ? e.toString().replaceFirst(
-                                                        'Exception: ',
-                                                        '',
-                                                      )
-                                                    : e.toString())
-                                                .isEmpty
-                                            ? AppLocalizations.of(
-                                                context,
-                                              )!.couldNotSubmitListing
-                                            : (e is Exception
-                                                  ? e.toString().replaceFirst(
-                                                      'Exception: ',
-                                                      '',
-                                                    )
-                                                  : e.toString()),
+                                        userErrorText(
+                                          context,
+                                          e,
+                                          fallback: AppLocalizations.of(
+                                            context,
+                                          )!.couldNotSubmitListing,
+                                        ),
                                       ),
                                       backgroundColor: Colors.red,
                                     ),

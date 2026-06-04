@@ -209,6 +209,7 @@
   "listingUploadPartialFail": "ڕێکلام دروست کرا، بەڵام بارکردنی وێنە شکستی هێنا ({code}).",
   "failedToSubmitListing": "ناتوانرێت ڕێکلام بنێدرێت: {msg}",
   "couldNotSubmitListing": "نەتوانرا ڕێکلام بنێدرێت. تکایە هەوڵ بدەوە.",
+  "listingVinAlreadyExists": "ئەم ژمارەی شاسییە پێشتر لە ڕێکلامێکی تر بەکارهاتووە. ژمارەیەکی تر بەکاربهێنە یان ڕێکلامی خۆت دەستکاری بکە.",
   "errorTitle": "هەڵە",
   "okAction": "باشە",
   "createAccount": "هەژمار دروست بکە",
