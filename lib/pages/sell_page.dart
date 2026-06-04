@@ -1077,9 +1077,11 @@ class _SellPageState extends State<SellPage> {
   }
 
   Future<void> _uploadCarImages(String carId) async {
+    final files = SellDraftMediaPersistence.xFilesForUpload(_images);
+    if (files.isEmpty) return;
     try {
       final publicUrls = <String>[];
-      for (final file in _images) {
+      for (final file in files) {
         final sign = await ApiService.signR2ImageUpload(
           filename: file.name,
           contentType: file.mimeType,
@@ -1090,7 +1092,7 @@ class _SellPageState extends State<SellPage> {
             uploadUrl.isEmpty ||
             publicUrl == null ||
             publicUrl.isEmpty) {
-          await ApiService.uploadCarImages(carId, _images);
+          await ApiService.uploadCarImages(carId, files);
           return;
         }
         await ApiService.uploadToSignedUpload(uploadUrl, file);
@@ -1099,19 +1101,21 @@ class _SellPageState extends State<SellPage> {
       await ApiService.attachCarImageUrls(carId, publicUrls);
     } on ApiException catch (e) {
       if (e.statusCode == 503) {
-        await ApiService.uploadCarImages(carId, _images);
+        await ApiService.uploadCarImages(carId, files);
       } else {
         rethrow;
       }
     } catch (_) {
-      await ApiService.uploadCarImages(carId, _images);
+      await ApiService.uploadCarImages(carId, files);
     }
   }
 
   Future<void> _uploadDamageImages(String carId) async {
+    final files = SellDraftMediaPersistence.xFilesForUpload(_damageImages);
+    if (files.isEmpty) return;
     try {
       final publicUrls = <String>[];
-      for (final file in _damageImages) {
+      for (final file in files) {
         final sign = await ApiService.signR2ImageUpload(
           filename: file.name,
           contentType: file.mimeType,
@@ -1124,7 +1128,7 @@ class _SellPageState extends State<SellPage> {
             publicUrl.isEmpty) {
           await ApiService.uploadCarImages(
             carId,
-            _damageImages,
+            files,
             imageKind: 'damage',
           );
           return;
@@ -1137,7 +1141,7 @@ class _SellPageState extends State<SellPage> {
       if (e.statusCode == 503) {
         await ApiService.uploadCarImages(
           carId,
-          _damageImages,
+          files,
           imageKind: 'damage',
         );
       } else {
@@ -1146,7 +1150,7 @@ class _SellPageState extends State<SellPage> {
     } catch (_) {
       await ApiService.uploadCarImages(
         carId,
-        _damageImages,
+        files,
         imageKind: 'damage',
       );
     }
@@ -1247,6 +1251,36 @@ class _SellPageState extends State<SellPage> {
       final carId = isEditing ? editListingId : listingPrimaryId(car);
       if (carId.isEmpty) {
         throw StateError('Car saved but missing id');
+      }
+
+      final draftOwner = _draftOwnerKey ?? _buildDraftOwnerKey();
+      final refreshedPaths = await SellDraftMediaPersistence.persistPathList(
+        _images,
+        draftId: draftOwner,
+        namePrefix: 'listing',
+      );
+      final refreshedDamage = await SellDraftMediaPersistence.persistPathList(
+        _damageImages,
+        draftId: draftOwner,
+        namePrefix: 'damage',
+      );
+      final refreshedVideos = await SellDraftMediaPersistence.persistPathList(
+        _videos,
+        draftId: draftOwner,
+        namePrefix: 'video',
+      );
+      if (mounted) {
+        setState(() {
+          _images
+            ..clear()
+            ..addAll(refreshedPaths.map((path) => XFile(path)));
+          _damageImages
+            ..clear()
+            ..addAll(refreshedDamage.map((path) => XFile(path)));
+          _videos
+            ..clear()
+            ..addAll(refreshedVideos.map((path) => XFile(path)));
+        });
       }
 
       if (_images.isNotEmpty) {

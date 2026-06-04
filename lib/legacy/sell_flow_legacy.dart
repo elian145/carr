@@ -6972,6 +6972,14 @@ class _SellStep4PageState extends State<SellStep4Page> {
                                     width: double.infinity,
                                     height: double.infinity,
                                     key: ValueKey(image.path),
+                                    errorBuilder: (_, __, ___) => Container(
+                                      color: Colors.grey.shade800,
+                                      child: Icon(
+                                        Icons.broken_image_outlined,
+                                        color: Colors.white54,
+                                        size: 32,
+                                      ),
+                                    ),
                                   )
                                 : _listingNetworkImage(
                                     (image.toString().trim().startsWith('http'))
@@ -8123,8 +8131,16 @@ class _SellReviewCarDetailScrollViewState
   List<_PreviewMediaEntry> _buildMediaList() {
     final imgs = widget.carData['images'];
     final vids = widget.carData['videos'];
-    final List<dynamic> il = imgs is List ? imgs : const [];
-    final List<dynamic> vl = vids is List ? vids : const [];
+    final il = imgs is List
+        ? SellDraftMediaPersistence.resolveDynamicMediaList(
+            List<dynamic>.from(imgs),
+          )
+        : const <dynamic>[];
+    final vl = vids is List
+        ? SellDraftMediaPersistence.resolveDynamicMediaList(
+            List<dynamic>.from(vids),
+          )
+        : const <dynamic>[];
     return [
       ...il.map((e) => _PreviewMediaEntry(isVideo: false, item: e)),
       ...vl.map((e) => _PreviewMediaEntry(isVideo: true, item: e)),
@@ -8247,6 +8263,14 @@ class _SellReviewCarDetailScrollViewState
                               File(item.path),
                               fit: BoxFit.cover,
                               width: double.infinity,
+                              errorBuilder: (_, __, ___) => Container(
+                                color: Colors.grey[900],
+                                child: Icon(
+                                  Icons.broken_image_outlined,
+                                  size: 48,
+                                  color: Colors.grey[400],
+                                ),
+                              ),
                             );
                           }
                           final url = item.toString().trim();
@@ -8684,8 +8708,10 @@ class _SellStep5PageState extends State<SellStep5Page> {
                                     return;
                                   }
                                   // Submit the listing
-                                  final submittedId =
-                                      await _submitListing(carData);
+                                  final submittedId = await _submitListing(
+                                    carData,
+                                    parentState: parentState,
+                                  );
                                   if (!mounted) return;
 
                                   if (parentState?._isEditMode == true) {
@@ -8939,7 +8965,10 @@ class _SellStep5PageState extends State<SellStep5Page> {
   }
 
   /// Returns the created car id on success so caller can navigate to listing page; null otherwise.
-  Future<String?> _submitListing(Map<String, dynamic> carData) async {
+  Future<String?> _submitListing(
+    Map<String, dynamic> carData, {
+    _SellCarPageState? parentState,
+  }) async {
     // Require authentication before allowing submission
     final existingToken = ApiService.accessToken;
     if (existingToken == null || existingToken.isEmpty) {
@@ -9086,6 +9115,25 @@ class _SellStep5PageState extends State<SellStep5Page> {
         // Success - listing created or updated
         // Upload/attach images and wait for list refresh so the new listing has all image URLs before we show success
         try {
+          final draftId = parentState?._currentDraftId.isNotEmpty == true
+              ? parentState!._currentDraftId
+              : 'default';
+          final storedMedia =
+              await SellDraftMediaPersistence.prepareCarDataForStorage(
+            carData,
+            draftId: draftId,
+          );
+          carData['images'] = storedMedia['images'];
+          carData['damage_images'] = storedMedia['damage_images'];
+          carData['videos'] = storedMedia['videos'];
+          if (parentState != null && parentState.mounted) {
+            parentState.setState(() {
+              parentState.carData['images'] = carData['images'];
+              parentState.carData['damage_images'] = carData['damage_images'];
+              parentState.carData['videos'] = carData['videos'];
+            });
+          }
+
           final dynamic maybeImgs = carData['images'];
           final List<dynamic> imgs = (maybeImgs is List) ? maybeImgs : const [];
           final dynamic maybeVideos = carData['videos'];
@@ -9094,10 +9142,13 @@ class _SellStep5PageState extends State<SellStep5Page> {
               : const [];
           final List<XFile> toUpload = <XFile>[];
           final List<String> toAttach = <String>[];
-          final List<XFile> videosToUpload = <XFile>[];
+          final List<XFile> videosToUpload =
+              SellDraftMediaPersistence.xFilesForUpload(vids);
           for (final dynamic img in imgs) {
             if (img is XFile) {
-              toUpload.add(img);
+              if (File(img.path).existsSync()) {
+                toUpload.add(img);
+              }
             } else if (img is String) {
               final s = img.trim();
               // If it's a server-relative path (from "Blur Plates"), attach it; don't treat it as a local file.
@@ -9108,25 +9159,8 @@ class _SellStep5PageState extends State<SellStep5Page> {
               } else if (s.startsWith('http://') || s.startsWith('https://')) {
                 // We don't attach absolute URLs; if you ever store them, keep them as-is in DB via other flow.
                 // For now, ignore.
-              } else {
-                // Local filesystem path string
-                try {
-                  toUpload.add(XFile(s));
-                } catch (_) {}
-              }
-            }
-          }
-          for (final dynamic vid in vids) {
-            if (vid is XFile) {
-              videosToUpload.add(vid);
-            } else if (vid is String) {
-              final s = vid.trim();
-              if (s.isNotEmpty &&
-                  !s.startsWith('http://') &&
-                  !s.startsWith('https://')) {
-                try {
-                  videosToUpload.add(XFile(s));
-                } catch (_) {}
+              } else if (File(s).existsSync()) {
+                toUpload.add(XFile(s));
               }
             }
           }
@@ -9189,7 +9223,9 @@ class _SellStep5PageState extends State<SellStep5Page> {
           final List<String> damageToAttach = <String>[];
           for (final dynamic img in dimgs) {
             if (img is XFile) {
-              damageToUpload.add(img);
+              if (File(img.path).existsSync()) {
+                damageToUpload.add(img);
+              }
             } else if (img is String) {
               final s = img.trim();
               if (s.startsWith('uploads/') ||
@@ -9198,10 +9234,8 @@ class _SellStep5PageState extends State<SellStep5Page> {
                 damageToAttach.add(s);
               } else if (s.startsWith('http://') || s.startsWith('https://')) {
                 // Skip absolute URLs for attach/upload here.
-              } else {
-                try {
-                  damageToUpload.add(XFile(s));
-                } catch (_) {}
+              } else if (File(s).existsSync()) {
+                damageToUpload.add(XFile(s));
               }
             }
           }

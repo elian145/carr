@@ -12,16 +12,43 @@ class SellDraftMediaPersistence {
   static String _localPath(String raw) =>
       raw.trim().replaceFirst(RegExp(r'^file://'), '');
 
+  static String _safeDraftId(String draftId) {
+    final trimmed = draftId.trim();
+    if (trimmed.isEmpty) return 'default';
+    return trimmed.replaceAll(RegExp(r'[^A-Za-z0-9_.-]'), '_');
+  }
+
   static Future<Directory> _draftDir(String draftId) async {
     final docs = await getApplicationDocumentsDirectory();
-    final safeId = draftId.trim().isEmpty
-        ? 'default'
-        : draftId.replaceAll(RegExp(r'[^A-Za-z0-9_.-]'), '_');
-    final dir = Directory(p.join(docs.path, 'sell_draft_media', safeId));
+    final dir = Directory(
+      p.join(docs.path, 'sell_draft_media', _safeDraftId(draftId)),
+    );
     if (!await dir.exists()) {
       await dir.create(recursive: true);
     }
     return dir;
+  }
+
+  static Future<void> _writeBytesToFile(File dest, List<int> bytes) async {
+    await dest.writeAsBytes(bytes, flush: true);
+  }
+
+  static Future<bool> _copyOrReadInto(File dest, String local) async {
+    final src = File(local);
+    if (await src.exists()) {
+      try {
+        await src.copy(dest.path);
+        return await dest.exists();
+      } catch (_) {}
+    }
+    try {
+      final bytes = await XFile(local).readAsBytes();
+      if (bytes.isEmpty) return false;
+      await _writeBytesToFile(dest, bytes);
+      return await dest.exists();
+    } catch (_) {
+      return false;
+    }
   }
 
   static Future<String?> _persistLocalPath(
@@ -33,16 +60,23 @@ class SellDraftMediaPersistence {
     if (local.isEmpty) return null;
     if (_isRemote(local)) return local;
 
-    final src = File(local);
-    if (!await src.exists()) return null;
-
     final dir = await _draftDir(draftId);
     final dest = File(p.join(dir.path, fileName));
+    final normSrc = p.normalize(local);
+    final normDest = p.normalize(dest.path);
+
+    // Re-persisting an item already stored at the target path must not delete it.
+    if (normSrc == normDest) {
+      if (await dest.exists()) return dest.path;
+      return null;
+    }
+
     if (await dest.exists()) {
       await dest.delete();
     }
-    await src.copy(dest.path);
-    return dest.path;
+
+    final ok = await _copyOrReadInto(dest, local);
+    return ok ? dest.path : null;
   }
 
   static Future<List<dynamic>> persistDynamicMediaList(
@@ -169,5 +203,9 @@ class SellDraftMediaPersistence {
         .map((e) => e is XFile ? e.path : e.toString())
         .where((s) => s.trim().isNotEmpty)
         .toList();
+  }
+
+  static List<XFile> xFilesForUpload(List<dynamic>? items) {
+    return resolveDynamicMediaList(items).whereType<XFile>().toList();
   }
 }
