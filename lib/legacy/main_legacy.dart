@@ -34,6 +34,7 @@ import '../shared/listings/listing_status.dart';
 import '../shared/listings/listing_sold_badge.dart';
 import '../shared/listings/listing_share.dart';
 import '../shared/prefs/listing_layout_prefs.dart';
+import '../shared/prefs/sell_draft_media_persistence.dart';
 import '../state/locale_controller.dart' as app_state;
 import '../globals.dart';
 import '../pages/analytics_page.dart';

@@ -14,6 +14,7 @@ import '../models/online_spec_variant.dart';
 import '../shared/errors/user_error_text.dart';
 import '../shared/listings/listing_identity.dart';
 import '../shared/prefs/sell_listing_draft_prefs.dart';
+import '../shared/prefs/sell_draft_media_persistence.dart';
 
 class SellPage extends StatefulWidget {
   const SellPage({
@@ -470,10 +471,41 @@ class _SellPageState extends State<SellPage> {
       return;
     }
 
-    final draft = _buildDraftData();
+    var draft = _buildDraftData();
+    draft = await SellDraftMediaPersistence.augmentDraftMap(
+      draft,
+      draftId: owner,
+    );
     await SellListingDraftPrefs.save(owner, draft);
     if (!mounted) return;
     setState(() {
+      _images
+        ..clear()
+        ..addAll(
+          SellDraftMediaPersistence.resolvePathList(
+            draft['image_paths'] is List
+                ? List<dynamic>.from(draft['image_paths'] as List)
+                : null,
+          ).map((path) => XFile(path)),
+        );
+      _damageImages
+        ..clear()
+        ..addAll(
+          SellDraftMediaPersistence.resolvePathList(
+            draft['damage_image_paths'] is List
+                ? List<dynamic>.from(draft['damage_image_paths'] as List)
+                : null,
+          ).map((path) => XFile(path)),
+        );
+      _videos
+        ..clear()
+        ..addAll(
+          SellDraftMediaPersistence.resolvePathList(
+            draft['video_paths'] is List
+                ? List<dynamic>.from(draft['video_paths'] as List)
+                : null,
+          ).map((path) => XFile(path)),
+        );
       _draftExists = true;
       _draftIsComplete = draft['complete'] == true;
       _draftLoaded = true;
@@ -497,30 +529,21 @@ class _SellPageState extends State<SellPage> {
 
     _restoringDraft = true;
     try {
-      final imagePaths = (draft['image_paths'] is List)
-          ? (draft['image_paths'] as List)
-                .map((e) => e.toString())
-                .where(
-                  (path) => path.trim().isNotEmpty && File(path).existsSync(),
-                )
-                .toList()
-          : <String>[];
-      final videoPaths = (draft['video_paths'] is List)
-          ? (draft['video_paths'] as List)
-                .map((e) => e.toString())
-                .where(
-                  (path) => path.trim().isNotEmpty && File(path).existsSync(),
-                )
-                .toList()
-          : <String>[];
-      final damageImagePaths = (draft['damage_image_paths'] is List)
-          ? (draft['damage_image_paths'] as List)
-                .map((e) => e.toString())
-                .where(
-                  (path) => path.trim().isNotEmpty && File(path).existsSync(),
-                )
-                .toList()
-          : <String>[];
+      final imagePaths = SellDraftMediaPersistence.resolvePathList(
+        draft['image_paths'] is List
+            ? List<dynamic>.from(draft['image_paths'] as List)
+            : null,
+      );
+      final videoPaths = SellDraftMediaPersistence.resolvePathList(
+        draft['video_paths'] is List
+            ? List<dynamic>.from(draft['video_paths'] as List)
+            : null,
+      );
+      final damageImagePaths = SellDraftMediaPersistence.resolvePathList(
+        draft['damage_image_paths'] is List
+            ? List<dynamic>.from(draft['damage_image_paths'] as List)
+            : null,
+      );
 
       final draftTitleStatus = (draft['title_status'] ?? 'clean')
           .toString()

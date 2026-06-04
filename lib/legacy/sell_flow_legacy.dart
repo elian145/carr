@@ -906,10 +906,22 @@ class _SellCarPageState extends State<SellCarPage> {
         return;
       }
       final persistedStep = _effectivePersistedDraftStep();
+      final storedCarData =
+          await SellDraftMediaPersistence.prepareCarDataForStorage(
+        carData,
+        draftId: _currentDraftId.isNotEmpty ? _currentDraftId : _newSellDraftId(),
+      );
+      if (mounted) {
+        setState(() {
+          carData = storedCarData;
+        });
+      } else {
+        carData = storedCarData;
+      }
       final snapshot = <String, dynamic>{
         'draftId': _currentDraftId.isNotEmpty ? _currentDraftId : _newSellDraftId(),
         'currentStep': persistedStep,
-        'carData': _draftValue(carData),
+        'carData': _draftValue(storedCarData),
         'updatedAt': DateTime.now().millisecondsSinceEpoch,
       };
       _currentDraftId = snapshot['draftId'].toString();
@@ -5074,6 +5086,8 @@ class _SellStep2PageState extends State<SellStep2Page> {
                   labelStyle: TextStyle(color: Colors.white70),
                   hintText: 'e.g. 1HGBH41JXMN109186',
                   hintStyle: TextStyle(color: Colors.white38),
+                  filled: true,
+                  fillColor: Colors.transparent,
                   border: InputBorder.none,
                   enabledBorder: InputBorder.none,
                   focusedBorder: InputBorder.none,
@@ -6418,7 +6432,14 @@ class _SellStep4PageState extends State<SellStep4Page> {
   @override
   void initState() {
     super.initState();
+    unawaited(_loadMediaDraft());
+  }
+
+  Future<void> _loadMediaDraft() async {
     _hydrateFromParentCarData();
+    await _restoreDraft();
+    if (!mounted) return;
+    await _syncMediaDraftToParent();
   }
 
   @override
@@ -6459,16 +6480,14 @@ class _SellStep4PageState extends State<SellStep4Page> {
       if (!mounted) return;
       setState(() {
         _selectedImages = images is List
-            ? images
-                .map(_normalizeDraftImageItem)
-                .where((e) => e.toString().trim().isNotEmpty)
-                .toList()
+            ? SellDraftMediaPersistence.resolveDynamicMediaList(
+                List<dynamic>.from(images),
+              )
             : _selectedImages;
         _damageImages = dmg is List
-            ? dmg
-                .map(_normalizeDraftImageItem)
-                .where((e) => e.toString().trim().isNotEmpty)
-                .toList()
+            ? SellDraftMediaPersistence.resolveDynamicMediaList(
+                List<dynamic>.from(dmg),
+              )
             : <dynamic>[];
         _selectedVideos
           ..clear()
@@ -6508,16 +6527,14 @@ class _SellStep4PageState extends State<SellStep4Page> {
     }
     setState(() {
       _selectedImages = images is List
-          ? images
-              .map(_normalizeDraftImageItem)
-              .where((e) => e.toString().trim().isNotEmpty)
-              .toList()
+          ? SellDraftMediaPersistence.resolveDynamicMediaList(
+              List<dynamic>.from(images),
+            )
           : _selectedImages;
       _damageImages = hasDamageList
-          ? (dmg as List)
-              .map(_normalizeDraftImageItem)
-              .where((e) => e.toString().trim().isNotEmpty)
-              .toList()
+          ? SellDraftMediaPersistence.resolveDynamicMediaList(
+              List<dynamic>.from(dmg as List),
+            )
           : <dynamic>[];
       _selectedVideos.clear();
       if (videos is List) {
@@ -6537,17 +6554,45 @@ class _SellStep4PageState extends State<SellStep4Page> {
 
   Future<void> _saveDraft() async {
     try {
+      final parentState = context.findAncestorStateOfType<_SellCarPageState>();
+      final draftId = parentState?._currentDraftId ?? 'default';
+      final images = await SellDraftMediaPersistence.persistDynamicMediaList(
+        _selectedImages,
+        draftId: draftId,
+        namePrefix: 'listing',
+      );
+      final damage = await SellDraftMediaPersistence.persistDynamicMediaList(
+        _damageImages,
+        draftId: draftId,
+        namePrefix: 'damage',
+      );
+      final videos = await SellDraftMediaPersistence.persistDynamicMediaList(
+        _selectedVideos,
+        draftId: draftId,
+        namePrefix: 'video',
+      );
+      if (mounted) {
+        setState(() {
+          _selectedImages = images;
+          _damageImages = damage;
+          _selectedVideos
+            ..clear()
+            ..addAll(videos.whereType<XFile>());
+        });
+      }
       final sp = await SharedPreferences.getInstance();
       await sp.setString(
         _draftKey,
         json.encode(<String, dynamic>{
-          'selectedImages': _selectedImages
+          'selectedImages': images
               .map((e) => e is XFile ? e.path : e.toString())
               .toList(),
-          'damage_images': _damageImages
+          'damage_images': damage
               .map((e) => e is XFile ? e.path : e.toString())
               .toList(),
-          'selectedVideos': _selectedVideos.map((e) => e.path).toList(),
+          'selectedVideos': videos
+              .map((e) => e is XFile ? e.path : e.toString())
+              .toList(),
           'imagesProcessed': _imagesProcessed,
         }),
       );
@@ -6560,15 +6605,41 @@ class _SellStep4PageState extends State<SellStep4Page> {
     parentState.carData['videos'] = List<XFile>.from(_selectedVideos);
   }
 
-  void _syncMediaDraftToParent() {
+  Future<void> _syncMediaDraftToParent() async {
     final parentState = context.findAncestorStateOfType<_SellCarPageState>();
     if (parentState == null) return;
-    parentState.carData['images'] = List<dynamic>.from(_selectedImages);
-    parentState.carData['damage_images'] = List<dynamic>.from(_damageImages);
-    parentState.carData['videos'] = List<XFile>.from(_selectedVideos);
+    final draftId = parentState._currentDraftId;
+    final images = await SellDraftMediaPersistence.persistDynamicMediaList(
+      _selectedImages,
+      draftId: draftId,
+      namePrefix: 'listing',
+    );
+    final damage = await SellDraftMediaPersistence.persistDynamicMediaList(
+      _damageImages,
+      draftId: draftId,
+      namePrefix: 'damage',
+    );
+    final videos = await SellDraftMediaPersistence.persistDynamicMediaList(
+      _selectedVideos,
+      draftId: draftId,
+      namePrefix: 'video',
+    );
+    if (!mounted) return;
+    setState(() {
+      _selectedImages = images;
+      _damageImages = damage;
+      _selectedVideos
+        ..clear()
+        ..addAll(videos.whereType<XFile>());
+    });
+    parentState.carData['images'] = List<dynamic>.from(images);
+    parentState.carData['damage_images'] = List<dynamic>.from(damage);
+    parentState.carData['videos'] = List<XFile>.from(
+      videos.whereType<XFile>(),
+    );
     parentState.carData['images_processed'] = _imagesProcessed;
     if (_imagesProcessed) {
-      parentState.carData['processed_image_paths'] = _selectedImages
+      parentState.carData['processed_image_paths'] = images
           .map((e) => e is XFile ? e.path : e.toString())
           .where((s) => s.trim().isNotEmpty)
           .toList();
@@ -6594,7 +6665,7 @@ class _SellStep4PageState extends State<SellStep4Page> {
         _selectedImages = [..._selectedImages, ...additions];
         _imagesProcessed = false;
       });
-      _syncMediaDraftToParent();
+      unawaited(_syncMediaDraftToParent());
       unawaited(_saveDraft());
     } catch (_) {}
   }
@@ -6609,7 +6680,7 @@ class _SellStep4PageState extends State<SellStep4Page> {
       setState(() {
         _damageImages = [..._damageImages, ...additions];
       });
-      _syncMediaDraftToParent();
+      unawaited(_syncMediaDraftToParent());
       unawaited(_saveDraft());
     } catch (_) {}
   }
@@ -6695,7 +6766,7 @@ class _SellStep4PageState extends State<SellStep4Page> {
         _imagesProcessed = true;
       });
 
-      _syncMediaDraftToParent();
+      unawaited(_syncMediaDraftToParent());
       final parentState = context.findAncestorStateOfType<_SellCarPageState>();
       if (parentState != null) {
         parentState.carData['processed_image_paths'] = List<String>.from(
@@ -6746,7 +6817,7 @@ class _SellStep4PageState extends State<SellStep4Page> {
           }
         }
       });
-      _syncMediaDraftToParent();
+      unawaited(_syncMediaDraftToParent());
       unawaited(_saveDraft());
     } catch (e) {
       if (!mounted) return;
@@ -6920,7 +6991,7 @@ class _SellStep4PageState extends State<SellStep4Page> {
                               setState(() {
                                 _selectedImages.removeAt(index);
                               });
-                            _syncMediaDraftToParent();
+                            unawaited(_syncMediaDraftToParent());
                             },
                             child: Container(
                               decoration: BoxDecoration(
@@ -7107,7 +7178,7 @@ class _SellStep4PageState extends State<SellStep4Page> {
                               setState(() {
                                 _damageImages.removeAt(index);
                               });
-                              _syncMediaDraftToParent();
+                              unawaited(_syncMediaDraftToParent());
                               unawaited(_saveDraft());
                             },
                             child: Container(
@@ -7250,7 +7321,7 @@ class _SellStep4PageState extends State<SellStep4Page> {
                           setState(() {
                             _selectedVideos.removeAt(index);
                           });
-                          _syncMediaDraftToParent();
+                          unawaited(_syncMediaDraftToParent());
                         },
                         child: Container(
                           decoration: BoxDecoration(
@@ -7310,7 +7381,7 @@ class _SellStep4PageState extends State<SellStep4Page> {
                   height: 50,
                   child: OutlinedButton(
                     onPressed: () {
-                    _syncMediaDraftToParent();
+                    unawaited(_syncMediaDraftToParent());
                       final parentState = context
                           .findAncestorStateOfType<_SellCarPageState>();
                       if (parentState != null) {
@@ -7353,7 +7424,7 @@ class _SellStep4PageState extends State<SellStep4Page> {
                       }
 
                       // Save data and navigate to next step
-                    _syncMediaDraftToParent();
+                    unawaited(_syncMediaDraftToParent());
                       final parentState = context
                           .findAncestorStateOfType<_SellCarPageState>();
                       if (parentState != null) {
