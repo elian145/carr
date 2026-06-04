@@ -33,8 +33,10 @@ import '../shared/listings/listing_identity.dart';
 import '../shared/listings/listing_status.dart';
 import '../shared/listings/listing_sold_badge.dart';
 import '../shared/listings/listing_share.dart';
+import '../shared/listings/listing_card_media.dart';
 import '../shared/prefs/listing_layout_prefs.dart';
 import '../shared/prefs/sell_draft_media_persistence.dart';
+import '../shared/prefs/legacy_sell_draft_prefs.dart';
 import '../state/locale_controller.dart' as app_state;
 import '../globals.dart';
 import '../pages/analytics_page.dart';
@@ -1889,6 +1891,7 @@ Widget buildGlobalCarCard(
   Map car, {
   bool listLayout = false,
   int carouselResetSeed = 0,
+  VoidCallback? onCardTap,
 }) {
   final brand = car['brand'] ?? '';
   final brandId =
@@ -1943,40 +1946,34 @@ Widget buildGlobalCarCard(
       ? const EdgeInsets.fromLTRB(8, 8, 8, 6)
       : const EdgeInsets.fromLTRB(12, 8, 12, 10);
 
-  return Container(
-    decoration: BoxDecoration(
-      color: cardFill,
-      borderRadius: BorderRadius.circular(20),
-      border: null,
-      boxShadow: [
-        BoxShadow(
-          color: Colors.black.withOpacity(0.2),
-          blurRadius: 8,
-          offset: Offset(0, 4),
-        ),
-      ],
-    ),
-    child: Stack(
-      clipBehavior: Clip.hardEdge,
-      children: [
-        InkWell(
-          borderRadius: BorderRadius.circular(20),
-          onTap: () {
-            final carId = (car['id'] ?? '').toString().trim();
-            if (carId.isEmpty) return;
-            unawaited(
-              RecentlyViewedService.recordView(
-                carId,
-                snapshot: Map<String, dynamic>.from(car),
-              ),
-            );
-            Navigator.pushNamed(
-              context,
-              '/car_detail',
-              arguments: {'carId': carId},
-            );
-          },
-          child: listLayout
+  Widget wrapCardTextTap(Widget child) {
+    if (onCardTap == null) return child;
+    return Material(
+      color: Colors.transparent,
+      child: InkWell(
+        onTap: onCardTap,
+        child: child,
+      ),
+    );
+  }
+
+  void onPublishedCardTap() {
+    final carId = (car['id'] ?? '').toString().trim();
+    if (carId.isEmpty) return;
+    unawaited(
+      RecentlyViewedService.recordView(
+        carId,
+        snapshot: Map<String, dynamic>.from(car),
+      ),
+    );
+    Navigator.pushNamed(
+      context,
+      '/car_detail',
+      arguments: {'carId': carId},
+    );
+  }
+
+  final Widget cardInner = listLayout
               ? Column(
                   crossAxisAlignment: CrossAxisAlignment.stretch,
                   mainAxisSize: MainAxisSize.max,
@@ -2040,6 +2037,7 @@ Widget buildGlobalCarCard(
                                     context,
                                     car,
                                     carouselResetSeed: carouselResetSeed,
+                                    enableDetailTap: onCardTap == null,
                                   ),
                                   if (showVideoCountBadge)
                                     Positioned(
@@ -2055,22 +2053,24 @@ Widget buildGlobalCarCard(
                           ),
                           Expanded(
                             flex: 6,
-                            child: Padding(
-                              padding: listingCardTextPadding,
-                              child: SizedBox(
-                                width: double.infinity,
-                                height: double.infinity,
-                                child: _buildGlobalCarCardInnerText(
-                                  context,
-                                  car,
-                                  brandId: brandId,
-                                  trimLine: trimLine,
-                                  yearDisplay: yearDisplay,
-                                  mileageDisplay: mileageDisplay,
-                                  cityLine: cityLine,
-                                  dividerLineColor: dividerLineColor,
-                                  metaTextColor: metaTextColor,
-                                  pinBottomMeta: true,
+                            child: wrapCardTextTap(
+                              Padding(
+                                padding: listingCardTextPadding,
+                                child: SizedBox(
+                                  width: double.infinity,
+                                  height: double.infinity,
+                                  child: _buildGlobalCarCardInnerText(
+                                    context,
+                                    car,
+                                    brandId: brandId,
+                                    trimLine: trimLine,
+                                    yearDisplay: yearDisplay,
+                                    mileageDisplay: mileageDisplay,
+                                    cityLine: cityLine,
+                                    dividerLineColor: dividerLineColor,
+                                    metaTextColor: metaTextColor,
+                                    pinBottomMeta: true,
+                                  ),
                                 ),
                               ),
                             ),
@@ -2137,31 +2137,57 @@ Widget buildGlobalCarCard(
                           context,
                           car,
                           carouselResetSeed: carouselResetSeed,
+                          enableDetailTap: onCardTap == null,
                         ),
                       ),
                     ),
                     // Content section (year/mileage + city below price — in flow, no overlap)
                     Expanded(
-                      child: Padding(
-                        padding: listingCardTextPadding,
-                        child: _buildGlobalCarCardInnerText(
-                          context,
-                          car,
-                          brandId: brandId,
-                          trimLine: trimLine,
-                          yearDisplay: yearDisplay,
-                          mileageDisplay: mileageDisplay,
-                          cityLine: cityLine,
-                          dividerLineColor: dividerLineColor,
-                          metaTextColor: metaTextColor,
-                          pinBottomMeta: true,
+                      child: wrapCardTextTap(
+                        Padding(
+                          padding: listingCardTextPadding,
+                          child: _buildGlobalCarCardInnerText(
+                            context,
+                            car,
+                            brandId: brandId,
+                            trimLine: trimLine,
+                            yearDisplay: yearDisplay,
+                            mileageDisplay: mileageDisplay,
+                            cityLine: cityLine,
+                            dividerLineColor: dividerLineColor,
+                            metaTextColor: metaTextColor,
+                            pinBottomMeta: true,
+                          ),
                         ),
                       ),
                     ),
                   ],
-                ),
+                );
+
+  return Container(
+    decoration: BoxDecoration(
+      color: cardFill,
+      borderRadius: BorderRadius.circular(20),
+      border: null,
+      boxShadow: [
+        BoxShadow(
+          color: Colors.black.withOpacity(0.2),
+          blurRadius: 8,
+          offset: Offset(0, 4),
         ),
-        // Video indicator (grid cards only; list layout shows it on the image tile)
+      ],
+    ),
+    child: Stack(
+      clipBehavior: Clip.hardEdge,
+      children: [
+        if (onCardTap == null)
+          InkWell(
+            borderRadius: BorderRadius.circular(20),
+            onTap: onPublishedCardTap,
+            child: cardInner,
+          )
+        else
+          cardInner,
         if (!listLayout && showVideoCountBadge)
           Positioned(
             top: 12,
@@ -2184,59 +2210,14 @@ Widget _buildGlobalCardImageCarousel(
   BuildContext context,
   Map car, {
   int carouselResetSeed = 0,
+  bool enableDetailTap = true,
 }) {
-  final List<String> urls = () {
-    final List<String> u = [];
-    final String primary = (car['image_url'] ?? '').toString();
-    final List<dynamic> imgs = (car['images'] is List)
-        ? (car['images'] as List)
-        : const [];
-    if (primary.isNotEmpty) {
-      u.add(_buildFullImageUrl(primary));
-    }
-    for (final dynamic it in imgs) {
-      if (it is Map &&
-          (it['kind'] ?? '').toString().toLowerCase() == 'damage') {
-        continue;
-      }
-      String s;
-      if (it is Map) {
-        s = (it['image_url'] ?? it['url'] ?? it['path'] ?? it['src'] ?? '')
-            .toString();
-      } else {
-        s = it.toString();
-      }
-      if (s.isNotEmpty) {
-        final full = _buildFullImageUrl(s);
-        if (!u.contains(full)) u.add(full);
-      }
-    }
-    if (u.isEmpty && imgs.isNotEmpty) {
-      dynamic first;
-      for (final dynamic e in imgs) {
-        if (e is Map &&
-            (e['kind'] ?? '').toString().toLowerCase() == 'damage') {
-          continue;
-        }
-        first = e;
-        break;
-      }
-      if (first != null) {
-        final String s = first is Map
-            ? (first['image_url'] ??
-                      first['url'] ??
-                      first['path'] ??
-                      first['src'] ??
-                      '')
-                  .toString()
-            : first.toString();
-        if (s.isNotEmpty) u.add(_buildFullImageUrl(s));
-      }
-    }
-    return u;
-  }();
+  final slots = ListingCardMedia.collectFromCar(
+    car,
+    resolveNetworkUrl: _buildFullImageUrl,
+  );
 
-  if (urls.isEmpty) {
+  if (slots.isEmpty) {
     return Container(
       color: Colors.grey[900],
       width: double.infinity,
@@ -2250,54 +2231,66 @@ Widget _buildGlobalCardImageCarousel(
   bool dotWindowForward = true;
 
   return StatefulBuilder(
-    key: ValueKey('global_card_carousel_${car['id']}_$carouselResetSeed'),
+    key: ValueKey(
+      'global_card_carousel_${car['id'] ?? car['draftId'] ?? ''}_$carouselResetSeed',
+    ),
     builder: (context, setState) {
       int computeDotStart(int index) {
         final int visible =
-            urls.length < _kMaxVisibleDots ? urls.length : _kMaxVisibleDots;
-        if (visible <= 0 || urls.length <= visible) return 0;
-        final int maxStart = (urls.length - visible).clamp(0, urls.length);
+            slots.length < _kMaxVisibleDots ? slots.length : _kMaxVisibleDots;
+        if (visible <= 0 || slots.length <= visible) return 0;
+        final int maxStart = (slots.length - visible).clamp(0, slots.length);
         return (index - (visible - 1)).clamp(0, maxStart);
       }
+
+      final pageView = PageView.builder(
+        onPageChanged: (i) {
+          setState(() {
+            currentIndex = i;
+            final nextStart = computeDotStart(i);
+            if (nextStart != dotWindowStart) {
+              dotWindowForward = nextStart > dotWindowStart;
+              dotWindowStart = nextStart;
+            }
+          });
+        },
+        itemCount: slots.length,
+        itemBuilder: (context, i) {
+          return ListingCardMedia.buildCarouselImage(
+            slots[i],
+            networkBuilder: _listingNetworkImage,
+            fit: BoxFit.cover,
+          );
+        },
+      );
+
+      final carId = (car['id'] ?? '').toString().trim();
+      final Widget pager = enableDetailTap && carId.isNotEmpty
+          ? GestureDetector(
+              onTap: () {
+                Navigator.pushNamed(
+                  context,
+                  '/car_detail',
+                  arguments: {'carId': carId},
+                );
+              },
+              child: pageView,
+            )
+          : pageView;
 
       return Stack(
         fit: StackFit.expand,
         children: [
-          GestureDetector(
-            onTap: () {
-              Navigator.pushNamed(
-                context,
-                '/car_detail',
-                arguments: {'carId': car['id']},
-              );
-            },
-            child: PageView.builder(
-              onPageChanged: (i) {
-                setState(() {
-                  currentIndex = i;
-                  final nextStart = computeDotStart(i);
-                  if (nextStart != dotWindowStart) {
-                    dotWindowForward = nextStart > dotWindowStart;
-                    dotWindowStart = nextStart;
-                  }
-                });
-              },
-              itemCount: urls.length,
-              itemBuilder: (context, i) {
-                final url = urls[i];
-                return _listingNetworkImage(url, fit: BoxFit.cover);
-              },
-            ),
-          ),
-          if (urls.length > 1)
+          pager,
+          if (slots.length > 1)
             Positioned(
               bottom: 8,
               left: 0,
               right: 0,
               child: Center(
                 child: () {
-                  final int visible = urls.length < _kMaxVisibleDots
-                      ? urls.length
+                  final int visible = slots.length < _kMaxVisibleDots
+                      ? slots.length
                       : _kMaxVisibleDots;
                   if (visible <= 1) return const SizedBox.shrink();
 
@@ -2324,7 +2317,7 @@ Widget _buildGlobalCardImageCarousel(
 
                   final start = dotWindowStart.clamp(
                     0,
-                    (urls.length - visible).clamp(0, urls.length),
+                    (slots.length - visible).clamp(0, slots.length),
                   );
 
                   return AnimatedSwitcher(

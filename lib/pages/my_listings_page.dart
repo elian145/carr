@@ -1,9 +1,8 @@
-import 'dart:convert';
+import 'dart:async';
 import 'dart:io' show Platform;
 
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
-import 'package:shared_preferences/shared_preferences.dart';
 
 import '../l10n/app_localizations.dart';
 import '../theme_provider.dart';
@@ -17,24 +16,12 @@ import '../shared/listings/listing_identity.dart';
 import '../shared/listings/listing_management.dart';
 import '../shared/listings/listing_status.dart';
 import '../shared/prefs/sell_listing_draft_prefs.dart';
+import '../shared/prefs/sell_draft_media_persistence.dart';
+import '../shared/prefs/legacy_sell_draft_list.dart';
 import '../shared/text/pretty_title_case.dart';
 import '../shared/prefs/listing_layout_prefs.dart';
 import '../legacy/main_legacy.dart'
     show buildGlobalCarCard, mapListingToGlobalCarCardData;
-
-int _readLegacySellDraftStepForListings(dynamic raw, {int maxIdx = 4}) {
-  if (raw == null) return 0;
-  if (raw is int) return raw.clamp(0, maxIdx);
-  if (raw is double) {
-    if (raw.isNaN || raw.isInfinite) return 0;
-    return raw.round().clamp(0, maxIdx);
-  }
-  final s = raw.toString().trim();
-  if (s.isEmpty) return 0;
-  final d = double.tryParse(s);
-  if (d != null) return d.round().clamp(0, maxIdx);
-  return int.tryParse(s)?.clamp(0, maxIdx) ?? 0;
-}
 
 class MyListingsPage extends StatefulWidget {
   const MyListingsPage({super.key});
@@ -44,8 +31,6 @@ class MyListingsPage extends StatefulWidget {
 }
 
 class _MyListingsPageState extends State<MyListingsPage> {
-  static const String _draftSnapshotKey = 'legacy_sell_draft_snapshot_v1';
-  static const String _draftCurrentStepKey = 'legacy_sell_draft_current_step_v1';
   final ScrollController _controller = ScrollController();
 
   bool _loading = true;
@@ -54,7 +39,7 @@ class _MyListingsPageState extends State<MyListingsPage> {
   int _page = 1;
   String? _error;
   bool _loadingDraft = true;
-  Map<String, dynamic>? _draftSnapshot;
+  List<Map<String, dynamic>> _drafts = <Map<String, dynamic>>[];
 
   final List<Map<String, dynamic>> _cars = <Map<String, dynamic>>[];
 
@@ -70,7 +55,7 @@ class _MyListingsPageState extends State<MyListingsPage> {
     super.initState();
     // Keep consistent layout (grid vs list) with the rest of the app.
     ListingLayoutPrefs.load();
-    _loadDraftSnapshot();
+    _loadDrafts();
     _controller.addListener(() {
       if (_loading || _loadingMore || !_hasNext) return;
       final pos = _controller.position;
@@ -173,122 +158,76 @@ class _MyListingsPageState extends State<MyListingsPage> {
     await _fetch(refresh: false);
   }
 
-  Future<void> _loadDraftSnapshot() async {
+  Future<void> _loadDrafts() async {
     try {
+      final drafts = <Map<String, dynamic>>[];
       final ownerKey = _buildDraftOwnerKey();
       final modernDraft = await SellListingDraftPrefs.load(ownerKey);
       if (modernDraft != null && _hasMeaningfulDraftData(modernDraft)) {
-        if (!mounted) return;
-        setState(() {
-          _draftSnapshot = <String, dynamic>{
-            'currentStep': modernDraft['complete'] == true ? 4 : 0,
-            'carData': modernDraft,
-          };
-          _loadingDraft = false;
+        drafts.add(<String, dynamic>{
+          'draftId': 'modern_$ownerKey',
+          'currentStep': modernDraft['complete'] == true ? 4 : 0,
+          'carData': modernDraft,
+          'isModern': true,
         });
-        return;
       }
-
-      final sp = await SharedPreferences.getInstance();
-      final raw = sp.getString(_draftSnapshotKey);
-      if (raw == null || raw.trim().isEmpty) {
-        if (!mounted) return;
-        setState(() {
-          _draftSnapshot = null;
-          _loadingDraft = false;
-        });
-        return;
-      }
-      final decoded = json.decode(raw);
-      if (decoded is! Map) {
-        if (!mounted) return;
-        setState(() {
-          _draftSnapshot = null;
-          _loadingDraft = false;
-        });
-        return;
-      }
-      final map = Map<String, dynamic>.from(decoded.cast<String, dynamic>());
-      final rawCarData = map['carData'];
-      final carData = rawCarData is Map
-          ? Map<String, dynamic>.from(rawCarData.cast<String, dynamic>())
-          : <String, dynamic>{};
-      final hasMeaningfulContent = carData.values.any((value) {
-        if (value == null) return false;
-        if (value is String) return value.trim().isNotEmpty;
-        if (value is num) return value != 0;
-        if (value is bool) return value;
-        if (value is Iterable) return value.isNotEmpty;
-        if (value is Map) return value.isNotEmpty;
-        return value.toString().trim().isNotEmpty;
-      });
+      drafts.addAll(await LegacySellDraftList.loadVisible());
       if (!mounted) return;
-      if (!hasMeaningfulContent) {
-        await sp.remove(_draftSnapshotKey);
-        await sp.remove('legacy_sell_draft_current_step_v1');
-        await sp.remove('legacy_sell_draft_step1_v1');
-        await sp.remove('legacy_sell_draft_step2_v1');
-        await sp.remove('legacy_sell_draft_step3_v1');
-        await sp.remove('legacy_sell_draft_step4_v1');
-        setState(() {
-          _draftSnapshot = null;
-          _loadingDraft = false;
-        });
-        return;
-      }
-      final prefsStep = sp.getInt(_draftCurrentStepKey);
-      final j = _readLegacySellDraftStepForListings(map['currentStep']);
-      final mergedStep = prefsStep == null
-          ? j
-          : (j > prefsStep.clamp(0, 4) ? j : prefsStep.clamp(0, 4));
       setState(() {
-        _draftSnapshot = <String, dynamic>{
-          if (map['draftId'] != null) 'draftId': map['draftId'],
-          'currentStep': mergedStep,
-          'carData': carData,
-          if (map['isPlaceholder'] == true) 'isPlaceholder': true,
-          if (map['updatedAt'] != null) 'updatedAt': map['updatedAt'],
-        };
+        _drafts = drafts;
         _loadingDraft = false;
       });
     } catch (_) {
       if (!mounted) return;
       setState(() {
-        _draftSnapshot = null;
+        _drafts = <Map<String, dynamic>>[];
         _loadingDraft = false;
       });
     }
   }
 
-  Future<void> _discardDraft() async {
-    final ownerKey = _buildDraftOwnerKey();
-    await SellListingDraftPrefs.clear(ownerKey);
-    final sp = await SharedPreferences.getInstance();
-    await sp.remove(_draftSnapshotKey);
-    await sp.remove('legacy_sell_draft_current_step_v1');
-    await sp.remove('legacy_sell_draft_step1_v1');
-    await sp.remove('legacy_sell_draft_step2_v1');
-    await sp.remove('legacy_sell_draft_step3_v1');
-    await sp.remove('legacy_sell_draft_step4_v1');
+  Future<void> _discardDraft(Map<String, dynamic> draft) async {
+    final draftId = (draft['draftId'] ?? '').toString();
+    if (draft['isModern'] == true) {
+      await SellListingDraftPrefs.clear(_buildDraftOwnerKey());
+    } else {
+      await LegacySellDraftList.discard(draft);
+    }
     if (!mounted) return;
     setState(() {
-      _draftSnapshot = null;
+      _drafts.removeWhere((item) => item['draftId']?.toString() == draftId);
     });
   }
 
-  void _resumeDraft() {
-    final snapshot = _draftSnapshot;
-    if (snapshot != null && snapshot.isNotEmpty) {
-      Navigator.pushNamed(
+  Future<void> _resumeDraft(Map<String, dynamic> draft) async {
+    if (draft['isModern'] == true) {
+      final carData = draft['carData'] is Map
+          ? Map<String, dynamic>.from(
+              (draft['carData'] as Map).cast<String, dynamic>(),
+            )
+          : <String, dynamic>{};
+      await Navigator.pushNamed(
         context,
         '/sell',
         arguments: <String, dynamic>{
-          'draftSnapshot': Map<String, dynamic>.from(snapshot),
+          'draftSnapshot': <String, dynamic>{
+            'currentStep': draft['currentStep'] ?? 0,
+            'carData': carData,
+          },
         },
       );
-      return;
+    } else {
+      final prepared = await LegacySellDraftList.prepareForResume(draft);
+      if (!mounted) return;
+      await Navigator.pushNamed(
+        context,
+        '/sell',
+        arguments: <String, dynamic>{
+          'draftSnapshot': prepared,
+        },
+      );
     }
-    Navigator.pushNamed(context, '/sell');
+    if (mounted) await _loadDrafts();
   }
 
   String _buildDraftOwnerKey() {
@@ -328,15 +267,16 @@ class _MyListingsPageState extends State<MyListingsPage> {
     return '$title • $suffix';
   }
 
-  Widget _buildDraftCard({required bool listLayout}) {
-    final snapshot = _draftSnapshot;
-    if (snapshot == null) return const SizedBox.shrink();
+  Widget _buildDraftCard(
+    Map<String, dynamic> snapshot, {
+    required bool listLayout,
+  }) {
     final carData = snapshot['carData'] is Map
         ? Map<String, dynamic>.from(
             (snapshot['carData'] as Map).cast<String, dynamic>(),
           )
         : <String, dynamic>{};
-    final currentStep = int.tryParse(snapshot['currentStep']?.toString() ?? '') ?? 0;
+    final currentStep = LegacySellDraftList.readStep(snapshot['currentStep']);
     const labels = [
       'Step 1: Basic info',
       'Step 2: Details',
@@ -349,11 +289,13 @@ class _MyListingsPageState extends State<MyListingsPage> {
       ...carData,
       'title': _draftTitle(carData),
       'price': carData['price']?.toString().trim(),
-      'images': (carData['images'] is List)
-          ? List<dynamic>.from(carData['images'] as List)
-          : (carData['image_paths'] is List)
-              ? List<dynamic>.from(carData['image_paths'] as List)
-          : const <dynamic>[],
+      'images': SellDraftMediaPersistence.resolveDynamicMediaList(
+        (carData['images'] is List)
+            ? List<dynamic>.from(carData['images'] as List)
+            : (carData['image_paths'] is List)
+                ? List<dynamic>.from(carData['image_paths'] as List)
+                : null,
+      ),
       'videos': (carData['videos'] is List)
           ? List<dynamic>.from(carData['videos'] as List)
           : (carData['video_paths'] is List)
@@ -367,21 +309,11 @@ class _MyListingsPageState extends State<MyListingsPage> {
       child: Stack(
         clipBehavior: Clip.none,
         children: [
-          IgnorePointer(
-            child: buildGlobalCarCard(
-              context,
-              draftListing,
-              listLayout: listLayout,
-            ),
-          ),
-          Positioned.fill(
-            child: Material(
-              color: Colors.transparent,
-              child: InkWell(
-                borderRadius: BorderRadius.circular(20),
-                onTap: _resumeDraft,
-              ),
-            ),
+          buildGlobalCarCard(
+            context,
+            draftListing,
+            listLayout: listLayout,
+            onCardTap: () => unawaited(_resumeDraft(snapshot)),
           ),
           Positioned(
             top: 12,
@@ -411,7 +343,7 @@ class _MyListingsPageState extends State<MyListingsPage> {
               shape: const CircleBorder(),
               child: IconButton(
                 visualDensity: VisualDensity.compact,
-                onPressed: _discardDraft,
+                onPressed: () => unawaited(_discardDraft(snapshot)),
                 icon: const Icon(Icons.delete_outline, color: Colors.white),
                 tooltip: _text(
                   'Discard draft',
@@ -804,7 +736,9 @@ class _MyListingsPageState extends State<MyListingsPage> {
 
     final bottomInset = MediaQuery.paddingOf(context).bottom;
     final authenticatedBody = RefreshIndicator(
-      onRefresh: () => _fetch(refresh: true),
+      onRefresh: () async {
+        await Future.wait([_fetch(refresh: true), _loadDrafts()]);
+      },
       child: _loading
           ? const Center(child: CircularProgressIndicator())
           : (_error != null)
@@ -825,8 +759,8 @@ class _MyListingsPageState extends State<MyListingsPage> {
                   valueListenable: ListingLayoutPrefs.columns,
                   builder: (context, cols, _) {
                     final listingColumns = (cols == 1) ? 1 : 2;
-                    final hasDraft = _draftSnapshot != null;
-                    final totalCards = _cars.length + (hasDraft ? 1 : 0);
+                    final draftCount = _drafts.length;
+                    final totalCards = _cars.length + draftCount;
                     return Column(
                       children: [
                         Expanded(
@@ -886,13 +820,14 @@ class _MyListingsPageState extends State<MyListingsPage> {
                                       );
                                     }
 
-                                    if (hasDraft && index == 0) {
+                                    if (index < draftCount) {
                                       return _buildDraftCard(
+                                        _drafts[index],
                                         listLayout: listingColumns == 1,
                                       );
                                     }
 
-                                    final car = _cars[hasDraft ? index - 1 : index];
+                                    final car = _cars[index - draftCount];
                                     final id = listingPrimaryId(car);
 
                                     final mapped = mapListingToGlobalCarCardData(

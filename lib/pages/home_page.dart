@@ -12,6 +12,7 @@ import '../services/config.dart';
 import '../shared/media/media_url.dart';
 import '../shared/errors/user_error_text.dart';
 import '../shared/listings/listing_identity.dart';
+import '../shared/listings/listing_card_media.dart';
 import '../shared/text/pretty_title_case.dart';
 
 String _normalizeBrandId(String brand) {
@@ -430,48 +431,12 @@ Widget _buildGlobalCarCardInnerText(
 }
 
 Widget _buildGlobalCardImageCarousel(BuildContext context, Map<String, dynamic> car) {
-  final List<String> urls = () {
-    final List<String> u = [];
-    final String primary = (car['image_url'] ?? '').toString();
-    final List<dynamic> imgs = (car['images'] is List) ? (car['images'] as List) : const [];
-    if (primary.isNotEmpty) {
-      u.add(buildMediaUrl(primary));
-    }
-    for (final dynamic it in imgs) {
-      if (it is Map && (it['kind'] ?? '').toString().toLowerCase() == 'damage') {
-        continue;
-      }
-      String s;
-      if (it is Map) {
-        s = (it['image_url'] ?? it['url'] ?? it['path'] ?? it['src'] ?? '').toString();
-      } else {
-        s = it.toString();
-      }
-      if (s.isNotEmpty) {
-        final full = buildMediaUrl(s);
-        if (!u.contains(full)) u.add(full);
-      }
-    }
-    if (u.isEmpty && imgs.isNotEmpty) {
-      dynamic first;
-      for (final dynamic e in imgs) {
-        if (e is Map && (e['kind'] ?? '').toString().toLowerCase() == 'damage') {
-          continue;
-        }
-        first = e;
-        break;
-      }
-      if (first != null) {
-        final String s = first is Map
-            ? (first['image_url'] ?? first['url'] ?? first['path'] ?? first['src'] ?? '').toString()
-            : first.toString();
-        if (s.isNotEmpty) u.add(buildMediaUrl(s));
-      }
-    }
-    return u;
-  }();
+  final slots = ListingCardMedia.collectFromCar(
+    car,
+    resolveNetworkUrl: buildMediaUrl,
+  );
 
-  if (urls.isEmpty) {
+  if (slots.isEmpty) {
     return Container(
       color: Colors.grey[900],
       width: double.infinity,
@@ -487,9 +452,9 @@ Widget _buildGlobalCardImageCarousel(BuildContext context, Map<String, dynamic> 
   return StatefulBuilder(
     builder: (context, setState) {
       int computeDotStart(int index) {
-        final int visible = urls.length < kMaxVisibleDots ? urls.length : kMaxVisibleDots;
-        if (visible <= 0 || urls.length <= visible) return 0;
-        final int maxStart = (urls.length - visible).clamp(0, urls.length);
+        final int visible = slots.length < kMaxVisibleDots ? slots.length : kMaxVisibleDots;
+        if (visible <= 0 || slots.length <= visible) return 0;
+        final int maxStart = (slots.length - visible).clamp(0, slots.length);
         return (index - (visible - 1)).clamp(0, maxStart);
       }
 
@@ -515,21 +480,25 @@ Widget _buildGlobalCardImageCarousel(BuildContext context, Map<String, dynamic> 
                   }
                 });
               },
-              itemCount: urls.length,
+              itemCount: slots.length,
               itemBuilder: (context, i) {
-                final url = urls[i];
-                return _listingNetworkImage(url);
+                return ListingCardMedia.buildCarouselImage(
+                  slots[i],
+                  networkBuilder: (url, {BoxFit fit = BoxFit.cover}) =>
+                      _listingNetworkImage(url),
+                  fit: BoxFit.cover,
+                );
               },
             ),
           ),
-          if (urls.length > 1)
+          if (slots.length > 1)
             Positioned(
               bottom: 8,
               left: 0,
               right: 0,
               child: Center(
                 child: () {
-                  final int visible = urls.length < kMaxVisibleDots ? urls.length : kMaxVisibleDots;
+                  final int visible = slots.length < kMaxVisibleDots ? slots.length : kMaxVisibleDots;
                   if (visible <= 1) return const SizedBox.shrink();
 
                   Widget buildDotRow(int startIndex) {
@@ -555,7 +524,7 @@ Widget _buildGlobalCardImageCarousel(BuildContext context, Map<String, dynamic> 
 
                   final start = dotWindowStart.clamp(
                     0,
-                    (urls.length - visible).clamp(0, urls.length),
+                    (slots.length - visible).clamp(0, slots.length),
                   );
 
                   return AnimatedSwitcher(

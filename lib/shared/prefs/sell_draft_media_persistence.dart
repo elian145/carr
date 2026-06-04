@@ -12,6 +12,24 @@ class SellDraftMediaPersistence {
   static String _localPath(String raw) =>
       raw.trim().replaceFirst(RegExp(r'^file://'), '');
 
+  /// Normalized local filesystem path (strips `file://`).
+  static String localMediaPath(String raw) => _localPath(raw);
+
+  /// True when [raw] is a device path, not a server uploads/static URL.
+  static bool isLocalMediaPath(String raw) {
+    final local = _localPath(raw);
+    if (local.isEmpty) return false;
+    if (_isRemote(local)) return false;
+    final norm = local.replaceAll(r'\', '/');
+    if (norm.startsWith('uploads/') ||
+        norm.startsWith('static/') ||
+        norm.startsWith('car_photos/')) {
+      return false;
+    }
+    if (norm.contains('sell_draft_media')) return true;
+    return p.isAbsolute(norm);
+  }
+
   static String _safeDraftId(String draftId) {
     final trimmed = draftId.trim();
     if (trimmed.isEmpty) return 'default';

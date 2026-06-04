@@ -1817,9 +1817,13 @@ class _MyListingsPageState extends State<MyListingsPage> {
       ...carData,
       'title': _draftTitle(carData),
       'price': carData['price']?.toString().trim(),
-      'images': (carData['images'] is List)
-          ? List<dynamic>.from(carData['images'] as List)
-          : const <dynamic>[],
+      'images': SellDraftMediaPersistence.resolveDynamicMediaList(
+        (carData['images'] is List)
+            ? List<dynamic>.from(carData['images'] as List)
+            : (carData['image_paths'] is List)
+                ? List<dynamic>.from(carData['image_paths'] as List)
+                : null,
+      ),
       'videos': (carData['videos'] is List)
           ? List<dynamic>.from(carData['videos'] as List)
           : const <dynamic>[],

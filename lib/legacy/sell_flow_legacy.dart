@@ -231,7 +231,7 @@ class _SellDraftGatePageState extends State<SellDraftGatePage> {
       });
       if (_drafts.isEmpty) {
         WidgetsBinding.instance.addPostFrameCallback((_) {
-          if (mounted) _startFresh();
+          if (mounted) unawaited(_startFresh());
         });
       }
     } catch (_) {
@@ -241,7 +241,7 @@ class _SellDraftGatePageState extends State<SellDraftGatePage> {
         _loading = false;
       });
       WidgetsBinding.instance.addPostFrameCallback((_) {
-        if (mounted) _startFresh();
+        if (mounted) unawaited(_startFresh());
       });
     }
   }
@@ -303,13 +303,17 @@ class _SellDraftGatePageState extends State<SellDraftGatePage> {
       });
       if (_drafts.isEmpty) {
         WidgetsBinding.instance.addPostFrameCallback((_) {
-          if (mounted) _startFresh();
+          if (mounted) unawaited(_startFresh());
         });
       }
     } catch (_) {}
   }
 
-  void _startFresh() {
+  Future<void> _startFresh() async {
+    LegacySellDraftPrefs.suppressPersist = true;
+    await _archiveActiveDraftIfAny(clearActive: true);
+    await LegacySellDraftPrefs.clearActiveStepStorage();
+    if (!mounted) return;
     Navigator.pushReplacementNamed(
       context,
       '/sell',
@@ -317,11 +321,7 @@ class _SellDraftGatePageState extends State<SellDraftGatePage> {
     );
   }
 
-  Future<void> _startFreshWithArchive() async {
-    await _archiveActiveDraftIfAny(clearActive: false);
-    if (!mounted) return;
-    _startFresh();
-  }
+  Future<void> _startFreshWithArchive() async => _startFresh();
 
   Future<void> _continueDraft(Map<String, dynamic> draft) async {
     final normalized = _normalizeSellDraftSnapshot(draft);
@@ -508,7 +508,7 @@ class _SellDraftGatePageState extends State<SellDraftGatePage> {
           : (_drafts.isEmpty)
               ? Center(
                   child: ElevatedButton(
-                    onPressed: _startFresh,
+                    onPressed: () => unawaited(_startFresh()),
                     style: ElevatedButton.styleFrom(
                       backgroundColor: const Color(0xFFFF6B00),
                       foregroundColor: Colors.white,
@@ -566,7 +566,7 @@ class _SellDraftGatePageState extends State<SellDraftGatePage> {
                     SizedBox(
                       width: double.infinity,
                       child: ElevatedButton(
-                        onPressed: _startFreshWithArchive,
+                        onPressed: () => unawaited(_startFreshWithArchive()),
                         style: ElevatedButton.styleFrom(
                           backgroundColor: const Color(0xFFFF6B00),
                           foregroundColor: Colors.white,
@@ -767,6 +767,15 @@ class _SellCarPageState extends State<SellCarPage> {
     } catch (_) {}
   }
 
+  Future<void> _initFreshListingSession() async {
+    await LegacySellDraftPrefs.clearActiveStepStorage();
+    LegacySellDraftPrefs.allowPersist();
+    if (!mounted) return;
+    setState(() {
+      _sellPageResetToken++;
+    });
+  }
+
   Future<void> _clearAllSellDrafts() async {
     try {
       _skipDraftPersistOnDispose = true;
@@ -774,10 +783,7 @@ class _SellCarPageState extends State<SellCarPage> {
       await sp.remove(_draftCurrentStepKey);
       await sp.remove(_draftSnapshotKey);
       await sp.remove(_sellDraftArchiveKey);
-      await sp.remove('legacy_sell_draft_step1_v1');
-      await sp.remove('legacy_sell_draft_step2_v1');
-      await sp.remove('legacy_sell_draft_step3_v1');
-      await sp.remove('legacy_sell_draft_step4_v1');
+      await LegacySellDraftPrefs.clearActiveStorage();
       if (mounted) {
         setState(() {
           carData = <String, dynamic>{};
@@ -897,7 +903,7 @@ class _SellCarPageState extends State<SellCarPage> {
         }
         await sp.remove(_draftCurrentStepKey);
         await sp.remove(_draftSnapshotKey);
-        await sp.remove(_sellDraftArchiveKey);
+        await LegacySellDraftPrefs.clearActiveStepStorage();
         if (mounted) {
           setState(() {
             _hasDraftSnapshot = false;
@@ -1250,6 +1256,10 @@ class _SellCarPageState extends State<SellCarPage> {
       _draftPreviewStep = 0;
       _draftPreviewCarData = null;
       _currentDraftId = _newSellDraftId();
+      carData = <String, dynamic>{};
+      completedSteps.clear();
+      currentStep = 0;
+      unawaited(_initFreshListingSession());
     } else {
       unawaited(_loadSellDraftPreview());
     }
@@ -1500,7 +1510,8 @@ class _SellCarPageState extends State<SellCarPage> {
 
   @override
   void dispose() {
-    if (!_skipDraftPersistOnDispose) {
+    if (!_skipDraftPersistOnDispose &&
+        !LegacySellDraftPrefs.suppressPersist) {
       unawaited(_saveDraftCurrentStep());
       unawaited(_saveSellDraftSnapshot());
     }
@@ -1623,7 +1634,9 @@ class _SellStep1PageState extends State<SellStep1Page> {
 
   @override
   void dispose() {
-    unawaited(_saveDraft());
+    if (!LegacySellDraftPrefs.suppressPersist) {
+      unawaited(_saveDraft());
+    }
     _yearFocusNode.dispose();
     _yearController.removeListener(_onYearTextForCatalog);
     _yearController.dispose();
@@ -3302,7 +3315,9 @@ class _SellStep2PageState extends State<SellStep2Page> {
 
   @override
   void dispose() {
-    unawaited(_saveDraft());
+    if (!LegacySellDraftPrefs.suppressPersist) {
+      unawaited(_saveDraft());
+    }
     _mileageFocusNode.dispose();
     _engineSizeFocusNode.dispose();
     _mileageController.dispose();
@@ -5468,7 +5483,9 @@ class _SellStep3PageState extends State<SellStep3Page> {
 
   @override
   void dispose() {
-    unawaited(_saveDraft());
+    if (!LegacySellDraftPrefs.suppressPersist) {
+      unawaited(_saveDraft());
+    }
     _priceFocusNode.dispose();
     _priceController.dispose();
     _phoneController.dispose();
@@ -6436,8 +6453,29 @@ class _SellStep4PageState extends State<SellStep4Page> {
   }
 
   Future<void> _loadMediaDraft() async {
-    _hydrateFromParentCarData();
-    await _restoreDraft();
+    final parentState = context.findAncestorStateOfType<_SellCarPageState>();
+    final startFresh = parentState?.widget.startFreshListing == true;
+    if (startFresh) {
+      if (mounted) {
+        setState(() {
+          _selectedImages = [];
+          _damageImages = [];
+          _selectedVideos.clear();
+          _imagesProcessed = false;
+          _isProcessingImages = false;
+        });
+      }
+      if (parentState != null) {
+        parentState.carData.remove('images');
+        parentState.carData.remove('damage_images');
+        parentState.carData.remove('videos');
+        parentState.carData.remove('images_processed');
+        parentState.carData.remove('processed_image_paths');
+      }
+    } else {
+      _hydrateFromParentCarData();
+      await _restoreDraft();
+    }
     if (!mounted) return;
     await _syncMediaDraftToParent();
   }
@@ -6462,7 +6500,9 @@ class _SellStep4PageState extends State<SellStep4Page> {
 
   @override
   void dispose() {
-    unawaited(_saveDraft());
+    if (!LegacySellDraftPrefs.suppressPersist) {
+      unawaited(_saveDraft());
+    }
     super.dispose();
   }
 

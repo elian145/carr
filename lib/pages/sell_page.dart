@@ -15,6 +15,7 @@ import '../shared/errors/user_error_text.dart';
 import '../shared/listings/listing_identity.dart';
 import '../shared/prefs/sell_listing_draft_prefs.dart';
 import '../shared/prefs/sell_draft_media_persistence.dart';
+import '../shared/prefs/legacy_sell_draft_prefs.dart';
 
 class SellPage extends StatefulWidget {
   const SellPage({
@@ -263,7 +264,9 @@ class _SellPageState extends State<SellPage> {
 
   Future<void> _startFreshFromRoute() async {
     final owner = _draftOwnerKey ??= _buildDraftOwnerKey();
+    await LegacySellDraftPrefs.beginFreshListing();
     await SellListingDraftPrefs.clear(owner);
+    LegacySellDraftPrefs.allowPersist(); // step scratch only; legacy archive untouched
     if (!mounted) return;
     setState(() {
       _editListingId = null;
@@ -271,6 +274,9 @@ class _SellPageState extends State<SellPage> {
       _draftExists = false;
       _draftIsComplete = false;
       _draftPreviewData = null;
+      _images.clear();
+      _videos.clear();
+      _damageImages.clear();
     });
   }
 
