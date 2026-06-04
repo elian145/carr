@@ -20,6 +20,7 @@ import '../shared/listings/listing_management.dart';
 import '../shared/listings/listing_owner.dart';
 import '../shared/listings/listing_share.dart';
 import '../shared/text/pretty_title_case.dart';
+import '../shared/vin/open_vin_search.dart';
 import 'listing_image_gallery_page.dart';
 
 class CarDetailPage extends StatefulWidget {
@@ -950,12 +951,7 @@ class _CarDetailPageState extends State<CarDetailPage> {
         },
         child: InkWell(
           borderRadius: BorderRadius.circular(8),
-          onTap: () async {
-            final url = Uri.parse('https://www.vindecoderz.com/EN/check-lookup/$vin');
-            if (await canLaunchUrl(url)) {
-              await launchUrl(url, mode: LaunchMode.externalApplication);
-            }
-          },
+          onTap: () => openVinSearch(vin),
           child: Container(
             width: double.infinity,
             padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),

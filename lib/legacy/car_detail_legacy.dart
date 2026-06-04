@@ -2724,12 +2724,9 @@ Widget buildCarListingSpecsGrid(
           icon: Icons.pin_outlined,
           label: 'VIN',
           value: car['vin'].toString().trim(),
-          onTap: () async {
+          onTap: () {
             final vin = car['vin'].toString().trim();
-            final url = Uri.parse('https://www.vindecoderz.com/EN/check-lookup/$vin');
-            if (await canLaunchUrl(url)) {
-              await launchUrl(url, mode: LaunchMode.externalApplication);
-            }
+            openVinSearch(vin);
           },
         ),
       ),
