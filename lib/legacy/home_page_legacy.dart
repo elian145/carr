@@ -539,37 +539,35 @@ class _HomePageState extends State<HomePage> {
       final map = json.decode(raw) as Map<String, dynamic>;
       if (!mounted) return;
       setState(() {
-        selectedBrand = map['brand'];
-        selectedModel = map['model'];
-        selectedTrim = map['trim'];
-        selectedMinPrice = map['price_min'];
-        selectedMaxPrice = map['price_max'];
-        selectedMinYear = map['year_min'];
-        selectedMaxYear = map['year_max'];
-        selectedMinMileage = map['min_mileage'];
-        selectedMaxMileage = map['max_mileage'];
-        selectedCondition = map['condition'];
-        selectedTransmission = map['transmission'];
-        selectedFuelType = map['fuel_type'];
-        selectedBodyType = map['body_type'];
-        selectedColor = map['color'];
-        selectedDriveType = map['drive_type'];
-        final rsRaw = map['region_specs']?.toString().trim().toLowerCase();
+        selectedBrand = _filterStr(map['brand']);
+        selectedModel = _filterStr(map['model']);
+        selectedTrim = _filterStr(map['trim']);
+        selectedMinPrice = _filterStr(map['price_min']);
+        selectedMaxPrice = _filterStr(map['price_max']);
+        selectedMinYear = _filterStr(map['year_min']);
+        selectedMaxYear = _filterStr(map['year_max']);
+        selectedMinMileage = _filterStr(map['min_mileage']);
+        selectedMaxMileage = _filterStr(map['max_mileage']);
+        selectedCondition = _filterStr(map['condition']);
+        selectedTransmission = _filterStr(map['transmission']);
+        selectedFuelType = _filterStr(map['fuel_type']);
+        selectedBodyType = _filterStr(map['body_type']);
+        selectedColor = _filterStr(map['color']);
+        selectedDriveType = _filterStr(map['drive_type']);
+        final rsRaw = _filterStr(map['region_specs'])?.toLowerCase();
         selectedRegionSpecs =
-            (rsRaw != null &&
-                rsRaw.isNotEmpty &&
-                isValidCarRegionSpecCode(rsRaw))
+            (rsRaw != null && rsRaw.isNotEmpty && isValidCarRegionSpecCode(rsRaw))
             ? rsRaw
             : null;
-        selectedCylinderCount = map['cylinders'];
-        selectedSeating = map['seating'];
-        selectedEngineSize = map['engine_size'];
-        selectedCity = map['city'];
-        selectedPlateType = map['plate_type'];
-        selectedPlateCity = map['plate_city'];
-        selectedTitleStatus = map['title_status'];
-        selectedDamagedParts = map['damaged_parts'];
-        selectedSortBy = map['sort_by'];
+        selectedCylinderCount = _filterStr(map['cylinders']);
+        selectedSeating = _filterStr(map['seating']);
+        selectedEngineSize = _filterStr(map['engine_size']);
+        selectedCity = _filterStr(map['city']);
+        selectedPlateType = _filterStr(map['plate_type']);
+        selectedPlateCity = _filterStr(map['plate_city']);
+        selectedTitleStatus = _filterStr(map['title_status']);
+        selectedDamagedParts = _filterStr(map['damaged_parts']);
+        selectedSortBy = _filterStr(map['sort_by']);
       });
       _syncHomeFilterTextControllersFromSelection();
     } catch (_) {}
@@ -585,8 +583,75 @@ class _HomePageState extends State<HomePage> {
     _engineSizeController.text = selectedEngineSize ?? '';
   }
 
+  Map<String, dynamic> _moreFiltersDialogSnapshot() {
+    return <String, dynamic>{
+      'price_min': selectedMinPrice,
+      'price_max': selectedMaxPrice,
+      'year_min': selectedMinYear,
+      'year_max': selectedMaxYear,
+      'min_mileage': selectedMinMileage,
+      'max_mileage': selectedMaxMileage,
+      'condition': selectedCondition,
+      'transmission': selectedTransmission,
+      'fuel_type': selectedFuelType,
+      'body_type': selectedBodyType,
+      'color': selectedColor,
+      'drive_type': selectedDriveType,
+      'region_specs': selectedRegionSpecs,
+      'cylinders': selectedCylinderCount,
+      'seating': selectedSeating,
+      'engine_size': selectedEngineSize,
+      'plate_type': selectedPlateType,
+      'plate_city': selectedPlateCity,
+      'title_status': selectedTitleStatus,
+      'damaged_parts': selectedDamagedParts,
+      'isPriceDropdown': isPriceDropdown,
+      'isYearDropdown': isYearDropdown,
+      'isMileageDropdown': isMileageDropdown,
+      'isEngineSizeDropdown': isEngineSizeDropdown,
+    };
+  }
+
+  void _restoreMoreFiltersDialogSnapshot(Map<String, dynamic> snap) {
+    setState(() {
+      selectedMinPrice = _filterStr(snap['price_min']);
+      selectedMaxPrice = _filterStr(snap['price_max']);
+      selectedMinYear = _filterStr(snap['year_min']);
+      selectedMaxYear = _filterStr(snap['year_max']);
+      selectedMinMileage = _filterStr(snap['min_mileage']);
+      selectedMaxMileage = _filterStr(snap['max_mileage']);
+      selectedCondition = _filterStr(snap['condition']);
+      selectedTransmission = _filterStr(snap['transmission']);
+      selectedFuelType = _filterStr(snap['fuel_type']);
+      selectedBodyType = _filterStr(snap['body_type']);
+      selectedColor = _filterStr(snap['color']);
+      selectedDriveType = _filterStr(snap['drive_type']);
+      final rsRaw = _filterStr(snap['region_specs'])?.toLowerCase();
+      selectedRegionSpecs =
+          (rsRaw != null && rsRaw.isNotEmpty && isValidCarRegionSpecCode(rsRaw))
+          ? rsRaw
+          : null;
+      selectedCylinderCount = _filterStr(snap['cylinders']);
+      selectedSeating = _filterStr(snap['seating']);
+      selectedEngineSize = _filterStr(snap['engine_size']);
+      selectedPlateType = _filterStr(snap['plate_type']);
+      selectedPlateCity = _filterStr(snap['plate_city']);
+      selectedTitleStatus = _filterStr(snap['title_status']);
+      selectedDamagedParts = _filterStr(snap['damaged_parts']);
+      isPriceDropdown = snap['isPriceDropdown'] == true;
+      isYearDropdown = snap['isYearDropdown'] == true;
+      isMileageDropdown = snap['isMileageDropdown'] == true;
+      isEngineSizeDropdown = snap['isEngineSizeDropdown'] == true;
+      _syncHomeFilterTextControllersFromSelection();
+    });
+  }
+
   Future<void> _persistFilters() async {
     try {
+      if (!_hasActiveFilters()) {
+        await _clearFiltersOnly();
+        return;
+      }
       final sp = await SharedPreferences.getInstance();
       final Map<String, dynamic> map = {
         'brand': selectedBrand,
@@ -2933,6 +2998,8 @@ class _HomePageState extends State<HomePage> {
         selectedSeating != null ||
         selectedEngineSize != null ||
         selectedCity != null ||
+        selectedPlateType != null ||
+        selectedPlateCity != null ||
         selectedSortBy != null ||
         selectedTitleStatus != null ||
         selectedDamagedParts != null;
@@ -2941,30 +3008,10 @@ class _HomePageState extends State<HomePage> {
   // Helper method to clear all filters
   void _clearAllFilters() {
     setState(() {
-      selectedBrand = null;
-      selectedModel = null;
-      selectedTrim = null;
-      selectedMinPrice = null;
-      selectedMaxPrice = null;
-      selectedMinYear = null;
-      selectedMaxYear = null;
-      selectedMinMileage = null;
-      selectedMaxMileage = null;
-      selectedCondition = null;
-      selectedTransmission = null;
-      selectedFuelType = null;
-      selectedBodyType = null;
-      selectedColor = null;
-      selectedDriveType = null;
-      selectedRegionSpecs = null;
-      selectedCylinderCount = null;
-      selectedSeating = null;
-      selectedEngineSize = null;
-      selectedCity = null;
-      selectedSortBy = null;
-      selectedTitleStatus = null;
-      selectedDamagedParts = null;
+      _resetAllFiltersInMemory();
+      _syncHomeFilterTextControllersFromSelection();
     });
+    unawaited(_clearFiltersOnly());
     onFilterChanged();
   }
 
@@ -3046,7 +3093,9 @@ class _HomePageState extends State<HomePage> {
           selectedSortBy = null;
           break;
       }
+      _syncHomeFilterTextControllersFromSelection();
     });
+    unawaited(_persistFilters());
     onFilterChanged();
   }
 
@@ -4450,6 +4499,8 @@ class _HomePageState extends State<HomePage> {
                                         selectedMaxMileage ?? '';
                                     _engineSizeController.text =
                                         selectedEngineSize ?? '';
+                                    final moreFiltersSnapshot =
+                                        _moreFiltersDialogSnapshot();
                                     await showDialog(
                                       context: context,
                                       builder: (context) {
@@ -7521,10 +7572,17 @@ class _HomePageState extends State<HomePage> {
                                                         ),
                                                       ),
                                                       TextButton(
-                                                        onPressed: () =>
-                                                            Navigator.pop(
-                                                              context,
-                                                            ),
+                                                        onPressed: () {
+                                                          _restoreMoreFiltersDialogSnapshot(
+                                                            moreFiltersSnapshot,
+                                                          );
+                                                          unawaited(
+                                                            _persistFilters(),
+                                                          );
+                                                          Navigator.pop(
+                                                            context,
+                                                          );
+                                                        },
                                                         child: Text(
                                                           _cancelTextGlobal(
                                                             context,
@@ -7547,6 +7605,9 @@ class _HomePageState extends State<HomePage> {
                                                                 Colors.white,
                                                           ),
                                                           onPressed: () {
+                                                            unawaited(
+                                                              _persistFilters(),
+                                                            );
                                                             onFilterChanged();
                                                             Navigator.pop(
                                                               context,
