@@ -6461,6 +6461,7 @@ class _SellStep4PageState extends State<SellStep4Page> {
   @override
   void initState() {
     super.initState();
+    _videosHydratedFromParent = true;
     unawaited(_loadMediaDraft());
   }
 
@@ -6518,21 +6519,18 @@ class _SellStep4PageState extends State<SellStep4Page> {
         }
       } catch (_) {}
 
-      final mergedImages = SellDraftMediaPersistence.mergeRawMediaLists([
-        if (parentImages is List) List<dynamic>.from(parentImages) else [],
-        stepImages,
-      ]);
-      final mergedDamage = SellDraftMediaPersistence.mergeRawMediaLists([
-        if (parentDamage is List) List<dynamic>.from(parentDamage) else [],
-        stepDamage,
-      ]);
-      final mergedVideoPaths = <String>{
-        if (parentVideos is List)
-          ...parentVideos.map(
-            (e) => e is XFile ? e.path : e.toString().trim(),
-          ),
-        ...stepVideos.map((e) => e.path),
-      }.where((path) => path.isNotEmpty && File(path).existsSync());
+      final mergedImages = SellDraftMediaPersistence.coalesceMediaLists(
+        primary: parentImages is List ? List<dynamic>.from(parentImages) : null,
+        secondary: stepImages,
+      );
+      final mergedDamage = SellDraftMediaPersistence.coalesceMediaLists(
+        primary: parentDamage is List ? List<dynamic>.from(parentDamage) : null,
+        secondary: stepDamage,
+      );
+      final mergedVideos = SellDraftMediaPersistence.coalesceMediaLists(
+        primary: parentVideos is List ? List<dynamic>.from(parentVideos) : null,
+        secondary: stepVideos.map((e) => e.path).toList(),
+      );
 
       if (mounted) {
         setState(() {
@@ -6540,7 +6538,7 @@ class _SellStep4PageState extends State<SellStep4Page> {
           _damageImages = mergedDamage;
           _selectedVideos
             ..clear()
-            ..addAll(mergedVideoPaths.map((path) => XFile(path)));
+            ..addAll(mergedVideos.whereType<XFile>());
           _isProcessingImages = false;
         });
       }
@@ -6549,7 +6547,7 @@ class _SellStep4PageState extends State<SellStep4Page> {
         parentState.carData['damage_images'] =
             List<dynamic>.from(mergedDamage);
         parentState.carData['videos'] = List<XFile>.from(
-          mergedVideoPaths.map((path) => XFile(path)),
+          mergedVideos.whereType<XFile>(),
         );
         parentState.carData['images_processed'] = _imagesProcessed;
       }
@@ -6565,19 +6563,6 @@ class _SellStep4PageState extends State<SellStep4Page> {
   @override
   void didChangeDependencies() {
     super.didChangeDependencies();
-    if (_videosHydratedFromParent) return;
-    _videosHydratedFromParent = true;
-    final parentState = context.findAncestorStateOfType<_SellCarPageState>();
-    final dynamic saved = parentState?.carData['videos'];
-    if (saved is List && saved.isNotEmpty) {
-      for (final dynamic item in saved) {
-        if (item is XFile) {
-          _selectedVideos.add(item);
-        } else if (item is String && item.trim().isNotEmpty) {
-          _selectedVideos.add(XFile(item.trim()));
-        }
-      }
-    }
   }
 
   @override

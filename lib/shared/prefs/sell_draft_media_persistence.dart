@@ -166,13 +166,15 @@ class SellDraftMediaPersistence {
     required String namePrefix,
   }) async {
     final out = <dynamic>[];
+    final seen = <String>{};
     for (final item in items) {
       final raw = item is XFile
           ? item.path
           : item?.toString().trim() ?? '';
       if (raw.isEmpty) continue;
       if (isRetainedMediaReference(raw)) {
-        out.add(raw);
+        final id = canonicalMediaIdentity(raw);
+        if (seen.add(id)) out.add(raw);
         continue;
       }
       final stored = await _persistLocalPath(
@@ -181,6 +183,8 @@ class SellDraftMediaPersistence {
         namePrefix: namePrefix,
       );
       if (stored == null || stored.isEmpty) continue;
+      final id = canonicalMediaIdentity(stored);
+      if (!seen.add(id)) continue;
       out.add(XFile(stored));
     }
     return out;
@@ -284,15 +288,48 @@ class SellDraftMediaPersistence {
     return item?.toString().trim() ?? '';
   }
 
-  /// Union of media lists, preserving first-seen order.
+  /// Stable dedupe key: draft files by basename, everything else by normalized path.
+  static String canonicalMediaIdentity(dynamic item) {
+    final raw = _mediaIdentity(item);
+    if (raw.isEmpty) return raw;
+    if (isRetainedMediaReference(raw)) {
+      return _localPath(raw).replaceAll(r'\', '/').toLowerCase();
+    }
+    var local = p.normalize(_localPath(raw)).replaceAll(r'\', '/');
+    if (Platform.isWindows) {
+      local = local.toLowerCase();
+    }
+    if (local.contains('sell_draft_media/')) {
+      return p.basename(local);
+    }
+    return local;
+  }
+
+  /// Prefer [primary] when it has media; otherwise use [secondary].
+  static List<dynamic> coalesceMediaLists({
+    List<dynamic>? primary,
+    List<dynamic>? secondary,
+  }) {
+    final primaryResolved = resolveDynamicMediaList(
+      primary is List ? List<dynamic>.from(primary) : null,
+      includeMissingLocalPaths: true,
+    );
+    if (primaryResolved.isNotEmpty) return primaryResolved;
+    return resolveDynamicMediaList(
+      secondary is List ? List<dynamic>.from(secondary) : null,
+      includeMissingLocalPaths: true,
+    );
+  }
+
+  /// Union of media lists with canonical dedupe (same draft file, different path spellings).
   static List<dynamic> mergeRawMediaLists(List<List<dynamic>> sources) {
     final seen = <String>{};
     final merged = <dynamic>[];
     for (final source in sources) {
       for (final item in source) {
-        final id = _mediaIdentity(item);
+        final id = canonicalMediaIdentity(item);
         if (id.isEmpty || !seen.add(id)) continue;
-        merged.add(item is XFile ? item : id);
+        merged.add(item is XFile ? item : _mediaIdentity(item));
       }
     }
     return resolveDynamicMediaList(merged, includeMissingLocalPaths: true);
@@ -310,21 +347,26 @@ class SellDraftMediaPersistence {
   }) {
     if (items == null) return [];
     final out = <dynamic>[];
+    final seen = <String>{};
     for (final item in items) {
       final raw = item is XFile ? item.path : item?.toString().trim() ?? '';
       if (raw.isEmpty) continue;
+      dynamic resolved;
       if (isRetainedMediaReference(raw)) {
-        out.add(raw);
-        continue;
+        resolved = raw;
+      } else {
+        final local = _localPath(raw);
+        if (File(local).existsSync()) {
+          resolved = XFile(local);
+        } else if (includeMissingLocalPaths && _isUnderSellDraftMedia(local)) {
+          resolved = XFile(local);
+        } else {
+          continue;
+        }
       }
-      final local = _localPath(raw);
-      if (File(local).existsSync()) {
-        out.add(XFile(local));
-        continue;
-      }
-      if (includeMissingLocalPaths && _isUnderSellDraftMedia(local)) {
-        out.add(XFile(local));
-      }
+      final id = canonicalMediaIdentity(resolved);
+      if (id.isEmpty || !seen.add(id)) continue;
+      out.add(resolved);
     }
     return out;
   }
