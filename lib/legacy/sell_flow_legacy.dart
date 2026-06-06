@@ -975,10 +975,10 @@ class _SellCarPageState extends State<SellCarPage> {
       if (!mounted) return;
       setState(() {
         currentStep = restoredStep.clamp(0, _kSellStepCount - 1);
-        carData = restoredCarData;
+        carData = _resolveCarDataMedia(restoredCarData);
         _hasDraftSnapshot = true;
         _draftPreviewStep = currentStep;
-        _draftPreviewCarData = restoredCarData;
+        _draftPreviewCarData = carData;
       });
       WidgetsBinding.instance.addPostFrameCallback((_) {
         if (mounted && _pageController.hasClients) {
@@ -1030,6 +1030,18 @@ class _SellCarPageState extends State<SellCarPage> {
     } catch (_) {}
   }
 
+  Map<String, dynamic> _resolveCarDataMedia(Map<String, dynamic> data) {
+    final copy = Map<String, dynamic>.from(data);
+    for (final key in ['images', 'damage_images', 'videos']) {
+      if (copy[key] is List) {
+        copy[key] = SellDraftMediaPersistence.resolveDynamicMediaList(
+          List<dynamic>.from(copy[key] as List),
+        );
+      }
+    }
+    return copy;
+  }
+
   void _applyDraftSnapshot(
     Map<String, dynamic> snapshot, {
     bool restoreCurrentStep = true,
@@ -1051,10 +1063,10 @@ class _SellCarPageState extends State<SellCarPage> {
     if (restoreCurrentStep) {
       currentStep = currentStepValue.clamp(0, _kSellStepCount - 1);
     }
-    carData = restoredCarData;
+    carData = _resolveCarDataMedia(restoredCarData);
     _hasDraftSnapshot = true;
     _draftPreviewStep = currentStep;
-    _draftPreviewCarData = restoredCarData;
+    _draftPreviewCarData = carData;
     WidgetsBinding.instance.addPostFrameCallback((_) {
       if (mounted && _pageController.hasClients) {
         _pageController.jumpToPage(currentStep);
@@ -6473,11 +6485,81 @@ class _SellStep4PageState extends State<SellStep4Page> {
         parentState.carData.remove('processed_image_paths');
       }
     } else {
-      _hydrateFromParentCarData();
-      await _restoreDraft();
+      final parentImages = parentState?.carData['images'];
+      final parentDamage = parentState?.carData['damage_images'];
+      final parentVideos = parentState?.carData['videos'];
+      List<dynamic> stepImages = const [];
+      List<dynamic> stepDamage = const [];
+      List<XFile> stepVideos = const [];
+      try {
+        final sp = await SharedPreferences.getInstance();
+        final raw = sp.getString(_draftKey);
+        if (raw != null && raw.trim().isNotEmpty) {
+          final decoded = json.decode(raw);
+          if (decoded is Map) {
+            final data = Map<String, dynamic>.from(
+              decoded.cast<String, dynamic>(),
+            );
+            if (data['selectedImages'] is List) {
+              stepImages = List<dynamic>.from(data['selectedImages'] as List);
+            }
+            if (data['damage_images'] is List) {
+              stepDamage = List<dynamic>.from(data['damage_images'] as List);
+            }
+            if (data['selectedVideos'] is List) {
+              stepVideos = (data['selectedVideos'] as List)
+                  .map((e) => e.toString())
+                  .where((e) => e.trim().isNotEmpty && File(e).existsSync())
+                  .map((e) => XFile(e))
+                  .toList();
+            }
+            _imagesProcessed = data['imagesProcessed'] == true;
+          }
+        }
+      } catch (_) {}
+
+      final mergedImages = SellDraftMediaPersistence.mergeRawMediaLists([
+        if (parentImages is List) List<dynamic>.from(parentImages) else [],
+        stepImages,
+      ]);
+      final mergedDamage = SellDraftMediaPersistence.mergeRawMediaLists([
+        if (parentDamage is List) List<dynamic>.from(parentDamage) else [],
+        stepDamage,
+      ]);
+      final mergedVideoPaths = <String>{
+        if (parentVideos is List)
+          ...parentVideos.map(
+            (e) => e is XFile ? e.path : e.toString().trim(),
+          ),
+        ...stepVideos.map((e) => e.path),
+      }.where((path) => path.isNotEmpty && File(path).existsSync());
+
+      if (mounted) {
+        setState(() {
+          _selectedImages = mergedImages;
+          _damageImages = mergedDamage;
+          _selectedVideos
+            ..clear()
+            ..addAll(mergedVideoPaths.map((path) => XFile(path)));
+          _isProcessingImages = false;
+        });
+      }
+      if (parentState != null) {
+        parentState.carData['images'] = List<dynamic>.from(mergedImages);
+        parentState.carData['damage_images'] =
+            List<dynamic>.from(mergedDamage);
+        parentState.carData['videos'] = List<XFile>.from(
+          mergedVideoPaths.map((path) => XFile(path)),
+        );
+        parentState.carData['images_processed'] = _imagesProcessed;
+      }
     }
     if (!mounted) return;
-    await _syncMediaDraftToParent();
+    if (_selectedImages.isNotEmpty ||
+        _damageImages.isNotEmpty ||
+        _selectedVideos.isNotEmpty) {
+      await _syncMediaDraftToParent();
+    }
   }
 
   @override
@@ -6501,7 +6583,19 @@ class _SellStep4PageState extends State<SellStep4Page> {
   @override
   void dispose() {
     if (!LegacySellDraftPrefs.suppressPersist) {
-      unawaited(_saveDraft());
+      final parentState = context.findAncestorStateOfType<_SellCarPageState>();
+      if (parentState != null) {
+        parentState.carData['images'] = List<dynamic>.from(_selectedImages);
+        parentState.carData['damage_images'] =
+            List<dynamic>.from(_damageImages);
+        parentState.carData['videos'] = List<XFile>.from(_selectedVideos);
+        parentState.carData['images_processed'] = _imagesProcessed;
+      }
+      unawaited(
+        _saveDraft().then((_) {
+          parentState?._saveSellDraftSnapshot();
+        }),
+      );
     }
     super.dispose();
   }
@@ -6636,6 +6730,15 @@ class _SellStep4PageState extends State<SellStep4Page> {
           'imagesProcessed': _imagesProcessed,
         }),
       );
+      if (parentState != null) {
+        parentState.carData['images'] = List<dynamic>.from(images);
+        parentState.carData['damage_images'] = List<dynamic>.from(damage);
+        parentState.carData['videos'] = List<XFile>.from(
+          videos.whereType<XFile>(),
+        );
+        parentState.carData['images_processed'] = _imagesProcessed;
+      }
+      unawaited(parentState?._saveSellDraftSnapshot());
     } catch (_) {}
   }
 
@@ -6772,8 +6875,9 @@ class _SellStep4PageState extends State<SellStep4Page> {
       // Build local preview files from base64 (avoids loading many /static/ URLs concurrently, which can drop connections)
       final List<XFile> blurredLocal = <XFile>[];
       final List<String> okPaths = <String>[];
+      final parentState = context.findAncestorStateOfType<_SellCarPageState>();
+      final draftId = parentState?._currentDraftId ?? 'default';
       try {
-        final dir = Directory.systemTemp;
         final int n = paths.length;
         for (int i = 0; i < n; i++) {
           final String path = paths[i].toString();
@@ -6783,15 +6887,17 @@ class _SellStep4PageState extends State<SellStep4Page> {
               dataUri.contains('base64,')) {
             final idx = dataUri.indexOf('base64,');
             final raw = base64Decode(dataUri.substring(idx + 7));
-            final outFile = File(
-              '${dir.path}/blurred_preview_${DateTime.now().millisecondsSinceEpoch}_$i.jpg',
+            final stored = await SellDraftMediaPersistence.persistBytesToDraft(
+              raw,
+              draftId: draftId,
+              namePrefix: 'listing_blur',
             );
-            await outFile.writeAsBytes(raw);
-            blurredLocal.add(XFile(outFile.path));
-            okPaths.add(path);
-          } else {
-            // Fallback: keep original local image for preview if we didn't get base64 for this one.
-            if (i < local.length) blurredLocal.add(local[i]);
+            if (stored != null && stored.isNotEmpty) {
+              blurredLocal.add(XFile(stored));
+              okPaths.add(path);
+            }
+          } else if (i < local.length) {
+            blurredLocal.add(local[i]);
           }
         }
       } catch (e) {
@@ -6807,7 +6913,6 @@ class _SellStep4PageState extends State<SellStep4Page> {
       });
 
       unawaited(_syncMediaDraftToParent());
-      final parentState = context.findAncestorStateOfType<_SellCarPageState>();
       if (parentState != null) {
         parentState.carData['processed_image_paths'] = List<String>.from(
           okPaths.isNotEmpty ? okPaths : paths,
