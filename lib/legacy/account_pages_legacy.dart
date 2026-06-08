@@ -633,7 +633,10 @@ class _ProfilePageState extends State<ProfilePage> {
                           _showAuthRequiredDialog(context);
                           return;
                         }
-                        Navigator.pushNamed(context, '/recently-viewed');
+                        Navigator.pushReplacementNamed(
+                          context,
+                          '/recently-viewed',
+                        );
                       },
                     ),
                     SizedBox(height: 12),

@@ -361,8 +361,19 @@ class _RecentlyViewedPageState extends State<RecentlyViewedPage> {
       );
     }
 
+    final loggedIn =
+        ApiService.accessToken != null && ApiService.accessToken!.isNotEmpty;
+
     return Scaffold(
+      extendBody: true,
       appBar: AppBar(
+        leading: IconButton(
+          icon: const Icon(Icons.arrow_back),
+          onPressed: () => navigateMainShellTab(
+            context,
+            loggedIn ? '/profile' : '/login',
+          ),
+        ),
         title: Text(title),
         actions: [
           if (_cars.isNotEmpty && !_loading)
@@ -376,7 +387,8 @@ class _RecentlyViewedPageState extends State<RecentlyViewedPage> {
       body: body,
       bottomNavigationBar: buildFloatingBottomNav(
         context,
-        currentIndex: 0,
+        currentIndex: 3,
+        solidBackground: true,
         onTap: (idx) {
           switch (idx) {
             case 0:
@@ -389,9 +401,6 @@ class _RecentlyViewedPageState extends State<RecentlyViewedPage> {
               navigateMainShellTab(context, '/dealers');
               break;
             case 3:
-              final loggedIn =
-                  ApiService.accessToken != null &&
-                  ApiService.accessToken!.isNotEmpty;
               navigateMainShellTab(
                 context,
                 loggedIn ? '/profile' : '/login',

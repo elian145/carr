@@ -13,8 +13,6 @@ import '../models/analytics_model.dart';
 import '../shared/errors/user_error_text.dart';
 import '../shared/listings/listing_events.dart';
 import '../shared/listings/listing_identity.dart';
-import '../shared/listings/listing_management.dart';
-import '../shared/listings/listing_status.dart';
 import '../shared/prefs/sell_listing_draft_prefs.dart';
 import '../shared/prefs/sell_draft_media_persistence.dart';
 import '../shared/prefs/legacy_sell_draft_list.dart';
@@ -434,64 +432,6 @@ class _MyListingsPageState extends State<MyListingsPage> {
     );
   }
 
-  Future<void> _deleteListing(String carId) async {
-    final deleted = await confirmAndDeleteListing(context, carId);
-    if (!deleted || !mounted) return;
-    _removeListingFromList(carId);
-    await _fetch(refresh: true);
-  }
-
-  Future<void> _toggleSold(Map<String, dynamic> car) async {
-    final carId = listingPrimaryId(car);
-    if (carId.isEmpty) return;
-    final sold = isListingSold(car);
-    if (!sold) {
-      final ok = await confirmMarkListingSold(context);
-      if (!ok || !mounted) return;
-    }
-    final updated = await setListingSoldStatus(context, carId, sold: !sold);
-    if (!mounted || updated == null) return;
-    setState(() {
-      final idx = _cars.indexWhere((c) => listingMatchesId(c, carId));
-      if (idx >= 0) _cars[idx] = {..._cars[idx], ...updated};
-    });
-  }
-
-  Future<void> _editListing(Map<String, dynamic> car) async {
-    final carId = listingPrimaryId(car);
-    if (carId.isEmpty) return;
-
-    final updated = await openEditListingPage(context, car);
-    if (!mounted || updated == null) return;
-    setState(() {
-      final idx = _cars.indexWhere((c) => listingMatchesId(c, carId));
-      if (idx >= 0) _cars[idx] = {..._cars[idx], ...updated};
-    });
-  }
-
-  Widget _ownerOverlayIcon({
-    required IconData icon,
-    required String tooltip,
-    required VoidCallback onTap,
-    Color background = const Color(0xCC000000),
-  }) {
-    return Tooltip(
-      message: tooltip,
-      child: Material(
-        color: background,
-        shape: const CircleBorder(),
-        child: InkWell(
-          customBorder: const CircleBorder(),
-          onTap: onTap,
-          child: Padding(
-            padding: const EdgeInsets.all(6),
-            child: Icon(icon, size: 16, color: Colors.white),
-          ),
-        ),
-      ),
-    );
-  }
-
   /// Same full-cell card as home, with compact owner controls overlaid on top.
   Widget _buildOwnedListingTile({
     required Map<String, dynamic> car,
@@ -530,38 +470,6 @@ class _MyListingsPageState extends State<MyListingsPage> {
                   ),
                 ),
               ),
-            ),
-          ),
-        if (id.isNotEmpty)
-          Positioned(
-            top: 6,
-            right: 6,
-            child: Row(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                _ownerOverlayIcon(
-                  icon: isListingSold(car)
-                      ? Icons.undo_outlined
-                      : Icons.sell_outlined,
-                  tooltip: isListingSold(car)
-                      ? _text('Mark available', ar: 'متاح', ku: 'بەردەست')
-                      : _text('Mark sold', ar: 'مباع', ku: 'فرۆشراو'),
-                  onTap: () => _toggleSold(car),
-                ),
-                const SizedBox(width: 4),
-                _ownerOverlayIcon(
-                  icon: Icons.edit_outlined,
-                  tooltip: loc?.editAction ?? 'Edit',
-                  onTap: () => _editListing(car),
-                ),
-                const SizedBox(width: 4),
-                _ownerOverlayIcon(
-                  icon: Icons.delete_outline,
-                  tooltip: loc?.deleteAction ?? 'Delete',
-                  background: const Color(0xCCB3261E),
-                  onTap: () => _deleteListing(id),
-                ),
-              ],
             ),
           ),
       ],
