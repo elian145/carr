@@ -1,10 +1,10 @@
-# CARZO Store Submission Notes
+# CarNet Store Submission Notes
 
 Use this document when completing Google Play Data Safety, Apple App Privacy, and reviewer notes. Keep the answers aligned with the final backend configuration and privacy policy.
 
 ## Store Listing Inputs
 
-- App name: `CARZO`
+- App name: `CarNet`
 - Bundle/package ID: `com.carzo.app`
 - Category: Auto & Vehicles / Shopping marketplace
 - Support email: set `SUPPORT_EMAIL` on the backend to your real monitored inbox (default in API/legal pages is `support@carzo.app` until overridden).

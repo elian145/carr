@@ -103,7 +103,7 @@ abstract class AppLocalizations {
   /// No description provided for @appTitle.
   ///
   /// In en, this message translates to:
-  /// **'CARZO'**
+  /// **'CarNet'**
   String get appTitle;
 
   /// No description provided for @navHome.
@@ -1045,7 +1045,7 @@ abstract class AppLocalizations {
   /// No description provided for @chatOnCarzo.
   ///
   /// In en, this message translates to:
-  /// **'Chat on Carzo'**
+  /// **'Chat on CarNet'**
   String get chatOnCarzo;
 
   /// No description provided for @chatCarzoOwnListing.

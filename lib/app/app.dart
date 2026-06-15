@@ -53,7 +53,7 @@ class CarzoApp extends StatelessWidget {
               return _AppWithDeepLinks(
                 child: MaterialApp(
                   navigatorKey: appNavigatorKey,
-                  title: 'CARZO',
+                  title: 'CarNet',
                   debugShowCheckedModeBanner: false,
                   builder: (context, child) => EdgeSwipeBack(
                     navigatorKey: appNavigatorKey,

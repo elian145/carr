@@ -1135,7 +1135,7 @@ def push_test():
     if not token:
         return jsonify(
             {
-                "message": "No push token on server. Open CARZO, allow notifications, log out, log in again.",
+                "message": "No push token on server. Open CarNet, allow notifications, log out, log in again.",
             }
         ), 400
     if not fcm_is_configured():
@@ -1149,7 +1149,7 @@ def push_test():
         ), 503
     ok = send_push(
         token,
-        title="CARZO test",
+        title="CarNet test",
         body="If you see this, push notifications are working.",
         data={"type": "push_test"},
     )

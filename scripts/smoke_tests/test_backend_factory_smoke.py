@@ -255,11 +255,11 @@ class BackendFactorySmokeTest(unittest.TestCase):
 
         terms = self.client.get("/terms")
         self.assertEqual(terms.status_code, 200, terms.data)
-        self.assertIn(b"CARZO", terms.data)
+        self.assertIn(b"CarNet", terms.data)
 
         privacy = self.client.get("/privacy")
         self.assertEqual(privacy.status_code, 200, privacy.data)
-        self.assertIn(b"CARZO", privacy.data)
+        self.assertIn(b"CarNet", privacy.data)
 
     def test_delete_account(self):
         r = self.client.delete(

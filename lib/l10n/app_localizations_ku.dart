@@ -484,7 +484,7 @@ class AppLocalizationsKu extends AppLocalizations {
   String get chatOnWhatsApp => 'وتووێژ لە واتساپ';
 
   @override
-  String get chatOnCarzo => 'چات لەسەر Carzo';
+  String get chatOnCarzo => 'چات لەسەر CarNet';
 
   @override
   String get chatCarzoOwnListing =>

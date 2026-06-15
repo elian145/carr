@@ -1,6 +1,6 @@
 import '../../services/config.dart';
 
-/// Opens this listing in CARZO when the link is opened on a device with the app.
+/// Opens this listing in CarNet when the link is opened on a device with the app.
 String listingDeepLink(String listingId) {
   final id = listingId.trim();
   if (id.isEmpty) return '';
@@ -87,7 +87,7 @@ String? listingWebShareLinkWebPreview(String listingId) {
 
 /// Link to put on the share sheet — always HTTPS when available.
 ///
-/// iOS/Android **Universal / App Links** open CARZO when the recipient taps this URL
+/// iOS/Android **Universal / App Links** open CarNet when the recipient taps this URL
 /// (one tap → listing in the app). Requires AASA on the server and Associated Domains
 /// in a properly signed build.
 String listingShareLinkOnly(String listingId) {

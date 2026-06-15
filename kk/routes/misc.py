@@ -130,7 +130,7 @@ def _needs_in_app_bridge(user_agent: str) -> bool:
 
 
 def _listing_handoff_script(listing_id: str, is_android: bool, *, auto_attempt: bool = True) -> str:
-    """JS to leave Snapchat/Instagram WebView and open CARZO (Safari or Android intent)."""
+    """JS to leave Snapchat/Instagram WebView and open CarNet (Safari or Android intent)."""
     qid = quote(listing_id, safe="")
     deep = f"carzo://listing?id={qid}"
     canonical = _listing_canonical_https_url(listing_id)
@@ -230,7 +230,7 @@ def _listing_handoff_script(listing_id: str, is_android: bool, *, auto_attempt: 
     setTimeout(window.carzoOpenAndroidIntent, 80);
     return;
   }}
-  /* iOS: auto-try custom scheme on load (same as tapping Open in CARZO app). May be blocked in some WebViews. */
+  /* iOS: auto-try custom scheme on load (same as tapping Open in CarNet app). May be blocked in some WebViews. */
   setTimeout(function () {{
     try {{ window.location.href = deep; }} catch (e4) {{}}
   }}, 120);
@@ -244,7 +244,7 @@ def _listing_canonical_https_url(listing_id: str) -> str:
 
 
 def _listing_in_app_bridge_html(listing_id: str) -> Response:
-    """Snapchat / Instagram in-app browsers: minimal page that opens CARZO (intent / ``carzo://``)."""
+    """Snapchat / Instagram in-app browsers: minimal page that opens CarNet (intent / ``carzo://``)."""
     ua = (request.headers.get("User-Agent") or "").lower()
     is_android = "android" in ua
     qid = quote(listing_id, safe="")
@@ -259,13 +259,13 @@ def _listing_in_app_bridge_html(listing_id: str) -> Response:
 <head>
   <meta charset="utf-8"/>
   <meta name="viewport" content="width=device-width, initial-scale=1"/>
-  <title>Open in CARZO</title>
+  <title>Open in CarNet</title>
   <meta property="og:url" content="{esc_href}"/>
   <meta property="al:ios:url" content="{esc_deep}"/>
-  <meta property="al:ios:app_name" content="CARZO"/>
+  <meta property="al:ios:app_name" content="CarNet"/>
   <meta property="al:android:url" content="{esc_deep}"/>
   <meta property="al:android:package" content="com.carzo.app"/>
-  <meta property="al:android:app_name" content="CARZO"/>
+  <meta property="al:android:app_name" content="CarNet"/>
   <style>
     * {{ box-sizing: border-box; }}
     body {{
@@ -300,7 +300,7 @@ def _listing_in_app_bridge_html(listing_id: str) -> Response:
   </style>
 </head>
 <body>
-  <button type="button" class="btn" id="carzo-open-app">Open in CARZO app</button>
+  <button type="button" class="btn" id="carzo-open-app">Open in CarNet app</button>
   <script>{open_script}</script>
 </body>
 </html>"""
@@ -569,7 +569,7 @@ def listing_share_landing(listing_id: str):
 
     handoff_overlay = f"""
   <div id="carzo-handoff-overlay" style="display:none;position:fixed;inset:0;z-index:99999;background:#111;color:#fff;flex-direction:column;align-items:center;justify-content:center;padding:1.5rem;text-align:center;font-family:-apple-system,BlinkMacSystemFont,sans-serif;">
-    <p style="font-size:1rem;margin:0 0 0.75rem;max-width:22rem;line-height:1.5">Instagram / Snapchat cannot open CARZO from here.</p>
+    <p style="font-size:1rem;margin:0 0 0.75rem;max-width:22rem;line-height:1.5">Instagram / Snapchat cannot open CarNet from here.</p>
     <p style="font-size:0.88rem;margin:0 0 1rem;max-width:22rem;line-height:1.5;color:#bbb">Tap the <strong>compass</strong> at the bottom (Open in Safari), or <strong>⋯</strong> → Open in Safari.</p>
     <a href="{page_url_esc}" target="_blank" rel="noopener noreferrer" id="carzo-handoff-link" style="display:block;width:100%;max-width:20rem;padding:1.1rem 1.25rem;background:linear-gradient(180deg,#ff7a1a,#e85f00);color:#fff;font-weight:700;font-size:1.1rem;border-radius:14px;text-decoration:none;-webkit-appearance:none;">Open in Safari</a>
     <button type="button" id="carzo-handoff-btn" style="display:none;margin-top:0.75rem;width:100%;max-width:20rem;padding:1rem;background:#333;color:#fff;font-weight:600;font-size:1rem;border-radius:12px;border:1px solid #555">Open in app (Android)</button>
@@ -580,10 +580,10 @@ def listing_share_landing(listing_id: str):
 <head>
   <meta charset="utf-8"/>
   <meta name="viewport" content="width=device-width, initial-scale=1"/>
-  <title>{title} · CARZO</title>
+  <title>{title} · CarNet</title>
   <link rel="canonical" href="{page_url_esc}"/>
   <meta property="og:type" content="website"/>
-  <meta property="og:title" content="{title} · CARZO"/>
+  <meta property="og:title" content="{title} · CarNet"/>
   <meta property="og:description" content="{og_desc}"/>
   <meta property="og:url" content="{page_url_esc}"/>
 {og_image_meta}  <meta name="twitter:card" content="summary_large_image"/>
@@ -684,7 +684,7 @@ def listing_share_landing(listing_id: str):
 <body>
 {handoff_overlay}
   <div id="web-shell">
-  <div class="topbar">CARZO</div>
+  <div class="topbar">CarNet</div>
   <div class="wrap">
     <div class="card">
       {img_block}
@@ -694,12 +694,12 @@ def listing_share_landing(listing_id: str):
         <p class="meta">{year} · {mile_s} · {loc}</p>
         <p class="price">{currency} {price_s}</p>
         <div class="desc">{desc_html}</div>
-        <a href="{esc_deep}" class="cta" id="carzo-open-btn" rel="noopener noreferrer">Open in CARZO app</a>
+        <a href="{esc_deep}" class="cta" id="carzo-open-btn" rel="noopener noreferrer">Open in CarNet app</a>
         <p class="hint">
-          Opening CARZO… If nothing happens, tap the orange button above.
+          Opening CarNet… If nothing happens, tap the orange button above.
         </p>
         <p class="foot">
-          Universal Links open this URL in CARZO when iOS/Android is fully configured.
+          Universal Links open this URL in CarNet when iOS/Android is fully configured.
           Web-only view: add <strong>?web=1</strong> to the URL to skip opening the app.
         </p>
       </div>

@@ -1,11 +1,11 @@
 {
-    "name": "CARZO",
-    "short_name": "CARZO",
+    "name": "CarNet",
+    "short_name": "CarNet",
     "start_url": ".",
     "display": "standalone",
-    "background_color": "#0175C2",
-    "theme_color": "#0175C2",
-    "description": "CARZO mobile marketplace for buying and selling cars.",
+    "background_color": "#000000",
+    "theme_color": "#FF6B00",
+    "description": "CarNet mobile marketplace for buying and selling cars.",
     "orientation": "portrait-primary",
     "prefer_related_applications": false,
     "icons": [

@@ -482,7 +482,7 @@ String _formatSocketErrorForUser(String err) {
   if (text.contains('failed host lookup') ||
       text.contains('no address associated with hostname') ||
       text.contains('network is unreachable')) {
-    return 'Cannot reach CARZO server. Check Wi‑Fi or mobile data, then open '
+    return 'Cannot reach CarNet server. Check Wi‑Fi or mobile data, then open '
         'https://carr-5hrm.onrender.com in Safari.';
   }
   return err;

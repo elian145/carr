@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """
-HTTP preflight against a deployed CARZO API host (default: Render production).
+HTTP preflight against a deployed CarNet API host (default: Render production).
 
 Critical checks (exit 1 on failure):
   - GET /health
@@ -33,7 +33,7 @@ DEFAULT_HOST = "https://carr-5hrm.onrender.com"
 def _fetch(url: str, timeout: float) -> tuple[int, bytes, dict[str, str]]:
     req = urllib.request.Request(
         url,
-        headers={"Accept": "application/json, text/html, */*", "User-Agent": "CARZO-verify/1.0"},
+        headers={"Accept": "application/json, text/html, */*", "User-Agent": "CarNet-verify/1.0"},
     )
     try:
         with urllib.request.urlopen(req, timeout=timeout) as resp:
@@ -153,7 +153,7 @@ def _check_app_links(host: str, timeout: float, required: bool) -> list[str]:
 
 
 def main() -> None:
-    p = argparse.ArgumentParser(description="Verify deployed CARZO API host")
+    p = argparse.ArgumentParser(description="Verify deployed CarNet API host")
     p.add_argument("--host", default=DEFAULT_HOST, help="API origin (no /api suffix)")
     p.add_argument(
         "--timeout",

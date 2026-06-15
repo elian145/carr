@@ -69,13 +69,13 @@ def confirm_signup_redirect():
 <html>
 <head>
   <meta charset="utf-8">
-  <title>Confirm signup - CARZO</title>
+  <title>Confirm signup - CarNet</title>
   <meta http-equiv="refresh" content="0;url={app_link}">
   <style>body {{ font-family: system-ui; max-width: 480px; margin: 2rem auto; padding: 1rem; }}</style>
 </head>
 <body>
-  <p>Redirecting to the CARZO app&hellip;</p>
-  <p>If nothing opens, <a href="{app_link}">tap here to open in the app</a>, or open the CARZO app and paste this link in the &quot;Verify email&quot; screen:</p>
+  <p>Redirecting to the CarNet app&hellip;</p>
+  <p>If nothing opens, <a href="{app_link}">tap here to open in the app</a>, or open the CarNet app and paste this link in the &quot;Verify email&quot; screen:</p>
   <p style="word-break: break-all;"><code>{app_link}</code></p>
 </body>
 </html>"""
@@ -288,14 +288,14 @@ def init_jwt_callbacks(jwt) -> None:
 
 def _send_signup_verification_email(to_email: str, token: str) -> bool:
     """Send signup confirmation link. Returns True if sent."""
-    subject = "Confirm your CARZO signup"
+    subject = "Confirm your CarNet signup"
     base = _public_base_url()
     app_link = f"carzo://auth/confirm-signup?token={token}"
     # Prefer https link so the link opens in a browser and can redirect to the app or show fallback
     primary_link = f"{base}/auth/confirm-signup?token={token}" if base else app_link
     body = (
         f"Tap this link to confirm your signup:\n\n{primary_link}\n\n"
-        "If the app does not open, open CARZO and go to Verify email, then paste the link there.\n"
+        "If the app does not open, open CarNet and go to Verify email, then paste the link there.\n"
         "This link expires in 24 hours.\n"
         "If you did not request this signup, you can ignore this email.\n"
     )
@@ -303,7 +303,7 @@ def _send_signup_verification_email(to_email: str, token: str) -> bool:
     resend_key = (os.environ.get("RESEND_API_KEY") or "").strip()
     resend_from = (os.environ.get("RESEND_FROM_EMAIL") or "").strip() or "onboarding@resend.dev"
     if resend_key:
-        resend_from_str = resend_from if ("<" in resend_from and ">" in resend_from) else f"CARZO <{resend_from}>"
+        resend_from_str = resend_from if ("<" in resend_from and ">" in resend_from) else f"CarNet <{resend_from}>"
         try:
             r = requests.post(
                 "https://api.resend.com/emails",
@@ -872,9 +872,9 @@ def _send_password_reset_email(to_email: str, token: str) -> None:
     """Send password reset email. Prefer Resend (best deliverability), then SendGrid, then SMTP."""
     to_mask = (to_email[:3] + "***") if len(to_email) >= 3 else "***"
     current_app.logger.info("[FORGOT-PASSWORD] Sending reset email to %s", to_mask)
-    subject = "Reset your CARZO password"
+    subject = "Reset your CarNet password"
     body = (
-        "You requested a password reset. Use the code below in the CARZO app to set a new password.\n\n"
+        "You requested a password reset. Use the code below in the CarNet app to set a new password.\n\n"
         f"Reset code: {token}\n\n"
         "This code expires in 1 hour. If you did not request this, you can ignore this email.\n"
     )
@@ -886,10 +886,10 @@ def _send_password_reset_email(to_email: str, token: str) -> None:
     )
     from_addr = (from_addr or "").strip() if from_addr else ""
     if "<" in str(from_addr) and ">" in str(from_addr):
-        from_name = str(from_addr).split("<")[0].strip().strip('"') or "CARZO"
+        from_name = str(from_addr).split("<")[0].strip().strip('"') or "CarNet"
         from_email_only = str(from_addr).split("<")[-1].replace(">", "").strip()
     else:
-        from_name = "CARZO"
+        from_name = "CarNet"
         from_email_only = from_addr or ""
 
     # 1) Resend (recommended: simple API, good deliverability, works on Render free tier)
@@ -899,7 +899,7 @@ def _send_password_reset_email(to_email: str, token: str) -> None:
         if "<" in resend_from and ">" in resend_from:
             resend_from_str = resend_from
         else:
-            resend_from_str = f"CARZO <{resend_from}>"
+            resend_from_str = f"CarNet <{resend_from}>"
         try:
             r = requests.post(
                 "https://api.resend.com/emails",
@@ -967,10 +967,10 @@ def _send_password_reset_email(to_email: str, token: str) -> None:
 
 def _send_email_verification_email(to_email: str, token: str) -> bool:
     """Send email verification link (Resend/SendGrid/SMTP). Returns True if sent."""
-    subject = "Verify your CARZO email"
+    subject = "Verify your CarNet email"
     link = f"carzo://auth/verify-email?token={token}"
     body = (
-        f"Please verify your email by opening this link in the CARZO app:\n\n{link}\n\n"
+        f"Please verify your email by opening this link in the CarNet app:\n\n{link}\n\n"
         "Or enter the verification code in the app. This link expires in 24 hours.\n"
         "If you did not request this, you can ignore this email.\n"
     )
@@ -978,7 +978,7 @@ def _send_email_verification_email(to_email: str, token: str) -> bool:
     resend_key = (os.environ.get("RESEND_API_KEY") or "").strip()
     resend_from = (os.environ.get("RESEND_FROM_EMAIL") or "").strip() or "onboarding@resend.dev"
     if resend_key:
-        resend_from_str = resend_from if ("<" in resend_from and ">" in resend_from) else f"CARZO <{resend_from}>"
+        resend_from_str = resend_from if ("<" in resend_from and ">" in resend_from) else f"CarNet <{resend_from}>"
         try:
             r = requests.post(
                 "https://api.resend.com/emails",
@@ -996,9 +996,9 @@ def _send_email_verification_email(to_email: str, token: str) -> bool:
     sendgrid_key = (os.environ.get("SENDGRID_API_KEY") or "").strip()
     from_addr = (current_app.config.get("MAIL_DEFAULT_SENDER") or current_app.config.get("MAIL_USERNAME")) or ""
     if isinstance(from_addr, str) and "<" in from_addr and ">" in from_addr:
-        from_name, from_email_only = from_addr.split("<")[0].strip().strip('"') or "CARZO", from_addr.split("<")[-1].replace(">", "").strip()
+        from_name, from_email_only = from_addr.split("<")[0].strip().strip('"') or "CarNet", from_addr.split("<")[-1].replace(">", "").strip()
     else:
-        from_name, from_email_only = "CARZO", (from_addr or "").strip()
+        from_name, from_email_only = "CarNet", (from_addr or "").strip()
     if sendgrid_key and from_email_only:
         try:
             r = requests.post(

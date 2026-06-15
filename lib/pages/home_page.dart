@@ -995,7 +995,7 @@ class _HomePageState extends State<HomePage>
   Widget build(BuildContext context) {
     super.build(context);
     final loc = AppLocalizations.of(context);
-    final title = (loc?.appTitle ?? 'CARZO').toUpperCase();
+    final title = loc?.appTitle ?? 'CarNet';
 
     return Scaffold(
       appBar: AppBar(

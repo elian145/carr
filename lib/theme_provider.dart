@@ -89,7 +89,7 @@ class AppThemes {
     return const BoxDecoration(color: lightAppBackground);
   }
 
-  /// Bottom bar colors for legacy CARZO tabs.
+  /// Bottom bar colors for legacy CarNet tabs.
   static ({Color backgroundColor, Color unselectedItemColor}) bottomNavChrome(
     Brightness brightness,
   ) {

@@ -56,7 +56,7 @@ Future<void> _shareListingViaAirbridge(
     origin = shareOriginFromContext(context);
   }
   final title = (listingTitle ?? '').trim();
-  final sheetTitle = title.isNotEmpty ? 'CARZO – $title' : 'CARZO listing';
+  final sheetTitle = title.isNotEmpty ? 'CarNet – $title' : 'CarNet listing';
 
   final deep = listingDeepLink(id);
   final fallback = listingWebShareLinkWebPreview(id) ?? listingWebShareLink(id);
@@ -153,7 +153,7 @@ Future<void> _shareListingDirect(
   }
 
   final title = (listingTitle ?? '').trim();
-  final sheetTitle = title.isNotEmpty ? 'CARZO – $title' : 'CARZO listing';
+  final sheetTitle = title.isNotEmpty ? 'CarNet – $title' : 'CarNet listing';
 
   final parsed = Uri.tryParse(link);
   if (parsed != null &&

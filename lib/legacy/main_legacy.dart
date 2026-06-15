@@ -3719,7 +3719,7 @@ class MyApp extends StatelessWidget {
           builder: (context, themeProvider, child) => _AppWithDeepLinks(
             child: MaterialApp(
               navigatorKey: _appNavigatorKey,
-              title: 'CARZO',
+              title: 'CarNet',
               builder: (context, child) => EdgeSwipeBack(
                 navigatorKey: _appNavigatorKey,
                 child: child ?? const SizedBox.shrink(),

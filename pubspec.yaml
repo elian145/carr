@@ -1,5 +1,5 @@
 name: car_listing_app
-description: "CARZO mobile marketplace for buying and selling cars."
+description: "CarNet mobile marketplace for buying and selling cars."
 # The following line prevents the package from being accidentally published to
 # pub.dev using `flutter pub publish`. This is preferred for private packages.
 publish_to: 'none' # Remove this line if you wish to publish to pub.dev
@@ -89,7 +89,7 @@ flutter_launcher_icons:
   ios: true
   image_path: assets/icon/app_icon.png
   remove_alpha_ios: true
-  adaptive_icon_background: "#FFFFFF"
+  adaptive_icon_background: "#000000"
   adaptive_icon_foreground: assets/icon/app_icon.png
 
 # For information on the generic Dart part of this file, see the

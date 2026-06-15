@@ -1716,7 +1716,7 @@ class _HomePageState extends State<HomePage> {
             headers: {
               'Connection': 'keep-alive',
               'Accept': 'application/json',
-              'User-Agent': 'CARZO-Mobile/1.0',
+              'User-Agent': 'CarNet-Mobile/1.0',
               'Cache-Control': 'no-cache',
               'Pragma': 'no-cache',
             },
@@ -1990,7 +1990,7 @@ class _HomePageState extends State<HomePage> {
             headers: {
               'Connection': 'close',
               'Accept': 'application/json',
-              'User-Agent': 'CARZO-Mobile/1.0',
+              'User-Agent': 'CarNet-Mobile/1.0',
               'Cache-Control': 'no-cache',
               'Pragma': 'no-cache',
             },
@@ -2364,7 +2364,7 @@ class _HomePageState extends State<HomePage> {
               url,
               headers: {
                 'Accept': 'application/json',
-                'User-Agent': 'CARZO-Mobile/1.0',
+                'User-Agent': 'CarNet-Mobile/1.0',
                 'Connection': attempt % 2 == 0 ? 'close' : 'keep-alive',
                 'Cache-Control': 'no-cache',
               },
@@ -2436,7 +2436,7 @@ class _HomePageState extends State<HomePage> {
               url,
               headers: {
                 'Accept': 'application/json',
-                'User-Agent': 'CARZO-Mobile/1.0',
+                'User-Agent': 'CarNet-Mobile/1.0',
                 'Connection': 'close',
                 'Cache-Control': 'no-cache',
                 'Pragma': 'no-cache',

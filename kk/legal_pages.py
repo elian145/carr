@@ -1,4 +1,4 @@
-"""Serve CARZO Terms of Service and Privacy Policy as public HTML pages."""
+"""Serve CarNet Terms of Service and Privacy Policy as public HTML pages."""
 
 from __future__ import annotations
 

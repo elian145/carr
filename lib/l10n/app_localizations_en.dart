@@ -9,7 +9,7 @@ class AppLocalizationsEn extends AppLocalizations {
   AppLocalizationsEn([String locale = 'en']) : super(locale);
 
   @override
-  String get appTitle => 'CARZO';
+  String get appTitle => 'CarNet';
 
   @override
   String get navHome => 'Home';
@@ -484,7 +484,7 @@ class AppLocalizationsEn extends AppLocalizations {
   String get chatOnWhatsApp => 'Chat on WhatsApp';
 
   @override
-  String get chatOnCarzo => 'Chat on Carzo';
+  String get chatOnCarzo => 'Chat on CarNet';
 
   @override
   String get chatCarzoOwnListing =>
