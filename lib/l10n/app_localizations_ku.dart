@@ -9,7 +9,7 @@ class AppLocalizationsKu extends AppLocalizations {
   AppLocalizationsKu([String locale = 'ku']) : super(locale);
 
   @override
-  String get appTitle => 'کارزو';
+  String get appTitle => 'CarNet';
 
   @override
   String get navHome => 'ماڵەوە';
