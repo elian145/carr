@@ -446,8 +446,8 @@ class _MyListingsPageState extends State<MyListingsPage> {
         card,
         if (id.isNotEmpty)
           Positioned(
-            top: 6,
-            left: 6,
+            top: 14,
+            left: 14,
             child: Material(
               color: const Color(0xFFFF6B00),
               borderRadius: BorderRadius.circular(6),

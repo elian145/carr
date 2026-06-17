@@ -35,6 +35,16 @@ int _maxSellDraftStep(int a, int b, [int c = 0]) {
   return math.max(math.max(a.clamp(0, maxIdx), b.clamp(0, maxIdx)), c.clamp(0, maxIdx));
 }
 
+void _dismissAnyKeyboard([BuildContext? context]) {
+  final focus = FocusManager.instance.primaryFocus;
+  if (focus != null && focus.hasFocus) {
+    focus.unfocus();
+  }
+  if (context != null && context.mounted) {
+    FocusScope.of(context).unfocus();
+  }
+}
+
 Map<String, dynamic> _normalizeSellDraftSnapshot(Map<String, dynamic> raw) {
   final rawCarData = raw['carData'];
   final carData = rawCarData is Map
@@ -752,6 +762,8 @@ class _SellCarPageState extends State<SellCarPage> {
         .clamp(0, _kSellStepCount - 1);
   }
 
+  void _dismissKeyboard() => _dismissAnyKeyboard(context);
+
   Future<void> _saveDraftCurrentStep() async {
     if (_isEditMode) return;
     try {
@@ -1454,6 +1466,7 @@ class _SellCarPageState extends State<SellCarPage> {
 
   // Method to navigate to next step with validation
   void _goToNextStep() {
+    _dismissKeyboard();
     if (currentStep < _kSellStepCount - 1) {
       if (_isStepCompleted(currentStep)) {
         completedSteps.add(currentStep);
@@ -1481,6 +1494,7 @@ class _SellCarPageState extends State<SellCarPage> {
 
   // Method to navigate to previous step
   void _goToPreviousStep() {
+    _dismissKeyboard();
     if (currentStep > 0) {
       setState(() {
         currentStep--;
@@ -1503,6 +1517,7 @@ class _SellCarPageState extends State<SellCarPage> {
   /// Jump to a wizard index and keep [currentStep] + persisted draft in sync
   /// (used e.g. when validation sends the user back to a specific step).
   void _jumpSellWizardToIndex(int index) {
+    _dismissKeyboard();
     final clamped = index.clamp(0, _kSellStepCount - 1);
     setState(() {
       currentStep = clamped;
@@ -5581,9 +5596,8 @@ class _SellStep3PageState extends State<SellStep3Page> {
   }
 
   void _dismissKeyboard() {
-    // Clear focus from all number input fields
+    _dismissAnyKeyboard(context);
     _priceFocusNode.unfocus();
-    FocusScope.of(context).unfocus();
   }
 
   Widget _buildCurrencyButton(String currency, bool isSelected) {
@@ -5761,7 +5775,10 @@ class _SellStep3PageState extends State<SellStep3Page> {
 
   @override
   Widget build(BuildContext context) {
-    return SingleChildScrollView(
+    return GestureDetector(
+      onTap: _dismissKeyboard,
+      behavior: HitTestBehavior.translucent,
+      child: SingleChildScrollView(
       padding: EdgeInsets.all(20),
       child: Form(
         key: _formKey,
@@ -5858,6 +5875,9 @@ class _SellStep3PageState extends State<SellStep3Page> {
                               ),
                               style: _sellFlowManualFieldTextStyle(context),
                               keyboardType: TextInputType.number,
+                              textInputAction: TextInputAction.done,
+                              onFieldSubmitted: (_) => _dismissKeyboard(),
+                              onTapOutside: (_) => _dismissKeyboard(),
                               inputFormatters: [
                                 services.FilteringTextInputFormatter.digitsOnly,
                               ],
@@ -6183,7 +6203,6 @@ class _SellStep3PageState extends State<SellStep3Page> {
 
             // Contact Phone
             TextFormField(
-              onTap: () => _dismissKeyboard(),
               controller: _phoneController,
               decoration: InputDecoration(
                 labelText: _trLegacyText(
@@ -6242,7 +6261,6 @@ class _SellStep3PageState extends State<SellStep3Page> {
 
             // Listing Description (Optional)
             TextFormField(
-              onTap: () => _dismissKeyboard(),
               controller: _descriptionController,
               minLines: 3,
               maxLines: 6,
@@ -6389,6 +6407,7 @@ class _SellStep3PageState extends State<SellStep3Page> {
                         final parentState = context
                             .findAncestorStateOfType<_SellCarPageState>();
                         if (parentState != null) {
+                          _dismissKeyboard();
                           parentState.carData['price'] = selectedPrice;
                           parentState.carData['city'] = selectedCity;
                           parentState.carData['plate_type'] = selectedPlateType;
@@ -6423,6 +6442,7 @@ class _SellStep3PageState extends State<SellStep3Page> {
           ],
         ),
       ),
+    ),
     );
   }
 }
