@@ -3782,7 +3782,19 @@ class _HomePageState extends State<HomePage> {
                                 },
                               ),
                               SizedBox(height: 16),
-                              Row(
+                              Builder(
+                                builder: (filterRowContext) {
+                                  final isLightShell =
+                                      Theme.of(filterRowContext).brightness ==
+                                      Brightness.light;
+                                  final dropdownMenuInk = isLightShell
+                                      ? AppThemes.darkHomeShellBackground
+                                      : Colors.white;
+                                  const dropdownFieldInk = Colors.white;
+                                  final dropdownMenuBg = isLightShell
+                                      ? Colors.white
+                                      : AppThemes.darkHomeShellBackground;
+                                  return Row(
                                 children: [
                                   // Brand selector styled like a form field for symmetry
                                   Expanded(
@@ -4123,11 +4135,48 @@ class _HomePageState extends State<HomePage> {
                                     child: DropdownButtonFormField<String>(
                                       isDense: true,
                                       isExpanded: true,
+                                      dropdownColor: dropdownMenuBg,
                                       style: GoogleFonts.orbitron(
                                         fontSize: 14,
-                                        color: Colors.white,
+                                        color: dropdownMenuInk,
                                         fontWeight: FontWeight.bold,
                                       ),
+                                      selectedItemBuilder: (context) => [
+                                        Text(
+                                          AppLocalizations.of(context)!.any,
+                                          maxLines: 1,
+                                          overflow: TextOverflow.ellipsis,
+                                          style: GoogleFonts.orbitron(
+                                            fontSize: 14,
+                                            color: dropdownFieldInk,
+                                            fontWeight: FontWeight.bold,
+                                          ),
+                                        ),
+                                        if (selectedBrand != null &&
+                                            models[selectedBrand!] != null)
+                                          ...models[selectedBrand!]!.map(
+                                            (m) => Text(
+                                              CarNameTranslations.getLocalizedModel(
+                                                    context,
+                                                    selectedBrand,
+                                                    m,
+                                                  ).isNotEmpty
+                                                  ? CarNameTranslations.getLocalizedModel(
+                                                      context,
+                                                      selectedBrand,
+                                                      m,
+                                                    )
+                                                  : m,
+                                              maxLines: 1,
+                                              overflow: TextOverflow.ellipsis,
+                                              style: GoogleFonts.orbitron(
+                                                fontSize: 14,
+                                                color: dropdownFieldInk,
+                                                fontWeight: FontWeight.bold,
+                                              ),
+                                            ),
+                                          ),
+                                      ],
                                       initialValue:
                                           selectedModel != null &&
                                               (selectedModel!.isEmpty ||
@@ -4171,7 +4220,9 @@ class _HomePageState extends State<HomePage> {
                                             maxLines: 1,
                                             overflow: TextOverflow.ellipsis,
                                             style: GoogleFonts.orbitron(
-                                              color: Colors.grey,
+                                              color: isLightShell
+                                                  ? const Color(0xFF757575)
+                                                  : Colors.grey,
                                               fontSize: 14,
                                             ),
                                           ),
@@ -4197,6 +4248,7 @@ class _HomePageState extends State<HomePage> {
                                                 overflow: TextOverflow.ellipsis,
                                                 style: GoogleFonts.orbitron(
                                                   fontSize: 14,
+                                                  color: dropdownMenuInk,
                                                 ),
                                               ),
                                             ),
@@ -4220,11 +4272,42 @@ class _HomePageState extends State<HomePage> {
                                     child: DropdownButtonFormField<String>(
                                       isDense: true,
                                       isExpanded: true,
+                                      dropdownColor: dropdownMenuBg,
                                       style: GoogleFonts.orbitron(
                                         fontSize: 14,
-                                        color: Colors.white,
+                                        color: dropdownMenuInk,
                                         fontWeight: FontWeight.bold,
                                       ),
+                                      selectedItemBuilder: (context) => [
+                                        Text(
+                                          AppLocalizations.of(context)!.any,
+                                          maxLines: 1,
+                                          overflow: TextOverflow.ellipsis,
+                                          style: GoogleFonts.orbitron(
+                                            fontSize: 14,
+                                            color: dropdownFieldInk,
+                                            fontWeight: FontWeight.bold,
+                                          ),
+                                        ),
+                                        if (selectedBrand != null &&
+                                            selectedModel != null &&
+                                            trimsByBrandModel[selectedBrand] != null &&
+                                            trimsByBrandModel[selectedBrand]![selectedModel] !=
+                                                null)
+                                          ...trimsByBrandModel[selectedBrand]![selectedModel]!
+                                              .map(
+                                                (t) => Text(
+                                                  t,
+                                                  maxLines: 1,
+                                                  overflow: TextOverflow.ellipsis,
+                                                  style: GoogleFonts.orbitron(
+                                                    fontSize: 14,
+                                                    color: dropdownFieldInk,
+                                                    fontWeight: FontWeight.bold,
+                                                  ),
+                                                ),
+                                              ),
+                                      ],
                                       initialValue:
                                           selectedTrim != null &&
                                               (selectedTrim!.isEmpty ||
@@ -4264,7 +4347,9 @@ class _HomePageState extends State<HomePage> {
                                             maxLines: 1,
                                             overflow: TextOverflow.ellipsis,
                                             style: GoogleFonts.orbitron(
-                                              color: Colors.grey,
+                                              color: isLightShell
+                                                  ? const Color(0xFF757575)
+                                                  : Colors.grey,
                                               fontSize: 14,
                                             ),
                                           ),
@@ -4284,6 +4369,7 @@ class _HomePageState extends State<HomePage> {
                                                     overflow: TextOverflow.ellipsis,
                                                     style: GoogleFonts.orbitron(
                                                       fontSize: 14,
+                                                      color: dropdownMenuInk,
                                                     ),
                                                   ),
                                                 ),
@@ -4299,6 +4385,8 @@ class _HomePageState extends State<HomePage> {
                                     ),
                                   ),
                                 ],
+                              );
+                                },
                               ),
                               SizedBox(height: 8),
                               // Active Filters Display
