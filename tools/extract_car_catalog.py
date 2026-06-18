@@ -120,6 +120,463 @@ def normalize_model(s: str) -> str:
     return s.strip().title()
 
 
+# Junk trim values from listings / imports (matched case-insensitively after normalize_trim_key).
+_JUNK_TRIM_KEYS = frozenset({
+    "",
+    "-",
+    "--",
+    "n/a",
+    "na",
+    "none",
+    "null",
+    "unknown",
+    "notspecified",
+    "unspecified",
+    "notavailable",
+    "tbd",
+    "test",
+    "default",
+    "standardtrim",
+    "trim",
+})
+
+# Known duplicate spellings → preferred display label (key = normalize_trim_key).
+TRIM_ALIASES: dict[str, str] = {
+    "m135i": "M135i",
+    "m140i": "M140i",
+    "m240i": "M240i",
+    "m340i": "M340i",
+    "m440i": "M440i",
+    "m550i": "M550i",
+    "m850i": "M850i",
+    "m2": "M2",
+    "m3": "M3",
+    "m4": "M4",
+    "m5": "M5",
+    "m6": "M6",
+    "m8": "M8",
+    "m1": "1M",
+    "sportline": "Sport Line",
+    "sport-line": "Sport Line",
+    "msport": "M Sport",
+    "m-sport": "M Sport",
+    "rline": "R-Line",
+    "r-line": "R-Line",
+    "txl": "TXL",
+    "tx-l": "TX-L",
+    "gxr": "GXR",
+    "gxl": "GXL",
+    "vxr": "VXR",
+    "vxl": "VXL",
+    "xle": "XLE",
+    "xse": "XSE",
+    "gli": "GLI",
+    "glihybrid": "GLI Hybrid",
+    "xli": "XLI",
+    "glx": "GLX",
+    "gle": "GLE",
+    "grsport": "GR-Sport",
+    "gr-sport": "GR-Sport",
+    "grcorolla": "GR Corolla",
+    "gr-corolla": "GR Corolla",
+    "grsupra": "GR Supra",
+    "gr-supra": "GR Supra",
+    "trdpro": "TRD Pro",
+    "trd-pro": "TRD Pro",
+    "trdoffroad": "TRD Off-Road",
+    "trd-off-road": "TRD Off-Road",
+    "trdoff-road": "TRD Off-Road",
+    "sr5premium": "SR5 Premium",
+    "sr5-premium": "SR5 Premium",
+    "seplus": "SE Plus",
+    "se+": "SE Plus",
+    "splus": "S Plus",
+    "s+": "S Plus",
+    "hybridle": "Hybrid LE",
+    "hybridse": "Hybrid SE",
+    "hybridxle": "Hybrid XLE",
+    "hybridxse": "Hybrid XSE",
+    "limitedspecialedition": "Limited Special Edition",
+    "montecarlo": "Monte Carlo",
+    "monte-carlo": "Monte Carlo",
+    "nightshade": "Nightshade",
+    "type-s": "Type S",
+    "types": "Type S",
+    "aspec": "A-Spec",
+    "a-spec": "A-Spec",
+    "advancepackage": "Advance",
+    "technologypackage": "Technology",
+    "other": "Other",
+}
+
+# Equipment-line suffixes scraped as separate trims (e.g. C300 Luxury → C300).
+# Longest matches first.
+_PACKAGE_SUFFIXES: tuple[str, ...] = (
+    "Premium Plus",
+    "Premium Luxury",
+    "Luxury Plus",
+    "Business Edition",
+    "Luxury Edition",
+    "Motorsport Edition",
+    "Petronas Edition",
+    "Luxury Line",
+    "Luxury-Line",
+    "Luxury-line",
+    "Sport Line",
+    "Sport-line",
+    "Urban-line",
+    "AMG Line",
+    "Avantgarde",
+    "Elegance",
+    "Progressive",
+    "Luxury",
+    "Sport",
+)
+
+# Letter+digit variant codes: C300, A 250, GLC250, CLA200, C43 AMG, etc.
+_VARIANT_CODE_RE = re.compile(
+    r"^[A-Za-z]{1,4}\s?\d+[a-zA-Z0-9]*(?:\s+(?:AMG|4MATIC|4Matic|4Matic\+))?$",
+    re.IGNORECASE,
+)
+# BMW-style: 328i, 530i, xDrive35i
+_BMW_VARIANT_RE = re.compile(
+    r"^(?:xDrive|sDrive)?\d{3}[a-zA-Z]+(?:\s+(?:AMG|4MATIC|4Matic))?$",
+    re.IGNORECASE,
+)
+# Audi-style: 45 TFSI quattro, 35 TFSI Sport
+_AUDI_VARIANT_RE = re.compile(
+    r"^\d{1,2}\s+TFSI\b.*$",
+    re.IGNORECASE,
+)
+
+
+def normalize_trim_key(s: str) -> str:
+    """Fold spacing/punctuation for duplicate detection."""
+    s = re.sub(r"\s+", " ", (s or "").strip())
+    return re.sub(r"[\s\-_+.]+", "", s.lower())
+
+
+# Whole-trim labels that must not be split (even if they end with a suffix word).
+_PROTECTED_TRIM_KEYS = frozenset(
+    normalize_trim_key(name)
+    for name in (
+        "M Sport",
+        "GR Sport",
+        "GR-Sport",
+        "TRD Sport",
+        "Sport",
+        "Luxury",
+        "Sport Line",
+        "Range Rover Sport",
+        "Bronco Sport",
+        "Rogue Sport",
+        "Outlander Sport",
+        "Pajero Sport",
+        "Montero Sport",
+        "Discovery Sport",
+        "EcoSport",
+    )
+)
+
+
+def _looks_like_variant_code(base: str) -> bool:
+    base = re.sub(r"\s+", " ", base.strip())
+    if not base:
+        return False
+    if _VARIANT_CODE_RE.match(base):
+        return True
+    if _BMW_VARIANT_RE.match(base):
+        return True
+    if _AUDI_VARIANT_RE.match(base):
+        return True
+    return False
+
+
+def strip_package_suffix(label: str) -> str:
+    """Remove trailing package-line words from variant codes (C300 Luxury → C300)."""
+    key = normalize_trim_key(label)
+    if key in _PROTECTED_TRIM_KEYS:
+        return label
+
+    for suffix in _PACKAGE_SUFFIXES:
+        label_lower = label.lower()
+        suffix_lower = suffix.lower()
+        if not label_lower.endswith(suffix_lower):
+            continue
+        cut = len(label) - len(suffix)
+        if cut < 2:
+            continue
+        sep = label[cut - 1]
+        if sep not in (" ", "-"):
+            continue
+        base = label[: cut - 1].strip()
+        if not base or not _looks_like_variant_code(base):
+            continue
+        return base
+    return label
+
+
+def canonicalize_trim(raw: str) -> str | None:
+    """Normalize one trim label; return None if junk."""
+    if not raw or not isinstance(raw, str):
+        return None
+    label = re.sub(r"\s+", " ", raw.strip())
+    if not label:
+        return None
+    key = normalize_trim_key(label)
+    if key in _JUNK_TRIM_KEYS:
+        return None
+    label = strip_package_suffix(label)
+    key = normalize_trim_key(label)
+    return TRIM_ALIASES.get(key, label)
+
+
+def _trim_label_score(label: str) -> tuple:
+    """Lower tuple = preferred display spelling when deduping."""
+    key = normalize_trim_key(label)
+    is_other = key == "other"
+    spaces = label.count(" ")
+    all_upper = label.isupper() and len(label) > 2
+    all_lower = label.islower() and len(label) > 1
+    alias_hit = label == TRIM_ALIASES.get(key)
+    return (is_other, not alias_hit, spaces, all_upper, all_lower, len(label))
+
+
+def _prefer_trim_label(a: str, b: str) -> str:
+    return a if _trim_label_score(a) < _trim_label_score(b) else b
+
+
+# Static popularity hints (higher = show earlier). Listing counts override via scale.
+_TRIM_POPULARITY_RANK: dict[str, int] = {
+    # Entry / base
+    "base": 980,
+    "standard": 970,
+    "l": 960,
+    "e": 950,
+    "le": 940,
+    "gl": 930,
+    "lx": 925,
+    "ce": 920,
+    # Gulf / regional volume sellers
+    "gli": 915,
+    "xli": 910,
+    "glx": 905,
+    "gle": 900,
+    "gx": 895,
+    "tx": 890,
+    "exr": 885,
+    "gxr": 880,
+    "gxl": 875,
+    "vxr": 870,
+    "vxl": 865,
+    "txl": 860,
+    "tzg": 855,
+    # Mid trims
+    "se": 850,
+    "sport": 845,
+    "altis": 840,
+    "ex": 835,
+    "exl": 830,
+    "ambition": 825,
+    "active": 820,
+    "style": 815,
+    "comfort": 810,
+    # Upper mid / luxury
+    "xle": 800,
+    "xse": 795,
+    "limited": 790,
+    "touring": 785,
+    "elegance": 780,
+    "avantgarde": 775,
+    "premium": 770,
+    "premiumplus": 765,
+    "progressive": 760,
+    "platinum": 755,
+    "prestige": 750,
+    "royal": 745,
+    "grande": 740,
+    # Performance / sporty (often searched)
+    "msport": 820,
+    "amgline": 815,
+    "trd": 810,
+    "trdpro": 805,
+    "trdoffroad": 800,
+    "types": 795,
+    "aspec": 790,
+    "rs": 785,
+    "vrs": 780,
+    "gr": 775,
+    "grsport": 770,
+    # SUV / truck common
+    "sr5": 780,
+    "sr5premium": 775,
+    "xlt": 770,
+    "lariat": 765,
+    "wildtrak": 760,
+    "rubicon": 755,
+    "sportline": 750,
+    "rline": 745,
+    "r-design": 740,
+    # Hybrid variants
+    "hybrid": 700,
+    "hybridle": 695,
+    "hybridse": 690,
+    "hybridxle": 685,
+    "hybridxse": 680,
+    "prime": 675,
+    # Mercedes / BMW common variant codes
+    "c180": 720,
+    "c200": 715,
+    "c220": 710,
+    "c250": 705,
+    "c300": 700,
+    "e200": 720,
+    "e300": 715,
+    "e350": 710,
+    "glc200": 715,
+    "glc300": 710,
+    "320i": 705,
+    "328i": 700,
+    "330i": 695,
+    "520i": 705,
+    "530i": 700,
+    "x3": 690,
+    "x5": 685,
+    "a200": 700,
+    "a220": 695,
+    "a250": 690,
+    # AMG / M high intent
+    "c43amg": 650,
+    "c63amg": 645,
+    "c63s": 640,
+    "e43amg": 650,
+    "e53amg": 645,
+    "m135i": 630,
+    "m240i": 625,
+    "m340i": 620,
+    "m440i": 615,
+    "m550i": 610,
+}
+
+
+def _trim_popularity_score(label: str, listing_counts: dict[str, int]) -> int:
+    key = normalize_trim_key(label)
+    if key == "other":
+        return -10_000_000
+    listing = listing_counts.get(key, 0)
+    static = _TRIM_POPULARITY_RANK.get(key, 0)
+    variant_boost = 280 if static == 0 and listing == 0 and _looks_like_variant_code(label) else 0
+    return listing * 100 + static + variant_boost
+
+
+def _trim_popularity_sort_key(label: str, listing_counts: dict[str, int]) -> tuple:
+    if normalize_trim_key(label) == "other":
+        return (1, 0, label.lower())
+    return (0, -_trim_popularity_score(label, listing_counts), label.lower())
+
+
+def count_trim_popularity_from_listings() -> dict[str, dict[str, dict[str, int]]]:
+    """brand_slug -> canonical_model -> trim_key -> listing count."""
+    counts: dict[str, dict[str, dict[str, int]]] = defaultdict(
+        lambda: defaultdict(lambda: defaultdict(int))
+    )
+    model_keys_by_slug: dict[str, dict[str, str]] = defaultdict(dict)
+
+    def canonical_model(slug: str, model: str) -> str:
+        lower = model.lower()
+        existing = model_keys_by_slug[slug].get(lower)
+        if existing:
+            return existing
+        model_keys_by_slug[slug][lower] = model
+        return model
+
+    for path in JSON_DATA_PATHS:
+        if not path.exists():
+            continue
+        try:
+            raw = path.read_bytes()
+            if raw.startswith(b"\xff\xfe") or raw.startswith(b"\xfe\xff"):
+                text = raw.decode("utf-16", errors="replace")
+            else:
+                text = raw.decode("utf-8", errors="replace")
+            data = json.loads(text)
+        except (json.JSONDecodeError, OSError, UnicodeDecodeError):
+            continue
+        cars = data.get("cars", data) if isinstance(data, dict) else data
+        if not isinstance(cars, list):
+            continue
+        for car in cars:
+            if not isinstance(car, dict):
+                continue
+            brand_raw = car.get("brand") or car.get("make")
+            model_raw = car.get("model")
+            trim_raw = car.get("trim")
+            if not brand_raw or not model_raw or not trim_raw:
+                continue
+            slug = brand_to_slug(str(brand_raw))
+            if not slug:
+                continue
+            model = canonical_model(slug, normalize_model(str(model_raw)))
+            label = canonicalize_trim(str(trim_raw))
+            if label is None:
+                continue
+            counts[slug][model][normalize_trim_key(label)] += 1
+    return {
+        slug: {model: dict(trim_counts) for model, trim_counts in models.items()}
+        for slug, models in counts.items()
+    }
+
+
+def sanitize_trim_list(
+    trims: list[str],
+    listing_counts: dict[str, int] | None = None,
+) -> list[str]:
+    """Deduplicate, canonicalize, sort by popularity; keep 'Other' last."""
+    pop = listing_counts or {}
+    best_by_key: dict[str, str] = {}
+    for raw in trims:
+        label = canonicalize_trim(raw)
+        if label is None:
+            continue
+        key = normalize_trim_key(label)
+        prev = best_by_key.get(key)
+        best_by_key[key] = label if prev is None else _prefer_trim_label(prev, label)
+
+    regular: list[str] = []
+    other: str | None = None
+    for label in best_by_key.values():
+        if normalize_trim_key(label) == "other":
+            other = label
+        else:
+            regular.append(label)
+
+    regular.sort(key=lambda label: _trim_popularity_sort_key(label, pop))
+    if other is not None:
+        regular.append(other)
+    return regular
+
+
+def sanitize_trims(
+    trim_levels: dict,
+    popularity_by_slug: dict[str, dict[str, dict[str, int]]] | None = None,
+) -> dict:
+    """Apply [sanitize_trim_list] to every brand/model trim list."""
+    pop_by_slug = popularity_by_slug or {}
+    out: dict = {}
+    for brand, models_map in trim_levels.items():
+        cleaned_models: dict = {}
+        brand_pop = pop_by_slug.get(brand, {})
+        for model, trims in models_map.items():
+            if not trims:
+                continue
+            cleaned = sanitize_trim_list(list(trims), brand_pop.get(model, {}))
+            if cleaned:
+                cleaned_models[model] = cleaned
+        if cleaned_models:
+            out[brand] = cleaned_models
+    return out
+
+
 def load_json_catalog() -> tuple[dict[str, set[str]], dict[str, dict[str, set[str]]]]:
     """
     Load all JSON listing files and return (models_per_brand, trims_per_brand_model).
@@ -485,6 +942,8 @@ def main():
     car_models, trim_levels = merge_json_into_catalog(
         car_models, trim_levels, rec_models, rec_trims
     )
+    trim_popularity = count_trim_popularity_from_listings()
+    trim_levels = sanitize_trims(trim_levels, trim_popularity)
     dart = emit_dart(car_models, trim_levels)
     out_path = REPO_ROOT / "lib" / "data" / "car_catalog.dart"
     out_path.write_text(dart, encoding="utf-8")
