@@ -92,6 +92,12 @@ import '../shared/trust/report_dialog.dart';
 import '../models/online_spec_variant.dart';
 import '../widgets/in_app_video_screen.dart';
 import '../pages/listing_image_gallery_page.dart';
+import '../shared/shell/home_feed_scroll_persistence.dart';
+import '../shared/shell/main_bottom_nav.dart';
+export '../shared/shell/main_bottom_nav.dart' show buildFloatingBottomNav;
+import '../shared/car/region_specs.dart';
+import '../shared/home/home_sort_api.dart';
+import '../pages/home_page.dart' as modern_home;
 import '../pages/tiktok_scroll_page.dart';
 import '../widgets/network_video_thumbnail.dart';
 import '../widgets/edge_swipe_back.dart';
@@ -111,19 +117,6 @@ const List<String> _kOnlineSpecOptionKeys = [
   '_online_opts_engine_size',
   '_online_opts_cylinder',
   '_online_opts_seating',
-];
-
-/// Canonical codes for listing / filter "region specs" (lowercase API / DB values).
-const List<String> kCarRegionSpecCodes = [
-  'us',
-  'gcc',
-  'iraq',
-  'canada',
-  'eu',
-  'cn',
-  'korea',
-  'ru',
-  'iran',
 ];
 
 String carRegionSpecDisplayLabel(String code) {
@@ -174,11 +167,6 @@ String carRegionSpecDisplayLabelLocalized(BuildContext context, String code) {
     default:
       return carRegionSpecDisplayLabel(code);
   }
-}
-
-bool isValidCarRegionSpecCode(String? s) {
-  if (s == null || s.isEmpty) return false;
-  return kCarRegionSpecCodes.contains(s.trim().toLowerCase());
 }
 
 String _trLegacyText(
@@ -841,38 +829,6 @@ TextStyle _sellFlowManualFieldTextStyle(BuildContext context) =>
     ? const TextStyle(color: Colors.white)
     : TextStyle(color: Colors.grey[900]!);
 
-/// Persists home feed scroll when main tabs use [Navigator.pushReplacement],
-/// which disposes and rebuilds [HomePage].
-class _HomeFeedScrollPersistence {
-  _HomeFeedScrollPersistence._();
-
-  static double? _pixels;
-
-  static double get initialOffset => _pixels ?? 0;
-
-  static void capture(ScrollController c) {
-    try {
-      if (c.hasClients) {
-        final pos = c.position;
-        _pixels = pos.pixels.clamp(
-          pos.minScrollExtent,
-          pos.maxScrollExtent,
-        );
-      }
-    } catch (_) {}
-  }
-
-  /// Home tab tapped while already on Home (scroll-to-top); keep bucket in sync.
-  static void markTop() {
-    _pixels = 0;
-  }
-
-  /// When the route is disposed before a deferred scroll restore runs, keep the target offset.
-  static void savePixels(double pixels) {
-    _pixels = pixels;
-  }
-}
-
 void _switchMainTabNoAnimation(BuildContext context, String routeName) {
   final currentRoute = ModalRoute.of(context)?.settings.name;
   if (currentRoute == routeName) return;
@@ -880,7 +836,7 @@ void _switchMainTabNoAnimation(BuildContext context, String routeName) {
   Widget? page;
   switch (routeName) {
     case '/':
-      page = HomePage();
+      page = const modern_home.HomePage();
       break;
     case '/favorites':
       page = AuthGuard(child: FavoritesPage());
@@ -914,107 +870,6 @@ void _switchMainTabNoAnimation(BuildContext context, String routeName) {
 /// Same as [_switchMainTabNoAnimation] but callable from other libraries (e.g. shell pages).
 void navigateMainShellTab(BuildContext context, String routeName) {
   _switchMainTabNoAnimation(context, routeName);
-}
-
-Widget buildFloatingBottomNav(
-  BuildContext context, {
-  required int currentIndex,
-  required ValueChanged<int> onTap,
-  bool solidBackground = false,
-}) {
-  final brightness = Theme.of(context).brightness;
-  final isLight = brightness == Brightness.light;
-  final unselectedItemColor = isLight
-      ? const Color(0xFF666666)
-      : const Color(0xD9FFFFFF);
-  final solidFill = isLight ? Colors.white : const Color(0xFF1C1C1E);
-
-  final bar = Theme(
-    data: Theme.of(context).copyWith(
-      canvasColor: Colors.transparent,
-      splashColor: Colors.transparent,
-      highlightColor: Colors.transparent,
-      bottomNavigationBarTheme: BottomNavigationBarThemeData(
-        backgroundColor: solidBackground ? solidFill : Colors.transparent,
-        elevation: 0,
-      ),
-    ),
-    child: BottomNavigationBar(
-      key: ValueKey<int>(currentIndex),
-      type: BottomNavigationBarType.fixed,
-      backgroundColor: solidBackground ? solidFill : Colors.transparent,
-      elevation: 0,
-      selectedItemColor: const Color(0xFFFF6B00),
-      unselectedItemColor: unselectedItemColor,
-      selectedLabelStyle: const TextStyle(
-        fontWeight: FontWeight.w700,
-        letterSpacing: 0.15,
-      ),
-      unselectedLabelStyle: const TextStyle(
-        fontWeight: FontWeight.w600,
-        letterSpacing: 0.1,
-      ),
-      showSelectedLabels: true,
-      showUnselectedLabels: true,
-      currentIndex: currentIndex,
-      onTap: onTap,
-      items: [
-        BottomNavigationBarItem(
-          icon: Icon(Icons.home),
-          label: AppLocalizations.of(context)!.navHome,
-        ),
-        BottomNavigationBarItem(
-          icon: Icon(Icons.favorite),
-          label: AppLocalizations.of(context)!.navSaved,
-        ),
-        BottomNavigationBarItem(
-          icon: Icon(Icons.storefront_outlined),
-          label: AppLocalizations.of(context)!.navDealers,
-        ),
-        BottomNavigationBarItem(
-          icon: Icon(Icons.person),
-          label: AppLocalizations.of(context)!.navProfile,
-        ),
-      ],
-    ),
-  );
-
-  final Widget navBody = solidBackground
-      ? bar
-      : BackdropFilter(
-          filter: ui.ImageFilter.blur(sigmaX: 30, sigmaY: 30),
-          child: bar,
-        );
-
-  return Padding(
-    padding: const EdgeInsets.fromLTRB(12, 0, 12, 10),
-    child: SafeArea(
-      top: false,
-      child: Container(
-        decoration: BoxDecoration(
-          color: solidBackground ? solidFill : null,
-          borderRadius: BorderRadius.circular(999),
-          border: Border.all(
-            color: isLight
-                ? Colors.white.withOpacity(0.14)
-                : Colors.white.withOpacity(0.08),
-            width: 1,
-          ),
-          boxShadow: [
-            BoxShadow(
-              color: Colors.black.withOpacity(isLight ? 0.08 : 0.14),
-              blurRadius: 24,
-              offset: const Offset(0, 10),
-            ),
-          ],
-        ),
-        child: ClipRRect(
-          borderRadius: BorderRadius.circular(999),
-          child: navBody,
-        ),
-      ),
-    ),
-  );
 }
 
 // Fancy selector tile used in Sell page pickers
@@ -1257,22 +1112,7 @@ String _photosUploadedTextGlobal(BuildContext context) {
 
 // Convert localized sort options to backend API parameters
 String? _convertSortToApiValue(BuildContext context, String? sortOption) {
-  if (sortOption == null || sortOption.isEmpty) return null;
-
-  final loc = AppLocalizations.of(context)!;
-
-  // Map localized sort options to backend API values
-  if (sortOption == loc.defaultSort) return null;
-  if (sortOption == loc.sort_newest) return 'newest';
-  if (sortOption == loc.sort_price_low_high) return 'price_asc';
-  if (sortOption == loc.sort_price_high_low) return 'price_desc';
-  if (sortOption == loc.sort_year_newest) return 'year_desc';
-  if (sortOption == loc.sort_year_oldest) return 'year_asc';
-  if (sortOption == loc.sort_mileage_low_high) return 'mileage_asc';
-  if (sortOption == loc.sort_mileage_high_low) return 'mileage_desc';
-
-  // Fallback for any unrecognized sort option
-  return sortOption;
+  return homeSortToApiValue(context, sortOption);
 }
 
 /// Options removed from filter UI; still used to drop spec-driven list entries.
@@ -3667,7 +3507,8 @@ class MyApp extends StatelessWidget {
               debugShowCheckedModeBanner: false,
               initialRoute: '/',
               routes: {
-                '/': (context) => HomePage(),
+                '/': (context) => const modern_home.HomePage(),
+                '/legacy_home': (context) => LegacyHomePage(),
                 '/sell': (context) {
                   final args = ModalRoute.of(context)?.settings.arguments;
                   final initialDraftSnapshot = args is Map

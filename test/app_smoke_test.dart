@@ -42,6 +42,7 @@ void main() {
       }
     }
 
+    await pushNamed('/legacy_home');
     await pushNamed('/sell');
     await pushNamed('/sell', args: {'startFresh': true});
     await pushNamed('/settings');

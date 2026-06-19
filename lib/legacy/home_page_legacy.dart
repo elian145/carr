@@ -1,10 +1,10 @@
 part of 'main_legacy.dart';
 
-class HomePage extends StatefulWidget {
-  const HomePage({super.key});
+class LegacyHomePage extends StatefulWidget {
+  const LegacyHomePage({super.key});
 
   @override
-  _HomePageState createState() => _HomePageState();
+  _LegacyHomePageState createState() => _LegacyHomePageState();
 }
 
 /// Empty listings: shows only the message. When a non-default sort is already
@@ -64,7 +64,7 @@ class _HomeEmptyListMessageState extends State<_HomeEmptyListMessage> {
   }
 }
 
-class _HomePageState extends State<HomePage> {
+class _LegacyHomePageState extends State<LegacyHomePage> {
   // Keep a lightweight in-memory feed snapshot across route replacement.
   static List<Map<String, dynamic>> _homeFeedCache = <Map<String, dynamic>>[];
   static int _homeFeedCachePage = 1;
@@ -117,7 +117,7 @@ class _HomePageState extends State<HomePage> {
 
   // Listings layout
   int listingColumns = 2;
-  // Infinite scroll state (offset restored via [_HomeFeedScrollPersistence] after tab switches)
+  // Infinite scroll state (offset restored via [HomeFeedScrollPersistence] after tab switches)
   late final ScrollController _homeScrollController;
   /// Target scroll offset to apply after listings finish loading (initial offset is lost while `isLoading`).
   double? _pendingHomeScrollRestore;
@@ -1282,7 +1282,7 @@ class _HomePageState extends State<HomePage> {
   @override
   void initState() {
     super.initState();
-    final seededOffset = _HomeFeedScrollPersistence.initialOffset;
+    final seededOffset = HomeFeedScrollPersistence.initialOffset;
     _homeScrollController = ScrollController(
       initialScrollOffset: seededOffset > 0 ? seededOffset : 0,
     );
@@ -1380,7 +1380,7 @@ class _HomePageState extends State<HomePage> {
         final snapshot = (pending != null && pending > _lastHomeScrollPixels)
             ? pending
             : _lastHomeScrollPixels;
-        _HomeFeedScrollPersistence.savePixels(snapshot);
+        HomeFeedScrollPersistence.savePixels(snapshot);
         if (_hasNext &&
             !_isLoadingMore &&
             pos.pixels >= (pos.maxScrollExtent - 400)) {
@@ -1431,7 +1431,7 @@ class _HomePageState extends State<HomePage> {
       if (best <= 0 && _pendingHomeScrollRestore != null) {
         best = _pendingHomeScrollRestore!;
       }
-      _HomeFeedScrollPersistence.savePixels(best);
+      HomeFeedScrollPersistence.savePixels(best);
       _homeFeedCache = cars
           .map((e) => Map<String, dynamic>.from(e))
           .toList(growable: true);
@@ -1449,16 +1449,16 @@ class _HomePageState extends State<HomePage> {
         final y = pos.pixels.clamp(pos.minScrollExtent, pos.maxScrollExtent);
         _lastHomeScrollPixels = y;
         _pendingHomeScrollRestore = y;
-        _HomeFeedScrollPersistence.savePixels(y);
+        HomeFeedScrollPersistence.savePixels(y);
         return;
       }
     } catch (_) {}
     _pendingHomeScrollRestore = _lastHomeScrollPixels;
-    _HomeFeedScrollPersistence.savePixels(_lastHomeScrollPixels);
+    HomeFeedScrollPersistence.savePixels(_lastHomeScrollPixels);
   }
 
   void _primePendingHomeScrollRestoreFromPersistence() {
-    final y = _HomeFeedScrollPersistence.initialOffset;
+    final y = HomeFeedScrollPersistence.initialOffset;
     if (y > 0) _pendingHomeScrollRestore = y;
   }
 
@@ -1912,7 +1912,7 @@ class _HomePageState extends State<HomePage> {
     _homeScrollRestoreScheduleGen++;
     _pendingHomeScrollRestore = null;
     _lastHomeScrollPixels = 0;
-    _HomeFeedScrollPersistence.markTop();
+    HomeFeedScrollPersistence.markTop();
     if (_homeScrollController.hasClients) {
       _homeScrollController.animateTo(
         0,

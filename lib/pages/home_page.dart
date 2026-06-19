@@ -9,10 +9,14 @@ import '../l10n/app_localizations.dart';
 import '../theme_provider.dart';
 import '../services/api_service.dart';
 import '../services/config.dart';
-import '../shared/media/media_url.dart';
+import '../shared/home/home_listings_fetch.dart';
+import '../shared/prefs/listing_layout_prefs.dart';
+import '../shared/shell/home_feed_scroll_persistence.dart';
+import '../shared/shell/main_bottom_nav.dart';
 import '../shared/errors/user_error_text.dart';
 import '../shared/listings/listing_identity.dart';
 import '../shared/listings/listing_card_media.dart';
+import '../shared/media/media_url.dart';
 import '../shared/text/pretty_title_case.dart';
 
 String _normalizeBrandId(String brand) {
@@ -830,9 +834,11 @@ class _HomePageState extends State<HomePage>
   @override
   void initState() {
     super.initState();
+    ListingLayoutPrefs.load();
 
     _controller.addListener(() {
       if (_controller.hasClients) {
+        HomeFeedScrollPersistence.savePixels(_controller.offset);
         _cacheOffset = _controller.offset;
       }
       if (!_hasNext || _loadingMore || _loading) return;
@@ -907,27 +913,16 @@ class _HomePageState extends State<HomePage>
     }
 
     try {
-      final data = await ApiService.getCars(page: _page, perPage: _perPage);
-
-      final dynamic rawCars = (data['cars'] ?? data);
-      final List<dynamic> list = rawCars is List ? rawCars : const <dynamic>[];
-      final newCars = list
-          .whereType<Map>()
-          .map((m) => Map<String, dynamic>.from(m.cast<String, dynamic>()))
-          .toList();
-
-      bool hasNext = false;
-      final dynamic pagination = data['pagination'];
-      if (pagination is Map && pagination['has_next'] is bool) {
-        hasNext = pagination['has_next'] as bool;
-      } else {
-        hasNext = newCars.length >= _perPage;
-      }
+      final result = await fetchHomeListingsPage(
+        page: _page,
+        perPage: _perPage,
+        context: context,
+      );
 
       if (!mounted) return;
       setState(() {
-        _cars.addAll(newCars);
-        _hasNext = hasNext;
+        _cars.addAll(result.cars);
+        _hasNext = result.hasNext;
         _loading = false;
         _loadingMore = false;
       });
@@ -991,216 +986,166 @@ class _HomePageState extends State<HomePage>
     );
   }
 
+  void _onShellTab(int idx) {
+    if (idx == 0) {
+      if (_controller.hasClients) {
+        _controller.animateTo(
+          0,
+          duration: const Duration(milliseconds: 280),
+          curve: Curves.easeOut,
+        );
+      }
+      HomeFeedScrollPersistence.markTop();
+      return;
+    }
+    HomeFeedScrollPersistence.capture(_controller);
+    final route = switch (idx) {
+      1 => '/favorites',
+      2 => '/dealers',
+      3 => '/profile',
+      _ => '/',
+    };
+    Navigator.of(context).pushReplacementNamed(route);
+  }
+
+  Future<void> _openLegacyFilters() async {
+    await Navigator.of(context).pushNamed('/legacy_home');
+    if (!mounted) return;
+    await _fetch(refresh: true);
+  }
+
   @override
   Widget build(BuildContext context) {
     super.build(context);
     final loc = AppLocalizations.of(context);
     final title = loc?.appTitle ?? 'CarNet';
+    final listingColumns = ListingLayoutPrefs.columns.value;
 
     return Scaffold(
+      extendBody: true,
       appBar: AppBar(
-        title: Text(title),
+        title: Text(title, style: const TextStyle(fontSize: 18)),
+        titleSpacing: NavigationToolbar.kMiddleSpacing,
         actions: [
           IconButton(
-            tooltip: loc?.sellTitle ?? 'Sell',
-            onPressed: () => Navigator.pushNamed(context, '/sell'),
-            icon: const Icon(Icons.add_circle_outline),
+            tooltip: loc?.moreFilters ?? 'Filters',
+            onPressed: _openLegacyFilters,
+            icon: const Icon(Icons.tune),
           ),
-          IconButton(
-            tooltip: loc?.favoritesTitle ?? 'Favorites',
-            onPressed: () => Navigator.pushNamed(context, '/favorites'),
-            icon: const Icon(Icons.favorite_border),
-          ),
-          IconButton(
-            tooltip: loc?.profileTitle ?? 'Profile',
-            onPressed: () => Navigator.pushNamed(context, '/profile'),
-            icon: const Icon(Icons.person_outline),
+          Padding(
+            padding: const EdgeInsetsDirectional.only(
+              end: NavigationToolbar.kMiddleSpacing,
+            ),
+            child: OutlinedButton.icon(
+              onPressed: () {
+                HomeFeedScrollPersistence.capture(_controller);
+                Navigator.of(context).pushReplacementNamed('/sell');
+              },
+              icon: const Icon(Icons.add, color: Colors.white),
+              label: Text(
+                loc?.sellButton ?? 'Sell',
+                style: const TextStyle(color: Colors.white),
+              ),
+              style: OutlinedButton.styleFrom(
+                side: const BorderSide(color: Colors.white70),
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(8),
+                ),
+                padding: const EdgeInsets.symmetric(horizontal: 12),
+              ),
+            ),
           ),
         ],
       ),
-      body: RefreshIndicator(
-        onRefresh: () => _fetch(refresh: true),
-        child: _loading
-            ? const Center(child: CircularProgressIndicator())
-            : (_cars.isEmpty && _error != null)
-                ? ListView(
-                    children: [
-                      const SizedBox(height: 40),
-                      Center(
-                        child: Text(
-                          _error!,
-                          textAlign: TextAlign.center,
-                        ),
-                      ),
-                      const SizedBox(height: 12),
-                      Center(
-                        child: OutlinedButton(
-                          onPressed: () => _fetch(refresh: true),
-                          child: Text(loc?.retryAction ?? 'Retry'),
-                        ),
-                      ),
-                    ],
-                  )
-                : (_cars.isEmpty)
-                    ? ListView(
-                        children: [
-                          const SizedBox(height: 40),
-                          Center(
-                            child: Text(
-                              loc?.noListingsYet ?? 'No listings yet',
-                              textAlign: TextAlign.center,
-                            ),
-                          ),
-                          const SizedBox(height: 12),
-                          Center(
-                            child: OutlinedButton(
-                              onPressed: () => _fetch(refresh: true),
-                              child: Text(loc?.retryAction ?? 'Retry'),
-                            ),
-                          ),
-                        ],
-                      )
-                : GridView.builder(
-                    controller: _controller,
-                    key: const PageStorageKey<String>('home_grid'),
-                    padding: const EdgeInsets.all(12),
-                    gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-                      crossAxisCount: 2,
-                      childAspectRatio: 0.72,
-                      crossAxisSpacing: 12,
-                      mainAxisSpacing: 12,
-                    ),
-                    itemCount: _cars.length + (_hasNext ? 1 : 0),
-                    itemBuilder: (context, index) {
-                      if (index >= _cars.length) {
-                        return const Center(
-                          child: SizedBox(
-                            width: 20,
-                            height: 20,
-                            child: CircularProgressIndicator(strokeWidth: 2),
-                          ),
-                        );
-                      }
-
-                      final car = _cars[index];
-                      final carId = listingPrimaryId(car);
-                      final carTitle = _localizedCarTitleForCard(context, car);
-                      final price = (car['price'] ?? '').toString();
-                      final location = (car['location'] ?? '').toString();
-                      final year = (car['year'] ?? '').toString();
-
-                      final isLight =
-                          Theme.of(context).brightness == Brightness.light;
-                      return InkWell(
-                        onTap: () {
-                          if (carId.isEmpty) return;
-                          Navigator.pushNamed(
-                            context,
-                            '/car_detail',
-                            arguments: {'carId': carId},
-                          );
-                        },
-                        child: Container(
-                          decoration: BoxDecoration(
-                            color: isLight
-                                ? AppThemes.listingCardFillGridOnLightShell()
-                                : Colors.white.withOpacity(0.10),
-                            borderRadius: BorderRadius.circular(12),
-                            boxShadow: [
-                              BoxShadow(
-                                color: Colors.black.withOpacity(0.2),
-                                blurRadius: 8,
-                                offset: const Offset(0, 4),
+      bottomNavigationBar: buildFloatingBottomNav(
+        context,
+        currentIndex: 0,
+        onTap: _onShellTab,
+      ),
+      body: SafeArea(
+        top: false,
+        bottom: false,
+        child: Stack(
+          children: [
+            Container(
+              decoration: AppThemes.shellBackgroundDecoration(
+                Theme.of(context).brightness,
+              ),
+            ),
+            RefreshIndicator(
+              onRefresh: () => _fetch(refresh: true),
+              child: _loading
+                  ? const Center(child: CircularProgressIndicator())
+                  : (_cars.isEmpty && _error != null)
+                      ? ListView(
+                          children: [
+                            const SizedBox(height: 40),
+                            Center(
+                              child: Text(
+                                _error!,
+                                textAlign: TextAlign.center,
                               ),
-                            ],
-                          ),
-                          clipBehavior: Clip.antiAlias,
-                          child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              AspectRatio(
-                                aspectRatio: 16 / 10,
-                                child: _carImage(car),
+                            ),
+                            const SizedBox(height: 12),
+                            Center(
+                              child: OutlinedButton(
+                                onPressed: () => _fetch(refresh: true),
+                                child: Text(loc?.retryAction ?? 'Retry'),
                               ),
-                              Expanded(
-                                child: Padding(
-                                  padding: const EdgeInsets.all(10),
-                                  child: Column(
-                                    crossAxisAlignment: CrossAxisAlignment.start,
-                                    children: [
-                                      SizedBox(
-                                        height: 34,
-                                        child: Row(
-                                          crossAxisAlignment:
-                                              CrossAxisAlignment.start,
-                                          children: [
-                                            Expanded(
-                                              child: Align(
-                                                alignment: Alignment.centerLeft,
-                                                child: Text(
-                                                  carTitle.isEmpty
-                                                      ? (loc?.carLabel ?? 'Car')
-                                                      : carTitle,
-                                                  maxLines: 2,
-                                                  overflow:
-                                                      TextOverflow.ellipsis,
-                                                  style: TextStyle(
-                                                    fontWeight: FontWeight.w600,
-                                                    color: isLight
-                                                        ? const Color(0xFFFF6B00)
-                                                        : Theme.of(context)
-                                                            .colorScheme
-                                                            .onSurface,
-                                                    fontSize: 15,
-                                                    height: 1.1,
-                                                  ),
-                                                ),
-                                              ),
-                                            ),
-                                            if (price.isNotEmpty) ...[
-                                              const SizedBox(width: 8),
-                                              Text(
-                                                price,
-                                                maxLines: 1,
-                                                overflow: TextOverflow.ellipsis,
-                                                style: TextStyle(
-                                                  fontWeight: FontWeight.w700,
-                                                  color: isLight
-                                                      ? const Color(0xFFFF6B00)
-                                                      : Theme.of(context)
-                                                          .colorScheme
-                                                          .onSurface,
-                                                  fontSize: 14,
-                                                ),
-                                              ),
-                                            ],
-                                          ],
-                                        ),
-                                      ),
-                                      const Spacer(),
-                                      Text(
-                                        [location]
-                                            .where((s) => s.isNotEmpty)
-                                            .join(' • '),
-                                        maxLines: 1,
-                                        overflow: TextOverflow.ellipsis,
-                                        style: Theme.of(context)
-                                            .textTheme
-                                            .bodySmall
-                                            ?.copyWith(
-                                              color: isLight ? Colors.white70 : null,
-                                            ),
-                                      ),
-                                    ],
+                            ),
+                          ],
+                        )
+                      : (_cars.isEmpty)
+                          ? ListView(
+                              children: [
+                                const SizedBox(height: 40),
+                                Center(
+                                  child: Text(
+                                    loc?.noCarsFound ?? 'No cars found',
+                                    textAlign: TextAlign.center,
                                   ),
                                 ),
+                              ],
+                            )
+                          : GridView.builder(
+                              controller: _controller,
+                              key: const PageStorageKey<String>('home_grid'),
+                              padding: const EdgeInsets.fromLTRB(8, 8, 8, 88),
+                              gridDelegate:
+                                  SliverGridDelegateWithFixedCrossAxisCount(
+                                crossAxisCount:
+                                    listingColumns == 1 ? 1 : 2,
+                                childAspectRatio:
+                                    ListingLayoutPrefs.gridChildAspectRatio(
+                                  listingColumns == 1 ? 1 : 2,
+                                ),
+                                crossAxisSpacing: listingColumns == 1 ? 4 : 8,
+                                mainAxisSpacing: listingColumns == 1 ? 4 : 8,
                               ),
-                            ],
-                          ),
-                        ),
-                      );
-                    },
-                  ),
+                              itemCount: _cars.length + (_hasNext ? 1 : 0),
+                              itemBuilder: (context, index) {
+                                if (index >= _cars.length) {
+                                  return const Center(
+                                    child: SizedBox(
+                                      width: 20,
+                                      height: 20,
+                                      child: CircularProgressIndicator(
+                                        strokeWidth: 2,
+                                      ),
+                                    ),
+                                  );
+                                }
+                                final car = _cars[index];
+                                return buildGlobalCarCard(
+                                  context,
+                                  car,
+                                  listLayout: listingColumns == 1,
+                                );
+                              },
+                            ),
+            ),
+          ],
+        ),
       ),
     );
   }
