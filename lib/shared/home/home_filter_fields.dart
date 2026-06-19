@@ -163,4 +163,66 @@ class HomeFilterFields {
   }
 
   bool get hasAnyActive => HomeFilterPersistence.hasAnyActive(toPersistMap());
+
+  static const Object _unset = Object();
+
+  HomeFilterFields copyWith({
+    Object? brand = _unset,
+    Object? model = _unset,
+    Object? trim = _unset,
+    Object? priceMin = _unset,
+    Object? priceMax = _unset,
+    Object? yearMin = _unset,
+    Object? yearMax = _unset,
+    Object? minMileage = _unset,
+    Object? maxMileage = _unset,
+    Object? condition = _unset,
+    Object? transmission = _unset,
+    Object? fuelType = _unset,
+    Object? bodyType = _unset,
+    Object? color = _unset,
+    Object? driveType = _unset,
+    Object? regionSpecs = _unset,
+    Object? cylinders = _unset,
+    Object? seating = _unset,
+    Object? engineSize = _unset,
+    Object? city = _unset,
+    Object? plateType = _unset,
+    Object? plateCity = _unset,
+    Object? titleStatus = _unset,
+    Object? damagedParts = _unset,
+    Object? sortBy = _unset,
+  }) {
+    String? pick(Object? key, String? current) =>
+        identical(key, _unset) ? current : key as String?;
+    return HomeFilterFields(
+      brand: pick(brand, this.brand),
+      model: pick(model, this.model),
+      trim: pick(trim, this.trim),
+      priceMin: pick(priceMin, this.priceMin),
+      priceMax: pick(priceMax, this.priceMax),
+      yearMin: pick(yearMin, this.yearMin),
+      yearMax: pick(yearMax, this.yearMax),
+      minMileage: pick(minMileage, this.minMileage),
+      maxMileage: pick(maxMileage, this.maxMileage),
+      condition: pick(condition, this.condition),
+      transmission: pick(transmission, this.transmission),
+      fuelType: pick(fuelType, this.fuelType),
+      bodyType: pick(bodyType, this.bodyType),
+      color: pick(color, this.color),
+      driveType: pick(driveType, this.driveType),
+      regionSpecs: pick(regionSpecs, this.regionSpecs),
+      cylinders: pick(cylinders, this.cylinders),
+      seating: pick(seating, this.seating),
+      engineSize: pick(engineSize, this.engineSize),
+      city: pick(city, this.city),
+      plateType: pick(plateType, this.plateType),
+      plateCity: pick(plateCity, this.plateCity),
+      titleStatus: pick(titleStatus, this.titleStatus),
+      damagedParts: pick(damagedParts, this.damagedParts),
+      sortBy: pick(sortBy, this.sortBy),
+    );
+  }
+
+  HomeFilterFields cleared() => const HomeFilterFields();
 }
