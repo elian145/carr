@@ -11,6 +11,7 @@ import '../services/api_service.dart';
 import '../services/auth_service.dart';
 import '../services/car_spec_index.dart';
 import '../models/online_spec_variant.dart';
+import '../shared/auth/phone_verification_gate.dart';
 import '../shared/errors/user_error_text.dart';
 import '../shared/listings/listing_identity.dart';
 import '../shared/prefs/sell_listing_draft_prefs.dart';
@@ -1184,6 +1185,12 @@ class _SellPageState extends State<SellPage> {
       return;
     }
 
+    final editListingIdEarly = (_editListingId ?? '').trim();
+    if (editListingIdEarly.isEmpty && !auth.isUserVerified) {
+      final verified = await ensurePhoneVerifiedForAction(context);
+      if (!verified || !mounted) return;
+    }
+
     if (!(_formKey.currentState?.validate() ?? false)) {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
@@ -1334,6 +1341,9 @@ class _SellPageState extends State<SellPage> {
       );
     } catch (e) {
       if (!mounted) return;
+      if (isPhoneVerificationRequired(e)) {
+        showPhoneVerificationRequiredSnackBar(context);
+      }
       setState(() {
         _error = userErrorText(
           context,

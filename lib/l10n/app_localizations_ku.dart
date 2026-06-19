@@ -1224,6 +1224,10 @@ class AppLocalizationsKu extends AppLocalizations {
   String get sendCodeButton => 'ناردنی کۆد';
 
   @override
+  String get phoneVerificationRequiredMessage =>
+      'پێش بڵاوکردنەوەی ڕێکلام یان ناردنی پەیام، ژمارەی تەلەفۆنت لە پرۆفایلدا پشتڕاست بکەرەوە.';
+
+  @override
   String get noListingsYet => 'هێشتا هیچ ڕێکلامێک نییە';
 
   @override

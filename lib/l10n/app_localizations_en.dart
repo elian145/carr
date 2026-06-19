@@ -1222,6 +1222,10 @@ class AppLocalizationsEn extends AppLocalizations {
   String get sendCodeButton => 'Send code';
 
   @override
+  String get phoneVerificationRequiredMessage =>
+      'Verify your phone number in Profile before posting listings or sending messages.';
+
+  @override
   String get noListingsYet => 'No Listings Yet';
 
   @override

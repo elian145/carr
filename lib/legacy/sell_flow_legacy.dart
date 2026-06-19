@@ -8783,6 +8783,19 @@ class _SellStep5PageState extends State<SellStep5Page> {
                                       .findAncestorStateOfType<
                                         _SellCarPageState
                                       >();
+                                  final isEdit = parentState?._isEditMode == true;
+                                  if (!isEdit) {
+                                    final auth = context.read<AuthService>();
+                                    if (!auth.isUserVerified) {
+                                      setState(() {
+                                        isSubmitting = false;
+                                      });
+                                      await ensurePhoneVerifiedForAction(
+                                        context,
+                                      );
+                                      return;
+                                    }
+                                  }
                                   final Map<String, dynamic> carData =
                                       Map<String, dynamic>.from(
                                         parentState?.carData ?? {},

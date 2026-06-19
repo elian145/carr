@@ -428,6 +428,7 @@
   "verifyPhoneDialogMessage": "A 6-digit code will be sent to {phone}.",
   "sixDigitCodeLabel": "6-digit code",
   "sendCodeButton": "Send code",
+  "phoneVerificationRequiredMessage": "Verify your phone number in Profile before posting listings or sending messages.",
 
   "noListingsYet": "No Listings Yet",
   "noListingsEmptyHint": "You haven't created any car listings yet.\nStart by adding your first car!",

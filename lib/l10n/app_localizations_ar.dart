@@ -1217,6 +1217,10 @@ class AppLocalizationsAr extends AppLocalizations {
   String get sendCodeButton => 'إرسال الرمز';
 
   @override
+  String get phoneVerificationRequiredMessage =>
+      'تحقق من رقم هاتفك في الملف الشخصي قبل نشر الإعلانات أو إرسال الرسائل.';
+
+  @override
   String get noListingsYet => 'لا توجد إعلانات بعد';
 
   @override

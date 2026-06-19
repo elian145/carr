@@ -81,6 +81,10 @@ tools/out/
 kk/_*.py
 kk/check_*.py
 
+# Firebase service account exports (never commit)
+firebase-service-account*.txt
+firebase-service-account*.json
+
 # Accidental CLI artifact files (repo root)
 Get
 Run

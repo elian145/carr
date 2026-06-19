@@ -61,6 +61,12 @@ class AuthService extends ChangeNotifier {
     }
   }
 
+  /// Reload the current user from `/auth/me` (e.g. after phone verification).
+  Future<void> refreshProfile() async {
+    if (!ApiService.isAuthenticated) return;
+    await _loadUserProfile();
+  }
+
   // Start email-based registration (no account yet – user must confirm via email link)
   Future<void> registerEmailWithVerification({
     String? username,
