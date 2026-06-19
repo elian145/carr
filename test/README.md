@@ -2,7 +2,7 @@
 
 | File | What it exercises |
 |------|-------------------|
-| `app_smoke_test.dart` | **Production** shell (`legacy.MyApp` — same as `main.dart`) |
+| `app_smoke_test.dart` | **Production** shell (`ProductionApp` — same as `main.dart`) |
 | `widget_test.dart` | Production shell builds without crashing |
 | `carzo_app_smoke_test.dart` | Refactor shell (`CarzoApp` / `lib/app`) during migration |
 

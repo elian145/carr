@@ -37,9 +37,9 @@ Map<String, dynamic>? _sellDraftSnapshot(Map<String, dynamic>? args) {
   return Map<String, dynamic>.from(draft.cast<String, dynamic>());
 }
 
-/// Modern production routes used by [ProductionApp] (legacy fallbacks merged separately).
+/// Production routes for [ProductionApp], including `/legacy_*` URL aliases.
 Map<String, WidgetBuilder> buildProductionRoutes() {
-  return {
+  final routes = <String, WidgetBuilder>{
     '/': (context) => const modern_home.HomePage(),
     '/home_filters': (context) => const modern_filters.HomeFiltersPage(),
     '/sell': (context) {
@@ -188,4 +188,25 @@ Map<String, WidgetBuilder> buildProductionRoutes() {
       return DealerProfilePage(dealerPublicId: dealerPublicId);
     },
   };
+
+  void alias(String legacyPath, String canonicalPath) {
+    final builder = routes[canonicalPath];
+    if (builder != null) {
+      routes[legacyPath] = builder;
+    }
+  }
+
+  // Backward-compatible URLs (same screens as canonical routes).
+  alias('/legacy_home', '/');
+  alias('/legacy_home_filters', '/home_filters');
+  alias('/legacy_sell', '/sell');
+  alias('/legacy_car_detail', '/car_detail');
+  alias('/legacy_comparison', '/comparison');
+  alias('/legacy_favorites', '/favorites');
+  alias('/legacy_profile', '/profile');
+  alias('/legacy_settings', '/settings');
+  alias('/legacy_login', '/login');
+  alias('/legacy_saved_searches', '/saved-searches');
+
+  return routes;
 }

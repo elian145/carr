@@ -39,7 +39,7 @@ This checklist is the final gate before uploading Android AAB/APK or iOS builds.
 - `flutter clean`
 - `flutter pub get`
 - `flutter analyze`
-- `flutter test` (boots production `legacy.MyApp` with an ephemeral local API stub)
+- `flutter test` (boots production `ProductionApp` with an ephemeral local API stub)
 - Android release builds:
   - `flutter build apk --release --flavor prod --dart-define=API_BASE=https://your-api-domain`
   - `flutter build appbundle --release --flavor prod --dart-define=API_BASE=https://your-api-domain`
