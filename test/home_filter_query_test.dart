@@ -31,6 +31,13 @@ void main() {
       final q = await HomeFilterQuery.fromSharedPreferences(includeSort: false);
       expect(q['brand'], 'bmw');
     });
+
+    test('counts active filters', () async {
+      SharedPreferences.setMockInitialValues({
+        HomeFilterQuery.prefsKey: '{"brand":"bmw","condition":"Any"}',
+      });
+      expect(await HomeFilterQuery.activeFilterCount(), 1);
+    });
   });
 
   testWidgets('homeSortToApiValue maps localized labels', (tester) async {

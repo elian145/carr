@@ -103,6 +103,12 @@ class HomeFilterQuery {
     }
   }
 
+  /// Number of active home filters (for badge / summary on modern home).
+  static Future<int> activeFilterCount({BuildContext? context}) async {
+    final q = await fromSharedPreferences(context: context, includeSort: true);
+    return q.length;
+  }
+
   /// Client-side filter for exact damaged-parts count (legacy home behavior).
   static List<Map<String, dynamic>> applyDamagedPartsExactFilter(
     List<Map<String, dynamic>> input,

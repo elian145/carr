@@ -97,6 +97,7 @@ import '../shared/shell/main_bottom_nav.dart';
 export '../shared/shell/main_bottom_nav.dart' show buildFloatingBottomNav;
 import '../shared/car/region_specs.dart';
 import '../shared/home/home_sort_api.dart';
+import '../shared/home/home_filter_query.dart';
 import '../pages/home_page.dart' as modern_home;
 import '../pages/tiktok_scroll_page.dart';
 import '../widgets/network_video_thumbnail.dart';
@@ -3509,6 +3510,7 @@ class MyApp extends StatelessWidget {
               routes: {
                 '/': (context) => const modern_home.HomePage(),
                 '/legacy_home': (context) => LegacyHomePage(),
+                '/home_filters': (context) => const LegacyHomePage(filtersOnly: true),
                 '/sell': (context) {
                   final args = ModalRoute.of(context)?.settings.arguments;
                   final initialDraftSnapshot = args is Map

@@ -10,6 +10,7 @@ import '../theme_provider.dart';
 import '../services/api_service.dart';
 import '../services/config.dart';
 import '../shared/home/home_listings_fetch.dart';
+import '../shared/home/home_filter_query.dart';
 import '../shared/prefs/listing_layout_prefs.dart';
 import '../shared/shell/home_feed_scroll_persistence.dart';
 import '../shared/shell/main_bottom_nav.dart';
@@ -825,6 +826,7 @@ class _HomePageState extends State<HomePage>
   bool _hasNext = true;
   int _page = 1;
   String? _error;
+  int _activeFilterCount = 0;
 
   static const int _perPage = 20;
 
@@ -863,6 +865,14 @@ class _HomePageState extends State<HomePage>
         _fetch(refresh: true);
       });
     }
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      _refreshActiveFilterCount();
+    });
+  }
+
+  Future<void> _refreshActiveFilterCount() async {
+    final n = await HomeFilterQuery.activeFilterCount(context: context);
+    if (mounted) setState(() => _activeFilterCount = n);
   }
 
   @override
@@ -1008,10 +1018,13 @@ class _HomePageState extends State<HomePage>
     Navigator.of(context).pushReplacementNamed(route);
   }
 
-  Future<void> _openLegacyFilters() async {
-    await Navigator.of(context).pushNamed('/legacy_home');
+  Future<void> _openFilters() async {
+    final changed = await Navigator.of(context).pushNamed('/home_filters');
     if (!mounted) return;
-    await _fetch(refresh: true);
+    await _refreshActiveFilterCount();
+    if (changed == true) {
+      await _fetch(refresh: true);
+    }
   }
 
   @override
@@ -1029,8 +1042,12 @@ class _HomePageState extends State<HomePage>
         actions: [
           IconButton(
             tooltip: loc?.moreFilters ?? 'Filters',
-            onPressed: _openLegacyFilters,
-            icon: const Icon(Icons.tune),
+            onPressed: _openFilters,
+            icon: Badge(
+              isLabelVisible: _activeFilterCount > 0,
+              label: Text('$_activeFilterCount'),
+              child: const Icon(Icons.tune),
+            ),
           ),
           Padding(
             padding: const EdgeInsetsDirectional.only(
