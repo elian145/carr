@@ -1,8 +1,7 @@
 import 'package:flutter/material.dart';
 
 import '../l10n/app_localizations.dart';
-import '../pages/home_page.dart'
-    show buildGlobalCarCard, mapListingToGlobalCarCardData;
+import '../shared/listings/global_listing_card.dart';
 import '../shared/shell/main_bottom_nav.dart';
 import '../shared/shell/main_shell_navigation.dart';
 import '../services/api_service.dart';

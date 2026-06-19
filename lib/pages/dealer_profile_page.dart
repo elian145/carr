@@ -6,8 +6,7 @@ import 'package:provider/provider.dart';
 import 'package:url_launcher/url_launcher.dart';
 
 import '../l10n/app_localizations.dart';
-import '../pages/home_page.dart'
-    show buildGlobalCarCard, mapListingToGlobalCarCardData;
+import '../shared/listings/global_listing_card.dart';
 import '../services/auth_service.dart';
 import '../services/api_service.dart';
 import '../shared/maps/dealer_map_coords.dart';

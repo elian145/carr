@@ -18,8 +18,7 @@ import '../shared/prefs/sell_draft_media_persistence.dart';
 import '../shared/prefs/legacy_sell_draft_list.dart';
 import '../shared/text/pretty_title_case.dart';
 import '../shared/prefs/listing_layout_prefs.dart';
-import '../pages/home_page.dart'
-    show buildGlobalCarCard, mapListingToGlobalCarCardData;
+import '../shared/listings/global_listing_card.dart';
 
 class MyListingsPage extends StatefulWidget {
   const MyListingsPage({super.key});

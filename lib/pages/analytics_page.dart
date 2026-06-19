@@ -8,7 +8,7 @@ import '../models/analytics_model.dart';
 import '../services/analytics_service.dart';
 import '../shared/errors/user_error_text.dart';
 import '../shared/listings/listing_identity.dart';
-import 'home_page.dart' as home show buildGlobalCarCard;
+import '../shared/listings/global_listing_card.dart';
 import '../globals.dart';
 import '../theme_provider.dart';
 import '../shared/text/pretty_title_case.dart';
@@ -585,7 +585,7 @@ class _AnalyticsPageState extends State<AnalyticsPage> {
       'is_quick_sell': false,
     };
 
-    Widget cardWidget = home.buildGlobalCarCard(
+    Widget cardWidget = buildGlobalCarCard(
       context,
       Map<String, dynamic>.from(car),
     );

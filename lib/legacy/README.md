@@ -38,7 +38,7 @@ All `part` files share one library with `main_legacy.dart` (imports only in the 
 
 ## Shared listing cards
 
-Modern pages use `buildGlobalCarCard` and `mapListingToGlobalCarCardData` from `lib/pages/home_page.dart` (re-exported by `main_legacy.dart` for backward compatibility).
+Modern pages use `buildGlobalCarCard` and related helpers from `lib/shared/listings/global_listing_card.dart` (re-exported by `main_legacy.dart` for backward compatibility).
 
 ## Tooling
 

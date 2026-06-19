@@ -2,8 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
 import '../l10n/app_localizations.dart';
-import '../pages/home_page.dart'
-    show buildGlobalCarCard, mapListingToGlobalCarCardData;
+import '../shared/listings/global_listing_card.dart';
 import '../services/api_service.dart';
 import '../services/auth_service.dart';
 import '../shared/errors/user_error_text.dart';
