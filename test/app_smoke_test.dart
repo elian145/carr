@@ -43,6 +43,7 @@ void main() {
     }
 
     await pushNamed('/home_filters');
+    await pushNamed('/legacy_home_filters');
     await pushNamed('/legacy_home');
     await pushNamed('/sell');
     await pushNamed('/sell', args: {'startFresh': true});

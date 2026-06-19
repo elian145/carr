@@ -22,7 +22,7 @@ All `part` files share one library with `main_legacy.dart` (imports only in the 
 | Route | Screen |
 |-------|--------|
 | `/` | `HomePage` |
-| `/home_filters` | Legacy filter UI only |
+| `/home_filters` | Filter panel (`LegacyHomeFiltersPage`; modern `HomeFiltersPage` wrapper for CarzoApp) |
 | `/sell` | `SellPage` + draft gate |
 | `/car_detail` | `CarDetailPage` |
 | `/favorites`, `/profile`, `/settings` | Modern account pages |

@@ -10,6 +10,11 @@ class LegacyHomePage extends StatefulWidget {
   _LegacyHomePageState createState() => _LegacyHomePageState();
 }
 
+/// Filter-only route (`/legacy_home_filters`). Production uses [HomeFiltersPage].
+class LegacyHomeFiltersPage extends LegacyHomePage {
+  const LegacyHomeFiltersPage({super.key}) : super(filtersOnly: true);
+}
+
 /// Empty listings: shows only the message. When a non-default sort is already
 /// selected, still runs a one-time auto-fetch (no extra controls on this screen).
 class _HomeEmptyListMessage extends StatefulWidget {
@@ -424,39 +429,44 @@ class _LegacyHomePageState extends State<LegacyHomePage> {
     return s.isEmpty ? null : s;
   }
 
-  /// Apply filters from a saved-search map (`min_price`, `cylinder_count`, etc.).
   void applyFiltersFromSavedSearch(Map<String, dynamic> normalized) {
     _resetAllFiltersInMemory();
-    selectedBrand = _filterStr(normalized['brand']);
-    selectedModel = _filterStr(normalized['model']);
-    selectedTrim = _filterStr(normalized['trim']);
-    selectedMinPrice = _filterStr(normalized['min_price']);
-    selectedMaxPrice = _filterStr(normalized['max_price']);
-    selectedMinYear = _filterStr(normalized['min_year']);
-    selectedMaxYear = _filterStr(normalized['max_year']);
-    selectedMinMileage = _filterStr(normalized['min_mileage']);
-    selectedMaxMileage = _filterStr(normalized['max_mileage']);
-    selectedCondition = _filterStr(normalized['condition']);
-    selectedTransmission = _filterStr(normalized['transmission']);
-    selectedFuelType = _filterStr(normalized['fuel_type']);
-    selectedBodyType = _filterStr(normalized['body_type']);
-    selectedColor = _filterStr(normalized['color']);
-    selectedDriveType = _filterStr(normalized['drive_type']);
-    final rsApply =
-        _filterStr(normalized['region_specs'])?.toLowerCase();
-    selectedRegionSpecs =
-        (rsApply != null && rsApply.isNotEmpty && isValidCarRegionSpecCode(rsApply))
-        ? rsApply
-        : null;
-    selectedCylinderCount = _filterStr(normalized['cylinder_count']);
-    selectedSeating = _filterStr(normalized['seating']);
-    selectedEngineSize = _filterStr(normalized['engine_size']);
-    selectedCity = _filterStr(normalized['city']);
-    selectedPlateType = _filterStr(normalized['plate_type']);
-    selectedPlateCity = _filterStr(normalized['plate_city']);
-    selectedTitleStatus = _filterStr(normalized['title_status']);
-    selectedDamagedParts = _filterStr(normalized['damaged_parts']);
-    selectedSortBy = _filterStr(normalized['sort_by']);
+    final fields = HomeFilterFields.fromSavedSearchMap(normalized);
+    var regionSpecs = fields.regionSpecs?.toLowerCase();
+    if (regionSpecs != null &&
+        regionSpecs.isNotEmpty &&
+        !isValidCarRegionSpecCode(regionSpecs)) {
+      regionSpecs = null;
+    }
+    _applyHomeFilterFields(
+      HomeFilterFields(
+        brand: fields.brand,
+        model: fields.model,
+        trim: fields.trim,
+        priceMin: fields.priceMin,
+        priceMax: fields.priceMax,
+        yearMin: fields.yearMin,
+        yearMax: fields.yearMax,
+        minMileage: fields.minMileage,
+        maxMileage: fields.maxMileage,
+        condition: fields.condition,
+        transmission: fields.transmission,
+        fuelType: fields.fuelType,
+        bodyType: fields.bodyType,
+        color: fields.color,
+        driveType: fields.driveType,
+        regionSpecs: regionSpecs,
+        cylinders: fields.cylinders,
+        seating: fields.seating,
+        engineSize: fields.engineSize,
+        city: fields.city,
+        plateType: fields.plateType,
+        plateCity: fields.plateCity,
+        titleStatus: fields.titleStatus,
+        damagedParts: fields.damagedParts,
+        sortBy: fields.sortBy,
+      ),
+    );
     _syncHomeFilterTextControllersFromSelection();
   }
 
@@ -542,35 +552,13 @@ class _LegacyHomePageState extends State<LegacyHomePage> {
       final map = json.decode(raw) as Map<String, dynamic>;
       if (!mounted) return;
       setState(() {
-        selectedBrand = _filterStr(map['brand']);
-        selectedModel = _filterStr(map['model']);
-        selectedTrim = _filterStr(map['trim']);
-        selectedMinPrice = _filterStr(map['price_min']);
-        selectedMaxPrice = _filterStr(map['price_max']);
-        selectedMinYear = _filterStr(map['year_min']);
-        selectedMaxYear = _filterStr(map['year_max']);
-        selectedMinMileage = _filterStr(map['min_mileage']);
-        selectedMaxMileage = _filterStr(map['max_mileage']);
-        selectedCondition = _filterStr(map['condition']);
-        selectedTransmission = _filterStr(map['transmission']);
-        selectedFuelType = _filterStr(map['fuel_type']);
-        selectedBodyType = _filterStr(map['body_type']);
-        selectedColor = _filterStr(map['color']);
-        selectedDriveType = _filterStr(map['drive_type']);
-        final rsRaw = _filterStr(map['region_specs'])?.toLowerCase();
-        selectedRegionSpecs =
-            (rsRaw != null && rsRaw.isNotEmpty && isValidCarRegionSpecCode(rsRaw))
-            ? rsRaw
-            : null;
-        selectedCylinderCount = _filterStr(map['cylinders']);
-        selectedSeating = _filterStr(map['seating']);
-        selectedEngineSize = _filterStr(map['engine_size']);
-        selectedCity = _filterStr(map['city']);
-        selectedPlateType = _filterStr(map['plate_type']);
-        selectedPlateCity = _filterStr(map['plate_city']);
-        selectedTitleStatus = _filterStr(map['title_status']);
-        selectedDamagedParts = _filterStr(map['damaged_parts']);
-        selectedSortBy = _filterStr(map['sort_by']);
+        _applyHomeFilterFields(HomeFilterFields.fromPersistMap(map));
+        final rs = selectedRegionSpecs?.toLowerCase();
+        if (rs != null &&
+            rs.isNotEmpty &&
+            !isValidCarRegionSpecCode(rs)) {
+          selectedRegionSpecs = null;
+        }
       });
       _syncHomeFilterTextControllersFromSelection();
     } catch (_) {}
@@ -655,39 +643,70 @@ class _LegacyHomePageState extends State<LegacyHomePage> {
         await _clearFiltersOnly();
         return;
       }
-      await HomeFilterPersistence.saveMap(_homeFilterPersistSnapshot());
+      await HomeFilterPersistence.saveMap(_currentHomeFilterFields().toPersistMap());
     } catch (_) {}
   }
 
-  Map<String, dynamic> _homeFilterPersistSnapshot() {
-    return {
-      'brand': selectedBrand,
-      'model': selectedModel,
-      'trim': selectedTrim,
-      'price_min': selectedMinPrice,
-      'price_max': selectedMaxPrice,
-      'year_min': selectedMinYear,
-      'year_max': selectedMaxYear,
-      'min_mileage': selectedMinMileage,
-      'max_mileage': selectedMaxMileage,
-      'condition': selectedCondition,
-      'transmission': selectedTransmission,
-      'fuel_type': selectedFuelType,
-      'body_type': selectedBodyType,
-      'color': selectedColor,
-      'drive_type': selectedDriveType,
-      'region_specs': selectedRegionSpecs,
-      'cylinders': selectedCylinderCount,
-      'seating': selectedSeating,
-      'engine_size': selectedEngineSize,
-      'city': selectedCity,
-      'plate_type': selectedPlateType,
-      'plate_city': selectedPlateCity,
-      'title_status': selectedTitleStatus,
-      'damaged_parts': selectedDamagedParts,
-      'sort_by': selectedSortBy,
-    };
+  HomeFilterFields _currentHomeFilterFields() {
+    return HomeFilterFields(
+      brand: selectedBrand,
+      model: selectedModel,
+      trim: selectedTrim,
+      priceMin: selectedMinPrice,
+      priceMax: selectedMaxPrice,
+      yearMin: selectedMinYear,
+      yearMax: selectedMaxYear,
+      minMileage: selectedMinMileage,
+      maxMileage: selectedMaxMileage,
+      condition: selectedCondition,
+      transmission: selectedTransmission,
+      fuelType: selectedFuelType,
+      bodyType: selectedBodyType,
+      color: selectedColor,
+      driveType: selectedDriveType,
+      regionSpecs: selectedRegionSpecs,
+      cylinders: selectedCylinderCount,
+      seating: selectedSeating,
+      engineSize: selectedEngineSize,
+      city: selectedCity,
+      plateType: selectedPlateType,
+      plateCity: selectedPlateCity,
+      titleStatus: selectedTitleStatus,
+      damagedParts: selectedDamagedParts,
+      sortBy: selectedSortBy,
+    );
   }
+
+  void _applyHomeFilterFields(HomeFilterFields fields) {
+    selectedBrand = fields.brand;
+    selectedModel = fields.model;
+    selectedTrim = fields.trim;
+    selectedMinPrice = fields.priceMin;
+    selectedMaxPrice = fields.priceMax;
+    selectedMinYear = fields.yearMin;
+    selectedMaxYear = fields.yearMax;
+    selectedMinMileage = fields.minMileage;
+    selectedMaxMileage = fields.maxMileage;
+    selectedCondition = fields.condition;
+    selectedTransmission = fields.transmission;
+    selectedFuelType = fields.fuelType;
+    selectedBodyType = fields.bodyType;
+    selectedColor = fields.color;
+    selectedDriveType = fields.driveType;
+    selectedRegionSpecs = fields.regionSpecs;
+    selectedCylinderCount = fields.cylinders;
+    selectedSeating = fields.seating;
+    selectedEngineSize = fields.engineSize;
+    selectedCity = fields.city;
+    selectedPlateType = fields.plateType;
+    selectedPlateCity = fields.plateCity;
+    selectedTitleStatus = fields.titleStatus;
+    selectedDamagedParts = fields.damagedParts;
+    selectedSortBy = fields.sortBy;
+  }
+
+  Map<String, dynamic> _homeFilterPersistSnapshot() =>
+      _currentHomeFilterFields().toPersistMap();
 
   Future<void> _clearPersistedFilters() async {
     try {

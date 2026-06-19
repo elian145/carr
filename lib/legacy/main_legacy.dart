@@ -110,6 +110,7 @@ import '../shared/home/home_sort_api.dart';
 import '../shared/home/home_filter_query.dart';
 import '../shared/home/home_active_filter_chips.dart';
 import '../shared/home/home_filter_persistence.dart';
+import '../shared/home/home_filter_fields.dart';
 import '../pages/home_page.dart' as modern_home;
 import '../pages/sell_page.dart' as modern_sell;
 import '../pages/sell_entry_pages.dart';
@@ -2655,7 +2656,8 @@ class MyApp extends StatelessWidget {
               routes: {
                 '/': (context) => const modern_home.HomePage(),
                 '/legacy_home': (context) => LegacyHomePage(),
-                '/home_filters': (context) => const LegacyHomePage(filtersOnly: true),
+                '/home_filters': (context) => const LegacyHomeFiltersPage(),
+                '/legacy_home_filters': (context) => const LegacyHomeFiltersPage(),
                 '/sell': (context) {
                   final args = ModalRoute.of(context)?.settings.arguments;
                   final initialDraftSnapshot = args is Map
