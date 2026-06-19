@@ -7,6 +7,7 @@ import '../pages/chat_pages.dart' as chat;
 import '../pages/change_password_page.dart';
 import '../pages/edit_profile_page.dart';
 import '../pages/home_page.dart' as modern;
+import '../pages/home_filters_page.dart';
 import '../pages/favorites_page.dart' as favorites;
 import '../pages/profile_page.dart' as profile;
 import '../pages/reset_password_page.dart';
@@ -23,6 +24,7 @@ import '../pages/dealers_directory_page.dart';
 import '../pages/edit_dealer_page.dart';
 import '../pages/edit_listing_page.dart';
 import '../pages/recently_viewed_page.dart';
+import '../pages/saved_searches_page.dart';
 import '../services/auth_service.dart';
 
 class _AuthRequiredPage extends StatelessWidget {
@@ -70,6 +72,7 @@ Map<String, WidgetBuilder> buildAppRoutes() {
 
   return {
     '/': (context) => const modern.HomePage(),
+    '/home_filters': (context) => const HomeFiltersPage(),
     '/sell': (context) {
       final args = argsMap(context);
       final draftSnapshot = args?['draftSnapshot'];
@@ -152,6 +155,7 @@ Map<String, WidgetBuilder> buildAppRoutes() {
       );
     },
     '/comparison': (context) => const comparison.ComparisonPage(),
+    '/saved-searches': (context) => const SavedSearchesPage(),
     '/recently-viewed': (context) => const RecentlyViewedPage(),
     '/analytics': (context) => AnalyticsPage(),
     '/admin/dealers': (context) => const AdminDealersPage(),

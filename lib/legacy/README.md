@@ -6,9 +6,9 @@ Production UI entry: `main_legacy.dart` → `MyApp` (used from `lib/main.dart`).
 
 | File | Role |
 |------|------|
-| `main_legacy.dart` | Imports, app shell, routing, shared widgets, galleries, search (~3.9k lines) |
-| `home_page_legacy.dart` | Legacy home feed + filters (`/legacy_home`, `/home_filters`) |
-| `saved_searches_legacy.dart` | Saved searches screen |
+| `main_legacy.dart` | Imports, app shell, routing, shared widgets, galleries, search (~3.1k lines) |
+| `home_page_legacy.dart` | Legacy home feed + filter UI fallback (`/legacy_home`, `/legacy_home_filters`) |
+| `saved_searches_legacy.dart` | Saved searches fallback (`/legacy_saved_searches`) |
 | `car_detail_legacy.dart` | Listing detail (`/legacy_car_detail`) |
 | `sell_flow_legacy.dart` | Sell flow (`/legacy_sell`) |
 | `comparison_legacy.dart` | Car comparison (`/legacy_comparison`) |
@@ -22,7 +22,7 @@ All `part` files share one library with `main_legacy.dart` (imports only in the 
 | Route | Screen |
 |-------|--------|
 | `/` | `HomePage` |
-| `/home_filters` | Filter panel (`LegacyHomeFiltersPage`; modern `HomeFiltersPage` wrapper for CarzoApp) |
+| `/home_filters` | `HomeFiltersPage` (brand/model/city + more-filters sheet) |
 | `/sell` | `SellPage` + draft gate |
 | `/car_detail` | `CarDetailPage` |
 | `/favorites`, `/profile`, `/settings` | Modern account pages |
@@ -34,11 +34,22 @@ All `part` files share one library with `main_legacy.dart` (imports only in the 
 
 ## Legacy fallbacks
 
-`/legacy_home`, `/legacy_sell`, `/legacy_car_detail`, `/legacy_favorites`, `/legacy_profile`, `/legacy_settings`, `/legacy_login`, `/legacy_comparison` — kept for rollback and smoke tests.
+`/legacy_home`, `/legacy_home_filters`, `/legacy_sell`, `/legacy_car_detail`, `/legacy_favorites`, `/legacy_profile`, `/legacy_settings`, `/legacy_login`, `/legacy_comparison`, `/legacy_saved_searches` — kept for rollback and smoke tests.
+
+## Shared modules (modern home filters)
+
+- `lib/shared/home/home_filter_fields.dart` — filter state + persistence
+- `lib/shared/home/home_filter_options.dart` — static option lists
+- `lib/shared/home/home_more_filters_sheet.dart` — secondary filters sheet
+- `lib/shared/home/home_active_filter_chips.dart` — active chip UI
 
 ## Shared listing cards
 
 Modern pages use `buildGlobalCarCard` and related helpers from `lib/shared/listings/global_listing_card.dart` (re-exported by `main_legacy.dart` for backward compatibility).
+
+## CarzoApp (refactor shell)
+
+`lib/app/routes.dart` mirrors modern production routes (including `/home_filters` and `/saved-searches`) for migration testing via `CarzoApp`.
 
 ## Tooling
 

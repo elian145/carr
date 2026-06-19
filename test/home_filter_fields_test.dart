@@ -40,4 +40,19 @@ void main() {
     expect(fields.cylinders, '6');
     expect(fields.toPersistMap()['price_min'], '10000');
   });
+
+  test('HomeFilterFields copyWith and cleared', () {
+    const fields = HomeFilterFields(
+      brand: 'Toyota',
+      model: 'Camry',
+      priceMin: '5000',
+    );
+    final updated = fields.copyWith(model: null, priceMin: '6000');
+    expect(updated.brand, 'Toyota');
+    expect(updated.model, isNull);
+    expect(updated.priceMin, '6000');
+
+    expect(fields.cleared().brand, isNull);
+    expect(fields.cleared().hasAnyActive, isFalse);
+  });
 }

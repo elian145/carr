@@ -45,7 +45,9 @@ void main() {
     }
 
     await pushNamed('/sell');
+    await pushNamed('/home_filters');
     await pushNamed('/settings');
+    await pushNamed('/saved-searches');
     await pushNamed('/favorites');
     await pushNamed('/chat');
     await pushNamed('/login');
