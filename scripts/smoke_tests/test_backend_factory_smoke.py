@@ -336,6 +336,45 @@ class BackendFactorySmokeTest(unittest.TestCase):
         body = r.get_json() or {}
         self.assertEqual(body.get("code"), "phone_verification_required")
 
+    def test_socket_send_requires_phone_verification(self):
+        with self.app.app_context():
+            unverified = self._User(
+                username="unverified_socket",
+                phone_number="07000000097",
+                first_name="U",
+                last_name="S",
+                email=None,
+                is_active=True,
+                is_verified=False,
+                public_id="pusv",
+            )
+            unverified.set_password("Aa123456")
+            self._db.session.add(unverified)
+            self._db.session.commit()
+
+        token = self._login("unverified_socket", "Aa123456")
+        client = self.socketio.test_client(
+            self.app,
+            flask_test_client=self.client,
+            query_string=f"token={token}",
+        )
+        self.assertTrue(client.is_connected(), client.get_received())
+        client.get_received()  # drain connect event
+        client.emit(
+            "send_message",
+            {
+                "car_id": self.car_public,
+                "content": "hello via socket",
+                "receiver_id": self.seller_public,
+            },
+        )
+        received = client.get_received()
+        errors = [evt for evt in received if evt.get("name") == "error"]
+        self.assertTrue(errors, received)
+        payload = errors[-1]["args"][0]
+        self.assertEqual(payload.get("code"), "phone_verification_required")
+        client.disconnect()
+
     def test_email_signup_and_login(self):
         u = f"e_{uuid.uuid4().hex[:8]}"
         signup = self.client.post(

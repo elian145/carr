@@ -15,6 +15,7 @@ import '../services/websocket_service.dart';
 import '../services/auth_service.dart';
 import '../services/api_service.dart';
 import '../services/outgoing_chat_send_service.dart';
+import '../shared/auth/phone_verification_gate.dart';
 import '../shared/errors/user_error_text.dart';
 import '../shared/listings/listing_identity.dart';
 import '../shared/media/media_url.dart';
@@ -477,15 +478,44 @@ bool _isIgnorableSocketError(String err) {
       text.contains('transport=websocket');
 }
 
-String _formatSocketErrorForUser(String err) {
-  final text = err.toLowerCase();
-  if (text.contains('failed host lookup') ||
-      text.contains('no address associated with hostname') ||
-      text.contains('network is unreachable')) {
+String _formatSocketErrorForUser(BuildContext context, String err) {
+  final lower = err.toLowerCase();
+  if (lower.contains('verify your phone') ||
+      lower.contains('phone_verification_required')) {
+    return phoneVerificationRequiredMessage(AppLocalizations.of(context));
+  }
+  if (lower.contains('failed host lookup') ||
+      lower.contains('no address associated with hostname') ||
+      lower.contains('network is unreachable')) {
     return 'Cannot reach CarNet server. Check Wi‑Fi or mobile data, then open '
         'https://carr-5hrm.onrender.com in Safari.';
   }
   return err;
+}
+
+String _formatOutgoingChatError(BuildContext context, String? raw) {
+  if (raw == null || raw.trim().isEmpty) {
+    return AppLocalizations.of(context)?.errorTitle ?? 'Error';
+  }
+  if (_isPhoneVerificationSocketError(raw)) {
+    return phoneVerificationRequiredMessage(AppLocalizations.of(context));
+  }
+  return raw.replaceFirst('Exception: ', '').trim();
+}
+
+bool _isPhoneVerificationSocketError(String err) {
+  final lower = err.toLowerCase();
+  return lower.startsWith('phone_verification_required|') ||
+      lower.contains('verify your phone') ||
+      lower.contains('phone_verification_required');
+}
+
+void _maybePromptPhoneVerification(BuildContext context, String err) {
+  if (!_isPhoneVerificationSocketError(err)) return;
+  WidgetsBinding.instance.addPostFrameCallback((_) {
+    if (!context.mounted) return;
+    ensurePhoneVerifiedForAction(context);
+  });
 }
 
 String _resolveAttachmentUrl(ChatAttachment attachment) {
@@ -692,7 +722,7 @@ class _ChatListPageState extends State<ChatListPage>
       if (_isIgnorableSocketError(err)) return;
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
-          content: Text(_formatSocketErrorForUser(err)),
+          content: Text(_formatSocketErrorForUser(context, err)),
           backgroundColor: Colors.red,
         ),
       );
@@ -1169,9 +1199,12 @@ class _ChatConversationPageState extends State<ChatConversationPage>
               _scrollComposerToTop();
             });
           }
+          if (e.error != null) {
+            _maybePromptPhoneVerification(context, e.error!);
+          }
           ScaffoldMessenger.of(context).showSnackBar(
             SnackBar(
-              content: Text(e.error ?? 'Send failed'),
+              content: Text(_formatOutgoingChatError(context, e.error)),
               backgroundColor: Colors.red,
             ),
           );
@@ -1197,9 +1230,12 @@ class _ChatConversationPageState extends State<ChatConversationPage>
               _scrollComposerToTop();
             });
           }
+          if (e.error != null) {
+            _maybePromptPhoneVerification(context, e.error!);
+          }
           ScaffoldMessenger.of(context).showSnackBar(
             SnackBar(
-              content: Text(e.error ?? 'Send failed'),
+              content: Text(_formatOutgoingChatError(context, e.error)),
               backgroundColor: Colors.red,
             ),
           );
@@ -1225,9 +1261,12 @@ class _ChatConversationPageState extends State<ChatConversationPage>
           setState(() {
             _removeMessage(e.tempMessageId!);
           });
+          if (e.error != null) {
+            _maybePromptPhoneVerification(context, e.error!);
+          }
           ScaffoldMessenger.of(context).showSnackBar(
             SnackBar(
-              content: Text(e.error ?? 'Send failed'),
+              content: Text(_formatOutgoingChatError(context, e.error)),
               backgroundColor: Colors.red,
             ),
           );
@@ -1853,13 +1892,18 @@ class _ChatConversationPageState extends State<ChatConversationPage>
       if (!mounted) return;
       if (err.trim().isEmpty) return;
       if (_isIgnorableSocketError(err)) return;
+      _maybePromptPhoneVerification(context, err);
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
-          content: Text(_formatSocketErrorForUser(err)),
+          content: Text(_formatSocketErrorForUser(context, err)),
           backgroundColor: Colors.red,
         ),
       );
     });
+  }
+
+  Future<bool> _ensureVerifiedBeforeChatSend() async {
+    return ensurePhoneVerifiedForAction(context);
   }
 
   void _joinChat() {
@@ -2194,6 +2238,7 @@ class _ChatConversationPageState extends State<ChatConversationPage>
 
   Future<void> _sendVoiceMessage(XFile file) async {
     if (_isSending) return;
+    if (!await _ensureVerifiedBeforeChatSend()) return;
     setState(() => _isSending = true);
     final replyToMessageId = _replyingToMessage?.id;
     final startedAt = DateTime.now();
@@ -2219,6 +2264,7 @@ class _ChatConversationPageState extends State<ChatConversationPage>
         .where((file) => _isImageFile(file) || _isVideoFile(file))
         .toList();
     if (validFiles.isEmpty) return false;
+    if (!await _ensureVerifiedBeforeChatSend()) return false;
 
     final listingPreviewForMessage = _pendingInitialListingContext
         ? _listingPreview
@@ -2747,6 +2793,9 @@ class _ChatConversationPageState extends State<ChatConversationPage>
     final editingMessageId = _editingMessageId;
     final replyingToMessageId = _replyingToMessage?.id;
     if (editingMessageId == null && content.isEmpty && !_hasDraftAttachments) {
+      return;
+    }
+    if (editingMessageId == null && !await _ensureVerifiedBeforeChatSend()) {
       return;
     }
     setState(() => _isSending = true);

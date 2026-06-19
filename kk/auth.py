@@ -86,20 +86,25 @@ def phone_verification_required_response(user):
     Return (jsonify(...), status_code) when the user must verify their phone first.
     Admins are exempt. Returns None when the user may proceed.
     """
+    payload = phone_verification_error_payload(user)
+    if payload is None:
+        return None
+    if payload.get("code") is None:
+        return jsonify({"message": payload["message"]}), 404
+    return jsonify(payload), 403
+
+
+def phone_verification_error_payload(user) -> dict | None:
+    """Return an error payload dict, or None when the user may proceed."""
     if not user:
-        return jsonify({"message": "User not found"}), 404
+        return {"message": "User not found", "code": None}
     if getattr(user, "is_admin", False):
         return None
     if not getattr(user, "is_verified", False):
-        return (
-            jsonify(
-                {
-                    "message": "Verify your phone number before continuing.",
-                    "code": "phone_verification_required",
-                }
-            ),
-            403,
-        )
+        return {
+            "message": "Verify your phone number before continuing.",
+            "code": "phone_verification_required",
+        }
     return None
 
 

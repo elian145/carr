@@ -9,6 +9,7 @@ from flask import current_app, request
 from flask_jwt_extended import decode_token, get_jwt_identity, verify_jwt_in_request
 from flask_socketio import emit, join_room, leave_room
 
+from .auth import phone_verification_error_payload
 from .models import Car, Message, Notification, User, db
 from .push import send_push
 from .security import validate_input_sanitization
@@ -61,12 +62,15 @@ def register_socketio_handlers(socketio) -> None:
     """
     Register Socket.IO handlers on the given SocketIO instance.
 
-    IMPORTANT: `create_app()` can be called multiple times in tests; this function
-    must be idempotent.
+    create_app() can be called multiple times in tests; re-register handlers when
+    SocketIO is bound to a new Flask app instance.
     """
-    if getattr(socketio, "_kk_handlers_registered", False):
+    app = getattr(socketio, "app", None)
+    app_id = id(app) if app is not None else None
+    if app_id is not None and getattr(socketio, "_kk_handlers_app_id", None) == app_id:
         return
-    setattr(socketio, "_kk_handlers_registered", True)
+    if app_id is not None:
+        setattr(socketio, "_kk_handlers_app_id", app_id)
 
     @socketio.on("connect")
     def _connect():  # type: ignore[no-redef]
@@ -186,6 +190,11 @@ def register_socketio_handlers(socketio) -> None:
         me = _socket_current_user(optional=False)
         if not me:
             emit("error", {"message": "Unauthorized"})
+            return
+
+        verify_err = phone_verification_error_payload(me)
+        if verify_err:
+            emit("error", verify_err)
             return
 
         data = validate_input_sanitization(payload or {})

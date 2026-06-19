@@ -195,7 +195,14 @@ class WebSocketService {
       });
 
       _socket!.on('error', (err) {
-        final msg = (err is Map && err['message'] != null) ? err['message'].toString() : err.toString();
+        if (err is Map) {
+          final map = Map<String, dynamic>.from(err as Map);
+          final code = map['code']?.toString().trim() ?? '';
+          final msg = (map['message'] ?? err).toString();
+          _emitError(code.isNotEmpty ? '$code|$msg' : msg);
+          return;
+        }
+        final msg = err.toString();
         _emitError(msg);
       });
 

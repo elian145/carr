@@ -86,6 +86,11 @@ class OutgoingChatSendService {
     }
   }
 
+  static String _errorMessage(Object e) {
+    if (e is ApiException) return e.message;
+    return e.toString().replaceFirst('Exception: ', '').trim();
+  }
+
   void startMediaGroupSend({
     required String conversationId,
     required List<XFile> files,
@@ -170,7 +175,7 @@ class OutgoingChatSendService {
         conversationId: conversationId,
         success: false,
         tempMessageId: tempMessageId,
-        error: e.toString(),
+        error: _errorMessage(e),
         restoreFiles: restoreFiles,
         restoreCaption: restoreCaption,
       ));
@@ -250,7 +255,7 @@ class OutgoingChatSendService {
         conversationId: conversationId,
         success: false,
         tempMessageId: tempMessageId,
-        error: e.toString(),
+        error: _errorMessage(e),
         restoreFiles: [restoreFile],
       ));
     }
@@ -310,7 +315,7 @@ class OutgoingChatSendService {
         conversationId: conversationId,
         success: false,
         restoredPlainText: content,
-        error: e.toString(),
+        error: _errorMessage(e),
       ));
     }
   }

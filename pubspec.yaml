@@ -69,7 +69,7 @@ dependencies:
   record: ^6.2.1
   audioplayers: ^6.6.0
   path_provider: ^2.1.5
-  sentry_flutter: ^8.14.2
+  sentry_flutter: ^9.10.0
 
 dev_dependencies:
   flutter_test:
