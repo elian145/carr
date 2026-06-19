@@ -37,7 +37,7 @@ Map<String, dynamic>? _sellDraftSnapshot(Map<String, dynamic>? args) {
   return Map<String, dynamic>.from(draft.cast<String, dynamic>());
 }
 
-/// Modern production routes used by [MyApp] (legacy fallbacks merged separately).
+/// Modern production routes used by [ProductionApp] (legacy fallbacks merged separately).
 Map<String, WidgetBuilder> buildProductionRoutes() {
   return {
     '/': (context) => const modern_home.HomePage(),
