@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 
+import '../pages/home_filters_page.dart';
 import '../app/route_helpers.dart';
 import '../shared/auth/auth_guard.dart';
 import 'main_legacy.dart';
@@ -16,7 +17,7 @@ Map<String, dynamic>? _legacySellDraftSnapshot(BuildContext context) {
 Map<String, WidgetBuilder> buildLegacyFallbackRoutes() {
   return {
     '/legacy_home': (context) => LegacyHomePage(),
-    '/legacy_home_filters': (context) => const LegacyHomeFiltersPage(),
+    '/legacy_home_filters': (context) => const HomeFiltersPage(),
     '/legacy_sell': (context) {
       final initialDraftSnapshot = _legacySellDraftSnapshot(context);
       if (initialDraftSnapshot != null) {

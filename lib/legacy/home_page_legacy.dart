@@ -1,18 +1,10 @@
 part of 'main_legacy.dart';
 
 class LegacyHomePage extends StatefulWidget {
-  const LegacyHomePage({super.key, this.filtersOnly = false});
-
-  /// When true, shows only the filter panel (no listings feed). Used from modern home.
-  final bool filtersOnly;
+  const LegacyHomePage({super.key});
 
   @override
   _LegacyHomePageState createState() => _LegacyHomePageState();
-}
-
-/// Filter-only route (`/legacy_home_filters`). Production uses [HomeFiltersPage].
-class LegacyHomeFiltersPage extends LegacyHomePage {
-  const LegacyHomeFiltersPage({super.key}) : super(filtersOnly: true);
 }
 
 /// Empty listings: shows only the message. When a non-default sort is already
@@ -1313,7 +1305,7 @@ class _LegacyHomePageState extends State<LegacyHomePage> {
     _minMileageController = TextEditingController();
     _maxMileageController = TextEditingController();
     _engineSizeController = TextEditingController();
-    if (!widget.filtersOnly && _homeFeedCache.isNotEmpty) {
+    if (_homeFeedCache.isNotEmpty) {
       cars = _homeFeedCache
           .map((e) => Map<String, dynamic>.from(e))
           .toList(growable: true);
@@ -1321,9 +1313,6 @@ class _LegacyHomePageState extends State<LegacyHomePage> {
       hasLoadedOnce = true;
       _page = _homeFeedCachePage;
       _hasNext = _homeFeedCacheHasNext;
-    } else if (widget.filtersOnly) {
-      isLoading = false;
-      hasLoadedOnce = true;
     }
     // Restore last chosen layout (grid vs list) across pages.
     ListingLayoutPrefs.load().then((cols) {
@@ -1355,9 +1344,6 @@ class _LegacyHomePageState extends State<LegacyHomePage> {
       }
       await _restoreFilters();
       if (!mounted) return;
-      if (widget.filtersOnly) {
-        return;
-      }
       final oneTimeFilters = await _consumeOneTimeSavedSearchFilters();
       final pendingSavedSearch = await _consumePendingSavedSearchFetch();
       if (oneTimeFilters != null) {
@@ -1454,13 +1440,11 @@ class _LegacyHomePageState extends State<LegacyHomePage> {
         best = _pendingHomeScrollRestore!;
       }
       HomeFeedScrollPersistence.savePixels(best);
-      if (!widget.filtersOnly) {
-        _homeFeedCache = cars
-            .map((e) => Map<String, dynamic>.from(e))
-            .toList(growable: true);
-        _homeFeedCachePage = _page;
-        _homeFeedCacheHasNext = _hasNext;
-      }
+      _homeFeedCache = cars
+          .map((e) => Map<String, dynamic>.from(e))
+          .toList(growable: true);
+      _homeFeedCachePage = _page;
+      _homeFeedCacheHasNext = _hasNext;
       _homeScrollController.dispose();
     } catch (_) {}
     super.dispose();
@@ -2133,13 +2117,7 @@ class _LegacyHomePageState extends State<LegacyHomePage> {
   void onFilterChanged() {
     unawaited(_persistFilters());
     unawaited(_autoSaveSearch());
-    if (widget.filtersOnly) return;
     fetchCars();
-  }
-
-  Future<void> _finishFiltersOnly() async {
-    await _persistFilters();
-    if (mounted) Navigator.of(context).pop(true);
   }
 
   List<Map<String, dynamic>> _applyDamagedPartsExactFilter(
@@ -3143,21 +3121,7 @@ class _LegacyHomePageState extends State<LegacyHomePage> {
   Widget build(BuildContext context) {
     final loc = AppLocalizations.of(context)!;
     return Scaffold(
-      appBar: widget.filtersOnly
-          ? AppBar(
-              leading: IconButton(
-                icon: const Icon(Icons.close),
-                onPressed: () async {
-                  await _persistFilters();
-                  if (context.mounted) Navigator.of(context).pop(true);
-                },
-              ),
-              title: Text(
-                loc.moreFilters,
-                style: const TextStyle(fontSize: 18),
-              ),
-            )
-          : AppBar(
+      appBar: AppBar(
         title: Text(
           loc.appTitle,
           style: TextStyle(fontSize: 18),
@@ -3194,40 +3158,7 @@ class _LegacyHomePageState extends State<LegacyHomePage> {
       ),
       // Pull-to-refresh is already provided inside the main content via internal scrollables
       extendBody: true,
-      bottomNavigationBar: widget.filtersOnly
-          ? SafeArea(
-              minimum: const EdgeInsets.fromLTRB(12, 0, 12, 12),
-              child: Row(
-                children: [
-                  Expanded(
-                    child: OutlinedButton(
-                      onPressed: _clearAllFilters,
-                      child: Text(
-                        loc.clearFilters,
-                        maxLines: 1,
-                        overflow: TextOverflow.ellipsis,
-                      ),
-                    ),
-                  ),
-                  const SizedBox(width: 8),
-                  Expanded(
-                    child: ElevatedButton(
-                      style: ElevatedButton.styleFrom(
-                        backgroundColor: const Color(0xFFFF6B00),
-                        foregroundColor: Colors.white,
-                      ),
-                      onPressed: _finishFiltersOnly,
-                      child: Text(
-                        loc.applyFilters,
-                        maxLines: 1,
-                        overflow: TextOverflow.ellipsis,
-                      ),
-                    ),
-                  ),
-                ],
-              ),
-            )
-          : buildFloatingBottomNav(
+      bottomNavigationBar: buildFloatingBottomNav(
         context,
         currentIndex: 0,
         onTap: (idx) {
@@ -7413,8 +7344,7 @@ class _LegacyHomePageState extends State<LegacyHomePage> {
                       ),
                     ),
                   ), // SliverToBoxAdapter
-                  if (!widget.filtersOnly)
-                    if (isLoading)
+                  if (isLoading)
                     SliverFillRemaining(
                       hasScrollBody: false,
                       child: Center(

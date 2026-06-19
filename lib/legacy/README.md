@@ -9,7 +9,7 @@ Legacy library: `main_legacy.dart` — widgets, galleries, and `/legacy_*` fallb
 | File | Role |
 |------|------|
 | `main_legacy.dart` | Imports, app shell, routing, shared widgets, galleries, search (~3.1k lines) |
-| `home_page_legacy.dart` | Legacy home feed + filter UI fallback (`/legacy_home`, `/legacy_home_filters`) |
+| `home_page_legacy.dart` | Legacy home feed (`/legacy_home` only; filters use modern `HomeFiltersPage`) |
 | `saved_searches_legacy.dart` | Saved searches fallback (`/legacy_saved_searches`) |
 | `car_detail_legacy.dart` | Listing detail (`/legacy_car_detail`) |
 | `sell_flow_legacy.dart` | Sell flow (`/legacy_sell`) |
@@ -36,7 +36,7 @@ All `part` files share one library with `main_legacy.dart` (imports only in the 
 
 ## Legacy fallbacks
 
-`/legacy_home`, `/legacy_home_filters`, `/legacy_sell`, `/legacy_car_detail`, `/legacy_favorites`, `/legacy_profile`, `/legacy_settings`, `/legacy_login`, `/legacy_comparison`, `/legacy_saved_searches` — kept for rollback and smoke tests.
+`/legacy_home`, `/legacy_sell`, `/legacy_home_filters` (alias → modern `HomeFiltersPage`), `/legacy_car_detail`, `/legacy_favorites`, `/legacy_profile`, `/legacy_settings`, `/legacy_login`, `/legacy_comparison`, `/legacy_saved_searches` — kept for rollback and smoke tests.
 
 ## Shared modules (modern home filters)
 
