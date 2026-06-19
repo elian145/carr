@@ -129,12 +129,12 @@ import '../shared/sell/sell_draft_archive.dart';
 import '../shared/home/home_feed_toolbar.dart';
 import '../widgets/network_video_thumbnail.dart';
 import '../widgets/edge_swipe_back.dart';
-import '../app/production_app.dart';
 import '../app/navigator_key.dart';
 import '../app/route_helpers.dart';
 import '../shared/auth/auth_guard.dart';
 export '../shared/auth/auth_guard.dart' show AuthGuard;
 export '../app/navigator_key.dart' show appNavigatorKey;
+export 'legacy_fallback_routes.dart' show buildLegacyFallbackRoutes;
 part 'home_page_legacy.dart';
 part 'sell_flow_legacy.dart';
 part 'car_detail_legacy.dart';
@@ -142,7 +142,6 @@ part 'saved_searches_legacy.dart';
 part 'comparison_legacy.dart';
 part 'auth_pages_legacy.dart';
 part 'account_pages_legacy.dart';
-part 'legacy_routes.dart';
 
 const List<String> _kOnlineSpecOptionKeys = [
   '_online_opts_transmission',
@@ -2462,16 +2461,6 @@ class ComparisonButton extends StatelessWidget {
         );
       },
     );
-  }
-}
-
-/// Production entry widget. Prefer importing [ProductionApp] from `app/production_app.dart`.
-class MyApp extends StatelessWidget {
-  const MyApp({super.key});
-
-  @override
-  Widget build(BuildContext context) {
-    return ProductionApp(extraRoutes: buildLegacyFallbackRoutes());
   }
 }
 

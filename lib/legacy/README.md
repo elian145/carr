@@ -53,7 +53,7 @@ Modern pages use `buildGlobalCarCard` and related helpers from `lib/shared/listi
 
 `lib/app/routes.dart` mirrors modern production routes for migration testing via `CarzoApp`.
 
-Production routing lives in `lib/app/production_routes.dart` (`buildProductionRoutes()`). Legacy fallbacks are in `lib/legacy/legacy_routes.dart` (`buildLegacyFallbackRoutes()`), merged in [ProductionApp].
+Production routing lives in `lib/app/production_routes.dart` (`buildProductionRoutes()`). Legacy fallbacks are in `lib/legacy/legacy_fallback_routes.dart` (`buildLegacyFallbackRoutes()`), merged in [ProductionApp].
 
 Shared shell: `lib/app/app_shell.dart` (`CarNetAppShell`) — used by [ProductionApp] and [CarzoApp].
 

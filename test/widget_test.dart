@@ -1,9 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 
-import 'package:car_listing_app/legacy/main_legacy.dart' as legacy;
-
 import 'fake_api_server.dart';
+import 'production_test_app.dart';
 
 void main() {
   setUpAll(() async {
@@ -14,8 +13,8 @@ void main() {
     await FakeApiServer.stop();
   });
 
-  testWidgets('Production MyApp builds', (WidgetTester tester) async {
-    await tester.pumpWidget(const legacy.MyApp());
+  testWidgets('ProductionApp builds', (WidgetTester tester) async {
+    await tester.pumpWidget(buildProductionTestApp());
     await tester.pump();
     expect(find.byType(MaterialApp), findsOneWidget);
   });

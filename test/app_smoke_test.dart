@@ -1,9 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 
-import 'package:car_listing_app/legacy/main_legacy.dart' as legacy;
-
 import 'fake_api_server.dart';
+import 'production_test_app.dart';
 
 /// Boots the same widget tree as production (`main.dart` → [ProductionApp]).
 ///
@@ -20,7 +19,7 @@ void main() {
   testWidgets('Production app smoke: boot and visit legacy routes', (
     tester,
   ) async {
-    await tester.pumpWidget(const legacy.MyApp());
+    await tester.pumpWidget(buildProductionTestApp());
     await tester.pump();
     await tester.pump(const Duration(milliseconds: 200));
 
