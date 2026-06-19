@@ -4,6 +4,7 @@ import 'package:flutter/foundation.dart';
 import 'package:flutter/services.dart';
 
 import '../models/online_spec_variant.dart';
+import '../shared/debug/app_log.dart';
 
 int _jsonInt(dynamic v) {
   if (v is int) return v;
@@ -68,7 +69,7 @@ CarSpecIndexLoadResult parseCarSpecDatasetJsonString(String raw) {
       try {
         brands.add(_Brand.fromJson(e));
       } catch (err, st) {
-        debugPrint('CarSpecIndex: skip brand row: $err\n$st');
+        appLog('CarSpecIndex: skip brand row: $err\n$st');
       }
     }
 
@@ -78,7 +79,7 @@ CarSpecIndexLoadResult parseCarSpecDatasetJsonString(String raw) {
       try {
         models.add(_Model.fromJson(e));
       } catch (err, st) {
-        debugPrint('CarSpecIndex: skip model row: $err\n$st');
+        appLog('CarSpecIndex: skip model row: $err\n$st');
       }
     }
 
@@ -88,7 +89,7 @@ CarSpecIndexLoadResult parseCarSpecDatasetJsonString(String raw) {
       try {
         trims.add(_Trim.fromJson(e));
       } catch (err, st) {
-        debugPrint('CarSpecIndex: skip trim row: $err\n$st');
+        appLog('CarSpecIndex: skip trim row: $err\n$st');
       }
     }
 
@@ -99,7 +100,7 @@ CarSpecIndexLoadResult parseCarSpecDatasetJsonString(String raw) {
         final s = _Spec.fromJson(e);
         specByTrimId[s.trimId] = s;
       } catch (err, st) {
-        debugPrint('CarSpecIndex: skip spec row: $err\n$st');
+        appLog('CarSpecIndex: skip spec row: $err\n$st');
       }
     }
 
@@ -133,7 +134,7 @@ CarSpecIndexLoadResult parseCarSpecDatasetJsonString(String raw) {
     );
     return CarSpecIndexLoadResult._(index: index);
   } catch (e, st) {
-    debugPrint('CarSpecIndex parse failed: $e\n$st');
+    appLog('CarSpecIndex parse failed: $e\n$st');
     return CarSpecIndexLoadResult._(
       errorMessage:
           'Could not parse spec database ($e). Ensure assets/car_spec_dataset.json is valid JSON.',
@@ -175,20 +176,16 @@ class CarSpecIndex {
     try {
       final sw = Stopwatch()..start();
       final raw = await rootBundle.loadString(assetPath);
-      if (kDebugMode) {
-        debugPrint(
-          'CarSpecIndex: read asset ${(raw.length / 1024 / 1024).toStringAsFixed(2)} MiB in ${sw.elapsedMilliseconds} ms',
-        );
-      }
+      appLog(
+        'CarSpecIndex: read asset ${(raw.length / 1024 / 1024).toStringAsFixed(2)} MiB in ${sw.elapsedMilliseconds} ms',
+      );
       final result = await compute(parseCarSpecDatasetJsonString, raw);
-      if (kDebugMode) {
-        debugPrint(
-          'CarSpecIndex: parse + index build finished in ${sw.elapsedMilliseconds} ms (ok=${result.isOk})',
-        );
-      }
+      appLog(
+        'CarSpecIndex: parse + index build finished in ${sw.elapsedMilliseconds} ms (ok=${result.isOk})',
+      );
       return result;
     } catch (e, st) {
-      debugPrint('CarSpecIndex.loadWithResult failed: $e\n$st');
+      appLog('CarSpecIndex.loadWithResult failed: $e\n$st');
       return CarSpecIndexLoadResult._(
         errorMessage:
             'Could not load spec database ($e). Ensure assets/car_spec_dataset.json is listed under flutter: assets in pubspec.yaml, then stop the app and run again (full restart).',
@@ -906,7 +903,7 @@ class CarSpecIndex {
     try {
       return _mapSpecToFormFields(spec, catalogLabelHint: hint);
     } catch (e, st) {
-      debugPrint('CarSpecIndex.appliedFieldsFor failed: $e\n$st');
+      appLog('CarSpecIndex.appliedFieldsFor failed: $e\n$st');
       return null;
     }
   }

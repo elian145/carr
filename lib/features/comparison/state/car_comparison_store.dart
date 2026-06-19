@@ -3,6 +3,8 @@ import 'dart:convert';
 import 'package:flutter/foundation.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
+import '../../../shared/debug/app_log.dart';
+
 class CarComparisonStore extends ChangeNotifier {
   final List<Map<String, dynamic>> _comparisonCars = [];
 
@@ -61,7 +63,7 @@ class CarComparisonStore extends ChangeNotifier {
       await sp.setStringList('comparison_cars', encoded);
     } catch (e) {
       if (kDebugMode) {
-        debugPrint('CarComparisonStore: failed saving prefs: $e');
+        appLog('CarComparisonStore: failed saving prefs: $e');
       }
     }
   }
@@ -94,7 +96,7 @@ class CarComparisonStore extends ChangeNotifier {
       if (changed) notifyListeners();
     } catch (e) {
       if (kDebugMode) {
-        debugPrint('CarComparisonStore: failed loading prefs: $e');
+        appLog('CarComparisonStore: failed loading prefs: $e');
       }
     }
   }

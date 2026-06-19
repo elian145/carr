@@ -81,8 +81,20 @@ def confirm_signup_redirect():
 </html>"""
     return Response(html, mimetype="text/html")
 
-# Configurable via RATE_LIMIT_SEND_OTP. Default 30 for easier testing; set to 3 in production if desired.
-_SEND_OTP_MAX_REQUESTS = int(os.environ.get("RATE_LIMIT_SEND_OTP", "30"))
+# Configurable via RATE_LIMIT_SEND_OTP. Production default is strict; dev/testing default is relaxed.
+def _send_otp_max_requests() -> int:
+    explicit = (os.environ.get("RATE_LIMIT_SEND_OTP") or "").strip()
+    if explicit:
+        try:
+            return max(1, int(explicit))
+        except ValueError:
+            pass
+    from ..config import get_app_env
+
+    return 3 if get_app_env() == "production" else 30
+
+
+_SEND_OTP_MAX_REQUESTS = _send_otp_max_requests()
 _SEND_OTP_WINDOW_MINUTES = 10
 
 

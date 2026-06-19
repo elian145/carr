@@ -6,7 +6,7 @@ from flask import Blueprint, Response, abort, current_app, jsonify, request
 from flask_jwt_extended import jwt_required
 
 from ..ai_service import car_analysis_service, suggest_car_specs_from_ymm
-from ..auth import get_current_user
+from ..auth import get_current_user, phone_verification_required_response
 from ..media_processing import blur_image_bytes, heic_to_jpeg, process_and_store_image
 from ..security import generate_secure_filename
 from ..tasks.image_tasks import process_car_image_file
@@ -146,8 +146,9 @@ def process_car_images_test():
 def process_car_images():
     try:
         current_user = get_current_user()
-        if not current_user:
-            return jsonify({"error": "User not found"}), 404
+        verify_err = phone_verification_required_response(current_user)
+        if verify_err:
+            return verify_err
 
         files = request.files.getlist("images")
         if not files:

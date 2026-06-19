@@ -4,6 +4,7 @@ import 'dart:io';
 import 'package:firebase_messaging/firebase_messaging.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
+import 'package:sentry_flutter/sentry_flutter.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 import '../services/api_service.dart';
@@ -16,6 +17,22 @@ import '../state/locale_controller.dart';
 const String _apiBaseOverrideKey = 'api_base_override';
 
 Future<void> bootstrapAndRun(Widget app) async {
+  final dsn = kSentryDsn.trim();
+  if (dsn.isNotEmpty) {
+    await SentryFlutter.init(
+      (options) {
+        options.dsn = dsn;
+        options.environment = kReleaseMode ? 'production' : 'development';
+        options.tracesSampleRate = 0.0;
+      },
+      appRunner: () => _runZonedApp(app),
+    );
+    return;
+  }
+  _runZonedApp(app);
+}
+
+void _runZonedApp(Widget app) {
   runZonedGuarded(
     () async {
       WidgetsFlutterBinding.ensureInitialized();
@@ -27,10 +44,7 @@ Future<void> bootstrapAndRun(Widget app) async {
       }
 
       FlutterError.onError = (FlutterErrorDetails details) async {
-        try {
-          final sp = await SharedPreferences.getInstance();
-          await sp.setString('last_startup_error', details.exceptionAsString());
-        } catch (_) {}
+        await _captureStartupError(details.exception, details.stack);
         FlutterError.presentError(details);
       };
 
@@ -73,14 +87,23 @@ Future<void> bootstrapAndRun(Widget app) async {
       });
     },
     (error, stack) async {
-      try {
-        final sp = await SharedPreferences.getInstance();
-        await sp.setString('last_startup_error', error.toString());
-      } catch (_) {}
+      await _captureStartupError(error, stack);
       if (kDebugMode) {
         // ignore: avoid_print
         print('bootstrap error: $error');
       }
     },
   );
+}
+
+Future<void> _captureStartupError(Object error, StackTrace? stack) async {
+  try {
+    final sp = await SharedPreferences.getInstance();
+    await sp.setString('last_startup_error', error.toString());
+  } catch (_) {}
+
+  if (kSentryDsn.trim().isEmpty) return;
+  try {
+    await Sentry.captureException(error, stackTrace: stack);
+  } catch (_) {}
 }

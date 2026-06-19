@@ -50,6 +50,7 @@ class BackendFactorySmokeTest(unittest.TestCase):
                 last_name="L",
                 email=None,
                 is_active=True,
+                is_verified=True,
                 public_id="ps",
             )
             seller.set_password("Aa123456")
@@ -61,6 +62,7 @@ class BackendFactorySmokeTest(unittest.TestCase):
                 last_name="W",
                 email=None,
                 is_active=True,
+                is_verified=True,
                 public_id="pv",
             )
             viewer.set_password("Aa123456")
@@ -73,6 +75,7 @@ class BackendFactorySmokeTest(unittest.TestCase):
                 email="admin@test.example",
                 is_active=True,
                 is_admin=True,
+                is_verified=True,
                 public_id="pa",
             )
             admin.set_password("Aa123456")
@@ -273,6 +276,39 @@ class BackendFactorySmokeTest(unittest.TestCase):
 
         me = self.client.get("/api/auth/me", headers=self._auth(self.viewer_token))
         self.assertIn(me.status_code, (401, 404, 422))
+
+    def test_create_car_requires_phone_verification(self):
+        with self.app.app_context():
+            unverified = self._User(
+                username="unverified",
+                phone_number="07000000099",
+                first_name="U",
+                last_name="V",
+                email=None,
+                is_active=True,
+                is_verified=False,
+                public_id="puv",
+            )
+            unverified.set_password("Aa123456")
+            self._db.session.add(unverified)
+            self._db.session.commit()
+
+        token = self._login("unverified", "Aa123456")
+        r = self.client.post(
+            "/api/cars",
+            headers=self._auth(token),
+            json={
+                "brand": "toyota",
+                "model": "camry",
+                "year": 2020,
+                "mileage": 1000,
+                "price": 15000,
+                "location": "Erbil",
+            },
+        )
+        self.assertEqual(r.status_code, 403, r.data)
+        body = r.get_json() or {}
+        self.assertEqual(body.get("code"), "phone_verification_required")
 
     def test_email_signup_and_login(self):
         u = f"e_{uuid.uuid4().hex[:8]}"

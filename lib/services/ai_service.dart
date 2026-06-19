@@ -1,11 +1,11 @@
 import 'dart:io';
 import 'dart:convert';
 import 'dart:async' show TimeoutException;
-import 'package:flutter/foundation.dart';
 import 'package:http/http.dart' as http;
 import 'package:image_picker/image_picker.dart';
 import 'config.dart';
 import 'api_service.dart';
+import '../shared/debug/app_log.dart';
 
 class AiService {
   /// Analyze a single car image and extract vehicle information
@@ -31,17 +31,13 @@ class AiService {
       if (response.statusCode == 200) {
         return json.decode(responseBody.body);
       } else {
-        if (kDebugMode) {
-          debugPrint(
-            'AI analysis failed: ${response.statusCode} - ${responseBody.body}',
-          );
-        }
+        appLog(
+          'AI analysis failed: ${response.statusCode} - ${responseBody.body}',
+        );
         return null;
       }
     } catch (e) {
-      if (kDebugMode) {
-        debugPrint('Error analyzing car image: $e');
-      }
+      appLog('Error analyzing car image: $e');
       return null;
     }
   }
@@ -53,16 +49,12 @@ class AiService {
     try {
       final token = await _getAuthToken();
       if (token == null || token.isEmpty) {
-        if (kDebugMode) {
-          debugPrint('AI Service: Blur requires authentication');
-        }
+        appLog('AI Service: Blur requires authentication');
         return null;
       }
       final base = apiBaseApi();
       final uri = Uri.parse('$base/blur-image');
-      if (kDebugMode) {
-        debugPrint('AI Service: Blur endpoint: $uri');
-      }
+      appLog('AI Service: Blur endpoint: $uri');
       final List<XFile> result = [];
       int failed = 0;
       const int maxRetries = 2;
@@ -70,19 +62,15 @@ class AiService {
       for (int i = 0; i < imageFiles.length; i++) {
         if (i > 0) await Future.delayed(durationBetweenRequests);
         final file = imageFiles[i];
-        if (kDebugMode) {
-          debugPrint(
-            'AI Service: Blurring image ${i + 1}/${imageFiles.length}',
-          );
-        }
+        appLog(
+          'AI Service: Blurring image ${i + 1}/${imageFiles.length}',
+        );
         bool success = false;
         for (int attempt = 0; attempt <= maxRetries && !success; attempt++) {
           if (attempt > 0) {
-            if (kDebugMode) {
-              debugPrint(
-                'AI Service: Retry $attempt/$maxRetries for image ${i + 1}',
-              );
-            }
+            appLog(
+              'AI Service: Retry $attempt/$maxRetries for image ${i + 1}',
+            );
             await Future.delayed(const Duration(seconds: 2));
           }
           try {
@@ -99,11 +87,9 @@ class AiService {
             );
             final response = await http.Response.fromStream(streamed);
             if (response.statusCode != 200) {
-              if (kDebugMode) {
-                debugPrint(
-                  'AI Service: Blur failed for image ${i + 1}: ${response.statusCode} ${response.body}',
-                );
-              }
+              appLog(
+                'AI Service: Blur failed for image ${i + 1}: ${response.statusCode} ${response.body}',
+              );
               break;
             }
             final bytes = response.bodyBytes;
@@ -116,15 +102,11 @@ class AiService {
             result.add(XFile(outFile.path));
             success = true;
           } on TimeoutException catch (e) {
-            if (kDebugMode) {
-              debugPrint('AI Service: Timeout for image ${i + 1}: $e');
-            }
+            appLog('AI Service: Timeout for image ${i + 1}: $e');
           } catch (e) {
-            if (kDebugMode) {
-              debugPrint(
-                'AI Service: Error for image ${i + 1} (attempt ${attempt + 1}): $e',
-              );
-            }
+            appLog(
+              'AI Service: Error for image ${i + 1} (attempt ${attempt + 1}): $e',
+            );
           }
         }
         if (!success) {
@@ -133,22 +115,16 @@ class AiService {
         }
       }
       if (failed > 0) {
-        if (kDebugMode) {
-          debugPrint(
-            'AI Service: $failed of ${imageFiles.length} images could not be blurred; originals kept.',
-          );
-        }
+        appLog(
+          'AI Service: $failed of ${imageFiles.length} images could not be blurred; originals kept.',
+        );
       }
       return result;
     } on TimeoutException catch (e) {
-      if (kDebugMode) {
-        debugPrint('AI Service: Timeout: $e');
-      }
+      appLog('AI Service: Timeout: $e');
       return null;
     } catch (e) {
-      if (kDebugMode) {
-        debugPrint('AI Service: Error processing images: $e');
-      }
+      appLog('AI Service: Error processing images: $e');
       return null;
     }
   }
@@ -162,9 +138,7 @@ class AiService {
     try {
       final token = await _getAuthToken();
       if (token == null || token.isEmpty) {
-        if (kDebugMode) {
-          debugPrint('AI Service: Processing requires authentication');
-        }
+        appLog('AI Service: Processing requires authentication');
         return null;
       }
       final url = Uri.parse('${apiBaseApi()}/process-car-images');
@@ -179,11 +153,9 @@ class AiService {
       );
       final response = await http.Response.fromStream(streamed);
       if (response.statusCode != 200) {
-        if (kDebugMode) {
-          debugPrint(
-            'AI Service: Process images failed: ${response.statusCode} ${response.body}',
-          );
-        }
+        appLog(
+          'AI Service: Process images failed: ${response.statusCode} ${response.body}',
+        );
         return null;
       }
       final data = json.decode(response.body);
@@ -196,14 +168,10 @@ class AiService {
           .where((s) => s.trim().isNotEmpty)
           .toList();
     } on TimeoutException catch (e) {
-      if (kDebugMode) {
-        debugPrint('AI Service: Timeout: $e');
-      }
+      appLog('AI Service: Timeout: $e');
       return null;
     } catch (e) {
-      if (kDebugMode) {
-        debugPrint('AI Service: Error processing images: $e');
-      }
+      appLog('AI Service: Error processing images: $e');
       return null;
     }
   }
@@ -219,9 +187,7 @@ class AiService {
     }
     final token = await _getAuthToken();
     if (token == null || token.isEmpty) {
-      if (kDebugMode) {
-        debugPrint('AI Service: Processing requires authentication');
-      }
+      appLog('AI Service: Processing requires authentication');
       return null;
     }
 
@@ -242,11 +208,9 @@ class AiService {
       );
       final response = await http.Response.fromStream(streamed);
       if (response.statusCode != 200) {
-        if (kDebugMode) {
-          debugPrint(
-            'AI Service: Process images failed: ${response.statusCode} ${response.body}',
-          );
-        }
+        appLog(
+          'AI Service: Process images failed: ${response.statusCode} ${response.body}',
+        );
         return null;
       }
       final data = json.decode(response.body);
@@ -288,11 +252,9 @@ class AiService {
           if (attempt > 0) await Future.delayed(const Duration(seconds: 2));
           res = await sendBatch(batch);
         } catch (e) {
-          if (kDebugMode) {
-            debugPrint(
-              'AI Service: Batch error (size=${batch.length}, attempt=${attempt + 1}): $e',
-            );
-          }
+          appLog(
+            'AI Service: Batch error (size=${batch.length}, attempt=${attempt + 1}): $e',
+          );
         }
       }
 
@@ -305,9 +267,7 @@ class AiService {
               outB64.addAll(one['base64'] ?? const []);
             }
           } catch (e) {
-            if (kDebugMode) {
-              debugPrint('AI Service: Single-image batch error: $e');
-            }
+            appLog('AI Service: Single-image batch error: $e');
           }
         }
         continue;

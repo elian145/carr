@@ -80,6 +80,29 @@ def get_current_user():
         current_app.logger.error(f"Error getting current user: {str(e)}")
         return None
 
+
+def phone_verification_required_response(user):
+    """
+    Return (jsonify(...), status_code) when the user must verify their phone first.
+    Admins are exempt. Returns None when the user may proceed.
+    """
+    if not user:
+        return jsonify({"message": "User not found"}), 404
+    if getattr(user, "is_admin", False):
+        return None
+    if not getattr(user, "is_verified", False):
+        return (
+            jsonify(
+                {
+                    "message": "Verify your phone number before continuing.",
+                    "code": "phone_verification_required",
+                }
+            ),
+            403,
+        )
+    return None
+
+
 def create_password_reset_token(user):
     """Create password reset token.
 

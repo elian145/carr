@@ -10,7 +10,7 @@ from ..security import rate_limit
 from sqlalchemy import select, update
 from sqlalchemy.orm import joinedload, selectinload
 
-from ..auth import get_current_user, log_user_action
+from ..auth import get_current_user, log_user_action, phone_verification_required_response
 from ..favorites_cleanup import remove_listing_from_all_favorites
 from ..view_history import remove_listing_from_all_view_history
 from ..models import Car, ListingReport, User, db, user_viewed_listings
@@ -536,8 +536,9 @@ def create_car():
     """Create new car listing."""
     try:
         current_user = get_current_user()
-        if not current_user:
-            return jsonify({"message": "User not found"}), 404
+        verify_err = phone_verification_required_response(current_user)
+        if verify_err:
+            return verify_err
 
         raw = request.get_json(silent=True) or {}
 

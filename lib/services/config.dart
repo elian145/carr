@@ -171,5 +171,9 @@ const String kSupportWhatsapp = String.fromEnvironment('SUPPORT_WHATSAPP', defau
 const String kTermsUrl = String.fromEnvironment('TERMS_URL', defaultValue: '');
 const String kPrivacyUrl = String.fromEnvironment('PRIVACY_URL', defaultValue: '');
 
+/// Optional Sentry DSN for crash reporting in release builds.
+/// Pass via `--dart-define=SENTRY_DSN=https://...` when building prod artifacts.
+const String kSentryDsn = String.fromEnvironment('SENTRY_DSN', defaultValue: '');
+
 // No third-party plate API keys are exposed to the client.
 // All license plate blurring is performed server-side via the backend.

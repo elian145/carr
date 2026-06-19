@@ -8,7 +8,7 @@ from flask import Blueprint, current_app, jsonify, request
 from flask_jwt_extended import jwt_required
 from werkzeug.utils import safe_join
 
-from ..auth import get_current_user, log_user_action
+from ..auth import get_current_user, log_user_action, phone_verification_required_response
 from ..media_processing import process_and_store_image
 from ..models import Car, CarImage, CarVideo, db
 from ..security import generate_secure_filename, validate_file_upload
@@ -160,8 +160,9 @@ def r2_sign_upload():
 
     try:
         current_user = get_current_user()
-        if not current_user:
-            return jsonify({"message": "User not found"}), 404
+        verify_err = phone_verification_required_response(current_user)
+        if verify_err:
+            return verify_err
 
         data = request.get_json(silent=True) or {}
         asset = (data.get("asset") or "image").strip().lower()
@@ -207,8 +208,9 @@ def upload_car_images(car_id: str):
     """Upload car images (accepts 'files' or 'images') and save them."""
     try:
         current_user = get_current_user()
-        if not current_user:
-            return jsonify({"message": "User not found"}), 404
+        verify_err = phone_verification_required_response(current_user)
+        if verify_err:
+            return verify_err
 
         car = _get_car_by_any_id(car_id)
         if not car:
@@ -292,8 +294,9 @@ def attach_car_images(car_id: str):
     """Attach images by relative paths (uploads/...) or full URLs (e.g. R2 public URL)."""
     try:
         current_user = get_current_user()
-        if not current_user:
-            return jsonify({"message": "User not found"}), 404
+        verify_err = phone_verification_required_response(current_user)
+        if verify_err:
+            return verify_err
 
         car = _get_car_by_any_id(car_id)
         if not car:
@@ -382,8 +385,9 @@ def upload_car_videos(car_id: str):
     """Upload car videos"""
     try:
         current_user = get_current_user()
-        if not current_user:
-            return jsonify({"message": "User not found"}), 404
+        verify_err = phone_verification_required_response(current_user)
+        if verify_err:
+            return verify_err
 
         car = _get_car_by_any_id(car_id)
         if not car:

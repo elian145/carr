@@ -10,7 +10,7 @@ from flask_jwt_extended import jwt_required
 from sqlalchemy import func, or_
 from werkzeug.exceptions import RequestEntityTooLarge
 
-from ..auth import get_current_user
+from ..auth import get_current_user, phone_verification_required_response
 from ..extensions import socketio
 from ..models import BlockedUser, Car, Message, User, UserReport, db
 from ..push import fcm_is_configured, fcm_send_error_hint, last_fcm_send_error, send_push
@@ -398,8 +398,9 @@ def send_message(conversation_id: str):
     """Send a message in a conversation (conversation_id == car public_id or numeric id)."""
     try:
         me = get_current_user()
-        if not me:
-            return jsonify({"message": "Unauthorized"}), 401
+        verify_err = phone_verification_required_response(me)
+        if verify_err:
+            return verify_err
 
         data = validate_input_sanitization(request.get_json(silent=True) or {})
         content = str(data.get("content") or "").strip()
