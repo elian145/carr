@@ -5,7 +5,7 @@ import 'package:car_listing_app/legacy/main_legacy.dart' as legacy;
 
 import 'fake_api_server.dart';
 
-/// Boots the same widget tree as production (`main.dart` → `legacy.MyApp`).
+/// Boots the same widget tree as production (`main.dart` → [ProductionApp]).
 ///
 /// Run: `flutter test` (starts an ephemeral local API stub automatically).
 void main() {

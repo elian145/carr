@@ -48,6 +48,8 @@ void main() {
     await pushNamed('/home_filters');
     await pushNamed('/settings');
     await pushNamed('/saved-searches');
+    await pushNamed('/notifications');
+    await pushNamed('/help');
     await pushNamed('/favorites');
     await pushNamed('/chat');
     await pushNamed('/login');

@@ -129,9 +129,8 @@ import '../shared/sell/sell_draft_archive.dart';
 import '../shared/home/home_feed_toolbar.dart';
 import '../widgets/network_video_thumbnail.dart';
 import '../widgets/edge_swipe_back.dart';
+import '../app/production_app.dart';
 import '../app/navigator_key.dart';
-import '../app/production_routes.dart';
-import '../app/providers.dart';
 import '../app/route_helpers.dart';
 import '../shared/auth/auth_guard.dart';
 export '../shared/auth/auth_guard.dart' show AuthGuard;
@@ -2466,83 +2465,13 @@ class ComparisonButton extends StatelessWidget {
   }
 }
 
-/// Wraps [MaterialApp] and inits deep link handling after first frame.
-class _AppWithDeepLinks extends StatefulWidget {
-  const _AppWithDeepLinks({required this.child});
-  final Widget child;
-
-  @override
-  State<_AppWithDeepLinks> createState() => _AppWithDeepLinksState();
-}
-
-class _AppWithDeepLinksState extends State<_AppWithDeepLinks> {
-  @override
-  void initState() {
-    super.initState();
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      DeepLinkService.instance.init(appNavigatorKey);
-    });
-  }
-
-  @override
-  Widget build(BuildContext context) => widget.child;
-}
-
+/// Production entry widget. Prefer importing [ProductionApp] from `app/production_app.dart`.
 class MyApp extends StatelessWidget {
   const MyApp({super.key});
 
   @override
   Widget build(BuildContext context) {
-    return MultiProvider(
-      providers: buildAppProviders(),
-      child: ValueListenableBuilder<Locale?>(
-        valueListenable: LocaleController.currentLocale,
-        builder: (context, locale, _) => Consumer<ThemeProvider>(
-          builder: (context, themeProvider, child) => _AppWithDeepLinks(
-            child: MaterialApp(
-              navigatorKey: appNavigatorKey,
-              title: 'CarNet',
-              builder: (context, child) => EdgeSwipeBack(
-                navigatorKey: appNavigatorKey,
-                child: child ?? const SizedBox.shrink(),
-              ),
-              locale: locale,
-              supportedLocales: const [
-                Locale('en'),
-                Locale('ar'),
-                Locale('ku'),
-              ],
-              localizationsDelegates: [
-                AppLocalizations.delegate,
-                GlobalMaterialLocalizations.delegate,
-                GlobalWidgetsLocalizations.delegate,
-                GlobalCupertinoLocalizations.delegate,
-                const KuMaterialLocalizationsDelegate(),
-                const KuWidgetsLocalizationsDelegate(),
-                const KuCupertinoLocalizationsDelegate(),
-              ],
-              localeResolutionCallback: (deviceLocale, supported) {
-                if (locale != null) return locale;
-                if (deviceLocale == null) return const Locale('en');
-                for (final l in supported) {
-                  if (l.languageCode == deviceLocale.languageCode) return l;
-                }
-                return const Locale('en');
-              },
-              theme: AppThemes.lightTheme,
-              darkTheme: AppThemes.darkTheme,
-              themeMode: themeProvider.themeMode,
-              debugShowCheckedModeBanner: false,
-              initialRoute: '/',
-              routes: {
-                ...buildProductionRoutes(),
-                ...buildLegacyFallbackRoutes(),
-              },
-            ),
-          ),
-        ),
-      ),
-    );
+    return ProductionApp(extraRoutes: buildLegacyFallbackRoutes());
   }
 }
 

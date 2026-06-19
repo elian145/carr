@@ -1,6 +1,8 @@
 # Legacy app shell
 
-Production UI entry: `main_legacy.dart` → `MyApp` (used from `lib/main.dart`).
+Production entry: `lib/main.dart` → [ProductionApp] (`lib/app/production_app.dart`).
+
+Legacy library: `main_legacy.dart` — widgets, galleries, and `/legacy_*` fallback routes via [buildLegacyFallbackRoutes].
 
 ## Layout
 
@@ -51,7 +53,9 @@ Modern pages use `buildGlobalCarCard` and related helpers from `lib/shared/listi
 
 `lib/app/routes.dart` mirrors modern production routes for migration testing via `CarzoApp`.
 
-Production routing lives in `lib/app/production_routes.dart` (`buildProductionRoutes()`). Legacy fallbacks are in `lib/legacy/legacy_routes.dart` (`buildLegacyFallbackRoutes()`), merged in `MyApp`.
+Production routing lives in `lib/app/production_routes.dart` (`buildProductionRoutes()`). Legacy fallbacks are in `lib/legacy/legacy_routes.dart` (`buildLegacyFallbackRoutes()`), merged in [ProductionApp].
+
+Shared shell: `lib/app/app_shell.dart` (`CarNetAppShell`) — used by [ProductionApp] and [CarzoApp].
 
 Shared auth: `lib/shared/auth/auth_guard.dart` (`AuthGuard`, `SellAuthPrompt`).
 
