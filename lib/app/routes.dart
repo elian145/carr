@@ -12,6 +12,7 @@ import '../pages/profile_page.dart' as profile;
 import '../pages/reset_password_page.dart';
 import '../pages/verify_email_page.dart';
 import '../pages/sell_page.dart' as sell;
+import '../pages/sell_entry_pages.dart';
 import '../pages/settings_page.dart' as settings;
 import '../pages/car_detail_page.dart' as details;
 import '../pages/my_listings_page.dart' as mine;
@@ -72,13 +73,22 @@ Map<String, WidgetBuilder> buildAppRoutes() {
     '/sell': (context) {
       final args = argsMap(context);
       final draftSnapshot = args?['draftSnapshot'];
-      return sell.SellPage(
-        startFresh: args?['startFresh'] == true,
-        initialDraftSnapshot: draftSnapshot is Map
-            ? Map<String, dynamic>.from(draftSnapshot.cast<String, dynamic>())
-            : null,
-        editListing: args?['editListing'] == true,
-      );
+      if (args?['showDraftGate'] == true) {
+        return const SellDraftGatePage();
+      }
+      if (draftSnapshot is Map) {
+        return sell.SellPage(
+          startFresh: args?['startFresh'] == true,
+          editListing: args?['editListing'] == true,
+          initialDraftSnapshot: Map<String, dynamic>.from(
+            draftSnapshot.cast<String, dynamic>(),
+          ),
+        );
+      }
+      if (args?['startFresh'] == true) {
+        return const sell.SellPage(startFresh: true);
+      }
+      return const SellEntryRouterPage();
     },
     '/settings': (context) => const settings.SettingsPage(),
     '/favorites': (context) => const favorites.FavoritesPage(),

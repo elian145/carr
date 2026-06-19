@@ -101,7 +101,11 @@ import '../shared/home/home_filter_query.dart';
 import '../shared/home/home_active_filter_chips.dart';
 import '../shared/home/home_filter_persistence.dart';
 import '../pages/home_page.dart' as modern_home;
+import '../pages/sell_page.dart' as modern_sell;
+import '../pages/sell_entry_pages.dart';
 import '../pages/tiktok_scroll_page.dart';
+import '../shared/sell/sell_draft_archive.dart';
+import '../shared/home/home_feed_toolbar.dart';
 import '../widgets/network_video_thumbnail.dart';
 import '../widgets/edge_swipe_back.dart';
 part 'home_page_legacy.dart';
@@ -3408,7 +3412,10 @@ class AuthGuard extends StatelessWidget {
     if (auth.isLoading || ApiService.isAuthenticated) {
       return const Scaffold(body: Center(child: CircularProgressIndicator()));
     }
-    if (child is SellCarPage) {
+    if (child is SellCarPage ||
+        child is modern_sell.SellPage ||
+        child is SellEntryRouterPage ||
+        child is SellDraftGatePage) {
       return const _SellAuthPrompt();
     }
     WidgetsBinding.instance.addPostFrameCallback((_) {
@@ -3526,14 +3533,14 @@ class MyApp extends StatelessWidget {
                   final showDraftGate = args is Map && args['showDraftGate'] == true;
                   if (initialDraftSnapshot != null) {
                     return AuthGuard(
-                      child: SellCarPage(
+                      child: modern_sell.SellPage(
                         initialDraftSnapshot: initialDraftSnapshot,
                       ),
                     );
                   }
                   if (startFresh) {
                     return AuthGuard(
-                      child: const SellCarPage(startFreshListing: true),
+                      child: const modern_sell.SellPage(startFresh: true),
                     );
                   }
                   if (showDraftGate) {
@@ -3543,6 +3550,26 @@ class MyApp extends StatelessWidget {
                   }
                   return AuthGuard(
                     child: const SellEntryRouterPage(),
+                  );
+                },
+                '/legacy_sell': (context) {
+                  final args = ModalRoute.of(context)?.settings.arguments;
+                  final initialDraftSnapshot = args is Map
+                      ? (args['draftSnapshot'] is Map
+                          ? Map<String, dynamic>.from(
+                              (args['draftSnapshot'] as Map).cast<String, dynamic>(),
+                            )
+                          : null)
+                      : null;
+                  if (initialDraftSnapshot != null) {
+                    return AuthGuard(
+                      child: SellCarPage(
+                        initialDraftSnapshot: initialDraftSnapshot,
+                      ),
+                    );
+                  }
+                  return AuthGuard(
+                    child: const SellCarPage(startFreshListing: true),
                   );
                 },
                 '/settings': (context) => SettingsPage(),

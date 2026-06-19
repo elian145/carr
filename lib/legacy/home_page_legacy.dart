@@ -7474,63 +7474,21 @@ class _LegacyHomePageState extends State<LegacyHomePage> {
                     )
                   else ...[
                     SliverToBoxAdapter(
-                      child: Padding(
-                        padding: EdgeInsets.symmetric(
-                          horizontal: 8,
-                          vertical: 4,
-                        ),
-                        child: Row(
-                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                          children: [
-                            PopupMenuButton<String>(
-                              tooltip: AppLocalizations.of(context)!.sortBy,
-                              icon: Icon(Icons.sort, size: 20),
-                              onSelected: (value) {
-                                setState(
-                                  () => selectedSortBy = value == ''
-                                      ? null
-                                      : value,
-                                );
-                                _persistFilters();
-                                onSortChanged();
-                              },
-                              itemBuilder: (context) => [
-                                PopupMenuItem(
-                                  value: '',
-                                  child: Text(
-                                    AppLocalizations.of(context)!.defaultSort,
-                                  ),
-                                ),
-                                ...getLocalizedSortOptions(context)
-                                    .skip(1)
-                                    .map(
-                                      (s) => PopupMenuItem(
-                                        value: s,
-                                        child: Text(s),
-                                      ),
-                                    ),
-                              ],
-                            ),
-                            ToggleButtons(
-                              isSelected: [
-                                listingColumns == 1,
-                                listingColumns == 2,
-                                listingColumns == 3,
-                              ],
-                              onPressed: (index) {
-                                setState(() {
-                                  listingColumns = index == 0 ? 1 : (index == 1 ? 2 : 3);
-                                });
-                                ListingLayoutPrefs.setColumns(listingColumns);
-                              },
-                              children: const [
-                                Icon(Icons.view_agenda),
-                                Icon(Icons.grid_view),
-                                Icon(Icons.swipe_vertical),
-                              ],
-                            ),
-                          ],
-                        ),
+                      child: buildHomeFeedToolbar(
+                        context: context,
+                        selectedSortBy: selectedSortBy,
+                        listingColumns: listingColumns,
+                        onSortSelected: (value) {
+                          setState(() => selectedSortBy = value);
+                          _persistFilters();
+                          onSortChanged();
+                        },
+                        onLayoutSelected: (index) {
+                          setState(() {
+                            listingColumns = index == 0 ? 1 : (index == 1 ? 2 : 3);
+                          });
+                          ListingLayoutPrefs.setColumns(listingColumns);
+                        },
                       ),
                     ),
                     if (loadErrorMessage != null && cars.isNotEmpty)

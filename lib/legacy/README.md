@@ -19,7 +19,7 @@ All `part` files share one library with `main_legacy.dart` (imports only in the 
 
 ## Refactor direction
 
-Prefer new screens under `lib/pages/` and wire them in `MyApp` routes gradually. The modern `lib/pages/home_page.dart` is separate; `/` still uses legacy `HomePage` until parity is complete.
+Prefer new screens under `lib/pages/` and wire them in `MyApp` routes gradually. Production `/` uses modern `HomePage`; `/sell` uses modern `SellPage` with shared draft entry/gate pages. Legacy multi-step sell remains at `/legacy_sell`.
 
 ## Tooling
 
