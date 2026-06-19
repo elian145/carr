@@ -375,6 +375,62 @@ class BackendFactorySmokeTest(unittest.TestCase):
         self.assertEqual(payload.get("code"), "phone_verification_required")
         client.disconnect()
 
+    def test_upload_images_requires_phone_verification(self):
+        with self.app.app_context():
+            unverified = self._User(
+                username="unverified_upload",
+                phone_number="07000000096",
+                first_name="U",
+                last_name="U",
+                email=None,
+                is_active=True,
+                is_verified=False,
+                public_id="puvu",
+            )
+            unverified.set_password("Aa123456")
+            self._db.session.add(unverified)
+            self._db.session.commit()
+
+        token = self._login("unverified_upload", "Aa123456")
+        jpeg = b"\xff\xd8\xff\xdb" + b"0" * 100 + b"\xff\xd9"
+        r = self.client.post(
+            f"/api/cars/{self.car_public}/images?skip_blur=1",
+            headers=self._auth(token),
+            data={"images": (io.BytesIO(jpeg), "t.jpg")},
+            content_type="multipart/form-data",
+        )
+        self.assertEqual(r.status_code, 403, r.data)
+        body = r.get_json() or {}
+        self.assertEqual(body.get("code"), "phone_verification_required")
+
+    def test_process_car_images_requires_phone_verification(self):
+        with self.app.app_context():
+            unverified = self._User(
+                username="unverified_ai",
+                phone_number="07000000095",
+                first_name="U",
+                last_name="A",
+                email=None,
+                is_active=True,
+                is_verified=False,
+                public_id="puva",
+            )
+            unverified.set_password("Aa123456")
+            self._db.session.add(unverified)
+            self._db.session.commit()
+
+        token = self._login("unverified_ai", "Aa123456")
+        jpeg = b"\xff\xd8\xff\xdb" + b"0" * 100 + b"\xff\xd9"
+        r = self.client.post(
+            "/api/process-car-images",
+            headers=self._auth(token),
+            data={"images": (io.BytesIO(jpeg), "t.jpg")},
+            content_type="multipart/form-data",
+        )
+        self.assertEqual(r.status_code, 403, r.data)
+        body = r.get_json() or {}
+        self.assertEqual(body.get("code"), "phone_verification_required")
+
     def test_email_signup_and_login(self):
         u = f"e_{uuid.uuid4().hex[:8]}"
         signup = self.client.post(
