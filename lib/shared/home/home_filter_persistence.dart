@@ -4,7 +4,7 @@ import 'package:shared_preferences/shared_preferences.dart';
 
 import 'home_filter_query.dart';
 
-/// Read/write `home_filters_v1` prefs (same shape as legacy home).
+/// Read/write `home_filters_v1` prefs.
 class HomeFilterPersistence {
   HomeFilterPersistence._();
 
@@ -54,7 +54,7 @@ class HomeFilterPersistence {
     return false;
   }
 
-  /// Returns a copy of [map] with one filter group removed (legacy chip keys).
+  /// Returns a copy of [map] with one filter group removed.
   static Map<String, dynamic> clearFilterInMap(
     Map<String, dynamic> map,
     String filterType,

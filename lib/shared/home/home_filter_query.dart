@@ -109,7 +109,7 @@ class HomeFilterQuery {
     return q.length;
   }
 
-  /// Client-side filter for exact damaged-parts count (legacy home behavior).
+  /// Client-side filter for exact damaged-parts count.
   static List<Map<String, dynamic>> applyDamagedPartsExactFilter(
     List<Map<String, dynamic>> input,
     Map<String, String> query,

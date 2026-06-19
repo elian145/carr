@@ -1,4 +1,4 @@
-/// Static filter option lists aligned with legacy home / sell flow.
+/// Static filter option lists for home filters and sell flow.
 class HomeFilterOptions {
   HomeFilterOptions._();
 

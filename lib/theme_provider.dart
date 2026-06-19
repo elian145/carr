@@ -53,7 +53,7 @@ class AppThemes {
   /// Light mode: full-bleed scaffold / home body (pure white).
   static const Color lightAppBackground = Color(0xFFFFFFFF);
 
-  /// Dark home shell gradient (legacy pages).
+  /// Dark home shell gradient.
   static const List<Color> darkShellGradientColors = [
     Color(0xFF0F1115),
     Color(0xFF131722),
@@ -89,7 +89,7 @@ class AppThemes {
     return const BoxDecoration(color: lightAppBackground);
   }
 
-  /// Bottom bar colors for legacy CarNet tabs.
+  /// Bottom bar colors for main tab navigation.
   static ({Color backgroundColor, Color unselectedItemColor}) bottomNavChrome(
     Brightness brightness,
   ) {

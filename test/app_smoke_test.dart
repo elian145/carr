@@ -16,7 +16,7 @@ void main() {
     await FakeApiServer.stop();
   });
 
-  testWidgets('Production app smoke: boot production and legacy alias routes', (
+  testWidgets('Production app smoke: boot production routes', (
     tester,
   ) async {
     await tester.pumpWidget(buildProductionTestApp());
@@ -42,13 +42,10 @@ void main() {
     }
 
     await pushNamed('/home_filters');
-    await pushNamed('/legacy_home_filters');
-    await pushNamed('/legacy_home');
     await pushNamed('/sell');
     await pushNamed('/sell', args: {'startFresh': true});
     await pushNamed('/settings');
     await pushNamed('/saved-searches');
-    await pushNamed('/legacy_saved_searches');
     await pushNamed('/change-password');
     await pushNamed('/notifications');
     await pushNamed('/favorites');
@@ -60,7 +57,6 @@ void main() {
     await pushNamed('/edit-profile');
     await pushNamed('/forgot-password');
     await pushNamed('/car_detail', args: {'carId': '1'});
-    await pushNamed('/legacy_car_detail', args: {'carId': '1'});
     await pushNamed('/chat/conversation', args: {'conversationId': '1'});
     await pushNamed(
       '/edit_listing',
@@ -76,11 +72,6 @@ void main() {
     );
     await pushNamed('/my_listings');
     await pushNamed('/comparison');
-    await pushNamed('/legacy_comparison');
-    await pushNamed('/legacy_favorites');
-    await pushNamed('/legacy_profile');
-    await pushNamed('/legacy_settings');
-    await pushNamed('/legacy_login');
     await pushNamed('/recently-viewed');
     await pushNamed('/analytics');
     await pushNamed('/help');

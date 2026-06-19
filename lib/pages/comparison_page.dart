@@ -17,7 +17,7 @@ class ComparisonPage extends StatelessWidget {
     return (s.toLowerCase() == 'null') ? '' : s;
   }
 
-  /// Keep in sync with `carRegionSpecDisplayLabel` in legacy home/sell flow.
+  /// Keep in sync with `carRegionSpecDisplayLabel` in home/sell flow.
   String _regionSpecsDisplay(String raw) {
     switch (raw.trim().toLowerCase()) {
       case 'us':
