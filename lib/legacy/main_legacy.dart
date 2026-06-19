@@ -103,6 +103,7 @@ import '../shared/home/home_filter_persistence.dart';
 import '../pages/home_page.dart' as modern_home;
 import '../pages/sell_page.dart' as modern_sell;
 import '../pages/sell_entry_pages.dart';
+import '../pages/car_detail_page.dart' as modern_detail;
 import '../pages/tiktok_scroll_page.dart';
 import '../shared/sell/sell_draft_archive.dart';
 import '../shared/home/home_feed_toolbar.dart';
@@ -3582,6 +3583,14 @@ class MyApp extends StatelessWidget {
                 '/edit-profile': (context) =>
                     AuthGuard(child: EditProfilePage()),
                 '/car_detail': (context) {
+                  final args = routeArgs(context);
+                  final carId = (args?['carId'] ?? '').toString().trim();
+                  if (carId.isEmpty) {
+                    return navigationError('Missing listing id');
+                  }
+                  return modern_detail.CarDetailPage(carId: carId);
+                },
+                '/legacy_car_detail': (context) {
                   final args = routeArgs(context);
                   final carId = (args?['carId'] ?? '').toString().trim();
                   if (carId.isEmpty) {

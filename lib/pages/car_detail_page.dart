@@ -19,6 +19,9 @@ import '../shared/listings/listing_identity.dart';
 import '../shared/listings/listing_management.dart';
 import '../shared/listings/listing_owner.dart';
 import '../shared/listings/listing_share.dart';
+import '../shared/listings/listing_status.dart';
+import '../shared/listings/listing_sold_badge.dart';
+import '../shared/trust/report_dialog.dart';
 import '../shared/text/pretty_title_case.dart';
 import '../shared/vin/open_vin_search.dart';
 import 'listing_image_gallery_page.dart';
@@ -183,6 +186,60 @@ class _CarDetailPageState extends State<CarDetailPage> {
   bool get _isOwner {
     final auth = Provider.of<AuthService>(context, listen: false);
     return isListingOwner(_car, auth.userId);
+  }
+
+  bool get _isListingSold => isListingSold(_car);
+
+  Future<void> _toggleListingSoldStatus() async {
+    final id = listingPrimaryId(_car ?? {});
+    if (id.isEmpty) return;
+    if (!_isListingSold) {
+      final ok = await confirmMarkListingSold(context);
+      if (!ok || !mounted) return;
+    }
+    final updated = await setListingSoldStatus(
+      context,
+      id,
+      sold: !_isListingSold,
+    );
+    if (!mounted || updated == null) return;
+    setState(() {
+      _car = {...?_car, ...updated};
+    });
+    final nowSold = isListingSold(updated);
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text(
+          nowSold
+              ? _tr(
+                  'Listing marked as sold',
+                  ar: 'تم تحديد الإعلان كمباع',
+                  ku: 'ڕیکلام وەک فرۆشراو نیشانکرا',
+                )
+              : _tr(
+                  'Listing is available again',
+                  ar: 'الإعلان متاح مجدداً',
+                  ku: 'ڕیکلام دووبارە بەردەستە',
+                ),
+        ),
+      ),
+    );
+  }
+
+  void _onDetailMenuSelected(String value) {
+    final listingId = listingPrimaryId(_car ?? {'id': widget.carId});
+    if (value == 'report_listing' && listingId.isNotEmpty) {
+      unawaited(showReportListingDialog(context, listingId: listingId));
+      return;
+    }
+    if (value == 'report_user') {
+      final seller = (_car?['seller'] is Map) ? (_car!['seller'] as Map) : null;
+      final sellerId =
+          (seller?['id'] ?? seller?['user_id'] ?? '').toString().trim();
+      if (sellerId.isNotEmpty) {
+        unawaited(showReportUserDialog(context, userPublicId: sellerId));
+      }
+    }
   }
 
   Future<void> _editOwnListing() async {
@@ -1253,6 +1310,10 @@ class _CarDetailPageState extends State<CarDetailPage> {
     final detailColumn = Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
+        if (_isListingSold) ...[
+          buildListingSoldBadge(context),
+          const SizedBox(height: 12),
+        ],
         Row(
           crossAxisAlignment: CrossAxisAlignment.center,
           children: [
@@ -1549,6 +1610,23 @@ class _CarDetailPageState extends State<CarDetailPage> {
         actions: [
           if (_isOwner) ...[
             IconButton(
+              tooltip: _isListingSold
+                  ? _tr(
+                      'Mark as available',
+                      ar: 'متاح مجدداً',
+                      ku: 'بەردەست بکەرەوە',
+                    )
+                  : _tr(
+                      'Mark as sold',
+                      ar: 'تحديد كمباع',
+                      ku: 'وەک فرۆشراو',
+                    ),
+              onPressed: _toggleListingSoldStatus,
+              icon: Icon(
+                _isListingSold ? Icons.undo_outlined : Icons.sell_outlined,
+              ),
+            ),
+            IconButton(
               tooltip: loc?.editAction ?? 'Edit',
               onPressed: _editOwnListing,
               icon: const Icon(Icons.edit_outlined),
@@ -1577,6 +1655,35 @@ class _CarDetailPageState extends State<CarDetailPage> {
             onPressed: _toggleFavorite,
             icon: Icon(_isFavorite ? Icons.favorite : Icons.favorite_border),
           ),
+          if (!_isOwner &&
+              ApiService.accessToken != null &&
+              ApiService.accessToken!.isNotEmpty)
+            PopupMenuButton<String>(
+              onSelected: _onDetailMenuSelected,
+              itemBuilder: (ctx) => [
+                PopupMenuItem(
+                  value: 'report_listing',
+                  child: Text(
+                    _tr(
+                      'Report listing',
+                      ar: 'الإبلاغ عن الإعلان',
+                      ku: 'ڕاپۆرتکردنی ڕیکلام',
+                    ),
+                  ),
+                ),
+                if (receiverId != null && receiverId.trim().isNotEmpty)
+                  PopupMenuItem(
+                    value: 'report_user',
+                    child: Text(
+                      _tr(
+                        'Report seller',
+                        ar: 'الإبلاغ عن البائع',
+                        ku: 'ڕاپۆرتکردنی فرۆشیار',
+                      ),
+                    ),
+                  ),
+              ],
+            ),
         ],
       ),
       body: RefreshIndicator(

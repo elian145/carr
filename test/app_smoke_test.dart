@@ -56,6 +56,7 @@ void main() {
     await pushNamed('/edit-profile');
     await pushNamed('/forgot-password');
     await pushNamed('/car_detail', args: {'carId': '1'});
+    await pushNamed('/legacy_car_detail', args: {'carId': '1'});
     await pushNamed('/chat/conversation', args: {'conversationId': '1'});
     await pushNamed(
       '/edit_listing',
