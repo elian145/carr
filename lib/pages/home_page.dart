@@ -12,6 +12,7 @@ import '../services/config.dart';
 import '../shared/home/home_listings_fetch.dart';
 import '../shared/home/home_filter_persistence.dart';
 import '../shared/home/home_active_filter_chips.dart';
+import '../shared/home/home_feed_toolbar.dart';
 import '../shared/prefs/listing_layout_prefs.dart';
 import '../shared/shell/home_feed_scroll_persistence.dart';
 import '../shared/shell/main_bottom_nav.dart';
@@ -829,6 +830,7 @@ class _HomePageState extends State<HomePage>
   String? _error;
   int _activeFilterCount = 0;
   List<HomeActiveFilterChipSpec> _filterChips = const [];
+  String? _selectedSortBy;
 
   static const int _perPage = 20;
 
@@ -876,10 +878,25 @@ class _HomePageState extends State<HomePage>
     final map = await HomeFilterPersistence.loadMap();
     if (!mounted) return;
     final specs = homeActiveFilterChipSpecs(context, map);
+    final sortRaw = map['sort_by']?.toString().trim();
     setState(() {
       _filterChips = specs;
       _activeFilterCount = specs.length;
+      _selectedSortBy =
+          (sortRaw != null && sortRaw.isNotEmpty) ? sortRaw : null;
     });
+  }
+
+  Future<void> _applySort(String? localizedSort) async {
+    await HomeFilterPersistence.updateSort(localizedSort);
+    if (!mounted) return;
+    await _refreshFilterState();
+    await _fetch(refresh: true);
+  }
+
+  Future<void> _applyLayoutColumns(int columns) async {
+    await ListingLayoutPrefs.setColumns(columns);
+    if (mounted) setState(() {});
   }
 
   Future<void> _clearHomeFilter(String filterType) async {
@@ -1046,7 +1063,6 @@ class _HomePageState extends State<HomePage>
     super.build(context);
     final loc = AppLocalizations.of(context);
     final title = loc?.appTitle ?? 'CarNet';
-    final listingColumns = ListingLayoutPrefs.columns.value;
 
     return Scaffold(
       extendBody: true,
@@ -1116,11 +1132,22 @@ class _HomePageState extends State<HomePage>
                     specs: _filterChips,
                     onClearFilterType: _clearHomeFilter,
                   ),
+                  buildHomeFeedToolbarWithLayoutListener(
+                    context: context,
+                    selectedSortBy: _selectedSortBy,
+                    onSortSelected: _applySort,
+                    onLayoutSelected: _applyLayoutColumns,
+                  ),
                   Expanded(
-                    child: _buildHomeScrollContent(
-                      context,
-                      loc: loc,
-                      listingColumns: listingColumns,
+                    child: ValueListenableBuilder<int>(
+                      valueListenable: ListingLayoutPrefs.columns,
+                      builder: (context, listingColumns, _) {
+                        return _buildHomeScrollContent(
+                          context,
+                          loc: loc,
+                          listingColumns: listingColumns,
+                        );
+                      },
                     ),
                   ),
                 ],
@@ -1206,11 +1233,27 @@ class _HomePageState extends State<HomePage>
           );
         }
         final car = _cars[index];
-        return buildGlobalCarCard(
+        final card = buildGlobalCarCard(
           context,
           car,
           listLayout: listingColumns == 1,
         );
+        if (listingColumns == 3) {
+          return GestureDetector(
+            onTap: () {
+              Navigator.pushNamed(
+                context,
+                '/tiktok_scroll',
+                arguments: {
+                  'cars': _cars,
+                  'initialIndex': index,
+                },
+              );
+            },
+            child: AbsorbPointer(child: card),
+          );
+        }
+        return card;
       },
     );
   }

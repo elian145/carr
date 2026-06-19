@@ -144,4 +144,22 @@ class HomeFilterPersistence {
     await saveMap(updated);
     return updated;
   }
+
+  static Future<void> updateSort(String? localizedSortLabel) async {
+    final map = await loadMap();
+    if (localizedSortLabel == null || localizedSortLabel.trim().isEmpty) {
+      map.remove('sort_by');
+    } else {
+      map['sort_by'] = localizedSortLabel.trim();
+    }
+    await saveMap(map);
+  }
+
+  static Future<String?> loadSortLabel() async {
+    final map = await loadMap();
+    final sort = map['sort_by'];
+    if (sort == null) return null;
+    final s = sort.toString().trim();
+    return s.isEmpty ? null : s;
+  }
 }

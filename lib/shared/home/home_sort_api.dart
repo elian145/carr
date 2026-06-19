@@ -2,6 +2,21 @@ import 'package:flutter/widgets.dart';
 
 import '../../l10n/app_localizations.dart';
 
+/// Localized sort labels shown in home feed menus.
+List<String> homeLocalizedSortOptions(BuildContext context) {
+  final loc = AppLocalizations.of(context)!;
+  return [
+    loc.defaultSort,
+    loc.sort_newest,
+    loc.sort_price_low_high,
+    loc.sort_price_high_low,
+    loc.sort_year_newest,
+    loc.sort_year_oldest,
+    loc.sort_mileage_low_high,
+    loc.sort_mileage_high_low,
+  ];
+}
+
 /// Maps localized home sort labels to backend `sort_by` query values.
 String? homeSortToApiValue(BuildContext context, String? sortOption) {
   if (sortOption == null || sortOption.isEmpty) return null;

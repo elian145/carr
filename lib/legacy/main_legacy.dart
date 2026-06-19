@@ -98,6 +98,8 @@ export '../shared/shell/main_bottom_nav.dart' show buildFloatingBottomNav;
 import '../shared/car/region_specs.dart';
 import '../shared/home/home_sort_api.dart';
 import '../shared/home/home_filter_query.dart';
+import '../shared/home/home_active_filter_chips.dart';
+import '../shared/home/home_filter_persistence.dart';
 import '../pages/home_page.dart' as modern_home;
 import '../pages/tiktok_scroll_page.dart';
 import '../widgets/network_video_thumbnail.dart';

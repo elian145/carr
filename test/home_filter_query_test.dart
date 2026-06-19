@@ -2,6 +2,7 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 import 'package:car_listing_app/shared/home/home_filter_query.dart';
+import 'package:car_listing_app/shared/home/home_filter_persistence.dart';
 import 'package:car_listing_app/shared/home/home_active_filter_chips.dart';
 import 'package:car_listing_app/shared/home/home_sort_api.dart';
 import 'package:flutter/material.dart';
@@ -38,6 +39,15 @@ void main() {
         HomeFilterQuery.prefsKey: '{"brand":"bmw","condition":"Any"}',
       });
       expect(await HomeFilterQuery.activeFilterCount(), 1);
+    });
+
+    test('updateSort persists localized label', () async {
+      SharedPreferences.setMockInitialValues({});
+      await HomeFilterPersistence.updateSort('Price: Low to High');
+      final map = await HomeFilterPersistence.loadMap();
+      expect(map['sort_by'], 'Price: Low to High');
+      await HomeFilterPersistence.updateSort(null);
+      expect(await HomeFilterPersistence.loadMap(), isEmpty);
     });
   });
 

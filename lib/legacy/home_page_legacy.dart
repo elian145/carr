@@ -655,36 +655,38 @@ class _LegacyHomePageState extends State<LegacyHomePage> {
         await _clearFiltersOnly();
         return;
       }
-      final sp = await SharedPreferences.getInstance();
-      final Map<String, dynamic> map = {
-        'brand': selectedBrand,
-        'model': selectedModel,
-        'trim': selectedTrim,
-        'price_min': selectedMinPrice,
-        'price_max': selectedMaxPrice,
-        'year_min': selectedMinYear,
-        'year_max': selectedMaxYear,
-        'min_mileage': selectedMinMileage,
-        'max_mileage': selectedMaxMileage,
-        'condition': selectedCondition,
-        'transmission': selectedTransmission,
-        'fuel_type': selectedFuelType,
-        'body_type': selectedBodyType,
-        'color': selectedColor,
-        'drive_type': selectedDriveType,
-        'region_specs': selectedRegionSpecs,
-        'cylinders': selectedCylinderCount,
-        'seating': selectedSeating,
-        'engine_size': selectedEngineSize,
-        'city': selectedCity,
-        'plate_type': selectedPlateType,
-        'plate_city': selectedPlateCity,
-        'title_status': selectedTitleStatus,
-        'damaged_parts': selectedDamagedParts,
-        'sort_by': selectedSortBy,
-      };
-      await sp.setString(_filtersKey, json.encode(map));
+      await HomeFilterPersistence.saveMap(_homeFilterPersistSnapshot());
     } catch (_) {}
+  }
+
+  Map<String, dynamic> _homeFilterPersistSnapshot() {
+    return {
+      'brand': selectedBrand,
+      'model': selectedModel,
+      'trim': selectedTrim,
+      'price_min': selectedMinPrice,
+      'price_max': selectedMaxPrice,
+      'year_min': selectedMinYear,
+      'year_max': selectedMaxYear,
+      'min_mileage': selectedMinMileage,
+      'max_mileage': selectedMaxMileage,
+      'condition': selectedCondition,
+      'transmission': selectedTransmission,
+      'fuel_type': selectedFuelType,
+      'body_type': selectedBodyType,
+      'color': selectedColor,
+      'drive_type': selectedDriveType,
+      'region_specs': selectedRegionSpecs,
+      'cylinders': selectedCylinderCount,
+      'seating': selectedSeating,
+      'engine_size': selectedEngineSize,
+      'city': selectedCity,
+      'plate_type': selectedPlateType,
+      'plate_city': selectedPlateCity,
+      'title_status': selectedTitleStatus,
+      'damaged_parts': selectedDamagedParts,
+      'sort_by': selectedSortBy,
+    };
   }
 
   Future<void> _clearPersistedFilters() async {
@@ -1256,16 +1258,8 @@ class _LegacyHomePageState extends State<LegacyHomePage> {
     'Dhi Qar',
     'Salaheldeen',
   ];
-  List<String> getLocalizedSortOptions(BuildContext context) => [
-    AppLocalizations.of(context)!.defaultSort,
-    AppLocalizations.of(context)!.sort_newest,
-    AppLocalizations.of(context)!.sort_price_low_high,
-    AppLocalizations.of(context)!.sort_price_high_low,
-    AppLocalizations.of(context)!.sort_year_newest,
-    AppLocalizations.of(context)!.sort_year_oldest,
-    AppLocalizations.of(context)!.sort_mileage_low_high,
-    AppLocalizations.of(context)!.sort_mileage_high_low,
-  ];
+  List<String> getLocalizedSortOptions(BuildContext context) =>
+      homeLocalizedSortOptions(context);
 
   bool useCustomMinPrice = false;
   bool useCustomMaxPrice = false;
@@ -3115,409 +3109,15 @@ class _LegacyHomePageState extends State<LegacyHomePage> {
     onFilterChanged();
   }
 
-  // Helper method to build active filter chips
   List<Widget> _buildActiveFilterChips() {
-    List<Widget> chips = [];
-
-    // Brand filter
-    if (selectedBrand != null && selectedBrand!.toLowerCase() != 'any') {
-      chips.add(
-        _buildFilterChip(
-          AppLocalizations.of(context)!.brandLabel,
-          CarNameTranslations.getLocalizedBrand(
-                context,
-                selectedBrand,
-              ).isNotEmpty
-              ? CarNameTranslations.getLocalizedBrand(context, selectedBrand)
-              : selectedBrand!,
-          'brand',
-          Icons.directions_car,
-          Color(0xFFFF6B00),
-        ),
-      );
-    }
-
-    // Model filter
-    if (selectedModel != null && selectedModel!.toLowerCase() != 'any') {
-      chips.add(
-        _buildFilterChip(
-          AppLocalizations.of(context)!.modelLabel,
-          CarNameTranslations.getLocalizedModel(
-                context,
-                selectedBrand,
-                selectedModel,
-              ).isNotEmpty
-              ? CarNameTranslations.getLocalizedModel(
-                  context,
-                  selectedBrand,
-                  selectedModel,
-                )
-              : selectedModel!,
-          'model',
-          Icons.directions_car,
-          Color(0xFFFF6B00),
-        ),
-      );
-    }
-
-    // Trim filter
-    if (selectedTrim != null && selectedTrim!.toLowerCase() != 'any') {
-      chips.add(
-        _buildFilterChip(
-          AppLocalizations.of(context)!.trimLabel,
-          selectedTrim!,
-          'trim',
-          Icons.settings,
-          Color(0xFFFF6B00),
-        ),
-      );
-    }
-
-    // Price range filter
-    if (selectedMinPrice != null || selectedMaxPrice != null) {
-      String priceText = '';
-      if (selectedMinPrice != null && selectedMaxPrice != null) {
-        priceText =
-            '${_formatCurrencyGlobal(context, selectedMinPrice!)} - ${_formatCurrencyGlobal(context, selectedMaxPrice!)}';
-      } else if (selectedMinPrice != null) {
-        priceText =
-            '${AppLocalizations.of(context)!.minPrice}: ${_formatCurrencyGlobal(context, selectedMinPrice!)}';
-      } else if (selectedMaxPrice != null) {
-        priceText =
-            '${AppLocalizations.of(context)!.maxPrice}: ${_formatCurrencyGlobal(context, selectedMaxPrice!)}';
-      }
-      chips.add(
-        _buildFilterChip(
-          AppLocalizations.of(context)!.priceLabel,
-          priceText,
-          'price',
-          Icons.attach_money,
-          Colors.green,
-        ),
-      );
-    }
-
-    // Year range filter
-    if (selectedMinYear != null || selectedMaxYear != null) {
-      String yearText = '';
-      if (selectedMinYear != null && selectedMaxYear != null) {
-        yearText =
-            '${_localizeDigitsGlobal(context, selectedMinYear!)} - ${_localizeDigitsGlobal(context, selectedMaxYear!)}';
-      } else if (selectedMinYear != null) {
-        yearText =
-            '${AppLocalizations.of(context)!.minYear}: ${_localizeDigitsGlobal(context, selectedMinYear!)}';
-      } else if (selectedMaxYear != null) {
-        yearText =
-            '${AppLocalizations.of(context)!.maxYear}: ${_localizeDigitsGlobal(context, selectedMaxYear!)}';
-      }
-      chips.add(
-        _buildFilterChip(
-          AppLocalizations.of(context)!.yearLabel,
-          yearText,
-          'year',
-          Icons.calendar_today,
-          Colors.blue,
-        ),
-      );
-    }
-
-    // Mileage range filter
-    if (selectedMinMileage != null || selectedMaxMileage != null) {
-      String mileageText = '';
-      if (selectedMinMileage != null && selectedMaxMileage != null) {
-        mileageText =
-            '${_localizeDigitsGlobal(context, selectedMinMileage!)} - ${_localizeDigitsGlobal(context, selectedMaxMileage!)} ${AppLocalizations.of(context)!.unit_km}';
-      } else if (selectedMinMileage != null) {
-        mileageText =
-            '${AppLocalizations.of(context)!.minMileage}: ${_localizeDigitsGlobal(context, selectedMinMileage!)} ${AppLocalizations.of(context)!.unit_km}';
-      } else if (selectedMaxMileage != null) {
-        mileageText =
-            '${AppLocalizations.of(context)!.maxMileage}: ${_localizeDigitsGlobal(context, selectedMaxMileage!)} ${AppLocalizations.of(context)!.unit_km}';
-      }
-      chips.add(
-        _buildFilterChip(
-          AppLocalizations.of(context)!.mileageLabel,
-          mileageText,
-          'mileage',
-          Icons.speed,
-          Colors.orange,
-        ),
-      );
-    }
-
-    // Condition filter
-    if (selectedCondition != null &&
-        selectedCondition!.toLowerCase() != 'any') {
-      chips.add(
-        _buildFilterChip(
-          AppLocalizations.of(context)!.detail_condition,
-          _translateValueGlobal(context, selectedCondition) ??
-              selectedCondition!,
-          'condition',
-          Icons.check_circle,
-          Colors.green,
-        ),
-      );
-    }
-
-    // Transmission filter
-    if (selectedTransmission != null &&
-        selectedTransmission!.toLowerCase() != 'any') {
-      chips.add(
-        _buildFilterChip(
-          AppLocalizations.of(context)!.transmissionLabel,
-          _translateValueGlobal(context, selectedTransmission) ??
-              selectedTransmission!,
-          'transmission',
-          Icons.settings,
-          Colors.purple,
-        ),
-      );
-    }
-
-    // Fuel type filter
-    if (selectedFuelType != null && selectedFuelType!.toLowerCase() != 'any') {
-      chips.add(
-        _buildFilterChip(
-          AppLocalizations.of(context)!.detail_fuel,
-          _translateValueGlobal(context, selectedFuelType) ?? selectedFuelType!,
-          'fuelType',
-          Icons.local_gas_station,
-          Colors.orange,
-        ),
-      );
-    }
-
-    // Title/parts filter
-    if (selectedTitleStatus != null && selectedTitleStatus!.isNotEmpty) {
-      if (selectedTitleStatus == 'damaged' &&
-          selectedDamagedParts != null &&
-          selectedDamagedParts!.isNotEmpty) {
-        chips.add(
-          _buildFilterChip(
-            AppLocalizations.of(context)!.titleStatus,
-            AppLocalizations.of(context)!.titleStatusDamagedWithParts(
-              _localizeDigitsGlobal(context, selectedDamagedParts!),
-            ),
-            'titleStatus',
-            Icons.report,
-            Colors.redAccent,
+    return homeActiveFilterChipSpecs(context, _homeFilterPersistSnapshot())
+        .map(
+          (s) => buildHomeActiveFilterChip(
+            s,
+            onClear: () => _clearFilter(s.filterType),
           ),
-        );
-      } else {
-        chips.add(
-          _buildFilterChip(
-            AppLocalizations.of(context)!.titleStatus,
-            _translateValueGlobal(context, selectedTitleStatus) ??
-                selectedTitleStatus!.substring(0, 1).toUpperCase() +
-                    selectedTitleStatus!.substring(1),
-            'titleStatus',
-            Icons.verified,
-            Colors.green,
-          ),
-        );
-      }
-    }
-
-    // Body type filter
-    if (selectedBodyType != null && selectedBodyType!.toLowerCase() != 'any') {
-      chips.add(
-        _buildFilterChip(
-          AppLocalizations.of(context)!.bodyTypeLabel,
-          _translateValueGlobal(context, selectedBodyType) ?? selectedBodyType!,
-          'bodyType',
-          _getBodyTypeIcon(selectedBodyType!),
-          Color(0xFFFF6B00),
-        ),
-      );
-    }
-
-    // Color filter
-    if (selectedColor != null && selectedColor!.toLowerCase() != 'any') {
-      chips.add(
-        _buildFilterChip(
-          AppLocalizations.of(context)!.colorLabel,
-          _translateValueGlobal(context, selectedColor) ?? selectedColor!,
-          'color',
-          Icons.palette,
-          _getColorValue(selectedColor!),
-        ),
-      );
-    }
-
-    // Drive type filter
-    if (selectedDriveType != null &&
-        selectedDriveType!.toLowerCase() != 'any') {
-      chips.add(
-        _buildFilterChip(
-          AppLocalizations.of(context)!.driveType,
-          _translateValueGlobal(context, selectedDriveType) ??
-              selectedDriveType!,
-          'driveType',
-          Icons.directions_car,
-          Colors.cyan,
-        ),
-      );
-    }
-
-    if (selectedRegionSpecs != null &&
-        selectedRegionSpecs!.isNotEmpty &&
-        isValidCarRegionSpecCode(selectedRegionSpecs)) {
-      chips.add(
-        _buildFilterChip(
-          AppLocalizations.of(context)!.regionSpecsLabel,
-          carRegionSpecDisplayLabelLocalized(
-            context,
-            selectedRegionSpecs!,
-          ),
-          'regionSpecs',
-          Icons.public,
-          Colors.blueGrey,
-        ),
-      );
-    }
-
-    // Cylinder count filter
-    if (selectedCylinderCount != null &&
-        selectedCylinderCount!.toLowerCase() != 'any') {
-      chips.add(
-        _buildFilterChip(
-          AppLocalizations.of(context)!.detail_cylinders,
-          _localizeDigitsGlobal(context, selectedCylinderCount!),
-          'cylinderCount',
-          Icons.engineering,
-          Colors.red,
-        ),
-      );
-    }
-
-    // Seating filter
-    if (selectedSeating != null && selectedSeating!.toLowerCase() != 'any') {
-      chips.add(
-        _buildFilterChip(
-          AppLocalizations.of(context)!.seating,
-          _localizeDigitsGlobal(context, selectedSeating!),
-          'seating',
-          Icons.airline_seat_recline_normal,
-          Colors.indigo,
-        ),
-      );
-    }
-
-    // Engine Size filter
-    if (selectedEngineSize != null &&
-        selectedEngineSize!.toLowerCase() != 'any') {
-      chips.add(
-        _buildFilterChip(
-          AppLocalizations.of(context)!.engineSizeL,
-          _engineSizeChipLabel(context, selectedEngineSize!),
-          'engineSize',
-          Icons.engineering,
-          Colors.deepOrange,
-        ),
-      );
-    }
-
-    // City filter
-    if (selectedCity != null && selectedCity!.toLowerCase() != 'any') {
-      chips.add(
-        _buildFilterChip(
-          AppLocalizations.of(context)!.cityLabel,
-          _translateValueGlobal(context, selectedCity) ?? selectedCity!,
-          'city',
-          Icons.location_city,
-          Colors.teal,
-        ),
-      );
-    }
-
-    // Plate type filter
-    if (selectedPlateType != null &&
-        selectedPlateType!.isNotEmpty &&
-        selectedPlateType!.toLowerCase() != 'any') {
-      chips.add(
-        _buildFilterChip(
-          _trLegacyText(context, 'Plate type', ar: 'نوع اللوحة', ku: 'جۆری پڵەیت'),
-          _translatePlateTypeLegacy(context, selectedPlateType!),
-          'plateType',
-          Icons.confirmation_number_outlined,
-          const Color(0xFFFF6B00),
-        ),
-      );
-    }
-
-    // Plate city filter
-    if (selectedPlateCity != null &&
-        selectedPlateCity!.isNotEmpty &&
-        selectedPlateCity!.toLowerCase() != 'any') {
-      chips.add(
-        _buildFilterChip(
-          _trLegacyText(context, 'Plate city', ar: 'مدينة اللوحة', ku: 'شاری پڵەیت'),
-          _translateValueGlobal(context, selectedPlateCity) ?? selectedPlateCity!,
-          'plateCity',
-          Icons.location_on_outlined,
-          const Color(0xFFFF6B00),
-        ),
-      );
-    }
-
-    // Sort by filter
-    if (selectedSortBy != null &&
-        selectedSortBy!.toLowerCase() != 'any' &&
-        selectedSortBy!.toLowerCase() != 'default') {
-      chips.add(
-        _buildFilterChip(
-          AppLocalizations.of(context)!.sortBy,
-          _translateValueGlobal(context, selectedSortBy) ?? selectedSortBy!,
-          'sortBy',
-          Icons.sort,
-          Colors.grey,
-        ),
-      );
-    }
-
-    return chips;
-  }
-
-  // Helper method to build individual filter chips
-  Widget _buildFilterChip(
-    String label,
-    String value,
-    String filterType,
-    IconData icon,
-    Color color,
-  ) {
-    return GestureDetector(
-      onTap: () => _clearFilter(filterType),
-      child: Container(
-        padding: EdgeInsets.symmetric(horizontal: 8, vertical: 2),
-        decoration: BoxDecoration(
-          color: color.withOpacity(0.2),
-          borderRadius: BorderRadius.circular(10),
-          border: Border.all(color: color, width: 1),
-        ),
-        child: Row(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Icon(icon, color: color, size: 10),
-            SizedBox(width: 4),
-            Text(
-              '$label: $value',
-              style: GoogleFonts.orbitron(
-                fontSize: 9,
-                color: color,
-                fontWeight: FontWeight.bold,
-                height: 1.0,
-              ),
-              maxLines: 1,
-              overflow: TextOverflow.ellipsis,
-            ),
-            SizedBox(width: 4),
-            Icon(Icons.close, color: color, size: 9),
-          ],
-        ),
-      ),
-    );
+        )
+        .toList();
   }
 
   @override
