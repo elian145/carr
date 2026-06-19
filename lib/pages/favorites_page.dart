@@ -8,6 +8,8 @@ import '../services/api_service.dart';
 import '../services/auth_service.dart';
 import '../shared/errors/user_error_text.dart';
 import '../shared/prefs/listing_layout_prefs.dart';
+import '../shared/shell/main_bottom_nav.dart';
+import '../shared/shell/main_shell_navigation.dart';
 import '../theme_provider.dart';
 
 class FavoritesPage extends StatefulWidget {
@@ -241,6 +243,26 @@ class _FavoritesPageState extends State<FavoritesPage> {
                             ),
             ),
         ],
+      ),
+      extendBody: true,
+      bottomNavigationBar: buildFloatingBottomNav(
+        context,
+        currentIndex: 1,
+        onTap: (idx) {
+          switch (idx) {
+            case 0:
+              navigateMainShellTab(context, '/');
+              break;
+            case 1:
+              break;
+            case 2:
+              navigateMainShellTab(context, '/dealers');
+              break;
+            case 3:
+              navigateMainShellTab(context, '/profile');
+              break;
+          }
+        },
       ),
     );
   }

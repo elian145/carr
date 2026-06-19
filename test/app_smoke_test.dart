@@ -72,6 +72,11 @@ void main() {
     );
     await pushNamed('/my_listings');
     await pushNamed('/comparison');
+    await pushNamed('/legacy_comparison');
+    await pushNamed('/legacy_favorites');
+    await pushNamed('/legacy_profile');
+    await pushNamed('/legacy_settings');
+    await pushNamed('/legacy_login');
     await pushNamed('/recently-viewed');
     await pushNamed('/analytics');
     await pushNamed('/help');

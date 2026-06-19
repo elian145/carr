@@ -95,6 +95,8 @@ import '../pages/listing_image_gallery_page.dart';
 import '../shared/shell/home_feed_scroll_persistence.dart';
 import '../shared/shell/main_bottom_nav.dart';
 export '../shared/shell/main_bottom_nav.dart' show buildFloatingBottomNav;
+export '../shared/shell/main_shell_navigation.dart'
+    show navigateMainShellTab, navigateMainShellTabIndex;
 import '../shared/car/region_specs.dart';
 import '../shared/home/home_sort_api.dart';
 import '../shared/home/home_filter_query.dart';
@@ -104,7 +106,12 @@ import '../pages/home_page.dart' as modern_home;
 import '../pages/sell_page.dart' as modern_sell;
 import '../pages/sell_entry_pages.dart';
 import '../pages/car_detail_page.dart' as modern_detail;
+import '../pages/favorites_page.dart' as modern_favorites;
+import '../pages/profile_page.dart' as modern_profile;
+import '../pages/settings_page.dart' as modern_settings;
+import '../pages/comparison_page.dart' as modern_comparison;
 import '../pages/tiktok_scroll_page.dart';
+import '../shared/shell/main_shell_navigation.dart';
 import '../shared/sell/sell_draft_archive.dart';
 import '../shared/home/home_feed_toolbar.dart';
 import '../widgets/network_video_thumbnail.dart';
@@ -838,46 +845,7 @@ TextStyle _sellFlowManualFieldTextStyle(BuildContext context) =>
     : TextStyle(color: Colors.grey[900]!);
 
 void _switchMainTabNoAnimation(BuildContext context, String routeName) {
-  final currentRoute = ModalRoute.of(context)?.settings.name;
-  if (currentRoute == routeName) return;
-
-  Widget? page;
-  switch (routeName) {
-    case '/':
-      page = const modern_home.HomePage();
-      break;
-    case '/favorites':
-      page = AuthGuard(child: FavoritesPage());
-      break;
-    case '/sell':
-      page = AuthGuard(child: const SellEntryRouterPage());
-      break;
-    case '/dealers':
-      page = const DealersDirectoryPage();
-      break;
-    case '/profile':
-      page = AuthGuard(child: ProfilePage());
-      break;
-  }
-
-  if (page == null) {
-    Navigator.pushReplacementNamed(context, routeName);
-    return;
-  }
-
-  Navigator.of(context).pushReplacement(
-    PageRouteBuilder(
-      settings: RouteSettings(name: routeName),
-      pageBuilder: (_, __, ___) => page!,
-      transitionDuration: Duration.zero,
-      reverseTransitionDuration: Duration.zero,
-    ),
-  );
-}
-
-/// Same as [_switchMainTabNoAnimation] but callable from other libraries (e.g. shell pages).
-void navigateMainShellTab(BuildContext context, String routeName) {
-  _switchMainTabNoAnimation(context, routeName);
+  navigateMainShellTab(context, routeName);
 }
 
 // Fancy selector tile used in Sell page pickers
@@ -3407,7 +3375,9 @@ class AuthGuard extends StatelessWidget {
     // show their own friendly login/signup prompts and UI.
     if (auth.isAuthenticated ||
         child is FavoritesPage ||
-        child is ProfilePage) {
+        child is modern_favorites.FavoritesPage ||
+        child is ProfilePage ||
+        child is modern_profile.ProfilePage) {
       return child;
     }
     if (auth.isLoading || ApiService.isAuthenticated) {
@@ -3573,13 +3543,16 @@ class MyApp extends StatelessWidget {
                     child: const SellCarPage(startFreshListing: true),
                   );
                 },
-                '/settings': (context) => SettingsPage(),
-                '/favorites': (context) => AuthGuard(child: FavoritesPage()),
+                '/settings': (context) => const modern_settings.SettingsPage(),
+                '/favorites': (context) =>
+                    AuthGuard(child: const modern_favorites.FavoritesPage()),
                 '/dealers': (context) => const DealersDirectoryPage(),
-                '/chat': (context) => AuthGuard(child: ChatListPage()),
-                '/login': (context) => LoginPage(),
-                '/signup': (context) => SignupPage(),
-                '/profile': (context) => AuthGuard(child: ProfilePage()),
+                '/chat': (context) =>
+                    AuthGuard(child: const carzo_chat.ChatListPage()),
+                '/login': (context) => const auth_pages.LoginPage(),
+                '/signup': (context) => const auth_pages.RegisterPage(),
+                '/profile': (context) =>
+                    AuthGuard(child: const modern_profile.ProfilePage()),
                 '/edit-profile': (context) =>
                     AuthGuard(child: EditProfilePage()),
                 '/car_detail': (context) {
@@ -3674,7 +3647,12 @@ class MyApp extends StatelessWidget {
                 },
                 '/my_listings': (context) =>
                     AuthGuard(child: modern_listings.MyListingsPage()),
-                '/comparison': (context) => CarComparisonPage(),
+                '/comparison': (context) => const modern_comparison.ComparisonPage(),
+                '/legacy_comparison': (context) => CarComparisonPage(),
+                '/legacy_favorites': (context) => AuthGuard(child: FavoritesPage()),
+                '/legacy_profile': (context) => AuthGuard(child: ProfilePage()),
+                '/legacy_settings': (context) => SettingsPage(),
+                '/legacy_login': (context) => LoginPage(),
                 '/recently-viewed': (context) =>
                     AuthGuard(child: const RecentlyViewedPage()),
                 '/analytics': (context) => AnalyticsPage(),

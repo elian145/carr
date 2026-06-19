@@ -4,7 +4,8 @@ import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 
 import '../l10n/app_localizations.dart';
-import '../legacy/main_legacy.dart' show buildFloatingBottomNav, navigateMainShellTab;
+import '../shared/shell/main_bottom_nav.dart';
+import '../shared/shell/main_shell_navigation.dart';
 import '../services/api_service.dart';
 import '../shared/errors/user_error_text.dart';
 import '../shared/media/media_url.dart';
