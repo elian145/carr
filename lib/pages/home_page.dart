@@ -437,7 +437,12 @@ Widget _buildGlobalCarCardInnerText(
   );
 }
 
-Widget _buildGlobalCardImageCarousel(BuildContext context, Map<String, dynamic> car) {
+Widget _buildGlobalCardImageCarousel(
+  BuildContext context,
+  Map<String, dynamic> car, {
+  int carouselResetSeed = 0,
+  bool enableDetailTap = true,
+}) {
   final slots = ListingCardMedia.collectFromCar(
     car,
     resolveNetworkUrl: buildMediaUrl,
@@ -457,6 +462,9 @@ Widget _buildGlobalCardImageCarousel(BuildContext context, Map<String, dynamic> 
   bool dotWindowForward = true;
 
   return StatefulBuilder(
+    key: ValueKey(
+      'global_card_carousel_${car['id'] ?? car['draftId'] ?? ''}_$carouselResetSeed',
+    ),
     builder: (context, setState) {
       int computeDotStart(int index) {
         final int visible = slots.length < kMaxVisibleDots ? slots.length : kMaxVisibleDots;
@@ -465,39 +473,46 @@ Widget _buildGlobalCardImageCarousel(BuildContext context, Map<String, dynamic> 
         return (index - (visible - 1)).clamp(0, maxStart);
       }
 
+      final pageView = PageView.builder(
+        onPageChanged: (i) {
+          setState(() {
+            currentIndex = i;
+            final nextStart = computeDotStart(i);
+            if (nextStart != dotWindowStart) {
+              dotWindowForward = nextStart > dotWindowStart;
+              dotWindowStart = nextStart;
+            }
+          });
+        },
+        itemCount: slots.length,
+        itemBuilder: (context, i) {
+          return ListingCardMedia.buildCarouselImage(
+            slots[i],
+            networkBuilder: (url, {BoxFit fit = BoxFit.cover}) =>
+                _listingNetworkImage(url),
+            fit: BoxFit.cover,
+          );
+        },
+      );
+
+      final carId = listingPrimaryId(car);
+      final Widget pager = enableDetailTap && carId.isNotEmpty
+          ? GestureDetector(
+              onTap: () {
+                Navigator.pushNamed(
+                  context,
+                  '/car_detail',
+                  arguments: {'carId': carId},
+                );
+              },
+              child: pageView,
+            )
+          : pageView;
+
       return Stack(
         fit: StackFit.expand,
         children: [
-          GestureDetector(
-            onTap: () {
-              Navigator.pushNamed(
-                context,
-                '/car_detail',
-                arguments: {'carId': listingPrimaryId(car)},
-              );
-            },
-            child: PageView.builder(
-              onPageChanged: (i) {
-                setState(() {
-                  currentIndex = i;
-                  final nextStart = computeDotStart(i);
-                  if (nextStart != dotWindowStart) {
-                    dotWindowForward = nextStart > dotWindowStart;
-                    dotWindowStart = nextStart;
-                  }
-                });
-              },
-              itemCount: slots.length,
-              itemBuilder: (context, i) {
-                return ListingCardMedia.buildCarouselImage(
-                  slots[i],
-                  networkBuilder: (url, {BoxFit fit = BoxFit.cover}) =>
-                      _listingNetworkImage(url),
-                  fit: BoxFit.cover,
-                );
-              },
-            ),
-          ),
+          pager,
           if (slots.length > 1)
             Positioned(
               bottom: 8,
@@ -558,10 +573,67 @@ Widget _buildGlobalCardImageCarousel(BuildContext context, Map<String, dynamic> 
   );
 }
 
+/// Normalizes API listing / favorite payloads into the shape expected by [buildGlobalCarCard].
+Map<String, dynamic> mapListingToGlobalCarCardData(
+  BuildContext context,
+  Map<String, dynamic> listing,
+) {
+  final String brand = (listing['brand'] ?? '').toString().trim();
+  final String model = (listing['model'] ?? '').toString().trim();
+  final String yearStr = (listing['year']?.toString() ?? '').trim();
+  final String apiTitle = (listing['title'] ?? '').toString().trim();
+  String displayTitle;
+  if (apiTitle.isNotEmpty) {
+    displayTitle = apiTitle;
+  } else {
+    final String base = [
+      if (brand.isNotEmpty) prettyTitleCase(brand),
+      if (model.isNotEmpty) prettyTitleCase(model),
+    ].join(' ');
+    displayTitle = yearStr.isNotEmpty ? ('$base ($yearStr)') : base;
+  }
+  displayTitle = prettyTitleCase(displayTitle);
+
+  final num? mileageNum = () {
+    final v = listing['mileage'];
+    if (v == null) return null;
+    if (v is num) return v;
+    final s = v.toString().replaceAll(RegExp(r'[^0-9.-]'), '');
+    return num.tryParse(s);
+  }();
+  final String mileageFormatted = mileageNum == null
+      ? (listing['mileage']?.toString() ?? '')
+      : NumberFormat.decimalPattern().format(mileageNum);
+
+  final String carId =
+      (listing['public_id'] ?? listing['id'] ?? listing['car_id'] ?? '')
+          .toString();
+
+  return {
+    'id': carId,
+    'brand': brand,
+    'model': model,
+    'trim': listing['trim'],
+    'title': displayTitle,
+    'price': listing['price'],
+    'year': listing['year'],
+    'mileage': mileageFormatted,
+    'city': listing['city'] ?? listing['location'] ?? listing['city_name'],
+    'image_url': listing['image_url'],
+    'images': listing['images'],
+    'videos': listing['videos'],
+    'is_quick_sell': listing['is_quick_sell'] ?? false,
+    'status': listing['status'],
+    'created_at': listing['created_at'],
+  };
+}
+
 Widget buildGlobalCarCard(
   BuildContext context,
   Map<String, dynamic> car, {
   bool listLayout = false,
+  int carouselResetSeed = 0,
+  VoidCallback? onCardTap,
 }) {
   final brand = (car['brand'] ?? '').toString();
   final brandId = _normalizeBrandId(brand);
@@ -607,6 +679,19 @@ Widget buildGlobalCarCard(
       ? const EdgeInsets.fromLTRB(8, 8, 8, 6)
       : const EdgeInsets.fromLTRB(12, 8, 12, 10);
 
+  void onDefaultCardTap() {
+    final String carId = listingPrimaryId(car);
+    if (carId.isEmpty) return;
+    Navigator.pushNamed(
+      context,
+      '/car_detail',
+      arguments: {'carId': carId},
+    );
+  }
+
+  final VoidCallback cardTap = onCardTap ?? onDefaultCardTap;
+  final bool enableCarouselDetailTap = onCardTap == null;
+
   return Container(
     decoration: BoxDecoration(
       color: cardFill,
@@ -624,15 +709,7 @@ Widget buildGlobalCarCard(
       children: [
         InkWell(
           borderRadius: BorderRadius.circular(20),
-          onTap: () {
-            final String carId = listingPrimaryId(car);
-            if (carId.isEmpty) return;
-            Navigator.pushNamed(
-              context,
-              '/car_detail',
-              arguments: {'carId': carId},
-            );
-          },
+          onTap: cardTap,
           child: listLayout
               ? Column(
                   crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -687,7 +764,12 @@ Widget buildGlobalCarCard(
                               child: Stack(
                                 fit: StackFit.expand,
                                 children: [
-                                  _buildGlobalCardImageCarousel(context, car),
+                                  _buildGlobalCardImageCarousel(
+                                    context,
+                                    car,
+                                    carouselResetSeed: carouselResetSeed,
+                                    enableDetailTap: enableCarouselDetailTap,
+                                  ),
                                   if (showVideoCountBadge)
                                     Positioned(
                                       top: 8,
@@ -771,7 +853,12 @@ Widget buildGlobalCarCard(
                           top: quickSell ? Radius.zero : const Radius.circular(20),
                           bottom: Radius.zero,
                         ),
-                        child: _buildGlobalCardImageCarousel(context, car),
+                        child: _buildGlobalCardImageCarousel(
+                          context,
+                          car,
+                          carouselResetSeed: carouselResetSeed,
+                          enableDetailTap: enableCarouselDetailTap,
+                        ),
                       ),
                     ),
                     Expanded(

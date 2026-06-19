@@ -47,6 +47,8 @@ void main() {
     await pushNamed('/sell');
     await pushNamed('/sell', args: {'startFresh': true});
     await pushNamed('/settings');
+    await pushNamed('/change-password');
+    await pushNamed('/notifications');
     await pushNamed('/favorites');
     await pushNamed('/dealers');
     await pushNamed('/chat');

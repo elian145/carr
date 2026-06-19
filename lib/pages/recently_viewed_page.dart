@@ -1,8 +1,10 @@
 import 'package:flutter/material.dart';
 
 import '../l10n/app_localizations.dart';
-import '../legacy/main_legacy.dart'
-    show buildGlobalCarCard, buildFloatingBottomNav, mapListingToGlobalCarCardData, navigateMainShellTab;
+import '../pages/home_page.dart'
+    show buildGlobalCarCard, mapListingToGlobalCarCardData;
+import '../shared/shell/main_bottom_nav.dart';
+import '../shared/shell/main_shell_navigation.dart';
 import '../services/api_service.dart';
 import '../services/recently_viewed_service.dart';
 import '../shared/auth/token_store.dart';

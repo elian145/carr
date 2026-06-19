@@ -97,6 +97,8 @@ import '../shared/shell/main_bottom_nav.dart';
 export '../shared/shell/main_bottom_nav.dart' show buildFloatingBottomNav;
 export '../shared/shell/main_shell_navigation.dart'
     show navigateMainShellTab, navigateMainShellTabIndex;
+export '../pages/home_page.dart'
+    show buildGlobalCarCard, mapListingToGlobalCarCardData;
 import '../shared/car/region_specs.dart';
 import '../shared/home/home_sort_api.dart';
 import '../shared/home/home_filter_query.dart';
@@ -110,6 +112,7 @@ import '../pages/favorites_page.dart' as modern_favorites;
 import '../pages/profile_page.dart' as modern_profile;
 import '../pages/settings_page.dart' as modern_settings;
 import '../pages/comparison_page.dart' as modern_comparison;
+import '../pages/change_password_page.dart';
 import '../pages/tiktok_scroll_page.dart';
 import '../shared/shell/main_shell_navigation.dart';
 import '../shared/sell/sell_draft_archive.dart';
@@ -3554,7 +3557,7 @@ class MyApp extends StatelessWidget {
                 '/profile': (context) =>
                     AuthGuard(child: const modern_profile.ProfilePage()),
                 '/edit-profile': (context) =>
-                    AuthGuard(child: EditProfilePage()),
+                    AuthGuard(child: const EditProfilePage()),
                 '/car_detail': (context) {
                   final args = routeArgs(context);
                   final carId = (args?['carId'] ?? '').toString().trim();
@@ -3655,7 +3658,11 @@ class MyApp extends StatelessWidget {
                 '/legacy_login': (context) => LoginPage(),
                 '/recently-viewed': (context) =>
                     AuthGuard(child: const RecentlyViewedPage()),
-                '/analytics': (context) => AnalyticsPage(),
+                '/analytics': (context) => const AnalyticsPage(),
+                '/change-password': (context) =>
+                    AuthGuard(child: const ChangePasswordPage()),
+                '/notifications': (context) =>
+                    AuthGuard(child: const carzo_chat.NotificationsPage()),
                 '/reset-password': (context) => ResetPasswordPage(),
                 '/verify-email': (context) {
                   final args = ModalRoute.of(context)?.settings.arguments;

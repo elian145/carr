@@ -18,7 +18,7 @@ import '../shared/prefs/sell_draft_media_persistence.dart';
 import '../shared/prefs/legacy_sell_draft_list.dart';
 import '../shared/text/pretty_title_case.dart';
 import '../shared/prefs/listing_layout_prefs.dart';
-import '../legacy/main_legacy.dart'
+import '../pages/home_page.dart'
     show buildGlobalCarCard, mapListingToGlobalCarCardData;
 
 class MyListingsPage extends StatefulWidget {
