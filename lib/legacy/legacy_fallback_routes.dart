@@ -6,13 +6,13 @@ import '../pages/car_detail_page.dart' as car_detail;
 import '../pages/comparison_page.dart' as comparison;
 import '../pages/favorites_page.dart' as favorites;
 import '../pages/home_filters_page.dart';
+import '../pages/home_page.dart' as home;
 import '../pages/profile_page.dart' as profile;
 import '../pages/saved_searches_page.dart' as saved_searches;
 import '../pages/sell_entry_pages.dart';
 import '../pages/sell_page.dart' as sell;
 import '../pages/settings_page.dart' as settings;
 import '../shared/auth/auth_guard.dart';
-import 'main_legacy.dart' show LegacyHomePage;
 
 Map<String, dynamic>? _sellDraftSnapshot(Map<String, dynamic>? args) {
   if (args == null) return null;
@@ -23,11 +23,10 @@ Map<String, dynamic>? _sellDraftSnapshot(Map<String, dynamic>? args) {
 
 /// Legacy fallback routes (`/legacy_*`) for rollback and smoke tests.
 ///
-/// Almost all aliases point at the same modern screens as production; only
-/// `/legacy_home` still mounts [LegacyHomePage].
+/// Almost all `/legacy_*` URLs are aliases to the same modern screens as production.
 Map<String, WidgetBuilder> buildLegacyFallbackRoutes() {
   return {
-    '/legacy_home': (context) => LegacyHomePage(),
+    '/legacy_home': (context) => const home.HomePage(),
     '/legacy_home_filters': (context) => const HomeFiltersPage(),
     '/legacy_sell': (context) {
       final args = readRouteArgs(context);
