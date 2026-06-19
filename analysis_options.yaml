@@ -8,8 +8,7 @@
 include: package:flutter_lints/flutter.yaml
 
 # NOTE:
-# We exclude legacy code while refactoring. The goal is to keep `flutter analyze`
-# clean for the actively-maintained code paths, then migrate legacy code in phases.
+# Scratch/backup files are excluded from analyzer runs.
 
 analyzer:
   # CI/Codemagic: don't fail builds on non-critical warnings while the codebase
@@ -27,7 +26,6 @@ analyzer:
     equal_keys_in_map: ignore
     deprecated_member_use: ignore
   exclude:
-    - lib/legacy/**
     - lib/main_backup.dart
     - tools/scratch/original_main.dart.txt
     - tools/scratch/temp_main.dart.txt

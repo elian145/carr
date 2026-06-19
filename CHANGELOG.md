@@ -31,15 +31,11 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 - `assets/icon/app_icon.png` and `flutter_launcher_icons` config in `pubspec.yaml`.
 - This changelog.
 
-### Removed
-
-- `lib/legacy/main_legacy.dart` monolith and part files; production UI is `lib/pages/` + `lib/app/`.
-- `lib/legacy/legacy_fallback_routes.dart` — `/legacy_*` aliases now live in `buildProductionRoutes()`.
-- Accidental repo-root scratch files (`tash list`, `*_files.txt`, local test images).
-- Root-level `migrate_*.py`, `test_*.py`, and dev setup scripts (relocated under `scripts/`).
-
 ### Changed
 
+- Renamed sell draft prefs modules to `sell_draft_prefs.dart` / `sell_draft_list.dart` (`SellDraftPrefs`, `SellDraftList`); SharedPreferences key strings unchanged.
+- Removed `lib/legacy/` folder and obsolete legacy split tooling under `tools/`.
+- Dropped `lib/legacy/**` from `analysis_options.yaml` excludes.
 - `.gitignore` patterns for common accidental CLI artifacts and scratch listings.
 - Backend CI runs `scripts/smoke_tests/test_backend_factory_smoke.py`.
 - README and `tools/windows/start_app.ps1` point to `scripts/dev/start_servers.ps1`.

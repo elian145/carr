@@ -3,11 +3,11 @@ import 'dart:convert';
 import 'package:image_picker/image_picker.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
-import 'legacy_sell_draft_prefs.dart';
+import 'sell_draft_prefs.dart';
 
-/// Loads and manages multiple legacy sell drafts (active + archive).
-class LegacySellDraftList {
-  LegacySellDraftList._();
+/// Loads and manages sell drafts (active snapshot + archive).
+class SellDraftList {
+  SellDraftList._();
 
   static String _newDraftId() => DateTime.now().microsecondsSinceEpoch.toString();
 
@@ -104,7 +104,7 @@ class LegacySellDraftList {
     final drafts = <Map<String, dynamic>>[];
     final seenIds = <String>{};
 
-    final activeRaw = sp.getString(LegacySellDraftPrefs.snapshotKey);
+    final activeRaw = sp.getString(SellDraftPrefs.snapshotKey);
     if (activeRaw != null && activeRaw.trim().isNotEmpty) {
       try {
         final decoded = json.decode(activeRaw);
@@ -113,7 +113,7 @@ class LegacySellDraftList {
             Map<String, dynamic>.from(decoded.cast<String, dynamic>()),
           );
           if (isVisible(active)) {
-            final prefsStep = sp.getInt(LegacySellDraftPrefs.currentStepKey);
+            final prefsStep = sp.getInt(SellDraftPrefs.currentStepKey);
             active['currentStep'] = _mergeStep(
               jsonStep: readStep(active['currentStep']),
               prefsStep: prefsStep,
@@ -125,7 +125,7 @@ class LegacySellDraftList {
       } catch (_) {}
     }
 
-    for (final draft in _decodeArchive(sp.getString(LegacySellDraftPrefs.archiveKey))) {
+    for (final draft in _decodeArchive(sp.getString(SellDraftPrefs.archiveKey))) {
       if (!isVisible(draft)) continue;
       final id = draft['draftId'].toString();
       if (seenIds.contains(id)) continue;
@@ -141,12 +141,12 @@ class LegacySellDraftList {
     final isActive = draft['isActive'] == true;
     final sp = await SharedPreferences.getInstance();
     if (isActive) {
-      await LegacySellDraftPrefs.clearActiveStorage();
+      await SellDraftPrefs.clearActiveStorage();
       return;
     }
-    final archive = _decodeArchive(sp.getString(LegacySellDraftPrefs.archiveKey));
+    final archive = _decodeArchive(sp.getString(SellDraftPrefs.archiveKey));
     archive.removeWhere((item) => item['draftId'] == draftId);
-    await sp.setString(LegacySellDraftPrefs.archiveKey, _encodeArchive(archive));
+    await sp.setString(SellDraftPrefs.archiveKey, _encodeArchive(archive));
   }
 
   /// Promotes an archived draft to active (when opening from My Listings).
@@ -157,7 +157,7 @@ class LegacySellDraftList {
     final sp = await SharedPreferences.getInstance();
 
     if (draft['isActive'] != true) {
-      final activeRaw = sp.getString(LegacySellDraftPrefs.snapshotKey);
+      final activeRaw = sp.getString(SellDraftPrefs.snapshotKey);
       if (activeRaw != null && activeRaw.trim().isNotEmpty) {
         try {
           final decoded = json.decode(activeRaw);
@@ -167,13 +167,13 @@ class LegacySellDraftList {
             );
             if (isVisible(active)) {
               final archive =
-                  _decodeArchive(sp.getString(LegacySellDraftPrefs.archiveKey));
+                  _decodeArchive(sp.getString(SellDraftPrefs.archiveKey));
               archive.removeWhere(
                 (item) => item['draftId'] == active['draftId'],
               );
               archive.insert(0, active);
               await sp.setString(
-                LegacySellDraftPrefs.archiveKey,
+                SellDraftPrefs.archiveKey,
                 _encodeArchive(archive),
               );
             }
@@ -182,17 +182,17 @@ class LegacySellDraftList {
       }
 
       final archive =
-          _decodeArchive(sp.getString(LegacySellDraftPrefs.archiveKey));
+          _decodeArchive(sp.getString(SellDraftPrefs.archiveKey));
       archive.removeWhere((item) => item['draftId'] == normalized['draftId']);
-      await sp.setString(LegacySellDraftPrefs.archiveKey, _encodeArchive(archive));
+      await sp.setString(SellDraftPrefs.archiveKey, _encodeArchive(archive));
       await sp.setString(
-        LegacySellDraftPrefs.snapshotKey,
+        SellDraftPrefs.snapshotKey,
         json.encode(normalized),
       );
       normalized['isActive'] = true;
     }
 
-    final prefsStep = sp.getInt(LegacySellDraftPrefs.currentStepKey);
+    final prefsStep = sp.getInt(SellDraftPrefs.currentStepKey);
     normalized['currentStep'] = _mergeStep(
       jsonStep: readStep(normalized['currentStep']),
       prefsStep: prefsStep,

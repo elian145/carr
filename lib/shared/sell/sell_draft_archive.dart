@@ -4,9 +4,9 @@ import 'dart:math' as math;
 import 'package:image_picker/image_picker.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
-import '../prefs/legacy_sell_draft_prefs.dart';
+import '../prefs/sell_draft_prefs.dart';
 
-/// Legacy sell draft archive helpers (`legacy_sell_draft_*` prefs keys).
+/// Sell draft archive helpers (SharedPreferences keys in [SellDraftPrefs]).
 class SellDraftArchive {
   SellDraftArchive._();
 
@@ -109,7 +109,7 @@ class SellDraftArchive {
   static Future<bool> hasAnyVisibleDraft() async {
     try {
       final sp = await SharedPreferences.getInstance();
-      final activeRaw = sp.getString(LegacySellDraftPrefs.snapshotKey);
+      final activeRaw = sp.getString(SellDraftPrefs.snapshotKey);
       if (activeRaw != null && activeRaw.trim().isNotEmpty) {
         final decoded = json.decode(activeRaw);
         if (decoded is Map) {
@@ -119,7 +119,7 @@ class SellDraftArchive {
           if (isVisibleDraft(active)) return true;
         }
       }
-      final archive = decodeArchive(sp.getString(LegacySellDraftPrefs.archiveKey));
+      final archive = decodeArchive(sp.getString(SellDraftPrefs.archiveKey));
       return archive.any(isVisibleDraft);
     } catch (_) {
       return false;

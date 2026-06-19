@@ -5,7 +5,7 @@ import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 import '../l10n/app_localizations.dart';
-import '../shared/prefs/legacy_sell_draft_prefs.dart';
+import '../shared/prefs/sell_draft_prefs.dart';
 import '../shared/sell/sell_draft_archive.dart';
 
 String _sellEntryTr(
@@ -102,9 +102,9 @@ class _SellDraftGatePageState extends State<SellDraftGatePage> {
   Future<void> _loadDrafts() async {
     try {
       final sp = await SharedPreferences.getInstance();
-      final activeRaw = sp.getString(LegacySellDraftPrefs.snapshotKey);
+      final activeRaw = sp.getString(SellDraftPrefs.snapshotKey);
       final archive = SellDraftArchive.decodeArchive(
-        sp.getString(LegacySellDraftPrefs.archiveKey),
+        sp.getString(SellDraftPrefs.archiveKey),
       );
 
       final drafts = <Map<String, dynamic>>[];
@@ -156,7 +156,7 @@ class _SellDraftGatePageState extends State<SellDraftGatePage> {
   Future<void> _archiveActiveDraftIfAny({bool clearActive = true}) async {
     try {
       final sp = await SharedPreferences.getInstance();
-      final activeRaw = sp.getString(LegacySellDraftPrefs.snapshotKey);
+      final activeRaw = sp.getString(SellDraftPrefs.snapshotKey);
       if (activeRaw != null && activeRaw.trim().isNotEmpty) {
         final decoded = json.decode(activeRaw);
         if (decoded is Map) {
@@ -165,19 +165,19 @@ class _SellDraftGatePageState extends State<SellDraftGatePage> {
           );
           if (SellDraftArchive.isVisibleDraft(active)) {
             final archive = SellDraftArchive.decodeArchive(
-              sp.getString(LegacySellDraftPrefs.archiveKey),
+              sp.getString(SellDraftPrefs.archiveKey),
             );
             archive.removeWhere((draft) => draft['draftId'] == active['draftId']);
             archive.insert(0, active);
             await sp.setString(
-              LegacySellDraftPrefs.archiveKey,
+              SellDraftPrefs.archiveKey,
               SellDraftArchive.encodeArchive(archive),
             );
           }
         }
       }
       if (clearActive) {
-        await LegacySellDraftPrefs.clearActiveStorage();
+        await SellDraftPrefs.clearActiveStorage();
       }
     } catch (_) {}
   }
@@ -188,14 +188,14 @@ class _SellDraftGatePageState extends State<SellDraftGatePage> {
     try {
       final sp = await SharedPreferences.getInstance();
       if (isActive) {
-        await LegacySellDraftPrefs.clearActiveStorage();
+        await SellDraftPrefs.clearActiveStorage();
       } else {
         final archive = SellDraftArchive.decodeArchive(
-          sp.getString(LegacySellDraftPrefs.archiveKey),
+          sp.getString(SellDraftPrefs.archiveKey),
         );
         archive.removeWhere((item) => item['draftId'] == draftId);
         await sp.setString(
-          LegacySellDraftPrefs.archiveKey,
+          SellDraftPrefs.archiveKey,
           SellDraftArchive.encodeArchive(archive),
         );
       }
@@ -212,9 +212,9 @@ class _SellDraftGatePageState extends State<SellDraftGatePage> {
   }
 
   Future<void> _startFresh() async {
-    LegacySellDraftPrefs.suppressPersist = true;
+    SellDraftPrefs.suppressPersist = true;
     await _archiveActiveDraftIfAny(clearActive: true);
-    await LegacySellDraftPrefs.clearActiveStepStorage();
+    await SellDraftPrefs.clearActiveStepStorage();
     if (!mounted) return;
     Navigator.pushReplacementNamed(
       context,
@@ -231,15 +231,15 @@ class _SellDraftGatePageState extends State<SellDraftGatePage> {
       try {
         final sp = await SharedPreferences.getInstance();
         final archive = SellDraftArchive.decodeArchive(
-          sp.getString(LegacySellDraftPrefs.archiveKey),
+          sp.getString(SellDraftPrefs.archiveKey),
         );
         archive.removeWhere((item) => item['draftId'] == normalized['draftId']);
         await sp.setString(
-          LegacySellDraftPrefs.archiveKey,
+          SellDraftPrefs.archiveKey,
           SellDraftArchive.encodeArchive(archive),
         );
         await sp.setString(
-          LegacySellDraftPrefs.snapshotKey,
+          SellDraftPrefs.snapshotKey,
           json.encode(normalized),
         );
       } catch (_) {}
@@ -247,7 +247,7 @@ class _SellDraftGatePageState extends State<SellDraftGatePage> {
     if (!mounted) return;
     try {
       final sp = await SharedPreferences.getInstance();
-      final prefsStep = sp.getInt(LegacySellDraftPrefs.currentStepKey);
+      final prefsStep = sp.getInt(SellDraftPrefs.currentStepKey);
       final fromNorm = SellDraftArchive.readStep(normalized['currentStep']);
       normalized['currentStep'] = SellDraftArchive.mergeStep(
         jsonStep: fromNorm,

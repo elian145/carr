@@ -1,7 +1,10 @@
 import 'package:shared_preferences/shared_preferences.dart';
 
-/// Legacy sell flow draft keys in [SharedPreferences].
-class LegacySellDraftPrefs {
+/// Sell flow draft keys in [SharedPreferences].
+///
+/// Storage key strings retain the `legacy_sell_draft_*` prefix for upgrades from
+/// older app builds.
+class SellDraftPrefs {
   static const String currentStepKey = 'legacy_sell_draft_current_step_v1';
   static const String snapshotKey = 'legacy_sell_draft_snapshot_v1';
   static const String archiveKey = 'legacy_sell_draft_archive_v1';

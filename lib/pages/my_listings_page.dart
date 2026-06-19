@@ -15,7 +15,7 @@ import '../shared/listings/listing_events.dart';
 import '../shared/listings/listing_identity.dart';
 import '../shared/prefs/sell_listing_draft_prefs.dart';
 import '../shared/prefs/sell_draft_media_persistence.dart';
-import '../shared/prefs/legacy_sell_draft_list.dart';
+import '../shared/prefs/sell_draft_list.dart';
 import '../shared/text/pretty_title_case.dart';
 import '../shared/prefs/listing_layout_prefs.dart';
 import '../shared/listings/global_listing_card.dart';
@@ -168,7 +168,7 @@ class _MyListingsPageState extends State<MyListingsPage> {
           'isModern': true,
         });
       }
-      drafts.addAll(await LegacySellDraftList.loadVisible());
+      drafts.addAll(await SellDraftList.loadVisible());
       if (!mounted) return;
       setState(() {
         _drafts = drafts;
@@ -188,7 +188,7 @@ class _MyListingsPageState extends State<MyListingsPage> {
     if (draft['isModern'] == true) {
       await SellListingDraftPrefs.clear(_buildDraftOwnerKey());
     } else {
-      await LegacySellDraftList.discard(draft);
+      await SellDraftList.discard(draft);
     }
     if (!mounted) return;
     setState(() {
@@ -214,7 +214,7 @@ class _MyListingsPageState extends State<MyListingsPage> {
         },
       );
     } else {
-      final prepared = await LegacySellDraftList.prepareForResume(draft);
+      final prepared = await SellDraftList.prepareForResume(draft);
       if (!mounted) return;
       await Navigator.pushNamed(
         context,
@@ -273,7 +273,7 @@ class _MyListingsPageState extends State<MyListingsPage> {
             (snapshot['carData'] as Map).cast<String, dynamic>(),
           )
         : <String, dynamic>{};
-    final currentStep = LegacySellDraftList.readStep(snapshot['currentStep']);
+    final currentStep = SellDraftList.readStep(snapshot['currentStep']);
     const labels = [
       'Step 1: Basic info',
       'Step 2: Details',
