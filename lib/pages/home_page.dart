@@ -10,7 +10,8 @@ import '../theme_provider.dart';
 import '../services/api_service.dart';
 import '../services/config.dart';
 import '../shared/home/home_listings_fetch.dart';
-import '../shared/home/home_filter_query.dart';
+import '../shared/home/home_filter_persistence.dart';
+import '../shared/home/home_active_filter_chips.dart';
 import '../shared/prefs/listing_layout_prefs.dart';
 import '../shared/shell/home_feed_scroll_persistence.dart';
 import '../shared/shell/main_bottom_nav.dart';
@@ -827,6 +828,7 @@ class _HomePageState extends State<HomePage>
   int _page = 1;
   String? _error;
   int _activeFilterCount = 0;
+  List<HomeActiveFilterChipSpec> _filterChips = const [];
 
   static const int _perPage = 20;
 
@@ -866,13 +868,25 @@ class _HomePageState extends State<HomePage>
       });
     }
     WidgetsBinding.instance.addPostFrameCallback((_) {
-      _refreshActiveFilterCount();
+      _refreshFilterState();
     });
   }
 
-  Future<void> _refreshActiveFilterCount() async {
-    final n = await HomeFilterQuery.activeFilterCount(context: context);
-    if (mounted) setState(() => _activeFilterCount = n);
+  Future<void> _refreshFilterState() async {
+    final map = await HomeFilterPersistence.loadMap();
+    if (!mounted) return;
+    final specs = homeActiveFilterChipSpecs(context, map);
+    setState(() {
+      _filterChips = specs;
+      _activeFilterCount = specs.length;
+    });
+  }
+
+  Future<void> _clearHomeFilter(String filterType) async {
+    await HomeFilterPersistence.clearFilter(filterType);
+    if (!mounted) return;
+    await _refreshFilterState();
+    await _fetch(refresh: true);
   }
 
   @override
@@ -1021,7 +1035,7 @@ class _HomePageState extends State<HomePage>
   Future<void> _openFilters() async {
     final changed = await Navigator.of(context).pushNamed('/home_filters');
     if (!mounted) return;
-    await _refreshActiveFilterCount();
+    await _refreshFilterState();
     if (changed == true) {
       await _fetch(refresh: true);
     }
@@ -1090,80 +1104,114 @@ class _HomePageState extends State<HomePage>
               ),
             ),
             RefreshIndicator(
-              onRefresh: () => _fetch(refresh: true),
-              child: _loading
-                  ? const Center(child: CircularProgressIndicator())
-                  : (_cars.isEmpty && _error != null)
-                      ? ListView(
-                          children: [
-                            const SizedBox(height: 40),
-                            Center(
-                              child: Text(
-                                _error!,
-                                textAlign: TextAlign.center,
-                              ),
-                            ),
-                            const SizedBox(height: 12),
-                            Center(
-                              child: OutlinedButton(
-                                onPressed: () => _fetch(refresh: true),
-                                child: Text(loc?.retryAction ?? 'Retry'),
-                              ),
-                            ),
-                          ],
-                        )
-                      : (_cars.isEmpty)
-                          ? ListView(
-                              children: [
-                                const SizedBox(height: 40),
-                                Center(
-                                  child: Text(
-                                    loc?.noCarsFound ?? 'No cars found',
-                                    textAlign: TextAlign.center,
-                                  ),
-                                ),
-                              ],
-                            )
-                          : GridView.builder(
-                              controller: _controller,
-                              key: const PageStorageKey<String>('home_grid'),
-                              padding: const EdgeInsets.fromLTRB(8, 8, 8, 88),
-                              gridDelegate:
-                                  SliverGridDelegateWithFixedCrossAxisCount(
-                                crossAxisCount:
-                                    listingColumns == 1 ? 1 : 2,
-                                childAspectRatio:
-                                    ListingLayoutPrefs.gridChildAspectRatio(
-                                  listingColumns == 1 ? 1 : 2,
-                                ),
-                                crossAxisSpacing: listingColumns == 1 ? 4 : 8,
-                                mainAxisSpacing: listingColumns == 1 ? 4 : 8,
-                              ),
-                              itemCount: _cars.length + (_hasNext ? 1 : 0),
-                              itemBuilder: (context, index) {
-                                if (index >= _cars.length) {
-                                  return const Center(
-                                    child: SizedBox(
-                                      width: 20,
-                                      height: 20,
-                                      child: CircularProgressIndicator(
-                                        strokeWidth: 2,
-                                      ),
-                                    ),
-                                  );
-                                }
-                                final car = _cars[index];
-                                return buildGlobalCarCard(
-                                  context,
-                                  car,
-                                  listLayout: listingColumns == 1,
-                                );
-                              },
-                            ),
+              onRefresh: () async {
+                await _fetch(refresh: true);
+                await _refreshFilterState();
+              },
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.stretch,
+                children: [
+                  buildHomeActiveFilterChipWrap(
+                    context,
+                    specs: _filterChips,
+                    onClearFilterType: _clearHomeFilter,
+                  ),
+                  Expanded(
+                    child: _buildHomeScrollContent(
+                      context,
+                      loc: loc,
+                      listingColumns: listingColumns,
+                    ),
+                  ),
+                ],
+              ),
             ),
           ],
         ),
       ),
+    );
+  }
+
+  Widget _buildHomeScrollContent(
+    BuildContext context, {
+    required AppLocalizations? loc,
+    required int listingColumns,
+  }) {
+    if (_loading) {
+      return ListView(
+        physics: const AlwaysScrollableScrollPhysics(),
+        children: const [
+          SizedBox(height: 120),
+          Center(child: CircularProgressIndicator()),
+        ],
+      );
+    }
+    if (_cars.isEmpty && _error != null) {
+      return ListView(
+        physics: const AlwaysScrollableScrollPhysics(),
+        children: [
+          const SizedBox(height: 40),
+          Center(
+            child: Text(
+              _error!,
+              textAlign: TextAlign.center,
+            ),
+          ),
+          const SizedBox(height: 12),
+          Center(
+            child: OutlinedButton(
+              onPressed: () => _fetch(refresh: true),
+              child: Text(loc?.retryAction ?? 'Retry'),
+            ),
+          ),
+        ],
+      );
+    }
+    if (_cars.isEmpty) {
+      return ListView(
+        physics: const AlwaysScrollableScrollPhysics(),
+        children: [
+          const SizedBox(height: 40),
+          Center(
+            child: Text(
+              loc?.noCarsFound ?? 'No cars found',
+              textAlign: TextAlign.center,
+            ),
+          ),
+        ],
+      );
+    }
+    return GridView.builder(
+      controller: _controller,
+      key: const PageStorageKey<String>('home_grid'),
+      physics: const AlwaysScrollableScrollPhysics(),
+      padding: const EdgeInsets.fromLTRB(8, 8, 8, 88),
+      gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
+        crossAxisCount: listingColumns == 1 ? 1 : 2,
+        childAspectRatio: ListingLayoutPrefs.gridChildAspectRatio(
+          listingColumns == 1 ? 1 : 2,
+        ),
+        crossAxisSpacing: listingColumns == 1 ? 4 : 8,
+        mainAxisSpacing: listingColumns == 1 ? 4 : 8,
+      ),
+      itemCount: _cars.length + (_hasNext ? 1 : 0),
+      itemBuilder: (context, index) {
+        if (index >= _cars.length) {
+          return const Center(
+            child: SizedBox(
+              width: 20,
+              height: 20,
+              child: CircularProgressIndicator(strokeWidth: 2),
+            ),
+          );
+        }
+        final car = _cars[index];
+        return buildGlobalCarCard(
+          context,
+          car,
+          listLayout: listingColumns == 1,
+        );
+      },
     );
   }
 }

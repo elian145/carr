@@ -2,6 +2,7 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 import 'package:car_listing_app/shared/home/home_filter_query.dart';
+import 'package:car_listing_app/shared/home/home_active_filter_chips.dart';
 import 'package:car_listing_app/shared/home/home_sort_api.dart';
 import 'package:flutter/material.dart';
 import 'package:car_listing_app/l10n/app_localizations.dart';
@@ -52,6 +53,35 @@ void main() {
               AppLocalizations.of(context)!.sort_newest,
             );
             expect(v, 'newest');
+            return const SizedBox.shrink();
+          },
+        ),
+      ),
+    );
+    await tester.pumpAndSettle();
+  });
+
+  testWidgets('homeActiveFilterChipSpecs builds brand and price chips', (
+    tester,
+  ) async {
+    await tester.pumpWidget(
+      MaterialApp(
+        localizationsDelegates: AppLocalizations.localizationsDelegates,
+        supportedLocales: AppLocalizations.supportedLocales,
+        home: Builder(
+          builder: (context) {
+            final specs = homeActiveFilterChipSpecs(context, {
+              'brand': 'Toyota',
+              'price_min': '10000',
+              'price_max': '20000',
+              'condition': 'Any',
+            });
+            expect(specs.length, 2);
+            expect(specs.first.filterType, 'brand');
+            expect(
+              specs.any((s) => s.filterType == 'price'),
+              isTrue,
+            );
             return const SizedBox.shrink();
           },
         ),
