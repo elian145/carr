@@ -113,7 +113,9 @@ import '../pages/profile_page.dart' as modern_profile;
 import '../pages/settings_page.dart' as modern_settings;
 import '../pages/comparison_page.dart' as modern_comparison;
 import '../pages/change_password_page.dart';
+import '../pages/saved_searches_page.dart' as modern_saved_searches;
 import '../pages/tiktok_scroll_page.dart';
+import '../shared/home/saved_search_apply.dart';
 import '../shared/shell/main_shell_navigation.dart';
 import '../shared/sell/sell_draft_archive.dart';
 import '../shared/home/home_feed_toolbar.dart';
@@ -3656,6 +3658,9 @@ class MyApp extends StatelessWidget {
                 '/legacy_profile': (context) => AuthGuard(child: ProfilePage()),
                 '/legacy_settings': (context) => SettingsPage(),
                 '/legacy_login': (context) => LoginPage(),
+                '/saved-searches': (context) =>
+                    const modern_saved_searches.SavedSearchesPage(),
+                '/legacy_saved_searches': (context) => const SavedSearchesPage(),
                 '/recently-viewed': (context) =>
                     AuthGuard(child: const RecentlyViewedPage()),
                 '/analytics': (context) => const AnalyticsPage(),

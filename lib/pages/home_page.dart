@@ -11,6 +11,7 @@ import '../services/api_service.dart';
 import '../services/config.dart';
 import '../shared/home/home_listings_fetch.dart';
 import '../shared/home/home_filter_persistence.dart';
+import '../shared/home/saved_search_apply.dart';
 import '../shared/home/home_active_filter_chips.dart';
 import '../shared/home/home_feed_toolbar.dart';
 import '../shared/prefs/listing_layout_prefs.dart';
@@ -952,13 +953,34 @@ class _HomePageState extends State<HomePage>
       _error = null;
       WidgetsBinding.instance.addPostFrameCallback((_) => _restoreScrollOffset());
     } else {
-      WidgetsBinding.instance.addPostFrameCallback((_) {
-        _fetch(refresh: true);
+      WidgetsBinding.instance.addPostFrameCallback((_) async {
+        await _applyPendingSavedSearchIfNeeded();
+        if (!mounted) return;
+        if (_cars.isEmpty) {
+          await _fetch(refresh: true);
+        }
       });
     }
     WidgetsBinding.instance.addPostFrameCallback((_) {
       _refreshFilterState();
     });
+  }
+
+  Future<void> _applyPendingSavedSearchIfNeeded() async {
+    final oneTime = await SavedSearchApply.consumeOneTimeFilters();
+    final pending = await SavedSearchApply.consumePendingFetch();
+    if (oneTime != null) {
+      await HomeFilterPersistence.saveMap(oneTime);
+    }
+    if (!mounted) return;
+    if (oneTime != null || pending) {
+      _cacheCars.clear();
+      _cacheHasNext = true;
+      _cachePage = 1;
+      _cacheOffset = 0;
+      HomeFeedScrollPersistence.markTop();
+      await _refreshFilterState();
+    }
   }
 
   Future<void> _refreshFilterState() async {

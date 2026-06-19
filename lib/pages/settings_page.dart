@@ -279,6 +279,12 @@ class _SettingsPageState extends State<SettingsPage> {
                 ),
                 const Divider(height: 1),
                 ListTile(
+                  leading: const Icon(Icons.bookmark_outline),
+                  title: Text(loc?.savedSearchesTitle ?? 'Saved searches'),
+                  onTap: () => Navigator.pushNamed(context, '/saved-searches'),
+                ),
+                const Divider(height: 1),
+                ListTile(
                   leading: const Icon(Icons.help_outline),
                   title: Text(loc?.helpSupportTitle ?? 'Help & Support'),
                   onTap: () => Navigator.push(

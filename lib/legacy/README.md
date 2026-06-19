@@ -28,7 +28,7 @@ All `part` files share one library with `main_legacy.dart` (imports only in the 
 | `/favorites`, `/profile`, `/settings` | Modern account pages |
 | `/login`, `/signup`, `/forgot-password`, `/change-password` | Modern auth |
 | `/my_listings`, `/edit_listing` | Modern listing management |
-| `/comparison`, `/recently-viewed`, `/analytics` | Modern utility pages |
+| `/comparison`, `/recently-viewed`, `/analytics`, `/saved-searches` | Modern utility pages |
 | `/dealers`, `/dealer/profile`, `/dealer/edit` | Dealer directory + profile |
 | `/chat`, `/chat/conversation`, `/notifications` | Modern chat |
 
