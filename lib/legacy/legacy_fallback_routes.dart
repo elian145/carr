@@ -1,12 +1,20 @@
 import 'package:flutter/material.dart';
 
-import '../pages/home_filters_page.dart';
 import '../app/route_helpers.dart';
+import '../pages/auth_pages.dart' as auth_pages;
+import '../pages/car_detail_page.dart' as car_detail;
+import '../pages/comparison_page.dart' as comparison;
+import '../pages/favorites_page.dart' as favorites;
+import '../pages/home_filters_page.dart';
+import '../pages/profile_page.dart' as profile;
+import '../pages/saved_searches_page.dart' as saved_searches;
+import '../pages/sell_entry_pages.dart';
+import '../pages/sell_page.dart' as sell;
+import '../pages/settings_page.dart' as settings;
 import '../shared/auth/auth_guard.dart';
-import 'main_legacy.dart';
+import 'main_legacy.dart' show LegacyHomePage;
 
-Map<String, dynamic>? _legacySellDraftSnapshot(BuildContext context) {
-  final args = readRouteArgs(context);
+Map<String, dynamic>? _sellDraftSnapshot(Map<String, dynamic>? args) {
   if (args == null) return null;
   final draft = args['draftSnapshot'];
   if (draft is! Map) return null;
@@ -14,23 +22,41 @@ Map<String, dynamic>? _legacySellDraftSnapshot(BuildContext context) {
 }
 
 /// Legacy fallback routes (`/legacy_*`) for rollback and smoke tests.
+///
+/// Almost all aliases point at the same modern screens as production; only
+/// `/legacy_home` still mounts [LegacyHomePage].
 Map<String, WidgetBuilder> buildLegacyFallbackRoutes() {
   return {
     '/legacy_home': (context) => LegacyHomePage(),
     '/legacy_home_filters': (context) => const HomeFiltersPage(),
     '/legacy_sell': (context) {
-      final initialDraftSnapshot = _legacySellDraftSnapshot(context);
+      final args = readRouteArgs(context);
+      final initialDraftSnapshot = _sellDraftSnapshot(args);
+      final startFresh = args?['startFresh'] == true;
+      final showDraftGate = args?['showDraftGate'] == true;
       if (initialDraftSnapshot != null) {
         return AuthGuard(
           sellFlow: true,
-          child: SellCarPage(
+          child: sell.SellPage(
             initialDraftSnapshot: initialDraftSnapshot,
           ),
         );
       }
+      if (startFresh) {
+        return AuthGuard(
+          sellFlow: true,
+          child: const sell.SellPage(startFresh: true),
+        );
+      }
+      if (showDraftGate) {
+        return AuthGuard(
+          sellFlow: true,
+          child: const SellDraftGatePage(),
+        );
+      }
       return AuthGuard(
         sellFlow: true,
-        child: const SellCarPage(startFreshListing: true),
+        child: const SellEntryRouterPage(),
       );
     },
     '/legacy_car_detail': (context) {
@@ -39,15 +65,20 @@ Map<String, WidgetBuilder> buildLegacyFallbackRoutes() {
       if (carId.isEmpty) {
         return navigationErrorScaffold('Missing listing id');
       }
-      return CarDetailsPage(carId: carId);
+      return car_detail.CarDetailPage(carId: carId);
     },
-    '/legacy_comparison': (context) => CarComparisonPage(),
-    '/legacy_favorites': (context) =>
-        AuthGuard(allowGuest: true, child: FavoritesPage()),
-    '/legacy_profile': (context) =>
-        AuthGuard(allowGuest: true, child: ProfilePage()),
-    '/legacy_settings': (context) => SettingsPage(),
-    '/legacy_login': (context) => LoginPage(),
-    '/legacy_saved_searches': (context) => const SavedSearchesPage(),
+    '/legacy_comparison': (context) => const comparison.ComparisonPage(),
+    '/legacy_favorites': (context) => AuthGuard(
+          allowGuest: true,
+          child: const favorites.FavoritesPage(),
+        ),
+    '/legacy_profile': (context) => AuthGuard(
+          allowGuest: true,
+          child: const profile.ProfilePage(),
+        ),
+    '/legacy_settings': (context) => const settings.SettingsPage(),
+    '/legacy_login': (context) => const auth_pages.LoginPage(),
+    '/legacy_saved_searches': (context) =>
+        const saved_searches.SavedSearchesPage(),
   };
 }

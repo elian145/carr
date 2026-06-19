@@ -16,7 +16,7 @@ void main() {
     await FakeApiServer.stop();
   });
 
-  testWidgets('Production app smoke: boot and visit legacy routes', (
+  testWidgets('Production app smoke: boot production and legacy alias routes', (
     tester,
   ) async {
     await tester.pumpWidget(buildProductionTestApp());

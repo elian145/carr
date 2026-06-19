@@ -2,20 +2,20 @@
 
 Production entry: `lib/main.dart` → [ProductionApp] (`lib/app/production_app.dart`).
 
-Legacy library: `main_legacy.dart` — widgets, galleries, and `/legacy_*` fallback routes via [buildLegacyFallbackRoutes].
+Legacy library: `main_legacy.dart` — widgets, galleries, and embedded legacy UI still used by `/legacy_home`.
 
 ## Layout
 
 | File | Role |
 |------|------|
-| `main_legacy.dart` | Imports, app shell, routing, shared widgets, galleries, search (~3.1k lines) |
-| `home_page_legacy.dart` | Legacy home feed (`/legacy_home` only; filters use modern `HomeFiltersPage`) |
-| `saved_searches_legacy.dart` | Saved searches fallback (`/legacy_saved_searches`) |
-| `car_detail_legacy.dart` | Listing detail (`/legacy_car_detail`) |
-| `sell_flow_legacy.dart` | Sell flow (`/legacy_sell`) |
-| `comparison_legacy.dart` | Car comparison (`/legacy_comparison`) |
-| `auth_pages_legacy.dart` | Legacy favorites, login, signup fallbacks |
-| `account_pages_legacy.dart` | Legacy profile, settings fallbacks |
+| `main_legacy.dart` | Imports, shared widgets, galleries, search (~2.7k lines) |
+| `home_page_legacy.dart` | Legacy home feed (`/legacy_home`) |
+| `saved_searches_legacy.dart` | Legacy saved searches (embedded from legacy home) |
+| `car_detail_legacy.dart` | Legacy listing detail (unused by routes; kept for reference) |
+| `sell_flow_legacy.dart` | Legacy sell flow (unused by routes; kept for reference) |
+| `comparison_legacy.dart` | Legacy comparison (unused by routes) |
+| `auth_pages_legacy.dart` | Legacy favorites/login (unused by routes) |
+| `account_pages_legacy.dart` | Legacy profile/settings (unused by routes) |
 
 All `part` files share one library with `main_legacy.dart` (imports only in the main file).
 
@@ -34,9 +34,22 @@ All `part` files share one library with `main_legacy.dart` (imports only in the 
 | `/dealers`, `/dealer/profile`, `/dealer/edit` | Dealer directory + profile |
 | `/chat`, `/chat/conversation`, `/notifications` | Modern chat |
 
-## Legacy fallbacks
+## Legacy fallback aliases
 
-`/legacy_home`, `/legacy_sell`, `/legacy_home_filters` (alias → modern `HomeFiltersPage`), `/legacy_car_detail`, `/legacy_favorites`, `/legacy_profile`, `/legacy_settings`, `/legacy_login`, `/legacy_comparison`, `/legacy_saved_searches` — kept for rollback and smoke tests.
+Defined in `lib/legacy/legacy_fallback_routes.dart` for smoke tests and rollback URLs.
+
+| Route | Screen |
+|-------|--------|
+| `/legacy_home` | `LegacyHomePage` (only non-modern fallback) |
+| `/legacy_home_filters` | `HomeFiltersPage` |
+| `/legacy_sell` | Modern `SellPage` + draft gate |
+| `/legacy_car_detail` | `CarDetailPage` |
+| `/legacy_favorites` | `FavoritesPage` |
+| `/legacy_profile` | `ProfilePage` |
+| `/legacy_settings` | `SettingsPage` |
+| `/legacy_login` | `LoginPage` |
+| `/legacy_comparison` | `ComparisonPage` |
+| `/legacy_saved_searches` | `SavedSearchesPage` |
 
 ## Shared modules (modern home filters)
 
