@@ -129,6 +129,13 @@ import '../shared/sell/sell_draft_archive.dart';
 import '../shared/home/home_feed_toolbar.dart';
 import '../widgets/network_video_thumbnail.dart';
 import '../widgets/edge_swipe_back.dart';
+import '../app/navigator_key.dart';
+import '../app/production_routes.dart';
+import '../app/providers.dart';
+import '../app/route_helpers.dart';
+import '../shared/auth/auth_guard.dart';
+export '../shared/auth/auth_guard.dart' show AuthGuard;
+export '../app/navigator_key.dart' show appNavigatorKey;
 part 'home_page_legacy.dart';
 part 'sell_flow_legacy.dart';
 part 'car_detail_legacy.dart';
@@ -136,6 +143,7 @@ part 'saved_searches_legacy.dart';
 part 'comparison_legacy.dart';
 part 'auth_pages_legacy.dart';
 part 'account_pages_legacy.dart';
+part 'legacy_routes.dart';
 
 const List<String> _kOnlineSpecOptionKeys = [
   '_online_opts_transmission',
@@ -416,8 +424,6 @@ const bool kSideloadBuild = bool.fromEnvironment(
   defaultValue: false,
 );
 
-/// Navigator key for deep link handling (e.g. reset-password from email link).
-final GlobalKey<NavigatorState> _appNavigatorKey = GlobalKey<NavigatorState>();
 // Build commit SHA for on-device verification
 const String kBuildSha = String.fromEnvironment(
   'BUILD_COMMIT_SHA',
@@ -2460,111 +2466,6 @@ class ComparisonButton extends StatelessWidget {
   }
 }
 
-/// Shown when a logged-out user opens Sell; offers login / signup or cancel.
-class _SellAuthPrompt extends StatefulWidget {
-  const _SellAuthPrompt();
-
-  @override
-  State<_SellAuthPrompt> createState() => _SellAuthPromptState();
-}
-
-class _SellAuthPromptState extends State<_SellAuthPrompt> {
-  @override
-  void initState() {
-    super.initState();
-    WidgetsBinding.instance.addPostFrameCallback((_) => _showAuthDialog());
-  }
-
-  Future<void> _showAuthDialog() async {
-    if (!mounted) return;
-    final loc = AppLocalizations.of(context)!;
-    var handled = false;
-
-    await showDialog<void>(
-      context: context,
-      barrierDismissible: true,
-      builder: (ctx) => AlertDialog(
-        title: Text(loc.sellRequiresAuthTitle),
-        content: Text(loc.sellRequiresAuthBody),
-        actions: [
-          TextButton(
-            onPressed: () {
-              handled = true;
-              Navigator.pop(ctx);
-              _switchMainTabNoAnimation(context, '/');
-            },
-            child: Text(loc.cancelAction),
-          ),
-          TextButton(
-            onPressed: () {
-              handled = true;
-              Navigator.pop(ctx);
-              Navigator.pushReplacementNamed(context, '/signup');
-            },
-            child: Text(loc.signupTitle),
-          ),
-          FilledButton(
-            onPressed: () {
-              handled = true;
-              Navigator.pop(ctx);
-              Navigator.pushReplacementNamed(context, '/login');
-            },
-            child: Text(loc.loginAction),
-          ),
-        ],
-      ),
-    );
-
-    if (!mounted) return;
-    if (!handled) {
-      Navigator.pushReplacementNamed(context, '/');
-    }
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    return const Scaffold(body: Center(child: CircularProgressIndicator()));
-  }
-}
-
-/// Redirects to /login if the user is not authenticated; otherwise shows [child].
-/// Special-case: the Favorites page is allowed to show even when logged out
-/// so it can display its own "login/signup required" message.
-/// Sell shows a login/signup dialog instead of an immediate redirect.
-class AuthGuard extends StatelessWidget {
-  const AuthGuard({super.key, required this.child});
-  final Widget child;
-
-  @override
-  Widget build(BuildContext context) {
-    final auth = Provider.of<AuthService>(context);
-    // Allow FavoritesPage and ProfilePage for logged-out users so they can
-    // show their own friendly login/signup prompts and UI.
-    if (auth.isAuthenticated ||
-        child is FavoritesPage ||
-        child is modern_favorites.FavoritesPage ||
-        child is ProfilePage ||
-        child is modern_profile.ProfilePage) {
-      return child;
-    }
-    if (auth.isLoading || ApiService.isAuthenticated) {
-      return const Scaffold(body: Center(child: CircularProgressIndicator()));
-    }
-    if (child is SellCarPage ||
-        child is modern_sell.SellPage ||
-        child is SellEntryRouterPage ||
-        child is SellDraftGatePage) {
-      return const _SellAuthPrompt();
-    }
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      if (context.mounted) {
-        Navigator.pushReplacementNamed(context, '/login');
-      }
-    });
-    return const Scaffold(body: Center(child: CircularProgressIndicator()));
-  }
-}
-
 /// Wraps [MaterialApp] and inits deep link handling after first frame.
 class _AppWithDeepLinks extends StatefulWidget {
   const _AppWithDeepLinks({required this.child});
@@ -2579,7 +2480,7 @@ class _AppWithDeepLinksState extends State<_AppWithDeepLinks> {
   void initState() {
     super.initState();
     WidgetsBinding.instance.addPostFrameCallback((_) {
-      DeepLinkService.instance.init(_appNavigatorKey);
+      DeepLinkService.instance.init(appNavigatorKey);
     });
   }
 
@@ -2592,38 +2493,17 @@ class MyApp extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    Map<String, dynamic>? routeArgs(BuildContext context) {
-      final args = ModalRoute.of(context)?.settings.arguments;
-      if (args is Map<String, dynamic>) return args;
-      if (args is Map) {
-        return args.map((key, value) => MapEntry(key.toString(), value));
-      }
-      return null;
-    }
-
-    Widget navigationError(String message) {
-      return Scaffold(
-        appBar: AppBar(title: const Text('Navigation error')),
-        body: Center(child: Text(message)),
-      );
-    }
-
     return MultiProvider(
-      providers: [
-        ChangeNotifierProvider(create: (context) => ThemeProvider()),
-        ChangeNotifierProvider(create: (context) => ChatUiThemeController()),
-        ChangeNotifierProvider(create: (context) => CarComparisonStore()),
-        ChangeNotifierProvider(create: (context) => AuthService()),
-      ],
+      providers: buildAppProviders(),
       child: ValueListenableBuilder<Locale?>(
         valueListenable: LocaleController.currentLocale,
         builder: (context, locale, _) => Consumer<ThemeProvider>(
           builder: (context, themeProvider, child) => _AppWithDeepLinks(
             child: MaterialApp(
-              navigatorKey: _appNavigatorKey,
+              navigatorKey: appNavigatorKey,
               title: 'CarNet',
               builder: (context, child) => EdgeSwipeBack(
-                navigatorKey: _appNavigatorKey,
+                navigatorKey: appNavigatorKey,
                 child: child ?? const SizedBox.shrink(),
               ),
               locale: locale,
@@ -2655,224 +2535,8 @@ class MyApp extends StatelessWidget {
               debugShowCheckedModeBanner: false,
               initialRoute: '/',
               routes: {
-                '/': (context) => const modern_home.HomePage(),
-                '/legacy_home': (context) => LegacyHomePage(),
-                '/home_filters': (context) => const modern_filters.HomeFiltersPage(),
-                '/legacy_home_filters': (context) => const LegacyHomeFiltersPage(),
-                '/sell': (context) {
-                  final args = ModalRoute.of(context)?.settings.arguments;
-                  final initialDraftSnapshot = args is Map
-                      ? (args['draftSnapshot'] is Map
-                          ? Map<String, dynamic>.from(
-                              (args['draftSnapshot'] as Map).cast<String, dynamic>(),
-                            )
-                          : null)
-                      : null;
-                  final startFresh = args is Map && args['startFresh'] == true;
-                  final showDraftGate = args is Map && args['showDraftGate'] == true;
-                  if (initialDraftSnapshot != null) {
-                    return AuthGuard(
-                      child: modern_sell.SellPage(
-                        initialDraftSnapshot: initialDraftSnapshot,
-                      ),
-                    );
-                  }
-                  if (startFresh) {
-                    return AuthGuard(
-                      child: const modern_sell.SellPage(startFresh: true),
-                    );
-                  }
-                  if (showDraftGate) {
-                    return AuthGuard(
-                      child: const SellDraftGatePage(),
-                    );
-                  }
-                  return AuthGuard(
-                    child: const SellEntryRouterPage(),
-                  );
-                },
-                '/legacy_sell': (context) {
-                  final args = ModalRoute.of(context)?.settings.arguments;
-                  final initialDraftSnapshot = args is Map
-                      ? (args['draftSnapshot'] is Map
-                          ? Map<String, dynamic>.from(
-                              (args['draftSnapshot'] as Map).cast<String, dynamic>(),
-                            )
-                          : null)
-                      : null;
-                  if (initialDraftSnapshot != null) {
-                    return AuthGuard(
-                      child: SellCarPage(
-                        initialDraftSnapshot: initialDraftSnapshot,
-                      ),
-                    );
-                  }
-                  return AuthGuard(
-                    child: const SellCarPage(startFreshListing: true),
-                  );
-                },
-                '/settings': (context) => const modern_settings.SettingsPage(),
-                '/favorites': (context) =>
-                    AuthGuard(child: const modern_favorites.FavoritesPage()),
-                '/dealers': (context) => const DealersDirectoryPage(),
-                '/chat': (context) =>
-                    AuthGuard(child: const carzo_chat.ChatListPage()),
-                '/login': (context) => const auth_pages.LoginPage(),
-                '/signup': (context) => const auth_pages.RegisterPage(),
-                '/profile': (context) =>
-                    AuthGuard(child: const modern_profile.ProfilePage()),
-                '/edit-profile': (context) =>
-                    AuthGuard(child: const EditProfilePage()),
-                '/car_detail': (context) {
-                  final args = routeArgs(context);
-                  final carId = (args?['carId'] ?? '').toString().trim();
-                  if (carId.isEmpty) {
-                    return navigationError('Missing listing id');
-                  }
-                  return modern_detail.CarDetailPage(carId: carId);
-                },
-                '/legacy_car_detail': (context) {
-                  final args = routeArgs(context);
-                  final carId = (args?['carId'] ?? '').toString().trim();
-                  if (carId.isEmpty) {
-                    return navigationError('Missing listing id');
-                  }
-                  return CarDetailsPage(carId: carId);
-                },
-                '/tiktok_scroll': (context) {
-                  final args = routeArgs(context);
-                  final cars = (args?['cars'] as List?)
-                          ?.whereType<Map>()
-                          .map((m) => Map<String, dynamic>.from(m))
-                          .toList() ??
-                      <Map<String, dynamic>>[];
-                  final initialIndex = (args?['initialIndex'] as int?) ?? 0;
-                  return TikTokScrollPage(
-                    cars: cars,
-                    initialIndex: initialIndex,
-                  );
-                },
-                '/chat/conversation': (context) {
-                  final args = routeArgs(context);
-                  final rawId = (args?['carId'] ?? args?['conversationId'] ?? '')
-                      .toString()
-                      .trim();
-                  if (rawId.isEmpty) {
-                    return Scaffold(
-                      appBar: AppBar(title: const Text('Navigation error')),
-                      body: Center(
-                        child: Text('Missing chat conversation id'),
-                      ),
-                    );
-                  }
-                  return AuthGuard(
-                    child: carzo_chat.ChatConversationPage(
-                      carId: rawId,
-                      receiverId: args?['receiverId']?.toString(),
-                      initialDraft: args?['initialDraft']?.toString(),
-                      initialListingPreview: args?['listingPreview'] is Map
-                          ? Map<String, dynamic>.from(
-                              (args?['listingPreview'] as Map)
-                                  .cast<String, dynamic>(),
-                            )
-                          : null,
-                    ),
-                  );
-                },
-                '/edit': (context) {
-                  final args = routeArgs(context);
-                  final car = args?['car'];
-                  if (car is! Map) {
-                    return Scaffold(
-                      appBar: AppBar(title: const Text('Navigation error')),
-                      body: const Center(child: Text('Missing listing data')),
-                    );
-                  }
-                  return AuthGuard(
-                    child: modern_edit.EditListingPage(
-                      car: Map<String, dynamic>.from(
-                        car.cast<String, dynamic>(),
-                      ),
-                    ),
-                  );
-                },
-                '/edit_listing': (context) {
-                  final args = ModalRoute.of(context)?.settings.arguments;
-                  final car = args is Map ? args['car'] : null;
-                  if (car is! Map) {
-                    return Scaffold(
-                      appBar: AppBar(title: const Text('Navigation error')),
-                      body: const Center(child: Text('Missing listing data')),
-                    );
-                  }
-                  return AuthGuard(
-                    child: modern_edit.EditListingPage(
-                      car: Map<String, dynamic>.from(
-                        car.cast<String, dynamic>(),
-                      ),
-                    ),
-                  );
-                },
-                '/my_listings': (context) =>
-                    AuthGuard(child: modern_listings.MyListingsPage()),
-                '/comparison': (context) => const modern_comparison.ComparisonPage(),
-                '/legacy_comparison': (context) => CarComparisonPage(),
-                '/legacy_favorites': (context) => AuthGuard(child: FavoritesPage()),
-                '/legacy_profile': (context) => AuthGuard(child: ProfilePage()),
-                '/legacy_settings': (context) => SettingsPage(),
-                '/legacy_login': (context) => LoginPage(),
-                '/saved-searches': (context) =>
-                    const modern_saved_searches.SavedSearchesPage(),
-                '/legacy_saved_searches': (context) => const SavedSearchesPage(),
-                '/recently-viewed': (context) =>
-                    AuthGuard(child: const RecentlyViewedPage()),
-                '/analytics': (context) => const AnalyticsPage(),
-                '/change-password': (context) =>
-                    AuthGuard(child: const ChangePasswordPage()),
-                '/notifications': (context) =>
-                    AuthGuard(child: const carzo_chat.NotificationsPage()),
-                '/reset-password': (context) => ResetPasswordPage(),
-                '/verify-email': (context) {
-                  final args = ModalRoute.of(context)?.settings.arguments;
-                  final token = args is Map
-                      ? (args['token'] ?? '').toString().trim()
-                      : '';
-                  return VerifyEmailPage(
-                    initialToken: token.isNotEmpty ? token : null,
-                  );
-                },
-                '/forgot-password': (context) =>
-                    auth_pages.ForgotPasswordPage(),
-                '/admin/dealers': (context) =>
-                    AuthGuard(child: AdminDealersPage()),
-                '/admin/reports': (context) =>
-                    AuthGuard(child: const AdminReportsPage()),
-                '/help': (context) => const HelpCenterPage(),
-                '/dealer/edit': (context) =>
-                    AuthGuard(child: EditDealerPage()),
-                '/dealer/profile': (context) {
-                  final args =
-                      ModalRoute.of(context)?.settings.arguments
-                          as Map<String, dynamic>?;
-                  final dealerPublicId =
-                      (args?['dealerPublicId'] ?? '').toString().trim();
-                  if (dealerPublicId.isEmpty) {
-                    return Scaffold(
-                      appBar: AppBar(title: const Text('Navigation error')),
-                      body: Center(
-                        child: Text(
-                          _trLegacyText(
-                            context,
-                            'Missing dealer id',
-                            ar: 'معرّف الوكيل مفقود',
-                            ku: 'ناسنامەی وەکیل ونە',
-                          ),
-                        ),
-                      ),
-                    );
-                  }
-                  return DealerProfilePage(dealerPublicId: dealerPublicId);
-                },
+                ...buildProductionRoutes(),
+                ...buildLegacyFallbackRoutes(),
               },
             ),
           ),

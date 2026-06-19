@@ -49,7 +49,11 @@ Modern pages use `buildGlobalCarCard` and related helpers from `lib/shared/listi
 
 ## CarzoApp (refactor shell)
 
-`lib/app/routes.dart` mirrors modern production routes (including `/home_filters` and `/saved-searches`) for migration testing via `CarzoApp`.
+`lib/app/routes.dart` mirrors modern production routes for migration testing via `CarzoApp`.
+
+Production routing lives in `lib/app/production_routes.dart` (`buildProductionRoutes()`). Legacy fallbacks are in `lib/legacy/legacy_routes.dart` (`buildLegacyFallbackRoutes()`), merged in `MyApp`.
+
+Shared auth: `lib/shared/auth/auth_guard.dart` (`AuthGuard`, `SellAuthPrompt`).
 
 ## Tooling
 

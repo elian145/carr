@@ -9,9 +9,8 @@ import '../state/locale_controller.dart';
 import '../theme_provider.dart';
 import '../widgets/edge_swipe_back.dart';
 import 'providers.dart';
+import 'navigator_key.dart';
 import 'routes.dart';
-
-final GlobalKey<NavigatorState> appNavigatorKey = GlobalKey<NavigatorState>();
 
 class _AppWithDeepLinks extends StatefulWidget {
   const _AppWithDeepLinks({required this.child});
