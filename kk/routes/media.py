@@ -155,15 +155,18 @@ def r2_sign_upload():
     Body: { "filename": "photo.jpg", "content_type": "image/jpeg", "asset": "image" | "video" } (optional).
     Response: { "upload_url": "<presigned PUT URL>", "key": "<object key>", "public_url": "<optional public URL>" }.
     """
-    if not _r2_configured():
-        return jsonify({"message": "R2 storage is not configured"}), 503
-
     try:
         current_user = get_current_user()
         verify_err = phone_verification_required_response(current_user)
         if verify_err:
             return verify_err
+    except Exception:
+        return jsonify({"message": "Unauthorized"}), 401
 
+    if not _r2_configured():
+        return jsonify({"message": "R2 storage is not configured"}), 503
+
+    try:
         data = request.get_json(silent=True) or {}
         asset = (data.get("asset") or "image").strip().lower()
         raw_name = (data.get("filename") or data.get("name") or "").strip()

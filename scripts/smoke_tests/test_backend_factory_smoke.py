@@ -431,6 +431,32 @@ class BackendFactorySmokeTest(unittest.TestCase):
         body = r.get_json() or {}
         self.assertEqual(body.get("code"), "phone_verification_required")
 
+    def test_r2_sign_upload_requires_phone_verification(self):
+        with self.app.app_context():
+            unverified = self._User(
+                username="unverified_r2",
+                phone_number="07000000094",
+                first_name="U",
+                last_name="R",
+                email=None,
+                is_active=True,
+                is_verified=False,
+                public_id="puvr",
+            )
+            unverified.set_password("Aa123456")
+            self._db.session.add(unverified)
+            self._db.session.commit()
+
+        token = self._login("unverified_r2", "Aa123456")
+        r = self.client.post(
+            "/api/media/r2/sign-upload",
+            headers=self._auth(token),
+            json={"filename": "photo.jpg", "content_type": "image/jpeg"},
+        )
+        self.assertEqual(r.status_code, 403, r.data)
+        body = r.get_json() or {}
+        self.assertEqual(body.get("code"), "phone_verification_required")
+
     def test_email_signup_and_login(self):
         u = f"e_{uuid.uuid4().hex[:8]}"
         signup = self.client.post(

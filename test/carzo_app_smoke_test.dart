@@ -56,6 +56,7 @@ void main() {
     await pushNamed('/comparison');
     await pushNamed('/recently-viewed');
     await pushNamed('/analytics');
+    await pushNamed('/dealers');
 
     await tester.pump(const Duration(seconds: 5));
   });
