@@ -33,6 +33,11 @@ import '../shared/i18n/legacy_inline_text.dart';
 import '../shared/i18n/digits.dart';
 import '../shared/prefs/sell_draft_step.dart';
 import '../shared/ui/keyboard.dart';
+import '../shared/debug/app_log.dart';
+import '../shared/navigation/route_args.dart';
+import '../shared/i18n/listing_field_labels.dart';
+import '../shared/listings/transmission_filter.dart';
+import '../shared/listings/listing_uploaded_ago.dart';
 import '../shared/auth/phone_verification_gate.dart';
 import '../shared/errors/user_error_text.dart';
 import '../shared/listings/listing_events.dart';
@@ -195,28 +200,8 @@ String _trLegacyText(
 }) =>
     trLegacyText(context, en, ar: ar, ku: ku);
 
-String _translatePlateTypeLegacy(BuildContext context, String raw) {
-  final v = raw.trim().toLowerCase().replaceAll('-', ' ').replaceAll('_', ' ');
-  switch (v) {
-    case 'private':
-      return _trLegacyText(context, 'Private', ar: 'خصوصي', ku: 'تایبەت');
-    case 'commercial':
-    case 'comercial':
-      return _trLegacyText(context, 'Commercial', ar: 'تجاري', ku: 'بازرگانی');
-    case 'taxi':
-      return _trLegacyText(context, 'Taxi', ar: 'تاكسي', ku: 'تەکسی');
-    case 'government':
-      return _trLegacyText(context, 'Government', ar: 'حكومي', ku: 'حکومی');
-    case 'temporary':
-      return _trLegacyText(context, 'Temporary', ar: 'مؤقت', ku: 'کاتی');
-    case 'diplomatic':
-      return _trLegacyText(context, 'Diplomatic', ar: 'دبلوماسي', ku: 'دیبلۆماسی');
-    case 'police':
-      return _trLegacyText(context, 'Police', ar: 'شرطة', ku: 'پۆلیس');
-    default:
-      return prettyTitleCase(raw);
-  }
-}
+String _translatePlateTypeLegacy(BuildContext context, String raw) =>
+    translatePlateTypeLabel(context, raw);
 
 /// JSON list of [OnlineSpecVariant] maps for correlated step-2 fields (bundled catalog).
 const String _kOnlineSpecVariantsKey = '_online_spec_variants';
@@ -413,11 +398,7 @@ const String kBuildSha = String.fromEnvironment(
 // Flutter sets this at compile time when running `flutter test`.
 const bool _kFlutterTest = bool.fromEnvironment('FLUTTER_TEST');
 
-void _debugLog(String message) {
-  if (kDebugMode) {
-    debugPrint(message);
-  }
-}
+void _debugLog(String message) => appLog(message);
 
 Future<http.MultipartFile> _buildVideoMultipartFile(XFile video) async {
   final path = video.path.trim();
@@ -706,22 +687,11 @@ class _RetryingListingNetworkImageState
 String _localizeDigitsGlobal(BuildContext context, String input) =>
     localizeDigits(context, input);
 
-/// Bare number `3.0` → localized + liter unit; values with badges (`3.0 D`) unchanged.
-String _engineSizeChipLabel(BuildContext context, String raw) {
-  final t = raw.trim();
-  if (double.tryParse(t) != null) {
-    return '${_localizeDigitsGlobal(context, t)}${AppLocalizations.of(context)!.unit_liter_suffix}';
-  }
-  return _localizeDigitsGlobal(context, t);
-}
+String _engineSizeChipLabel(BuildContext context, String raw) =>
+    engineSizeChipLabel(context, raw);
 
-String _engineSizeSellRowLabel(BuildContext context, String raw) {
-  final t = raw.trim();
-  if (double.tryParse(t) != null) {
-    return '${_localizeDigitsGlobal(context, t)} ${AppLocalizations.of(context)!.unit_liter_suffix}';
-  }
-  return _localizeDigitsGlobal(context, t);
-}
+String _engineSizeSellRowLabel(BuildContext context, String raw) =>
+    engineSizeSellRowLabel(context, raw);
 
 // Locale-aware currency formatting with digit localization
 String _formatCurrencyGlobal(BuildContext context, dynamic raw) =>
@@ -1193,11 +1163,8 @@ String? _convertSortToApiValue(BuildContext context, String? sortOption) {
   return sortOption;
 }
 
-/// Options removed from filter UI; still used to drop spec-driven list entries.
-bool _isExcludedTransmissionFilter(String value) {
-  final compact = value.trim().toLowerCase().replaceAll(RegExp(r'[\s_-]+'), '');
-  return compact == 'semiautomatic' || compact == 'semiauto' || compact == 'cvt';
-}
+bool _isExcludedTransmissionFilter(String value) =>
+    isExcludedTransmissionFilter(value);
 
 String? _translateValueGlobal(BuildContext context, String? raw) {
   if (raw == null) return null;
@@ -1507,30 +1474,8 @@ Map<String, dynamic> mapListingToGlobalCarCardData(
   };
 }
 
-/// Human-readable "time since listing was created" for card and detail UI.
-String _listingUploadedAgo(BuildContext context, Map car) {
-  final loc = AppLocalizations.of(context);
-  if (loc == null) return '';
-  dynamic raw = car['created_at'];
-  if (raw == null || raw.toString().trim().isEmpty) {
-    raw = car['posted_at'] ?? car['listed_at'];
-  }
-  if (raw == null) return '';
-  final dt = DateTime.tryParse(raw.toString().trim());
-  if (dt == null) return '';
-  final now = DateTime.now();
-  var diff = now.difference(dt);
-  if (diff.isNegative) diff = Duration.zero;
-  if (diff.inMinutes < 1) return loc.justNow;
-  if (diff.inHours < 24) {
-    if (diff.inHours < 1) {
-      return loc.timeMinutesAgo(diff.inMinutes < 1 ? 1 : diff.inMinutes);
-    }
-    return loc.timeHoursAgo(diff.inHours);
-  }
-  final days = diff.inDays;
-  return loc.timeDaysAgo(days < 1 ? 1 : days);
-}
+String _listingUploadedAgo(BuildContext context, Map car) =>
+    listingUploadedAgo(context, car);
 
 /// Video count pill used on global listing cards (grid + list layout).
 Widget _globalListingCardVideoCountBadge(Map car) {
@@ -3609,22 +3554,6 @@ class MyApp extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    Map<String, dynamic>? routeArgs(BuildContext context) {
-      final args = ModalRoute.of(context)?.settings.arguments;
-      if (args is Map<String, dynamic>) return args;
-      if (args is Map) {
-        return args.map((key, value) => MapEntry(key.toString(), value));
-      }
-      return null;
-    }
-
-    Widget navigationError(String message) {
-      return Scaffold(
-        appBar: AppBar(title: const Text('Navigation error')),
-        body: Center(child: Text(message)),
-      );
-    }
-
     return MultiProvider(
       providers: [
         ChangeNotifierProvider(create: (context) => ThemeProvider()),
@@ -3715,15 +3644,15 @@ class MyApp extends StatelessWidget {
                 '/edit-profile': (context) =>
                     AuthGuard(child: EditProfilePage()),
                 '/car_detail': (context) {
-                  final args = routeArgs(context);
+                  final args = readRouteArgs(context);
                   final carId = (args?['carId'] ?? '').toString().trim();
                   if (carId.isEmpty) {
-                    return navigationError('Missing listing id');
+                    return navigationErrorScaffold('Missing listing id');
                   }
                   return CarDetailsPage(carId: carId);
                 },
                 '/tiktok_scroll': (context) {
-                  final args = routeArgs(context);
+                  final args = readRouteArgs(context);
                   final cars = (args?['cars'] as List?)
                           ?.whereType<Map>()
                           .map((m) => Map<String, dynamic>.from(m))
@@ -3736,7 +3665,7 @@ class MyApp extends StatelessWidget {
                   );
                 },
                 '/chat/conversation': (context) {
-                  final args = routeArgs(context);
+                  final args = readRouteArgs(context);
                   final rawId = (args?['carId'] ?? args?['conversationId'] ?? '')
                       .toString()
                       .trim();
@@ -3763,7 +3692,7 @@ class MyApp extends StatelessWidget {
                   );
                 },
                 '/edit': (context) {
-                  final args = routeArgs(context);
+                  final args = readRouteArgs(context);
                   final car = args?['car'];
                   if (car is! Map) {
                     return Scaffold(
