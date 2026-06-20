@@ -439,51 +439,22 @@ class _CarDetailsPageState extends State<CarDetailsPage> {
     try {
       final sp = await SharedPreferences.getInstance();
       final cacheKey = 'cache_car_${widget.carId}';
-      final url = Uri.parse('${getApiBase()}/api/cars/${widget.carId}');
-      final headers = <String, String>{'Accept': 'application/json'};
-      await TokenStore.load();
-      await ApiService.initializeTokens();
-      final token = ApiService.accessToken ?? TokenStore.token;
-      if (token != null && token.isNotEmpty) {
-        headers['Authorization'] = 'Bearer $token';
-      }
 
       // Prefer network first so new uploads (images/videos) are not hidden behind stale cache.
       bool appliedFromNetwork = false;
       try {
-        final resp = await http
-            .get(url, headers: headers)
-            .timeout(const Duration(seconds: 20));
-        if (resp.statusCode == 200) {
-          final data = json.decode(resp.body);
-          if (data is List && data.isNotEmpty) {
-            if (mounted) {
-              setState(() {
-                car = _normalizeCarDetailMap(
-                  Map<String, dynamic>.from(data.first),
-                );
-                loading = false;
-              });
-              _clampHeroMediaIndex();
-            }
-            appliedFromNetwork = true;
-          } else if (data is Map) {
-            final Map<String, dynamic> map = Map<String, dynamic>.from(data);
-            final dynamic inner = map['car'];
-            final Map<String, dynamic> normalized = inner is Map
-                ? Map<String, dynamic>.from(inner)
-                : map;
-            if (mounted) {
-              setState(() {
-                car = _normalizeCarDetailMap(normalized);
-                loading = false;
-              });
-              _clampHeroMediaIndex();
-            }
-            appliedFromNetwork = true;
-          }
+        final loaded = await ApiService.getCarDetail(widget.carId);
+        if (loaded != null && mounted) {
+          setState(() {
+            car = _normalizeCarDetailMap(loaded);
+            loading = false;
+          });
+          _clampHeroMediaIndex();
+          appliedFromNetwork = true;
         }
-      } catch (e, st) { logNonFatal(e, st); }
+      } catch (e, st) {
+        logNonFatal(e, st);
+      }
 
       if (appliedFromNetwork && car != null) {
         _precacheListingImages();

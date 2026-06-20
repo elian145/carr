@@ -9014,49 +9014,44 @@ class _SellStep5PageState extends State<SellStep5Page> {
             await CarService().uploadCarImages(carId, toUpload);
           }
           if (videosToUpload.isNotEmpty) {
-            // Backend (kk/routes/media.py) expects multipart field name "files", not "video".
-            final url = Uri.parse('${getApiBase()}/api/cars/$carId/videos');
-            final req = http.MultipartRequest('POST', url);
-            req.headers['Authorization'] = 'Bearer $existingToken';
-            for (final v in videosToUpload) {
-              req.files.add(await _buildVideoMultipartFile(v));
-            }
-            final resp = await req.send();
-            final respBody = await resp.stream.bytesToString();
-            Map<String, dynamic> payload = const {};
             try {
-              final parsed = json.decode(respBody);
-              if (parsed is Map<String, dynamic>) payload = parsed;
-            } catch (e, st) { logNonFatal(e, st); }
-            final uploaded = payload['videos'];
-            final uploadedCount = uploaded is List ? uploaded.length : 0;
-            if (resp.statusCode != 200 && resp.statusCode != 201) {
-              _debugLog('Video upload failed: ${resp.statusCode} $respBody');
-              if (mounted) {
-                ScaffoldMessenger.of(context).showSnackBar(
-                  SnackBar(
-                    content: Text(
-                      'Video upload failed (${resp.statusCode}). ${respBody.isNotEmpty ? respBody : ''}',
-                    ),
-                    backgroundColor: Colors.orange,
-                  ),
-                );
-              }
-            } else if (uploadedCount == 0) {
-              _debugLog(
-                'Video upload returned success but 0 videos: $respBody',
+              final payload = await ApiService.uploadCarVideos(
+                carId,
+                videosToUpload,
+                multipartFileBuilder: _buildVideoMultipartFile,
               );
+              final uploaded = payload['videos'];
+              final uploadedCount = uploaded is List ? uploaded.length : 0;
+              if (uploadedCount == 0) {
+                _debugLog(
+                  'Video upload returned success but 0 videos: $payload',
+                );
+                if (mounted) {
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    SnackBar(
+                      content: Text(
+                        (payload['message'] ?? 'No valid videos were uploaded.')
+                            .toString(),
+                      ),
+                      backgroundColor: Colors.orange,
+                    ),
+                  );
+                }
+              }
+            } on ApiException catch (e) {
+              _debugLog('Video upload failed: ${e.statusCode} ${e.message}');
               if (mounted) {
                 ScaffoldMessenger.of(context).showSnackBar(
                   SnackBar(
                     content: Text(
-                      (payload['message'] ?? 'No valid videos were uploaded.')
-                          .toString(),
+                      'Video upload failed (${e.statusCode}). ${e.message.isNotEmpty ? e.message : ''}',
                     ),
                     backgroundColor: Colors.orange,
                   ),
                 );
               }
+            } catch (e, st) {
+              logNonFatal(e, st);
             }
           }
           final dynamic maybeDmg = carData['damage_images'];

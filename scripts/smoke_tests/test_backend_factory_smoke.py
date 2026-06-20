@@ -492,6 +492,13 @@ class BackendFactorySmokeTest(unittest.TestCase):
         self.assertIsInstance(body, list)
         self.assertGreaterEqual(len(body), 1)
 
+    def test_get_car_by_public_id(self):
+        r = self.client.get(f"/api/cars/{self.car_public}")
+        self.assertEqual(r.status_code, 200, r.data)
+        body = r.get_json() or {}
+        self.assertIn("car", body)
+        self.assertEqual((body.get("car") or {}).get("brand"), "toyota")
+
     def test_favorites_toggle_and_list(self):
         fav = self.client.post(
             f"/api/cars/{self.car_public}/favorite",

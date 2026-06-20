@@ -2331,7 +2331,11 @@ Widget build(BuildContext context) {
 
                     if (_selectedVideos.isNotEmpty) {
                       try {
-                        await ApiService.uploadCarVideos(carId, _selectedVideos);
+                        await ApiService.uploadCarVideos(
+                          carId,
+                          _selectedVideos,
+                          multipartFileBuilder: _buildVideoMultipartFile,
+                        );
                       } on ApiException catch (e) {
                         showDialog(
                           context: context,

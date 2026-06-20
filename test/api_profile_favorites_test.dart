@@ -46,6 +46,13 @@ void main() {
     expect(listings['pagination'], isA<Map>());
   });
 
+  test('getCarDetail returns car from mock API', () async {
+    final detail = await ApiService.getCarDetail('test-car-1');
+    expect(detail, isNotNull);
+    expect(detail!['brand'], 'toyota');
+    expect(detail['model'], 'camry');
+  });
+
   test('getMyListingsCompat returns array from /my_listings', () async {
     final listings = await ApiService.getMyListingsCompat();
     expect(listings, isA<List<Map<String, dynamic>>>());

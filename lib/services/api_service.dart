@@ -332,6 +332,9 @@ class ApiService {
   static Future<Map<String, dynamic>> getCar(String carId) =>
       _ApiServiceListings.getCar(carId);
 
+  static Future<Map<String, dynamic>?> getCarDetail(String carId) =>
+      _ApiServiceListings.getCarDetail(carId);
+
   static Future<Map<String, dynamic>> createCar(
     Map<String, dynamic> carData,
   ) =>
@@ -396,9 +399,14 @@ class ApiService {
 
   static Future<Map<String, dynamic>> uploadCarVideos(
     String carId,
-    List<XFile> videoFiles,
-  ) =>
-      _ApiServiceListings.uploadCarVideos(carId, videoFiles);
+    List<XFile> videoFiles, {
+    Future<http.MultipartFile> Function(XFile file)? multipartFileBuilder,
+  }) =>
+      _ApiServiceListings.uploadCarVideos(
+        carId,
+        videoFiles,
+        multipartFileBuilder: multipartFileBuilder,
+      );
 
   static Future<Map<String, dynamic>> getFavorites({
     int page = 1,

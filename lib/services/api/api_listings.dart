@@ -56,12 +56,55 @@ abstract final class _ApiServiceListings {
       await ApiService._ensureTokenLoaded();
       final response = await ApiService._httpClient
           .get(
-            Uri.parse('${ApiService.baseUrl}/cars/$carId'),
+            Uri.parse('${ApiService.baseUrl}/cars/${Uri.encodeComponent(carId.trim())}'),
             headers: ApiService._getHeaders(includeAuth: true),
           )
           .timeout(ApiService._defaultTimeout);
 
       return unwrapCarApiPayload(ApiService._handleResponse(response));
+    }
+
+  /// Parses car detail JSON (legacy list, `{car: ...}`, or flat map). Returns null when unknown.
+  static Map<String, dynamic>? parseCarDetailPayload(dynamic data) {
+      if (data is List && data.isNotEmpty && data.first is Map) {
+        return Map<String, dynamic>.from(
+          (data.first as Map).map((k, v) => MapEntry(k.toString(), v)),
+        );
+      }
+      if (data is Map) {
+        final map = Map<String, dynamic>.from(
+          data.map((k, v) => MapEntry(k.toString(), v)),
+        );
+        return unwrapCarApiPayload(map);
+      }
+      return null;
+    }
+
+  /// Loads a single listing for detail pages; returns null on failure (callers may use cache).
+  static Future<Map<String, dynamic>?> getCarDetail(String carId) async {
+      final id = Uri.encodeComponent(carId.trim());
+      if (id.isEmpty) return null;
+      try {
+        await ApiService._ensureTokenLoaded();
+        final url = Uri.parse('${ApiService.baseUrl}/cars/$id');
+        var headers = ApiService._getHeaders(includeAuth: true);
+        var response = await ApiService._httpClient
+            .get(url, headers: headers)
+            .timeout(const Duration(seconds: 20));
+        if (response.statusCode == 401 &&
+            await ApiService._refreshAccessToken()) {
+          headers = ApiService._getHeaders(includeAuth: true);
+          response = await ApiService._httpClient
+              .get(url, headers: headers)
+              .timeout(const Duration(seconds: 20));
+        }
+        if (response.statusCode != 200) return null;
+        if (response.body.isEmpty) return null;
+        final decoded = json.decode(response.body);
+        return parseCarDetailPayload(decoded);
+      } catch (_) {
+        return null;
+      }
     }
 
   static Future<Map<String, dynamic>> createCar(
@@ -207,16 +250,18 @@ abstract final class _ApiServiceListings {
 
   static Future<Map<String, dynamic>> uploadCarVideos(
     String carId,
-    List<XFile> videoFiles,
-  ) async {
+    List<XFile> videoFiles, {
+    Future<http.MultipartFile> Function(XFile file)? multipartFileBuilder,
+  }) async {
+      final buildFile = multipartFileBuilder ??
+          (file) => http.MultipartFile.fromPath('files', file.path);
       final data = await ApiService._sendAuthenticatedMultipart(() async {
         final request = http.MultipartRequest(
           'POST',
           Uri.parse('${ApiService.baseUrl}/cars/$carId/videos'),
         );
-        // Backend expects `request.files["files"]` (list).
         for (final file in videoFiles) {
-          request.files.add(await http.MultipartFile.fromPath('files', file.path));
+          request.files.add(await buildFile(file));
         }
         return request;
       });
