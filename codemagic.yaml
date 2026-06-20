@@ -214,9 +214,17 @@ workflows:
           echo "Using export options from use-profiles:"
           /usr/libexec/PlistBuddy -c 'Print :method' "$EXPORT_PLIST" || true
           /usr/libexec/PlistBuddy -c 'Print :provisioningProfiles' "$EXPORT_PLIST" 2>/dev/null || true
-          # Apple requires CFBundleVersion to increase on every upload (CM_BUILD_ID is unique per build).
-          BUILD_NUM="${CM_BUILD_ID:-2}"
-          echo "iOS build number (CFBundleVersion): $BUILD_NUM"
+          # Apple requires CFBundleVersion to increase on every upload and be ≤18 chars.
+          # CM_BUILD_ID is unique per build but can exceed Apple's 18-character limit.
+          RAW_BUILD_ID="${CM_BUILD_ID:-${CM_BUILD_NUMBER:-2}}"
+          BUILD_NUM="${RAW_BUILD_ID: -18}"
+          BUILD_NUM="${BUILD_NUM#"${BUILD_NUM%%[!0]*}"}"
+          BUILD_NUM="${BUILD_NUM:-1}"
+          if [ "${#BUILD_NUM}" -gt 18 ]; then
+            echo "ERROR: CFBundleVersion exceeds 18 chars: $BUILD_NUM"
+            exit 1
+          fi
+          echo "iOS build number (CFBundleVersion): $BUILD_NUM (from CM_BUILD_ID=$CM_BUILD_ID)"
           flutter build ipa --release \
             --build-name="1.0.0" \
             --build-number="$BUILD_NUM" \

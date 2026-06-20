@@ -55,7 +55,11 @@ workflows:
           flutter test --dart-define=API_BASE=http://127.0.0.1:8081
       - name: Prepare App Store build metadata
         script: |
-          /usr/libexec/PlistBuddy -c "Set :CFBundleVersion $CM_BUILD_ID" ios/Runner/Info.plist
+          RAW_BUILD_ID="${CM_BUILD_ID:-${CM_BUILD_NUMBER:-2}}"
+          BUILD_NUM="${RAW_BUILD_ID: -18}"
+          BUILD_NUM="${BUILD_NUM#"${BUILD_NUM%%[!0]*}"}"
+          BUILD_NUM="${BUILD_NUM:-1}"
+          /usr/libexec/PlistBuddy -c "Set :CFBundleVersion $BUILD_NUM" ios/Runner/Info.plist
           /usr/libexec/PlistBuddy -c 'Print :aps-environment' ios/Runner/Runner.entitlements
       - name: Build iOS app
         script: |

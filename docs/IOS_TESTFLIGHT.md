@@ -150,7 +150,9 @@ Commit and push if you change the name.
 3. Wait until green (first time may take ~15–25 min).
 4. Build uploads to App Store Connect automatically (`submit_to_testflight: true`).
 
-**Upload error “bundle version must be higher than previously uploaded version: 1”** — Apple already has build **1**. Each new upload needs a higher **CFBundleVersion**. The workflow uses Codemagic **`CM_BUILD_ID`** as the iOS build number so this does not repeat.
+**Upload error “bundle version must be higher than previously uploaded version: 1”** — Apple already has build **1**. Each new upload needs a higher **CFBundleVersion**. The workflow uses the last 18 digits of Codemagic **`CM_BUILD_ID`** as the iOS build number so it stays unique and within Apple’s limit.
+
+**Upload error “CFBundleVersion … must be no longer than 18 characters”** — Codemagic **`CM_BUILD_ID`** can be 19+ digits. The workflow truncates to the last 18 digits before `flutter build ipa`.
 
 ### Archive built but no `.ipa` (only `Runner.xcarchive` in logs)
 
