@@ -102,6 +102,11 @@ class ApiService {
         headers: headers,
       );
 
+  static Future<List<Map<String, dynamic>>> _makeAuthenticatedListRequest(
+    String endpoint,
+  ) =>
+      _ApiServiceHttp.makeAuthenticatedListRequest(endpoint);
+
   // Authentication & profile (api/api_auth.dart)
   static Future<Map<String, dynamic>> registerEmailRequest({
     String? username,
@@ -240,6 +245,9 @@ class ApiService {
         dealershipPhone: dealershipPhone,
         dealershipLocation: dealershipLocation,
       );
+
+  static Future<Map<String, dynamic>> signupLegacy(Map<String, dynamic> body) =>
+      _ApiServiceAuth.signupLegacy(body);
 
   static Future<Map<String, dynamic>> verifyPhone(
     String phoneNumber,
@@ -463,6 +471,20 @@ class ApiService {
     int perPage = 20,
   }) =>
       _ApiServiceListings.getMyListings(page: page, perPage: perPage);
+
+  static Future<List<Map<String, dynamic>>> getMyListingsCompat() =>
+      _ApiServiceListings.getMyListingsCompat();
+
+  static Future<http.Response> getCarsRaw(
+    Map<String, String> queryParams, {
+    Duration timeout = const Duration(seconds: 60),
+    Map<String, String>? extraHeaders,
+  }) =>
+      _ApiServiceListings.getCarsRaw(
+        queryParams,
+        timeout: timeout,
+        extraHeaders: extraHeaders,
+      );
 
   // Check if user is authenticated
   static bool get isAuthenticated =>

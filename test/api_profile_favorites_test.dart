@@ -45,4 +45,9 @@ void main() {
     expect(listings['cars'], isA<List>());
     expect(listings['pagination'], isA<Map>());
   });
+
+  test('getMyListingsCompat returns array from /my_listings', () async {
+    final listings = await ApiService.getMyListingsCompat();
+    expect(listings, isA<List<Map<String, dynamic>>>());
+  });
 }

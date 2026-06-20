@@ -341,4 +341,26 @@ abstract final class _ApiServiceListings {
       );
     }
 
+  /// Legacy mobile alias: `GET /api/my_listings` returns a bare JSON array.
+  static Future<List<Map<String, dynamic>>> getMyListingsCompat() async {
+      return ApiService._makeAuthenticatedListRequest('/my_listings');
+    }
+
+  /// Public car search with arbitrary query params (home feed, filters, sort fallbacks).
+  static Future<http.Response> getCarsRaw(
+    Map<String, String> queryParams, {
+    Duration timeout = const Duration(seconds: 60),
+    Map<String, String>? extraHeaders,
+  }) async {
+      final uri = Uri.parse('${ApiService.baseUrl}/cars')
+          .replace(queryParameters: queryParams);
+      final headers = {
+        ...ApiService._getHeaders(includeAuth: false),
+        ...?extraHeaders,
+      };
+      return ApiService._httpClient
+          .get(uri, headers: headers)
+          .timeout(timeout);
+    }
+
 }

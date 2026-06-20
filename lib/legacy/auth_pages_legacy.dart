@@ -683,7 +683,6 @@ class _SignupPageState extends State<SignupPage> {
         return;
       }
       // Phone path: keep existing API calls for send_otp/signup, then persist tokens via ApiService
-      final url = Uri.parse('${getApiBase()}/api/auth/signup');
       final Map<String, dynamic> requestBody = <String, dynamic>{
         'password': _passwordController.text,
         'auth_type': _authType,
@@ -697,68 +696,58 @@ class _SignupPageState extends State<SignupPage> {
           'dealership_location': _dealershipLocationController.text.trim(),
         },
       };
-      final resp = await http
-          .post(
-            url,
-            headers: <String, String>{'Content-Type': 'application/json'},
-            body: json.encode(requestBody),
-          )
-          .timeout(const Duration(seconds: 25));
-      if (resp.statusCode >= 200 && resp.statusCode < 300) {
-        final data = json.decode(resp.body) as Map<String, dynamic>;
-        final String? legacyToken = (data['token'] as String?)?.trim();
-        final String? access = (data['access_token'] as String?)?.trim();
-        final String? refresh = (data['refresh_token'] as String?)?.trim();
-        final String? token = (legacyToken != null && legacyToken.isNotEmpty)
-            ? legacyToken
-            : access;
-        if (token != null && token.isNotEmpty) {
-          await ApiService.setAccessToken(token);
-          if (refresh != null && refresh.isNotEmpty) {
-            await ApiService.setRefreshToken(refresh);
-          }
-          await authService.initialize();
-          if (!mounted) return;
-          Navigator.pushReplacementNamed(context, '/');
-          return;
+      final data = await ApiService.signupLegacy(requestBody);
+      final String? legacyToken = (data['token'] as String?)?.trim();
+      final String? access = (data['access_token'] as String?)?.trim();
+      final String? refresh = (data['refresh_token'] as String?)?.trim();
+      final String? token = (legacyToken != null && legacyToken.isNotEmpty)
+          ? legacyToken
+          : access;
+      if (token != null && token.isNotEmpty) {
+        await ApiService.setAccessToken(token);
+        if (refresh != null && refresh.isNotEmpty) {
+          await ApiService.setRefreshToken(refresh);
         }
-        // No token: try login so we get tokens and profile
-        try {
-          final loginIdent = _authType == 'phone'
-              ? '+964${_phoneController.text.trim()}'
-              : username;
-          await authService.login(loginIdent, _passwordController.text);
-          if (!mounted) return;
-          Navigator.pushReplacementNamed(context, '/');
-        } catch (e, st) { logNonFatal(e, st); 
-          if (!mounted) return;
-          showDialog(
-            context: context,
-            builder: (_) => AlertDialog(
-              title: Text(AppLocalizations.of(context)!.errorTitle),
-              content: const Text(
-                'Signup succeeded. Please log in to continue.',
-              ),
-              actions: [
-                TextButton(
-                  onPressed: () => Navigator.pop(context),
-                  child: Text(AppLocalizations.of(context)!.okAction),
-                ),
-              ],
-            ),
-          );
-        }
+        await authService.initialize();
+        if (!mounted) return;
+        Navigator.pushReplacementNamed(context, '/');
         return;
       }
+      // No token: try login so we get tokens and profile
+      try {
+        final loginIdent = _authType == 'phone'
+            ? '+964${_phoneController.text.trim()}'
+            : username;
+        await authService.login(loginIdent, _passwordController.text);
+        if (!mounted) return;
+        Navigator.pushReplacementNamed(context, '/');
+      } catch (e, st) {
+        logNonFatal(e, st);
+        if (!mounted) return;
+        showDialog(
+          context: context,
+          builder: (_) => AlertDialog(
+            title: Text(AppLocalizations.of(context)!.errorTitle),
+            content: const Text(
+              'Signup succeeded. Please log in to continue.',
+            ),
+            actions: [
+              TextButton(
+                onPressed: () => Navigator.pop(context),
+                child: Text(AppLocalizations.of(context)!.okAction),
+              ),
+            ],
+          ),
+        );
+      }
+      return;
+    } on ApiException catch (e) {
       if (!mounted) return;
-      final msg = resp.body.isNotEmpty
-          ? resp.body
-          : AppLocalizations.of(context)!.couldNotSubmitListing;
       showDialog(
         context: context,
         builder: (_) => AlertDialog(
           title: Text(AppLocalizations.of(context)!.errorTitle),
-          content: Text(msg),
+          content: Text(e.message),
           actions: [
             TextButton(
               onPressed: () => Navigator.pop(context),

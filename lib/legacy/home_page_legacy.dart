@@ -1639,18 +1639,17 @@ class _HomePageState extends State<HomePage> {
       final timeout = filters.containsKey('sort_by')
           ? Duration(seconds: 30)
           : Duration(seconds: 15);
-      final response = await http
-          .get(
-            url,
-            headers: {
+      final response = await ApiService.getCarsRaw(
+        filters,
+        timeout: timeout,
+        extraHeaders: {
               'Connection': 'keep-alive',
               'Accept': 'application/json',
               'User-Agent': 'CarNet-Mobile/1.0',
               'Cache-Control': 'no-cache',
               'Pragma': 'no-cache',
             },
-          )
-          .timeout(timeout);
+      );
 
       _debugLog('ðŸ“¡ Response status: ${response.statusCode}');
       _debugLog('ðŸ“¡ Response body length: ${response.body.length}');
@@ -1793,13 +1792,11 @@ class _HomePageState extends State<HomePage> {
       final Map<String, String> filters = _buildFilters();
       filters['page'] = _page.toString();
       filters['per_page'] = '20';
-      final query = Uri(queryParameters: filters).query;
-      final url = Uri.parse(
-        '${getApiBase()}/api/cars${query.isNotEmpty ? '?$query' : ''}',
+      final resp = await ApiService.getCarsRaw(
+        filters,
+        timeout: const Duration(seconds: 20),
+        extraHeaders: {'Accept': 'application/json'},
       );
-      final resp = await http
-          .get(url, headers: {'Accept': 'application/json'})
-          .timeout(Duration(seconds: 20));
       if (resp.statusCode == 200) {
         final decoded = json.decode(resp.body);
         List<dynamic> listSource;
@@ -1860,20 +1857,15 @@ class _HomePageState extends State<HomePage> {
   Future<bool> _fetchFromApiCars({bool includeSort = true}) async {
     try {
       Map<String, String> filters = _buildFilters(includeSort: includeSort);
-      final query = Uri(queryParameters: filters).query;
-      final url = Uri.parse(
-        '${getApiBase()}/api/cars${query.isNotEmpty ? '?$query' : ''}',
-      );
-      final resp = await http
-          .get(
-            url,
-            headers: {
+      final resp = await ApiService.getCarsRaw(
+        filters,
+        timeout: const Duration(seconds: 20),
+        extraHeaders: {
               'Accept': 'application/json',
               'Connection': 'close',
               'Cache-Control': 'no-cache',
             },
-          )
-          .timeout(Duration(seconds: 20));
+      );
       if (resp.statusCode == 200) {
         final decoded = json.decode(resp.body);
         if (decoded is Map && decoded['cars'] is List) {
@@ -1910,7 +1902,10 @@ class _HomePageState extends State<HomePage> {
 
       _debugLog('ðŸ” Fallback URL: $url');
 
-      final response = await http.get(url).timeout(Duration(seconds: 10));
+      final response = await ApiService.getCarsRaw(
+        filters,
+        timeout: const Duration(seconds: 10),
+      );
       if (response.statusCode == 200) {
         final decoded = json.decode(response.body);
         List<dynamic> listSource;
@@ -2218,22 +2213,16 @@ class _HomePageState extends State<HomePage> {
         _debugLog('ðŸ”„ Attempt $attempt with ${timeout.inSeconds}s timeout');
 
         Map<String, String> filters = _buildFilters();
-        String query = Uri(queryParameters: filters).query;
-        final url = Uri.parse(
-          '${getApiBase()}/api/cars${query.isNotEmpty ? '?$query' : ''}',
-        );
-
-        final response = await http
-            .get(
-              url,
-              headers: {
+        final response = await ApiService.getCarsRaw(
+          filters,
+          timeout: timeout,
+          extraHeaders: {
                 'Accept': 'application/json',
                 'User-Agent': 'CarNet-Mobile/1.0',
                 'Connection': attempt % 2 == 0 ? 'close' : 'keep-alive',
                 'Cache-Control': 'no-cache',
               },
-            )
-            .timeout(timeout);
+        );
 
         if (response.statusCode == 200) {
           final decoded = json.decode(response.body);
@@ -2263,6 +2252,7 @@ class _HomePageState extends State<HomePage> {
 
           // Save to cache
           final sp = await SharedPreferences.getInstance();
+          final query = Uri(queryParameters: filters).query;
           final cacheKey = 'cache_home_${query.hashCode}';
           unawaited(sp.setString(cacheKey, response.body));
 
@@ -2290,15 +2280,10 @@ class _HomePageState extends State<HomePage> {
     for (int attempt = 1; attempt <= 3; attempt++) {
       try {
         Map<String, String> filters = _buildFilters();
-        String query = Uri(queryParameters: filters).query;
-        final url = Uri.parse(
-          '${getApiBase()}/api/cars${query.isNotEmpty ? '?$query' : ''}',
-        );
-
-        final response = await http
-            .get(
-              url,
-              headers: {
+        final response = await ApiService.getCarsRaw(
+          filters,
+          timeout: const Duration(seconds: 15),
+          extraHeaders: {
                 'Accept': 'application/json',
                 'User-Agent': 'CarNet-Mobile/1.0',
                 'Connection': 'close',
@@ -2306,8 +2291,7 @@ class _HomePageState extends State<HomePage> {
                 'Pragma': 'no-cache',
                 'If-None-Match': '*',
               },
-            )
-            .timeout(Duration(seconds: 15));
+        );
 
         if (response.statusCode == 200) {
           final decoded = json.decode(response.body);
@@ -2356,14 +2340,12 @@ class _HomePageState extends State<HomePage> {
     _debugLog('ðŸ”„ Simple sort attempt with: $apiSortValue');
     // Try with minimal headers and shorter timeout
     Map<String, String> filters = _buildFilters();
-    String query = Uri(queryParameters: filters).query;
-    final url = Uri.parse(
-      '${getApiBase()}/api/cars${query.isNotEmpty ? '?$query' : ''}',
-    );
 
-    final response = await http
-        .get(url, headers: {'Accept': 'application/json'})
-        .timeout(Duration(seconds: 10));
+    final response = await ApiService.getCarsRaw(
+      filters,
+      timeout: const Duration(seconds: 10),
+      extraHeaders: {'Accept': 'application/json'},
+    );
 
     if (response.statusCode == 200) {
       final decoded = json.decode(response.body);
@@ -2404,15 +2386,13 @@ class _HomePageState extends State<HomePage> {
 
     try {
       Map<String, String> filters = _buildFilters();
-      String query = Uri(queryParameters: filters).query;
-      final url = Uri.parse(
-        '${getApiBase()}/api/cars${query.isNotEmpty ? '?$query' : ''}',
-      );
 
       // Try with a very simple request
-      final response = await http
-          .get(url, headers: {'Accept': 'application/json'})
-          .timeout(Duration(seconds: 20));
+      final response = await ApiService.getCarsRaw(
+        filters,
+        timeout: const Duration(seconds: 20),
+        extraHeaders: {'Accept': 'application/json'},
+      );
 
       if (response.statusCode == 200) {
         final decoded = json.decode(response.body);

@@ -485,6 +485,13 @@ class BackendFactorySmokeTest(unittest.TestCase):
         self.assertIn("username", body)
         self.assertIn("id", body)
 
+    def test_my_listings_compat_returns_array(self):
+        r = self.client.get("/api/my_listings", headers=self._auth(self.seller_token))
+        self.assertEqual(r.status_code, 200, r.data)
+        body = r.get_json()
+        self.assertIsInstance(body, list)
+        self.assertGreaterEqual(len(body), 1)
+
     def test_favorites_toggle_and_list(self):
         fav = self.client.post(
             f"/api/cars/{self.car_public}/favorite",

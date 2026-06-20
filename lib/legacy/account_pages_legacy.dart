@@ -1554,23 +1554,14 @@ class _MyListingsPageState extends State<MyListingsPage> {
         return;
       }
 
-      final url = Uri.parse('${getApiBase()}/api/my_listings');
-      final response = await http.get(
-        url,
-        headers: {
-          'Authorization': 'Bearer $token',
-          'Content-Type': 'application/json',
-        },
-      ).timeout(const Duration(seconds: 60));
-
-      if (response.statusCode == 200) {
-        final List<dynamic> data = json.decode(response.body);
-        setState(() {
-          myListings = data.cast<Map<String, dynamic>>();
-          isLoading = false;
-        });
-        _debugLog('MyListings loaded: ${myListings.length} listings');
-      } else if (response.statusCode == 401) {
+      final listings = await ApiService.getMyListingsCompat();
+      setState(() {
+        myListings = listings;
+        isLoading = false;
+      });
+      _debugLog('MyListings loaded: ${myListings.length} listings');
+    } on ApiException catch (e) {
+      if (e.statusCode == 401) {
         setState(() {
           error = 'Please log in to view your listings';
           isLoading = false;
@@ -1581,9 +1572,7 @@ class _MyListingsPageState extends State<MyListingsPage> {
           error = 'Failed to load listings. Please try again.';
           isLoading = false;
         });
-        _debugLog(
-          'MyListings API error: ${response.statusCode} - ${response.body}',
-        );
+        _debugLog('MyListings API error: ${e.statusCode} - ${e.message}');
       }
     } catch (e) {
       setState(() {

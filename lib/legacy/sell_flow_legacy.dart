@@ -8915,17 +8915,12 @@ class _SellStep5PageState extends State<SellStep5Page> {
     }..removeWhere((k, v) => v == null || (v is String && v.trim().isEmpty));
 
     try {
-      final headers = {
-        'Content-Type': 'application/json',
-        'Authorization': 'Bearer $existingToken',
-      };
       final editId = context
               .findAncestorStateOfType<_SellCarPageState>()
               ?._editListingId
               ?.trim() ??
           '';
 
-      http.Response? response;
       String carId = '';
       if (editId.isNotEmpty) {
         try {
@@ -8935,22 +8930,27 @@ class _SellStep5PageState extends State<SellStep5Page> {
           throw Exception(e.message);
         }
       } else {
-        final url = Uri.parse('${getApiBase()}/api/cars');
-        response = await http
-            .post(url, headers: headers, body: json.encode(payload))
-            .timeout(
-              const Duration(seconds: 25),
-              onTimeout: () {
-                throw Exception(
-                  'Network timeout. Please check the server and try again.',
-                );
-              },
-            );
-        if (response.statusCode == 201) {
-          final Map<String, dynamic> created = json.decode(response.body);
-          final dynamic carObj =
-              (created['car'] is Map) ? created['car'] : created;
-          carId = (carObj['id']?.toString() ?? '').toString();
+        try {
+          final created = await ApiService.createCar(payload);
+          final carObj = unwrapCarApiPayload(created);
+          carId = listingPrimaryId(carObj);
+        } on ApiException catch (e) {
+          if (e.statusCode == 401) {
+            _debugLog('Submission failed: Authentication failed');
+            throw Exception('Authentication failed. Please log in again.');
+          }
+          _debugLog('Submission failed: ${e.statusCode} - ${e.message}');
+          final body = e.body;
+          String? msg = e.message;
+          if (body != null) {
+            final List<dynamic>? errs = (body['errors'] is List)
+                ? List<dynamic>.from(body['errors']!)
+                : null;
+            if (errs != null && errs.isNotEmpty) {
+              msg = errs.map((err) => err.toString()).join(', ');
+            }
+          }
+          throw Exception(msg);
         }
       }
 
@@ -9186,41 +9186,7 @@ class _SellStep5PageState extends State<SellStep5Page> {
         return carId;
       }
 
-      // Edit failures throw via [ApiException] above; only create reaches here.
-      final createResponse = response;
-      if (createResponse == null) {
-        throw Exception('Failed to create listing');
-      }
-      if (createResponse.statusCode == 401) {
-        _debugLog('Submission failed: Authentication failed');
-        throw Exception('Authentication failed. Please log in again.');
-      } else {
-        _debugLog(
-          'Submission failed: ${createResponse.statusCode} - ${createResponse.body}',
-        );
-        dynamic errorData;
-        try {
-          errorData = json.decode(createResponse.body);
-        } catch (e, st) { logNonFatal(e, st); 
-          errorData = null;
-        }
-        String? msg;
-        if (errorData is Map<String, dynamic>) {
-          final List<dynamic>? errs = (errorData['errors'] is List)
-              ? List<dynamic>.from(errorData['errors'])
-              : null;
-          if (errs != null && errs.isNotEmpty) {
-            msg = errs.map((e) => e.toString()).join(', ');
-          } else {
-            msg =
-                (errorData['message']?.toString()) ??
-                (errorData['error']?.toString());
-          }
-        } else if (errorData is List) {
-          msg = errorData.map((e) => e.toString()).join(', ');
-        }
-        throw Exception(msg ?? 'Failed to create listing');
-      }
+      throw Exception('Failed to create listing');
     } catch (e) {
       if (e.toString().contains('SocketException') ||
           e.toString().contains('HandshakeException')) {

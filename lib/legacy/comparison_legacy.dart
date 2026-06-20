@@ -2297,86 +2297,58 @@ Widget build(BuildContext context) {
                   };
 
                   try {
-                    final url = Uri.parse(getApiBase() + '/api/cars');
-                    final headers = {
-                      'Content-Type': 'application/json',
-                      if (ApiService.accessToken != null) 'Authorization': 'Bearer ' + ApiService.accessToken!,
-                    };
-                    final resp = await http.post(
-                      url,
-                      headers: headers,
-                      body: json.encode(payload),
-                    ).timeout(const Duration(seconds: 60));
-                    if (resp.statusCode == 201) {
-                      final Map<String, dynamic> created = json.decode(resp.body);
-                      final int carId = created['id'];
-                      if (_selectedImages.isNotEmpty) {
-                        final uploadUrl = Uri.parse(getApiBase() + '/api/cars/' + carId.toString() + '/images');
-                        final request = http.MultipartRequest('POST', uploadUrl);
-                        final tok = ApiService.accessToken;
-                        if (tok != null) request.headers['Authorization'] = 'Bearer ' + tok;
-                        for (final img in _selectedImages) {
-                          request.files.add(await http.MultipartFile.fromPath('image', img.path));
-                        }
-                        final uploadResp = await request.send();
-                        final uploadHttpResp = await http.Response.fromStream(uploadResp);
-                        if (uploadResp.statusCode == 201) {
-                          try {
-                            final respJson = json.decode(uploadHttpResp.body);
-                            final newPrimary = (respJson is Map) ? (respJson['image_url']?.toString() ?? '') : '';
-                            if (newPrimary.isNotEmpty) {
-                              // Navigate back to home so the new image shows up immediately
-                              ScaffoldMessenger.of(context).showSnackBar(
-                                SnackBar(content: Text(_photosUploadedTextGlobal(context))),
-                              );
-                            }
-                          } catch (e, st) { logNonFatal(e, st); }
-                        } else {
-                          showDialog(
-                            context: context,
-                            builder: (context) => AlertDialog(
-                              title: Text(AppLocalizations.of(context)!.error),
-                              content: Text(
-                                AppLocalizations.of(context)!.listingUploadPartialFail(uploadResp.statusCode) +
-                                (uploadHttpResp.body.isNotEmpty ? '\n' + uploadHttpResp.body : ''),
-                              ),
-                              actions: [
-                                TextButton(onPressed: () => Navigator.pop(context), child: Text(AppLocalizations.of(context)!.ok)),
-                              ],
-                            ),
+                    final result = await ApiService.createCar(payload);
+                    final carMap = unwrapCarApiPayload(result);
+                    final carId = listingPrimaryId(carMap);
+                    if (_selectedImages.isNotEmpty) {
+                      try {
+                        final respJson = await ApiService.uploadCarImages(
+                          carId,
+                          _selectedImages,
+                        );
+                        final newPrimary = respJson['image_url']?.toString() ?? '';
+                        if (newPrimary.isNotEmpty) {
+                          ScaffoldMessenger.of(context).showSnackBar(
+                            SnackBar(content: Text(_photosUploadedTextGlobal(context))),
                           );
                         }
-                      }
-                      
-                      // Upload videos if any
-                      if (_selectedVideos.isNotEmpty) {
-                        final videoUploadUrl = Uri.parse(getApiBase() + '/api/cars/' + carId.toString() + '/videos');
-                        final videoRequest = http.MultipartRequest('POST', videoUploadUrl);
-                        final tok = ApiService.accessToken;
-                        if (tok != null) videoRequest.headers['Authorization'] = 'Bearer ' + tok;
-                        for (final video in _selectedVideos) {
-                          videoRequest.files.add(await _buildVideoMultipartFile(video));
-                        }
-                        final videoUploadResp = await videoRequest.send();
-                        if (videoUploadResp.statusCode != 200 &&
-                            videoUploadResp.statusCode != 201) {
-                          showDialog(
-                            context: context,
-                            builder: (context) => AlertDialog(
-                              title: Text(AppLocalizations.of(context)!.error),
-                              content: Text('${AppLocalizations.of(context)!.error}: ${_localizeDigitsGlobal(context, videoUploadResp.statusCode.toString())}'),
-                              actions: [
-                                TextButton(onPressed: () => Navigator.pop(context), child: Text(AppLocalizations.of(context)!.ok)),
-                              ],
+                      } on ApiException catch (e) {
+                        showDialog(
+                          context: context,
+                          builder: (context) => AlertDialog(
+                            title: Text(AppLocalizations.of(context)!.error),
+                            content: Text(
+                              AppLocalizations.of(context)!.listingUploadPartialFail(e.statusCode) +
+                                  (e.message.isNotEmpty ? '\n${e.message}' : ''),
                             ),
-                          );
-                        }
+                            actions: [
+                              TextButton(onPressed: () => Navigator.pop(context), child: Text(AppLocalizations.of(context)!.ok)),
+                            ],
+                          ),
+                        );
                       }
-                      
-                      // After successful create and uploads, go home to refresh
-                      Navigator.pushReplacementNamed(context, '/');
-                    } else if (resp.statusCode == 401 || resp.statusCode == 403) {
-                      // Token missing/expired or not authorized -> prompt login
+                    }
+
+                    if (_selectedVideos.isNotEmpty) {
+                      try {
+                        await ApiService.uploadCarVideos(carId, _selectedVideos);
+                      } on ApiException catch (e) {
+                        showDialog(
+                          context: context,
+                          builder: (context) => AlertDialog(
+                            title: Text(AppLocalizations.of(context)!.error),
+                            content: Text('${AppLocalizations.of(context)!.error}: ${_localizeDigitsGlobal(context, e.statusCode.toString())}'),
+                            actions: [
+                              TextButton(onPressed: () => Navigator.pop(context), child: Text(AppLocalizations.of(context)!.ok)),
+                            ],
+                          ),
+                        );
+                      }
+                    }
+
+                    Navigator.pushReplacementNamed(context, '/');
+                  } on ApiException catch (e) {
+                    if (e.statusCode == 401 || e.statusCode == 403) {
                       showDialog(
                         context: context,
                         builder: (context) => AlertDialog(
@@ -2399,7 +2371,7 @@ Widget build(BuildContext context) {
                         context: context,
                         builder: (context) => AlertDialog(
                           title: Text(AppLocalizations.of(context)!.error),
-                          content: Text(AppLocalizations.of(context)!.failedToSubmitListing(resp.body)),
+                          content: Text(AppLocalizations.of(context)!.failedToSubmitListing(e.message)),
                           actions: [
                             TextButton(onPressed: () => Navigator.pop(context), child: Text(AppLocalizations.of(context)!.ok)),
                           ],

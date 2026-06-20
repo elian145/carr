@@ -371,4 +371,51 @@ abstract final class _ApiServiceHttp {
 
       return _handleResponse(response);
     }
+
+    /// GET that returns a JSON array (e.g. legacy `/my_listings` compat).
+    static Future<List<Map<String, dynamic>>> makeAuthenticatedListRequest(
+      String endpoint,
+    ) async {
+      await _ensureTokenLoaded();
+      final url = Uri.parse('${ApiService.baseUrl}$endpoint');
+      var requestHeaders = _getHeaders();
+
+      var response = await ApiService._httpClient
+          .get(url, headers: requestHeaders)
+          .timeout(ApiService._defaultTimeout);
+
+      if (response.statusCode == 401 && await _refreshAccessToken()) {
+        requestHeaders = _getHeaders();
+        response = await ApiService._httpClient
+            .get(url, headers: requestHeaders)
+            .timeout(ApiService._defaultTimeout);
+      }
+
+      if (response.statusCode >= 200 && response.statusCode < 300) {
+        final decoded = response.body.isNotEmpty ? json.decode(response.body) : <dynamic>[];
+        if (decoded is List) {
+          return decoded
+              .whereType<Map>()
+              .map(
+                (e) => Map<String, dynamic>.from(
+                  e.map((k, v) => MapEntry(k.toString(), v)),
+                ),
+              )
+              .toList();
+        }
+        throw ApiException(
+          statusCode: response.statusCode,
+          message: 'Expected a JSON array',
+        );
+      }
+
+      if (response.statusCode == 401) {
+        await clearTokens();
+      }
+      _handleResponse(response);
+      throw ApiException(
+        statusCode: response.statusCode,
+        message: 'Request failed',
+      );
+    }
 }
