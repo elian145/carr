@@ -697,7 +697,7 @@ void _switchMainTabNoAnimation(BuildContext context, String routeName) {
   Navigator.of(context).pushReplacement(
     PageRouteBuilder(
       settings: RouteSettings(name: routeName),
-      pageBuilder: (_, __, ___) => page!,
+      pageBuilder: (context, _, _) => page!,
       transitionDuration: Duration.zero,
       reverseTransitionDuration: Duration.zero,
     ),
@@ -1078,12 +1078,12 @@ Widget _buildGlobalCarCardInnerText(
 }) {
   // Keep the title box height stable (prevents card overflows), but render the
   // brand+model text larger so it has stronger hierarchy than trim.
-  const double _titleBoxFontSize = 15;
+  const double titleBoxFontSize = 15;
   const double titleFontSize = 17;
   const double titleLineHeight = 1.1;
   const int titleMaxLines = 2;
   final double reservedTitleHeight =
-      _titleBoxFontSize * titleLineHeight * titleMaxLines;
+      titleBoxFontSize * titleLineHeight * titleMaxLines;
   final bool hasTrim = trimLine.isNotEmpty;
 
   return Column(
@@ -1660,7 +1660,7 @@ Widget _buildGlobalCardImageCarousel(
   }
 
   int currentIndex = 0;
-  const int _kMaxVisibleDots = 6;
+  const int kMaxVisibleDots = 6;
   int dotWindowStart = 0;
   bool dotWindowForward = true;
 
@@ -1671,7 +1671,7 @@ Widget _buildGlobalCardImageCarousel(
     builder: (context, setState) {
       int computeDotStart(int index) {
         final int visible =
-            slots.length < _kMaxVisibleDots ? slots.length : _kMaxVisibleDots;
+            slots.length < kMaxVisibleDots ? slots.length : kMaxVisibleDots;
         if (visible <= 0 || slots.length <= visible) return 0;
         final int maxStart = (slots.length - visible).clamp(0, slots.length);
         return (index - (visible - 1)).clamp(0, maxStart);
@@ -1723,9 +1723,9 @@ Widget _buildGlobalCardImageCarousel(
               right: 0,
               child: Center(
                 child: () {
-                  final int visible = slots.length < _kMaxVisibleDots
+                  final int visible = slots.length < kMaxVisibleDots
                       ? slots.length
-                      : _kMaxVisibleDots;
+                      : kMaxVisibleDots;
                   if (visible <= 1) return const SizedBox.shrink();
 
                   Widget buildDotRow(int startIndex) {
@@ -3337,9 +3337,9 @@ List<double> _tintColorMatrix(Color color) {
   const double lR = 0.2126;
   const double lG = 0.7152;
   const double lB = 0.0722;
-  final double r = color.red / 255.0;
-  final double g = color.green / 255.0;
-  final double b = color.blue / 255.0;
+  final double r = color.r;
+  final double g = color.g;
+  final double b = color.b;
   return [
     lR * r,
     lG * r,

@@ -5,7 +5,7 @@ class CarDetailsPage extends StatefulWidget {
   final String carId;
   const CarDetailsPage({super.key, required this.carId});
   @override
-  _CarDetailsPageState createState() => _CarDetailsPageState();
+  State<CarDetailsPage> createState() => _CarDetailsPageState();
 }
 
 class _CarDetailsPageState extends State<CarDetailsPage> {
@@ -532,10 +532,11 @@ class _CarDetailsPageState extends State<CarDetailsPage> {
         loading = false;
       });
     } catch (e, st) { logNonFatal(e, st); 
-      if (mounted)
+      if (mounted) {
         setState(() {
           loading = false;
         });
+      }
     }
   }
 
@@ -2017,7 +2018,7 @@ class _CarDetailsPageState extends State<CarDetailsPage> {
         padding: const EdgeInsets.symmetric(horizontal: 2),
         scrollDirection: Axis.horizontal,
         itemCount: items.length,
-        separatorBuilder: (_, __) => SizedBox(width: 12),
+        separatorBuilder: (context, index) => SizedBox(width: 12),
         itemBuilder: (context, index) {
           final item = Map<String, dynamic>.from(items[index]);
           final normalized = mapListingToGlobalCarCardData(context, item);
@@ -2100,7 +2101,7 @@ Widget buildCarListingSpecsGrid(
     }
   }
 
-  String _orDash(String? s) {
+  String orDash(String? s) {
     final v = (s ?? '').toString().trim();
     return v.isEmpty ? '—' : v;
   }
@@ -2323,7 +2324,7 @@ Widget buildCarListingSpecsGrid(
       : '—';
 
   final String? transRaw = pickNE(car, ['transmission']);
-  final String transmissionVal = _orDash(
+  final String transmissionVal = orDash(
     _translateValueGlobal(context, transRaw) ?? transRaw,
   );
 
@@ -2370,7 +2371,7 @@ Widget buildCarListingSpecsGrid(
       ? _localizeDigitsGlobal(context, cylRawPrimary)
       : '—';
 
-  final String titleStatusVal = _orDash(
+  final String titleStatusVal = orDash(
     car['title_status'] != null
         ? (car['title_status'].toString().toLowerCase() == 'damaged'
               ? (car['damaged_parts'] != null
@@ -2386,7 +2387,7 @@ Widget buildCarListingSpecsGrid(
   );
 
   final String? fuelRaw = pickNE(car, ['fuel_type', 'fuelType', 'fuel']);
-  final String fuelVal = _orDash(
+  final String fuelVal = orDash(
     _translateValueGlobal(context, fuelRaw) ?? fuelRaw,
   );
 
@@ -2409,7 +2410,7 @@ Widget buildCarListingSpecsGrid(
     _SpecItem(
       icon: Icons.public,
       label: AppLocalizations.of(context)!.regionSpecsLabel,
-      value: _orDash(() {
+      value: orDash(() {
         final raw = pickNE(car, ['region_specs', 'regionSpecs']) ?? '';
         final c = raw.toString().trim().toLowerCase();
         if (!isValidCarRegionSpecCode(c)) return '';
@@ -2432,7 +2433,7 @@ Widget buildCarListingSpecsGrid(
     detailRowSpec(
       icon: Icons.layers,
       label: AppLocalizations.of(context)!.trimLabel,
-      value: _orDash(
+      value: orDash(
         _translateValueGlobal(context, pickNE(car, ['trim'])) ??
             pickNE(car, ['trim']),
       ),
@@ -2440,7 +2441,7 @@ Widget buildCarListingSpecsGrid(
     detailRowSpec(
       icon: Icons.check_circle,
       label: AppLocalizations.of(context)!.detail_condition,
-      value: _orDash(
+      value: orDash(
         _translateValueGlobal(context, pickNE(car, ['condition'])),
       ),
     ),
@@ -2489,7 +2490,7 @@ Widget buildCarListingSpecsGrid(
     detailRowSpec(
       icon: Icons.drive_eta,
       label: AppLocalizations.of(context)!.detail_drive,
-      value: _orDash(
+      value: orDash(
         _translateValueGlobal(
           context,
           pickNE(car, ['drive_type', 'driveType', 'drivetrain', 'drive']),
@@ -2499,7 +2500,7 @@ Widget buildCarListingSpecsGrid(
     detailRowSpec(
       icon: Icons.directions_car_filled,
       label: AppLocalizations.of(context)!.detail_body,
-      value: _orDash(
+      value: orDash(
         _translateValueGlobal(
           context,
           pickNE(car, ['body_type', 'bodyType', 'body']),
@@ -2509,12 +2510,12 @@ Widget buildCarListingSpecsGrid(
     detailRowSpec(
       icon: Icons.color_lens,
       label: AppLocalizations.of(context)!.detail_color,
-      value: _orDash(_translateValueGlobal(context, pickNE(car, ['color']))),
+      value: orDash(_translateValueGlobal(context, pickNE(car, ['color']))),
     ),
     detailRowSpec(
       icon: Icons.airline_seat_recline_normal,
       label: AppLocalizations.of(context)!.detail_seating,
-      value: _orDash(
+      value: orDash(
         _localizeDigitsGlobal(
           context,
           pickNE(car, ['seating', 'seats', 'seatCount']) ?? '',
@@ -2529,7 +2530,7 @@ Widget buildCarListingSpecsGrid(
         ar: 'اللوحة',
         ku: 'پڵەیت',
       ),
-      value: _orDash(() {
+      value: orDash(() {
         final rawCity = pickNE(car, ['plate_city', 'plateCity'])?.trim();
         final rawType = pickNE(car, ['plate_type', 'plateType'])?.trim();
 

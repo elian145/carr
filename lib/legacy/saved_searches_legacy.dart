@@ -110,7 +110,7 @@ class _SavedSearchesPageState extends State<SavedSearchesPage> {
             )
           : ListView.separated(
               itemCount: _items.length,
-              separatorBuilder: (_, __) => Divider(height: 1),
+              separatorBuilder: (context, index) => Divider(height: 1),
               itemBuilder: (context, index) {
                 final item = _items[index];
                 final filters = item['filters'] as Map<String, dynamic>? ?? {};
@@ -365,7 +365,7 @@ class _SavedSearchesPageState extends State<SavedSearchesPage> {
         _buildFilterChip(
           context,
           l.seating,
-          '${filters['seating'].toString()}',
+          filters['seating'].toString(),
         ),
       );
     }

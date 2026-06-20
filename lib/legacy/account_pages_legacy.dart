@@ -4,7 +4,7 @@ class ProfilePage extends StatefulWidget {
   const ProfilePage({super.key});
 
   @override
-  _ProfilePageState createState() => _ProfilePageState();
+  State<ProfilePage> createState() => _ProfilePageState();
 }
 
 class _ProfilePageState extends State<ProfilePage> {
@@ -964,7 +964,7 @@ class EditListingPage extends StatefulWidget {
   final Map car;
   const EditListingPage({super.key, required this.car});
   @override
-  _EditListingPageState createState() => _EditListingPageState();
+  State<EditListingPage> createState() => _EditListingPageState();
 }
 
 class _EditListingPageState extends State<EditListingPage> {
@@ -983,7 +983,7 @@ class MyListingsPage extends StatefulWidget {
   const MyListingsPage({super.key});
 
   @override
-  _MyListingsPageState createState() => _MyListingsPageState();
+  State<MyListingsPage> createState() => _MyListingsPageState();
 }
 
 class SettingsPage extends StatefulWidget {
@@ -1220,7 +1220,7 @@ class _SettingsPageState extends State<SettingsPage> {
                   (_pushEnabled ? loc.enabledLabel : loc.disabledLabel),
               trailing: Switch.adaptive(
                 value: _pushEnabled,
-                activeColor: const Color(0xFFFF6B00),
+                activeThumbColor: const Color(0xFFFF6B00),
                 onChanged: _togglePush,
               ),
               onTap: () => _togglePush(!_pushEnabled),

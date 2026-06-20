@@ -4,7 +4,7 @@ class HomePage extends StatefulWidget {
   const HomePage({super.key});
 
   @override
-  _HomePageState createState() => _HomePageState();
+  State<HomePage> createState() => _HomePageState();
 }
 
 /// Empty listings: shows only the message. When a non-default sort is already
@@ -1339,6 +1339,7 @@ class _HomePageState extends State<HomePage> {
     });
   }
 
+  @override
   void dispose() {
     ListingEvents.deletedListingId.removeListener(_onHomeListingDeleted);
     _sortDebounceTimer?.cancel();
@@ -2720,8 +2721,9 @@ class _HomePageState extends State<HomePage> {
   String? _getValidDriveTypeValue() {
     if (selectedDriveType == null ||
         selectedDriveType == 'Any' ||
-        selectedDriveType!.isEmpty)
+        selectedDriveType!.isEmpty) {
       return '';
+    }
 
     final availableTypes = getAvailableDriveTypes();
 
@@ -6925,7 +6927,7 @@ class _HomePageState extends State<HomePage> {
                                                         String
                                                       >(
                                                         key: ValueKey(
-                                                          'home_more_region_specs_${_moreFiltersDialogFieldGeneration}',
+                                                          'home_more_region_specs_$_moreFiltersDialogFieldGeneration',
                                                         ),
                                                         initialValue:
                                                             _getValidRegionSpecsValue(),

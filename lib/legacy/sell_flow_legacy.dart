@@ -580,7 +580,7 @@ class SellCarPage extends StatefulWidget {
   final bool startFreshListing;
 
   @override
-  _SellCarPageState createState() => _SellCarPageState();
+  State<SellCarPage> createState() => _SellCarPageState();
 }
 
 class _SellCarPageState extends State<SellCarPage> {
@@ -617,7 +617,7 @@ class _SellCarPageState extends State<SellCarPage> {
       case 0:
         return SellStep1Page(
           resumeDraftToken: _draftResumeToken,
-          key: ValueKey('s1_${_draftResumeToken}'),
+          key: ValueKey('s1_$_draftResumeToken'),
         );
       case 1:
         return SellStep2Page(
@@ -1474,7 +1474,7 @@ class SellStep1Page extends StatefulWidget {
   final int resumeDraftToken;
 
   @override
-  _SellStep1PageState createState() => _SellStep1PageState();
+  State<SellStep1Page> createState() => _SellStep1PageState();
 }
 
 class _SellStep1PageState extends State<SellStep1Page> {
@@ -2079,8 +2079,11 @@ class _SellStep1PageState extends State<SellStep1Page> {
             if (years.isNotEmpty) ...[
               const SizedBox(height: 12),
               DropdownButtonFormField<int>(
+                key: ValueKey(
+                  'cat_year_${_catYear ?? years.first}_${years.join('-')}',
+                ),
                 isExpanded: true,
-                value: _catYear != null && years.contains(_catYear)
+                initialValue: _catYear != null && years.contains(_catYear)
                     ? _catYear
                     : years.first,
                 decoration: InputDecoration(
@@ -2234,7 +2237,7 @@ class _SellStep1PageState extends State<SellStep1Page> {
                       height: 400,
                       child: ListView.separated(
                         itemCount: filtered.length,
-                        separatorBuilder: (_, __) => SizedBox(height: 10),
+                        separatorBuilder: (context, index) => SizedBox(height: 10),
                         itemBuilder: (context, index) {
                           final value = filtered[index];
                           final lowerTitle = title.toLowerCase();
@@ -2966,7 +2969,7 @@ class SellStep2Page extends StatefulWidget {
   final String specsHydrateToken;
 
   @override
-  _SellStep2PageState createState() => _SellStep2PageState();
+  State<SellStep2Page> createState() => _SellStep2PageState();
 }
 
 class _SellStep2PageState extends State<SellStep2Page> {
@@ -3849,7 +3852,7 @@ class _SellStep2PageState extends State<SellStep2Page> {
                       height: 420,
                       child: ListView.separated(
                         itemCount: options.length,
-                        separatorBuilder: (_, __) => SizedBox(height: 10),
+                        separatorBuilder: (context, index) => SizedBox(height: 10),
                         itemBuilder: (context, index) {
                           final value = options[index];
                           final lowerTitle = title.toLowerCase();
@@ -5225,7 +5228,7 @@ class SellStep3Page extends StatefulWidget {
   const SellStep3Page({super.key});
 
   @override
-  _SellStep3PageState createState() => _SellStep3PageState();
+  State<SellStep3Page> createState() => _SellStep3PageState();
 }
 
 class _SellStep3PageState extends State<SellStep3Page> {
@@ -5467,7 +5470,7 @@ class _SellStep3PageState extends State<SellStep3Page> {
                   height: 420,
                   child: ListView.separated(
                     itemCount: options.length,
-                    separatorBuilder: (_, __) => SizedBox(height: 10),
+                    separatorBuilder: (context, index) => SizedBox(height: 10),
                     itemBuilder: (context, index) {
                       final value = options[index];
                       final rawLower = value.trim().toLowerCase();
@@ -6211,7 +6214,7 @@ class SellStep4Page extends StatefulWidget {
   const SellStep4Page({super.key});
 
   @override
-  _SellStep4PageState createState() => _SellStep4PageState();
+  State<SellStep4Page> createState() => _SellStep4PageState();
 }
 
 class _SellStep4PageState extends State<SellStep4Page> {
@@ -6796,7 +6799,7 @@ class _SellStep4PageState extends State<SellStep4Page> {
                                     width: double.infinity,
                                     height: double.infinity,
                                     key: ValueKey(image.path),
-                                    errorBuilder: (_, __, ___) => Container(
+                                    errorBuilder: (context, error, stackTrace) => Container(
                                       color: Colors.grey.shade800,
                                       child: Icon(
                                         Icons.broken_image_outlined,
@@ -8087,7 +8090,7 @@ class _SellReviewCarDetailScrollViewState
                               File(item.path),
                               fit: BoxFit.cover,
                               width: double.infinity,
-                              errorBuilder: (_, __, ___) => Container(
+                              errorBuilder: (context, error, stackTrace) => Container(
                                 color: Colors.grey[900],
                                 child: Icon(
                                   Icons.broken_image_outlined,
@@ -8380,7 +8383,7 @@ class _SellReviewCarDetailScrollViewState
 class SellStep5Page extends StatefulWidget {
   const SellStep5Page({super.key});
   @override
-  _SellStep5PageState createState() => _SellStep5PageState();
+  State<SellStep5Page> createState() => _SellStep5PageState();
 }
 
 class _SellStep5PageState extends State<SellStep5Page> {

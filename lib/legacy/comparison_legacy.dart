@@ -28,7 +28,9 @@ class CarComparisonPage extends StatelessWidget {
                           '${c['title'] ?? ''} • ${c['year'] ?? ''} • ${c['price'] ?? ''}',
                     )
                     .join('\n');
-                if (text.trim().isNotEmpty) Share.share(text);
+                if (text.trim().isNotEmpty) {
+                  SharePlus.instance.share(ShareParams(text: text));
+                }
               } catch (e, st) { logNonFatal(e, st); }
             },
             icon: Icon(Icons.share_outlined),

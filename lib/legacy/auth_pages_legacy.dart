@@ -4,7 +4,7 @@ class FavoritesPage extends StatefulWidget {
   const FavoritesPage({super.key});
 
   @override
-  _FavoritesPageState createState() => _FavoritesPageState();
+  State<FavoritesPage> createState() => _FavoritesPageState();
 }
 
 class _FavoritesPageState extends State<FavoritesPage> {
@@ -278,7 +278,7 @@ class ChatListPage extends StatefulWidget {
   const ChatListPage({super.key});
 
   @override
-  _ChatListPageState createState() => _ChatListPageState();
+  State<ChatListPage> createState() => _ChatListPageState();
 }
 
 class _ChatListPageState extends State<ChatListPage> {
@@ -292,7 +292,7 @@ class LoginPage extends StatefulWidget {
   const LoginPage({super.key});
 
   @override
-  _LoginPageState createState() => _LoginPageState();
+  State<LoginPage> createState() => _LoginPageState();
 }
 
 class _LoginPageState extends State<LoginPage> {
@@ -427,7 +427,7 @@ class SignupPage extends StatefulWidget {
   const SignupPage({super.key});
 
   @override
-  _SignupPageState createState() => _SignupPageState();
+  State<SignupPage> createState() => _SignupPageState();
 }
 
 class _SignupPageState extends State<SignupPage> {
@@ -882,49 +882,44 @@ class _SignupPageState extends State<SignupPage> {
                 ),
               ),
               SizedBox(height: 8),
-              Row(
-                children: [
-                  Expanded(
-                    child: RadioListTile<String>(
-                      title: Text(
-                        'Email',
-                        style: TextStyle(color: textColor),
+              RadioGroup<String>(
+                groupValue: _authType,
+                onChanged: (value) {
+                  if (value == null) return;
+                  setState(() {
+                    _authType = value;
+                    _otpSent = false;
+                    _otpController.clear();
+                  });
+                },
+                child: Row(
+                  children: [
+                    Expanded(
+                      child: RadioListTile<String>(
+                        title: Text(
+                          'Email',
+                          style: TextStyle(color: textColor),
+                        ),
+                        value: 'email',
+                        activeColor: Color(0xFFFF6B00),
+                        contentPadding: EdgeInsets.zero,
+                        dense: true,
                       ),
-                      value: 'email',
-                      groupValue: _authType,
-                      onChanged: (value) {
-                        setState(() {
-                          _authType = value!;
-                          _otpSent = false;
-                          _otpController.clear();
-                        });
-                      },
-                      activeColor: Color(0xFFFF6B00),
-                      contentPadding: EdgeInsets.zero,
-                      dense: true,
                     ),
-                  ),
-                  Expanded(
-                    child: RadioListTile<String>(
-                      title: Text(
-                        'Phone',
-                        style: TextStyle(color: textColor),
+                    Expanded(
+                      child: RadioListTile<String>(
+                        title: Text(
+                          'Phone',
+                          style: TextStyle(color: textColor),
+                        ),
+                        value: 'phone',
+                        activeColor: Color(0xFFFF6B00),
+                        contentPadding: EdgeInsets.zero,
+                        dense: true,
                       ),
-                      value: 'phone',
-                      groupValue: _authType,
-                      onChanged: (value) {
-                        setState(() {
-                          _authType = value!;
-                          _otpSent = false;
-                          _otpController.clear();
-                        });
-                      },
-                      activeColor: Color(0xFFFF6B00),
-                      contentPadding: EdgeInsets.zero,
-                      dense: true,
                     ),
-                  ),
-                ],
+                  ],
+                ),
               ),
               SizedBox(height: 12),
               Text(
