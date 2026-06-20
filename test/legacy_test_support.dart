@@ -1,5 +1,36 @@
+import 'dart:convert';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:shared_preferences/shared_preferences.dart';
+
+/// Sample listing map for car-detail widget tests (matches FakeApiServer shape).
+Map<String, dynamic> sampleDetailListing([String id = 'detail_test_1']) => {
+      'id': id,
+      'public_id': id,
+      'title': 'Test car',
+      'brand': 'toyota',
+      'model': 'camry',
+      'year': 2020,
+      'price': 10000,
+      'currency': 'USD',
+      'location': 'Erbil',
+      'images': <dynamic>[],
+      'videos': <dynamic>[],
+    };
+
+/// Seeds SharedPreferences so legacy car detail can render without waiting on network.
+void seedCarDetailCache(
+  String carId, {
+  Map<String, dynamic>? listing,
+  Map<String, dynamic> extraPrefs = const {},
+}) {
+  SharedPreferences.setMockInitialValues({
+    'push_enabled': false,
+    'cache_car_$carId': jsonEncode(listing ?? sampleDetailListing(carId)),
+    ...extraPrefs,
+  });
+}
 
 /// Pushes a named route on the root [Navigator] and asserts no framework errors.
 Future<void> smokePushNamed(

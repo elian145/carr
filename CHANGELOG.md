@@ -22,8 +22,8 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 - `scripts/dev/` and `scripts/smoke_tests/` for local tooling and CI smoke tests.
 - `docs/DEPLOY_ENV_CHECKLIST.md` for Render production env vars.
 - `assets/icon/app_icon.png` and `flutter_launcher_icons` config in `pubspec.yaml`.
-- Widget tests: profile username via `/auth/me`; sell step 1 (`startFresh`); chat list row from `/api/chats`; ApiService profile/favorites/listings against mock API.
-- Backend smoke: favorites toggle/list, saved-search CRUD, GET `/api/chats` after a message, and POST `/api/auth/refresh`.
+- Widget tests: profile username via `/auth/me`; sell step 1 (`startFresh`); chat list row from `/api/chats`; car detail from cached listing; ApiService profile/favorites/listings against mock API.
+- Backend smoke: favorites toggle/list, saved-search CRUD, GET `/api/chats` after a message, POST `/api/auth/refresh`, and POST `/api/auth/logout`.
 
 ### Changed
 
@@ -55,6 +55,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 - Migrated legacy `withOpacity` → `withValues` across all `lib/legacy/` part files.
 - Bumped backend dependencies for pip-audit (Flask 3.1.3, Flask-CORS 6, Flask-SocketIO 5.6.1, Werkzeug, Pillow, etc.) and removed unused `python-jose`.
 - Legacy profile/favorites/signup OTP use `ApiService` (token refresh) instead of raw `http`; `FakeApiServer` matches `/auth/me` and `/api/my_listings` response shapes.
+- `DeepLinkService` skips platform app-link plugins when `ApiService.isTestHttpClientBound` (widget tests).
 - Home feed, my listings, comparison quick-sell, and sell create/list flows route HTTP through `ApiService` (`getCarsRaw`, `getMyListingsCompat`, `createCar`, uploads).
 - Car detail and sell video upload use `ApiService.getCarDetail` / `uploadCarVideos` (custom MIME sniffing preserved via multipart builder).
 - Method-aware `FakeApiServer` stub; ApiService integration tests; backend create-car smoke.

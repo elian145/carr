@@ -4,6 +4,7 @@ import 'package:app_links/app_links.dart';
 import 'package:flutter/material.dart';
 
 import 'config.dart';
+import 'api_service.dart';
 import '../shared/listings/listing_share_urls.dart';
 
 /// Handles app deep links (e.g. carzo://auth/reset-password?token=xxx).
@@ -28,6 +29,9 @@ class DeepLinkService {
   /// Initialize with the [MaterialApp] navigator key. Call once after [MaterialApp] is built.
   void init(GlobalKey<NavigatorState> navigatorKey) {
     _navigatorKey = navigatorKey;
+    // Widget/smoke tests bind [ApiService.testHttpClient]; platform deep-link plugins are unavailable there.
+    if (ApiService.isTestHttpClientBound) return;
+
     _linkSub?.cancel();
     _linkSub = null;
     _lastScheduledUriString = null;

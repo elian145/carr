@@ -535,6 +535,15 @@ class BackendFactorySmokeTest(unittest.TestCase):
         )
         self.assertEqual(me.status_code, 200, me.data)
 
+    def test_auth_logout(self):
+        logout = self.client.post(
+            "/api/auth/logout",
+            headers=self._auth(self.viewer_token),
+        )
+        self.assertEqual(logout.status_code, 200, logout.data)
+        body = logout.get_json() or {}
+        self.assertIn("message", body)
+
     def test_my_listings_compat_returns_array(self):
         r = self.client.get("/api/my_listings", headers=self._auth(self.seller_token))
         self.assertEqual(r.status_code, 200, r.data)
