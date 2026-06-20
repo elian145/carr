@@ -1,7 +1,7 @@
 part of '../sell_page.dart';
 
 // Extensions on [_SellPageState] call [setState] legitimately.
-// ignore_for_file: invalid_use_of_protected_member
+// ignore_for_file: invalid_use_of_protected_member, library_private_types_in_public_api
 
 const Map<String, String> _kEngineTypeLabels = {
     'gasoline': 'Gasoline',

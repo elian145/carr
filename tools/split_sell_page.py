@@ -27,8 +27,7 @@ for fname, ext_name, start, end in sections:
         prefix = label_maps + "\n\n"
     part_text = (
         f"part of '../sell_page.dart';\n\n"
-        f"// Extensions on [_SellPageState] call [setState] legitimately.\n"
-        f"// ignore_for_file: invalid_use_of_protected_member\n\n"
+        f"// ignore_for_file: invalid_use_of_protected_member, library_private_types_in_public_api\n\n"
         f"{prefix}"
         f"extension {ext_name} on _SellPageState {{\n"
         f"{body}\n"
