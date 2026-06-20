@@ -18,7 +18,6 @@ class AnalyticsPage extends StatefulWidget {
 
 class _AnalyticsPageState extends State<AnalyticsPage> {
   List<ListingAnalytics> _listings = [];
-  ListingAnalytics? _selectedListing;
   bool _isLoading = true;
   String? _error;
   AnalyticsSummary? _summary;
@@ -428,8 +427,6 @@ class _AnalyticsPageState extends State<AnalyticsPage> {
   }
 
   Widget _buildListingCard(ListingAnalytics listing) {
-    final isSelected = _selectedListing?.listingId == listing.listingId;
-
     // Convert analytics data to match home page car format EXACTLY like My Listings
     final String brand = listing.brand.trim();
     final String model = listing.model.trim();
@@ -474,15 +471,6 @@ class _AnalyticsPageState extends State<AnalyticsPage> {
       context,
       Map<String, dynamic>.from(car),
     );
-    if (isSelected) {
-      cardWidget = Container(
-        decoration: BoxDecoration(
-          borderRadius: BorderRadius.circular(20),
-          border: Border.all(color: const Color(0xFFFF6B00), width: 2),
-        ),
-        child: cardWidget,
-      );
-    }
 
     // Override tap behavior for analytics modal
     return GestureDetector(

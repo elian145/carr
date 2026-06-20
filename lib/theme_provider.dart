@@ -1,3 +1,6 @@
+// CupertinoPageTransitionsBuilder lives in cupertino.dart as of Flutter 3.44+.
+// ignore: unnecessary_import
+import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
