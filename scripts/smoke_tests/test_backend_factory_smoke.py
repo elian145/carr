@@ -576,6 +576,60 @@ class BackendFactorySmokeTest(unittest.TestCase):
         self.assertIn("car", body)
         self.assertEqual((body.get("car") or {}).get("brand"), "honda")
 
+    def test_mark_listing_sold_and_active(self):
+        sold = self.client.post(
+            f"/api/cars/{self.car_public}/mark-sold",
+            headers=self._auth(self.seller_token),
+        )
+        self.assertEqual(sold.status_code, 200, sold.data)
+        sold_body = sold.get_json() or {}
+        self.assertEqual((sold_body.get("car") or {}).get("status"), "sold")
+
+        active = self.client.post(
+            f"/api/cars/{self.car_public}/mark-active",
+            headers=self._auth(self.seller_token),
+        )
+        self.assertEqual(active.status_code, 200, active.data)
+        active_body = active.get_json() or {}
+        self.assertEqual((active_body.get("car") or {}).get("status"), "active")
+
+    def test_user_my_listings_paginated(self):
+        r = self.client.get(
+            "/api/user/my-listings?page=1&per_page=10",
+            headers=self._auth(self.seller_token),
+        )
+        self.assertEqual(r.status_code, 200, r.data)
+        body = r.get_json() or {}
+        self.assertIn("cars", body)
+        self.assertIn("pagination", body)
+        self.assertGreaterEqual(len(body.get("cars") or []), 1)
+
+    def test_socket_send_success_for_verified_user(self):
+        client = self.socketio.test_client(
+            self.app,
+            flask_test_client=self.client,
+            query_string=f"token={self.viewer_token}",
+        )
+        self.assertTrue(client.is_connected(), client.get_received())
+        client.get_received()
+        client.emit(
+            "send_message",
+            {
+                "car_id": self.car_public,
+                "content": "hello via socket",
+                "receiver_id": self.seller_public,
+            },
+        )
+        received = client.get_received()
+        errors = [evt for evt in received if evt.get("name") == "error"]
+        self.assertFalse(errors, received)
+        success_events = [
+            evt
+            for evt in received
+            if evt.get("name") in ("new_message", "message_sent")
+        ]
+        self.assertTrue(success_events, received)
+
     def test_list_cars_with_brand_filter(self):
         r = self.client.get("/api/cars?brand=toyota&page=1&per_page=10")
         self.assertEqual(r.status_code, 200, r.data)

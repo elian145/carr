@@ -74,4 +74,22 @@ void main() {
     final favorited = await ApiService.isCarFavorited('list_car_1');
     expect(favorited, isA<bool>());
   });
+
+  test('getCarsRaw GET returns HTTP 200 with JSON body', () async {
+    final response = await ApiService.getCarsRaw({
+      'page': '1',
+      'per_page': '10',
+      'brand': 'toyota',
+    });
+    expect(response.statusCode, 200);
+    expect(response.body, isNotEmpty);
+  });
+
+  test('markListingSold and markListingActive POST succeed on mock API', () async {
+    final sold = await ApiService.markListingSold('list_car_1');
+    expect(sold['message'], isNotEmpty);
+
+    final active = await ApiService.markListingActive('list_car_1');
+    expect(active['message'], isNotEmpty);
+  });
 }

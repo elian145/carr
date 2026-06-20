@@ -112,6 +112,18 @@ class FakeApiServer {
       if (method == 'DELETE') {
         return _json(200, {'message': 'deleted'});
       }
+      if (segments.length > 1 && segments[1] == 'mark-sold' && method == 'POST') {
+        return _json(200, {
+          'message': 'Listing marked as sold',
+          'car': {..._sampleCar(id), 'status': 'sold'},
+        });
+      }
+      if (segments.length > 1 && segments[1] == 'mark-active' && method == 'POST') {
+        return _json(200, {
+          'message': 'Listing marked as available',
+          'car': {..._sampleCar(id), 'status': 'active'},
+        });
+      }
       return _json(200, {'car': _sampleCar(id)});
     }
 

@@ -22,8 +22,8 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 - `scripts/dev/` and `scripts/smoke_tests/` for local tooling and CI smoke tests.
 - `docs/DEPLOY_ENV_CHECKLIST.md` for Render production env vars.
 - `assets/icon/app_icon.png` and `flutter_launcher_icons` config in `pubspec.yaml`.
-- Widget tests: profile username via `/auth/me`; sell step 1 (`startFresh`); chat list/conversation; car detail from cache and mock API; ApiService profile/favorites/listings against mock API.
-- Backend smoke: favorites toggle/list/status, filtered `/api/cars`, saved-search CRUD, GET `/api/chats`, POST `/api/auth/refresh`, and POST `/api/auth/logout`.
+- Widget tests: profile username via `/auth/me`; sell step 1 (`startFresh`); chat list/conversation; car detail from cache and mock API; my listings empty state; ApiService profile/favorites/listings against mock API.
+- Backend smoke: favorites toggle/list/status, filtered `/api/cars`, mark sold/active, paginated `/api/user/my-listings`, verified Socket.IO send, saved-search CRUD, GET `/api/chats`, POST `/api/auth/refresh`, and POST `/api/auth/logout`.
 
 ### Changed
 
