@@ -57,6 +57,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 - Legacy profile/favorites/signup OTP use `ApiService` (token refresh) instead of raw `http`; `FakeApiServer` matches `/auth/me` and `/api/my_listings` response shapes.
 - Home feed, my listings, comparison quick-sell, and sell create/list flows route HTTP through `ApiService` (`getCarsRaw`, `getMyListingsCompat`, `createCar`, uploads).
 - Car detail and sell video upload use `ApiService.getCarDetail` / `uploadCarVideos` (custom MIME sniffing preserved via multipart builder).
+- Method-aware `FakeApiServer` stub; ApiService integration tests; backend create-car smoke.
 - Aligned `kk/requirements_min.txt` with patched core versions; `backend/requirements.txt` redirects to `kk/requirements.txt`.
 - `run_local_checks.ps1` runs `pip-audit` after backend smoke.
 

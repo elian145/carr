@@ -56,6 +56,8 @@ kk/
 
 ## Testing
 
-- Flutter: `flutter test` (uses `test/fake_api_server.dart`)
-- Backend: `python scripts/smoke_tests/test_backend_factory_smoke.py`
+- Flutter: `flutter test` (uses in-memory `test/fake_api_server.dart` — method-aware stub bound to [ApiService.testHttpClient])
+- Backend: `python scripts/smoke_tests/test_backend_factory_smoke.py` (22 factory tests)
 - Optional manual scripts: `kk/test_*.py` (require a running server unless noted)
+
+All production legacy HTTP goes through `ApiService` (token refresh, shared errors, test mock client).

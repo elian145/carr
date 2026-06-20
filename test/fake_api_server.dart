@@ -29,21 +29,39 @@ class FakeApiServer {
   }
 
   static Future<http.Response> _handle(http.Request request) async {
-    final path = request.url.path;
-    final body = _bodyForPath(path);
-    if (body == null) {
-      return http.Response('Not found', 404);
-    }
+    final response = _responseFor(request);
+    return response ?? http.Response('Not found', 404);
+  }
+
+  static http.Response _json(int status, Object body) {
     return http.Response(
       json.encode(body),
-      200,
+      status,
       headers: {'content-type': 'application/json; charset=utf-8'},
     );
   }
 
-  static Object? _bodyForPath(String path) {
+  static Map<String, dynamic> _sampleCar(String id) => {
+        'id': id,
+        'title': 'Test car',
+        'brand': 'toyota',
+        'model': 'camry',
+        'year': 2020,
+        'price': 10000,
+        'currency': 'USD',
+        'location': 'Erbil',
+        'image_url': '',
+        'images': <dynamic>[],
+        'videos': <dynamic>[],
+        'seller': {'id': 'seller_1', 'username': 'seller'},
+      };
+
+  static http.Response? _responseFor(http.Request request) {
+    final method = request.method.toUpperCase();
+    final path = request.url.path;
+
     if (path == '/health') {
-      return {'status': 'ok'};
+      return _json(200, {'status': 'ok'});
     }
 
     if (!path.startsWith('/api/')) {
@@ -54,29 +72,32 @@ class FakeApiServer {
       final segments = path.substring('/api/cars/'.length).split('/');
       final id = segments.first;
       if (segments.length > 1 && segments[1] == 'favorite') {
-        return {'is_favorited': false};
+        if (method == 'POST') {
+          return _json(200, {'is_favorited': true, 'message': 'added'});
+        }
+        return _json(200, {'is_favorited': false});
       }
-      return {
-        'car': {
-          'id': id,
-          'title': 'Test car',
-          'brand': 'toyota',
-          'model': 'camry',
-          'year': 2020,
-          'price': 10000,
-          'currency': 'USD',
-          'location': 'Erbil',
-          'image_url': '',
+      if (segments.length > 1 && segments[1] == 'images' && method == 'POST') {
+        return _json(201, {
           'images': <dynamic>[],
-          'videos': <dynamic>[],
-          'seller': {'id': 'seller_1', 'username': 'seller'},
-        },
-      };
+          'image_url': 'https://example.com/car.jpg',
+        });
+      }
+      if (segments.length > 1 && segments[1] == 'videos' && method == 'POST') {
+        return _json(201, {'videos': <dynamic>[], 'message': 'stub'});
+      }
+      if (method == 'PUT' || method == 'PATCH') {
+        return _json(200, {'car': _sampleCar(id), 'message': 'updated'});
+      }
+      if (method == 'DELETE') {
+        return _json(200, {'message': 'deleted'});
+      }
+      return _json(200, {'car': _sampleCar(id)});
     }
 
     if (path.startsWith('/api/dealers/') && path.length > '/api/dealers/'.length) {
       final id = path.substring('/api/dealers/'.length).split('/').first;
-      return {
+      return _json(200, {
         'dealer': {
           'public_id': id,
           'dealership_name': 'Test Dealer',
@@ -84,59 +105,69 @@ class FakeApiServer {
         },
         'listings': <dynamic>[],
         'stats': {'total_listings': 0, 'featured_listings': 0},
-      };
+      });
     }
 
     if (path.startsWith('/api/admin/dealers/')) {
-      return {'message': 'ok'};
+      return _json(200, {'message': 'ok'});
     }
 
     if (path.startsWith('/api/admin/reports')) {
-      return {'reports': <dynamic>[]};
+      return _json(200, {'reports': <dynamic>[]});
     }
 
     if (path.startsWith('/api/chat/')) {
       if (path.endsWith('/messages')) {
-        return <dynamic>[];
+        return _json(200, <dynamic>[]);
       }
-      if (path.contains('/send')) {
-        return {'id': 1, 'content': 'stub'};
+      if (path.contains('/send') && method == 'POST') {
+        return _json(201, {'id': 1, 'content': 'stub'});
       }
-      return <String, dynamic>{};
+      return _json(200, <String, dynamic>{});
+    }
+
+    if (path.startsWith('/api/saved-searches/') && method == 'DELETE') {
+      return _json(200, {'message': 'deleted'});
     }
 
     if (path.startsWith('/api/analytics/')) {
-      return <String, dynamic>{};
+      return _json(200, <String, dynamic>{});
     }
 
     switch (path) {
       case '/api/analytics/listings':
-        return <dynamic>[];
+        return _json(200, <dynamic>[]);
       case '/api/my_listings':
-        return <dynamic>[];
+        return _json(200, <dynamic>[]);
       case '/api/user/my-listings':
-        return {
+        return _json(200, {
           'cars': <dynamic>[],
           'pagination': {'has_next': false},
-        };
+        });
       case '/api/cars':
-        return {
-          'cars': <dynamic>[],
+        if (method == 'POST') {
+          return _json(201, {
+            'message': 'Car listing created successfully',
+            'car': _sampleCar('mock_car_new'),
+          });
+        }
+        return _json(200, {
+          'cars': <dynamic>[_sampleCar('list_car_1')],
           'pagination': {'has_next': false, 'page': 1, 'per_page': 20},
-        };
+        });
       case '/api/chats':
-        return <dynamic>[];
+        return _json(200, <dynamic>[]);
       case '/api/chat/unread_count':
-        return {'unread_count': 0};
+        return _json(200, {'unread_count': 0});
       case '/api/auth/login':
       case '/api/auth/signup':
-        return {
+        return _json(200, {
           'access_token': 'test_access_token',
           'refresh_token': 'test_refresh_token',
           'user': {'id': 1, 'username': 'test', 'is_admin': false},
-        };
+        });
       case '/api/auth/me':
-        return {
+        return _json(200, {
           'id': 1,
           'username': 'testuser',
           'email': 'test@example.com',
@@ -144,57 +175,67 @@ class FakeApiServer {
           'account_type': 'individual',
           'first_name': 'Test',
           'last_name': 'User',
-        };
+        });
       case '/api/user/profile':
-        return {
+        return _json(200, {
           'user': {
             'id': 1,
             'username': 'test',
             'is_admin': false,
             'account_type': 'individual',
           },
-        };
+        });
       case '/api/user/favorites':
       case '/api/user/recently-viewed':
-        return {
+        return _json(200, {
           'cars': <dynamic>[],
           'pagination': {'has_next': false},
-        };
+        });
       case '/api/user/dealer-profile':
-        return {
+        return _json(200, {
           'dealer': {
             'dealership_name': 'Test Dealer',
             'dealership_location': 'Erbil',
           },
-        };
+        });
       case '/api/saved-searches':
-        return {'saved_searches': <dynamic>[]};
+        if (method == 'POST') {
+          return _json(201, {
+            'saved_search': {
+              'id': 'ss_mock_1',
+              'name': 'Mock search',
+              'filters': {'brand': 'toyota'},
+              'notify': true,
+            },
+          });
+        }
+        return _json(200, {'saved_searches': <dynamic>[]});
       case '/api/auth/send_otp':
-        return {'sent': false, 'message': 'stub'};
+        return _json(200, {'sent': false, 'message': 'stub'});
       case '/api/auth/delete-account':
-        return {'message': 'Account deleted successfully'};
+        return _json(200, {'message': 'Account deleted successfully'});
       case '/api/auth/refresh':
-        return {
+        return _json(200, {
           'access_token': 'test_access_token',
           'refresh_token': 'test_refresh_token',
-        };
+        });
       case '/api/config/trust':
-        return {
+        return _json(200, {
           'support_email': 'support@test.example',
           'privacy_url': 'https://example.com/privacy',
           'terms_url': 'https://example.com/terms',
-        };
+        });
       case '/api/push/preferences':
-        return {'push_enabled': true};
+        return _json(200, {'push_enabled': true});
       case '/api/dealers':
-        return {
+        return _json(200, {
           'dealers': <dynamic>[],
           'pagination': {'has_next': false, 'page': 1, 'per_page': 20},
-        };
+        });
       case '/api/admin/dealers/pending':
-        return {'dealers': <dynamic>[]};
+        return _json(200, {'dealers': <dynamic>[]});
       default:
-        return <String, dynamic>{};
+        return _json(200, <String, dynamic>{});
     }
   }
 }

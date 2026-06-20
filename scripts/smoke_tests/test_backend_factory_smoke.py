@@ -499,6 +499,24 @@ class BackendFactorySmokeTest(unittest.TestCase):
         self.assertIn("car", body)
         self.assertEqual((body.get("car") or {}).get("brand"), "toyota")
 
+    def test_create_car_as_verified_seller(self):
+        r = self.client.post(
+            "/api/cars",
+            headers=self._auth(self.seller_token),
+            json={
+                "brand": "honda",
+                "model": "civic",
+                "year": 2019,
+                "mileage": 5000,
+                "price": 14000,
+                "location": "Erbil",
+            },
+        )
+        self.assertEqual(r.status_code, 201, r.data)
+        body = r.get_json() or {}
+        self.assertIn("car", body)
+        self.assertEqual((body.get("car") or {}).get("brand"), "honda")
+
     def test_favorites_toggle_and_list(self):
         fav = self.client.post(
             f"/api/cars/{self.car_public}/favorite",
