@@ -584,16 +584,6 @@ class _CarDetailPageState extends State<CarDetailPage> {
     return '';
   }
 
-  static String _formatDateYmd(String raw) {
-    if (raw.trim().isEmpty) return '';
-    final parsed = DateTime.tryParse(raw.trim());
-    if (parsed == null) return raw;
-    final y = parsed.year.toString().padLeft(4, '0');
-    final m = parsed.month.toString().padLeft(2, '0');
-    final d = parsed.day.toString().padLeft(2, '0');
-    return '$y-$m-$d';
-  }
-
   void _showDescriptionDialog(String description) {
     showDialog<void>(
       context: context,
@@ -626,12 +616,6 @@ class _CarDetailPageState extends State<CarDetailPage> {
     ]);
     final email = _firstNonEmptyFromMap(seller, ['email']);
     final city = _firstNonEmptyFromMap(seller, ['city', 'location']);
-    final joinedRaw = _firstNonEmptyFromMap(seller, [
-      'created_at',
-      'joined_at',
-      'member_since',
-    ]);
-    final joined = _formatDateYmd(joinedRaw);
     final avatarRaw = _firstNonEmptyFromMap(seller, [
       'profile_picture',
       'avatar',

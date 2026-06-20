@@ -453,7 +453,6 @@ Widget _buildGlobalCardImageCarousel(
   int currentIndex = 0;
   const int kMaxVisibleDots = 6;
   int dotWindowStart = 0;
-  bool dotWindowForward = true;
 
   return StatefulBuilder(
     key: ValueKey(
@@ -473,7 +472,6 @@ Widget _buildGlobalCardImageCarousel(
             currentIndex = i;
             final nextStart = computeDotStart(i);
             if (nextStart != dotWindowStart) {
-              dotWindowForward = nextStart > dotWindowStart;
               dotWindowStart = nextStart;
             }
           });

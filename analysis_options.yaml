@@ -14,7 +14,6 @@ analyzer:
   # CI/Codemagic: don't fail builds on non-critical warnings while the codebase
   # is being iterated on. (These still show up in IDEs if you want to fix them.)
   errors:
-    unused_local_variable: ignore
     unused_element_parameter: ignore
     dead_null_aware_expression: ignore
     invalid_null_aware_operator: ignore
