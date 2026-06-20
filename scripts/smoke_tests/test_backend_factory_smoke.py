@@ -511,6 +511,30 @@ class BackendFactorySmokeTest(unittest.TestCase):
         self.assertIn("username", body)
         self.assertIn("id", body)
 
+    def test_auth_refresh_rotates_tokens(self):
+        login = self.client.post(
+            "/api/auth/login",
+            json={"username": "viewer", "password": "Aa123456"},
+        )
+        self.assertEqual(login.status_code, 200, login.data)
+        refresh_token = (login.get_json() or {}).get("refresh_token")
+        self.assertTrue(refresh_token)
+
+        refreshed = self.client.post(
+            "/api/auth/refresh",
+            headers={"Authorization": f"Bearer {refresh_token}"},
+        )
+        self.assertEqual(refreshed.status_code, 200, refreshed.data)
+        body = refreshed.get_json() or {}
+        self.assertIn("access_token", body)
+        self.assertIn("refresh_token", body)
+
+        me = self.client.get(
+            "/api/auth/me",
+            headers=self._auth(body["access_token"]),
+        )
+        self.assertEqual(me.status_code, 200, me.data)
+
     def test_my_listings_compat_returns_array(self):
         r = self.client.get("/api/my_listings", headers=self._auth(self.seller_token))
         self.assertEqual(r.status_code, 200, r.data)

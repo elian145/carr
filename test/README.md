@@ -6,6 +6,8 @@
 | `widget_test.dart` | Production shell builds without crashing |
 | `legacy_profile_widget_test.dart` | Profile page loads username via `ApiService.getProfile()` |
 | `legacy_sell_step1_widget_test.dart` | Sell flow step 1 (`/sell` + `startFresh`) shows listing wizard UI |
+| `legacy_chat_list_widget_test.dart` | Chat list loads rows from `/api/chats` via `ApiService.getChats()` |
+| `api_chat_test.dart` | `getChats`, unread count, send message, message history against mock API |
 | `api_profile_favorites_test.dart` | `getProfile`, `getFavorites`, `getMyListings`, `getCarDetail` against mock API |
 | `api_integration_test.dart` | `createCar`, `toggleFavorite`, `createSavedSearch`, `updateCar`, `getCars` against mock API |
 | `carzo_app_smoke_test.dart` | Migration shell (`CarzoApp` / `lib/app`) — not used in production |

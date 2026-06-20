@@ -17,12 +17,13 @@ void main() {
     expect(ApiService.boundTestHttpClient, isNotNull);
   });
 
-  test('getChats returns empty list from mock API', () async {
+  test('getChats returns sample conversation from mock API', () async {
     await ApiService.setTokens(
       accessToken: 'test_access_token',
       refreshToken: 'test_refresh_token',
     );
     final chats = await ApiService.getChats().timeout(const Duration(seconds: 2));
-    expect(chats, isEmpty);
+    expect(chats.length, 1);
+    expect(chats.first['car_id'], 'list_car_1');
   });
 }

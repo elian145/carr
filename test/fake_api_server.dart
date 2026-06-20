@@ -56,6 +56,26 @@ class FakeApiServer {
         'seller': {'id': 'seller_1', 'username': 'seller'},
       };
 
+  static List<Map<String, dynamic>> _sampleChats() => [
+        {
+          'conversation_id': 1,
+          'car_id': 'list_car_1',
+          'car_title': 'Test car',
+          'car_brand': 'toyota',
+          'car_model': 'camry',
+          'car_year': 2020,
+          'other_user': {'id': 'buyer_1', 'name': 'Test Buyer'},
+          'last_message': {
+            'id': 'msg_stub_1',
+            'content': 'Hello from stub',
+            'message_type': 'text',
+            'created_at': '2026-01-01T12:00:00.000Z',
+            'sender_id': 'buyer_1',
+          },
+          'unread_count': 1,
+        },
+      ];
+
   static http.Response? _responseFor(http.Request request) {
     final method = request.method.toUpperCase();
     final path = request.url.path;
@@ -156,7 +176,7 @@ class FakeApiServer {
           'pagination': {'has_next': false, 'page': 1, 'per_page': 20},
         });
       case '/api/chats':
-        return _json(200, <dynamic>[]);
+        return _json(200, _sampleChats());
       case '/api/chat/unread_count':
         return _json(200, {'unread_count': 0});
       case '/api/auth/login':
