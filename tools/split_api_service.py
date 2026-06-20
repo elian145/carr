@@ -1,11 +1,12 @@
 #!/usr/bin/env python3
-"""Report ApiService size and planned part boundaries (manual split).
+"""Report ApiService size and part-file delegator boundaries.
 
 Run:
   python tools/split_api_service.py
 
-Automated extraction is not yet enabled — use line ranges below when splitting
-into `lib/services/api/*` part files with `_ApiServiceAuth`-style helpers.
+Implementation lives in `lib/services/api/*`; `api_service.dart` holds state,
+HTTP delegators, and public API surface. Re-run after large edits to refresh
+line ranges for maintenance.
 """
 
 from __future__ import annotations

@@ -50,22 +50,22 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ### Changed
 
-- Re-enabled analyzer rules on maintained Dart code (`lib/services/`, `lib/shared/`, `lib/pages/`); legacy remains excluded during migration.
+- Re-enabled analyzer rules on maintained Dart code; legacy included via `main_legacy.dart` part library — **0 analyzer issues**.
 - Added `logNonFatal()` for non-fatal error reporting (debug log + Sentry) across services and legacy part files.
 - Gated Socket.IO JWT `?token=` query fallback to development/testing only.
 - Added `docs/ARCHITECTURE.md`, corrected README/CHANGELOG drift, Dependabot, pip-audit in backend CI, Flutter coverage in CI.
 - HTTP timeouts on legacy raw `http` calls; production warning when rate limits fall back to in-process storage without Redis.
+- Split `api_service.dart` into `lib/services/api/{api_http,api_auth,api_listings,api_chat,api_admin}.dart` (~650-line delegator shell).
+- Cleared legacy deprecated APIs and style lints (RadioGroup, SharePlus, `Color.r/g/b`, etc.) — zero analyzer infos.
 
 - Migrated deprecated Flutter APIs in `lib/pages/` (Dropdown `initialValue`, `RadioGroup`, `ExpansibleController`, `withValues`).
 - Migrated legacy `withOpacity` → `withValues` across all `lib/legacy/` part files.
-- Enabled legacy analyzer (removed `lib/legacy/**` exclude); removed dead legacy helpers — **0 analyzer warnings**.
-- Split auth/profile HTTP from `api_service.dart` into `lib/services/api/api_auth.dart` (24 methods via `_ApiServiceAuth`).
+- Bumped backend dependencies for pip-audit (Flask 3.1.3, Flask-CORS 6, Flask-SocketIO 5.6.1, Werkzeug, Pillow, etc.) and removed unused `python-jose`.
 
 ### Planned (not yet complete)
 
 - Finish migrating production UI from `lib/legacy/` to `lib/pages/` (see `lib/legacy/README.md`).
-- Re-enable full analyzer rules on legacy code (info-level `use_build_context_synchronously` in sell flow).
-- Split remaining `api_service.dart` modules (listings, chat, admin) using `tools/split_api_service.py` boundaries.
+- Set `REDIS_URL` in production for multi-worker rate limits (see `docs/DEPLOY_ENV_CHECKLIST.md`).
 
 ## [1.0.0] - 2026-05-20
 

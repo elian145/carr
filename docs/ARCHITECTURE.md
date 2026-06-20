@@ -21,6 +21,8 @@ lib/
 ├── pages/                 # Modern screens; partially wired, migration in progress
 ├── app/                   # CarzoApp shell + routes (migration / tests only)
 ├── services/              # API, auth, WebSocket, push, config
+│   ├── api_service.dart   # HTTP core + delegators (~650 lines)
+│   └── api/               # api_http, api_auth, api_listings, api_chat, api_admin
 └── shared/                # Reusable helpers, prefs, i18n
 ```
 

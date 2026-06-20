@@ -19,7 +19,7 @@ All `part` files share one library with `main_legacy.dart` (imports only in the 
 
 ## Analyzer
 
-`lib/legacy/**` is included in `flutter analyze` (no folder exclude). Phase 1 removed dead code and fixed warnings; **0 analyzer warnings** remain. Info-level `use_build_context_synchronously` hints may still appear in large sell-flow widgets.
+`lib/legacy/**` is included in `flutter analyze` (no folder exclude). **0 analyzer issues** (warnings and infos) as of the latest hardening pass.
 
 ## Refactor direction
 

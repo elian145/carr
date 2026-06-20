@@ -10,20 +10,19 @@ Flask-Dance==7.1.0
 Werkzeug==3.0.1
 bcrypt==4.1.2
 Flask-Bcrypt==1.0.1
-python-dotenv==1.0.0
-Pillow==11.0.0
-python-multipart==0.0.6
+python-dotenv==1.2.2
+Pillow==12.2.0
+python-multipart==0.0.31
 redis==5.0.1
 celery==5.3.4
-gunicorn==21.2.0
+gunicorn==22.0.0
 psycopg[binary]
-marshmallow==3.20.1
+marshmallow==3.26.2
 marshmallow-sqlalchemy==0.29.0
 email-validator==2.1.0
 phonenumbers==8.13.26
-python-jose[cryptography]==3.3.0
-cryptography==45.0.7
-requests==2.31.0
+cryptography==48.0.1
+requests==2.33.0
 sentry-sdk
 # Needed for Roboflow plate blurring
 opencv-python-headless
