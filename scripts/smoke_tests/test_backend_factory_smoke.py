@@ -478,6 +478,13 @@ class BackendFactorySmokeTest(unittest.TestCase):
         self.assertEqual(login.status_code, 200, login.data)
         self.assertIn("access_token", login.get_json() or {})
 
+    def test_auth_me_returns_bare_user(self):
+        me = self.client.get("/api/auth/me", headers=self._auth(self.viewer_token))
+        self.assertEqual(me.status_code, 200, me.data)
+        body = me.get_json() or {}
+        self.assertIn("username", body)
+        self.assertIn("id", body)
+
     def test_favorites_toggle_and_list(self):
         fav = self.client.post(
             f"/api/cars/{self.car_public}/favorite",

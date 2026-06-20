@@ -226,6 +226,21 @@ class ApiService {
   ) =>
       _ApiServiceAuth.sendPhoneVerificationCode(phoneNumber);
 
+  static Future<Map<String, dynamic>> sendOtpLegacy({
+    required String phone,
+    bool isDealer = false,
+    String? dealershipName,
+    String? dealershipPhone,
+    String? dealershipLocation,
+  }) =>
+      _ApiServiceAuth.sendOtpLegacy(
+        phone: phone,
+        isDealer: isDealer,
+        dealershipName: dealershipName,
+        dealershipPhone: dealershipPhone,
+        dealershipLocation: dealershipLocation,
+      );
+
   static Future<Map<String, dynamic>> verifyPhone(
     String phoneNumber,
     String code,

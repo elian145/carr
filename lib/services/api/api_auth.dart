@@ -304,6 +304,33 @@ abstract final class _ApiServiceAuth {
       return ApiService._handleResponse(response);
     }
 
+  /// Legacy signup OTP (`/auth/send_otp`) — accepts `phone` and optional dealer fields.
+  static Future<Map<String, dynamic>> sendOtpLegacy({
+      required String phone,
+      bool isDealer = false,
+      String? dealershipName,
+      String? dealershipPhone,
+      String? dealershipLocation,
+    }) async {
+      final body = <String, dynamic>{
+        'phone': phone.trim(),
+        if (isDealer) ...<String, dynamic>{
+          'is_dealer': true,
+          'dealership_name': (dealershipName ?? '').trim(),
+          'dealership_phone': (dealershipPhone ?? '').trim(),
+          'dealership_location': (dealershipLocation ?? '').trim(),
+        },
+      };
+      final response = await ApiService._httpClient
+          .post(
+            Uri.parse('${ApiService.baseUrl}/auth/send_otp'),
+            headers: ApiService._getHeaders(includeAuth: false),
+            body: json.encode(body),
+          )
+          .timeout(ApiService._defaultTimeout);
+      return ApiService._handleResponse(response);
+    }
+
   static Future<Map<String, dynamic>> verifyPhone(
     String phoneNumber,
     String code,

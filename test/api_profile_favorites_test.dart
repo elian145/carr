@@ -24,6 +24,11 @@ void main() {
     await FakeApiServer.stop();
   });
 
+  test('sendOtpLegacy hits /auth/send_otp', () async {
+    final result = await ApiService.sendOtpLegacy(phone: '+9647700000000');
+    expect(result['sent'], isA<bool>());
+  });
+
   test('getProfile returns bare user from /auth/me', () async {
     final profile = await ApiService.getProfile();
     expect(profile['username'], 'testuser');

@@ -54,7 +54,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 - Migrated deprecated Flutter APIs in `lib/pages/` (Dropdown `initialValue`, `RadioGroup`, `ExpansibleController`, `withValues`).
 - Migrated legacy `withOpacity` → `withValues` across all `lib/legacy/` part files.
 - Bumped backend dependencies for pip-audit (Flask 3.1.3, Flask-CORS 6, Flask-SocketIO 5.6.1, Werkzeug, Pillow, etc.) and removed unused `python-jose`.
-- Legacy profile/favorites use `ApiService` (token refresh) instead of raw `http`; `FakeApiServer` matches `/auth/me` and `/api/my_listings` response shapes.
+- Legacy profile/favorites/signup OTP use `ApiService` (token refresh) instead of raw `http`; `FakeApiServer` matches `/auth/me` and `/api/my_listings` response shapes.
 - Aligned `kk/requirements_min.txt` with patched core versions; `backend/requirements.txt` redirects to `kk/requirements.txt`.
 - `run_local_checks.ps1` runs `pip-audit` after backend smoke.
 

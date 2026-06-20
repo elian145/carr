@@ -499,93 +499,50 @@ class _SignupPageState extends State<SignupPage> {
       _loading = true;
     });
     try {
-      final url = Uri.parse('${getApiBase()}/api/auth/send_otp');
-      final Map<String, dynamic> otpBody = {
-        'phone': '+964$phone',
-        if (_isDealer) ...<String, dynamic>{
-          'is_dealer': true,
-          'dealership_name': _dealershipNameController.text.trim(),
-          'dealership_phone': _dealershipPhoneController.text.trim(),
-          'dealership_location': _dealershipLocationController.text.trim(),
-        },
-      };
-      final resp = await http.post(
-        url,
-        headers: {'Content-Type': 'application/json'},
-        body: json.encode(otpBody),
-      ).timeout(const Duration(seconds: 60));
+      final data = await ApiService.sendOtpLegacy(
+        phone: '+964$phone',
+        isDealer: _isDealer,
+        dealershipName: _dealershipNameController.text.trim(),
+        dealershipPhone: _dealershipPhoneController.text.trim(),
+        dealershipLocation: _dealershipLocationController.text.trim(),
+      );
       if (!mounted) return;
-      if (resp.statusCode == 200) {
-        final data = json.decode(resp.body);
-        final bool sent = data['sent'] == true;
-        setState(() {
-          _otpSent = true;
-        });
-        if (sent) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(
-              content: Text(AppLocalizations.of(context)!.verificationCodeSent),
+      final bool sent = data['sent'] == true;
+      setState(() {
+        _otpSent = true;
+      });
+      if (sent) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(AppLocalizations.of(context)!.verificationCodeSent),
+          ),
+        );
+      } else if (data['dev_code'] != null && kDebugMode) {
+        final String code = data['dev_code'].toString();
+        showDialog(
+          context: context,
+          builder: (_) => AlertDialog(
+            title: Text(AppLocalizations.of(context)!.devCodeTitle),
+            content: Text(
+              AppLocalizations.of(context)!.useCodeToVerify(code),
             ),
-          );
-        } else if (data['dev_code'] != null && kDebugMode) {
-          final String code = data['dev_code'].toString();
-          showDialog(
-            context: context,
-            builder: (_) => AlertDialog(
-              title: Text(AppLocalizations.of(context)!.devCodeTitle),
-              content: Text(
-                AppLocalizations.of(context)!.useCodeToVerify(code),
+            actions: [
+              TextButton(
+                onPressed: () => Navigator.pop(context),
+                child: Text(AppLocalizations.of(context)!.okAction),
               ),
-              actions: [
-                TextButton(
-                  onPressed: () => Navigator.pop(context),
-                  child: Text(AppLocalizations.of(context)!.okAction),
-                ),
-              ],
-            ),
-          );
-        } else {
-          final String err =
-              data['error']?.toString() ??
-              AppLocalizations.of(context)!.couldNotSubmitListing;
-          showDialog(
-            context: context,
-            builder: (_) => AlertDialog(
-              title: Text(AppLocalizations.of(context)!.errorTitle),
-              content: Text(err),
-              actions: [
-                TextButton(
-                  onPressed: () => Navigator.pop(context),
-                  child: Text(AppLocalizations.of(context)!.okAction),
-                ),
-              ],
-            ),
-          );
-        }
+            ],
+          ),
+        );
       } else {
-        String msg = resp.body.isNotEmpty
-            ? resp.body
-            : AppLocalizations.of(context)!.couldNotSubmitListing;
-        if (resp.statusCode == 429 && resp.body.isNotEmpty) {
-          try {
-            final data = json.decode(resp.body) as Map<String, dynamic>?;
-            final message = data?['message']?.toString() ?? msg;
-            final retryAfter = data?['retry_after'];
-            final seconds = retryAfter is int
-                ? retryAfter
-                : (retryAfter is num ? retryAfter.toInt() : null);
-            if (seconds != null && seconds > 0) {
-              final minutes = (seconds / 60).ceil();
-              msg =
-                  '$message Try again in $minutes minute${minutes == 1 ? '' : 's'}.';
-            }
-          } catch (e, st) { logNonFatal(e, st); }
-        }
+        final String err =
+            data['error']?.toString() ??
+            AppLocalizations.of(context)!.couldNotSubmitListing;
         showDialog(
           context: context,
           builder: (_) => AlertDialog(
             title: Text(AppLocalizations.of(context)!.errorTitle),
-            content: Text(msg),
+            content: Text(err),
             actions: [
               TextButton(
                 onPressed: () => Navigator.pop(context),
@@ -595,6 +552,33 @@ class _SignupPageState extends State<SignupPage> {
           ),
         );
       }
+    } on ApiException catch (e) {
+      if (!mounted) return;
+      String msg = e.message;
+      if (e.statusCode == 429) {
+        final retryAfter = e.body?['retry_after'];
+        final seconds = retryAfter is int
+            ? retryAfter
+            : (retryAfter is num ? retryAfter.toInt() : null);
+        if (seconds != null && seconds > 0) {
+          final minutes = (seconds / 60).ceil();
+          msg =
+              '$msg Try again in $minutes minute${minutes == 1 ? '' : 's'}.';
+        }
+      }
+      showDialog(
+        context: context,
+        builder: (_) => AlertDialog(
+          title: Text(AppLocalizations.of(context)!.errorTitle),
+          content: Text(msg),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(context),
+              child: Text(AppLocalizations.of(context)!.okAction),
+            ),
+          ],
+        ),
+      );
     } catch (e) {
       if (!mounted) return;
       showDialog(
