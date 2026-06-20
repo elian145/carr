@@ -36,6 +36,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 - Removed `/legacy_*` route aliases from `buildProductionRoutes()`.
 - Removed refactor-only `CarzoApp` shell; production uses `ProductionApp` only.
 - `SellDraftList` delegates shared logic to `SellDraftArchive`.
+- Split `sell_page.dart` into extension parts under `lib/pages/sell/` (~809-line shell + 6 modules).
 - Removed `lib/legacy/` folder and obsolete legacy split tooling under `tools/`.
 - Dropped `lib/legacy/**` from `analysis_options.yaml` excludes.
 - `.gitignore` patterns for common accidental CLI artifacts and scratch listings.
