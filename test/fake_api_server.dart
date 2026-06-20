@@ -113,6 +113,7 @@ class FakeApiServer {
       case '/api/analytics/listings':
         return <dynamic>[];
       case '/api/my_listings':
+        return <dynamic>[];
       case '/api/user/my-listings':
         return {
           'cars': <dynamic>[],
@@ -135,6 +136,15 @@ class FakeApiServer {
           'user': {'id': 1, 'username': 'test', 'is_admin': false},
         };
       case '/api/auth/me':
+        return {
+          'id': 1,
+          'username': 'testuser',
+          'email': 'test@example.com',
+          'is_admin': false,
+          'account_type': 'individual',
+          'first_name': 'Test',
+          'last_name': 'User',
+        };
       case '/api/user/profile':
         return {
           'user': {

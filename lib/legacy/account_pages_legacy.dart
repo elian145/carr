@@ -106,15 +106,15 @@ class _ProfilePageState extends State<ProfilePage> {
         });
         return;
       }
-      final url = Uri.parse('${getApiBase()}/api/auth/me');
-      final resp = await http.get(
-        url,
-        headers: {'Authorization': 'Bearer $tok'},
-      ).timeout(const Duration(seconds: 60));
-      if (resp.statusCode == 200) {
-        me = json.decode(resp.body) as Map<String, dynamic>;
-      }
-    } catch (e, st) { logNonFatal(e, st); }
+      final response = await ApiService.getProfile();
+      me = (response['user'] is Map<String, dynamic>)
+          ? Map<String, dynamic>.from(response['user'] as Map)
+          : Map<String, dynamic>.from(response);
+    } on ApiException catch (e, st) {
+      logNonFatal(e, st);
+    } catch (e, st) {
+      logNonFatal(e, st);
+    }
     await _loadUnreadChatCount();
     if (mounted) {
       setState(() {

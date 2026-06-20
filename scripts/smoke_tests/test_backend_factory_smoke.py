@@ -478,6 +478,53 @@ class BackendFactorySmokeTest(unittest.TestCase):
         self.assertEqual(login.status_code, 200, login.data)
         self.assertIn("access_token", login.get_json() or {})
 
+    def test_favorites_toggle_and_list(self):
+        fav = self.client.post(
+            f"/api/cars/{self.car_public}/favorite",
+            headers=self._auth(self.viewer_token),
+        )
+        self.assertEqual(fav.status_code, 200, fav.data)
+        body = fav.get_json() or {}
+        self.assertTrue(body.get("is_favorited") or body.get("favorited"))
+
+        listed = self.client.get(
+            "/api/user/favorites",
+            headers=self._auth(self.viewer_token),
+        )
+        self.assertEqual(listed.status_code, 200, listed.data)
+        payload = listed.get_json() or {}
+        cars = payload.get("cars") or []
+        self.assertGreaterEqual(len(cars), 1)
+
+    def test_saved_searches_crud(self):
+        create = self.client.post(
+            "/api/saved-searches",
+            headers=self._auth(self.viewer_token),
+            json={
+                "name": "Camry under 15k",
+                "filters": {"brand": "toyota", "model": "camry", "max_price": 15000},
+                "notify": True,
+            },
+        )
+        self.assertEqual(create.status_code, 201, create.data)
+        created = create.get_json() or {}
+        search_id = (created.get("saved_search") or {}).get("id")
+        self.assertTrue(search_id)
+
+        listed = self.client.get(
+            "/api/saved-searches",
+            headers=self._auth(self.viewer_token),
+        )
+        self.assertEqual(listed.status_code, 200, listed.data)
+        rows = (listed.get_json() or {}).get("saved_searches") or []
+        self.assertGreaterEqual(len(rows), 1)
+
+        delete = self.client.delete(
+            f"/api/saved-searches/{search_id}",
+            headers=self._auth(self.viewer_token),
+        )
+        self.assertEqual(delete.status_code, 200, delete.data)
+
 if __name__ == "__main__":
     unittest.main(verbosity=2)
 

@@ -17,21 +17,18 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 - `signing.properties.example` for Play upload setup.
 - `scripts/print_android_app_link_sha.py` for Render `ANDROID_SHA256_CERT_FINGERPRINTS`.
 - `scripts/run_local_checks.ps1` to mirror CI locally.
-
-### Changed
-
-- Support/legal defaults use `support@carzo.app` (removed `support@carlistings.com` client fallback).
-- README release steps reference verify scripts and `--dart-define=API_BASE`.
-
 - MIT `LICENSE` file (README previously referenced it without the file).
 - `scripts/one_off_migrations/` for legacy SQLite repair scripts (moved from repo root).
 - `scripts/dev/` and `scripts/smoke_tests/` for local tooling and CI smoke tests.
 - `docs/DEPLOY_ENV_CHECKLIST.md` for Render production env vars.
 - `assets/icon/app_icon.png` and `flutter_launcher_icons` config in `pubspec.yaml`.
-- This changelog.
+- Widget tests: profile username via `/auth/me`; ApiService profile/favorites/listings against mock API.
+- Backend smoke: favorites toggle/list and saved-search CRUD.
 
 ### Changed
 
+- Support/legal defaults use `support@carzo.app` (removed `support@carlistings.com` client fallback).
+- README release steps reference verify scripts and `--dart-define=API_BASE`.
 - Renamed sell draft prefs modules to `sell_draft_prefs.dart` / `sell_draft_list.dart` (`SellDraftPrefs`, `SellDraftList`); SharedPreferences key strings unchanged.
 - Removed `/legacy_*` route aliases from `buildProductionRoutes()`.
 - Production entry uses `legacy.MyApp` from `lib/main.dart`; `CarzoApp` remains for migration smoke tests only.
@@ -47,9 +44,6 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 - `.gitignore` patterns for common accidental CLI artifacts and scratch listings.
 - Backend CI runs `scripts/smoke_tests/test_backend_factory_smoke.py`.
 - README and `tools/windows/start_app.ps1` point to `scripts/dev/start_servers.ps1`.
-
-### Changed
-
 - Re-enabled analyzer rules on maintained Dart code; legacy included via `main_legacy.dart` part library — **0 analyzer issues**.
 - Added `logNonFatal()` for non-fatal error reporting (debug log + Sentry) across services and legacy part files.
 - Gated Socket.IO JWT `?token=` query fallback to development/testing only.
@@ -57,10 +51,12 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 - HTTP timeouts on legacy raw `http` calls; production warning when rate limits fall back to in-process storage without Redis.
 - Split `api_service.dart` into `lib/services/api/{api_http,api_auth,api_listings,api_chat,api_admin}.dart` (~650-line delegator shell).
 - Cleared legacy deprecated APIs and style lints (RadioGroup, SharePlus, `Color.r/g/b`, etc.) — zero analyzer infos.
-
 - Migrated deprecated Flutter APIs in `lib/pages/` (Dropdown `initialValue`, `RadioGroup`, `ExpansibleController`, `withValues`).
 - Migrated legacy `withOpacity` → `withValues` across all `lib/legacy/` part files.
 - Bumped backend dependencies for pip-audit (Flask 3.1.3, Flask-CORS 6, Flask-SocketIO 5.6.1, Werkzeug, Pillow, etc.) and removed unused `python-jose`.
+- Legacy profile/favorites use `ApiService` (token refresh) instead of raw `http`; `FakeApiServer` matches `/auth/me` and `/api/my_listings` response shapes.
+- Aligned `kk/requirements_min.txt` with patched core versions; `backend/requirements.txt` redirects to `kk/requirements.txt`.
+- `run_local_checks.ps1` runs `pip-audit` after backend smoke.
 
 ### Planned (not yet complete)
 

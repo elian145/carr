@@ -64,29 +64,23 @@ class _FavoritesPageState extends State<FavoritesPage> {
           }
         } catch (e, st) { logNonFatal(e, st); }
       }
-      // Backend endpoint is /api/user/favorites
-      final url = Uri.parse('${getApiBase()}/api/user/favorites');
-      final resp = await http.get(
-        url,
-        headers: {'Authorization': 'Bearer $tok'},
-      ).timeout(const Duration(seconds: 60));
-      if (resp.statusCode == 200) {
-        final decoded = json.decode(resp.body);
-        final data = (decoded is Map && decoded['cars'] is List)
-            ? decoded['cars']
-            : ((decoded is Map && decoded['favorites'] is List)
-                  ? decoded['favorites']
-                  : decoded);
-        if (data is List) {
-          setState(() {
-            _favorites = data.cast<Map<String, dynamic>>();
-            _favorites.sort(
-              (a, b) => _favoritedAtMs(b).compareTo(_favoritedAtMs(a)),
-            );
-          });
-          unawaited(sp.setString(cacheKey, json.encode(_favorites)));
-        }
-      } else if (resp.statusCode == 401) {
+      final decoded = await ApiService.getFavorites();
+      final data = (decoded['cars'] is List)
+          ? decoded['cars']
+          : ((decoded['favorites'] is List)
+                ? decoded['favorites']
+                : decoded);
+      if (data is List) {
+        setState(() {
+          _favorites = data.cast<Map<String, dynamic>>();
+          _favorites.sort(
+            (a, b) => _favoritedAtMs(b).compareTo(_favoritedAtMs(a)),
+          );
+        });
+        unawaited(sp.setString(cacheKey, json.encode(_favorites)));
+      }
+    } on ApiException catch (e) {
+      if (e.statusCode == 401) {
         setState(() {
           _loginRequired = true;
         });

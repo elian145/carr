@@ -18,4 +18,8 @@ if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
 Write-Host "== backend factory smoke ==" -ForegroundColor Cyan
 $env:APP_ENV = "testing"
 python scripts/smoke_tests/test_backend_factory_smoke.py
+if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+
+Write-Host "== pip-audit ==" -ForegroundColor Cyan
+pip-audit -r kk/requirements.txt
 exit $LASTEXITCODE
