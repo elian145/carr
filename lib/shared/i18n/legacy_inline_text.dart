@@ -26,3 +26,39 @@ String noText(BuildContext context) {
   if (code == 'ku') return 'نەخێر';
   return 'No';
 }
+
+String pleaseSelectPhotoText(BuildContext context) {
+  return trLegacyText(
+    context,
+    'Please select at least one photo',
+    ar: 'يرجى اختيار صورة واحدة على الأقل',
+    ku: 'تکایە لانیکەم یەک وێنە هەڵبژێرە',
+  );
+}
+
+String listingSubmittedSuccessText(BuildContext context) {
+  return trLegacyText(
+    context,
+    'Listing submitted successfully!',
+    ar: 'تم إرسال الإعلان بنجاح!',
+    ku: 'ڕیکلام بە سەرکەوتوویی نێردرا!',
+  );
+}
+
+String couldNotLoadListingsText(BuildContext context) {
+  return trLegacyText(
+    context,
+    'Could not load listings',
+    ar: 'تعذر تحميل الإعلانات',
+    ku: 'نەتوانرا ڕیکلامەکان باربکرێن',
+  );
+}
+
+String photosUploadedText(BuildContext context) {
+  return trLegacyText(
+    context,
+    'Photos uploaded',
+    ar: 'تم تحميل الصور',
+    ku: 'وێنەکان بارکران',
+  );
+}
