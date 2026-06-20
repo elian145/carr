@@ -28,9 +28,9 @@ jobs:
         run: python -m compileall kk
 
       - name: Publish preflight (static)
-        run: python scripts/verify_publish_ready.py
+        run: python scripts/verify_preflight.py --skip-host
 
-      - name: Run backend smoke tests
+      - name: Run backend factory smoke tests
         env:
           APP_ENV: development
         run: python scripts/smoke_tests/test_backend_factory_smoke.py

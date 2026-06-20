@@ -44,7 +44,7 @@ jobs:
         run: flutter analyze
 
       - name: Publish preflight (static)
-        run: python scripts/verify_publish_ready.py
+        run: python scripts/verify_preflight.py --skip-host
 
       - name: Run tests
         run: flutter test --no-pub
