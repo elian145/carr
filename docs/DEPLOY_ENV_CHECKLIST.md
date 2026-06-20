@@ -73,9 +73,37 @@ If chat works in-app but no phone banner: check Render logs for `no firebase_tok
 ## Mobile build (Codemagic / local)
 
 - `API_BASE=https://<your-host>` (no `/api` suffix)
+- Optional crash reporting: `--dart-define=SENTRY_DSN=https://…` (Flutter; see `lib/services/config.dart` and `lib/app/bootstrap.dart`)
 - Restrict Google Maps keys to `com.carzo.app` + release SHA-1
 - Disclose **Airbridge** in App Store / Play privacy forms
 
-## QA
+## Preflight commands
+
+```bash
+# Static only (CI runs this)
+python scripts/verify_publish_ready.py
+
+# Static + deployed API smoke (recommended before each store upload)
+python scripts/verify_preflight.py --host https://<your-host>
+
+# Fail if Android App Links are not configured yet
+python scripts/verify_preflight.py --host https://<your-host> --require-app-links
+```
+
+Android App Links fingerprint helper:
+
+```bash
+python scripts/print_android_app_link_sha.py
+# Paste output into Render → ANDROID_SHA256_CERT_FINGERPRINTS → redeploy
+```
+
+## Known production gap (check before Play upload)
+
+As of last automated check against `https://carr-5hrm.onrender.com`:
+
+- iOS Universal Links (AASA): configured (`APPLE_TEAM_ID` set)
+- Android App Links (`assetlinks.json`): returns **404** until `ANDROID_SHA256_CERT_FINGERPRINTS` is set on Render
+
+Run `python scripts/verify_production_host.py --host https://<your-host>` to re-check.
 
 Run [`REAL_DEVICE_QA.md`](REAL_DEVICE_QA.md) on a **prod** Android build and TestFlight iOS build after env changes.

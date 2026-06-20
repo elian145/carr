@@ -115,6 +115,7 @@ part 'saved_searches_legacy.dart';
 part 'comparison_legacy.dart';
 part 'auth_pages_legacy.dart';
 part 'account_pages_legacy.dart';
+part 'legacy_routes.dart';
 
 const List<String> _kOnlineSpecOptionKeys = [
   '_online_opts_transmission',

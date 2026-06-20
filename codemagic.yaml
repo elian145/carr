@@ -27,6 +27,7 @@ workflows:
       # - ANDROID_GOOGLE_MAPS_API_KEY (Android Maps SDK key, restricted by package + SHA-1)
       # - AIRBRIDGE_APP_NAME, AIRBRIDGE_APP_TOKEN (optional; Airbridge deep links + short share links)
       # - AIRBRIDGE_LISTING_CHANNEL (optional; default listing_share — create this channel in Airbridge)
+      # - SENTRY_DSN (optional; Flutter crash reporting — same project as backend SENTRY_DSN or separate)
     cache:
       cache_paths:
         - "$FLUTTER_ROOT/.pub-cache"

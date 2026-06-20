@@ -152,6 +152,26 @@ def _check_app_links(host: str, timeout: float, required: bool) -> list[str]:
     return errors
 
 
+def _check_push_health(host: str, timeout: float) -> None:
+    base = host.rstrip("/")
+    code, body, _ = _fetch(f"{base}/health/push", timeout)
+    if code != 200:
+        print(f"WARN: /health/push returned {code}")
+        return
+    data = _json(body)
+    if not isinstance(data, dict):
+        print("WARN: /health/push invalid JSON")
+        return
+    if data.get("credentials_oauth_ok") is True:
+        print("OK: FCM credentials (/health/push)")
+    elif data.get("credentials_present") is True:
+        print("WARN: FCM credentials present but OAuth check failed")
+    else:
+        print(
+            "WARN: FCM not configured (set FIREBASE_SERVICE_ACCOUNT_BASE64 on Render)"
+        )
+
+
 def main() -> None:
     p = argparse.ArgumentParser(description="Verify deployed CarNet API host")
     p.add_argument("--host", default=DEFAULT_HOST, help="API origin (no /api suffix)")
@@ -181,6 +201,8 @@ def main() -> None:
     link_errors = _check_app_links(host, args.timeout, args.require_app_links)
     for e in link_errors:
         print(f"FAIL: {e}", file=sys.stderr)
+
+    _check_push_health(host, args.timeout)
 
     if errors or link_errors:
         raise SystemExit(1)

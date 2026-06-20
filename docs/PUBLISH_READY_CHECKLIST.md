@@ -34,8 +34,9 @@ This checklist is the final gate before uploading Android AAB/APK or iOS builds.
 
 ## 5) QA and validation commands
 
-- `python scripts/verify_publish_ready.py` (static file/bundle-id checks; runs in CI)
-- `python scripts/verify_production_host.py --host https://<your-api-host>` (deployed API; add `--require-app-links` before store upload)
+- `python scripts/verify_preflight.py --host https://<your-api-host>` (static + deployed API; add `--require-app-links` before store upload)
+- `python scripts/verify_publish_ready.py` (static file/bundle-id checks only; runs in CI)
+- `python scripts/verify_production_host.py --host https://<your-api-host>` (deployed API only)
 - `flutter clean`
 - `flutter pub get`
 - `flutter analyze`
@@ -43,6 +44,7 @@ This checklist is the final gate before uploading Android AAB/APK or iOS builds.
 - Android release builds:
   - `flutter build apk --release --flavor prod --dart-define=API_BASE=https://your-api-domain`
   - `flutter build appbundle --release --flavor prod --dart-define=API_BASE=https://your-api-domain`
+- Optional: `--dart-define=SENTRY_DSN=https://…` for release crash reporting
 - iOS release/TestFlight build uses release plist and production API base.
 
 ## 6) Store compliance
