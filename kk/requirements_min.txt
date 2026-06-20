@@ -17,7 +17,7 @@ Pillow==12.2.0
 python-multipart==0.0.31
 redis==5.0.1
 celery==5.3.4
-gunicorn==22.0.0
+gunicorn==26.0.0
 psycopg[binary]
 marshmallow==3.26.2
 marshmallow-sqlalchemy==0.29.0
