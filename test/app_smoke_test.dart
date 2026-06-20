@@ -4,6 +4,7 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:car_listing_app/legacy/main_legacy.dart' as legacy;
 
 import 'fake_api_server.dart';
+import 'legacy_test_support.dart';
 
 /// Boots the same widget tree as production (`main.dart` → `legacy.MyApp`).
 ///
@@ -24,64 +25,69 @@ void main() {
     await tester.pump();
     await tester.pump(const Duration(milliseconds: 200));
 
-    Future<void> pushNamed(String name, {Object? args}) async {
-      final nav = tester.state<NavigatorState>(find.byType(Navigator));
-      nav.pushNamed(name, arguments: args);
-      await tester.pump();
-      await tester.pump(const Duration(milliseconds: 350));
-      await tester.pump(const Duration(milliseconds: 350));
-      final ex = tester.takeException();
-      expect(ex, isNull, reason: 'Exception while opening route: $name');
+    const guestRoutes = [
+      '/sell',
+      '/settings',
+      '/favorites',
+      '/dealers',
+      '/chat',
+      '/login',
+      '/signup',
+      '/profile',
+      '/edit-profile',
+      '/forgot-password',
+      '/car_detail',
+      '/chat/conversation',
+      '/edit_listing',
+      '/edit',
+      '/my_listings',
+      '/comparison',
+      '/recently-viewed',
+      '/analytics',
+      '/help',
+      '/reset-password',
+      '/verify-email',
+      '/dealer/profile',
+      '/dealer/edit',
+      '/admin/dealers',
+      '/admin/reports',
+    ];
 
-      if (nav.canPop()) {
-        nav.pop();
-        await tester.pump();
-        await tester.pump(const Duration(milliseconds: 250));
-        final ex2 = tester.takeException();
-        expect(ex2, isNull, reason: 'Exception while closing route: $name');
-      }
+    final args = <String, Object?>{
+      '/sell': {'startFresh': true},
+      '/car_detail': {'carId': '1'},
+      '/chat/conversation': {'conversationId': '1'},
+      '/edit_listing': {
+        'car': <String, dynamic>{'id': 1, 'title': 'Test car'},
+      },
+      '/edit': {
+        'car': <String, dynamic>{'id': 1, 'title': 'Test car'},
+      },
+      '/verify-email': {'token': 'test-token'},
+      '/dealer/profile': {'dealerPublicId': 'dealer_test_1'},
+      '/tiktok_scroll': {
+        'cars': [
+          <String, dynamic>{
+            'id': '1',
+            'title': 'Test car',
+            'image_url': '',
+          },
+        ],
+        'initialIndex': 0,
+      },
+    };
+
+    for (final name in guestRoutes) {
+      await smokePushNamed(tester, name: name, args: args[name]);
     }
 
-    await pushNamed('/sell');
-    await pushNamed('/sell', args: {'startFresh': true});
-    await pushNamed('/settings');
-    await pushNamed('/favorites');
-    await pushNamed('/dealers');
-    await pushNamed('/chat');
-    await pushNamed('/login');
-    await pushNamed('/signup');
-    await pushNamed('/profile');
-    await pushNamed('/edit-profile');
-    await pushNamed('/forgot-password');
-    await pushNamed('/car_detail', args: {'carId': '1'});
-    await pushNamed('/chat/conversation', args: {'conversationId': '1'});
-    await pushNamed(
-      '/edit_listing',
-      args: {
-        'car': <String, dynamic>{'id': 1, 'title': 'Test car'},
-      },
+    await smokePushNamed(tester, name: '/sell', args: {'showDraftGate': true});
+    await smokePushNamed(
+      tester,
+      name: '/tiktok_scroll',
+      args: args['/tiktok_scroll'],
     );
-    await pushNamed(
-      '/edit',
-      args: {
-        'car': <String, dynamic>{'id': 1, 'title': 'Test car'},
-      },
-    );
-    await pushNamed('/my_listings');
-    await pushNamed('/comparison');
-    await pushNamed('/recently-viewed');
-    await pushNamed('/analytics');
-    await pushNamed('/help');
-    await pushNamed('/reset-password');
-    await pushNamed('/verify-email', args: {'token': 'test-token'});
-    await pushNamed(
-      '/dealer/profile',
-      args: {'dealerPublicId': 'dealer_test_1'},
-    );
-    await pushNamed('/dealer/edit');
-    await pushNamed('/admin/dealers');
-    await pushNamed('/admin/reports');
 
-    await tester.pump(const Duration(seconds: 5));
+    await tester.pump(const Duration(seconds: 2));
   });
 }

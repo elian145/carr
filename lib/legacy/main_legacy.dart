@@ -3712,7 +3712,7 @@ class MyApp extends StatelessWidget {
         ChangeNotifierProvider(create: (context) => ThemeProvider()),
         ChangeNotifierProvider(create: (context) => ChatUiThemeController()),
         ChangeNotifierProvider(create: (context) => CarComparisonStore()),
-        ChangeNotifierProvider(create: (context) => AuthService()),
+        ChangeNotifierProvider.value(value: AuthService()),
       ],
       child: ValueListenableBuilder<Locale?>(
         valueListenable: LocaleController.currentLocale,
