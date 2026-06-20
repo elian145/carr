@@ -9,7 +9,6 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 ### Added
 
 - Flutter tests boot production `ProductionApp` with shared `test/fake_api_server.dart`.
-- `test/carzo_app_smoke_test.dart` for the refactor `CarzoApp` shell.
 - `scripts/verify_publish_ready.py` static store preflight (CI on Flutter + backend).
 - Backend smoke coverage for `/api/config/trust`, `/terms`, and `/privacy`.
 - CI prod `appbundle` build (`--flavor prod`).
@@ -35,6 +34,8 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 - Renamed sell draft prefs modules to `sell_draft_prefs.dart` / `sell_draft_list.dart` (`SellDraftPrefs`, `SellDraftList`); SharedPreferences key strings unchanged.
 - Removed `/legacy_*` route aliases from `buildProductionRoutes()`.
+- Removed refactor-only `CarzoApp` shell; production uses `ProductionApp` only.
+- `SellDraftList` delegates shared logic to `SellDraftArchive`.
 - Removed `lib/legacy/` folder and obsolete legacy split tooling under `tools/`.
 - Dropped `lib/legacy/**` from `analysis_options.yaml` excludes.
 - `.gitignore` patterns for common accidental CLI artifacts and scratch listings.

@@ -3,28 +3,28 @@ import 'package:flutter/material.dart';
 import '../pages/admin_dealers_page.dart';
 import '../pages/admin_reports_page.dart';
 import '../pages/analytics_page.dart';
-import '../pages/auth_pages.dart' as auth_pages;
-import '../pages/car_detail_page.dart' as modern_detail;
+import '../pages/auth_pages.dart';
+import '../pages/car_detail_page.dart';
 import '../pages/change_password_page.dart';
-import '../pages/chat_pages.dart' as carzo_chat;
-import '../pages/comparison_page.dart' as modern_comparison;
+import '../pages/chat_pages.dart';
+import '../pages/comparison_page.dart';
 import '../pages/dealer_profile_page.dart';
 import '../pages/dealers_directory_page.dart';
 import '../pages/edit_dealer_page.dart';
-import '../pages/edit_listing_page.dart' as modern_edit;
+import '../pages/edit_listing_page.dart';
 import '../pages/edit_profile_page.dart';
-import '../pages/favorites_page.dart' as modern_favorites;
+import '../pages/favorites_page.dart';
 import '../pages/help_center_page.dart';
-import '../pages/home_filters_page.dart' as modern_filters;
-import '../pages/home_page.dart' as modern_home;
-import '../pages/my_listings_page.dart' as modern_listings;
-import '../pages/profile_page.dart' as modern_profile;
+import '../pages/home_filters_page.dart';
+import '../pages/home_page.dart';
+import '../pages/my_listings_page.dart';
+import '../pages/profile_page.dart';
 import '../pages/recently_viewed_page.dart';
 import '../pages/reset_password_page.dart';
-import '../pages/saved_searches_page.dart' as modern_saved_searches;
+import '../pages/saved_searches_page.dart';
 import '../pages/sell_entry_pages.dart';
-import '../pages/sell_page.dart' as modern_sell;
-import '../pages/settings_page.dart' as modern_settings;
+import '../pages/sell_page.dart';
+import '../pages/settings_page.dart';
 import '../pages/tiktok_scroll_page.dart';
 import '../pages/verify_email_page.dart';
 import '../shared/auth/auth_guard.dart';
@@ -37,11 +37,24 @@ Map<String, dynamic>? _sellDraftSnapshot(Map<String, dynamic>? args) {
   return Map<String, dynamic>.from(draft.cast<String, dynamic>());
 }
 
+Widget _editListingRoute(BuildContext context) {
+  final args = readRouteArgs(context);
+  final car = args?['car'];
+  if (car is! Map) {
+    return navigationErrorScaffold('Missing listing data');
+  }
+  return AuthGuard(
+    child: EditListingPage(
+      car: Map<String, dynamic>.from(car.cast<String, dynamic>()),
+    ),
+  );
+}
+
 /// Production routes for [ProductionApp].
 Map<String, WidgetBuilder> buildProductionRoutes() {
   return <String, WidgetBuilder>{
-    '/': (context) => const modern_home.HomePage(),
-    '/home_filters': (context) => const modern_filters.HomeFiltersPage(),
+    '/': (context) => const HomePage(),
+    '/home_filters': (context) => const HomeFiltersPage(),
     '/sell': (context) {
       final args = readRouteArgs(context);
       final initialDraftSnapshot = _sellDraftSnapshot(args);
@@ -50,7 +63,7 @@ Map<String, WidgetBuilder> buildProductionRoutes() {
       if (initialDraftSnapshot != null) {
         return AuthGuard(
           sellFlow: true,
-          child: modern_sell.SellPage(
+          child: SellPage(
             initialDraftSnapshot: initialDraftSnapshot,
           ),
         );
@@ -58,7 +71,7 @@ Map<String, WidgetBuilder> buildProductionRoutes() {
       if (startFresh) {
         return AuthGuard(
           sellFlow: true,
-          child: const modern_sell.SellPage(startFresh: true),
+          child: const SellPage(startFresh: true),
         );
       }
       if (showDraftGate) {
@@ -72,29 +85,27 @@ Map<String, WidgetBuilder> buildProductionRoutes() {
         child: const SellEntryRouterPage(),
       );
     },
-    '/settings': (context) => const modern_settings.SettingsPage(),
+    '/settings': (context) => const SettingsPage(),
     '/favorites': (context) => AuthGuard(
           allowGuest: true,
-          child: const modern_favorites.FavoritesPage(),
+          child: const FavoritesPage(),
         ),
     '/dealers': (context) => const DealersDirectoryPage(),
-    '/chat': (context) =>
-        AuthGuard(child: const carzo_chat.ChatListPage()),
-    '/login': (context) => const auth_pages.LoginPage(),
-    '/signup': (context) => const auth_pages.RegisterPage(),
+    '/chat': (context) => AuthGuard(child: const ChatListPage()),
+    '/login': (context) => const LoginPage(),
+    '/signup': (context) => const RegisterPage(),
     '/profile': (context) => AuthGuard(
           allowGuest: true,
-          child: const modern_profile.ProfilePage(),
+          child: const ProfilePage(),
         ),
-    '/edit-profile': (context) =>
-        AuthGuard(child: const EditProfilePage()),
+    '/edit-profile': (context) => AuthGuard(child: const EditProfilePage()),
     '/car_detail': (context) {
       final args = readRouteArgs(context);
       final carId = (args?['carId'] ?? '').toString().trim();
       if (carId.isEmpty) {
         return navigationErrorScaffold('Missing listing id');
       }
-      return modern_detail.CarDetailPage(carId: carId);
+      return CarDetailPage(carId: carId);
     },
     '/tiktok_scroll': (context) {
       final args = readRouteArgs(context);
@@ -117,7 +128,7 @@ Map<String, WidgetBuilder> buildProductionRoutes() {
         return navigationErrorScaffold('Missing chat conversation id');
       }
       return AuthGuard(
-        child: carzo_chat.ChatConversationPage(
+        child: ChatConversationPage(
           carId: rawId,
           receiverId: args?['receiverId']?.toString(),
           initialDraft: args?['initialDraft']?.toString(),
@@ -129,42 +140,18 @@ Map<String, WidgetBuilder> buildProductionRoutes() {
         ),
       );
     },
-    '/edit': (context) {
-      final args = readRouteArgs(context);
-      final car = args?['car'];
-      if (car is! Map) {
-        return navigationErrorScaffold('Missing listing data');
-      }
-      return AuthGuard(
-        child: modern_edit.EditListingPage(
-          car: Map<String, dynamic>.from(car.cast<String, dynamic>()),
-        ),
-      );
-    },
-    '/edit_listing': (context) {
-      final args = readRouteArgs(context);
-      final car = args?['car'];
-      if (car is! Map) {
-        return navigationErrorScaffold('Missing listing data');
-      }
-      return AuthGuard(
-        child: modern_edit.EditListingPage(
-          car: Map<String, dynamic>.from(car.cast<String, dynamic>()),
-        ),
-      );
-    },
-    '/my_listings': (context) =>
-        AuthGuard(child: modern_listings.MyListingsPage()),
-    '/comparison': (context) => const modern_comparison.ComparisonPage(),
-    '/saved-searches': (context) =>
-        const modern_saved_searches.SavedSearchesPage(),
+    '/edit': _editListingRoute,
+    '/edit_listing': _editListingRoute,
+    '/my_listings': (context) => AuthGuard(child: MyListingsPage()),
+    '/comparison': (context) => const ComparisonPage(),
+    '/saved-searches': (context) => const SavedSearchesPage(),
     '/recently-viewed': (context) =>
         AuthGuard(child: const RecentlyViewedPage()),
     '/analytics': (context) => const AnalyticsPage(),
     '/change-password': (context) =>
         AuthGuard(child: const ChangePasswordPage()),
     '/notifications': (context) =>
-        AuthGuard(child: const carzo_chat.NotificationsPage()),
+        AuthGuard(child: const NotificationsPage()),
     '/reset-password': (context) => ResetPasswordPage(),
     '/verify-email': (context) {
       final args = readRouteArgs(context);
@@ -173,7 +160,7 @@ Map<String, WidgetBuilder> buildProductionRoutes() {
         initialToken: token.isNotEmpty ? token : null,
       );
     },
-    '/forgot-password': (context) => auth_pages.ForgotPasswordPage(),
+    '/forgot-password': (context) => ForgotPasswordPage(),
     '/admin/dealers': (context) => AuthGuard(child: AdminDealersPage()),
     '/admin/reports': (context) =>
         AuthGuard(child: const AdminReportsPage()),

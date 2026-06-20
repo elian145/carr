@@ -93,9 +93,14 @@ class HomeFilterQuery {
       if (raw == null || raw.isEmpty) return {};
       final decoded = json.decode(raw);
       if (decoded is! Map) return {};
+      final map = Map<String, dynamic>.from(decoded.cast<String, dynamic>());
+      final ctx = context;
+      if (ctx != null && !ctx.mounted) {
+        return fromPersistMap(map, includeSort: false);
+      }
       return fromPersistMap(
-        Map<String, dynamic>.from(decoded.cast<String, dynamic>()),
-        context: context,
+        map,
+        context: ctx,
         includeSort: includeSort,
       );
     } catch (_) {

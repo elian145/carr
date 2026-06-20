@@ -4,7 +4,6 @@
 |------|-------------------|
 | `app_smoke_test.dart` | **Production** shell (`ProductionApp` — same as `main.dart`) |
 | `widget_test.dart` | Production shell builds without crashing |
-| `carzo_app_smoke_test.dart` | Refactor shell (`CarzoApp` / `lib/app`) during migration |
 
 All tests use `fake_api_server.dart`, which binds an ephemeral port and sets a runtime `API_BASE` override (no fixed port collisions in parallel runs).
 

@@ -1,4 +1,4 @@
 import 'package:flutter/material.dart';
 
-/// Shared navigator key for production [ProductionApp] and refactor [CarzoApp].
+/// Shared navigator key for [ProductionApp].
 final GlobalKey<NavigatorState> appNavigatorKey = GlobalKey<NavigatorState>();

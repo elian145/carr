@@ -1,102 +1,27 @@
 import 'dart:convert';
 
-import 'package:image_picker/image_picker.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
+import '../sell/sell_draft_archive.dart';
 import 'sell_draft_prefs.dart';
 
 /// Loads and manages sell drafts (active snapshot + archive).
 class SellDraftList {
   SellDraftList._();
 
-  static String _newDraftId() => DateTime.now().microsecondsSinceEpoch.toString();
-
-  static int readStep(dynamic raw, {int maxIdx = 4}) {
-    if (raw == null) return 0;
-    if (raw is int) return raw.clamp(0, maxIdx);
-    if (raw is double) {
-      if (raw.isNaN || raw.isInfinite) return 0;
-      return raw.round().clamp(0, maxIdx);
-    }
-    final s = raw.toString().trim();
-    if (s.isEmpty) return 0;
-    final asDouble = double.tryParse(s);
-    if (asDouble != null) {
-      return asDouble.round().clamp(0, maxIdx);
-    }
-    return int.tryParse(s)?.clamp(0, maxIdx) ?? 0;
-  }
-
-  static int _mergeStep({required int jsonStep, int? prefsStep}) {
-    const maxIdx = 4;
-    final j = jsonStep.clamp(0, maxIdx);
-    if (prefsStep == null) return j;
-    final p = prefsStep.clamp(0, maxIdx);
-    return j > p ? j : p;
-  }
+  static int readStep(dynamic raw, {int maxIdx = 4}) =>
+      SellDraftArchive.readStep(raw, maxIdx: maxIdx);
 
   static Map<String, dynamic> normalize(Map<String, dynamic> raw) {
-    final rawCarData = raw['carData'];
-    final carData = rawCarData is Map
-        ? Map<String, dynamic>.from(rawCarData.cast<String, dynamic>())
-        : <String, dynamic>{};
-    final draftId = (raw['draftId'] ?? '').toString().trim();
-    return <String, dynamic>{
-      'draftId': draftId.isEmpty ? _newDraftId() : draftId,
-      'currentStep': readStep(raw['currentStep']),
-      'carData': carData,
-      'isPlaceholder': raw['isPlaceholder'] == true,
-      'updatedAt': raw['updatedAt'] ?? DateTime.now().millisecondsSinceEpoch,
-      if (raw['isActive'] == true) 'isActive': true,
-    };
-  }
-
-  static bool _hasMeaningfulValue(dynamic value) {
-    if (value == null) return false;
-    if (value is String) return value.trim().isNotEmpty;
-    if (value is num) return value != 0;
-    if (value is bool) return value;
-    if (value is XFile) return value.path.trim().isNotEmpty;
-    if (value is Map) {
-      for (final entry in value.entries) {
-        if (_hasMeaningfulValue(entry.value)) return true;
-      }
-      return false;
+    final base = SellDraftArchive.normalizeSnapshot(raw);
+    if (raw['isActive'] == true) {
+      return <String, dynamic>{...base, 'isActive': true};
     }
-    if (value is Iterable) {
-      for (final item in value) {
-        if (_hasMeaningfulValue(item)) return true;
-      }
-      return false;
-    }
-    return value.toString().trim().isNotEmpty;
+    return base;
   }
 
-  static bool isVisible(Map<String, dynamic> draft) {
-    return _hasMeaningfulValue(draft['carData']);
-  }
-
-  static List<Map<String, dynamic>> _decodeArchive(String? raw) {
-    if (raw == null || raw.trim().isEmpty) return <Map<String, dynamic>>[];
-    try {
-      final decoded = json.decode(raw);
-      if (decoded is! List) return <Map<String, dynamic>>[];
-      return decoded
-          .whereType<Map>()
-          .map(
-            (item) => normalize(
-              Map<String, dynamic>.from(item.cast<String, dynamic>()),
-            ),
-          )
-          .toList();
-    } catch (_) {
-      return <Map<String, dynamic>>[];
-    }
-  }
-
-  static String _encodeArchive(List<Map<String, dynamic>> drafts) {
-    return json.encode(drafts.map(normalize).toList());
-  }
+  static bool isVisible(Map<String, dynamic> draft) =>
+      SellDraftArchive.isVisibleDraft(draft);
 
   /// Active + archived drafts with content, newest first.
   static Future<List<Map<String, dynamic>>> loadVisible() async {
@@ -114,7 +39,7 @@ class SellDraftList {
           );
           if (isVisible(active)) {
             final prefsStep = sp.getInt(SellDraftPrefs.currentStepKey);
-            active['currentStep'] = _mergeStep(
+            active['currentStep'] = SellDraftArchive.mergeStep(
               jsonStep: readStep(active['currentStep']),
               prefsStep: prefsStep,
             );
@@ -125,7 +50,8 @@ class SellDraftList {
       } catch (_) {}
     }
 
-    for (final draft in _decodeArchive(sp.getString(SellDraftPrefs.archiveKey))) {
+    for (final draft
+        in SellDraftArchive.decodeArchive(sp.getString(SellDraftPrefs.archiveKey))) {
       if (!isVisible(draft)) continue;
       final id = draft['draftId'].toString();
       if (seenIds.contains(id)) continue;
@@ -144,9 +70,13 @@ class SellDraftList {
       await SellDraftPrefs.clearActiveStorage();
       return;
     }
-    final archive = _decodeArchive(sp.getString(SellDraftPrefs.archiveKey));
+    final archive =
+        SellDraftArchive.decodeArchive(sp.getString(SellDraftPrefs.archiveKey));
     archive.removeWhere((item) => item['draftId'] == draftId);
-    await sp.setString(SellDraftPrefs.archiveKey, _encodeArchive(archive));
+    await sp.setString(
+      SellDraftPrefs.archiveKey,
+      SellDraftArchive.encodeArchive(archive),
+    );
   }
 
   /// Promotes an archived draft to active (when opening from My Listings).
@@ -166,15 +96,16 @@ class SellDraftList {
               Map<String, dynamic>.from(decoded.cast<String, dynamic>()),
             );
             if (isVisible(active)) {
-              final archive =
-                  _decodeArchive(sp.getString(SellDraftPrefs.archiveKey));
+              final archive = SellDraftArchive.decodeArchive(
+                sp.getString(SellDraftPrefs.archiveKey),
+              );
               archive.removeWhere(
                 (item) => item['draftId'] == active['draftId'],
               );
               archive.insert(0, active);
               await sp.setString(
                 SellDraftPrefs.archiveKey,
-                _encodeArchive(archive),
+                SellDraftArchive.encodeArchive(archive),
               );
             }
           }
@@ -182,9 +113,12 @@ class SellDraftList {
       }
 
       final archive =
-          _decodeArchive(sp.getString(SellDraftPrefs.archiveKey));
+          SellDraftArchive.decodeArchive(sp.getString(SellDraftPrefs.archiveKey));
       archive.removeWhere((item) => item['draftId'] == normalized['draftId']);
-      await sp.setString(SellDraftPrefs.archiveKey, _encodeArchive(archive));
+      await sp.setString(
+        SellDraftPrefs.archiveKey,
+        SellDraftArchive.encodeArchive(archive),
+      );
       await sp.setString(
         SellDraftPrefs.snapshotKey,
         json.encode(normalized),
@@ -193,7 +127,7 @@ class SellDraftList {
     }
 
     final prefsStep = sp.getInt(SellDraftPrefs.currentStepKey);
-    normalized['currentStep'] = _mergeStep(
+    normalized['currentStep'] = SellDraftArchive.mergeStep(
       jsonStep: readStep(normalized['currentStep']),
       prefsStep: prefsStep,
     );
