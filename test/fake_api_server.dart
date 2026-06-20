@@ -1,59 +1,62 @@
 import 'dart:convert';
-import 'dart:io';
 
+import 'package:car_listing_app/services/api_service.dart';
 import 'package:car_listing_app/services/config.dart';
+import 'package:http/http.dart' as http;
+import 'package:http/testing.dart';
 
-/// Local HTTP stub for widget/smoke tests (no real backend).
+/// In-memory API stub for widget/smoke tests (no loopback [HttpServer]).
 ///
-/// Binds an ephemeral port and sets [setRuntimeApiBaseOverride] so parallel
-/// test files do not collide on a fixed port.
+/// Binds [ApiService.testHttpClient] to a [MockClient] so Flutter's test
+/// binding does not intercept loopback HTTP with status 400.
 class FakeApiServer {
   FakeApiServer._();
 
-  static HttpServer? _server;
+  static MockClient? _client;
 
   /// Starts the stub once per isolate (safe for parallel `flutter test`).
   static Future<void> ensureStarted() async {
-    if (_server != null) return;
-    _server = await HttpServer.bind(InternetAddress.loopbackIPv4, 0);
-    final port = _server!.port;
-    setRuntimeApiBaseOverride('http://127.0.0.1:$port');
-    _server!.listen(_handle);
+    if (_client != null) return;
+    setRuntimeApiBaseOverride('http://127.0.0.1:1');
+    _client = MockClient(_handle);
+    ApiService.testHttpClient = _client;
   }
 
   static Future<void> stop() async {
-    await _server?.close(force: true);
-    _server = null;
+    ApiService.testHttpClient = null;
+    _client = null;
     setRuntimeApiBaseOverride(null);
   }
 
-  static Future<void> _handle(HttpRequest req) async {
-    final path = req.uri.path;
-
-    Future<void> jsonOk(Object body) async {
-      req.response.statusCode = 200;
-      req.response.headers.contentType = ContentType.json;
-      req.response.write(json.encode(body));
-      await req.response.close();
+  static Future<http.Response> _handle(http.Request request) async {
+    final path = request.url.path;
+    final body = _bodyForPath(path);
+    if (body == null) {
+      return http.Response('Not found', 404);
     }
+    return http.Response(
+      json.encode(body),
+      200,
+      headers: {'content-type': 'application/json; charset=utf-8'},
+    );
+  }
 
+  static Object? _bodyForPath(String path) {
     if (path == '/health') {
-      return jsonOk({'status': 'ok'});
+      return {'status': 'ok'};
     }
 
     if (!path.startsWith('/api/')) {
-      req.response.statusCode = 404;
-      await req.response.close();
-      return;
+      return null;
     }
 
     if (path.startsWith('/api/cars/') && path.length > '/api/cars/'.length) {
       final segments = path.substring('/api/cars/'.length).split('/');
       final id = segments.first;
       if (segments.length > 1 && segments[1] == 'favorite') {
-        return jsonOk({'is_favorited': false});
+        return {'is_favorited': false};
       }
-      return jsonOk({
+      return {
         'car': {
           'id': id,
           'title': 'Test car',
@@ -68,12 +71,12 @@ class FakeApiServer {
           'videos': <dynamic>[],
           'seller': {'id': 'seller_1', 'username': 'seller'},
         },
-      });
+      };
     }
 
     if (path.startsWith('/api/dealers/') && path.length > '/api/dealers/'.length) {
       final id = path.substring('/api/dealers/'.length).split('/').first;
-      return jsonOk({
+      return {
         'dealer': {
           'public_id': id,
           'dealership_name': 'Test Dealer',
@@ -81,103 +84,107 @@ class FakeApiServer {
         },
         'listings': <dynamic>[],
         'stats': {'total_listings': 0, 'featured_listings': 0},
-      });
+      };
     }
 
     if (path.startsWith('/api/admin/dealers/')) {
-      return jsonOk({'message': 'ok'});
+      return {'message': 'ok'};
     }
 
     if (path.startsWith('/api/admin/reports')) {
-      return jsonOk({'reports': <dynamic>[]});
+      return {'reports': <dynamic>[]};
     }
 
     if (path.startsWith('/api/chat/')) {
       if (path.endsWith('/messages')) {
-        return jsonOk(<dynamic>[]);
+        return <dynamic>[];
       }
       if (path.contains('/send')) {
-        return jsonOk({'id': 1, 'content': 'stub'});
+        return {'id': 1, 'content': 'stub'};
       }
-      return jsonOk(<String, dynamic>{});
+      return <String, dynamic>{};
+    }
+
+    if (path.startsWith('/api/analytics/')) {
+      return <String, dynamic>{};
     }
 
     switch (path) {
       case '/api/analytics/listings':
-        return jsonOk(<dynamic>[]);
+        return <dynamic>[];
       case '/api/my_listings':
       case '/api/user/my-listings':
-        return jsonOk({
+        return {
           'cars': <dynamic>[],
           'pagination': {'has_next': false},
-        });
+        };
       case '/api/cars':
-        return jsonOk({
+        return {
           'cars': <dynamic>[],
           'pagination': {'has_next': false, 'page': 1, 'per_page': 20},
-        });
+        };
       case '/api/chats':
-        return jsonOk(<dynamic>[]);
+        return <dynamic>[];
       case '/api/chat/unread_count':
-        return jsonOk({'unread_count': 0});
+        return {'unread_count': 0};
       case '/api/auth/login':
       case '/api/auth/signup':
-        return jsonOk({
+        return {
           'access_token': 'test_access_token',
           'refresh_token': 'test_refresh_token',
           'user': {'id': 1, 'username': 'test', 'is_admin': false},
-        });
+        };
       case '/api/auth/me':
       case '/api/user/profile':
-        return jsonOk({
+        return {
           'user': {
             'id': 1,
             'username': 'test',
             'is_admin': false,
             'account_type': 'individual',
           },
-        });
+        };
       case '/api/user/favorites':
       case '/api/user/recently-viewed':
-        return jsonOk({
+        return {
           'cars': <dynamic>[],
           'pagination': {'has_next': false},
-        });
+        };
       case '/api/user/dealer-profile':
-        return jsonOk({
+        return {
           'dealer': {
             'dealership_name': 'Test Dealer',
             'dealership_location': 'Erbil',
           },
-        });
+        };
       case '/api/saved-searches':
-        return jsonOk({'saved_searches': <dynamic>[]});
+        return {'saved_searches': <dynamic>[]};
       case '/api/auth/send_otp':
-        return jsonOk({'sent': false, 'message': 'stub'});
+        return {'sent': false, 'message': 'stub'};
       case '/api/auth/delete-account':
-        return jsonOk({'message': 'Account deleted successfully'});
+        return {'message': 'Account deleted successfully'};
       case '/api/auth/refresh':
-        return jsonOk({
+        return {
           'access_token': 'test_access_token',
           'refresh_token': 'test_refresh_token',
-        });
+        };
       case '/api/config/trust':
-        return jsonOk({
+        return {
           'support_email': 'support@test.example',
           'privacy_url': 'https://example.com/privacy',
           'terms_url': 'https://example.com/terms',
-        });
+        };
       case '/api/push/preferences':
-        return jsonOk({'push_enabled': true});
+        return {'push_enabled': true};
       case '/api/dealers':
-        return jsonOk({
+        return {
           'dealers': <dynamic>[],
           'pagination': {'has_next': false, 'page': 1, 'per_page': 20},
-        });
+        };
       case '/api/admin/dealers/pending':
-        return jsonOk({'dealers': <dynamic>[]});
+        return {'dealers': <dynamic>[]};
       default:
-        return jsonOk(<String, dynamic>{});
+        return <String, dynamic>{};
     }
   }
 }

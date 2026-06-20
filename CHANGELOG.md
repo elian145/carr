@@ -40,6 +40,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 - Split `chat_pages.dart` into extension parts under `lib/pages/chat/` (~1,072-line shell + 9 modules); `tools/split_chat_pages.py` for regeneration from monolith.
 - Unified sell draft prefs: merged `SellListingDraftPrefs` into `SellDraftPrefs` (`loadListingDraft` / `saveListingDraft` / `clearListingDraft`); SharedPreferences key strings unchanged.
 - Widget tests: car detail cached-listing UI check; `AuthService.adoptTestSession` / `resetTestSession` for test auth; `AuthService` registered with `ChangeNotifierProvider.value` so the singleton is not disposed between tests.
+- `ApiService.testHttpClient` + in-memory `FakeApiServer` mock client (replaces loopback `HttpServer` in tests); chat list empty-state widget test; sell flow still covered by route smoke.
 - Removed `lib/legacy/` folder and obsolete legacy split tooling under `tools/`.
 - Dropped `lib/legacy/**` from `analysis_options.yaml` excludes.
 - `.gitignore` patterns for common accidental CLI artifacts and scratch listings.

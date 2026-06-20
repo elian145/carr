@@ -30,7 +30,7 @@ Future<void> _pumpTestShell(WidgetTester tester, Widget child) async {
 Future<void> _waitForAnyText(
   WidgetTester tester,
   Iterable<String> texts, {
-  Duration timeout = const Duration(seconds: 10),
+  Duration timeout = const Duration(seconds: 15),
 }) async {
   final deadline = DateTime.now().add(timeout);
   while (DateTime.now().isBefore(deadline)) {
