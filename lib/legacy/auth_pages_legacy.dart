@@ -18,7 +18,7 @@ class _FavoritesPageState extends State<FavoritesPage> {
     if (raw == null || raw.isEmpty) return -1;
     try {
       return DateTime.parse(raw).millisecondsSinceEpoch;
-    } catch (_) {
+    } catch (e, st) { logNonFatal(e, st); 
       return -1;
     }
   }
@@ -62,14 +62,14 @@ class _FavoritesPageState extends State<FavoritesPage> {
               _loading = false;
             });
           }
-        } catch (_) {}
+        } catch (e, st) { logNonFatal(e, st); }
       }
       // Backend endpoint is /api/user/favorites
       final url = Uri.parse('${getApiBase()}/api/user/favorites');
       final resp = await http.get(
         url,
         headers: {'Authorization': 'Bearer $tok'},
-      );
+      ).timeout(const Duration(seconds: 60));
       if (resp.statusCode == 200) {
         final decoded = json.decode(resp.body);
         final data = (decoded is Map && decoded['cars'] is List)
@@ -126,7 +126,7 @@ class _FavoritesPageState extends State<FavoritesPage> {
       } else {
         unawaited(AnalyticsService.trackFavorite(carId));
       }
-    } catch (_) {}
+    } catch (e, st) { logNonFatal(e, st); }
   }
 
   @override
@@ -519,7 +519,8 @@ class _SignupPageState extends State<SignupPage> {
         url,
         headers: {'Content-Type': 'application/json'},
         body: json.encode(otpBody),
-      );
+      ).timeout(const Duration(seconds: 60));
+      if (!mounted) return;
       if (resp.statusCode == 200) {
         final data = json.decode(resp.body);
         final bool sent = data['sent'] == true;
@@ -584,7 +585,7 @@ class _SignupPageState extends State<SignupPage> {
               msg =
                   '$message Try again in $minutes minute${minutes == 1 ? '' : 's'}.';
             }
-          } catch (_) {}
+          } catch (e, st) { logNonFatal(e, st); }
         }
         showDialog(
           context: context,
@@ -601,6 +602,7 @@ class _SignupPageState extends State<SignupPage> {
         );
       }
     } catch (e) {
+      if (!mounted) return;
       showDialog(
         context: context,
         builder: (_) => AlertDialog(
@@ -750,7 +752,7 @@ class _SignupPageState extends State<SignupPage> {
           await authService.login(loginIdent, _passwordController.text);
           if (!mounted) return;
           Navigator.pushReplacementNamed(context, '/');
-        } catch (_) {
+        } catch (e, st) { logNonFatal(e, st); 
           if (!mounted) return;
           showDialog(
             context: context,
@@ -770,10 +772,10 @@ class _SignupPageState extends State<SignupPage> {
         }
         return;
       }
+      if (!mounted) return;
       final msg = resp.body.isNotEmpty
           ? resp.body
           : AppLocalizations.of(context)!.couldNotSubmitListing;
-      if (!mounted) return;
       showDialog(
         context: context,
         builder: (_) => AlertDialog(

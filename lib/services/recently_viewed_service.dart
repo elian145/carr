@@ -6,6 +6,7 @@ import 'api_service.dart';
 import '../shared/auth/token_store.dart';
 import '../shared/listings/listing_events.dart';
 import '../shared/listings/listing_identity.dart';
+import '../shared/debug/app_log.dart';
 
 /// Local cache + server sync for recently viewed listings.
 class RecentlyViewedService {
@@ -39,7 +40,7 @@ class RecentlyViewedService {
           .whereType<Map>()
           .map((e) => Map<String, dynamic>.from(e.cast<String, dynamic>()))
           .toList();
-    } catch (_) {
+    } catch (e, st) { logNonFatal(e, st); 
       return [];
     }
   }
@@ -60,7 +61,7 @@ class RecentlyViewedService {
       final token = ApiService.accessToken ?? TokenStore.token;
       if (token == null || token.isEmpty) return;
       await ApiService.recordListingView(id);
-    } catch (_) {}
+    } catch (e, st) { logNonFatal(e, st); }
   }
 
   static Future<void> _recordLocal(
@@ -88,7 +89,7 @@ class RecentlyViewedService {
         without.removeRange(maxItems, without.length);
       }
       await sp.setString(localKey, json.encode(without));
-    } catch (_) {}
+    } catch (e, st) { logNonFatal(e, st); }
   }
 
   static bool _entryMatchesId(Map<String, dynamic> entry, String listingId) {
@@ -148,7 +149,7 @@ class RecentlyViewedService {
         if (inner is Map) {
           out.add(Map<String, dynamic>.from(inner.cast<String, dynamic>()));
         }
-      } catch (_) {}
+      } catch (e, st) { logNonFatal(e, st); }
     }
     return out;
   }
@@ -198,7 +199,7 @@ class RecentlyViewedService {
           return _mergeById(serverCars, localDisplay);
         }
       }
-    } catch (_) {}
+    } catch (e, st) { logNonFatal(e, st); }
 
     return localDisplay;
   }
@@ -211,14 +212,14 @@ class RecentlyViewedService {
       final items = _decode(sp.getString(localKey));
       final kept = items.where((e) => !_entryMatchesId(e, id)).toList();
       await sp.setString(localKey, json.encode(kept));
-    } catch (_) {}
+    } catch (e, st) { logNonFatal(e, st); }
   }
 
   static Future<void> _clearLocal() async {
     try {
       final sp = await SharedPreferences.getInstance();
       await sp.remove(localKey);
-    } catch (_) {}
+    } catch (e, st) { logNonFatal(e, st); }
   }
 
   /// Remove one listing from local cache and server (when logged in).
@@ -231,7 +232,7 @@ class RecentlyViewedService {
       final token = ApiService.accessToken ?? TokenStore.token;
       if (token == null || token.isEmpty) return;
       await ApiService.deleteRecentlyViewedListing(id);
-    } catch (_) {}
+    } catch (e, st) { logNonFatal(e, st); }
   }
 
   /// Clear all recently viewed history locally and on the server.
@@ -242,6 +243,6 @@ class RecentlyViewedService {
       final token = ApiService.accessToken ?? TokenStore.token;
       if (token == null || token.isEmpty) return;
       await ApiService.clearRecentlyViewed();
-    } catch (_) {}
+    } catch (e, st) { logNonFatal(e, st); }
   }
 }

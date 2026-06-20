@@ -3,6 +3,7 @@ import 'dart:convert';
 import 'package:shared_preferences/shared_preferences.dart';
 
 import 'api_service.dart';
+import '../shared/debug/app_log.dart';
 
 /// Local cache + server sync for saved searches.
 class SavedSearchService {
@@ -16,7 +17,7 @@ class SavedSearchService {
           .whereType<Map>()
           .map((e) => Map<String, dynamic>.from(e.cast<String, dynamic>()))
           .toList();
-    } catch (_) {
+    } catch (e, st) { logNonFatal(e, st); 
       return [];
     }
   }
@@ -127,7 +128,7 @@ class SavedSearchService {
       final server = _fromServerResponse(res);
       await persistLocal(server);
       return server;
-    } catch (_) {
+    } catch (e, st) { logNonFatal(e, st); 
       return local;
     }
   }
@@ -172,7 +173,7 @@ class SavedSearchService {
           item['id'] = (created['id'] ?? id).toString();
         }
       }
-    } catch (_) {}
+    } catch (e, st) { logNonFatal(e, st); }
   }
 
   static Future<void> deleteOnServer(String id) async {
@@ -181,6 +182,6 @@ class SavedSearchService {
     if (token == null || token.isEmpty) return;
     try {
       await ApiService.deleteSavedSearch(id);
-    } catch (_) {}
+    } catch (e, st) { logNonFatal(e, st); }
   }
 }

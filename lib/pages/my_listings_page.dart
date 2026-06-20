@@ -80,12 +80,6 @@ class _MyListingsPageState extends State<MyListingsPage> {
     });
   }
 
-  void _removeListingFromList(String carId) {
-    setState(() {
-      _cars.removeWhere((c) => listingMatchesId(c, carId));
-    });
-  }
-
   Future<void> _fetch({required bool refresh}) async {
     final auth = Provider.of<AuthService>(context, listen: false);
     if (!auth.isAuthenticated) {
@@ -319,7 +313,7 @@ class _MyListingsPageState extends State<MyListingsPage> {
             child: Container(
               padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
               decoration: BoxDecoration(
-                color: Colors.black.withOpacity(0.62),
+                color: Colors.black.withValues(alpha: 0.62),
                 borderRadius: BorderRadius.circular(999),
               ),
               child: const Text(
@@ -337,7 +331,7 @@ class _MyListingsPageState extends State<MyListingsPage> {
             top: 10,
             right: 10,
             child: Material(
-              color: Colors.black.withOpacity(0.62),
+              color: Colors.black.withValues(alpha: 0.62),
               shape: const CircleBorder(),
               child: IconButton(
                 visualDensity: VisualDensity.compact,
@@ -357,7 +351,7 @@ class _MyListingsPageState extends State<MyListingsPage> {
             child: Container(
               padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
               decoration: BoxDecoration(
-                color: Colors.black.withOpacity(0.62),
+                color: Colors.black.withValues(alpha: 0.62),
                 borderRadius: BorderRadius.circular(999),
               ),
               child: Text(
@@ -386,7 +380,7 @@ class _MyListingsPageState extends State<MyListingsPage> {
             Container(
               padding: const EdgeInsets.all(24),
               decoration: BoxDecoration(
-                color: const Color(0xFFFF6B00).withOpacity(0.1),
+                color: const Color(0xFFFF6B00).withValues(alpha: 0.1),
                 shape: BoxShape.circle,
               ),
               child: const Icon(

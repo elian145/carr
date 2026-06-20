@@ -288,7 +288,7 @@ class _EditListingPageState extends State<EditListingPage> {
             ),
             const SizedBox(height: 12),
             DropdownButtonFormField<String>(
-              value: _condition,
+              initialValue: _condition,
               decoration: InputDecoration(
                 labelText: loc?.conditionLabel ?? 'Condition',
               ),

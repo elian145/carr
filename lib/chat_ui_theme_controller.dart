@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 import 'theme_provider.dart';
+import 'shared/debug/app_log.dart';
 
 /// Brightness for chat list + conversation only (not [ThemeProvider]).
 class ChatUiThemeController extends ChangeNotifier {
@@ -27,7 +28,7 @@ class ChatUiThemeController extends ChangeNotifier {
         _isDark = v;
         notifyListeners();
       }
-    } catch (_) {}
+    } catch (e, st) { logNonFatal(e, st); }
   }
 
   Future<void> setDark(bool value) async {
@@ -37,7 +38,7 @@ class ChatUiThemeController extends ChangeNotifier {
     try {
       final prefs = await SharedPreferences.getInstance();
       await prefs.setBool(_prefsKey, _isDark);
-    } catch (_) {}
+    } catch (e, st) { logNonFatal(e, st); }
   }
 
   void toggle() {

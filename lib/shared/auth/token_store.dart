@@ -1,4 +1,5 @@
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
+import '../../shared/debug/app_log.dart';
 
 /// Single source of truth for the app auth token.
 ///
@@ -16,7 +17,7 @@ class TokenStore {
     try {
       _token = await _storage.read(key: 'auth_token');
       _refreshToken = await _storage.read(key: 'auth_refresh_token');
-    } catch (_) {
+    } catch (e, st) { logNonFatal(e, st); 
       _token = null;
       _refreshToken = null;
     }
@@ -32,7 +33,7 @@ class TokenStore {
         await _storage.write(key: 'auth_token', value: t);
         _token = t;
       }
-    } catch (_) {
+    } catch (e, st) { logNonFatal(e, st); 
       // Best-effort: on some sideload iOS builds, keychain operations can fail.
       _token = t.isEmpty ? null : t;
     }
@@ -48,7 +49,7 @@ class TokenStore {
         await _storage.write(key: 'auth_refresh_token', value: t);
         _refreshToken = t;
       }
-    } catch (_) {
+    } catch (e, st) { logNonFatal(e, st); 
       _refreshToken = t.isEmpty ? null : t;
     }
   }

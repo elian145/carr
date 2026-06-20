@@ -12,6 +12,7 @@ import '../theme_provider.dart';
 import 'help_center_page.dart';
 import 'legal_document_page.dart';
 import '../services/trust_config.dart';
+import '../shared/debug/app_log.dart';
 
 class SettingsPage extends StatefulWidget {
   const SettingsPage({super.key});
@@ -45,7 +46,7 @@ class _SettingsPageState extends State<SettingsPage> {
         _apiOverride = apiOverride?.trim().isEmpty == true ? null : apiOverride?.trim();
         _loading = false;
       });
-    } catch (_) {
+    } catch (e, st) { logNonFatal(e, st); 
       if (!mounted) return;
       setState(() {
         _pushEnabled = true;
@@ -60,7 +61,7 @@ class _SettingsPageState extends State<SettingsPage> {
     try {
       final sp = await SharedPreferences.getInstance();
       await sp.setBool(_pushKey, v);
-    } catch (_) {}
+    } catch (e, st) { logNonFatal(e, st); }
   }
 
   Future<void> _setLocale(String? code) async {
@@ -153,7 +154,7 @@ class _SettingsPageState extends State<SettingsPage> {
         await sp.setString(_apiOverrideKey, v);
         setRuntimeApiBaseOverride(v);
       }
-    } catch (_) {}
+    } catch (e, st) { logNonFatal(e, st); }
 
     if (!mounted) return;
     setState(() {

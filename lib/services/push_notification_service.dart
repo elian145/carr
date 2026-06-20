@@ -10,6 +10,7 @@ import 'package:shared_preferences/shared_preferences.dart';
 
 import 'api_service.dart' show ApiException, ApiService;
 import 'config.dart';
+import '../shared/debug/app_log.dart';
 
 const AndroidNotificationChannel _chatChannel = AndroidNotificationChannel(
   'carzo_chat',
@@ -219,7 +220,7 @@ class PushNotificationService {
           if (token.isNotEmpty) {
             await sp.setString('push_token', token);
           }
-        } catch (_) {}
+        } catch (e, st) { logNonFatal(e, st); }
       }
       if (token.isEmpty) return;
 

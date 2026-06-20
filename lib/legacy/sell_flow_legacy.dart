@@ -44,7 +44,7 @@ List<Map<String, dynamic>> _decodeSellDraftArchive(String? raw) {
           ),
         )
         .toList();
-  } catch (_) {
+  } catch (e, st) { logNonFatal(e, st); 
     return <Map<String, dynamic>>[];
   }
 }
@@ -113,7 +113,7 @@ class _SellEntryRouterPageState extends State<SellEntryRouterPage> {
         '/sell',
         arguments: hasAnyDraft ? {'showDraftGate': true} : {'startFresh': true},
       );
-    } catch (_) {
+    } catch (e, st) { logNonFatal(e, st); 
       if (!mounted) return;
       Navigator.pushReplacementNamed(
         context,
@@ -195,7 +195,7 @@ class _SellDraftGatePageState extends State<SellDraftGatePage> {
               seenIds.add(active['draftId'].toString());
             }
           }
-        } catch (_) {}
+        } catch (e, st) { logNonFatal(e, st); }
       }
       for (final draft in archive) {
         if (!_isVisibleSellDraft(draft)) continue;
@@ -215,7 +215,7 @@ class _SellDraftGatePageState extends State<SellDraftGatePage> {
           if (mounted) unawaited(_startFresh());
         });
       }
-    } catch (_) {
+    } catch (e, st) { logNonFatal(e, st); 
       if (!mounted) return;
       setState(() {
         _drafts = <Map<String, dynamic>>[];
@@ -257,7 +257,7 @@ class _SellDraftGatePageState extends State<SellDraftGatePage> {
         await sp.remove('legacy_sell_draft_step3_v1');
         await sp.remove('legacy_sell_draft_step4_v1');
       }
-    } catch (_) {}
+    } catch (e, st) { logNonFatal(e, st); }
   }
 
   Future<void> _discardDraft(Map<String, dynamic> draft) async {
@@ -287,7 +287,7 @@ class _SellDraftGatePageState extends State<SellDraftGatePage> {
           if (mounted) unawaited(_startFresh());
         });
       }
-    } catch (_) {}
+    } catch (e, st) { logNonFatal(e, st); }
   }
 
   Future<void> _startFresh() async {
@@ -316,7 +316,7 @@ class _SellDraftGatePageState extends State<SellDraftGatePage> {
         archive.removeWhere((item) => item['draftId'] == normalized['draftId']);
         await sp.setString(_sellDraftArchiveKey, _encodeSellDraftArchive(archive));
         await sp.setString(_draftSnapshotKey, json.encode(normalized));
-      } catch (_) {}
+      } catch (e, st) { logNonFatal(e, st); }
     }
     if (!mounted) return;
     try {
@@ -325,7 +325,7 @@ class _SellDraftGatePageState extends State<SellDraftGatePage> {
       final fromNorm = _readSellDraftStepDynamic(normalized['currentStep']);
       final merged = _mergeSellDraftStep(jsonStep: fromNorm, prefsStep: prefsStep);
       normalized['currentStep'] = merged;
-    } catch (_) {}
+    } catch (e, st) { logNonFatal(e, st); }
     if (!mounted) return;
     Navigator.pushReplacementNamed(
       context,
@@ -353,9 +353,9 @@ class _SellDraftGatePageState extends State<SellDraftGatePage> {
     return Container(
       margin: const EdgeInsets.only(bottom: 12),
       decoration: BoxDecoration(
-        color: Colors.orange.withOpacity(0.08),
+        color: Colors.orange.withValues(alpha: 0.08),
         borderRadius: BorderRadius.circular(18),
-        border: Border.all(color: Colors.orange.withOpacity(0.24)),
+        border: Border.all(color: Colors.orange.withValues(alpha: 0.24)),
       ),
       child: Padding(
         padding: const EdgeInsets.all(14),
@@ -368,7 +368,7 @@ class _SellDraftGatePageState extends State<SellDraftGatePage> {
                   width: 42,
                   height: 42,
                   decoration: BoxDecoration(
-                    color: const Color(0xFFFF6B00).withOpacity(0.12),
+                    color: const Color(0xFFFF6B00).withValues(alpha: 0.12),
                     borderRadius: BorderRadius.circular(12),
                   ),
                   child: const Icon(Icons.drafts_outlined, color: Color(0xFFFF6B00)),
@@ -510,9 +510,9 @@ class _SellDraftGatePageState extends State<SellDraftGatePage> {
                     Container(
                       padding: const EdgeInsets.all(16),
                       decoration: BoxDecoration(
-                        color: Colors.orange.withOpacity(0.08),
+                        color: Colors.orange.withValues(alpha: 0.08),
                         borderRadius: BorderRadius.circular(18),
-                        border: Border.all(color: Colors.orange.withOpacity(0.24)),
+                        border: Border.all(color: Colors.orange.withValues(alpha: 0.24)),
                       ),
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
@@ -654,24 +654,6 @@ class _SellCarPageState extends State<SellCarPage> {
     return '$imgPart::$vidPart::$dmgPart';
   }
 
-  Future<void> _restoreDraftCurrentStep() async {
-    try {
-      final sp = await SharedPreferences.getInstance();
-      final saved = sp.getInt(_draftCurrentStepKey);
-      if (saved == null) return;
-      final clamped = saved.clamp(0, _kSellStepCount - 1);
-      if (!mounted) return;
-      setState(() {
-        currentStep = clamped;
-      });
-      WidgetsBinding.instance.addPostFrameCallback((_) {
-        if (mounted && _pageController.hasClients) {
-          _pageController.jumpToPage(clamped);
-        }
-      });
-    } catch (_) {}
-  }
-
   /// Non-empty field check for draft persistence (aligned with step sync keys).
   bool _sellPersistFieldNonEmpty(dynamic v) {
     if (v == null) return false;
@@ -740,14 +722,7 @@ class _SellCarPageState extends State<SellCarPage> {
     try {
       final sp = await SharedPreferences.getInstance();
       await sp.setInt(_draftCurrentStepKey, _effectivePersistedDraftStep());
-    } catch (_) {}
-  }
-
-  Future<void> _clearDraftCurrentStep() async {
-    try {
-      final sp = await SharedPreferences.getInstance();
-      await sp.remove(_draftCurrentStepKey);
-    } catch (_) {}
+    } catch (e, st) { logNonFatal(e, st); }
   }
 
   Future<void> _initFreshListingSession() async {
@@ -774,7 +749,7 @@ class _SellCarPageState extends State<SellCarPage> {
           _currentDraftId = _newSellDraftId();
         });
       }
-    } catch (_) {}
+    } catch (e, st) { logNonFatal(e, st); }
   }
 
   Future<void> _clearSubmittedDraftOnly({String? draftId}) async {
@@ -806,33 +781,7 @@ class _SellCarPageState extends State<SellCarPage> {
           _currentDraftId = _newSellDraftId();
         });
       }
-    } catch (_) {}
-  }
-
-  Future<void> _seedFreshDraftPlaceholder() async {
-    try {
-      final sp = await SharedPreferences.getInstance();
-      final placeholder = _normalizeSellDraftSnapshot(<String, dynamic>{
-        'draftId': _currentDraftId.isNotEmpty ? _currentDraftId : _newSellDraftId(),
-        'currentStep': 0,
-        'carData': <String, dynamic>{},
-        'isPlaceholder': true,
-        'updatedAt': DateTime.now().millisecondsSinceEpoch,
-      });
-      _currentDraftId = placeholder['draftId'].toString();
-      await sp.setString(_draftSnapshotKey, json.encode(placeholder));
-      final archive = _decodeSellDraftArchive(sp.getString(_sellDraftArchiveKey));
-      archive.removeWhere((item) => item['draftId'] == placeholder['draftId']);
-      archive.insert(0, placeholder);
-      await sp.setString(_sellDraftArchiveKey, _encodeSellDraftArchive(archive));
-      if (mounted) {
-        setState(() {
-          _hasDraftSnapshot = true;
-          _draftPreviewStep = 0;
-          _draftPreviewCarData = const <String, dynamic>{};
-        });
-      }
-    } catch (_) {}
+    } catch (e, st) { logNonFatal(e, st); }
   }
 
   dynamic _draftValue(dynamic value) {
@@ -923,7 +872,7 @@ class _SellCarPageState extends State<SellCarPage> {
       archive.removeWhere((draft) => draft['draftId'] == _currentDraftId);
       archive.insert(0, snapshot);
       await sp.setString(_sellDraftArchiveKey, _encodeSellDraftArchive(archive));
-    } catch (_) {}
+    } catch (e, st) { logNonFatal(e, st); }
   }
 
   Future<void> _restoreSellDraftSnapshot() async {
@@ -968,7 +917,7 @@ class _SellCarPageState extends State<SellCarPage> {
           _pageController.jumpToPage(currentStep);
         }
       });
-    } catch (_) {}
+    } catch (e, st) { logNonFatal(e, st); }
   }
 
   Future<void> _resumeSellDraft() async {
@@ -992,7 +941,7 @@ class _SellCarPageState extends State<SellCarPage> {
             final m = Map<String, dynamic>.from(decoded.cast<String, dynamic>());
             fromDisk = _readSellDraftStepDynamic(m['currentStep']);
           }
-        } catch (_) {}
+        } catch (e, st) { logNonFatal(e, st); }
       }
       final merged = _maxSellDraftStep(
         currentStep,
@@ -1010,7 +959,7 @@ class _SellCarPageState extends State<SellCarPage> {
       });
       unawaited(_saveDraftCurrentStep());
       unawaited(_saveSellDraftSnapshot());
-    } catch (_) {}
+    } catch (e, st) { logNonFatal(e, st); }
   }
 
   Map<String, dynamic> _resolveCarDataMedia(Map<String, dynamic> data) {
@@ -1095,7 +1044,7 @@ class _SellCarPageState extends State<SellCarPage> {
         _draftPreviewStep = restoredStep.clamp(0, _kSellStepCount - 1);
         _draftPreviewCarData = restoredCarData;
       });
-    } catch (_) {}
+    } catch (e, st) { logNonFatal(e, st); }
   }
 
   String _draftTitle(Map<String, dynamic> data) {
@@ -1127,9 +1076,9 @@ class _SellCarPageState extends State<SellCarPage> {
       padding: const EdgeInsets.fromLTRB(16, 16, 16, 8),
       child: Container(
         decoration: BoxDecoration(
-          color: Colors.orange.withOpacity(0.08),
+          color: Colors.orange.withValues(alpha: 0.08),
           borderRadius: BorderRadius.circular(16),
-          border: Border.all(color: Colors.orange.withOpacity(0.24)),
+          border: Border.all(color: Colors.orange.withValues(alpha: 0.24)),
         ),
         child: Padding(
           padding: const EdgeInsets.all(14),
@@ -1310,7 +1259,7 @@ class _SellCarPageState extends State<SellCarPage> {
                               : isCurrent
                               ? Color(0xFFFF6B00)
                               : isAccessible
-                              ? Color(0xFFFF6B00).withOpacity(0.5)
+                              ? Color(0xFFFF6B00).withValues(alpha: 0.5)
                               : Colors.grey[300],
                           borderRadius: BorderRadius.circular(2),
                         ),
@@ -1641,33 +1590,6 @@ class _SellStep1PageState extends State<SellStep1Page> {
     super.dispose();
   }
 
-  Future<void> _restoreDraft() async {
-    try {
-      final sp = await SharedPreferences.getInstance();
-      final raw = sp.getString(_draftKey);
-      if (raw == null || raw.trim().isEmpty) return;
-      final decoded = json.decode(raw);
-      if (decoded is! Map) return;
-      final data = Map<String, dynamic>.from(decoded.cast<String, dynamic>());
-      if (!mounted) return;
-      setState(() {
-        selectedBrand = data['selectedBrand']?.toString();
-        selectedModel = data['selectedModel']?.toString();
-        selectedTrim = data['selectedTrim']?.toString();
-        selectedYear = data['selectedYear']?.toString();
-        errBrand = data['errBrand'] == true;
-        errModel = data['errModel'] == true;
-        errTrim = data['errTrim'] == true;
-        errYear = data['errYear'] == true;
-        isYearManualInput = data['isYearManualInput'] == true;
-        _dsModelId = int.tryParse(data['dsModelId']?.toString() ?? '');
-        _catYear = int.tryParse(data['catYear']?.toString() ?? '');
-        _yearController.text = data['yearControllerText']?.toString() ?? '';
-      });
-      _schedDsRefresh();
-    } catch (_) {}
-  }
-
   void _hydrateFromParentCarData() {
     final parent = context.findAncestorStateOfType<_SellCarPageState>();
     final data = parent?.carData;
@@ -1704,7 +1626,7 @@ class _SellStep1PageState extends State<SellStep1Page> {
           'yearControllerText': _yearController.text,
         }),
       );
-    } catch (_) {}
+    } catch (e, st) { logNonFatal(e, st); }
   }
 
   Future<void> _resetSellFilters() async {
@@ -2119,10 +2041,10 @@ class _SellStep1PageState extends State<SellStep1Page> {
                   vertical: 10,
                 ),
                 decoration: BoxDecoration(
-                  color: const Color(0xFFFF6B00).withOpacity(0.12),
+                  color: const Color(0xFFFF6B00).withValues(alpha: 0.12),
                   borderRadius: BorderRadius.circular(8),
                   border: Border.all(
-                    color: const Color(0xFFFF6B00).withOpacity(0.25),
+                    color: const Color(0xFFFF6B00).withValues(alpha: 0.25),
                   ),
                 ),
                 child: Text(
@@ -2244,7 +2166,7 @@ class _SellStep1PageState extends State<SellStep1Page> {
               return translated.contains(normalizedQuery);
             }).toList();
             return Dialog(
-              backgroundColor: Colors.grey[900]?.withOpacity(0.98),
+              backgroundColor: Colors.grey[900]?.withValues(alpha: 0.98),
               shape: RoundedRectangleBorder(
                 borderRadius: BorderRadius.circular(20),
               ),
@@ -2293,7 +2215,7 @@ class _SellStep1PageState extends State<SellStep1Page> {
                             color: Colors.white70,
                           ),
                           filled: true,
-                          fillColor: Colors.black.withOpacity(0.2),
+                          fillColor: Colors.black.withValues(alpha: 0.2),
                           enabledBorder: OutlineInputBorder(
                             borderRadius: BorderRadius.circular(12),
                             borderSide: const BorderSide(color: Colors.white24),
@@ -2398,8 +2320,8 @@ class _SellStep1PageState extends State<SellStep1Page> {
                                 borderRadius: BorderRadius.circular(14),
                                 gradient: LinearGradient(
                                   colors: [
-                                    Colors.white.withOpacity(0.06),
-                                    Colors.white.withOpacity(0.02),
+                                    Colors.white.withValues(alpha: 0.06),
+                                    Colors.white.withValues(alpha: 0.02),
                                   ],
                                   begin: Alignment.topLeft,
                                   end: Alignment.bottomRight,
@@ -2456,7 +2378,7 @@ class _SellStep1PageState extends State<SellStep1Page> {
               return localized.contains(normalizedQuery);
             }).toList();
             return Dialog(
-              backgroundColor: Colors.grey[900]?.withOpacity(0.98),
+              backgroundColor: Colors.grey[900]?.withValues(alpha: 0.98),
               shape: RoundedRectangleBorder(
                 borderRadius: BorderRadius.circular(20),
               ),
@@ -2504,7 +2426,7 @@ class _SellStep1PageState extends State<SellStep1Page> {
                           color: Colors.white70,
                         ),
                         filled: true,
-                        fillColor: Colors.black.withOpacity(0.2),
+                        fillColor: Colors.black.withValues(alpha: 0.2),
                         enabledBorder: OutlineInputBorder(
                           borderRadius: BorderRadius.circular(12),
                           borderSide: const BorderSide(color: Colors.white24),
@@ -2540,7 +2462,7 @@ class _SellStep1PageState extends State<SellStep1Page> {
                             onTap: () => Navigator.pop(context, brand),
                             child: Container(
                               decoration: BoxDecoration(
-                                color: Colors.black.withOpacity(0.15),
+                                color: Colors.black.withValues(alpha: 0.15),
                                 borderRadius: BorderRadius.circular(12),
                                 border: Border.all(color: Colors.white24),
                               ),
@@ -2640,12 +2562,12 @@ class _SellStep1PageState extends State<SellStep1Page> {
               padding: EdgeInsets.all(20),
               decoration: BoxDecoration(
                 gradient: LinearGradient(
-                  colors: [Color(0xFFFF6B00).withOpacity(0.1), Colors.white],
+                  colors: [Color(0xFFFF6B00).withValues(alpha: 0.1), Colors.white],
                   begin: Alignment.topLeft,
                   end: Alignment.bottomRight,
                 ),
                 borderRadius: BorderRadius.circular(16),
-                border: Border.all(color: Color(0xFFFF6B00).withOpacity(0.2)),
+                border: Border.all(color: Color(0xFFFF6B00).withValues(alpha: 0.2)),
               ),
               child: Column(
                 children: [
@@ -2716,7 +2638,7 @@ class _SellStep1PageState extends State<SellStep1Page> {
                     width: 36,
                     height: 36,
                     decoration: BoxDecoration(
-                      color: const Color(0xFFFF6B00).withOpacity(0.12),
+                      color: const Color(0xFFFF6B00).withValues(alpha: 0.12),
                       borderRadius: BorderRadius.circular(10),
                     ),
                     child: selectedBrand == null
@@ -2942,7 +2864,7 @@ class _SellStep1PageState extends State<SellStep1Page> {
                     color: Color(0xFFFF6B00),
                   ),
                   style: IconButton.styleFrom(
-                    backgroundColor: Colors.grey.withOpacity(0.1),
+                    backgroundColor: Colors.grey.withValues(alpha: 0.1),
                     shape: RoundedRectangleBorder(
                       borderRadius: BorderRadius.circular(8),
                     ),
@@ -3324,73 +3246,6 @@ class _SellStep2PageState extends State<SellStep2Page> {
     super.dispose();
   }
 
-  Future<void> _restoreDraft() async {
-    try {
-      final sp = await SharedPreferences.getInstance();
-      final raw = sp.getString(_draftKey);
-      if (raw == null || raw.trim().isEmpty) return;
-      final decoded = json.decode(raw);
-      if (decoded is! Map) return;
-      final data = Map<String, dynamic>.from(decoded.cast<String, dynamic>());
-      if (!mounted) return;
-      setState(() {
-        selectedMileage = data['selectedMileage']?.toString();
-        selectedCondition = data['selectedCondition']?.toString();
-        selectedTransmission = data['selectedTransmission']?.toString();
-        selectedFuelType = data['selectedFuelType']?.toString();
-        selectedBodyType = data['selectedBodyType']?.toString();
-        selectedColor = data['selectedColor']?.toString();
-        selectedDriveType = data['selectedDriveType']?.toString();
-        selectedRegionSpecs = data['selectedRegionSpecs']?.toString();
-        selectedSeating = data['selectedSeating']?.toString();
-        selectedEngineSize = data['selectedEngineSize']?.toString();
-        selectedCylinderCount = data['selectedCylinderCount']?.toString();
-        selectedTitleStatus = data['selectedTitleStatus']?.toString();
-        selectedDamagedParts = data['selectedDamagedParts']?.toString();
-        selectedVin = data['selectedVin']?.toString();
-        _vinController.text = selectedVin ?? '';
-        errMileage = data['errMileage'] == true;
-        errCondition = data['errCondition'] == true;
-        errTransmission = data['errTransmission'] == true;
-        errFuelType = data['errFuelType'] == true;
-        errBodyType = data['errBodyType'] == true;
-        errColor = data['errColor'] == true;
-        errDrive = data['errDrive'] == true;
-        errRegionSpecs = data['errRegionSpecs'] == true;
-        errSeating = data['errSeating'] == true;
-        errEngineSize = data['errEngineSize'] == true;
-        errCylinderCount = data['errCylinderCount'] == true;
-        errTitle = data['errTitle'] == true;
-        errDamagedParts = data['errDamagedParts'] == true;
-        isMileageManualInput = data['isMileageManualInput'] == true;
-        isEngineSizeManualInput = data['isEngineSizeManualInput'] == true;
-        _mileageController.text = data['mileageControllerText']?.toString() ?? '';
-        _engineSizeController.text =
-            data['engineSizeControllerText']?.toString() ?? '';
-      });
-      final parentState = context.findAncestorStateOfType<_SellCarPageState>();
-      if (parentState != null) {
-        parentState.carData['mileage'] = selectedMileage;
-        parentState.carData['condition'] = selectedCondition;
-        parentState.carData['transmission'] = selectedTransmission;
-        parentState.carData['fuel_type'] = selectedFuelType;
-        parentState.carData['body_type'] = selectedBodyType;
-        parentState.carData['color'] = selectedColor;
-        parentState.carData['drive_type'] = selectedDriveType;
-        parentState.carData['region_specs'] =
-            selectedRegionSpecs?.trim().toLowerCase();
-        parentState.carData['seating'] = selectedSeating;
-        parentState.carData['engine_size'] = selectedEngineSize;
-        parentState.carData['cylinder_count'] = selectedCylinderCount;
-        parentState.carData['title_status'] = selectedTitleStatus;
-        parentState.carData['damaged_parts'] = selectedDamagedParts;
-        parentState.carData['vin'] = selectedVin;
-        parentState.setState(() {});
-      }
-      _hydrateFromParentCarData(force: true);
-    } catch (_) {}
-  }
-
   Future<void> _saveDraft() async {
     try {
       final sp = await SharedPreferences.getInstance();
@@ -3430,7 +3285,7 @@ class _SellStep2PageState extends State<SellStep2Page> {
           'engineSizeControllerText': _engineSizeController.text,
         }),
       );
-    } catch (_) {}
+    } catch (e, st) { logNonFatal(e, st); }
   }
 
   @override
@@ -3961,7 +3816,7 @@ class _SellStep2PageState extends State<SellStep2Page> {
           child: Opacity(
             opacity: curved.value,
             child: Dialog(
-              backgroundColor: Colors.grey[900]?.withOpacity(0.98),
+              backgroundColor: Colors.grey[900]?.withValues(alpha: 0.98),
               shape: RoundedRectangleBorder(
                 borderRadius: BorderRadius.circular(20),
               ),
@@ -4006,9 +3861,6 @@ class _SellStep2PageState extends State<SellStep2Page> {
                             displayText = _formatCurrencyGlobal(context, value);
                           } else if (lowerTitle.contains('mileage') &&
                               isNumeric) {
-                            final localeTag = Localizations.localeOf(
-                              context,
-                            ).toLanguageTag();
                             final nf = _decimalFormatterGlobal(context);
                             displayText =
                                 '${_localizeDigitsGlobal(context, nf.format(num.tryParse(value) ?? 0))} ${AppLocalizations.of(context)!.unit_km}';
@@ -4053,8 +3905,8 @@ class _SellStep2PageState extends State<SellStep2Page> {
                                 borderRadius: BorderRadius.circular(14),
                                 gradient: LinearGradient(
                                   colors: [
-                                    Colors.white.withOpacity(0.06),
-                                    Colors.white.withOpacity(0.02),
+                                    Colors.white.withValues(alpha: 0.06),
+                                    Colors.white.withValues(alpha: 0.02),
                                   ],
                                   begin: Alignment.topLeft,
                                   end: Alignment.bottomRight,
@@ -4109,12 +3961,12 @@ class _SellStep2PageState extends State<SellStep2Page> {
               padding: EdgeInsets.all(20),
               decoration: BoxDecoration(
                 gradient: LinearGradient(
-                  colors: [Color(0xFFFF6B00).withOpacity(0.1), Colors.white],
+                  colors: [Color(0xFFFF6B00).withValues(alpha: 0.1), Colors.white],
                   begin: Alignment.topLeft,
                   end: Alignment.bottomRight,
                 ),
                 borderRadius: BorderRadius.circular(16),
-                border: Border.all(color: Color(0xFFFF6B00).withOpacity(0.2)),
+                border: Border.all(color: Color(0xFFFF6B00).withValues(alpha: 0.2)),
               ),
               child: Column(
                 children: [
@@ -4262,7 +4114,7 @@ class _SellStep2PageState extends State<SellStep2Page> {
                     color: Color(0xFFFF6B00),
                   ),
                   style: IconButton.styleFrom(
-                    backgroundColor: Colors.grey.withOpacity(0.1),
+                    backgroundColor: Colors.grey.withValues(alpha: 0.1),
                     shape: RoundedRectangleBorder(
                       borderRadius: BorderRadius.circular(8),
                     ),
@@ -4381,7 +4233,7 @@ class _SellStep2PageState extends State<SellStep2Page> {
                     context: context,
                     builder: (context) {
                       return Dialog(
-                        backgroundColor: Colors.grey[900]?.withOpacity(0.98),
+                        backgroundColor: Colors.grey[900]?.withValues(alpha: 0.98),
                         shape: RoundedRectangleBorder(
                           borderRadius: BorderRadius.circular(20),
                         ),
@@ -4459,7 +4311,7 @@ class _SellStep2PageState extends State<SellStep2Page> {
                                                   BoxShadow(
                                                     color: const Color(
                                                       0xFFFF6B00,
-                                                    ).withOpacity(0.35),
+                                                    ).withValues(alpha: 0.35),
                                                     blurRadius: 14,
                                                     spreadRadius: 1,
                                                     offset: const Offset(0, 4),
@@ -4574,7 +4426,7 @@ class _SellStep2PageState extends State<SellStep2Page> {
                     context: context,
                     builder: (context) {
                       return Dialog(
-                        backgroundColor: Colors.grey[900]?.withOpacity(0.98),
+                        backgroundColor: Colors.grey[900]?.withValues(alpha: 0.98),
                         shape: RoundedRectangleBorder(
                           borderRadius: BorderRadius.circular(20),
                         ),
@@ -4632,7 +4484,7 @@ class _SellStep2PageState extends State<SellStep2Page> {
                                           Navigator.pop(context, colorName),
                                       child: Container(
                                         decoration: BoxDecoration(
-                                          color: Colors.black.withOpacity(0.15),
+                                          color: Colors.black.withValues(alpha: 0.15),
                                           borderRadius: BorderRadius.circular(
                                             12,
                                           ),
@@ -4956,7 +4808,7 @@ class _SellStep2PageState extends State<SellStep2Page> {
                     color: const Color(0xFFFF6B00),
                   ),
                   style: IconButton.styleFrom(
-                    backgroundColor: Colors.grey.withOpacity(0.1),
+                    backgroundColor: Colors.grey.withValues(alpha: 0.1),
                     shape: RoundedRectangleBorder(
                       borderRadius: BorderRadius.circular(8),
                     ),
@@ -5081,7 +4933,7 @@ class _SellStep2PageState extends State<SellStep2Page> {
               decoration: BoxDecoration(
                 color: Color(0xFF1A1A1A),
                 borderRadius: BorderRadius.circular(12),
-                border: Border.all(color: Color(0xFFFF6B00).withOpacity(0.3)),
+                border: Border.all(color: Color(0xFFFF6B00).withValues(alpha: 0.3)),
               ),
               padding: EdgeInsets.symmetric(horizontal: 16, vertical: 4),
               child: TextFormField(
@@ -5491,45 +5343,6 @@ class _SellStep3PageState extends State<SellStep3Page> {
     super.dispose();
   }
 
-  Future<void> _restoreDraft() async {
-    try {
-      final sp = await SharedPreferences.getInstance();
-      final raw = sp.getString(_draftKey);
-      if (raw == null || raw.trim().isEmpty) return;
-      final decoded = json.decode(raw);
-      if (decoded is! Map) return;
-      final data = Map<String, dynamic>.from(decoded.cast<String, dynamic>());
-      if (!mounted) return;
-      setState(() {
-        selectedPrice = data['selectedPrice']?.toString();
-        selectedCity = data['selectedCity']?.toString();
-        selectedPlateType = data['selectedPlateType']?.toString();
-        selectedPlateCity = data['selectedPlateCity']?.toString();
-        contactPhone = data['contactPhone']?.toString();
-        isQuickSell = data['isQuickSell'] == true;
-        isPriceManualInput = data['isPriceManualInput'] == true;
-        selectedCurrency = data['selectedCurrency']?.toString() ?? 'USD';
-        _priceController.text = data['priceControllerText']?.toString() ?? '';
-        _phoneController.text =
-            (contactPhone ?? '').replaceFirst(RegExp(r'^\+964'), '');
-        _descriptionController.text =
-            data['descriptionControllerText']?.toString() ?? '';
-      });
-      final parentState = context.findAncestorStateOfType<_SellCarPageState>();
-      if (parentState != null) {
-        parentState.carData['price'] = selectedPrice;
-        parentState.carData['city'] = selectedCity;
-        parentState.carData['plate_type'] = selectedPlateType;
-        parentState.carData['plate_city'] = selectedPlateCity;
-        parentState.carData['contact_phone'] = contactPhone;
-        parentState.carData['quick_sell'] = isQuickSell;
-        parentState.carData['currency'] = selectedCurrency;
-        parentState.carData['description'] = _descriptionController.text;
-        parentState.setState(() {});
-      }
-    } catch (_) {}
-  }
-
   Future<void> _saveDraft() async {
     try {
       final sp = await SharedPreferences.getInstance();
@@ -5548,7 +5361,7 @@ class _SellStep3PageState extends State<SellStep3Page> {
           'descriptionControllerText': _descriptionController.text,
         }),
       );
-    } catch (_) {}
+    } catch (e, st) { logNonFatal(e, st); }
   }
 
   void _resetStep3() {
@@ -5569,31 +5382,6 @@ class _SellStep3PageState extends State<SellStep3Page> {
   void _dismissKeyboard() {
     _dismissAnyKeyboard(context);
     _priceFocusNode.unfocus();
-  }
-
-  Widget _buildCurrencyButton(String currency, bool isSelected) {
-    return GestureDetector(
-      onTap: () {
-        setState(() {
-          selectedCurrency = currency;
-        });
-      },
-      child: Container(
-        padding: EdgeInsets.symmetric(horizontal: 20, vertical: 12),
-        decoration: BoxDecoration(
-          color: isSelected ? Color(0xFFFF6B00) : Colors.transparent,
-          borderRadius: BorderRadius.circular(12),
-        ),
-        child: Text(
-          currency,
-          style: TextStyle(
-            color: isSelected ? Colors.white : Colors.white70,
-            fontSize: 16,
-            fontWeight: isSelected ? FontWeight.w600 : FontWeight.w400,
-          ),
-        ),
-      ),
-    );
   }
 
   final List<String> cities = [
@@ -5646,7 +5434,7 @@ class _SellStep3PageState extends State<SellStep3Page> {
       context: context,
       builder: (context) {
         return Dialog(
-          backgroundColor: Colors.grey[900]?.withOpacity(0.98),
+          backgroundColor: Colors.grey[900]?.withValues(alpha: 0.98),
           shape: RoundedRectangleBorder(
             borderRadius: BorderRadius.circular(20),
           ),
@@ -5709,8 +5497,8 @@ class _SellStep3PageState extends State<SellStep3Page> {
                             borderRadius: BorderRadius.circular(14),
                             gradient: LinearGradient(
                               colors: [
-                                Colors.white.withOpacity(0.06),
-                                Colors.white.withOpacity(0.02),
+                                Colors.white.withValues(alpha: 0.06),
+                                Colors.white.withValues(alpha: 0.02),
                               ],
                               begin: Alignment.topLeft,
                               end: Alignment.bottomRight,
@@ -5762,12 +5550,12 @@ class _SellStep3PageState extends State<SellStep3Page> {
               padding: EdgeInsets.all(20),
               decoration: BoxDecoration(
                 gradient: LinearGradient(
-                  colors: [Color(0xFFFF6B00).withOpacity(0.1), Colors.white],
+                  colors: [Color(0xFFFF6B00).withValues(alpha: 0.1), Colors.white],
                   begin: Alignment.topLeft,
                   end: Alignment.bottomRight,
                 ),
                 borderRadius: BorderRadius.circular(16),
-                border: Border.all(color: Color(0xFFFF6B00).withOpacity(0.2)),
+                border: Border.all(color: Color(0xFFFF6B00).withValues(alpha: 0.2)),
               ),
               child: Column(
                 children: [
@@ -6001,7 +5789,7 @@ class _SellStep3PageState extends State<SellStep3Page> {
                         ),
                       ),
                       style: IconButton.styleFrom(
-                        backgroundColor: Colors.grey.withOpacity(0.1),
+                        backgroundColor: Colors.grey.withValues(alpha: 0.1),
                         shape: RoundedRectangleBorder(
                           borderRadius: BorderRadius.circular(8),
                         ),
@@ -6053,7 +5841,7 @@ class _SellStep3PageState extends State<SellStep3Page> {
                         color: Color(0xFFFF6B00),
                       ),
                       style: IconButton.styleFrom(
-                        backgroundColor: Colors.grey.withOpacity(0.1),
+                        backgroundColor: Colors.grey.withValues(alpha: 0.1),
                         shape: RoundedRectangleBorder(
                           borderRadius: BorderRadius.circular(8),
                         ),
@@ -6268,9 +6056,9 @@ class _SellStep3PageState extends State<SellStep3Page> {
             Container(
               padding: EdgeInsets.all(16),
               decoration: BoxDecoration(
-                color: Colors.orange.withOpacity(0.1),
+                color: Colors.orange.withValues(alpha: 0.1),
                 borderRadius: BorderRadius.circular(12),
-                border: Border.all(color: Colors.orange.withOpacity(0.3)),
+                border: Border.all(color: Colors.orange.withValues(alpha: 0.3)),
               ),
               child: Row(
                 children: [
@@ -6434,25 +6222,12 @@ class _SellStep4PageState extends State<SellStep4Page> {
   /// Local picks and/or server-relative paths for damage / crash disclosure.
   List<dynamic> _damageImages = [];
   final List<XFile> _selectedVideos = [];
-  bool _videosHydratedFromParent = false;
   bool _isProcessingImages = false;
   bool _imagesProcessed = false;
-
-  dynamic _normalizeDraftImageItem(dynamic item) {
-    if (item is XFile) return item;
-    final raw = item?.toString().trim() ?? '';
-    if (raw.isEmpty) return raw;
-    if (raw.startsWith('http://') || raw.startsWith('https://')) {
-      return raw;
-    }
-    final localPath = raw.startsWith('file://') ? raw.replaceFirst('file://', '') : raw;
-    return File(localPath).existsSync() ? XFile(localPath) : raw;
-  }
 
   @override
   void initState() {
     super.initState();
-    _videosHydratedFromParent = true;
     unawaited(_loadMediaDraft());
   }
 
@@ -6508,7 +6283,7 @@ class _SellStep4PageState extends State<SellStep4Page> {
             _imagesProcessed = data['imagesProcessed'] == true;
           }
         }
-      } catch (_) {}
+      } catch (e, st) { logNonFatal(e, st); }
 
       final mergedImages = SellDraftMediaPersistence.coalesceMediaLists(
         primary: parentImages is List ? List<dynamic>.from(parentImages) : null,
@@ -6576,92 +6351,6 @@ class _SellStep4PageState extends State<SellStep4Page> {
     super.dispose();
   }
 
-  Future<void> _restoreDraft() async {
-    try {
-      final sp = await SharedPreferences.getInstance();
-      final raw = sp.getString(_draftKey);
-      if (raw == null || raw.trim().isEmpty) return;
-      final decoded = json.decode(raw);
-      if (decoded is! Map) return;
-      final data = Map<String, dynamic>.from(decoded.cast<String, dynamic>());
-      final images = data['selectedImages'];
-      final videos = data['selectedVideos'];
-      final dmg = data['damage_images'];
-      if (!mounted) return;
-      setState(() {
-        _selectedImages = images is List
-            ? SellDraftMediaPersistence.resolveDynamicMediaList(
-                List<dynamic>.from(images),
-              )
-            : _selectedImages;
-        _damageImages = dmg is List
-            ? SellDraftMediaPersistence.resolveDynamicMediaList(
-                List<dynamic>.from(dmg),
-              )
-            : <dynamic>[];
-        _selectedVideos
-          ..clear()
-          ..addAll(
-            videos is List
-                ? videos
-                    .map((e) => e.toString())
-                    .where((e) => e.trim().isNotEmpty && File(e).existsSync())
-                    .map((e) => XFile(e))
-                    .toList()
-                : <XFile>[],
-          );
-        _imagesProcessed = data['imagesProcessed'] == true;
-        _isProcessingImages = false;
-      });
-      final parentState = context.findAncestorStateOfType<_SellCarPageState>();
-      if (parentState != null) {
-        parentState.carData['images'] = List<dynamic>.from(_selectedImages);
-        parentState.carData['videos'] = List<XFile>.from(_selectedVideos);
-        parentState.carData['damage_images'] =
-            List<dynamic>.from(_damageImages);
-        parentState.setState(() {});
-      }
-    } catch (_) {}
-  }
-
-  void _hydrateFromParentCarData() {
-    final parentState = context.findAncestorStateOfType<_SellCarPageState>();
-    final videos = parentState?.carData['videos'];
-    final images = parentState?.carData['images'];
-    final dmg = parentState?.carData['damage_images'];
-    final hasDamageList = dmg is List && dmg.isNotEmpty;
-    if ((images is! List || images.isEmpty) &&
-        (videos is! List || videos.isEmpty) &&
-        !hasDamageList) {
-      return;
-    }
-    setState(() {
-      _selectedImages = images is List
-          ? SellDraftMediaPersistence.resolveDynamicMediaList(
-              List<dynamic>.from(images),
-            )
-          : _selectedImages;
-      _damageImages = hasDamageList
-          ? SellDraftMediaPersistence.resolveDynamicMediaList(
-              List<dynamic>.from(dmg as List),
-            )
-          : <dynamic>[];
-      _selectedVideos.clear();
-      if (videos is List) {
-        for (final dynamic item in videos) {
-          if (item is XFile) {
-            _selectedVideos.add(item);
-          } else if (item is String && item.trim().isNotEmpty) {
-            _selectedVideos.add(XFile(item.trim()));
-          }
-        }
-      }
-      _videosHydratedFromParent = true;
-      _imagesProcessed = parentState?.carData['images_processed'] == true || _imagesProcessed;
-      _isProcessingImages = false;
-    });
-  }
-
   Future<void> _saveDraft() async {
     try {
       final parentState = context.findAncestorStateOfType<_SellCarPageState>();
@@ -6715,13 +6404,7 @@ class _SellStep4PageState extends State<SellStep4Page> {
         parentState.carData['images_processed'] = _imagesProcessed;
       }
       unawaited(parentState?._saveSellDraftSnapshot());
-    } catch (_) {}
-  }
-
-  void _syncVideosToParent() {
-    final parentState = context.findAncestorStateOfType<_SellCarPageState>();
-    if (parentState == null) return;
-    parentState.carData['videos'] = List<XFile>.from(_selectedVideos);
+    } catch (e, st) { logNonFatal(e, st); }
   }
 
   Future<void> _syncMediaDraftToParent() async {
@@ -6786,7 +6469,7 @@ class _SellStep4PageState extends State<SellStep4Page> {
       });
       unawaited(_syncMediaDraftToParent());
       unawaited(_saveDraft());
-    } catch (_) {}
+    } catch (e, st) { logNonFatal(e, st); }
   }
 
   Future<void> _pickDamageImages() async {
@@ -6801,7 +6484,7 @@ class _SellStep4PageState extends State<SellStep4Page> {
       });
       unawaited(_syncMediaDraftToParent());
       unawaited(_saveDraft());
-    } catch (_) {}
+    } catch (e, st) { logNonFatal(e, st); }
   }
 
   Future<void> _processImages() async {
@@ -6855,6 +6538,7 @@ class _SellStep4PageState extends State<SellStep4Page> {
       // Build local preview files from base64 (avoids loading many /static/ URLs concurrently, which can drop connections)
       final List<XFile> blurredLocal = <XFile>[];
       final List<String> okPaths = <String>[];
+      if (!mounted) return;
       final parentState = context.findAncestorStateOfType<_SellCarPageState>();
       final draftId = parentState?._currentDraftId ?? 'default';
       try {
@@ -6910,6 +6594,7 @@ class _SellStep4PageState extends State<SellStep4Page> {
       if (isPhoneVerificationRequired(e)) {
         await ensurePhoneVerifiedForAction(context);
       }
+      if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
           content: Text(
@@ -6937,7 +6622,7 @@ class _SellStep4PageState extends State<SellStep4Page> {
       List<XFile> picked;
       try {
         picked = await _imagePicker.pickMultiVideo(maxDuration: maxDur);
-      } catch (_) {
+      } catch (e, st) { logNonFatal(e, st); 
         // Some platforms/plugins may not support multi-video selection.
         final single = await _imagePicker.pickVideo(
           source: ImageSource.gallery,
@@ -6978,12 +6663,12 @@ class _SellStep4PageState extends State<SellStep4Page> {
             padding: EdgeInsets.all(20),
             decoration: BoxDecoration(
               gradient: LinearGradient(
-                colors: [Color(0xFFFF6B00).withOpacity(0.1), Colors.white],
+                colors: [Color(0xFFFF6B00).withValues(alpha: 0.1), Colors.white],
                 begin: Alignment.topLeft,
                 end: Alignment.bottomRight,
               ),
               borderRadius: BorderRadius.circular(16),
-              border: Border.all(color: Color(0xFFFF6B00).withOpacity(0.2)),
+              border: Border.all(color: Color(0xFFFF6B00).withValues(alpha: 0.2)),
             ),
             child: Column(
               children: [
@@ -7172,7 +6857,7 @@ class _SellStep4PageState extends State<SellStep4Page> {
                         : AppLocalizations.of(context)!.addMorePhotos,
                   ),
                   style: ElevatedButton.styleFrom(
-                    backgroundColor: Colors.grey.withOpacity(0.2),
+                    backgroundColor: Colors.grey.withValues(alpha: 0.2),
                     foregroundColor: Colors.white,
                     shape: RoundedRectangleBorder(
                       borderRadius: BorderRadius.circular(12),
@@ -7509,7 +7194,7 @@ class _SellStep4PageState extends State<SellStep4Page> {
                       ),
               ),
               style: ElevatedButton.styleFrom(
-                backgroundColor: Colors.grey.withOpacity(0.2),
+                backgroundColor: Colors.grey.withValues(alpha: 0.2),
                 foregroundColor: Colors.white,
                 shape: RoundedRectangleBorder(
                   borderRadius: BorderRadius.circular(12),
@@ -7734,7 +7419,7 @@ class _ListingPreviewWidgetState extends State<ListingPreviewWidget> {
       if (value == null) return raw;
       final formatter = _decimalFormatterGlobal(context);
       return formatter.format(value);
-    } catch (_) {
+    } catch (e, st) { logNonFatal(e, st); 
       return raw;
     }
   }
@@ -7782,7 +7467,7 @@ class _ListingPreviewWidgetState extends State<ListingPreviewWidget> {
             child: Divider(
               height: 1,
               thickness: 1,
-              color: Colors.black.withOpacity(0.22),
+              color: Colors.black.withValues(alpha: 0.22),
             ),
           ),
           AutoSizeText(
@@ -7818,7 +7503,7 @@ class _ListingPreviewWidgetState extends State<ListingPreviewWidget> {
       decoration: BoxDecoration(
         color: isLight
             ? const Color(0xFFF3F3F3)
-            : Colors.white.withOpacity(0.06),
+            : Colors.white.withValues(alpha: 0.06),
         borderRadius: BorderRadius.circular(12),
         border: Border.all(
           color: isLight ? const Color(0xFFE0E0E0) : Colors.white12,
@@ -8881,11 +8566,12 @@ class _SellStep5PageState extends State<SellStep5Page> {
                                             inner.cast<String, dynamic>(),
                                           );
                                         }
-                                      } catch (_) {
+                                      } catch (e, st) { logNonFatal(e, st); 
                                         updatedCar['id'] = submittedId;
                                         updatedCar['public_id'] = submittedId;
                                       }
                                     }
+                                    if (!context.mounted) return;
                                     try {
                                       ScaffoldMessenger.of(context).showSnackBar(
                                         SnackBar(
@@ -8896,7 +8582,7 @@ class _SellStep5PageState extends State<SellStep5Page> {
                                           backgroundColor: Colors.green,
                                         ),
                                       );
-                                    } catch (_) {}
+                                    } catch (e, st) { logNonFatal(e, st); }
                                     Navigator.pop(
                                       context,
                                       {'car': updatedCar},
@@ -8920,7 +8606,7 @@ class _SellStep5PageState extends State<SellStep5Page> {
                                           draftId =
                                               (decoded['draftId'] ?? '').toString().trim();
                                         }
-                                      } catch (_) {}
+                                      } catch (e, st) { logNonFatal(e, st); }
                                     }
                                     await sp.remove('legacy_sell_draft_current_step_v1');
                                     await sp.remove('legacy_sell_draft_snapshot_v1');
@@ -8943,7 +8629,7 @@ class _SellStep5PageState extends State<SellStep5Page> {
                                   }
 
                                   // Show success message
-                                  if (!mounted) return;
+                                  if (!context.mounted) return;
                                   try {
                                     ScaffoldMessenger.of(context).showSnackBar(
                                       SnackBar(
@@ -8955,7 +8641,7 @@ class _SellStep5PageState extends State<SellStep5Page> {
                                         backgroundColor: Colors.green,
                                       ),
                                     );
-                                  } catch (_) {}
+                                  } catch (e, st) { logNonFatal(e, st); }
 
                                   // Navigate back to home
                                   try {
@@ -8966,7 +8652,7 @@ class _SellStep5PageState extends State<SellStep5Page> {
                                       '/',
                                       (route) => false,
                                     );
-                                  } catch (_) {
+                                  } catch (e, st) { logNonFatal(e, st); 
                                     // Fallback
                                     Navigator.pushReplacementNamed(
                                       context,
@@ -8974,6 +8660,7 @@ class _SellStep5PageState extends State<SellStep5Page> {
                                     );
                                   }
                                 } catch (e) {
+                                  if (!mounted) return;
                                   ScaffoldMessenger.of(context).showSnackBar(
                                     SnackBar(
                                       content: Text(
@@ -9336,7 +9023,7 @@ class _SellStep5PageState extends State<SellStep5Page> {
             try {
               final parsed = json.decode(respBody);
               if (parsed is Map<String, dynamic>) payload = parsed;
-            } catch (_) {}
+            } catch (e, st) { logNonFatal(e, st); }
             final uploaded = payload['videos'];
             final uploadedCount = uploaded is List ? uploaded.length : 0;
             if (resp.statusCode != 200 && resp.statusCode != 201) {
@@ -9408,7 +9095,7 @@ class _SellStep5PageState extends State<SellStep5Page> {
           // Refresh list so new listing has server-confirmed image_url/images before success/navigation
           try {
             await CarService().getCars(refresh: true);
-          } catch (_) {}
+          } catch (e, st) { logNonFatal(e, st); }
           // Precache all listing images so they appear instantly when user views the listing (no placeholder wait)
           if (mounted) {
             final svc = CarService();
@@ -9469,11 +9156,12 @@ class _SellStep5PageState extends State<SellStep5Page> {
                 if (url.isEmpty || !mounted) continue;
                 try {
                   await precacheImage(NetworkImage(url), context);
-                } catch (_) {}
+                } catch (e, st) { logNonFatal(e, st); }
               }
             }
           }
         } catch (e) {
+          if (!mounted) return carId;
           try {
             ScaffoldMessenger.of(context).showSnackBar(
               SnackBar(
@@ -9484,7 +9172,7 @@ class _SellStep5PageState extends State<SellStep5Page> {
                 ),
               ),
             );
-          } catch (_) {}
+          } catch (e, st) { logNonFatal(e, st); }
         }
         _debugLog(
           editId.isNotEmpty
@@ -9509,7 +9197,7 @@ class _SellStep5PageState extends State<SellStep5Page> {
         dynamic errorData;
         try {
           errorData = json.decode(createResponse.body);
-        } catch (_) {
+        } catch (e, st) { logNonFatal(e, st); 
           errorData = null;
         }
         String? msg;

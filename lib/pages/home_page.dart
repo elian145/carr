@@ -379,7 +379,7 @@ Widget _buildGlobalCarCardInnerText(
                   child: Container(
                     width: 1,
                     height: 12,
-                    color: metaTextColor.withOpacity(0.35),
+                    color: metaTextColor.withValues(alpha: 0.35),
                   ),
                 ),
               ),
@@ -447,7 +447,6 @@ Widget _buildGlobalCardImageCarousel(BuildContext context, Map<String, dynamic> 
   int currentIndex = 0;
   const int kMaxVisibleDots = 6;
   int dotWindowStart = 0;
-  bool dotWindowForward = true;
 
   return StatefulBuilder(
     builder: (context, setState) {
@@ -475,7 +474,6 @@ Widget _buildGlobalCardImageCarousel(BuildContext context, Map<String, dynamic> 
                   currentIndex = i;
                   final nextStart = computeDotStart(i);
                   if (nextStart != dotWindowStart) {
-                    dotWindowForward = nextStart > dotWindowStart;
                     dotWindowStart = nextStart;
                   }
                 });
@@ -591,7 +589,7 @@ Widget buildGlobalCarCard(
   final isLight = Theme.of(context).brightness == Brightness.light;
   final cardFill = isLight
       ? AppThemes.listingCardFillGridOnLightShell()
-      : Colors.white.withOpacity(0.10);
+      : Colors.white.withValues(alpha: 0.10);
   final metaTextColor = Colors.white70;
   final dividerLineColor = Colors.white24;
   final bool showVideoCountBadge =
@@ -606,7 +604,7 @@ Widget buildGlobalCarCard(
       borderRadius: BorderRadius.circular(20),
       boxShadow: [
         BoxShadow(
-          color: Colors.black.withOpacity(0.2),
+          color: Colors.black.withValues(alpha: 0.2),
           blurRadius: 8,
           offset: const Offset(0, 4),
         ),
@@ -1087,7 +1085,6 @@ class _HomePageState extends State<HomePage>
                       final carTitle = _localizedCarTitleForCard(context, car);
                       final price = (car['price'] ?? '').toString();
                       final location = (car['location'] ?? '').toString();
-                      final year = (car['year'] ?? '').toString();
 
                       final isLight =
                           Theme.of(context).brightness == Brightness.light;
@@ -1104,11 +1101,11 @@ class _HomePageState extends State<HomePage>
                           decoration: BoxDecoration(
                             color: isLight
                                 ? AppThemes.listingCardFillGridOnLightShell()
-                                : Colors.white.withOpacity(0.10),
+                                : Colors.white.withValues(alpha: 0.10),
                             borderRadius: BorderRadius.circular(12),
                             boxShadow: [
                               BoxShadow(
-                                color: Colors.black.withOpacity(0.2),
+                                color: Colors.black.withValues(alpha: 0.2),
                                 blurRadius: 8,
                                 offset: const Offset(0, 4),
                               ),

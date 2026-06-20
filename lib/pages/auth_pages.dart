@@ -281,17 +281,6 @@ String _smsResetHint(BuildContext context) {
   return 'SMS may take a minute or two. A code is only sent if an account exists for this number.';
 }
 
-String _registrationSuccess(BuildContext context) {
-  final c = _lang(context);
-  if (c == 'ar') {
-    return 'تم التسجيل بنجاح! يرجى التحقق من بريدك الإلكتروني للتفعيل.';
-  }
-  if (c == 'ku') {
-    return 'خۆتۆمارکردن سەرکەوتوو بوو! تکایە ئیمەیڵەکەت بپشکنە بۆ پشتڕاستکردن.';
-  }
-  return 'Registration successful! Please check your email for verification.';
-}
-
 /// User-facing message for registration failure (no server/exception details).
 String _registrationFailedMessage(BuildContext context) {
   final c = _lang(context);
@@ -718,39 +707,32 @@ class _RegisterPageState extends State<RegisterPage> {
                 style: Theme.of(context).textTheme.titleMedium,
               ),
               const SizedBox(height: 8),
-              Row(
-                children: [
-                  Expanded(
-                    child: RadioListTile<String>(
-                      title: Text(AppLocalizations.of(context)!.emailLabel),
-                      value: 'email',
-                      groupValue: _authType,
-                      onChanged: (v) {
-                        if (v == null) return;
-                        setState(() {
-                          _authType = v;
-                          _otpSent = false;
-                          _otpController.clear();
-                        });
-                      },
+              RadioGroup<String>(
+                groupValue: _authType,
+                onChanged: (v) {
+                  if (v == null) return;
+                  setState(() {
+                    _authType = v;
+                    _otpSent = false;
+                    _otpController.clear();
+                  });
+                },
+                child: Row(
+                  children: [
+                    Expanded(
+                      child: RadioListTile<String>(
+                        title: Text(AppLocalizations.of(context)!.emailLabel),
+                        value: 'email',
+                      ),
                     ),
-                  ),
-                  Expanded(
-                    child: RadioListTile<String>(
-                      title: Text(AppLocalizations.of(context)!.phoneLabel),
-                      value: 'phone',
-                      groupValue: _authType,
-                      onChanged: (v) {
-                        if (v == null) return;
-                        setState(() {
-                          _authType = v;
-                          _otpSent = false;
-                          _otpController.clear();
-                        });
-                      },
+                    Expanded(
+                      child: RadioListTile<String>(
+                        title: Text(AppLocalizations.of(context)!.phoneLabel),
+                        value: 'phone',
+                      ),
                     ),
-                  ),
-                ],
+                  ],
+                ),
               ),
               const SizedBox(height: 8),
               Text(
@@ -1218,31 +1200,28 @@ class _ForgotPasswordPageState extends State<ForgotPasswordPage> {
                   style: Theme.of(context).textTheme.titleMedium,
                 ),
                 const SizedBox(height: 8),
-                Row(
-                  children: [
-                    Expanded(
-                      child: RadioListTile<String>(
-                        title: Text(AppLocalizations.of(context)!.emailLabel),
-                        value: 'email',
-                        groupValue: _recoveryMethod,
-                        onChanged: (v) {
-                          if (v == null) return;
-                          setState(() => _recoveryMethod = v);
-                        },
+                RadioGroup<String>(
+                  groupValue: _recoveryMethod,
+                  onChanged: (v) {
+                    if (v == null) return;
+                    setState(() => _recoveryMethod = v);
+                  },
+                  child: Row(
+                    children: [
+                      Expanded(
+                        child: RadioListTile<String>(
+                          title: Text(AppLocalizations.of(context)!.emailLabel),
+                          value: 'email',
+                        ),
                       ),
-                    ),
-                    Expanded(
-                      child: RadioListTile<String>(
-                        title: Text(AppLocalizations.of(context)!.phoneLabel),
-                        value: 'phone',
-                        groupValue: _recoveryMethod,
-                        onChanged: (v) {
-                          if (v == null) return;
-                          setState(() => _recoveryMethod = v);
-                        },
+                      Expanded(
+                        child: RadioListTile<String>(
+                          title: Text(AppLocalizations.of(context)!.phoneLabel),
+                          value: 'phone',
+                        ),
                       ),
-                    ),
-                  ],
+                    ],
+                  ),
                 ),
                 const SizedBox(height: 8),
                 if (_recoveryMethod == 'email')

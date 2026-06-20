@@ -5,6 +5,7 @@ import 'package:shared_preferences/shared_preferences.dart';
 
 import 'legacy_sell_draft_prefs.dart';
 import 'sell_draft_step.dart';
+import '../../shared/debug/app_log.dart';
 
 /// Loads and manages multiple legacy sell drafts (active + archive).
 class LegacySellDraftList {
@@ -72,7 +73,7 @@ class LegacySellDraftList {
             ),
           )
           .toList();
-    } catch (_) {
+    } catch (e, st) { logNonFatal(e, st); 
       return <Map<String, dynamic>>[];
     }
   }
@@ -105,7 +106,7 @@ class LegacySellDraftList {
             seenIds.add(active['draftId'].toString());
           }
         }
-      } catch (_) {}
+      } catch (e, st) { logNonFatal(e, st); }
     }
 
     for (final draft in _decodeArchive(sp.getString(LegacySellDraftPrefs.archiveKey))) {
@@ -161,7 +162,7 @@ class LegacySellDraftList {
               );
             }
           }
-        } catch (_) {}
+        } catch (e, st) { logNonFatal(e, st); }
       }
 
       final archive =

@@ -2,6 +2,7 @@ import 'package:flutter/foundation.dart';
 import 'dart:developer' as developer;
 import 'package:image_picker/image_picker.dart';
 import 'api_service.dart';
+import '../shared/debug/app_log.dart';
 
 class CarService extends ChangeNotifier {
   static final CarService _instance = CarService._internal();
@@ -121,7 +122,7 @@ class CarService extends ChangeNotifier {
           response['car']['images'] = List<String>.from(paths);
           response['car']['image_url'] = paths.first;
         }
-      } catch (_) {}
+      } catch (e, st) { logNonFatal(e, st); }
 
       // Add to local list
       if (response['car'] != null) {

@@ -1,5 +1,3 @@
-import 'package:flutter/material.dart';
-
 import 'app/bootstrap.dart';
 import 'legacy/main_legacy.dart' as legacy;
 

@@ -5,6 +5,7 @@ import 'package:google_maps_flutter/google_maps_flutter.dart';
 
 import '../l10n/app_localizations.dart';
 import '../shared/maps/dealer_map_coords.dart';
+import '../shared/debug/app_log.dart';
 
 /// Default map center (Baghdad) when the dealer has no saved pin yet.
 const LatLng _kDefaultMapCenter = LatLng(33.3152, 44.3661);
@@ -217,7 +218,7 @@ class _DealerLocationPickerPageState extends State<DealerLocationPickerPage> {
       });
       _searchFocusNode.unfocus();
       _mapController?.animateCamera(CameraUpdate.newLatLngZoom(pos, 15));
-    } catch (_) {
+    } catch (e, st) { logNonFatal(e, st); 
       if (!mounted) return;
       setState(() => _searching = false);
       ScaffoldMessenger.of(context).showSnackBar(

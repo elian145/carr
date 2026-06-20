@@ -10,7 +10,6 @@ class SavedSearchesPage extends StatefulWidget {
 }
 
 class _SavedSearchesPageState extends State<SavedSearchesPage> {
-  static const String _savedSearchesKey = 'saved_searches_v1';
   List<Map<String, dynamic>> _items = [];
   bool _loading = true;
 
@@ -115,7 +114,6 @@ class _SavedSearchesPageState extends State<SavedSearchesPage> {
               itemBuilder: (context, index) {
                 final item = _items[index];
                 final filters = item['filters'] as Map<String, dynamic>? ?? {};
-                final isAutoSaved = item['auto_saved'] == true;
 
                 return Card(
                   margin: EdgeInsets.symmetric(horizontal: 8, vertical: 4),
@@ -438,9 +436,9 @@ class _SavedSearchesPageState extends State<SavedSearchesPage> {
     return Container(
       padding: EdgeInsets.symmetric(horizontal: 8, vertical: 4),
       decoration: BoxDecoration(
-        color: Color(0xFFFF6B00).withOpacity(0.1),
+        color: Color(0xFFFF6B00).withValues(alpha: 0.1),
         borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: Color(0xFFFF6B00).withOpacity(0.3)),
+        border: Border.all(color: Color(0xFFFF6B00).withValues(alpha: 0.3)),
       ),
       child: Text(
         '$label: $value',
@@ -503,8 +501,8 @@ class _SavedSearchesPageState extends State<SavedSearchesPage> {
     }
 
     Navigator.pop(context);
-    if (!context.mounted) return;
     await _markPendingSavedSearchFetch();
+    if (!mounted) return;
     navigateMainShellTab(context, '/');
     messenger.showSnackBar(
       SnackBar(
@@ -740,7 +738,6 @@ class _SavedSearchesPageState extends State<SavedSearchesPage> {
     }
     if (filters['engine_size'] != null) {
       final es = filters['engine_size'].toString().trim();
-      final plain = double.tryParse(es) != null;
       filterItems.add(
         _buildFilterDetailItem(
           l.engineSizeL,

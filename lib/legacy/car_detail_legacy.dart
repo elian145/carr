@@ -99,7 +99,7 @@ class _CarDetailsPageState extends State<CarDetailsPage> {
           .toString();
       final fav = await ApiService.isCarFavorited(targetId);
       if (mounted) setState(() => isFavorite = fav);
-    } catch (_) {
+    } catch (e, st) { logNonFatal(e, st); 
       // ignore: keep existing UI state
     }
   }
@@ -276,10 +276,6 @@ class _CarDetailsPageState extends State<CarDetailsPage> {
     return urls;
   }
 
-  /// Image URLs tagged `kind: damage` on the server (crash / disclosure photos).
-  List<String> get _damageImageUrls =>
-      car == null ? const <String>[] : listingDamageImageFullUrls(car!);
-
   /// Normalizes API `videos` (strings and/or `{video_url: ...}` maps) to relative paths.
   static List<String> _normalizeVideoPaths(dynamic raw) {
     if (raw == null) return [];
@@ -290,7 +286,7 @@ class _CarDetailsPageState extends State<CarDetailsPage> {
       if (it is String) {
         s = it.trim();
       } else if (it is Map) {
-        final map = it as Map;
+        final map = Map<String, dynamic>.from(it);
         s = (map['video_url'] ?? map['url'] ?? map['path'] ?? '')
             .toString()
             .trim();
@@ -397,7 +393,7 @@ class _CarDetailsPageState extends State<CarDetailsPage> {
   void dispose() {
     try {
       ListingLayoutPrefs.columns.removeListener(_onListingLayoutChanged);
-    } catch (_) {}
+    } catch (e, st) { logNonFatal(e, st); }
     _scrollController.removeListener(_onScroll);
     _scrollController.dispose();
     _imagePageController.dispose();
@@ -487,7 +483,7 @@ class _CarDetailsPageState extends State<CarDetailsPage> {
             appliedFromNetwork = true;
           }
         }
-      } catch (_) {}
+      } catch (e, st) { logNonFatal(e, st); }
 
       if (appliedFromNetwork && car != null) {
         _precacheListingImages();
@@ -528,14 +524,14 @@ class _CarDetailsPageState extends State<CarDetailsPage> {
             unawaited(_loadFavoriteStatus());
             unawaited(_trackView());
           }
-        } catch (_) {}
+        } catch (e, st) { logNonFatal(e, st); }
       }
 
       if (!mounted) return;
       setState(() {
         loading = false;
       });
-    } catch (_) {
+    } catch (e, st) { logNonFatal(e, st); 
       if (mounted)
         setState(() {
           loading = false;
@@ -646,7 +642,7 @@ class _CarDetailsPageState extends State<CarDetailsPage> {
     if (direct != null && direct.isNotEmpty) return direct;
     final seller = car!['seller'];
     if (seller is Map) {
-      final m = Map<String, dynamic>.from(seller as Map);
+      final m = Map<String, dynamic>.from(seller);
       for (final key in [
         'phone_number',
         'phone',
@@ -753,7 +749,7 @@ class _CarDetailsPageState extends State<CarDetailsPage> {
     String? receiverName;
     final seller = car!['seller'];
     if (seller is Map) {
-      final m = Map<String, dynamic>.from(seller as Map);
+      final m = Map<String, dynamic>.from(seller);
       final rid = m['id'];
       if (rid != null) {
         final s = rid.toString().trim();
@@ -873,7 +869,7 @@ class _CarDetailsPageState extends State<CarDetailsPage> {
             });
           }
         }
-      } catch (_) {}
+      } catch (e, st) { logNonFatal(e, st); }
       List<Map<String, dynamic>> toCarList(dynamic decoded) {
         final dynamic raw = (decoded is Map)
             ? (decoded['cars'] ?? decoded['data'] ?? decoded['list'] ?? decoded)
@@ -1634,18 +1630,6 @@ class _CarDetailsPageState extends State<CarDetailsPage> {
     );
   }
 
-  String _formatPrice(String raw) {
-    try {
-      final num? value = num.tryParse(raw.replaceAll(RegExp(r'[^0-9\.-]'), ''));
-      if (value == null) return raw;
-      final localeCode = Localizations.localeOf(context).toLanguageTag();
-      final formatter = _decimalFormatterGlobal(context);
-      return formatter.format(value);
-    } catch (_) {
-      return raw;
-    }
-  }
-
   // Safely get the first non-empty string value from several possible keys (handles snake_case and camelCase)
   String? _getFirstNonEmpty(Map<String, dynamic> map, List<String> keys) {
     for (final key in keys) {
@@ -1664,17 +1648,6 @@ class _CarDetailsPageState extends State<CarDetailsPage> {
       return Map<String, dynamic>.from(seller);
     }
     return null;
-  }
-
-  String _formatSellerDate(String raw) {
-    final String input = raw.trim();
-    if (input.isEmpty) return '';
-    final DateTime? parsed = DateTime.tryParse(input);
-    if (parsed == null) return input;
-    final String y = parsed.year.toString().padLeft(4, '0');
-    final String m = parsed.month.toString().padLeft(2, '0');
-    final String d = parsed.day.toString().padLeft(2, '0');
-    return '$y-$m-$d';
   }
 
   Widget _buildSellerProfileSection() {
@@ -1713,20 +1686,6 @@ class _CarDetailsPageState extends State<CarDetailsPage> {
                     ])) ??
                 '')
             .trim();
-    final String joinedRaw =
-        (_getFirstNonEmpty(seller, [
-                  'created_at',
-                  'joined_at',
-                  'member_since',
-                ]) ??
-                _getFirstNonEmpty(car ?? <String, dynamic>{}, [
-                  'seller_created_at',
-                  'created_at',
-                ]) ??
-                '')
-            .trim();
-    final String joined = _formatSellerDate(joinedRaw);
-
     final String avatarRaw =
         ((_getFirstNonEmpty(seller, [
                       'profile_picture',
@@ -2007,88 +1966,6 @@ class _CarDetailsPageState extends State<CarDetailsPage> {
 
   Widget _buildSpecsGrid() => buildCarListingSpecsGrid(context, car!);
 
-  Widget _detailRowAlways({
-    required IconData icon,
-    required String label,
-    String? value,
-  }) {
-    final String shown = (value == null || value.isEmpty) ? '—' : value;
-    final isLight = Theme.of(context).brightness == Brightness.light;
-    final muted = isLight ? const Color(0xFF3A3A3A) : Colors.white70;
-    final body = isLight ? const Color(0xFF0A0A0A) : Colors.white;
-    return Padding(
-      padding: const EdgeInsets.symmetric(vertical: 6.0),
-      child: Row(
-        children: [
-          Icon(icon, color: muted, size: 18),
-          SizedBox(width: 8),
-          SizedBox(
-            width: 120,
-            child: Text(label, style: TextStyle(color: muted)),
-          ),
-          Expanded(
-            child: Text(shown, style: TextStyle(color: body)),
-          ),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildSpecCardSmall(_SpecItem item) {
-    return Container(
-      padding: EdgeInsets.symmetric(horizontal: 10, vertical: 8),
-      decoration: BoxDecoration(
-        color: Color(0xFFFF6B00).withOpacity(0.85),
-        borderRadius: BorderRadius.circular(10),
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.stretch,
-        mainAxisAlignment: MainAxisAlignment.center,
-        children: [
-          Row(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              Icon(item.icon, size: 14, color: Colors.black87),
-              SizedBox(width: 6),
-              Flexible(
-                child: Text(
-                  item.label,
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
-                  textAlign: TextAlign.center,
-                  style: TextStyle(
-                    fontSize: 11,
-                    color: Colors.black,
-                    fontWeight: FontWeight.w800,
-                  ),
-                ),
-              ),
-            ],
-          ),
-          Padding(
-            padding: const EdgeInsets.symmetric(vertical: 4, horizontal: 4),
-            child: Divider(
-              height: 1,
-              thickness: 1,
-              color: Colors.black.withOpacity(0.22),
-            ),
-          ),
-          Text(
-            item.value!,
-            maxLines: 1,
-            overflow: TextOverflow.ellipsis,
-            textAlign: TextAlign.center,
-            style: TextStyle(
-              fontSize: 13,
-              color: Colors.black,
-              fontWeight: FontWeight.w700,
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-
   Widget _buildHorizontalList(
     List<Map<String, dynamic>> items, {
     required PageController snapController,
@@ -2156,127 +2033,6 @@ class _CarDetailsPageState extends State<CarDetailsPage> {
       ),
     );
   }
-
-  Widget _buildSmallCarCard(Map<String, dynamic> data) {
-    final isLight = Theme.of(context).brightness == Brightness.light;
-    return InkWell(
-      onTap: () {
-        // Analytics tracking for view listing
-        Navigator.pushNamed(
-          context,
-          '/car_detail',
-          arguments: {'carId': data['id']},
-        );
-      },
-      child: Container(
-        width: 160,
-        decoration: BoxDecoration(
-          color: isLight
-              ? AppThemes.listingCardFillCompactOnLightShell()
-              : Colors.white.withOpacity(0.08),
-          borderRadius: BorderRadius.circular(12),
-          border: Border.all(color: Colors.white12),
-        ),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            ClipRRect(
-              borderRadius: BorderRadius.vertical(top: Radius.circular(12)),
-              child: () {
-                final String primary = (data['image_url'] ?? '').toString();
-                final List<dynamic> imgs = (data['images'] is List)
-                    ? (data['images'] as List)
-                    : const [];
-                String rel = primary;
-                if (rel.isEmpty && imgs.isNotEmpty) {
-                  for (final dynamic e in imgs) {
-                    if (e is Map &&
-                        (e['kind'] ?? '').toString().toLowerCase() ==
-                            'damage') {
-                      continue;
-                    }
-                    rel = e is Map
-                        ? (e['image_url'] ??
-                                  e['url'] ??
-                                  e['path'] ??
-                                  e['src'] ??
-                                  '')
-                              .toString()
-                        : e.toString();
-                    if (rel.trim().isNotEmpty) break;
-                  }
-                }
-                if (rel.isNotEmpty) {
-                  final built = _buildFullImageUrl(rel);
-                  return _listingNetworkImage(
-                    built,
-                    height: 110,
-                    width: 160,
-                    fit: BoxFit.cover,
-                  );
-                }
-                return Container(
-                  height: 110,
-                  width: 160,
-                  color: Colors.black26,
-                  child: Icon(Icons.directions_car, color: Colors.white38),
-                );
-              }(),
-            ),
-            Padding(
-              padding: const EdgeInsets.fromLTRB(
-                8.0,
-                16.0,
-                8.0,
-                8.0,
-              ), // Much more padding at top for space between image and text
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    data['title']?.toString() ?? '',
-                    maxLines: 1,
-                    overflow: TextOverflow.ellipsis,
-                    style: const TextStyle(
-                      color: Colors.white,
-                      fontWeight: FontWeight.bold,
-                    ),
-                  ),
-                  SizedBox(height: 8),
-                  if (data['price'] != null)
-                    Text(
-                      _formatCurrencyGlobal(context, data['price']),
-                      style: TextStyle(
-                        color: Color(0xFFFF6B00),
-                        fontWeight: FontWeight.w600,
-                      ),
-                    ),
-                ],
-              ),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-
-  Widget _spec(String label, String? value) {
-    if (value == null || value.isEmpty) return SizedBox.shrink();
-    return Padding(
-      padding: const EdgeInsets.symmetric(vertical: 6.0),
-      child: Row(
-        children: [
-          SizedBox(
-            width: 120,
-            child: Text(label, style: TextStyle(color: Colors.white70)),
-          ),
-          Expanded(
-            child: Text(value, style: TextStyle(color: Colors.white)),
-          ),
-        ],
-      ),
-    );
-  }
 }
 
 /// Full URLs for listing images tagged `kind: damage` (shared by detail + specs grid).
@@ -2339,7 +2095,7 @@ Widget buildCarListingSpecsGrid(
       final num? value = num.tryParse(raw.replaceAll(RegExp(r'[^0-9\.-]'), ''));
       if (value == null) return raw;
       return _decimalFormatterGlobal(context).format(value);
-    } catch (_) {
+    } catch (e, st) { logNonFatal(e, st); 
       return raw;
     }
   }
@@ -2365,19 +2121,19 @@ Widget buildCarListingSpecsGrid(
       padding: EdgeInsets.symmetric(horizontal: 12, vertical: 10),
       decoration: BoxDecoration(
         color: onTap != null
-            ? (isLight ? const Color(0xFFFFF2E8) : Colors.white.withOpacity(0.09))
-            : (isLight ? const Color(0xFFF3F3F3) : Colors.white.withOpacity(0.06)),
+            ? (isLight ? const Color(0xFFFFF2E8) : Colors.white.withValues(alpha: 0.09))
+            : (isLight ? const Color(0xFFF3F3F3) : Colors.white.withValues(alpha: 0.06)),
         borderRadius: BorderRadius.circular(12),
         border: Border.all(
           color: onTap != null
-              ? const Color(0xFFFF6B00).withOpacity(isLight ? 0.34 : 0.42)
+              ? const Color(0xFFFF6B00).withValues(alpha: isLight ? 0.34 : 0.42)
               : (isLight ? const Color(0xFFE0E0E0) : Colors.white12),
           width: onTap != null ? 1.2 : 1,
         ),
         boxShadow: onTap != null
             ? [
                 BoxShadow(
-                  color: Colors.black.withOpacity(isLight ? 0.04 : 0.18),
+                  color: Colors.black.withValues(alpha: isLight ? 0.04 : 0.18),
                   blurRadius: 10,
                   offset: const Offset(0, 4),
                 ),
@@ -2537,7 +2293,7 @@ Widget buildCarListingSpecsGrid(
                 child: Divider(
                   height: 1,
                   thickness: 1,
-                  color: Colors.black.withOpacity(0.22),
+                  color: Colors.black.withValues(alpha: 0.22),
                 ),
               ),
               Expanded(
@@ -2582,7 +2338,7 @@ Widget buildCarListingSpecsGrid(
       () {
         final dynamic specsRaw = car['specs'] ?? car['spec'] ?? car['details'];
         if (specsRaw is Map) {
-          final specs = Map<String, dynamic>.from(specsRaw as Map);
+          final specs = Map<String, dynamic>.from(specsRaw);
           return pickNE(specs, [
             'engine_size',
             'engine_size_liters',
@@ -2863,7 +2619,7 @@ Widget buildCarListingSpecsGrid(
     decoration: BoxDecoration(
       color: isLightSpecs
           ? const Color(0xFFEEEEEE)
-          : Colors.white.withOpacity(0.08),
+          : Colors.white.withValues(alpha: 0.08),
       borderRadius: BorderRadius.circular(14),
       border: Border.all(
         color: isLightSpecs ? const Color(0xFFE0E0E0) : Colors.white24,
@@ -2882,11 +2638,9 @@ class _SpecItem {
   final IconData icon;
   final String label;
   final String? value;
-  final bool isSecondary;
   _SpecItem({
     required this.icon,
     required this.label,
     required this.value,
-    this.isSecondary = false,
   });
 }

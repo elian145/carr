@@ -1,4 +1,5 @@
 import '../../services/config.dart';
+import '../../shared/debug/app_log.dart';
 
 /// Opens this listing in CarNet when the link is opened on a device with the app.
 String listingDeepLink(String listingId) {
@@ -37,7 +38,7 @@ String? _inferredShareWebBase() {
     final host = uri.host;
     if (host.isEmpty || _isNonPublicApiHost(host)) return null;
     return uri.origin;
-  } catch (_) {
+  } catch (e, st) { logNonFatal(e, st); 
     return null;
   }
 }
@@ -109,12 +110,12 @@ bool isHostUsedForListingShareLinks(String host) {
   if (share.isNotEmpty) {
     try {
       if (Uri.parse(share).host.toLowerCase() == h) return true;
-    } catch (_) {}
+    } catch (e, st) { logNonFatal(e, st); }
   }
   try {
     final apiHost = Uri.parse(effectiveApiBase()).host.toLowerCase();
     if (apiHost.isNotEmpty && apiHost == h) return true;
-  } catch (_) {}
+  } catch (e, st) { logNonFatal(e, st); }
   return false;
 }
 

@@ -10,6 +10,7 @@ import '../shared/errors/user_error_text.dart';
 import '../shared/listings/listing_events.dart';
 import '../shared/listings/listing_identity.dart';
 import '../shared/prefs/listing_layout_prefs.dart';
+import '../shared/debug/app_log.dart';
 
 class RecentlyViewedPage extends StatefulWidget {
   const RecentlyViewedPage({super.key});
@@ -55,7 +56,7 @@ class _RecentlyViewedPageState extends State<RecentlyViewedPage> {
         _loading = false;
         _error = null;
       });
-    } catch (_) {}
+    } catch (e, st) { logNonFatal(e, st); }
   }
 
   Future<void> _fetch() async {
@@ -233,14 +234,14 @@ class _RecentlyViewedPageState extends State<RecentlyViewedPage> {
             Icon(
               Icons.history,
               size: 64,
-              color: theme.colorScheme.onSurface.withOpacity(0.35),
+              color: theme.colorScheme.onSurface.withValues(alpha: 0.35),
             ),
             const SizedBox(height: 16),
             Text(
               message,
               textAlign: TextAlign.center,
               style: theme.textTheme.bodyLarge?.copyWith(
-                color: theme.colorScheme.onSurface.withOpacity(0.65),
+                color: theme.colorScheme.onSurface.withValues(alpha: 0.65),
               ),
             ),
           ],

@@ -1,5 +1,6 @@
 import 'package:flutter/foundation.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import '../../shared/debug/app_log.dart';
 
 typedef ListingDeletedHandler = void Function(String carId);
 
@@ -48,5 +49,5 @@ Future<void> invalidateListingDiskCaches(String carId) async {
         await sp.remove(key);
       }
     }
-  } catch (_) {}
+  } catch (e, st) { logNonFatal(e, st); }
 }

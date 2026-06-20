@@ -16,7 +16,7 @@ int? _jsonIntOpt(dynamic v) {
   if (v == null) return null;
   try {
     return _jsonInt(v);
-  } catch (_) {
+  } catch (e, st) { logNonFatal(e, st); 
     return null;
   }
 }
@@ -411,7 +411,7 @@ class CarSpecIndex {
           spec,
           catalogLabelHint: '${m.name} ${trim.name}',
         );
-      } catch (_) {
+      } catch (e, st) { logNonFatal(e, st); 
         continue;
       }
       final key = <String?>[

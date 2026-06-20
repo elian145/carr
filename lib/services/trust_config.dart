@@ -3,6 +3,7 @@ import 'dart:convert';
 import 'package:http/http.dart' as http;
 
 import 'config.dart';
+import '../shared/debug/app_log.dart';
 
 /// Support contact + legal URLs (server env with optional dart-define overrides).
 class TrustConfig {
@@ -25,7 +26,7 @@ class TrustConfig {
           );
         }
       }
-    } catch (_) {}
+    } catch (e, st) { logNonFatal(e, st); }
 
     _cached = TrustConfigData(
       supportEmail: _pick(kSupportEmail, fromApi.supportEmail),

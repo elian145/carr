@@ -24,6 +24,7 @@ import '../data/car_name_translations.dart';
 import '../theme_provider.dart';
 import '../widgets/theme_toggle_widget.dart';
 import '../widgets/in_app_video_screen.dart';
+import '../shared/debug/app_log.dart';
 
 const Color _kComposerOutlineOrange = Color(0xFFFF7A00);
 
@@ -438,40 +439,6 @@ const Color _kChatListRowInkLight = Color(0xFF000000);
 const Color _kChatListRowInkDarkPrimary = Color(0xFFF5F5F5);
 const Color _kChatListRowInkDarkMuted = Color(0xFFCFCFCF);
 
-void _showFullImage(BuildContext context, String url) {
-  Navigator.of(context).push(
-    MaterialPageRoute<void>(
-      builder: (_) => Scaffold(
-        backgroundColor: Colors.black,
-        body: SafeArea(
-          child: Stack(
-            alignment: Alignment.topRight,
-            children: [
-              Center(
-                child: InteractiveViewer(
-                  child: Image.network(
-                    url,
-                    fit: BoxFit.contain,
-                    errorBuilder: (context, error, stackTrace) => const Icon(
-                      Icons.broken_image,
-                      color: Colors.white,
-                      size: 64,
-                    ),
-                  ),
-                ),
-              ),
-              IconButton(
-                icon: const Icon(Icons.close, color: Colors.white, size: 30),
-                onPressed: () => Navigator.of(context).pop(),
-              ),
-            ],
-          ),
-        ),
-      ),
-    ),
-  );
-}
-
 bool _isIgnorableSocketError(String err) {
   final text = err.toLowerCase();
   return text.contains('was not upgraded to websocket') ||
@@ -720,7 +687,7 @@ class _ChatListPageState extends State<ChatListPage>
           if (image.isNotEmpty) {
             chat['car_image_url'] = image;
           }
-        } catch (_) {}
+        } catch (e, st) { logNonFatal(e, st); }
       }());
     }
     if (tasks.isNotEmpty) {
@@ -750,7 +717,7 @@ class _ChatListPageState extends State<ChatListPage>
           ..clear()
           ..addAll(data);
       });
-    } catch (_) {
+    } catch (e, st) { logNonFatal(e, st); 
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
@@ -849,7 +816,7 @@ class _ChatListPageState extends State<ChatListPage>
                         DateTime? dt;
                         try {
                           if (ts.isNotEmpty) dt = parseApiDateTime(ts);
-                        } catch (_) {}
+                        } catch (e, st) { logNonFatal(e, st); }
                         final unread = (c['unread_count'] is num)
                             ? (c['unread_count'] as num).toInt()
                             : 0;
@@ -1285,8 +1252,7 @@ class _ChatConversationPageState extends State<ChatConversationPage>
           _scrollController.jumpTo(_scrollController.offset + diff);
         }
       });
-    } catch (_) {
-    } finally {
+    } catch (e, st) { logNonFatal(e, st); } finally {
       if (mounted) setState(() => _loadingOlderMessages = false);
     }
   }
@@ -1325,7 +1291,7 @@ class _ChatConversationPageState extends State<ChatConversationPage>
       if (_messages.length > hadMessages) {
         _scrollToBottom();
       }
-    } catch (_) {}
+    } catch (e, st) { logNonFatal(e, st); }
   }
 
   @override
@@ -1606,7 +1572,7 @@ class _ChatConversationPageState extends State<ChatConversationPage>
         if (title.isNotEmpty) _carDisplayTitle = title;
         if (image.isNotEmpty) _carImageUrl = image;
       });
-    } catch (_) {}
+    } catch (e, st) { logNonFatal(e, st); }
   }
 
   ChatMessage _buildPendingMediaGroupMessage(
@@ -1897,7 +1863,7 @@ class _ChatConversationPageState extends State<ChatConversationPage>
       });
       await _ensureCarListingMeta();
       _scrollToBottom(jump: true);
-    } catch (_) {
+    } catch (e, st) { logNonFatal(e, st); 
       // Keep the page usable even if history fetch fails.
     } finally {
       if (mounted) {
@@ -2139,7 +2105,7 @@ class _ChatConversationPageState extends State<ChatConversationPage>
     _voiceRecordTimer?.cancel();
     try {
       await _voiceRecorder.stop();
-    } catch (_) {}
+    } catch (e, st) { logNonFatal(e, st); }
     final path = _voiceRecordPath;
     if (!mounted) return;
     setState(() {
@@ -2150,7 +2116,7 @@ class _ChatConversationPageState extends State<ChatConversationPage>
     if (path != null) {
       try {
         await File(path).delete();
-      } catch (_) {}
+      } catch (e, st) { logNonFatal(e, st); }
     }
   }
 
@@ -2160,7 +2126,7 @@ class _ChatConversationPageState extends State<ChatConversationPage>
     String? effectivePath;
     try {
       effectivePath = await _voiceRecorder.stop();
-    } catch (_) {}
+    } catch (e, st) { logNonFatal(e, st); }
     effectivePath ??= _voiceRecordPath;
     final recordedFor = _voiceRecordDuration;
     if (!mounted) return;
@@ -2173,7 +2139,7 @@ class _ChatConversationPageState extends State<ChatConversationPage>
     if (recordedFor.inSeconds < 1) {
       try {
         await File(effectivePath).delete();
-      } catch (_) {}
+      } catch (e, st) { logNonFatal(e, st); }
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
@@ -2488,10 +2454,10 @@ class _ChatConversationPageState extends State<ChatConversationPage>
   }) {
     final theme = Theme.of(context);
     final baseColor = isMe
-        ? Colors.white.withOpacity(0.14)
+        ? Colors.white.withValues(alpha: 0.14)
         : _homeListingCardBackgroundFill(context);
     final borderColor = isMe
-        ? Colors.white.withOpacity(0.5)
+        ? Colors.white.withValues(alpha: 0.5)
         : Colors.white.withValues(alpha: 0.12);
     final inner = Container(
       width: double.infinity,

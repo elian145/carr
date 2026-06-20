@@ -391,7 +391,7 @@ class _ListingImageGalleryPageState extends State<ListingImageGalleryPage> {
                   child: Icon(
                     Icons.play_circle_fill,
                     size: 56,
-                    color: Colors.white.withOpacity(0.92),
+                    color: Colors.white.withValues(alpha: 0.92),
                   ),
                 ),
                 Positioned(
@@ -585,7 +585,7 @@ class _ListingPreviewMediaGridPageState extends State<ListingPreviewMediaGridPag
           child: Icon(
             Icons.play_circle_fill,
             size: 56,
-            color: Colors.white.withOpacity(0.92),
+            color: Colors.white.withValues(alpha: 0.92),
           ),
         ),
         Positioned(

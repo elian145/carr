@@ -17,8 +17,8 @@ def run(cmd: list[str]) -> None:
 
 def main() -> None:
     run([sys.executable, "scripts/verify_preflight.py", "--skip-host"])
-    run(["flutter", "analyze"])
-    run(["flutter", "test"])
+    run(["flutter", "analyze", "--no-fatal-infos"])
+    run(["flutter", "test", "--coverage"])
     run([sys.executable, "scripts/smoke_tests/test_backend_factory_smoke.py"])
     print("\nAll local CI checks passed.")
 

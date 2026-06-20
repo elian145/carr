@@ -4,6 +4,7 @@ import 'package:provider/provider.dart';
 import '../l10n/app_localizations.dart';
 import '../services/api_service.dart';
 import '../services/auth_service.dart';
+import '../shared/debug/app_log.dart';
 
 /// If [input] looks like a confirmation link (carzo:// or https with token=), returns the token; otherwise returns [input] trimmed.
 String _tokenFromPastedInput(String input) {
@@ -13,7 +14,7 @@ String _tokenFromPastedInput(String input) {
     final uri = Uri.parse(s);
     final token = uri.queryParameters['token']?.trim();
     if (token != null && token.isNotEmpty) return token;
-  } catch (_) {}
+  } catch (e, st) { logNonFatal(e, st); }
   return s;
 }
 

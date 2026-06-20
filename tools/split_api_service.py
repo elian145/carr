@@ -1,18 +1,13 @@
 #!/usr/bin/env python3
-"""Regenerate ApiService part files from the monolith (future use).
+"""Report ApiService size and planned part boundaries (manual split).
 
-Current layout keeps implementation in lib/services/api_service.dart.
-Run after editing line ranges below when splitting auth/listings/chat modules.
+Run:
+  python tools/split_api_service.py
 
-Suggested parts (library + part of):
-  - api/api_http.dart      — tokens, _handleResponse, _makeAuthenticatedRequest
-  - api/api_auth.dart      — register/login/phone/password/profile
-  - api/api_listings.dart  — cars, favorites, saved searches, my listings
-  - api/api_chat.dart      — chat HTTP fallbacks, attachments
-  - api/api_admin.dart     — reports, blocks, push, getChats
-
-ApiException lives in lib/services/api_exception.dart (already extracted).
+Automated extraction is not yet enabled — use line ranges below when splitting
+into `lib/services/api/*` part files with `_ApiServiceAuth`-style helpers.
 """
+
 from __future__ import annotations
 
 from pathlib import Path
@@ -20,8 +15,24 @@ from pathlib import Path
 REPO = Path(__file__).resolve().parents[1]
 SRC = REPO / "lib/services/api_service.dart"
 
-# Placeholder: run `python tools/split_api_service.py --dry-run` to print sizes.
-if __name__ == "__main__":
+BOUNDARIES = [
+    ("api_http.dart", "Token + HTTP core", 46, 414),
+    ("api_auth.dart", "Auth + profile + dealer admin", 416, 584),
+    ("api_listings.dart", "Cars, favorites, saved searches", 586, 759),
+    ("api_chat.dart", "Chat HTTP + attachments", 771, 878),
+    ("api_admin.dart", "Reports, blocks, push admin", 880, 957),
+]
+
+
+def main() -> int:
     lines = SRC.read_text(encoding="utf-8").splitlines()
     print(f"api_service.dart: {len(lines)} lines")
-    print("ApiException: extracted to lib/services/api_exception.dart")
+    print("ApiException: lib/services/api_exception.dart")
+    print("\nSuggested part boundaries (1-based line ranges):")
+    for fname, label, start, end in BOUNDARIES:
+        print(f"  {fname:20} {label:32} L{start}-{end} ({end - start + 1} lines)")
+    return 0
+
+
+if __name__ == "__main__":
+    raise SystemExit(main())

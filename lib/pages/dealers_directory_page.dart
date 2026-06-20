@@ -9,6 +9,7 @@ import '../services/api_service.dart';
 import '../shared/errors/user_error_text.dart';
 import '../shared/media/media_url.dart';
 import '../theme_provider.dart';
+import '../shared/debug/app_log.dart';
 
 /// Browse and search approved dealerships (public API).
 class DealersDirectoryPage extends StatefulWidget {
@@ -154,7 +155,7 @@ class _DealersDirectoryPageState extends State<DealersDirectoryPage> {
         _hasNext = hasNext;
         _loadingMore = false;
       });
-    } catch (_) {
+    } catch (e, st) { logNonFatal(e, st); 
       if (!mounted) return;
       setState(() => _loadingMore = false);
     }

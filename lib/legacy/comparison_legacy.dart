@@ -29,7 +29,7 @@ class CarComparisonPage extends StatelessWidget {
                     )
                     .join('\n');
                 if (text.trim().isNotEmpty) Share.share(text);
-              } catch (_) {}
+              } catch (e, st) { logNonFatal(e, st); }
             },
             icon: Icon(Icons.share_outlined),
           ),
@@ -71,11 +71,10 @@ class CarComparisonPage extends StatelessWidget {
           Consumer<CarComparisonStore>(
             builder: (context, comparisonStore, child) {
               final cars = comparisonStore.comparisonCars;
-              final double columnWidth = 260.0;
               final isDark = Theme.of(context).brightness == Brightness.dark;
               final cs = Theme.of(context).colorScheme;
               final lightInk = AppThemes.darkHomeShellBackground;
-              final lightInkMuted = lightInk.withOpacity(0.72);
+              final lightInkMuted = lightInk.withValues(alpha: 0.72);
 
               if (cars.isEmpty) {
                 return Center(
@@ -136,7 +135,7 @@ class CarComparisonPage extends StatelessWidget {
                     padding: EdgeInsets.all(16),
                     decoration: BoxDecoration(
                       color: isDark
-                          ? Colors.white.withOpacity(0.06)
+                          ? Colors.white.withValues(alpha: 0.06)
                           : AppThemes.lightAppBackground,
                       borderRadius: BorderRadius.circular(16),
                       border: Border.all(
@@ -293,12 +292,12 @@ class CarComparisonPage extends StatelessWidget {
                       final table = Container(
                         decoration: BoxDecoration(
                           color: isDark
-                              ? Colors.white.withOpacity(0.06)
+                              ? Colors.white.withValues(alpha: 0.06)
                               : AppThemes.lightAppBackground,
                           borderRadius: BorderRadius.circular(16),
                           boxShadow: [
                             BoxShadow(
-                              color: Colors.black.withOpacity(0.08),
+                              color: Colors.black.withValues(alpha: 0.08),
                               blurRadius: 16,
                               offset: Offset(0, 8),
                             ),
@@ -315,7 +314,7 @@ class CarComparisonPage extends StatelessWidget {
                               ),
                               decoration: BoxDecoration(
                                 // Keep the orange accent in light mode, but soften it.
-                                color: Color(0xFFFF6B00).withOpacity(
+                                color: Color(0xFFFF6B00).withValues(alpha: 
                                   isDark ? 0.12 : 0.10,
                                 ),
                                 borderRadius: BorderRadius.vertical(
@@ -709,7 +708,7 @@ class CarComparisonPage extends StatelessWidget {
     final isDark = Theme.of(context).brightness == Brightness.dark;
     final cs = Theme.of(context).colorScheme;
     final lightInk = AppThemes.darkHomeShellBackground;
-    final lightInkMuted = lightInk.withOpacity(0.72);
+    final lightInkMuted = lightInk.withValues(alpha: 0.72);
     final sections = [
       {
         'title': AppLocalizations.of(context)!.brandLabel,
@@ -853,7 +852,7 @@ class CarComparisonPage extends StatelessWidget {
           margin: EdgeInsets.only(top: s == 0 ? 0 : 16),
           decoration: BoxDecoration(
             // Keep the orange accent in light mode, but soften it.
-            color: Color(0xFFFF6B00).withOpacity(isDark ? 0.12 : 0.10),
+            color: Color(0xFFFF6B00).withValues(alpha: isDark ? 0.12 : 0.10),
             borderRadius: BorderRadius.circular(12),
             border: isDark ? null : Border.all(color: cs.outlineVariant),
           ),
@@ -890,8 +889,8 @@ class CarComparisonPage extends StatelessWidget {
             decoration: BoxDecoration(
               color: isOdd
                   ? (isDark
-                      ? Colors.white.withOpacity(0.02)
-                      : Colors.black.withOpacity(0.02))
+                      ? Colors.white.withValues(alpha: 0.02)
+                      : Colors.black.withValues(alpha: 0.02))
                   : Colors.transparent,
               border: Border(
                 bottom: BorderSide(
@@ -1060,13 +1059,13 @@ class CarComparisonPage extends StatelessWidget {
           padding: EdgeInsets.symmetric(horizontal: 8, vertical: 4),
           decoration: BoxDecoration(
             color: boolVal
-                ? Colors.green.withOpacity(0.18)
-                : Colors.red.withOpacity(0.18),
+                ? Colors.green.withValues(alpha: 0.18)
+                : Colors.red.withValues(alpha: 0.18),
             borderRadius: BorderRadius.circular(999),
             border: Border.all(
               color: boolVal
-                  ? Colors.greenAccent.withOpacity(0.3)
-                  : Colors.redAccent.withOpacity(0.3),
+                  ? Colors.greenAccent.withValues(alpha: 0.3)
+                  : Colors.redAccent.withValues(alpha: 0.3),
             ),
           ),
           child: Text(
@@ -1134,18 +1133,6 @@ class CarComparisonPage extends StatelessWidget {
     // Localize digits for numeric-like strings
     return _localizeDigitsGlobal(context, raw + (suffix?.toString() ?? ''));
   }
-
-  String _formatPrice(BuildContext context, String price) {
-    try {
-      final num? value = num.tryParse(price.replaceAll(RegExp(r'[^0-9.]'), ''));
-      if (value == null) return _localizeDigitsGlobal(context, price);
-      final locale = Localizations.localeOf(context).toLanguageTag();
-      final formatter = _decimalFormatterGlobal(context);
-      return _localizeDigitsGlobal(context, formatter.format(value));
-    } catch (_) {
-      return _localizeDigitsGlobal(context, price);
-    }
-  }
 }
 
 /* Legacy AddListingPage implementation removed - begin (commented out)
@@ -1189,7 +1176,7 @@ class CarComparisonPage extends StatelessWidget {
           _selectedImages = files;
         });
       }
-    } catch (_) {}
+    } catch (e, st) { logNonFatal(e, st); }
   }
 
   // For video picker
@@ -1205,7 +1192,7 @@ class CarComparisonPage extends StatelessWidget {
           _selectedVideos.add(file);
         });
       }
-    } catch (_) {}
+    } catch (e, st) { logNonFatal(e, st); }
   }
   
   // Toggle states for unified filters
@@ -1359,7 +1346,7 @@ Widget build(BuildContext context) {
                       onPressed: () => setState(() => isYearDropdown = !isYearDropdown),
                       icon: Icon(isYearDropdown ? Icons.edit : Icons.list, color: Color(0xFFFF6B00)),
                       style: IconButton.styleFrom(
-                        backgroundColor: Colors.grey.withOpacity(0.2),
+                        backgroundColor: Colors.grey.withValues(alpha: 0.2),
                         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
                       ),
                     ),
@@ -1397,7 +1384,7 @@ Widget build(BuildContext context) {
                       onPressed: () => setState(() => isPriceDropdown = !isPriceDropdown),
                       icon: Icon(isPriceDropdown ? Icons.edit : Icons.list, color: Color(0xFFFF6B00)),
                       style: IconButton.styleFrom(
-                        backgroundColor: Colors.grey.withOpacity(0.2),
+                        backgroundColor: Colors.grey.withValues(alpha: 0.2),
                         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
                       ),
                     ),
@@ -1443,7 +1430,7 @@ Widget build(BuildContext context) {
                       onPressed: () => setState(() => isMileageDropdown = !isMileageDropdown),
                       icon: Icon(isMileageDropdown ? Icons.edit : Icons.list, color: Color(0xFFFF6B00)),
                       style: IconButton.styleFrom(
-                        backgroundColor: Colors.grey.withOpacity(0.2),
+                        backgroundColor: Colors.grey.withValues(alpha: 0.2),
                         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
                       ),
                     ),
@@ -1526,7 +1513,7 @@ Widget build(BuildContext context) {
                       context: context,
                       builder: (context) {
                         return Dialog(
-                          backgroundColor: Colors.grey[900]?.withOpacity(0.98),
+                          backgroundColor: Colors.grey[900]?.withValues(alpha: 0.98),
                           shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
                           child: Container(
                             width: 400,
@@ -1571,7 +1558,7 @@ Widget build(BuildContext context) {
                                         },
                                         child: Container(
                                           decoration: BoxDecoration(
-                                            color: Colors.black.withOpacity(0.15),
+                                            color: Colors.black.withValues(alpha: 0.15),
                                             borderRadius: BorderRadius.circular(12),
                                             border: Border.all(color: Colors.white24),
                                           ),
@@ -1625,7 +1612,7 @@ Widget build(BuildContext context) {
                     }
                   },
                   style: ElevatedButton.styleFrom(
-                    backgroundColor: Colors.grey.withOpacity(0.2),
+                    backgroundColor: Colors.grey.withValues(alpha: 0.2),
                     shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
                     padding: EdgeInsets.symmetric(vertical: 15),
                   ),
@@ -1670,7 +1657,7 @@ Widget build(BuildContext context) {
                       context: context,
                       builder: (context) {
                         return Dialog(
-                          backgroundColor: Colors.grey[900]?.withOpacity(0.98),
+                          backgroundColor: Colors.grey[900]?.withValues(alpha: 0.98),
                           shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
                           child: Container(
                             width: 400,
@@ -1760,7 +1747,7 @@ Widget build(BuildContext context) {
                                         },
                                         child: Container(
                                           decoration: BoxDecoration(
-                                            color: Colors.black.withOpacity(0.15),
+                                            color: Colors.black.withValues(alpha: 0.15),
                                             borderRadius: BorderRadius.circular(12),
                                             border: Border.all(color: Colors.white24),
                                           ),
@@ -1807,7 +1794,7 @@ Widget build(BuildContext context) {
                     }
                   },
                   style: ElevatedButton.styleFrom(
-                    backgroundColor: Colors.grey.withOpacity(0.2),
+                    backgroundColor: Colors.grey.withValues(alpha: 0.2),
                     shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
                     padding: EdgeInsets.symmetric(vertical: 15),
                   ),
@@ -1934,7 +1921,7 @@ Widget build(BuildContext context) {
                       color: const Color(0xFFFF6B00),
                     ),
                     style: IconButton.styleFrom(
-                      backgroundColor: Colors.grey.withOpacity(0.2),
+                      backgroundColor: Colors.grey.withValues(alpha: 0.2),
                       shape: RoundedRectangleBorder(
                         borderRadius: BorderRadius.circular(8),
                       ),
@@ -2039,7 +2026,7 @@ Widget build(BuildContext context) {
                   icon: Icon(Icons.photo_library),
                   label: Text(_selectedImages.isEmpty ? AppLocalizations.of(context)!.addPhotos : AppLocalizations.of(context)!.addMorePhotos),
                   style: ElevatedButton.styleFrom(
-                    backgroundColor: Colors.grey.withOpacity(0.2),
+                    backgroundColor: Colors.grey.withValues(alpha: 0.2),
                     foregroundColor: Colors.white,
                   ),
                 ),
@@ -2153,7 +2140,7 @@ Widget build(BuildContext context) {
                           ),
                   ),
                   style: ElevatedButton.styleFrom(
-                    backgroundColor: Colors.grey.withOpacity(0.2),
+                    backgroundColor: Colors.grey.withValues(alpha: 0.2),
                     foregroundColor: Colors.white,
                   ),
                 ),
@@ -2163,9 +2150,9 @@ Widget build(BuildContext context) {
               Container(
                 padding: EdgeInsets.all(16),
                 decoration: BoxDecoration(
-                  color: Colors.orange.withOpacity(0.1),
+                  color: Colors.orange.withValues(alpha: 0.1),
                   borderRadius: BorderRadius.circular(12),
-                  border: Border.all(color: Colors.orange.withOpacity(0.3)),
+                  border: Border.all(color: Colors.orange.withValues(alpha: 0.3)),
                 ),
                 child: Row(
                   children: [
@@ -2317,7 +2304,7 @@ Widget build(BuildContext context) {
                       url,
                       headers: headers,
                       body: json.encode(payload),
-                    );
+                    ).timeout(const Duration(seconds: 60));
                     if (resp.statusCode == 201) {
                       final Map<String, dynamic> created = json.decode(resp.body);
                       final int carId = created['id'];
@@ -2341,7 +2328,7 @@ Widget build(BuildContext context) {
                                 SnackBar(content: Text(_photosUploadedTextGlobal(context))),
                               );
                             }
-                          } catch (_) {}
+                          } catch (e, st) { logNonFatal(e, st); }
                         } else {
                           showDialog(
                             context: context,
@@ -2465,68 +2452,5 @@ Widget build(BuildContext context) {
   );
 }
 
-// Helper function to get body type icon
-IconData _getBodyTypeIcon(String bodyType) {
-  switch (bodyType.toLowerCase()) {
-    case 'sedan':
-      return Icons.directions_car;
-    case 'suv':
-      return Icons.directions_car_filled;
-    case 'hatchback':
-      return Icons.directions_car;
-    case 'coupe':
-      return Icons.directions_car;
-    case 'wagon':
-      return Icons.directions_car;
-    case 'pickup':
-      return Icons.local_shipping;
-    case 'van':
-      return Icons.airport_shuttle;
-    case 'minivan':
-      return Icons.airport_shuttle;
-    case 'motorcycle':
-      return Icons.motorcycle;
-    case 'utv':
-      return Icons.directions_car;
-    case 'atv':
-      return Icons.directions_car;
-    default:
-      return Icons.directions_car;
-  }
-}
-
-// Helper function to get color value
-Color _getColorValue(String colorName) {
-  switch (colorName.toLowerCase()) {
-    case 'black':
-      return Colors.black;
-    case 'white':
-      return Colors.white;
-    case 'silver':
-      return Colors.grey[300]!;
-    case 'gray':
-      return Colors.grey[600]!;
-    case 'red':
-      return Colors.red;
-    case 'blue':
-      return Colors.blue;
-    case 'green':
-      return Colors.green;
-    case 'yellow':
-      return Colors.yellow;
-    case 'orange':
-      return Colors.orange;
-    case 'purple':
-      return Colors.purple;
-    case 'brown':
-      return Colors.brown;
-    case 'beige':
-      return Color(0xFFF5F5DC);
-    case 'gold':
-      return Color(0xFFFFD700);
-    default:
-      return Colors.grey;
-  }
-}
 // Removed stray closing brace that caused a syntax error
 

@@ -3,6 +3,7 @@
 
 import 'dart:io' show Platform;
 import 'package:flutter/foundation.dart' show kReleaseMode;
+import '../shared/debug/app_log.dart';
 
 // Base like: https://api.example.com (NO trailing slash)
 // - Debug: can use http:// for local development
@@ -156,7 +157,7 @@ String effectiveSocketIoBase() {
     if (uri.hasPort && uri.port == 5003) {
       return uri.replace(port: 5000).toString();
     }
-  } catch (_) {}
+  } catch (e, st) { logNonFatal(e, st); }
   return base;
 }
 

@@ -4,6 +4,7 @@ import 'dart:io';
 import 'package:image_picker/image_picker.dart';
 import 'package:path/path.dart' as p;
 import 'package:path_provider/path_provider.dart';
+import '../../shared/debug/app_log.dart';
 
 /// Copies picked listing media into app documents so sell drafts survive restarts.
 class SellDraftMediaPersistence {
@@ -94,14 +95,14 @@ class SellDraftMediaPersistence {
       try {
         await src.copy(dest.path);
         return await dest.exists();
-      } catch (_) {}
+      } catch (e, st) { logNonFatal(e, st); }
     }
     try {
       final bytes = await XFile(local).readAsBytes();
       if (bytes.isEmpty) return false;
       await _writeBytesToFile(dest, bytes);
       return await dest.exists();
-    } catch (_) {
+    } catch (e, st) { logNonFatal(e, st); 
       return false;
     }
   }
@@ -115,7 +116,7 @@ class SellDraftMediaPersistence {
         bytes.length,
         Object.hashAll(bytes.sublist(0, sampleLen)),
       ).abs().toString();
-    } catch (_) {
+    } catch (e, st) { logNonFatal(e, st); 
       return Object.hashAll([local]).abs().toString();
     }
   }
@@ -134,7 +135,7 @@ class SellDraftMediaPersistence {
       try {
         await XFile(local).length();
         return local;
-      } catch (_) {
+      } catch (e, st) { logNonFatal(e, st); 
         return null;
       }
     }

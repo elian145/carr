@@ -27,6 +27,7 @@ kk/**/*.tar.gz
 # Flutter/Build outputs
 .flutter-plugins-dependencies
 build/
+coverage/
 **/DerivedData/
 **/.dart_tool/
 **/.fleet/

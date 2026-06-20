@@ -3,8 +3,12 @@ $ErrorActionPreference = "Stop"
 $root = Split-Path -Parent $PSScriptRoot
 Set-Location $root
 
+Write-Host "== flutter analyze ==" -ForegroundColor Cyan
+flutter analyze --no-fatal-infos
+if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+
 Write-Host "== flutter test ==" -ForegroundColor Cyan
-flutter test --no-pub
+flutter test --no-pub --coverage
 if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
 
 Write-Host "== verify_publish_ready ==" -ForegroundColor Cyan

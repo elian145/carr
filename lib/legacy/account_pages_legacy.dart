@@ -17,14 +17,14 @@ class _ProfilePageState extends State<ProfilePage> {
   Color _profileCardFill(BuildContext context) {
     if (_profileLightShell(context)) return Colors.white;
     return Color.alphaBlend(
-      Colors.white.withOpacity(0.085),
+      Colors.white.withValues(alpha: 0.085),
       AppThemes.darkHomeShellBackground,
     );
   }
 
   Color _profileBorderColor(BuildContext context) {
     if (_profileLightShell(context)) return const Color(0xFFE0E0E0);
-    return Colors.white.withOpacity(0.12);
+    return Colors.white.withValues(alpha: 0.12);
   }
 
   Color _profilePrimaryInk(BuildContext context) {
@@ -50,7 +50,7 @@ class _ProfilePageState extends State<ProfilePage> {
       border: Border.all(color: _profileBorderColor(context), width: 1),
       boxShadow: [
         BoxShadow(
-          color: Colors.black.withOpacity(light ? shadowOpacity : 0.45),
+          color: Colors.black.withValues(alpha: light ? shadowOpacity : 0.45),
           blurRadius: light ? blur : 20,
           offset: const Offset(0, 6),
         ),
@@ -110,11 +110,11 @@ class _ProfilePageState extends State<ProfilePage> {
       final resp = await http.get(
         url,
         headers: {'Authorization': 'Bearer $tok'},
-      );
+      ).timeout(const Duration(seconds: 60));
       if (resp.statusCode == 200) {
         me = json.decode(resp.body) as Map<String, dynamic>;
       }
-    } catch (_) {}
+    } catch (e, st) { logNonFatal(e, st); }
     await _loadUnreadChatCount();
     if (mounted) {
       setState(() {
@@ -140,7 +140,7 @@ class _ProfilePageState extends State<ProfilePage> {
       } else {
         _unreadChatCount = count;
       }
-    } catch (_) {}
+    } catch (e, st) { logNonFatal(e, st); }
   }
 
   void refreshProfile() {
@@ -187,105 +187,6 @@ class _ProfilePageState extends State<ProfilePage> {
     Navigator.pushReplacementNamed(context, '/login');
   }
 
-  Widget _buildNotLoggedInState(BuildContext context) {
-    return Stack(
-      children: [
-        Container(decoration: _shellDecoration(context)),
-        Center(
-          child: Padding(
-            padding: const EdgeInsets.all(32.0),
-            child: Column(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: [
-                Container(
-                  padding: EdgeInsets.all(24),
-                  decoration: _profileCardDecoration(
-                    context,
-                    radius: 20,
-                    blur: 18,
-                    shadowOpacity: 0.1,
-                  ),
-                  child: Column(
-                    children: [
-                      Container(
-                        padding: EdgeInsets.all(20),
-                        decoration: BoxDecoration(
-                          color: Color(0xFFFF6B00).withOpacity(0.1),
-                          shape: BoxShape.circle,
-                        ),
-                        child: Icon(
-                          Icons.person_outline,
-                          size: 64,
-                          color: Color(0xFFFF6B00),
-                        ),
-                      ),
-                      SizedBox(height: 24),
-                      Text(
-                        AppLocalizations.of(context)!.notLoggedIn,
-                        textAlign: TextAlign.center,
-                        style: TextStyle(
-                          fontSize: 20,
-                          fontWeight: FontWeight.w600,
-                          color: _profilePrimaryInk(context),
-                        ),
-                      ),
-                      SizedBox(height: 8),
-                      Text(
-                        'Sign in to access your profile and manage your account',
-                        textAlign: TextAlign.center,
-                        style: TextStyle(
-                          fontSize: 14,
-                          color: _profileSecondaryInk(context),
-                        ),
-                      ),
-                      SizedBox(height: 32),
-                      SizedBox(
-                        width: double.infinity,
-                        height: 50,
-                        child: ElevatedButton(
-                          onPressed: () =>
-                              Navigator.pushReplacementNamed(context, '/login'),
-                          style: ElevatedButton.styleFrom(
-                            backgroundColor: Color(0xFFFF6B00),
-                            foregroundColor: Colors.white,
-                            shape: RoundedRectangleBorder(
-                              borderRadius: BorderRadius.circular(12),
-                            ),
-                            elevation: 2,
-                          ),
-                          child: Text(
-                            AppLocalizations.of(context)!.loginAction,
-                            style: TextStyle(
-                              fontSize: 16,
-                              fontWeight: FontWeight.w600,
-                            ),
-                          ),
-                        ),
-                      ),
-                      SizedBox(height: 16),
-                      TextButton(
-                        onPressed: () =>
-                            Navigator.pushReplacementNamed(context, '/signup'),
-                        child: Text(
-                          AppLocalizations.of(context)!.createAccount,
-                          style: TextStyle(
-                            color: Color(0xFFFF6B00),
-                            fontSize: 16,
-                            fontWeight: FontWeight.w500,
-                          ),
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-              ],
-            ),
-          ),
-        ),
-      ],
-    );
-  }
-
   Widget _buildLoggedInState(BuildContext context) {
     final isLoggedIn =
         ApiService.accessToken != null && ApiService.accessToken!.isNotEmpty;
@@ -307,7 +208,7 @@ class _ProfilePageState extends State<ProfilePage> {
                       Container(
                         padding: EdgeInsets.all(12),
                         decoration: BoxDecoration(
-                          color: Color(0xFFFF6B00).withOpacity(0.1),
+                          color: Color(0xFFFF6B00).withValues(alpha: 0.1),
                           shape: BoxShape.circle,
                         ),
                         child: Icon(
@@ -375,7 +276,7 @@ class _ProfilePageState extends State<ProfilePage> {
                       Container(
                         padding: EdgeInsets.all(20),
                         decoration: BoxDecoration(
-                          color: Color(0xFFFF6B00).withOpacity(0.1),
+                          color: Color(0xFFFF6B00).withValues(alpha: 0.1),
                           shape: BoxShape.circle,
                         ),
                         child:
@@ -390,7 +291,7 @@ class _ProfilePageState extends State<ProfilePage> {
                                 ),
                                 backgroundColor: isLightShell
                                     ? Colors.grey[200]
-                                    : Colors.white.withOpacity(0.12),
+                                    : Colors.white.withValues(alpha: 0.12),
                               )
                             : Icon(
                                 Icons.person,
@@ -481,8 +382,8 @@ class _ProfilePageState extends State<ProfilePage> {
                               bg = Colors.grey.shade200;
                               fg = Colors.grey.shade700;
                             } else {
-                              bg = Colors.white.withOpacity(0.1);
-                              fg = Colors.white.withOpacity(0.88);
+                              bg = Colors.white.withValues(alpha: 0.1);
+                              fg = Colors.white.withValues(alpha: 0.88);
                             }
                           }
                           return Container(
@@ -834,7 +735,7 @@ class _ProfilePageState extends State<ProfilePage> {
         Container(
           padding: EdgeInsets.all(8),
           decoration: BoxDecoration(
-            color: Color(0xFFFF6B00).withOpacity(0.1),
+            color: Color(0xFFFF6B00).withValues(alpha: 0.1),
             borderRadius: BorderRadius.circular(8),
           ),
           child: Icon(icon, size: 20, color: Color(0xFFFF6B00)),
@@ -885,12 +786,12 @@ class _ProfilePageState extends State<ProfilePage> {
         decoration: BoxDecoration(
           color: light
               ? Colors.grey[100]
-              : Colors.white.withOpacity(0.06),
+              : Colors.white.withValues(alpha: 0.06),
           borderRadius: BorderRadius.circular(12),
           border: Border.all(
             color: light
                 ? Colors.grey[300]!
-                : Colors.white.withOpacity(0.1),
+                : Colors.white.withValues(alpha: 0.1),
           ),
         ),
         child: Row(
@@ -898,7 +799,7 @@ class _ProfilePageState extends State<ProfilePage> {
             Container(
               padding: EdgeInsets.all(8),
               decoration: BoxDecoration(
-                color: accent.withOpacity(0.1),
+                color: accent.withValues(alpha: 0.1),
                 borderRadius: BorderRadius.circular(8),
               ),
               child: Icon(icon, size: 20, color: accent),
@@ -1153,7 +1054,7 @@ class _SettingsPageState extends State<SettingsPage> {
     final tileFill = isLightShell
         ? Colors.white
         : Color.alphaBlend(
-            Colors.white.withOpacity(0.06),
+            Colors.white.withValues(alpha: 0.06),
             AppThemes.darkHomeShellBackground,
           );
     final tileBorder = isLightShell ? Colors.grey.shade200 : Colors.white12;
@@ -1193,7 +1094,7 @@ class _SettingsPageState extends State<SettingsPage> {
                 width: 40,
                 height: 40,
                 decoration: BoxDecoration(
-                  color: const Color(0xFFFF6B00).withOpacity(0.12),
+                  color: const Color(0xFFFF6B00).withValues(alpha: 0.12),
                   borderRadius: BorderRadius.circular(12),
                 ),
                 child: Icon(icon, color: const Color(0xFFFF6B00), size: 22),
@@ -1244,7 +1145,7 @@ class _SettingsPageState extends State<SettingsPage> {
           border: Border.all(color: tileBorder),
           boxShadow: [
             BoxShadow(
-              color: Colors.black.withOpacity(isLightShell ? 0.05 : 0.20),
+              color: Colors.black.withValues(alpha: isLightShell ? 0.05 : 0.20),
               blurRadius: 14,
               offset: const Offset(0, 8),
             ),
@@ -1379,7 +1280,7 @@ class _MyListingsPageState extends State<MyListingsPage> {
     try {
       final a = await AnalyticsService.getListingAnalytics(listingId);
       if (a.listingId.toString().isNotEmpty) return a;
-    } catch (_) {
+    } catch (e, st) { logNonFatal(e, st); 
       // fall through
     }
 
@@ -1389,7 +1290,7 @@ class _MyListingsPageState extends State<MyListingsPage> {
       for (final a in all) {
         if (a.listingId.toString() == listingId) return a;
       }
-    } catch (_) {
+    } catch (e, st) { logNonFatal(e, st); 
       // fall through
     }
 
@@ -1660,7 +1561,7 @@ class _MyListingsPageState extends State<MyListingsPage> {
           'Authorization': 'Bearer $token',
           'Content-Type': 'application/json',
         },
-      );
+      ).timeout(const Duration(seconds: 60));
 
       if (response.statusCode == 200) {
         final List<dynamic> data = json.decode(response.body);
@@ -1690,19 +1591,6 @@ class _MyListingsPageState extends State<MyListingsPage> {
         isLoading = false;
       });
     }
-  }
-
-  dynamic _draftValue(dynamic value) {
-    if (value == null) return null;
-    if (value is String || value is num || value is bool) return value;
-    if (value is XFile) return value.path;
-    if (value is Map) {
-      return value.map((k, v) => MapEntry(k.toString(), _draftValue(v)));
-    }
-    if (value is Iterable) {
-      return value.map(_draftValue).toList();
-    }
-    return value.toString();
   }
 
   Future<void> _loadSellDraftSnapshot() async {
@@ -1748,7 +1636,7 @@ class _MyListingsPageState extends State<MyListingsPage> {
         };
         isLoadingDraft = false;
       });
-    } catch (_) {
+    } catch (e, st) { logNonFatal(e, st); 
       if (!mounted) return;
       setState(() {
         _draftSnapshot = null;
@@ -1770,7 +1658,7 @@ class _MyListingsPageState extends State<MyListingsPage> {
       setState(() {
         _draftSnapshot = null;
       });
-    } catch (_) {}
+    } catch (e, st) { logNonFatal(e, st); }
   }
 
   Future<void> _resumeSellDraft() async {
@@ -1860,7 +1748,7 @@ class _MyListingsPageState extends State<MyListingsPage> {
             child: Container(
               padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
               decoration: BoxDecoration(
-                color: Colors.black.withOpacity(0.62),
+                color: Colors.black.withValues(alpha: 0.62),
                 borderRadius: BorderRadius.circular(999),
               ),
               child: const Text(
@@ -1878,7 +1766,7 @@ class _MyListingsPageState extends State<MyListingsPage> {
             top: 10,
             right: 10,
             child: Material(
-              color: Colors.black.withOpacity(0.62),
+              color: Colors.black.withValues(alpha: 0.62),
               shape: const CircleBorder(),
               child: IconButton(
                 visualDensity: VisualDensity.compact,
@@ -1894,7 +1782,7 @@ class _MyListingsPageState extends State<MyListingsPage> {
             child: Container(
               padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
               decoration: BoxDecoration(
-                color: Colors.black.withOpacity(0.62),
+                color: Colors.black.withValues(alpha: 0.62),
                 borderRadius: BorderRadius.circular(999),
               ),
               child: Text(
@@ -2018,7 +1906,7 @@ class _MyListingsPageState extends State<MyListingsPage> {
             Container(
               padding: EdgeInsets.all(24),
               decoration: BoxDecoration(
-                color: Color(0xFFFF6B00).withOpacity(0.1),
+                color: Color(0xFFFF6B00).withValues(alpha: 0.1),
                 shape: BoxShape.circle,
               ),
               child: Icon(
@@ -2081,7 +1969,7 @@ class _MyListingsPageState extends State<MyListingsPage> {
               borderRadius: BorderRadius.circular(12),
               boxShadow: [
                 BoxShadow(
-                  color: Colors.black.withOpacity(0.05),
+                  color: Colors.black.withValues(alpha: 0.05),
                   blurRadius: 10,
                   offset: Offset(0, 5),
                 ),

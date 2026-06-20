@@ -1,0 +1,4 @@
+# Dev/test tooling for backend (not required at runtime).
+pytest==8.3.4
+pytest-cov==6.0.0
+pip-audit==2.7.3

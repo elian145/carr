@@ -13,6 +13,7 @@ import '../services/config.dart';
 import '../services/push_notification_service.dart'
     show PushNotificationService, firebaseMessagingBackgroundHandler;
 import '../state/locale_controller.dart';
+import '../shared/debug/app_log.dart';
 
 const String _apiBaseOverrideKey = 'api_base_override';
 
@@ -53,19 +54,19 @@ void _runZonedApp(Widget app) {
         final sp = await SharedPreferences.getInstance();
         final override = sp.getString(_apiBaseOverrideKey);
         setRuntimeApiBaseOverride(override);
-      } catch (_) {}
+      } catch (e, st) { logNonFatal(e, st); }
 
       // Minimal pre-run init only (fast): load tokens if available.
       try {
         await ApiService.initializeTokens();
-      } catch (_) {}
+      } catch (e, st) { logNonFatal(e, st); }
 
       // Drop orphaned one-time saved-search keys if the app was killed before Home mounted.
       try {
         final sp = await SharedPreferences.getInstance();
         await sp.remove('home_apply_filters_once_v1');
         await sp.remove('home_pending_saved_search_fetch_v1');
-      } catch (_) {}
+      } catch (e, st) { logNonFatal(e, st); }
 
       runApp(app);
 
@@ -73,17 +74,17 @@ void _runZonedApp(Widget app) {
       Future.microtask(() async {
         try {
           await PushNotificationService.initialize();
-        } catch (_) {}
+        } catch (e, st) { logNonFatal(e, st); }
         try {
           await LocaleController.loadSavedLocale();
-        } catch (_) {}
+        } catch (e, st) { logNonFatal(e, st); }
         try {
           await AuthService().initialize();
-        } catch (_) {}
+        } catch (e, st) { logNonFatal(e, st); }
         // Auth must finish before syncing FCM token to the backend.
         try {
           await PushNotificationService.syncTokenWithBackend();
-        } catch (_) {}
+        } catch (e, st) { logNonFatal(e, st); }
       });
     },
     (error, stack) async {
@@ -100,10 +101,10 @@ Future<void> _captureStartupError(Object error, StackTrace? stack) async {
   try {
     final sp = await SharedPreferences.getInstance();
     await sp.setString('last_startup_error', error.toString());
-  } catch (_) {}
+  } catch (e, st) { logNonFatal(e, st); }
 
   if (kSentryDsn.trim().isEmpty) return;
   try {
     await Sentry.captureException(error, stackTrace: stack);
-  } catch (_) {}
+  } catch (e, st) { logNonFatal(e, st); }
 }

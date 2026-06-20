@@ -9,6 +9,7 @@ import '../services/auth_service.dart';
 import '../shared/errors/user_error_text.dart';
 import '../shared/prefs/listing_layout_prefs.dart';
 import '../theme_provider.dart';
+import '../shared/debug/app_log.dart';
 
 class FavoritesPage extends StatefulWidget {
   const FavoritesPage({super.key});
@@ -27,7 +28,7 @@ class _FavoritesPageState extends State<FavoritesPage> {
     if (raw == null || raw.isEmpty) return -1;
     try {
       return DateTime.parse(raw).millisecondsSinceEpoch;
-    } catch (_) {
+    } catch (e, st) { logNonFatal(e, st); 
       return -1;
     }
   }
@@ -87,7 +88,7 @@ class _FavoritesPageState extends State<FavoritesPage> {
           });
         });
       }
-    } catch (_) {}
+    } catch (e, st) { logNonFatal(e, st); }
   }
 
   @override

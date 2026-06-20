@@ -3,6 +3,7 @@ import 'dart:ui' as ui;
 
 import 'package:flutter/material.dart';
 import 'package:video_thumbnail/video_thumbnail.dart';
+import '../shared/debug/app_log.dart';
 
 /// Loads a preview frame from a local path or **network video URL** using the
 /// platform thumbnail generator (same plugin as local file previews).
@@ -71,7 +72,7 @@ class _NetworkVideoThumbnailPreviewState
       if (w <= 0 || h <= 0) return null;
       // Thumbnail matches video orientation; clamp so layout stays reasonable.
       return (w / h).clamp(0.28, 2.6);
-    } catch (_) {
+    } catch (e, st) { logNonFatal(e, st); 
       return null;
     } finally {
       codec?.dispose();
@@ -101,7 +102,7 @@ class _NetworkVideoThumbnailPreviewState
       if (!mounted) return;
       final ok = data != null && data.isNotEmpty;
       double? ratio;
-      if (ok && data != null) {
+      if (ok) {
         ratio = await _aspectRatioFromImageBytes(data);
       }
       if (!mounted) return;
@@ -111,7 +112,7 @@ class _NetworkVideoThumbnailPreviewState
         _bytes = ok ? data : null;
         _aspectRatio = ratio;
       });
-    } catch (_) {
+    } catch (e, st) { logNonFatal(e, st); 
       if (!mounted) return;
       setState(() {
         _loading = false;

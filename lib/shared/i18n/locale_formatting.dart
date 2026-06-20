@@ -3,13 +3,14 @@ import 'package:intl/intl.dart';
 
 import '../../globals.dart';
 import 'digits.dart';
+import '../../shared/debug/app_log.dart';
 
 NumberFormat decimalFormatterForLocale(BuildContext context) {
   String tag = Localizations.localeOf(context).toLanguageTag();
   if (tag.startsWith('ku')) tag = 'ar';
   try {
     return NumberFormat.decimalPattern(tag);
-  } catch (_) {
+  } catch (e, st) { logNonFatal(e, st); 
     return NumberFormat.decimalPattern('en');
   }
 }

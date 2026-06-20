@@ -1,10 +1,10 @@
 import 'dart:async';
-import 'dart:convert';
 import 'dart:io';
 import 'package:flutter/foundation.dart' show kReleaseMode;
 import 'package:socket_io_client/socket_io_client.dart' as io;
 import 'api_service.dart';
 import 'config.dart';
+import '../shared/debug/app_log.dart';
 
 // Sideload build flag to allow LAN HTTP Socket.IO on iOS release builds.
 const bool kSideloadBuild = bool.fromEnvironment(
@@ -33,7 +33,7 @@ DateTime parseApiDateTime(dynamic raw) {
       parsed.millisecond,
       parsed.microsecond,
     ).toLocal();
-  } catch (_) {
+  } catch (e, st) { logNonFatal(e, st); 
     return DateTime.now();
   }
 }
@@ -84,14 +84,14 @@ class WebSocketService {
   static void _emitError(String message) {
     try {
       _errorController.add(message);
-    } catch (_) {}
+    } catch (e, st) { logNonFatal(e, st); }
     onError?.call(message);
   }
 
   static void _emitConnected(bool connected) {
     try {
       _connectionController.add(connected);
-    } catch (_) {}
+    } catch (e, st) { logNonFatal(e, st); }
     if (connected) {
       onConnected?.call();
     } else {
@@ -102,7 +102,7 @@ class WebSocketService {
   static void _cleanupSocket() {
     try {
       _socket?.dispose();
-    } catch (_) {}
+    } catch (e, st) { logNonFatal(e, st); }
     _socket = null;
   }
 
@@ -117,7 +117,7 @@ class WebSocketService {
         final data = item['data'];
         if (event.isEmpty || data is! Map<String, dynamic>) continue;
         _socket!.emit(event, data);
-      } catch (_) {}
+      } catch (e, st) { logNonFatal(e, st); }
     }
   }
 
@@ -204,7 +204,7 @@ class WebSocketService {
 
       _socket!.on('new_message', (payload) {
         if (payload is Map) {
-          final m = Map<String, dynamic>.from(payload as Map);
+          final m = Map<String, dynamic>.from(payload);
           _messagesController.add(m);
           onMessage?.call(m);
         }
@@ -212,19 +212,19 @@ class WebSocketService {
 
       _socket!.on('message_updated', (payload) {
         if (payload is Map) {
-          _messageUpdatesController.add(Map<String, dynamic>.from(payload as Map));
+          _messageUpdatesController.add(Map<String, dynamic>.from(payload));
         }
       });
 
       _socket!.on('message_deleted', (payload) {
         if (payload is Map) {
-          _messageDeletesController.add(Map<String, dynamic>.from(payload as Map));
+          _messageDeletesController.add(Map<String, dynamic>.from(payload));
         }
       });
 
       _socket!.on('new_notification', (payload) {
         if (payload is Map) {
-          final n = Map<String, dynamic>.from(payload as Map);
+          final n = Map<String, dynamic>.from(payload);
           _notificationsController.add(n);
           onNotification?.call(n);
         }
@@ -232,7 +232,7 @@ class WebSocketService {
 
       _socket!.on('typing', (payload) {
         if (payload is Map) {
-          final t = Map<String, dynamic>.from(payload as Map);
+          final t = Map<String, dynamic>.from(payload);
           _typingController.add(t);
         }
       });
@@ -242,7 +242,7 @@ class WebSocketService {
           if (payload is Map && payload['car_id'] != null) {
             _currentRoom = payload['car_id'].toString();
           }
-        } catch (_) {}
+        } catch (e, st) { logNonFatal(e, st); }
       });
 
       _socket!.connect();
@@ -259,7 +259,7 @@ class WebSocketService {
   static void disconnect() {
     try {
       _socket?.disconnect();
-    } catch (_) {}
+    } catch (e, st) { logNonFatal(e, st); }
     _cleanupSocket();
     _isConnected = false;
     _isConnecting = false;

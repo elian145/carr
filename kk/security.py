@@ -87,7 +87,17 @@ def rate_limit(max_requests=10, window_minutes=60, per_ip=True):
                     # Fall through to in-memory on any redis error.
                     pass
 
-            # In-memory fallback (dev only)
+            # In-memory fallback (dev only; not shared across workers).
+            env = (os.environ.get("APP_ENV") or "").strip().lower()
+            if env == "production":
+                try:
+                    current_app.logger.warning(
+                        "Rate limit using in-process storage (REDIS_URL unavailable). "
+                        "Limits are not shared across Gunicorn workers."
+                    )
+                except Exception:
+                    pass
+
             now = time.time()
             window_start = now - window_s
             times = rate_limit_storage.get(key, [])

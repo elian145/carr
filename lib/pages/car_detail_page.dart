@@ -22,6 +22,7 @@ import '../shared/listings/listing_share.dart';
 import '../shared/text/pretty_title_case.dart';
 import '../shared/vin/open_vin_search.dart';
 import 'listing_image_gallery_page.dart';
+import '../shared/debug/app_log.dart';
 
 class CarDetailPage extends StatefulWidget {
   final String carId;
@@ -220,7 +221,7 @@ class _CarDetailPageState extends State<CarDetailPage> {
           });
         }
       }
-    } catch (_) {}
+    } catch (e, st) { logNonFatal(e, st); }
 
     // 2) Load fresh from API.
     try {
@@ -232,7 +233,6 @@ class _CarDetailPageState extends State<CarDetailPage> {
       } else {
         car = Map<String, dynamic>.from(data);
       }
-      if (car == null) throw StateError('Invalid car response');
 
       if (!mounted) return;
       setState(() {
@@ -244,7 +244,7 @@ class _CarDetailPageState extends State<CarDetailPage> {
       try {
         final sp = await SharedPreferences.getInstance();
         await sp.setString('cache_car_${widget.carId}', json.encode(car));
-      } catch (_) {}
+      } catch (e, st) { logNonFatal(e, st); }
 
       // Track view (auth-only, best-effort).
       final idForAnalytics = listingPrimaryId(car).isNotEmpty
@@ -287,7 +287,7 @@ class _CarDetailPageState extends State<CarDetailPage> {
       final fav = await ApiService.isCarFavorited(targetId);
       if (!mounted) return;
       setState(() => _isFavorite = fav);
-    } catch (_) {}
+    } catch (e, st) { logNonFatal(e, st); }
   }
 
   Future<void> _toggleFavorite() async {
@@ -359,7 +359,7 @@ class _CarDetailPageState extends State<CarDetailPage> {
     }
     try {
       await AnalyticsService.trackShare(id);
-    } catch (_) {}
+    } catch (e, st) { logNonFatal(e, st); }
   }
 
   Future<void> _callSeller() async {
@@ -386,7 +386,7 @@ class _CarDetailPageState extends State<CarDetailPage> {
       } else {
         throw StateError('Cannot launch dialer');
       }
-    } catch (_) {
+    } catch (e, st) { logNonFatal(e, st); 
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
@@ -439,7 +439,7 @@ class _CarDetailPageState extends State<CarDetailPage> {
           });
         }
       }
-    } catch (_) {}
+    } catch (e, st) { logNonFatal(e, st); }
 
     try {
       // Similar: same brand + model (if model present)
@@ -466,7 +466,7 @@ class _CarDetailPageState extends State<CarDetailPage> {
             'cache_similar_${widget.carId}',
             json.encode(items),
           );
-        } catch (_) {}
+        } catch (e, st) { logNonFatal(e, st); }
       }
 
       // Related: same brand, newest first.
@@ -487,8 +487,8 @@ class _CarDetailPageState extends State<CarDetailPage> {
           'cache_related_${widget.carId}',
           json.encode(relItems),
         );
-      } catch (_) {}
-    } catch (_) {
+      } catch (e, st) { logNonFatal(e, st); }
+    } catch (e, st) { logNonFatal(e, st); 
       // ignore: non-critical
     } finally {
       if (mounted) {
@@ -527,16 +527,6 @@ class _CarDetailPageState extends State<CarDetailPage> {
     return '';
   }
 
-  static String _formatDateYmd(String raw) {
-    if (raw.trim().isEmpty) return '';
-    final parsed = DateTime.tryParse(raw.trim());
-    if (parsed == null) return raw;
-    final y = parsed.year.toString().padLeft(4, '0');
-    final m = parsed.month.toString().padLeft(2, '0');
-    final d = parsed.day.toString().padLeft(2, '0');
-    return '$y-$m-$d';
-  }
-
   void _showDescriptionDialog(String description) {
     showDialog<void>(
       context: context,
@@ -569,12 +559,6 @@ class _CarDetailPageState extends State<CarDetailPage> {
     ]);
     final email = _firstNonEmptyFromMap(seller, ['email']);
     final city = _firstNonEmptyFromMap(seller, ['city', 'location']);
-    final joinedRaw = _firstNonEmptyFromMap(seller, [
-      'created_at',
-      'joined_at',
-      'member_since',
-    ]);
-    final joined = _formatDateYmd(joinedRaw);
     final avatarRaw = _firstNonEmptyFromMap(seller, [
       'profile_picture',
       'avatar',
@@ -691,10 +675,10 @@ class _CarDetailPageState extends State<CarDetailPage> {
       decoration: BoxDecoration(
         color: Theme.of(
           context,
-        ).colorScheme.surfaceContainerHighest.withOpacity(0.38),
+        ).colorScheme.surfaceContainerHighest.withValues(alpha: 0.38),
         borderRadius: BorderRadius.circular(12),
         border: Border.all(
-          color: Theme.of(context).colorScheme.outlineVariant.withOpacity(0.55),
+          color: Theme.of(context).colorScheme.outlineVariant.withValues(alpha: 0.55),
         ),
       ),
       child: Column(
@@ -707,7 +691,7 @@ class _CarDetailPageState extends State<CarDetailPage> {
                 radius: 24,
                 backgroundColor: Theme.of(
                   context,
-                ).colorScheme.primary.withOpacity(0.14),
+                ).colorScheme.primary.withValues(alpha: 0.14),
                 backgroundImage: isDealerSeller && avatarUrl.isNotEmpty
                     ? NetworkImage(avatarUrl)
                     : null,
@@ -763,7 +747,7 @@ class _CarDetailPageState extends State<CarDetailPage> {
                     vertical: 4,
                   ),
                   decoration: BoxDecoration(
-                    color: Colors.green.withOpacity(0.12),
+                    color: Colors.green.withValues(alpha: 0.12),
                     borderRadius: BorderRadius.circular(999),
                   ),
                   child: Row(
@@ -845,7 +829,7 @@ class _CarDetailPageState extends State<CarDetailPage> {
                 decoration: BoxDecoration(
                   color: Theme.of(
                     context,
-                  ).colorScheme.surfaceContainerHighest.withOpacity(0.5),
+                  ).colorScheme.surfaceContainerHighest.withValues(alpha: 0.5),
                   borderRadius: BorderRadius.circular(8),
                 ),
                 child: Column(
@@ -894,7 +878,7 @@ class _CarDetailPageState extends State<CarDetailPage> {
             decoration: BoxDecoration(
               color: Theme.of(
                 context,
-              ).colorScheme.surfaceContainerHighest.withOpacity(0.5),
+              ).colorScheme.surfaceContainerHighest.withValues(alpha: 0.5),
               borderRadius: BorderRadius.circular(8),
             ),
             child: Column(
@@ -958,7 +942,7 @@ class _CarDetailPageState extends State<CarDetailPage> {
             decoration: BoxDecoration(
               color: Theme.of(
                 context,
-              ).colorScheme.surfaceContainerHighest.withOpacity(0.5),
+              ).colorScheme.surfaceContainerHighest.withValues(alpha: 0.5),
               borderRadius: BorderRadius.circular(8),
             ),
             child: Row(
@@ -1107,7 +1091,7 @@ class _CarDetailPageState extends State<CarDetailPage> {
                   decoration: BoxDecoration(
                     color: listOnLight
                         ? AppThemes.listingCardFillCompactOnLightShell()
-                        : Colors.white.withOpacity(0.08),
+                        : Colors.white.withValues(alpha: 0.08),
                     borderRadius: BorderRadius.circular(12),
                     border: Border.all(color: Colors.white12),
                   ),
@@ -1439,14 +1423,14 @@ class _CarDetailPageState extends State<CarDetailPage> {
                 ),
                 decoration: BoxDecoration(
                   color: Theme.of(context).colorScheme.surfaceContainerHighest
-                      .withOpacity(0.55),
+                      .withValues(alpha: 0.55),
                   borderRadius: BorderRadius.circular(14),
                   border: Border.all(
-                    color: const Color(0xFFFF6B00).withOpacity(0.28),
+                    color: const Color(0xFFFF6B00).withValues(alpha: 0.28),
                   ),
                   boxShadow: [
                     BoxShadow(
-                      color: Colors.black.withOpacity(
+                      color: Colors.black.withValues(alpha: 
                         isLightShell ? 0.04 : 0.16,
                       ),
                       blurRadius: 12,

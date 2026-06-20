@@ -17,6 +17,10 @@ Production UI entry: `main_legacy.dart` → `MyApp` (used from `lib/main.dart`).
 
 All `part` files share one library with `main_legacy.dart` (imports only in the main file).
 
+## Analyzer
+
+`lib/legacy/**` is included in `flutter analyze` (no folder exclude). Phase 1 removed dead code and fixed warnings; **0 analyzer warnings** remain. Info-level `use_build_context_synchronously` hints may still appear in large sell-flow widgets.
+
 ## Refactor direction
 
 Prefer new screens under `lib/pages/` and wire them in `MyApp` routes gradually. The modern `lib/pages/home_page.dart` is separate; `/` still uses legacy `HomePage` until parity is complete.

@@ -8,7 +8,6 @@ import 'dart:developer' as developer;
 import 'package:google_fonts/google_fonts.dart';
 import 'package:auto_size_text/auto_size_text.dart';
 import 'package:cached_network_image/cached_network_image.dart';
-import 'package:flutter_svg/flutter_svg.dart';
 import 'package:url_launcher/url_launcher.dart';
 import 'package:flutter/services.dart' as services;
 import 'dart:ui' as ui;
@@ -283,108 +282,6 @@ OnlineSpecVariant _onlineSpecVariantFromCatalogFields(CatalogSpecFields f) {
   );
 }
 
-bool _legacyScalarStep2KeyMissing(Map<String, dynamic> d, String key) {
-  final v = d[key]?.toString().trim();
-  return v == null || v.isEmpty;
-}
-
-/// Step 2 [carData] keys the UI hydrates from (not `_online_opts_*`).
-bool _legacyCarDataHasAnyScalarStep2(Map<String, dynamic> d) {
-  for (final k in const [
-    'transmission',
-    'fuel_type',
-    'engine_type',
-    'body_type',
-    'drive_type',
-    'engine_size',
-    'cylinder_count',
-    'seating',
-    'fuel_economy',
-  ]) {
-    if (!_legacyScalarStep2KeyMissing(d, k)) return true;
-  }
-  return false;
-}
-
-bool _legacyHasValidOnlineEngineSizeOpts(Map<String, dynamic> d) {
-  final raw = d['_online_opts_engine_size'];
-  if (raw is! List || raw.isEmpty) return false;
-  for (final e in raw) {
-    final x = OnlineSpecVariant.parseLeadingEngineLiters(e.toString());
-    if (x != null && x > 0.001) return true;
-  }
-  return false;
-}
-
-bool _legacyCarDataHasOnlineStep2Signals(Map<String, dynamic> d) {
-  if (_legacyCarDataHasAnyScalarStep2(d)) return true;
-  for (final k in const [
-    '_online_opts_transmission',
-    '_online_opts_drive',
-    '_online_opts_body',
-    '_online_opts_fuel',
-    '_online_opts_engine_size',
-    '_online_opts_cylinder',
-    '_online_opts_seating',
-  ]) {
-    final v = d[k];
-    if (v is! List || v.isEmpty) continue;
-    if (k == '_online_opts_engine_size' &&
-        !_legacyHasValidOnlineEngineSizeOpts(d)) {
-      continue;
-    }
-    return true;
-  }
-  final v = d[_kOnlineSpecVariantsKey];
-  return v is List && v.isNotEmpty;
-}
-
-/// Fill any still-missing scalars from the first bundled-catalog spec variant.
-void _applyFirstOnlineSpecVariantForMissingScalars(Map<String, dynamic> d) {
-  final raw = d[_kOnlineSpecVariantsKey];
-  if (raw is! List || raw.isEmpty) return;
-  final first = raw.first;
-  if (first is! Map) return;
-  final v = OnlineSpecVariant.fromJson(Map<String, dynamic>.from(first as Map));
-  if (_legacyScalarStep2KeyMissing(d, 'transmission') &&
-      v.transmission != null) {
-    d['transmission'] = sellFlowTransmissionLabel(v.transmission!);
-  }
-  if (_legacyScalarStep2KeyMissing(d, 'fuel_type') && v.fuelType != null) {
-    d['fuel_type'] = sellFlowFuelLabel(v.fuelType!);
-  }
-  if (_legacyScalarStep2KeyMissing(d, 'engine_type') && v.engineType != null) {
-    d['engine_type'] = v.engineType!;
-  }
-  if (_legacyScalarStep2KeyMissing(d, 'body_type') && v.bodyType != null) {
-    d['body_type'] = sellFlowBodyLabel(v.bodyType!);
-  }
-  if (_legacyScalarStep2KeyMissing(d, 'drive_type') && v.drivetrain != null) {
-    d['drive_type'] = sellFlowDriveLabel(v.drivetrain!);
-  }
-  if (_legacyScalarStep2KeyMissing(d, 'engine_size') &&
-      v.engineSizeLiters != null &&
-      v.engineSizeLiters! > 0) {
-    d['engine_size'] =
-        '${v.engineSizeLiters!.toStringAsFixed(1)}${v.displacementSuffix}';
-  }
-  if (_legacyScalarStep2KeyMissing(d, 'cylinder_count') &&
-      v.cylinderCount != null &&
-      v.cylinderCount! > 0) {
-    d['cylinder_count'] = '${v.cylinderCount}';
-  }
-  if (_legacyScalarStep2KeyMissing(d, 'seating') &&
-      v.seating != null &&
-      v.seating! > 0) {
-    d['seating'] = sellFlowNearestSeatingLabel(v.seating) ?? '${v.seating}';
-  }
-  if (_legacyScalarStep2KeyMissing(d, 'fuel_economy') &&
-      v.fuelEconomy != null &&
-      v.fuelEconomy!.trim().isNotEmpty) {
-    d['fuel_economy'] = v.fuelEconomy!.trim();
-  }
-}
-
 // Sideload build flag to disable services that require entitlements on iOS
 const bool kSideloadBuild = bool.fromEnvironment(
   'SIDELOAD_BUILD',
@@ -412,7 +309,7 @@ Future<http.MultipartFile> _buildVideoMultipartFile(XFile video) async {
     final raf = await file.open(mode: FileMode.read);
     headerBytes = await raf.read(64);
     await raf.close();
-  } catch (_) {}
+  } catch (e, st) { logNonFatal(e, st); }
 
   String? sniffFromHeader() {
     if (headerBytes.length >= 12) {
@@ -475,7 +372,7 @@ Future<http.MultipartFile> _buildVideoMultipartFile(XFile video) async {
   MediaType contentType;
   try {
     contentType = MediaType.parse(mime);
-  } catch (_) {
+  } catch (e, st) { logNonFatal(e, st); 
     contentType = MediaType('video', 'mp4');
   }
 
@@ -611,7 +508,7 @@ class _RetryingListingNetworkImageState
           return uri.replace(path: newPath).toString();
         }
       }
-    } catch (_) {}
+    } catch (e, st) { logNonFatal(e, st); }
     return url;
   }
 
@@ -671,7 +568,7 @@ class _RetryingListingNetworkImageState
           debugPrint(
             'Listing image failed (attempt=$_attempt): $url :: $error',
           );
-        } catch (_) {}
+        } catch (e, st) { logNonFatal(e, st); }
         _scheduleRetry();
         return Container(
           color: Colors.grey[900],
@@ -732,7 +629,7 @@ const Color kSellLightShellFieldFill = Color(0xFFFFF1E6);
 
 Color _sellFlowManualFieldFill(BuildContext context) =>
     Theme.of(context).brightness == Brightness.dark
-    ? Colors.black.withOpacity(0.2)
+    ? Colors.black.withValues(alpha: 0.2)
     : kSellLightShellFieldFill;
 
 TextStyle _sellFlowManualFieldLabelStyle(BuildContext context) =>
@@ -758,18 +655,6 @@ class _HomeFeedScrollPersistence {
   static double? _pixels;
 
   static double get initialOffset => _pixels ?? 0;
-
-  static void capture(ScrollController c) {
-    try {
-      if (c.hasClients) {
-        final pos = c.position;
-        _pixels = pos.pixels.clamp(
-          pos.minScrollExtent,
-          pos.maxScrollExtent,
-        );
-      }
-    } catch (_) {}
-  }
 
   /// Home tab tapped while already on Home (scroll-to-top); keep bucket in sync.
   static void markTop() {
@@ -905,13 +790,13 @@ Widget buildFloatingBottomNav(
           borderRadius: BorderRadius.circular(999),
           border: Border.all(
             color: isLight
-                ? Colors.white.withOpacity(0.14)
-                : Colors.white.withOpacity(0.08),
+                ? Colors.white.withValues(alpha: 0.14)
+                : Colors.white.withValues(alpha: 0.08),
             width: 1,
           ),
           boxShadow: [
             BoxShadow(
-              color: Colors.black.withOpacity(isLight ? 0.08 : 0.14),
+              color: Colors.black.withValues(alpha: isLight ? 0.08 : 0.14),
               blurRadius: 24,
               offset: const Offset(0, 10),
             ),
@@ -939,11 +824,11 @@ Widget buildFancySelector(
   final bool isDark = Theme.of(context).brightness == Brightness.dark;
   final Color accent = const Color(0xFFFF6B00);
   final List<Color> bg = isDark
-      ? [Colors.white.withOpacity(0.06), Colors.white.withOpacity(0.03)]
+      ? [Colors.white.withValues(alpha: 0.06), Colors.white.withValues(alpha: 0.03)]
       : [kSellLightShellFieldFill, kSellLightShellFieldFill];
   final Color borderColor = isError
       ? Colors.redAccent
-      : (isDark ? Colors.white12 : accent.withOpacity(0.25));
+      : (isDark ? Colors.white12 : accent.withValues(alpha: 0.25));
   final Color labelColor = isError
       ? Colors.redAccent
       : (isDark ? Colors.white70 : Colors.grey[600]!);
@@ -976,7 +861,7 @@ Widget buildFancySelector(
       border: Border.all(color: borderColor),
       boxShadow: [
         BoxShadow(
-          color: Colors.black.withOpacity(0.06),
+          color: Colors.black.withValues(alpha: 0.06),
           blurRadius: 10,
           offset: const Offset(0, 6),
         ),
@@ -988,7 +873,7 @@ Widget buildFancySelector(
           width: 4,
           height: 44,
           decoration: BoxDecoration(
-            color: (isError ? Colors.redAccent : accent).withOpacity(0.9),
+            color: (isError ? Colors.redAccent : accent).withValues(alpha: 0.9),
             borderRadius: BorderRadius.circular(999),
           ),
         ),
@@ -998,7 +883,7 @@ Widget buildFancySelector(
               width: 36,
               height: 36,
               decoration: BoxDecoration(
-                color: (isError ? Colors.redAccent : accent).withOpacity(0.12),
+                color: (isError ? Colors.redAccent : accent).withValues(alpha: 0.12),
                 borderRadius: BorderRadius.circular(10),
               ),
               child: currency != null
@@ -1045,10 +930,6 @@ Widget buildFancySelector(
 
 String _cancelTextGlobal(BuildContext context) {
   return AppLocalizations.of(context)!.cancelAction;
-}
-
-String _contactForPriceGlobal(BuildContext context) {
-  return AppLocalizations.of(context)!.contactForPrice;
 }
 
 String _pleaseFillRequiredGlobal(BuildContext context) {
@@ -1119,9 +1000,6 @@ String _listingSubmittedSuccessTextGlobal(BuildContext context) =>
 
 String _couldNotLoadListingsTextGlobal(BuildContext context) =>
     couldNotLoadListingsText(context);
-
-String _photosUploadedTextGlobal(BuildContext context) =>
-    photosUploadedText(context);
 
 String? _convertSortToApiValue(BuildContext context, String? sortOption) =>
     convertSortToApiValue(context, sortOption);
@@ -1391,7 +1269,7 @@ Widget _buildGlobalCarCardInnerText(
                   child: Container(
                     width: 1,
                     height: 12,
-                    color: metaTextColor.withOpacity(0.35),
+                    color: metaTextColor.withValues(alpha: 0.35),
                   ),
                 ),
               ),
@@ -1493,7 +1371,7 @@ Widget buildGlobalCarCard(
   // On dark shell: true frosted overlay. On light shell: solid blend so color matches dark mode.
   final cardFill = isLight
       ? AppThemes.listingCardFillGridOnLightShell()
-      : Colors.white.withOpacity(0.10);
+      : Colors.white.withValues(alpha: 0.10);
   final metaTextColor = Colors.white70;
   final dividerLineColor = Colors.white24;
   final bool showVideoCountBadge =
@@ -1728,7 +1606,7 @@ Widget buildGlobalCarCard(
       border: null,
       boxShadow: [
         BoxShadow(
-          color: Colors.black.withOpacity(0.2),
+          color: Colors.black.withValues(alpha: 0.2),
           blurRadius: 8,
           offset: Offset(0, 4),
         ),
@@ -2552,7 +2430,7 @@ class _SearchDialogState extends State<_SearchDialog> {
   ButtonStyle _searchModeButtonStyle({required bool selected}) {
     final backgroundColor = selected
         ? const Color(0xFFFF6B00)
-        : Colors.white.withOpacity(0.12);
+        : Colors.white.withValues(alpha: 0.12);
     final foregroundColor = selected ? Colors.white : Colors.white70;
     return ElevatedButton.styleFrom(
       backgroundColor: backgroundColor,
@@ -2640,7 +2518,7 @@ class _SearchDialogState extends State<_SearchDialog> {
   @override
   Widget build(BuildContext context) {
     return Dialog(
-      backgroundColor: Colors.grey[900]?.withOpacity(0.98),
+      backgroundColor: Colors.grey[900]?.withValues(alpha: 0.98),
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
       child: Container(
         width: 500,
@@ -2907,14 +2785,14 @@ void main() {
         try {
           final sp = await SharedPreferences.getInstance();
           await sp.setString('last_startup_error', details.exceptionAsString());
-        } catch (_) {}
+        } catch (e, st) { logNonFatal(e, st); }
       };
 
       // Minimal pre-run init only (fast): load tokens if available.
       // Heavier work is deferred until after first frame to avoid splash hangs.
       try {
         await ApiService.initializeTokens();
-      } catch (_) {}
+      } catch (e, st) { logNonFatal(e, st); }
 
       // Initialize global currency symbol
       globalSymbol = r'$';
@@ -2928,38 +2806,26 @@ void main() {
         if (!(kSideloadBuild && Platform.isIOS)) {
           try {
             await Firebase.initializeApp();
-          } catch (_) {}
+          } catch (e, st) { logNonFatal(e, st); }
           try {
             await _initPushToken();
-          } catch (_) {}
+          } catch (e, st) { logNonFatal(e, st); }
         }
         try {
           await LocaleController.loadSavedLocale();
-        } catch (_) {}
+        } catch (e, st) { logNonFatal(e, st); }
         try {
           await AuthService().initialize();
-        } catch (_) {}
+        } catch (e, st) { logNonFatal(e, st); }
       });
     },
     (error, stack) async {
       try {
         final sp = await SharedPreferences.getInstance();
         await sp.setString('last_startup_error', error.toString());
-      } catch (_) {}
+      } catch (e, st) { logNonFatal(e, st); }
     },
   );
-}
-
-// Helper page to view last startup error if present (can be wired to a hidden gesture if needed)
-class _StartupDiagnostics {
-  static Future<String?> lastError() async {
-    try {
-      final sp = await SharedPreferences.getInstance();
-      return sp.getString('last_startup_error');
-    } catch (_) {
-      return null;
-    }
-  }
 }
 
 Future<void> _initPushToken() async {
@@ -2982,7 +2848,7 @@ Future<void> _initPushToken() async {
         await sp.setString('push_token', token);
       }
     }
-  } catch (_) {}
+  } catch (e, st) { logNonFatal(e, st); }
 }
 
 // Car Comparison State Management
@@ -3023,7 +2889,7 @@ class ComparisonButton extends StatelessWidget {
             borderRadius: BorderRadius.circular(isCompact ? 14 : 17),
             boxShadow: [
               BoxShadow(
-                color: Colors.black.withOpacity(0.2),
+                color: Colors.black.withValues(alpha: 0.2),
                 blurRadius: 4,
                 offset: Offset(0, 2),
               ),

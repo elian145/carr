@@ -188,7 +188,7 @@ If you deploy the backend to the public internet, do **not** run it in debug mod
    APP_ENV=development python -m kk.app_new
    ```
 
-The backend will be available at `http://localhost:8081` (or `PORT` if set).
+The kk API listens on **port 5000** by default (`http://127.0.0.1:5000`). For local Flutter dev, run the proxy on **5003** (see [Listings not loading?](#listings-not-loading) and `scripts/dev/start_servers.ps1`).
 
 For production deployment details (Gunicorn/Celery/Redis/Socket.IO scaling), see `DEPLOYMENT.md`.
 
@@ -276,11 +276,12 @@ FIREBASE_PROJECT_ID=your-firebase-project-id
 
 ### Frontend Configuration
 
-Update the API base URL in `lib/services/api_service.dart`:
+Configure the API base URL via `lib/services/config.dart`:
 
-```dart
-static const String baseUrl = 'http://your-backend-url:5000/api';
-```
+- **Build time:** `--dart-define=API_BASE=https://your-api-host`
+- **Runtime:** Settings → API in the app (stored in SharedPreferences)
+
+Release builds require HTTPS. See `docs/ARCHITECTURE.md` for ports and entry points.
 
 ## 🗄️ Database Schema
 
@@ -364,21 +365,25 @@ Admin credentials:
 
 ### Backend Testing
 ```bash
-# Run backend tests
-python -m pytest tests/
+# Factory smoke tests (no server required; same as CI)
+python scripts/smoke_tests/test_backend_factory_smoke.py
 
-# Run with coverage
-python -m pytest --cov=app tests/
+# Optional manual scripts (may require a running kk server)
+python kk/test_auth_system.py
 ```
 
 ### Frontend Testing
 ```bash
-# Run Flutter tests
+flutter analyze
 flutter test
 
-# Run integration tests
-flutter drive --target=test_driver/app.dart
+# Full local CI mirror
+python scripts/run_local_ci.py
+# Windows shortcut:
+# .\scripts\run_local_checks.ps1
 ```
+
+See `test/README.md` and `docs/ARCHITECTURE.md`.
 
 ## 🚀 Deployment
 
@@ -430,20 +435,16 @@ flutter drive --target=test_driver/app.dart
 
 ```
 car_listing_app/
-├── kk/                          # Backend (Flask)
-│   ├── app_new.py              # Main Flask app
-│   ├── models.py               # Database models
-│   ├── auth.py                 # Authentication utilities
-│   ├── admin_routes.py         # Admin endpoints
-│   ├── config.py               # Configuration
-│   ├── requirements.txt        # Python dependencies
-│   └── setup_backend.py        # Setup script
-├── lib/                        # Frontend (Flutter)
-│   ├── main.dart              # Main Flutter app
-│   ├── services/              # API services
-│   ├── pages/                 # App pages
-│   └── theme_provider.dart    # Theme management
-└── README.md                  # This file
+├── kk/                    # Backend (Flask) — production via kk.wsgi / app_factory
+├── backend/               # Local dev proxy (:5003 → kk :5000)
+├── lib/
+│   ├── main.dart          # bootstrapAndRun(legacy.MyApp)
+│   ├── legacy/            # Production UI
+│   ├── pages/             # Modern screens (migration)
+│   └── services/          # API, auth, WebSocket, config
+├── test/                  # Flutter tests + fake API server
+├── scripts/               # CI helpers, smoke tests, dev servers
+└── docs/ARCHITECTURE.md   # Entry points, ports, migration status
 ```
 
 ## 🤝 Contributing

@@ -1,5 +1,4 @@
 import 'dart:convert';
-import 'dart:io';
 import 'package:flutter/foundation.dart';
 import 'package:http/http.dart' as http;
 import 'package:image_picker/image_picker.dart';
@@ -10,6 +9,11 @@ import '../shared/phone/phone_normalizer.dart';
 import 'api_exception.dart';
 
 export 'api_exception.dart';
+
+part 'api/api_auth.dart';
+part 'api/api_listings.dart';
+part 'api/api_chat.dart';
+part 'api/api_admin.dart';
 
 class ApiService {
   /// 60s to allow Render (and similar PaaS) cold starts on first request.
@@ -409,7 +413,7 @@ class ApiService {
     return _handleResponse(response);
   }
 
-  // Authentication methods
+  // Authentication & profile (api/api_auth.dart)
   static Future<Map<String, dynamic>> registerEmailRequest({
     String? username,
     required String email,
@@ -421,94 +425,29 @@ class ApiService {
     String? dealershipName,
     String? dealershipPhone,
     String? dealershipLocation,
-  }) async {
-    final u = (username ?? '').trim();
-    final normalizedPhone = (phoneNumber != null && phoneNumber.trim().isNotEmpty)
-        ? normalizePhoneNumber(phoneNumber)
-        : null;
-    final response = await _httpClient
-        .post(
-          Uri.parse('$baseUrl/auth/register-request'),
-          headers: _getHeaders(includeAuth: false),
-          body: json.encode({
-            if (!isDealer) 'username': u,
-            'email': email,
-            'password': password,
-            'first_name': firstName,
-            'last_name': lastName,
-            if (normalizedPhone != null && normalizedPhone.isNotEmpty)
-              'phone_number': normalizedPhone,
-            'is_dealer': isDealer,
-            if (isDealer &&
-                dealershipName != null &&
-                dealershipName.trim().isNotEmpty)
-              'dealership_name': dealershipName.trim(),
-            if (isDealer &&
-                dealershipPhone != null &&
-                dealershipPhone.trim().isNotEmpty)
-              'dealership_phone': dealershipPhone.trim(),
-            if (isDealer &&
-                dealershipLocation != null &&
-                dealershipLocation.trim().isNotEmpty)
-              'dealership_location': dealershipLocation.trim(),
-          }),
-        )
-        .timeout(_defaultTimeout);
+  }) =>
+      _ApiServiceAuth.registerEmailRequest(
+        username: username,
+        email: email,
+        password: password,
+        firstName: firstName,
+        lastName: lastName,
+        phoneNumber: phoneNumber,
+        isDealer: isDealer,
+        dealershipName: dealershipName,
+        dealershipPhone: dealershipPhone,
+        dealershipLocation: dealershipLocation,
+      );
 
-    return _handleResponse(response);
-  }
-
-  static Future<Map<String, dynamic>> confirmSignup(String token) async {
-    final response = await _httpClient
-        .post(
-          Uri.parse('$baseUrl/auth/register-confirm'),
-          headers: _getHeaders(includeAuth: false),
-          body: json.encode({'token': token}),
-        )
-        .timeout(_defaultTimeout);
-
-    final data = _handleResponse(response);
-    final String? access = (data['access_token'] as String?)?.trim();
-    final String? refresh = (data['refresh_token'] as String?)?.trim();
-    if (access != null && access.isNotEmpty) {
-      await _saveAccessToken(access);
-    }
-    if (refresh != null && refresh.isNotEmpty) {
-      await _saveRefreshToken(refresh);
-    }
-    return data;
-  }
+  static Future<Map<String, dynamic>> confirmSignup(String token) =>
+      _ApiServiceAuth.confirmSignup(token);
 
   static Future<Map<String, dynamic>> login(
     String emailOrPhone,
     String password,
-  ) async {
-    final response = await _httpClient
-        .post(
-          Uri.parse('$baseUrl/auth/login'),
-          headers: _getHeaders(includeAuth: false),
-          body: json.encode({'username': emailOrPhone, 'password': password}),
-        )
-        .timeout(_defaultTimeout);
+  ) =>
+      _ApiServiceAuth.login(emailOrPhone, password);
 
-    // Accept either legacy {'token': '<jwt>'} or new {'access_token': '...', 'refresh_token': '...'}
-    final data = _handleResponse(response);
-    final String? legacyToken = (data['token'] as String?)?.trim();
-    final String? access = (data['access_token'] as String?)?.trim();
-    final String? refresh = (data['refresh_token'] as String?)?.trim();
-    final token = (legacyToken != null && legacyToken.isNotEmpty)
-        ? legacyToken
-        : access;
-    if (token != null && token.isNotEmpty) {
-      await _saveAccessToken(token);
-    }
-    if (refresh != null && refresh.isNotEmpty) {
-      await _saveRefreshToken(refresh);
-    }
-    return data;
-  }
-
-  // Phone OTP (Option D)
   static Future<Map<String, dynamic>> phoneStart({
     required String phoneNumber,
     String? username,
@@ -520,31 +459,19 @@ class ApiService {
     String? dealershipName,
     String? dealershipPhone,
     String? dealershipLocation,
-  }) async {
-    final normalizedPhone = normalizePhoneNumber(phoneNumber);
-    final response = await _httpClient
-        .post(
-          Uri.parse('$baseUrl/auth/phone/start'),
-          headers: _getHeaders(includeAuth: false),
-          body: json.encode({
-            'phone_number': normalizedPhone,
-            if ((username ?? '').trim().isNotEmpty) 'username': username,
-            if ((firstName ?? '').trim().isNotEmpty) 'first_name': firstName,
-            if ((lastName ?? '').trim().isNotEmpty) 'last_name': lastName,
-            if ((email ?? '').trim().isNotEmpty) 'email': email,
-            if ((password ?? '').trim().isNotEmpty) 'password': password,
-            'is_dealer': isDealer,
-            if (isDealer && (dealershipName ?? '').trim().isNotEmpty)
-              'dealership_name': dealershipName,
-            if (isDealer && (dealershipPhone ?? '').trim().isNotEmpty)
-              'dealership_phone': dealershipPhone,
-            if (isDealer && (dealershipLocation ?? '').trim().isNotEmpty)
-              'dealership_location': dealershipLocation,
-          }),
-        )
-        .timeout(_defaultTimeout);
-    return _handleResponse(response);
-  }
+  }) =>
+      _ApiServiceAuth.phoneStart(
+        phoneNumber: phoneNumber,
+        username: username,
+        firstName: firstName,
+        lastName: lastName,
+        email: email,
+        password: password,
+        isDealer: isDealer,
+        dealershipName: dealershipName,
+        dealershipPhone: dealershipPhone,
+        dealershipLocation: dealershipLocation,
+      );
 
   static Future<Map<String, dynamic>> phoneVerify({
     required String phoneNumber,
@@ -558,307 +485,105 @@ class ApiService {
     String? dealershipName,
     String? dealershipPhone,
     String? dealershipLocation,
-  }) async {
-    final normalizedPhone = normalizePhoneNumber(phoneNumber);
-    final response = await _httpClient
-        .post(
-          Uri.parse('$baseUrl/auth/phone/verify'),
-          headers: _getHeaders(includeAuth: false),
-          body: json.encode({
-            'phone_number': normalizedPhone,
-            'code': code,
-            if ((username ?? '').trim().isNotEmpty) 'username': username,
-            if ((firstName ?? '').trim().isNotEmpty) 'first_name': firstName,
-            if ((lastName ?? '').trim().isNotEmpty) 'last_name': lastName,
-            if ((email ?? '').trim().isNotEmpty) 'email': email,
-            if ((password ?? '').trim().isNotEmpty) 'password': password,
-            'is_dealer': isDealer,
-            if (isDealer && (dealershipName ?? '').trim().isNotEmpty)
-              'dealership_name': dealershipName,
-            if (isDealer && (dealershipPhone ?? '').trim().isNotEmpty)
-              'dealership_phone': dealershipPhone,
-            if (isDealer && (dealershipLocation ?? '').trim().isNotEmpty)
-              'dealership_location': dealershipLocation,
-          }),
-        )
-        .timeout(_defaultTimeout);
+  }) =>
+      _ApiServiceAuth.phoneVerify(
+        phoneNumber: phoneNumber,
+        code: code,
+        username: username,
+        firstName: firstName,
+        lastName: lastName,
+        email: email,
+        password: password,
+        isDealer: isDealer,
+        dealershipName: dealershipName,
+        dealershipPhone: dealershipPhone,
+        dealershipLocation: dealershipLocation,
+      );
 
-    final data = _handleResponse(response);
-    final String? access = (data['access_token'] as String?)?.trim();
-    final String? refresh = (data['refresh_token'] as String?)?.trim();
-    if (access != null && access.isNotEmpty) {
-      await _saveAccessToken(access);
-    }
-    if (refresh != null && refresh.isNotEmpty) {
-      await _saveRefreshToken(refresh);
-    }
-    return data;
-  }
+  static Future<void> logout() => _ApiServiceAuth.logout();
 
-  static Future<void> logout() async {
-    // Best-effort server-side revocation; then clear locally.
-    try {
-      final headers = _getHeaders();
-      final rt = (_refreshToken ?? '').trim();
-      final body = (rt.isNotEmpty) ? json.encode({'refresh_token': rt}) : null;
-      await _httpClient
-          .post(Uri.parse('$baseUrl/auth/logout'), headers: headers, body: body)
-          .timeout(_defaultTimeout);
-    } catch (_) {}
-    await clearTokens();
-  }
-
-  /// Change password (authenticated). Requires current and new password.
   static Future<Map<String, dynamic>> changePassword({
     required String currentPassword,
     required String newPassword,
-  }) async {
-    return await _makeAuthenticatedRequest(
-      'POST',
-      '/auth/change-password',
-      body: {'current_password': currentPassword, 'new_password': newPassword},
-    );
-  }
+  }) =>
+      _ApiServiceAuth.changePassword(
+        currentPassword: currentPassword,
+        newPassword: newPassword,
+      );
 
-  /// Permanently delete the current user's account. Optionally pass [password] for confirmation.
-  static Future<Map<String, dynamic>> deleteAccount({String? password}) async {
-    final body = <String, dynamic>{};
-    if (password != null && password.trim().isNotEmpty) {
-      body['password'] = password.trim();
-    }
-    return await _makeAuthenticatedRequest(
-      'POST',
-      '/auth/delete-account',
-      body: body.isNotEmpty ? body : null,
-    );
-  }
+  static Future<Map<String, dynamic>> deleteAccount({String? password}) =>
+      _ApiServiceAuth.deleteAccount(password: password);
 
-  /// Request a password reset. Use [isPhone] so the server can look up by phone
-  /// and send SMS (do not duplicate the email field with the same string as phone).
   static Future<Map<String, dynamic>> forgotPassword(
     String value, {
     bool isPhone = false,
-  }) async {
-    final trimmed = value.trim();
-    final Map<String, dynamic> body;
-    if (isPhone) {
-      body = {'phone_number': normalizePhoneNumber(trimmed)};
-    } else {
-      // Backwards-compatible: backend historically mirrored email into phone_number.
-      body = {'email': trimmed, 'phone_number': trimmed};
-    }
-    final response = await _httpClient
-        .post(
-          Uri.parse('$baseUrl/auth/forgot-password'),
-          headers: _getHeaders(includeAuth: false),
-          body: json.encode(body),
-        )
-        .timeout(_defaultTimeout);
-
-    return _handleResponse(response);
-  }
+  }) =>
+      _ApiServiceAuth.forgotPassword(value, isPhone: isPhone);
 
   static Future<Map<String, dynamic>> resetPassword(
     String token,
     String newPassword,
-  ) async {
-    final response = await _httpClient
-        .post(
-          Uri.parse('$baseUrl/auth/reset-password'),
-          headers: _getHeaders(includeAuth: false),
-          body: json.encode({'token': token, 'password': newPassword}),
-        )
-        .timeout(_defaultTimeout);
+  ) =>
+      _ApiServiceAuth.resetPassword(token, newPassword);
 
-    return _handleResponse(response);
-  }
+  static Future<Map<String, dynamic>> verifyEmail(String token) =>
+      _ApiServiceAuth.verifyEmail(token);
 
-  static Future<Map<String, dynamic>> verifyEmail(String token) async {
-    final response = await _httpClient
-        .post(
-          Uri.parse('$baseUrl/auth/verify-email'),
-          headers: _getHeaders(includeAuth: false),
-          body: json.encode({'token': token}),
-        )
-        .timeout(_defaultTimeout);
+  static Future<Map<String, dynamic>> sendEmailVerification() =>
+      _ApiServiceAuth.sendEmailVerification();
 
-    return _handleResponse(response);
-  }
-
-  /// Request a verification email for the current user (authenticated).
-  static Future<Map<String, dynamic>> sendEmailVerification() async {
-    return await _makeAuthenticatedRequest(
-      'POST',
-      '/auth/send-email-verification',
-    );
-  }
-
-  /// Send 6-digit SMS code to phone (for verification). Rate-limited.
   static Future<Map<String, dynamic>> sendPhoneVerificationCode(
     String phoneNumber,
-  ) async {
-    final normalizedPhone = normalizePhoneNumber(phoneNumber);
-    final apiRoot = baseUrl.endsWith('/api') ? baseUrl : '$baseUrl/api';
-    final url = '$apiRoot/auth/send-verification';
-    final response = await _httpClient
-        .post(
-          Uri.parse(url),
-          headers: _getHeaders(includeAuth: false),
-          body: json.encode({'phone_number': normalizedPhone}),
-        )
-        .timeout(_defaultTimeout);
-    if (response.statusCode == 404) {
-      throw ApiException(
-        statusCode: 404,
-        message: 'Endpoint not found (404). Tried: $url',
-        body: <String, dynamic>{'status': 404},
-      );
-    }
-    return _handleResponse(response);
-  }
+  ) =>
+      _ApiServiceAuth.sendPhoneVerificationCode(phoneNumber);
 
-  /// Verify phone with 6-digit code.
   static Future<Map<String, dynamic>> verifyPhone(
     String phoneNumber,
     String code,
-  ) async {
-    final normalizedPhone = normalizePhoneNumber(phoneNumber);
-    final apiRoot = baseUrl.endsWith('/api') ? baseUrl : '$baseUrl/api';
-    final url = '$apiRoot/auth/verify-phone';
-    final response = await _httpClient
-        .post(
-          Uri.parse(url),
-          headers: _getHeaders(includeAuth: false),
-          body: json.encode({
-            'phone_number': normalizedPhone,
-            'verification_code': code,
-          }),
-        )
-        .timeout(_defaultTimeout);
-    if (response.statusCode == 404) {
-      throw ApiException(
-        statusCode: 404,
-        message: 'Endpoint not found (404). Tried: $url',
-        body: <String, dynamic>{'status': 404},
-      );
-    }
-    return _handleResponse(response);
-  }
+  ) =>
+      _ApiServiceAuth.verifyPhone(phoneNumber, code);
 
-  // User profile methods
-  static Future<Map<String, dynamic>> getProfile() async {
-    return await _makeAuthenticatedRequest('GET', '/auth/me');
-  }
+  static Future<Map<String, dynamic>> getProfile() => _ApiServiceAuth.getProfile();
 
-  static Future<Map<String, dynamic>> getDealerProfile(String dealerPublicId) async {
-    final id = Uri.encodeComponent(dealerPublicId.trim());
-    final response = await _httpClient
-        .get(
-          Uri.parse('$baseUrl/dealers/$id'),
-          headers: _getHeaders(includeAuth: false),
-        )
-        .timeout(_defaultTimeout);
-    return _handleResponse(response);
-  }
+  static Future<Map<String, dynamic>> getDealerProfile(String dealerPublicId) =>
+      _ApiServiceAuth.getDealerProfile(dealerPublicId);
 
-  /// Public directory search for approved dealerships (`GET /dealers`).
   static Future<Map<String, dynamic>> searchDealers({
     String? q,
     int page = 1,
     int perPage = 20,
-  }) async {
-    final params = <String, String>{
-      'page': page.toString(),
-      'per_page': perPage.toString(),
-    };
-    final query = (q ?? '').trim();
-    if (query.isNotEmpty) params['q'] = query;
-    final uri = Uri.parse('$baseUrl/dealers').replace(queryParameters: params);
-    final response = await _httpClient
-        .get(uri, headers: _getHeaders(includeAuth: false))
-        .timeout(_defaultTimeout);
-    return _handleResponse(response);
-  }
+  }) =>
+      _ApiServiceAuth.searchDealers(q: q, page: page, perPage: perPage);
 
   static Future<Map<String, dynamic>> updateDealerProfile(
     Map<String, dynamic> dealerData,
-  ) async {
-    return await _makeAuthenticatedRequest(
-      'PUT',
-      '/user/dealer-profile',
-      body: dealerData,
-    );
-  }
+  ) =>
+      _ApiServiceAuth.updateDealerProfile(dealerData);
 
-  /// Admin: users with `dealer_status == pending` (requires `is_admin` JWT).
-  static Future<Map<String, dynamic>> adminDealersPending() async {
-    return await _makeAuthenticatedRequest('GET', '/admin/dealers/pending');
-  }
+  static Future<Map<String, dynamic>> adminDealersPending() =>
+      _ApiServiceAuth.adminDealersPending();
 
-  /// Admin: approve pending dealer (`account_type` becomes dealer, status approved).
-  static Future<Map<String, dynamic>> adminApproveDealer(String publicUserId) async {
-    final id = Uri.encodeComponent(publicUserId.trim());
-    return await _makeAuthenticatedRequest('POST', '/admin/dealers/$id/approve');
-  }
+  static Future<Map<String, dynamic>> adminApproveDealer(String publicUserId) =>
+      _ApiServiceAuth.adminApproveDealer(publicUserId);
 
-  /// Admin: reject pending dealer application.
   static Future<Map<String, dynamic>> adminRejectDealer(
     String publicUserId, {
     String? reason,
-  }) async {
-    final id = Uri.encodeComponent(publicUserId.trim());
-    final body = <String, dynamic>{};
-    if (reason != null && reason.trim().isNotEmpty) {
-      body['reason'] = reason.trim();
-    }
-    return await _makeAuthenticatedRequest(
-      'POST',
-      '/admin/dealers/$id/reject',
-      body: body.isNotEmpty ? body : null,
-    );
-  }
+  }) =>
+      _ApiServiceAuth.adminRejectDealer(publicUserId, reason: reason);
 
   static Future<Map<String, dynamic>> updateProfile(
     Map<String, dynamic> profileData,
-  ) async {
-    return await _makeAuthenticatedRequest(
-      'PUT',
-      '/user/profile',
-      body: profileData,
-    );
-  }
+  ) =>
+      _ApiServiceAuth.updateProfile(profileData);
 
-  static Future<Map<String, dynamic>> uploadProfilePicture(
-    XFile imageFile,
-  ) async {
-    return _sendAuthenticatedMultipart(() async {
-      final request = http.MultipartRequest(
-        'POST',
-        Uri.parse('$baseUrl/user/upload-profile-picture'),
-      );
-      request.files.add(
-        await http.MultipartFile.fromPath('file', imageFile.path),
-      );
-      return request;
-    });
-  }
+  static Future<Map<String, dynamic>> uploadProfilePicture(XFile imageFile) =>
+      _ApiServiceAuth.uploadProfilePicture(imageFile);
 
-  static Future<Map<String, dynamic>> uploadDealerCoverPicture(
-    XFile imageFile,
-  ) async {
-    return _sendAuthenticatedMultipart(() async {
-      final request = http.MultipartRequest(
-        'POST',
-        Uri.parse('$baseUrl/user/upload-dealer-cover'),
-      );
-      request.files.add(
-        await http.MultipartFile.fromPath('file', imageFile.path),
-      );
-      return request;
-    });
-  }
+  static Future<Map<String, dynamic>> uploadDealerCoverPicture(XFile imageFile) =>
+      _ApiServiceAuth.uploadDealerCoverPicture(imageFile);
 
-  // Car listing methods
+  // Listings, favorites, saved searches (api/api_listings.dart)
   static Future<Map<String, dynamic>> getCars({
     int page = 1,
     int perPage = 20,
@@ -874,269 +599,127 @@ class ApiService {
     String? transmission,
     String? driveType,
     String? engineType,
-  }) async {
-    final queryParams = <String, String>{
-      'page': page.toString(),
-      'per_page': perPage.toString(),
-    };
+  }) =>
+      _ApiServiceListings.getCars(
+        page: page,
+        perPage: perPage,
+        brand: brand,
+        model: model,
+        yearMin: yearMin,
+        yearMax: yearMax,
+        priceMin: priceMin,
+        priceMax: priceMax,
+        location: location,
+        condition: condition,
+        bodyType: bodyType,
+        transmission: transmission,
+        driveType: driveType,
+        engineType: engineType,
+      );
 
-    if (brand != null) queryParams['brand'] = brand;
-    if (model != null) queryParams['model'] = model;
-    if (yearMin != null) queryParams['year_min'] = yearMin.toString();
-    if (yearMax != null) queryParams['year_max'] = yearMax.toString();
-    if (priceMin != null) queryParams['price_min'] = priceMin.toString();
-    if (priceMax != null) queryParams['price_max'] = priceMax.toString();
-    if (location != null) queryParams['location'] = location;
-    if (condition != null) queryParams['condition'] = condition;
-    if (bodyType != null) queryParams['body_type'] = bodyType;
-    if (transmission != null) queryParams['transmission'] = transmission;
-    if (driveType != null) queryParams['drive_type'] = driveType;
-    if (engineType != null) queryParams['engine_type'] = engineType;
-
-    final queryString = queryParams.entries
-        .map((e) => '${e.key}=${Uri.encodeComponent(e.value)}')
-        .join('&');
-
-    final response = await _httpClient
-        .get(
-          Uri.parse('$baseUrl/cars?$queryString'),
-          headers: _getHeaders(includeAuth: false),
-        )
-        .timeout(_defaultTimeout);
-
-    return _handleResponse(response);
-  }
-
-  static Future<Map<String, dynamic>> getCar(String carId) async {
-    await _ensureTokenLoaded();
-    final response = await _httpClient
-        .get(
-          Uri.parse('$baseUrl/cars/$carId'),
-          headers: _getHeaders(includeAuth: true),
-        )
-        .timeout(_defaultTimeout);
-
-    return unwrapCarApiPayload(_handleResponse(response));
-  }
+  static Future<Map<String, dynamic>> getCar(String carId) =>
+      _ApiServiceListings.getCar(carId);
 
   static Future<Map<String, dynamic>> createCar(
     Map<String, dynamic> carData,
-  ) async {
-    return await _makeAuthenticatedRequest('POST', '/cars', body: carData);
-  }
+  ) =>
+      _ApiServiceListings.createCar(carData);
 
   static Future<Map<String, dynamic>> updateCar(
     String carId,
     Map<String, dynamic> carData,
-  ) async {
-    final id = Uri.encodeComponent(carId.trim());
-    return await _makeAuthenticatedRequest(
-      'PUT',
-      '/cars/$id',
-      body: carData,
-    );
-  }
+  ) =>
+      _ApiServiceListings.updateCar(carId, carData);
 
-  static Future<Map<String, dynamic>> deleteCar(String carId) async {
-    final id = Uri.encodeComponent(carId.trim());
-    return await _makeAuthenticatedRequest('DELETE', '/cars/$id');
-  }
+  static Future<Map<String, dynamic>> deleteCar(String carId) =>
+      _ApiServiceListings.deleteCar(carId);
 
-  static Future<Map<String, dynamic>> markListingSold(String carId) async {
-    final id = Uri.encodeComponent(carId.trim());
-    return await _makeAuthenticatedRequest('POST', '/cars/$id/mark-sold');
-  }
+  static Future<Map<String, dynamic>> markListingSold(String carId) =>
+      _ApiServiceListings.markListingSold(carId);
 
-  static Future<Map<String, dynamic>> markListingActive(String carId) async {
-    final id = Uri.encodeComponent(carId.trim());
-    return await _makeAuthenticatedRequest('POST', '/cars/$id/mark-active');
-  }
+  static Future<Map<String, dynamic>> markListingActive(String carId) =>
+      _ApiServiceListings.markListingActive(carId);
 
   static Future<Map<String, dynamic>> uploadCarImages(
     String carId,
     List<XFile> imageFiles, {
     bool blurPlates = false,
-    /// Backend: `kind=damage` for crash/damage disclosure (excluded from main gallery).
     String imageKind = 'listing',
-  }) async {
-    // App-default behavior: do NOT blur unless user explicitly requests it.
-    // FORCE_SKIP_BLUR remains a hard override for dev/testing builds.
-    final bool skipBlur = forceSkipBlur() || !blurPlates;
-    final qp = <String>[];
-    if (skipBlur) qp.add('skip_blur=1');
-    if (imageKind.toLowerCase() == 'damage') qp.add('kind=damage');
-    final String query = qp.isEmpty ? '' : '?${qp.join('&')}';
-    final data = await _sendAuthenticatedMultipart(() async {
-      final request = http.MultipartRequest(
-        'POST',
-        Uri.parse('$baseUrl/cars/$carId/images$query'),
+  }) =>
+      _ApiServiceListings.uploadCarImages(
+        carId,
+        imageFiles,
+        blurPlates: blurPlates,
+        imageKind: imageKind,
       );
-      // Add files once under 'images' (backend accepts 'files', 'images', 'image', etc. and extends one list — do not send same file under multiple keys or backend gets duplicates)
-      for (final file in imageFiles) {
-        request.files.add(await http.MultipartFile.fromPath('images', file.path));
-      }
-      return request;
-    });
-    // Backend compatibility: some endpoints return { uploaded: [...] }
-    // Normalize to { images: [...] } expected by UI services
-    if (!data.containsKey('images') && data.containsKey('uploaded')) {
-      data['images'] = List.from(data['uploaded'] as List);
-    }
-    return data;
-  }
 
   static Future<Map<String, dynamic>> attachCarImages(
     String carId,
     List<String> paths, {
     String kind = 'listing',
-  }) async {
-    final body = <String, dynamic>{
-      'paths': paths,
-      if (kind.toLowerCase() == 'damage') 'kind': 'damage',
-    };
-    return await _makeAuthenticatedRequest(
-      'POST',
-      '/cars/$carId/images/attach',
-      body: body,
-    );
-  }
+  }) =>
+      _ApiServiceListings.attachCarImages(carId, paths, kind: kind);
 
-  /// Request a presigned R2 PUT URL for one image. Returns { upload_url, key, public_url? }.
   static Future<Map<String, dynamic>> signR2ImageUpload({
     String? filename,
     String? contentType,
-  }) async {
-    final body = <String, dynamic>{};
-    if (filename != null && filename.isNotEmpty) {
-      body['filename'] = filename;
-    }
-    if (contentType != null && contentType.isNotEmpty) {
-      body['content_type'] = contentType;
-    }
-    return await _makeAuthenticatedRequest(
-      'POST',
-      '/media/r2/sign-upload',
-      body: body.isNotEmpty ? body : null,
-    );
-  }
-
-  /// Upload file bytes to a presigned PUT URL (e.g. R2). No auth header.
-  static Future<void> uploadToSignedUpload(String uploadUrl, XFile file) async {
-    final bytes = await file.readAsBytes();
-    final uri = Uri.parse(uploadUrl);
-    final response = await _httpClient
-        .put(
-          uri,
-          body: bytes,
-          headers: <String, String>{
-            'Content-Type': file.mimeType ?? 'image/jpeg',
-          },
-        )
-        .timeout(_uploadTimeout);
-    if (response.statusCode < 200 || response.statusCode >= 300) {
-      throw ApiException(
-        statusCode: response.statusCode,
-        message: response.body.isNotEmpty ? response.body : 'Upload failed',
+  }) =>
+      _ApiServiceListings.signR2ImageUpload(
+        filename: filename,
+        contentType: contentType,
       );
-    }
-  }
 
-  /// Attach image URLs (e.g. R2 public URLs) to a car listing.
+  static Future<void> uploadToSignedUpload(String uploadUrl, XFile file) =>
+      _ApiServiceListings.uploadToSignedUpload(uploadUrl, file);
+
   static Future<Map<String, dynamic>> attachCarImageUrls(
     String carId,
     List<String> urls, {
     String kind = 'listing',
-  }) async {
-    final body = <String, dynamic>{
-      'urls': urls,
-      if (kind.toLowerCase() == 'damage') 'kind': 'damage',
-    };
-    return await _makeAuthenticatedRequest(
-      'POST',
-      '/cars/$carId/images/attach',
-      body: body,
-    );
-  }
+  }) =>
+      _ApiServiceListings.attachCarImageUrls(carId, urls, kind: kind);
 
-  static List<String>? getLastProcessedServerPaths() {
-    // Attach-based flow removed; always return null so callers skip.
-    return null;
-  }
+  static List<String>? getLastProcessedServerPaths() =>
+      _ApiServiceListings.getLastProcessedServerPaths();
 
   static Future<Map<String, dynamic>> uploadCarVideos(
     String carId,
     List<XFile> videoFiles,
-  ) async {
-    final data = await _sendAuthenticatedMultipart(() async {
-      final request = http.MultipartRequest(
-        'POST',
-        Uri.parse('$baseUrl/cars/$carId/videos'),
-      );
-      // Backend expects `request.files["files"]` (list).
-      for (final file in videoFiles) {
-        request.files.add(await http.MultipartFile.fromPath('files', file.path));
-      }
-      return request;
-    });
-    // Normalize { uploaded: [...] } -> { videos: [...] }
-    if (!data.containsKey('videos') && data.containsKey('uploaded')) {
-      data['videos'] = List.from(data['uploaded'] as List);
-    }
-    return data;
-  }
+  ) =>
+      _ApiServiceListings.uploadCarVideos(carId, videoFiles);
 
-  // Favorites methods
   static Future<Map<String, dynamic>> getFavorites({
     int page = 1,
     int perPage = 20,
-  }) async {
-    return await _makeAuthenticatedRequest(
-      'GET',
-      '/user/favorites?page=$page&per_page=$perPage',
-    );
-  }
+  }) =>
+      _ApiServiceListings.getFavorites(page: page, perPage: perPage);
 
-  static Future<Map<String, dynamic>> toggleFavorite(String carId) async {
-    return await _makeAuthenticatedRequest('POST', '/cars/$carId/favorite');
-  }
+  static Future<Map<String, dynamic>> toggleFavorite(String carId) =>
+      _ApiServiceListings.toggleFavorite(carId);
 
-  static Future<bool> isCarFavorited(String carId) async {
-    final res = await _makeAuthenticatedRequest('GET', '/cars/$carId/favorite');
-    return (res['is_favorited'] == true) || (res['favorited'] == true);
-  }
+  static Future<bool> isCarFavorited(String carId) =>
+      _ApiServiceListings.isCarFavorited(carId);
 
-  // Saved searches (alerts & retention)
-  static Future<Map<String, dynamic>> getSavedSearches() async {
-    return await _makeAuthenticatedRequest('GET', '/saved-searches');
-  }
+  static Future<Map<String, dynamic>> getSavedSearches() =>
+      _ApiServiceListings.getSavedSearches();
 
   static Future<Map<String, dynamic>> syncSavedSearches(
     List<Map<String, dynamic>> items,
-  ) async {
-    return await _makeAuthenticatedRequest(
-      'POST',
-      '/saved-searches/sync',
-      body: {'items': items},
-    );
-  }
+  ) =>
+      _ApiServiceListings.syncSavedSearches(items);
 
   static Future<Map<String, dynamic>> createSavedSearch({
     required String name,
     required Map<String, dynamic> filters,
     bool notify = true,
     bool autoSaved = false,
-  }) async {
-    return await _makeAuthenticatedRequest(
-      'POST',
-      '/saved-searches',
-      body: {
-        'name': name,
-        'filters': filters,
-        'notify': notify,
-        'auto_saved': autoSaved,
-      },
-    );
-  }
+  }) =>
+      _ApiServiceListings.createSavedSearch(
+        name: name,
+        filters: filters,
+        notify: notify,
+        autoSaved: autoSaved,
+      );
 
   static Future<Map<String, dynamic>> updateSavedSearch(
     String searchId, {
@@ -1144,63 +727,38 @@ class ApiService {
     Map<String, dynamic>? filters,
     bool? notify,
     bool? autoSaved,
-  }) async {
-    final body = <String, dynamic>{};
-    if (name != null) body['name'] = name;
-    if (filters != null) body['filters'] = filters;
-    if (notify != null) body['notify'] = notify;
-    if (autoSaved != null) body['auto_saved'] = autoSaved;
-    return await _makeAuthenticatedRequest(
-      'PUT',
-      '/saved-searches/$searchId',
-      body: body,
-    );
-  }
+  }) =>
+      _ApiServiceListings.updateSavedSearch(
+        searchId,
+        name: name,
+        filters: filters,
+        notify: notify,
+        autoSaved: autoSaved,
+      );
 
-  static Future<void> deleteSavedSearch(String searchId) async {
-    await _makeAuthenticatedRequest('DELETE', '/saved-searches/$searchId');
-  }
+  static Future<void> deleteSavedSearch(String searchId) =>
+      _ApiServiceListings.deleteSavedSearch(searchId);
 
   static Future<Map<String, dynamic>> getRecentlyViewed({
     int page = 1,
     int perPage = 20,
-  }) async {
-    return await _makeAuthenticatedRequest(
-      'GET',
-      '/user/recently-viewed?page=$page&per_page=$perPage',
-    );
-  }
+  }) =>
+      _ApiServiceListings.getRecentlyViewed(page: page, perPage: perPage);
 
-  /// Record a listing view for the Recently viewed screen.
-  static Future<void> recordListingView(String listingId) async {
-    final id = listingId.trim();
-    if (id.isEmpty) return;
-    await _makeAuthenticatedRequest(
-      'POST',
-      '/user/recently-viewed',
-      body: {'listing_id': id},
-    );
-  }
+  static Future<void> recordListingView(String listingId) =>
+      _ApiServiceListings.recordListingView(listingId);
 
-  static Future<void> clearRecentlyViewed() async {
-    await _makeAuthenticatedRequest('DELETE', '/user/recently-viewed');
-  }
+  static Future<void> clearRecentlyViewed() =>
+      _ApiServiceListings.clearRecentlyViewed();
 
-  static Future<void> deleteRecentlyViewedListing(String listingId) async {
-    final id = Uri.encodeComponent(listingId.trim());
-    if (id.isEmpty) return;
-    await _makeAuthenticatedRequest('DELETE', '/user/recently-viewed/$id');
-  }
+  static Future<void> deleteRecentlyViewedListing(String listingId) =>
+      _ApiServiceListings.deleteRecentlyViewedListing(listingId);
 
   static Future<Map<String, dynamic>> getMyListings({
     int page = 1,
     int perPage = 20,
-  }) async {
-    return await _makeAuthenticatedRequest(
-      'GET',
-      '/user/my-listings?page=$page&per_page=$perPage',
-    );
-  }
+  }) =>
+      _ApiServiceListings.getMyListings(page: page, perPage: perPage);
 
   // Check if user is authenticated
   static bool get isAuthenticated =>
@@ -1209,123 +767,50 @@ class ApiService {
   // Get current access token
   static String? get accessToken => _accessToken;
 
-  // Chat fallback endpoint (works without Socket.IO connectivity).
+  // Chat HTTP + attachments (api/api_chat.dart)
   static Future<Map<String, dynamic>> sendChatMessageByConversation({
     required String conversationId,
     required String content,
     String? receiverId,
     Map<String, dynamic>? listingPreview,
     String? replyToMessageId,
-  }) async {
-    final payload = <String, dynamic>{'content': content};
-    if (receiverId != null && receiverId.trim().isNotEmpty) {
-      payload['receiver_id'] = receiverId.trim();
-    }
-    if (listingPreview != null && listingPreview.isNotEmpty) {
-      payload['listing_preview'] = listingPreview;
-    }
-    if (replyToMessageId != null && replyToMessageId.trim().isNotEmpty) {
-      payload['reply_to_message_id'] = replyToMessageId.trim();
-    }
-    return await _makeAuthenticatedRequest(
-      'POST',
-      '/chat/$conversationId/send',
-      body: payload,
-    );
-  }
+  }) =>
+      _ApiServiceChat.sendChatMessageByConversation(
+        conversationId: conversationId,
+        content: content,
+        receiverId: receiverId,
+        listingPreview: listingPreview,
+        replyToMessageId: replyToMessageId,
+      );
 
-  static Future<int> getUnreadChatCount() async {
-    final result = await _makeAuthenticatedRequest('GET', '/chat/unread_count');
-    return (result['unread_count'] as num?)?.toInt() ?? 0;
-  }
+  static Future<int> getUnreadChatCount() =>
+      _ApiServiceChat.getUnreadChatCount();
 
-  /// Load chat history for a listing conversation (car public_id or numeric id).
-  ///
-  /// Returns a map with keys: `messages` (list), `page`, `per_page`, `total`, `has_more`.
   static Future<Map<String, dynamic>> getChatMessagesByConversation(
     String conversationId, {
     int page = 1,
     int perPage = 50,
-  }) async {
-    final endpoint =
-        '/chat/$conversationId/messages?page=$page&per_page=$perPage';
-    final url = Uri.parse('$baseUrl$endpoint');
-    Map<String, String> headers = _getHeaders();
+  }) =>
+      _ApiServiceChat.getChatMessagesByConversation(
+        conversationId,
+        page: page,
+        perPage: perPage,
+      );
 
-    http.Response response = await _httpClient
-        .get(url, headers: headers)
-        .timeout(_defaultTimeout);
-
-    if (response.statusCode == 401) {
-      final refreshed = await _refreshAccessToken();
-      if (!refreshed) {
-        await clearTokens();
-        throw Exception('Authentication failed');
-      }
-      headers = _getHeaders();
-      response = await _httpClient.get(url, headers: headers).timeout(_defaultTimeout);
-    }
-
-    if (response.statusCode < 200 || response.statusCode >= 300) {
-      _handleResponse(response);
-    }
-
-    if (response.body.trim().isEmpty) {
-      return {
-        'messages': <Map<String, dynamic>>[],
-        'has_more': false,
-        'total': 0,
-        'page': page,
-      };
-    }
-    final decoded = json.decode(response.body);
-
-    List<Map<String, dynamic>> messages = [];
-    bool hasMore = false;
-    int total = 0;
-
-    if (decoded is Map) {
-      if (decoded['messages'] is List) {
-        messages = (decoded['messages'] as List)
-            .whereType<Map>()
-            .map((m) => Map<String, dynamic>.from(m.cast<String, dynamic>()))
-            .toList();
-      }
-      hasMore = decoded['has_more'] == true;
-      total = (decoded['total'] as num?)?.toInt() ?? messages.length;
-    } else if (decoded is List) {
-      messages = decoded
-          .whereType<Map>()
-          .map((m) => Map<String, dynamic>.from(m.cast<String, dynamic>()))
-          .toList();
-    }
-
-    return {
-      'messages': messages,
-      'has_more': hasMore,
-      'total': total,
-      'page': page,
-    };
-  }
-
-  /// Upload an image and send it as a chat message.
   static Future<Map<String, dynamic>> sendChatImage({
     required String conversationId,
     required XFile imageFile,
     String? receiverId,
     String? caption,
     String? replyToMessageId,
-  }) async {
-    return _sendChatAttachment(
-      conversationId: conversationId,
-      endpointSuffix: 'send_image',
-      fieldName: 'image',
-      file: imageFile,
-      receiverId: receiverId,
-      caption: caption,
-      replyToMessageId: replyToMessageId,
-    );
-  }
+  }) =>
+      _ApiServiceChat.sendChatImage(
+        conversationId: conversationId,
+        imageFile: imageFile,
+        receiverId: receiverId,
+        caption: caption,
+        replyToMessageId: replyToMessageId,
+      );
 
   static Future<Map<String, dynamic>> sendChatVideo({
     required String conversationId,
@@ -1333,33 +818,27 @@ class ApiService {
     String? receiverId,
     String? caption,
     String? replyToMessageId,
-  }) async {
-    return _sendChatAttachment(
-      conversationId: conversationId,
-      endpointSuffix: 'send_video',
-      fieldName: 'video',
-      file: videoFile,
-      receiverId: receiverId,
-      caption: caption,
-      replyToMessageId: replyToMessageId,
-    );
-  }
+  }) =>
+      _ApiServiceChat.sendChatVideo(
+        conversationId: conversationId,
+        videoFile: videoFile,
+        receiverId: receiverId,
+        caption: caption,
+        replyToMessageId: replyToMessageId,
+      );
 
   static Future<Map<String, dynamic>> sendChatAudio({
     required String conversationId,
     required XFile audioFile,
     String? receiverId,
     String? replyToMessageId,
-  }) async {
-    return _sendChatAttachment(
-      conversationId: conversationId,
-      endpointSuffix: 'send_audio',
-      fieldName: 'audio',
-      file: audioFile,
-      receiverId: receiverId,
-      replyToMessageId: replyToMessageId,
-    );
-  }
+  }) =>
+      _ApiServiceChat.sendChatAudio(
+        conversationId: conversationId,
+        audioFile: audioFile,
+        receiverId: receiverId,
+        replyToMessageId: replyToMessageId,
+      );
 
   static Future<Map<String, dynamic>> sendChatMediaGroup({
     required String conversationId,
@@ -1368,294 +847,111 @@ class ApiService {
     String? caption,
     String? replyToMessageId,
     Map<String, dynamic>? listingPreview,
-  }) async {
-    if (files.isEmpty) {
-      throw Exception('No attachments selected');
-    }
-    final url = Uri.parse('$baseUrl/chat/$conversationId/send_media_group');
-
-    Future<http.Response> makeRequest() async {
-      final req = http.MultipartRequest('POST', url);
-      req.headers.addAll(_getHeaders());
-      for (final file in files) {
-        req.files.add(
-          await http.MultipartFile.fromPath('attachments', file.path),
-        );
-      }
-      if (receiverId != null && receiverId.trim().isNotEmpty) {
-        req.fields['receiver_id'] = receiverId.trim();
-      }
-      if (caption != null && caption.trim().isNotEmpty) {
-        req.fields['content'] = caption.trim();
-      }
-      if (replyToMessageId != null && replyToMessageId.trim().isNotEmpty) {
-        req.fields['reply_to_message_id'] = replyToMessageId.trim();
-      }
-      if (listingPreview != null && listingPreview.isNotEmpty) {
-        req.fields['listing_preview'] = json.encode(listingPreview);
-      }
-      final streamedResponse = await req.send().timeout(_uploadTimeout);
-      return http.Response.fromStream(streamedResponse);
-    }
-
-    var response = await makeRequest();
-    if (response.statusCode == 401) {
-      final refreshed = await _refreshAccessToken();
-      if (!refreshed) {
-        await clearTokens();
-        throw Exception('Authentication failed');
-      }
-      response = await makeRequest();
-    }
-
-    if (response.statusCode < 200 || response.statusCode >= 300) {
-      _handleResponse(response);
-    }
-    return json.decode(response.body) as Map<String, dynamic>;
-  }
-
-  static Future<Map<String, dynamic>> _sendChatAttachment({
-    required String conversationId,
-    required String endpointSuffix,
-    required String fieldName,
-    required XFile file,
-    String? receiverId,
-    String? caption,
-    String? replyToMessageId,
-  }) async {
-    final url = Uri.parse('$baseUrl/chat/$conversationId/$endpointSuffix');
-
-    Future<http.Response> makeRequest() async {
-      final req = http.MultipartRequest('POST', url);
-      req.headers.addAll(_getHeaders());
-      req.files.add(await http.MultipartFile.fromPath(fieldName, file.path));
-      if (receiverId != null && receiverId.trim().isNotEmpty) {
-        req.fields['receiver_id'] = receiverId.trim();
-      }
-      if (caption != null && caption.trim().isNotEmpty) {
-        req.fields['content'] = caption.trim();
-      }
-      if (replyToMessageId != null && replyToMessageId.trim().isNotEmpty) {
-        req.fields['reply_to_message_id'] = replyToMessageId.trim();
-      }
-      final streamedResponse = await req.send().timeout(_uploadTimeout);
-      return http.Response.fromStream(streamedResponse);
-    }
-
-    var response = await makeRequest();
-    if (response.statusCode == 401) {
-      final refreshed = await _refreshAccessToken();
-      if (!refreshed) {
-        await clearTokens();
-        throw Exception('Authentication failed');
-      }
-      response = await makeRequest();
-    }
-
-    if (response.statusCode < 200 || response.statusCode >= 300) {
-      _handleResponse(response);
-    }
-    return json.decode(response.body) as Map<String, dynamic>;
-  }
+  }) =>
+      _ApiServiceChat.sendChatMediaGroup(
+        conversationId: conversationId,
+        files: files,
+        receiverId: receiverId,
+        caption: caption,
+        replyToMessageId: replyToMessageId,
+        listingPreview: listingPreview,
+      );
 
   static Future<Map<String, dynamic>> editChatMessage({
     required String messageId,
     required String content,
     List<Map<String, dynamic>>? attachments,
-  }) async {
-    final body = <String, dynamic>{'content': content};
-    if (attachments != null) {
-      body['attachments'] = attachments;
-    }
-    return await _makeAuthenticatedRequest(
-      'PATCH',
-      '/chat/messages/$messageId',
-      body: body,
-    );
-  }
+  }) =>
+      _ApiServiceChat.editChatMessage(
+        messageId: messageId,
+        content: content,
+        attachments: attachments,
+      );
 
   static Future<Map<String, dynamic>> deleteChatMessage({
     required String messageId,
-  }) async {
-    return await _makeAuthenticatedRequest(
-      'DELETE',
-      '/chat/messages/$messageId',
-    );
-  }
+  }) =>
+      _ApiServiceChat.deleteChatMessage(messageId: messageId);
 
-  /// Register FCM push notification token with the backend.
-  /// Pass [enabled: false] to clear the stored token (user disabled push).
+  static Future<List<Map<String, dynamic>>> getChats() =>
+      _ApiServiceChat.getChats();
+
+  // Push, moderation, reports, blocks (api/api_admin.dart)
   static Future<void> registerPushToken(
     String token, {
     bool enabled = true,
-  }) async {
-    await _makeAuthenticatedRequest(
-      'POST',
-      '/users/push_token',
-      body: {
-        if (!enabled) 'enabled': false else 'token': token.trim(),
-      },
-    );
-  }
+  }) =>
+      _ApiServiceAdmin.registerPushToken(token, enabled: enabled);
 
-  /// Whether this account has an FCM token stored and the server can send push.
-  static Future<Map<String, dynamic>> getPushStatus() async {
-    return _makeAuthenticatedRequest('GET', '/users/push_status');
-  }
+  static Future<Map<String, dynamic>> getPushStatus() =>
+      _ApiServiceAdmin.getPushStatus();
 
-  /// Ask the server to send a test notification to this device.
-  static Future<Map<String, dynamic>> sendTestPush() async {
-    return _makeAuthenticatedRequest('POST', '/users/push_test');
-  }
+  static Future<Map<String, dynamic>> sendTestPush() =>
+      _ApiServiceAdmin.sendTestPush();
 
-  /// Block a user.
-  static Future<void> blockUser(String userId) async {
-    await _makeAuthenticatedRequest('POST', '/users/$userId/block');
-  }
+  static Future<void> blockUser(String userId) =>
+      _ApiServiceAdmin.blockUser(userId);
 
-  /// Unblock a user.
-  static Future<void> unblockUser(String userId) async {
-    await _makeAuthenticatedRequest('POST', '/users/$userId/unblock');
-  }
+  static Future<void> unblockUser(String userId) =>
+      _ApiServiceAdmin.unblockUser(userId);
 
-  /// Report a user.
   static Future<void> reportUser(
     String userId, {
     required String reason,
     String? details,
-  }) async {
-    final id = Uri.encodeComponent(userId.trim());
-    await _makeAuthenticatedRequest(
-      'POST',
-      '/users/$id/report',
-      body: {
-        'reason': reason,
-        if (details != null && details.trim().isNotEmpty)
-          'details': details.trim(),
-      },
-    );
-  }
+  }) =>
+      _ApiServiceAdmin.reportUser(
+        userId,
+        reason: reason,
+        details: details,
+      );
 
-  /// Report a listing.
   static Future<void> reportListing(
     String listingId, {
     required String reason,
     String? details,
-  }) async {
-    final id = Uri.encodeComponent(listingId.trim());
-    await _makeAuthenticatedRequest(
-      'POST',
-      '/cars/$id/report',
-      body: {
-        'reason': reason,
-        if (details != null && details.trim().isNotEmpty)
-          'details': details.trim(),
-      },
-    );
-  }
+  }) =>
+      _ApiServiceAdmin.reportListing(
+        listingId,
+        reason: reason,
+        details: details,
+      );
 
-  /// Admin: list user and listing reports.
   static Future<Map<String, dynamic>> adminListReports({
     String status = 'pending',
     String type = 'all',
     int page = 1,
     int perPage = 20,
-  }) async {
-    final q = Uri(queryParameters: {
-      'status': status,
-      'type': type,
-      'page': '$page',
-      'per_page': '$perPage',
-    });
-    return await _makeAuthenticatedRequest(
-      'GET',
-      '/admin/reports${q.query.isEmpty ? '' : '?${q.query}'}',
-    );
-  }
+  }) =>
+      _ApiServiceAdmin.adminListReports(
+        status: status,
+        type: type,
+        page: page,
+        perPage: perPage,
+      );
 
-  /// Admin: update a user report status.
   static Future<Map<String, dynamic>> adminUpdateUserReport(
     int reportId, {
     required String status,
     String? adminNotes,
-  }) async {
-    return await _makeAuthenticatedRequest(
-      'PATCH',
-      '/admin/reports/user/$reportId',
-      body: {
-        'status': status,
-        if (adminNotes != null && adminNotes.trim().isNotEmpty)
-          'admin_notes': adminNotes.trim(),
-      },
-    );
-  }
+  }) =>
+      _ApiServiceAdmin.adminUpdateUserReport(
+        reportId,
+        status: status,
+        adminNotes: adminNotes,
+      );
 
-  /// Admin: update a listing report status.
   static Future<Map<String, dynamic>> adminUpdateListingReport(
     int reportId, {
     required String status,
     String? adminNotes,
-  }) async {
-    return await _makeAuthenticatedRequest(
-      'PATCH',
-      '/admin/reports/listing/$reportId',
-      body: {
-        'status': status,
-        if (adminNotes != null && adminNotes.trim().isNotEmpty)
-          'admin_notes': adminNotes.trim(),
-      },
-    );
-  }
+  }) =>
+      _ApiServiceAdmin.adminUpdateListingReport(
+        reportId,
+        status: status,
+        adminNotes: adminNotes,
+      );
 
-  /// Get list of blocked user IDs.
-  static Future<List<String>> getBlockedUsers() async {
-    final result = await _makeAuthenticatedRequest('GET', '/users/blocked');
-    final raw = result['blocked_users'];
-    if (raw is List) {
-      return raw.map((e) => e.toString()).toList();
-    }
-    return [];
-  }
-
-  // Load recent chat conversations for the current user.
-  static Future<List<Map<String, dynamic>>> getChats() async {
-    final endpoint = '/chats';
-    final url = Uri.parse('$baseUrl$endpoint');
-    Map<String, String> headers = _getHeaders();
-
-    http.Response response = await _httpClient
-        .get(url, headers: headers)
-        .timeout(_defaultTimeout);
-
-    if (response.statusCode == 401) {
-      final refreshed = await _refreshAccessToken();
-      if (!refreshed) {
-        await clearTokens();
-        throw Exception('Authentication failed');
-      }
-      headers = _getHeaders();
-      response = await _httpClient.get(url, headers: headers).timeout(_defaultTimeout);
-    }
-
-    if (response.statusCode < 200 || response.statusCode >= 300) {
-      _handleResponse(response); // Throws ApiException.
-    }
-
-    if (response.body.trim().isEmpty) return <Map<String, dynamic>>[];
-    final decoded = json.decode(response.body);
-    if (decoded is List) {
-      return decoded
-          .whereType<Map>()
-          .map((m) => Map<String, dynamic>.from(m.cast<String, dynamic>()))
-          .toList();
-    }
-    if (decoded is Map && decoded['chats'] is List) {
-      final raw = decoded['chats'] as List;
-      return raw
-          .whereType<Map>()
-          .map((m) => Map<String, dynamic>.from(m.cast<String, dynamic>()))
-          .toList();
-    }
-    return <Map<String, dynamic>>[];
-  }
+  static Future<List<String>> getBlockedUsers() =>
+      _ApiServiceAdmin.getBlockedUsers();
 }

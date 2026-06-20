@@ -1,6 +1,7 @@
 import 'dart:convert';
 
 import 'package:shared_preferences/shared_preferences.dart';
+import '../../shared/debug/app_log.dart';
 
 class SellListingDraftPrefs {
   static const String _prefix = 'sell_listing_draft_v1_';
@@ -32,7 +33,7 @@ class SellListingDraftPrefs {
           return Map<String, dynamic>.from(decoded.cast<String, dynamic>());
         }
       }
-    } catch (_) {}
+    } catch (e, st) { logNonFatal(e, st); }
     return null;
   }
 

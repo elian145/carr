@@ -57,14 +57,14 @@ class _EditProfilePageState extends State<EditProfilePage> {
   Color _cardFill(BuildContext context) {
     if (_shellLight(context)) return Colors.white;
     return Color.alphaBlend(
-      Colors.white.withOpacity(0.085),
+      Colors.white.withValues(alpha: 0.085),
       AppThemes.darkHomeShellBackground,
     );
   }
 
   Color _cardBorderColor(BuildContext context) {
     if (_shellLight(context)) return const Color(0xFFE0E0E0);
-    return Colors.white.withOpacity(0.12);
+    return Colors.white.withValues(alpha: 0.12);
   }
 
   Color _primaryInk(BuildContext context) {
@@ -79,12 +79,12 @@ class _EditProfilePageState extends State<EditProfilePage> {
 
   Color _fieldFill(BuildContext context) {
     if (_shellLight(context)) return Colors.grey[50]!;
-    return Colors.white.withOpacity(0.06);
+    return Colors.white.withValues(alpha: 0.06);
   }
 
   Color _fieldBorder(BuildContext context) {
     if (_shellLight(context)) return Colors.grey[300]!;
-    return Colors.white.withOpacity(0.14);
+    return Colors.white.withValues(alpha: 0.14);
   }
 
   BoxDecoration _cardDecoration(BuildContext context, {double radius = 16}) {
@@ -95,7 +95,7 @@ class _EditProfilePageState extends State<EditProfilePage> {
       border: Border.all(color: _cardBorderColor(context), width: 1),
       boxShadow: [
         BoxShadow(
-          color: Colors.black.withOpacity(light ? 0.05 : 0.45),
+          color: Colors.black.withValues(alpha: light ? 0.05 : 0.45),
           blurRadius: light ? 10 : 18,
           offset: const Offset(0, 6),
         ),
@@ -278,7 +278,7 @@ class _EditProfilePageState extends State<EditProfilePage> {
               CircleAvatar(
                 radius: 60,
                 backgroundColor:
-                    light ? Colors.grey[200]! : Colors.white.withOpacity(0.12),
+                    light ? Colors.grey[200]! : Colors.white.withValues(alpha: 0.12),
                 backgroundImage: _profileImage != null
                     ? FileImage(File(_profileImage!.path))
                     : (_currentProfilePicture != null &&
@@ -476,12 +476,12 @@ class _EditProfilePageState extends State<EditProfilePage> {
                           decoration: BoxDecoration(
                             color: isLightShell
                                 ? Colors.red[50]!
-                                : Colors.red.withOpacity(0.14),
+                                : Colors.red.withValues(alpha: 0.14),
                             borderRadius: BorderRadius.circular(12),
                             border: Border.all(
                               color: isLightShell
                                   ? Colors.red[200]!
-                                  : Colors.red.withOpacity(0.45),
+                                  : Colors.red.withValues(alpha: 0.45),
                             ),
                           ),
                           child: Row(
@@ -511,12 +511,12 @@ class _EditProfilePageState extends State<EditProfilePage> {
                           decoration: BoxDecoration(
                             color: isLightShell
                                 ? Colors.green[50]!
-                                : Colors.green.withOpacity(0.14),
+                                : Colors.green.withValues(alpha: 0.14),
                             borderRadius: BorderRadius.circular(12),
                             border: Border.all(
                               color: isLightShell
                                   ? Colors.green[200]!
-                                  : Colors.green.withOpacity(0.45),
+                                  : Colors.green.withValues(alpha: 0.45),
                             ),
                           ),
                           child: Row(

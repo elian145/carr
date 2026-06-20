@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import logging
+import os
 from datetime import datetime
 
 logger = logging.getLogger(__name__)
@@ -36,6 +37,9 @@ def _socket_current_user(*, optional: bool = False) -> User | None:
         identity = None
 
     if not identity:
+        env = (os.environ.get("APP_ENV") or os.environ.get("FLASK_ENV") or "").strip().lower()
+        if env not in ("development", "testing", "test"):
+            return None
         raw = (request.args.get("token") or "").strip()
         if raw:
             try:

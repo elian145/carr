@@ -1,5 +1,4 @@
 import 'dart:async';
-import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:provider/provider.dart';
@@ -16,6 +15,7 @@ import '../shared/listings/listing_identity.dart';
 import '../shared/prefs/sell_listing_draft_prefs.dart';
 import '../shared/prefs/sell_draft_media_persistence.dart';
 import '../shared/prefs/legacy_sell_draft_prefs.dart';
+import '../shared/debug/app_log.dart';
 
 class SellPage extends StatefulWidget {
   const SellPage({
@@ -1111,7 +1111,7 @@ class _SellPageState extends State<SellPage> {
       } else {
         rethrow;
       }
-    } catch (_) {
+    } catch (e, st) { logNonFatal(e, st); 
       await ApiService.uploadCarImages(carId, files);
     }
   }
@@ -1153,7 +1153,7 @@ class _SellPageState extends State<SellPage> {
       } else {
         rethrow;
       }
-    } catch (_) {
+    } catch (e, st) { logNonFatal(e, st); 
       await ApiService.uploadCarImages(
         carId,
         files,
@@ -1519,12 +1519,12 @@ class _SellPageState extends State<SellPage> {
                   vertical: 10,
                 ),
                 decoration: BoxDecoration(
-                  color: Theme.of(context).colorScheme.primary.withOpacity(0.1),
+                  color: Theme.of(context).colorScheme.primary.withValues(alpha: 0.1),
                   borderRadius: BorderRadius.circular(8),
                   border: Border.all(
                     color: Theme.of(
                       context,
-                    ).colorScheme.primary.withOpacity(0.28),
+                    ).colorScheme.primary.withValues(alpha: 0.28),
                   ),
                 ),
                 child: Text(
@@ -1574,7 +1574,7 @@ class _SellPageState extends State<SellPage> {
               const SizedBox(height: 12),
               DropdownButtonFormField<int>(
                 isExpanded: true,
-                value: _catalogYear != null && years.contains(_catalogYear)
+                initialValue: _catalogYear != null && years.contains(_catalogYear)
                     ? _catalogYear
                     : years.first,
                 decoration: InputDecoration(
@@ -1827,7 +1827,7 @@ class _SellPageState extends State<SellPage> {
       key: ValueKey<String>(
         'eng_$_specDropdownKey$value${constrained?.join() ?? 'full'}',
       ),
-      value: value,
+      initialValue: value,
       isExpanded: true,
       decoration: InputDecoration(
         labelText: loc?.engineTypeLabel ?? 'Engine type',
@@ -1877,7 +1877,7 @@ class _SellPageState extends State<SellPage> {
       key: ValueKey<String>(
         'tr_$_specDropdownKey$value${constrained?.join() ?? 'full'}',
       ),
-      value: value,
+      initialValue: value,
       isExpanded: true,
       decoration: InputDecoration(
         labelText: loc?.transmissionLabel ?? 'Transmission',
@@ -1927,7 +1927,7 @@ class _SellPageState extends State<SellPage> {
       key: ValueKey<String>(
         'drv_$_specDropdownKey$value${constrained?.join() ?? 'full'}',
       ),
-      value: value,
+      initialValue: value,
       isExpanded: true,
       decoration: InputDecoration(
         labelText: loc?.driveType ?? 'Drive type',
@@ -1974,7 +1974,7 @@ class _SellPageState extends State<SellPage> {
       key: ValueKey<String>(
         'body_$_specDropdownKey$value${constrained?.join() ?? 'full'}',
       ),
-      value: value,
+      initialValue: value,
       isExpanded: true,
       decoration: InputDecoration(
         labelText: loc?.bodyTypeLabel ?? 'Body type',
@@ -1999,7 +1999,7 @@ class _SellPageState extends State<SellPage> {
       final pick = _coerceEngineDisplayPick(opts);
       return DropdownButtonFormField<String>(
         key: ValueKey<String>('es_${opts.join('|')}'),
-        value: pick,
+        initialValue: pick,
         isExpanded: true,
         decoration: InputDecoration(
           labelText: 'Engine size (L)',
@@ -2034,7 +2034,7 @@ class _SellPageState extends State<SellPage> {
       final value = (cur != null && opts.contains(cur)) ? cur : opts.first;
       return DropdownButtonFormField<int>(
         key: ValueKey<String>('cy_${opts.join(',')}'),
-        value: value,
+        initialValue: value,
         isExpanded: true,
         decoration: InputDecoration(
           labelText: 'Cylinders',
@@ -2069,7 +2069,7 @@ class _SellPageState extends State<SellPage> {
       final value = opts.contains(cur) ? cur : opts.first;
       return DropdownButtonFormField<String>(
         key: ValueKey<String>('mpg_${opts.join('|')}'),
-        value: value,
+        initialValue: value,
         isExpanded: true,
         decoration: InputDecoration(
           labelText: 'Fuel economy',
@@ -2113,7 +2113,7 @@ class _SellPageState extends State<SellPage> {
       final value = (cur != null && opts.contains(cur)) ? cur : opts.first;
       return DropdownButtonFormField<int>(
         key: ValueKey<String>('seat_${opts.join(',')}'),
-        value: value,
+        initialValue: value,
         isExpanded: true,
         decoration: InputDecoration(
           labelText: 'Seating',
@@ -2178,9 +2178,9 @@ class _SellPageState extends State<SellPage> {
                 Container(
                   padding: const EdgeInsets.all(12),
                   decoration: BoxDecoration(
-                    color: Colors.red.withOpacity(0.1),
+                    color: Colors.red.withValues(alpha: 0.1),
                     borderRadius: BorderRadius.circular(12),
-                    border: Border.all(color: Colors.red.withOpacity(0.25)),
+                    border: Border.all(color: Colors.red.withValues(alpha: 0.25)),
                   ),
                   child: Text(_error!),
                 ),
@@ -2190,9 +2190,9 @@ class _SellPageState extends State<SellPage> {
                 Container(
                   padding: const EdgeInsets.all(12),
                   decoration: BoxDecoration(
-                    color: Colors.orange.withOpacity(0.12),
+                    color: Colors.orange.withValues(alpha: 0.12),
                     borderRadius: BorderRadius.circular(12),
-                    border: Border.all(color: Colors.orange.withOpacity(0.35)),
+                    border: Border.all(color: Colors.orange.withValues(alpha: 0.35)),
                   ),
                   child: Text(_specLoadError!),
                 ),
@@ -2281,7 +2281,7 @@ class _SellPageState extends State<SellPage> {
                 const SizedBox(height: 12),
               ],
               DropdownButtonFormField<String>(
-                value: _selectedBrand,
+                initialValue: _selectedBrand,
                 decoration: InputDecoration(
                   labelText: loc?.brandLabel ?? 'Brand',
                 ),
@@ -2307,7 +2307,7 @@ class _SellPageState extends State<SellPage> {
               ),
               const SizedBox(height: 10),
               DropdownButtonFormField<String>(
-                value: _selectedModel,
+                initialValue: _selectedModel,
                 decoration: InputDecoration(
                   labelText: loc?.modelLabel ?? 'Model',
                 ),
@@ -2334,7 +2334,7 @@ class _SellPageState extends State<SellPage> {
               ),
               const SizedBox(height: 10),
               DropdownButtonFormField<String>(
-                value: _selectedTrim,
+                initialValue: _selectedTrim,
                 decoration: const InputDecoration(labelText: 'Trim'),
                 hint: const Text('Select trim'),
                 items: trimList
@@ -2446,7 +2446,7 @@ class _SellPageState extends State<SellPage> {
                   const SizedBox(width: 10),
                   Expanded(
                     child: DropdownButtonFormField<String>(
-                      value: _currency,
+                      initialValue: _currency,
                       decoration: InputDecoration(
                         labelText: loc?.currencyLabel ?? 'Currency',
                       ),
@@ -2482,7 +2482,7 @@ class _SellPageState extends State<SellPage> {
               _driveTypeField(loc),
               const SizedBox(height: 10),
               DropdownButtonFormField<String>(
-                value: _condition,
+                initialValue: _condition,
                 decoration: InputDecoration(
                   labelText: loc?.conditionLabel ?? 'Condition',
                 ),
@@ -2497,7 +2497,7 @@ class _SellPageState extends State<SellPage> {
               ),
               const SizedBox(height: 10),
               DropdownButtonFormField<String>(
-                value: _titleStatus,
+                initialValue: _titleStatus,
                 decoration: InputDecoration(
                   labelText: loc?.titleStatus ?? 'Title status',
                 ),

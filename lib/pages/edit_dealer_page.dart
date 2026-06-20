@@ -17,6 +17,7 @@ import '../shared/media/media_url.dart';
 import '../theme_provider.dart';
 import '../widgets/dealer_location_map_preview.dart';
 import 'dealer_location_picker_page.dart';
+import '../shared/debug/app_log.dart';
 
 class EditDealerPage extends StatefulWidget {
   const EditDealerPage({super.key});
@@ -59,7 +60,7 @@ class _EditDealerPageState extends State<EditDealerPage> {
   double? _pickLat;
   double? _pickLng;
   late final Map<String, _DayHours> _openingHours;
-  late final Map<String, ExpansionTileController> _openingHoursTileControllers;
+  late final Map<String, ExpansibleController> _openingHoursTileControllers;
   late final Map<String, GlobalKey> _openingHoursTileKeys;
   static const int _maxPhones = 5;
 
@@ -505,7 +506,7 @@ class _EditDealerPageState extends State<EditDealerPage> {
       for (final d in _days) d.key: _DayHours(enabled: false, is24h: false),
     };
     _openingHoursTileControllers = {
-      for (final d in _days) d.key: ExpansionTileController(),
+      for (final d in _days) d.key: ExpansibleController(),
     };
     _openingHoursTileKeys = {
       for (final d in _days) d.key: GlobalKey(),
@@ -540,7 +541,7 @@ class _EditDealerPageState extends State<EditDealerPage> {
         if (decoded is Map) {
           hoursMap = Map<String, dynamic>.from(decoded.cast<String, dynamic>());
         }
-      } catch (_) {}
+      } catch (e, st) { logNonFatal(e, st); }
     }
     if (hoursMap != null) {
       for (final d in _days) {
@@ -790,7 +791,7 @@ class _EditDealerPageState extends State<EditDealerPage> {
     final cardFill = isLightShell
         ? Colors.white
         : Color.alphaBlend(
-            Colors.white.withOpacity(0.06),
+            Colors.white.withValues(alpha: 0.06),
             AppThemes.darkHomeShellBackground,
           );
     final barSurface = Color.alphaBlend(

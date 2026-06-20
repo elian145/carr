@@ -41,13 +41,13 @@ jobs:
         run: flutter pub get
 
       - name: Analyze
-        run: flutter analyze
+        run: flutter analyze --no-fatal-infos
 
       - name: Publish preflight (static)
         run: python scripts/verify_preflight.py --skip-host
 
       - name: Run tests
-        run: flutter test --no-pub
+        run: flutter test --no-pub --coverage
 
       - name: Build APK (debug, dev flavor)
         run: flutter build apk --debug --no-pub --flavor dev

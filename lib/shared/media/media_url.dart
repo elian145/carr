@@ -1,4 +1,5 @@
 import '../../services/config.dart';
+import '../../shared/debug/app_log.dart';
 
 /// Normalize a relative backend media path into an absolute URL that works across
 /// emulator/device and across backend response variants.
@@ -23,7 +24,7 @@ String buildMediaUrl(String rel) {
         final path = uri.path + (uri.query.isNotEmpty ? '?${uri.query}' : '');
         return '$base$path';
       }
-    } catch (_) {}
+    } catch (e, st) { logNonFatal(e, st); }
     return s;
   }
 
@@ -48,7 +49,7 @@ String buildLegacyFullImageUrl(String rel) {
         final path = uri.path + (uri.query.isNotEmpty ? '?${uri.query}' : '');
         return effectiveApiBase() + path;
       }
-    } catch (_) {}
+    } catch (e, st) { logNonFatal(e, st); }
     return s;
   }
   if (s.startsWith('/')) s = s.substring(1);

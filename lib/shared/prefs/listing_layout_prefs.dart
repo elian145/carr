@@ -2,6 +2,7 @@ import 'dart:io' show Platform;
 
 import 'package:flutter/foundation.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import '../../shared/debug/app_log.dart';
 
 /// Global preference for listing layout.
 ///
@@ -28,7 +29,7 @@ class ListingLayoutPrefs {
       final v = _sanitize(sp.getInt(_key) ?? 2);
       columns.value = v;
       return v;
-    } catch (_) {
+    } catch (e, st) { logNonFatal(e, st); 
       columns.value = 2;
       return 2;
     }
@@ -40,7 +41,7 @@ class ListingLayoutPrefs {
     try {
       final sp = await SharedPreferences.getInstance();
       await sp.setInt(_key, v);
-    } catch (_) {}
+    } catch (e, st) { logNonFatal(e, st); }
   }
 
   /// Grid cell aspect ratio (width / height) — matches Home feed so cards do not overflow.

@@ -124,15 +124,10 @@ class _HomePageState extends State<HomePage> {
   int _homeScrollRestoreScheduleGen = 0;
   /// Last known pixels (updated in scroll listener); [dispose] often runs after the viewport dropped [ScrollPosition] clients.
   double _lastHomeScrollPixels = 0;
-  /// Hides the feed until [_restoreHomeScrollWork] jumps to the saved offset (avoids a flash of the top).
-  bool _obscureHomeBodyUntilScrollRestored = false;
   int _homeCarouselResetSeed = 0;
   int _page = 1;
   bool _hasNext = true;
   bool _isLoadingMore = false;
-
-  // Bottom bar tab selection for inline pages (payments, chat, saved, etc.)
-  int? _selectedBottomTabIndex;
 
   /// When the list is empty but a non-default sort is set, auto-fetch once
   /// (no sort/apply UI on the empty state).
@@ -570,7 +565,7 @@ class _HomePageState extends State<HomePage> {
         selectedSortBy = _filterStr(map['sort_by']);
       });
       _syncHomeFilterTextControllersFromSelection();
-    } catch (_) {}
+    } catch (e, st) { logNonFatal(e, st); }
   }
 
   void _syncHomeFilterTextControllersFromSelection() {
@@ -681,25 +676,7 @@ class _HomePageState extends State<HomePage> {
         'sort_by': selectedSortBy,
       };
       await sp.setString(_filtersKey, json.encode(map));
-    } catch (_) {}
-  }
-
-  Future<void> _clearPersistedFilters() async {
-    try {
-      final sp = await SharedPreferences.getInstance();
-      await sp.remove(_filtersKey);
-      await sp.remove(_sellFiltersKey);
-      await sp.remove(_savedSearchesKey);
-      // Clear known caches
-      await sp.remove('cache_favorites');
-      // Attempt to clear dynamic cache_home_* and cache_car_* keys by scanning
-      final allKeys = sp.getKeys();
-      for (final k in allKeys) {
-        if (k.startsWith('cache_home_') || k.startsWith('cache_car_')) {
-          await sp.remove(k);
-        }
-      }
-    } catch (_) {}
+    } catch (e, st) { logNonFatal(e, st); }
   }
 
   Future<void> _clearFiltersOnly() async {
@@ -709,7 +686,7 @@ class _HomePageState extends State<HomePage> {
       await sp.remove(_sellFiltersKey);
       await sp.remove(_savedSearchesKey);
       // Don't clear cached car data to improve reliability
-    } catch (_) {}
+    } catch (e, st) { logNonFatal(e, st); }
   }
 
   Future<void> _saveCurrentSearch() async {
@@ -787,37 +764,11 @@ class _HomePageState extends State<HomePage> {
         context,
         MaterialPageRoute(builder: (_) => SavedSearchesPage(parentState: this)),
       );
-    } catch (_) {}
+    } catch (e, st) { logNonFatal(e, st); }
   }
 
   // Intentionally disabled: auto-saving on every filter change created many duplicates.
   Future<void> _autoSaveSearch() async {}
-
-  // Check if current filters have meaningful values
-  bool _hasMeaningfulFilters() {
-    return (selectedBrand?.isNotEmpty == true) ||
-        (selectedModel?.isNotEmpty == true) ||
-        (selectedCity?.isNotEmpty == true) ||
-        (selectedMinPrice?.isNotEmpty == true) ||
-        (selectedMaxPrice?.isNotEmpty == true) ||
-        (selectedMinYear?.isNotEmpty == true) ||
-        (selectedMaxYear?.isNotEmpty == true) ||
-        (selectedMinMileage?.isNotEmpty == true) ||
-        (selectedMaxMileage?.isNotEmpty == true) ||
-        (selectedCondition?.isNotEmpty == true && selectedCondition != 'Any') ||
-        (selectedTransmission?.isNotEmpty == true &&
-            selectedTransmission != 'Any') ||
-        (selectedFuelType?.isNotEmpty == true && selectedFuelType != 'Any') ||
-        (selectedBodyType?.isNotEmpty == true && selectedBodyType != 'Any') ||
-        (selectedColor?.isNotEmpty == true && selectedColor != 'Any') ||
-        (selectedDriveType?.isNotEmpty == true && selectedDriveType != 'Any') ||
-        (selectedRegionSpecs?.isNotEmpty == true &&
-            isValidCarRegionSpecCode(selectedRegionSpecs)) ||
-        (selectedCylinderCount?.isNotEmpty == true &&
-            selectedCylinderCount != 'Any') ||
-        (selectedSeating?.isNotEmpty == true && selectedSeating != 'Any') ||
-        (selectedTitleStatus?.isNotEmpty == true);
-  }
 
   // Get current filter state as a map
   Map<String, dynamic> _getCurrentFilterState() {
@@ -900,18 +851,6 @@ class _HomePageState extends State<HomePage> {
     }
 
     return filters;
-  }
-
-  // Check if two filter maps are equal
-  bool _areFiltersEqual(
-    Map<String, dynamic> filters1,
-    Map<String, dynamic> filters2,
-  ) {
-    if (filters1.length != filters2.length) return false;
-    for (String key in filters1.keys) {
-      if (filters1[key] != filters2[key]) return false;
-    }
-    return true;
   }
 
   String _generateSearchName() {
@@ -1287,9 +1226,6 @@ class _HomePageState extends State<HomePage> {
       initialScrollOffset: seededOffset > 0 ? seededOffset : 0,
     );
     _primePendingHomeScrollRestoreFromPersistence();
-    // Do not obscure the home body while restoring scroll; in route-replacement
-    // flows this can get stuck and appear as a blank page.
-    _obscureHomeBodyUntilScrollRestored = false;
     _minPriceController = TextEditingController();
     _maxPriceController = TextEditingController();
     _minYearController = TextEditingController();
@@ -1386,7 +1322,7 @@ class _HomePageState extends State<HomePage> {
             pos.pixels >= (pos.maxScrollExtent - 400)) {
           _loadMore();
         }
-      } catch (_) {}
+      } catch (e, st) { logNonFatal(e, st); }
     });
   }
 
@@ -1427,7 +1363,7 @@ class _HomePageState extends State<HomePage> {
             pos.maxScrollExtent,
           );
         }
-      } catch (_) {}
+      } catch (e, st) { logNonFatal(e, st); }
       if (best <= 0 && _pendingHomeScrollRestore != null) {
         best = _pendingHomeScrollRestore!;
       }
@@ -1438,7 +1374,7 @@ class _HomePageState extends State<HomePage> {
       _homeFeedCachePage = _page;
       _homeFeedCacheHasNext = _hasNext;
       _homeScrollController.dispose();
-    } catch (_) {}
+    } catch (e, st) { logNonFatal(e, st); }
     super.dispose();
   }
 
@@ -1452,7 +1388,7 @@ class _HomePageState extends State<HomePage> {
         _HomeFeedScrollPersistence.savePixels(y);
         return;
       }
-    } catch (_) {}
+    } catch (e, st) { logNonFatal(e, st); }
     _pendingHomeScrollRestore = _lastHomeScrollPixels;
     _HomeFeedScrollPersistence.savePixels(_lastHomeScrollPixels);
   }
@@ -1488,8 +1424,7 @@ class _HomePageState extends State<HomePage> {
     const slack = 12.0;
     const maxPrefetchPages = 40;
 
-    try {
-      for (var i = 0; i < 240 && mounted; i++) {
+    for (var i = 0; i < 240 && mounted; i++) {
         if (gen != _homeScrollRestoreScheduleGen) return;
         await _nextLayoutFrame();
         if (!isLoading &&
@@ -1552,13 +1487,6 @@ class _HomePageState extends State<HomePage> {
         return;
       }
       _pendingHomeScrollRestore = null;
-    } finally {
-      if (mounted && gen == _homeScrollRestoreScheduleGen) {
-        setState(() {
-          _obscureHomeBodyUntilScrollRestored = false;
-        });
-      }
-    }
   }
 
   Future<void> _loadBodyTypesFromAssets() async {
@@ -1623,7 +1551,7 @@ class _HomePageState extends State<HomePage> {
           globalBodyTypeAssetMap = labelToSvg;
         });
       }
-    } catch (_) {
+    } catch (e, st) { logNonFatal(e, st); 
       // If anything fails, keep the existing static fallback already present in code
     }
   }
@@ -1699,7 +1627,7 @@ class _HomePageState extends State<HomePage> {
             });
             _scheduleHomeScrollRestoreAfterListReady();
           }
-        } catch (_) {}
+        } catch (e, st) { logNonFatal(e, st); }
       }
     } else {
       _debugLog('ðŸš« Bypassing cache for key: $cacheKey');
@@ -1738,7 +1666,7 @@ class _HomePageState extends State<HomePage> {
             if (pg != null && pg['has_next'] is bool) {
               _hasNext = pg['has_next'] as bool;
             }
-          } catch (_) {}
+          } catch (e, st) { logNonFatal(e, st); }
         } else {
           listSource = const [];
         }
@@ -1808,7 +1736,7 @@ class _HomePageState extends State<HomePage> {
     try {
       final ok = await _fetchFromApiCars(includeSort: true);
       if (ok) return; // Success via /api/cars; stop handling error
-    } catch (_) {}
+    } catch (e, st) { logNonFatal(e, st); }
 
     // If sorting failed and we have a sort parameter, try without sorting first
     if (selectedSortBy != null && selectedSortBy!.isNotEmpty && !isRetry) {
@@ -1881,7 +1809,7 @@ class _HomePageState extends State<HomePage> {
             if (pg != null && pg['has_next'] is bool) {
               _hasNext = pg['has_next'] as bool;
             }
-          } catch (_) {}
+          } catch (e, st) { logNonFatal(e, st); }
         } else if (decoded is List) {
           listSource = decoded;
         } else {
@@ -1904,7 +1832,7 @@ class _HomePageState extends State<HomePage> {
         }
         _page += 1;
       }
-    } catch (_) {}
+    } catch (e, st) { logNonFatal(e, st); }
     _isLoadingMore = false;
   }
 
@@ -1922,7 +1850,6 @@ class _HomePageState extends State<HomePage> {
     }
     if (mounted) {
       setState(() {
-        _obscureHomeBodyUntilScrollRestored = false;
         _homeCarouselResetSeed++;
       });
     }
@@ -1966,72 +1893,8 @@ class _HomePageState extends State<HomePage> {
           return true;
         }
       }
-    } catch (_) {}
+    } catch (e, st) { logNonFatal(e, st); }
     return false;
-  }
-
-  Future<void> _fetchWithAlternativeHeaders(String sortValue) async {
-    try {
-      _debugLog(
-        'ðŸ”„ Attempting fetch with alternative headers for sort: $sortValue',
-      );
-      Map<String, String> filters = _buildFilters();
-
-      String query = Uri(queryParameters: filters).query;
-      final url = Uri.parse(
-        '${getApiBase()}/api/cars${query.isNotEmpty ? '?$query' : ''}',
-      );
-
-      _debugLog('ðŸ” Alternative fetch URL: $url');
-
-      final response = await http
-          .get(
-            url,
-            headers: {
-              'Connection': 'close',
-              'Accept': 'application/json',
-              'User-Agent': 'CarNet-Mobile/1.0',
-              'Cache-Control': 'no-cache',
-              'Pragma': 'no-cache',
-            },
-          )
-          .timeout(Duration(seconds: 25));
-
-      if (response.statusCode == 200) {
-        final decoded = json.decode(response.body);
-        List<dynamic> listSource;
-        if (decoded is List) {
-          listSource = decoded;
-        } else if (decoded is Map && decoded['cars'] is List) {
-          listSource = decoded['cars'] as List;
-        } else {
-          listSource = const [];
-        }
-        final List<Map<String, dynamic>> parsed = listSource
-            .whereType<Map>()
-            .map((e) => e.map((k, v) => MapEntry(k.toString(), v)))
-            .toList()
-            .cast<Map<String, dynamic>>();
-
-        if (mounted) {
-          setState(() {
-            cars = _applyDamagedPartsExactFilter(parsed);
-            isLoading = false;
-            hasLoadedOnce = true;
-            loadErrorMessage = null;
-          });
-        }
-
-        _debugLog(
-          'âœ… Alternative fetch successful: ${parsed.length} cars loaded',
-        );
-      } else {
-        throw Exception('Server error: ${response.statusCode}');
-      }
-    } catch (e) {
-      _debugLog('âŒ Alternative fetch error: $e');
-      rethrow;
-    }
   }
 
   Future<void> _fetchWithoutSort() async {
@@ -2885,32 +2748,6 @@ class _HomePageState extends State<HomePage> {
     return isValidCarRegionSpecCode(s) ? s : '';
   }
 
-  // Helper method to get a valid transmission value for dropdown (dropdown uses '' for Any)
-  String? _getValidTransmissionValue() {
-    if (selectedTransmission == null ||
-        selectedTransmission == 'Any' ||
-        selectedTransmission!.isEmpty)
-      return '';
-
-    final availableTypes = getAvailableTransmissions();
-
-    // First try exact match (excluding 'Any' which is represented as '' in dropdown items)
-    if (availableTypes.contains(selectedTransmission) &&
-        selectedTransmission != 'Any') {
-      return selectedTransmission;
-    }
-
-    // Try case-insensitive match
-    final lowerSelected = selectedTransmission!.toLowerCase();
-    for (final type in availableTypes) {
-      if (type != 'Any' && type.toLowerCase() == lowerSelected) {
-        return type;
-      }
-    }
-
-    return '';
-  }
-
   // Helper method to get a valid fuel type value for dropdown (dropdown uses '' for Any)
   String? _getValidFuelTypeValue() {
     if (selectedFuelType == null ||
@@ -3476,7 +3313,7 @@ class _HomePageState extends State<HomePage> {
       child: Container(
         padding: EdgeInsets.symmetric(horizontal: 8, vertical: 2),
         decoration: BoxDecoration(
-          color: color.withOpacity(0.2),
+          color: color.withValues(alpha: 0.2),
           borderRadius: BorderRadius.circular(10),
           border: Border.all(color: color, width: 1),
         ),
@@ -3595,7 +3432,7 @@ class _HomePageState extends State<HomePage> {
                           borderRadius: BorderRadius.circular(20),
                         ),
                         color: Color.alphaBlend(
-                          Colors.white.withOpacity(0.06),
+                          Colors.white.withValues(alpha: 0.06),
                           AppThemes.darkHomeShellBackground,
                         ),
                         surfaceTintColor: Colors.transparent,
@@ -3710,7 +3547,7 @@ class _HomePageState extends State<HomePage> {
                                                       PopupMenuPosition.under,
                                                   offset: const Offset(0, 6),
                                                   color: Colors.grey[900]
-                                                      ?.withOpacity(0.98),
+                                                      ?.withValues(alpha: 0.98),
                                                   splashRadius: 18,
                                                   onSelected: (value) {
                                                     setState(() {
@@ -3805,7 +3642,7 @@ class _HomePageState extends State<HomePage> {
                                           builder: (context) {
                                             return Dialog(
                                               backgroundColor: Colors.grey[900]
-                                                  ?.withOpacity(0.98),
+                                                  ?.withValues(alpha: 0.98),
                                               shape: RoundedRectangleBorder(
                                                 borderRadius:
                                                     BorderRadius.circular(20),
@@ -3905,7 +3742,7 @@ class _HomePageState extends State<HomePage> {
                                                               decoration: BoxDecoration(
                                                                 color: Colors
                                                                     .black
-                                                                    .withOpacity(
+                                                                    .withValues(alpha: 
                                                                       0.15,
                                                                     ),
                                                                 borderRadius:
@@ -4038,7 +3875,7 @@ class _HomePageState extends State<HomePage> {
                                             fontWeight: FontWeight.bold,
                                           ),
                                           filled: true,
-                                          fillColor: Colors.black.withOpacity(
+                                          fillColor: Colors.black.withValues(alpha: 
                                             0.15,
                                           ),
                                           border: OutlineInputBorder(
@@ -4199,7 +4036,7 @@ class _HomePageState extends State<HomePage> {
                                           fontWeight: FontWeight.bold,
                                         ),
                                         filled: true,
-                                        fillColor: Colors.black.withOpacity(
+                                        fillColor: Colors.black.withValues(alpha: 
                                           0.15,
                                         ),
                                         border: OutlineInputBorder(
@@ -4330,7 +4167,7 @@ class _HomePageState extends State<HomePage> {
                                           fontWeight: FontWeight.bold,
                                         ),
                                         filled: true,
-                                        fillColor: Colors.black.withOpacity(0.15),
+                                        fillColor: Colors.black.withValues(alpha: 0.15),
                                         border: OutlineInputBorder(
                                           borderRadius: BorderRadius.circular(12),
                                         ),
@@ -4397,7 +4234,7 @@ class _HomePageState extends State<HomePage> {
                                     vertical: 8,
                                   ),
                                   decoration: BoxDecoration(
-                                    color: Colors.black.withOpacity(0.1),
+                                    color: Colors.black.withValues(alpha: 0.1),
                                     borderRadius: BorderRadius.circular(8),
                                     border: Border.all(color: Colors.white24),
                                   ),
@@ -4440,7 +4277,7 @@ class _HomePageState extends State<HomePage> {
                                                   ),
                                                   decoration: BoxDecoration(
                                                     color: Colors.red
-                                                        .withOpacity(0.2),
+                                                        .withValues(alpha: 0.2),
                                                     borderRadius:
                                                         BorderRadius.circular(
                                                           12,
@@ -4488,7 +4325,7 @@ class _HomePageState extends State<HomePage> {
                                                   decoration: BoxDecoration(
                                                     color: Color(
                                                       0xFFFF6B00,
-                                                    ).withOpacity(0.15),
+                                                    ).withValues(alpha: 0.15),
                                                     borderRadius:
                                                         BorderRadius.circular(
                                                           12,
@@ -4601,7 +4438,7 @@ class _HomePageState extends State<HomePage> {
                                                 isLightMoreFilters
                                                 ? Colors.white
                                                 : (Colors.grey[900]
-                                                          ?.withOpacity(0.98) ??
+                                                          ?.withValues(alpha: 0.98) ??
                                                       Colors.grey.shade900);
                                             final moreFiltersOnSurface =
                                                 isLightMoreFilters
@@ -4616,7 +4453,7 @@ class _HomePageState extends State<HomePage> {
                                             final moreFiltersFieldFill =
                                                 isLightMoreFilters
                                                 ? Colors.grey.shade200
-                                                : Colors.black.withOpacity(0.2);
+                                                : Colors.black.withValues(alpha: 0.2);
                                             const double moreFiltersFieldGap =
                                                 18;
                                             return AlertDialog(
@@ -6027,7 +5864,7 @@ class _HomePageState extends State<HomePage> {
                                                                   side: BorderSide(
                                                                     color: (selectedTitleStatus ?? '') == entry.key
                                                                         ? Colors.transparent
-                                                                        : moreFiltersOnSurface.withOpacity(0.2),
+                                                                        : moreFiltersOnSurface.withValues(alpha: 0.2),
                                                                   ),
                                                                 ),
                                                                 onSelected: (_) {
@@ -6165,7 +6002,7 @@ class _HomePageState extends State<HomePage> {
                                                                 side: BorderSide(
                                                                   color: isSelected
                                                                       ? Colors.transparent
-                                                                      : moreFiltersOnSurface.withOpacity(0.2),
+                                                                      : moreFiltersOnSurface.withValues(alpha: 0.2),
                                                                 ),
                                                               ),
                                                               onSelected: (_) {
@@ -6225,7 +6062,7 @@ class _HomePageState extends State<HomePage> {
                                                                   side: BorderSide(
                                                                     color: (selectedTransmission ?? 'Any') == t
                                                                         ? Colors.transparent
-                                                                        : moreFiltersOnSurface.withOpacity(0.2),
+                                                                        : moreFiltersOnSurface.withValues(alpha: 0.2),
                                                                   ),
                                                                 ),
                                                                 onSelected: (_) {
@@ -6418,7 +6255,7 @@ class _HomePageState extends State<HomePage> {
                                                                   isLightPicker
                                                                   ? Colors.white
                                                                   : (Colors.grey[900]
-                                                                            ?.withOpacity(
+                                                                            ?.withValues(alpha: 
                                                                               0.98,
                                                                             ) ??
                                                                         Colors
@@ -6570,7 +6407,7 @@ class _HomePageState extends State<HomePage> {
                                                                                                 color:
                                                                                                     const Color(
                                                                                                       0xFFFF6B00,
-                                                                                                    ).withOpacity(
+                                                                                                    ).withValues(alpha: 
                                                                                                       0.35,
                                                                                                     ),
                                                                                                 blurRadius: 14,
@@ -6771,7 +6608,7 @@ class _HomePageState extends State<HomePage> {
                                                                   isLightPicker
                                                                   ? Colors.white
                                                                   : (Colors.grey[900]
-                                                                            ?.withOpacity(
+                                                                            ?.withValues(alpha: 
                                                                               0.98,
                                                                             ) ??
                                                                         Colors
@@ -6796,7 +6633,7 @@ class _HomePageState extends State<HomePage> {
                                                                         .grey
                                                                         .shade200
                                                                   : Colors.black
-                                                                        .withOpacity(
+                                                                        .withValues(alpha: 
                                                                           0.15,
                                                                         );
                                                               return Dialog(
@@ -7881,10 +7718,10 @@ class _HomePageState extends State<HomePage> {
                             vertical: 4,
                           ),
                           decoration: BoxDecoration(
-                            color: Colors.orange.withOpacity(0.1),
+                            color: Colors.orange.withValues(alpha: 0.1),
                             borderRadius: BorderRadius.circular(8),
                             border: Border.all(
-                              color: Colors.orange.withOpacity(0.3),
+                              color: Colors.orange.withValues(alpha: 0.3),
                               width: 1,
                             ),
                           ),
@@ -8001,188 +7838,6 @@ class _HomePageState extends State<HomePage> {
     );
   }
 
-  Widget _buildCardImageCarousel(BuildContext context, Map car) {
-    final List<String> urls = () {
-      final List<String> u = [];
-      final String primary = (car['image_url'] ?? '').toString();
-      final List<dynamic> imgs = (car['images'] is List)
-          ? (car['images'] as List)
-          : const [];
-      if (primary.isNotEmpty) {
-        u.add(_buildFullImageUrl(primary));
-      }
-      for (final dynamic it in imgs) {
-        if (it is Map &&
-            (it['kind'] ?? '').toString().toLowerCase() == 'damage') {
-          continue;
-        }
-        String s;
-        if (it is Map) {
-          s = (it['image_url'] ?? it['url'] ?? it['path'] ?? it['src'] ?? '')
-              .toString();
-        } else {
-          s = it.toString();
-        }
-        if (s.isNotEmpty) {
-          final full = _buildFullImageUrl(s);
-          if (!u.contains(full)) u.add(full);
-        }
-      }
-      if (u.isEmpty && imgs.isNotEmpty) {
-        dynamic first;
-        for (final dynamic e in imgs) {
-          if (e is Map &&
-              (e['kind'] ?? '').toString().toLowerCase() == 'damage') {
-            continue;
-          }
-          first = e;
-          break;
-        }
-        if (first != null) {
-          final String s = first is Map
-              ? (first['image_url'] ??
-                        first['url'] ??
-                        first['path'] ??
-                        first['src'] ??
-                        '')
-                    .toString()
-              : first.toString();
-          if (s.isNotEmpty) u.add(_buildFullImageUrl(s));
-        }
-      }
-      return u;
-    }();
-
-    if (urls.isEmpty) {
-      return Container(
-        color: Colors.grey[900],
-        width: double.infinity,
-        child: Icon(Icons.directions_car, size: 60, color: Colors.grey[400]),
-      );
-    }
-
-    int currentIndex = 0;
-
-    return StatefulBuilder(
-      builder: (context, setState) {
-        return Stack(
-          fit: StackFit.expand,
-          children: [
-            GestureDetector(
-              onTap: () {
-                Navigator.pushNamed(
-                  context,
-                  '/car_detail',
-                  arguments: {'carId': car['id']},
-                );
-              },
-              child: PageView.builder(
-                onPageChanged: (i) => setState(() => currentIndex = i),
-                itemCount: urls.length,
-                itemBuilder: (context, i) {
-                  final url = urls[i];
-                  return _listingNetworkImage(
-                    url,
-                    fit: BoxFit.cover,
-                    width: double.infinity,
-                  );
-                },
-              ),
-            ),
-            if (urls.length > 1)
-              Positioned(
-                bottom: 8,
-                left: 0,
-                right: 0,
-                child: Center(
-                  child: SingleChildScrollView(
-                    scrollDirection: Axis.horizontal,
-                    child: Row(
-                      mainAxisAlignment: MainAxisAlignment.center,
-                      children: List.generate(urls.length, (i) {
-                        final active = i == currentIndex;
-                        return AnimatedContainer(
-                          duration: Duration(milliseconds: 200),
-                          margin: EdgeInsets.symmetric(horizontal: 3),
-                          width: active ? 8 : 6,
-                          height: active ? 8 : 6,
-                          decoration: BoxDecoration(
-                            color: active ? Colors.white : Colors.white70,
-                            shape: BoxShape.circle,
-                          ),
-                        );
-                      }),
-                    ),
-                  ),
-                ),
-              ),
-          ],
-        );
-      },
-    );
-  }
-
-  // Helper methods for unified filter functionality
-  String? _getPriceRangeValue() {
-    return selectedMinPrice ?? '';
-  }
-
-  String _formatPrice(String raw) {
-    try {
-      final num? value = num.tryParse(raw.replaceAll(RegExp(r'[^0-9.]'), ''));
-      if (value == null) return _localizeDigitsGlobal(context, raw);
-      final locale = Localizations.localeOf(context).toLanguageTag();
-      final formatter = _decimalFormatterGlobal(context);
-      return _localizeDigitsGlobal(context, formatter.format(value));
-    } catch (_) {
-      return _localizeDigitsGlobal(context, raw);
-    }
-  }
-
-  void _updatePriceFilter(String? value) {
-    setState(() {
-      if (value == null || value.isEmpty) {
-        selectedMinPrice = null;
-        selectedMaxPrice = null;
-      } else {
-        selectedMinPrice = value;
-        selectedMaxPrice = null;
-      }
-    });
-  }
-
-  String? _getYearRangeValue() {
-    return selectedMinYear ?? '';
-  }
-
-  void _updateYearFilter(String? value) {
-    setState(() {
-      if (value == null || value.isEmpty) {
-        selectedMinYear = null;
-        selectedMaxYear = null;
-      } else {
-        selectedMinYear = value;
-        selectedMaxYear = null;
-      }
-    });
-  }
-
-  String? _getMileageRangeValue() {
-    return selectedMinMileage ?? '';
-  }
-
-  void _updateMileageFilter(String? value) {
-    setState(() {
-      if (value == null || value.isEmpty) {
-        selectedMinMileage = null;
-        selectedMaxMileage = null;
-      } else {
-        selectedMinMileage = value;
-        selectedMaxMileage = null;
-      }
-    });
-  }
-
   // Helper function to get body type icon
   IconData _getBodyTypeIcon(String bodyType) {
     switch (bodyType.toLowerCase()) {
@@ -8247,36 +7902,6 @@ class _HomePageState extends State<HomePage> {
     }
   }
 
-  // Helper function to get an emoji for a given body type
-  String _getBodyTypeEmoji(String bodyType) {
-    switch (bodyType.toLowerCase()) {
-      case 'sedan':
-        return 'ðŸš—';
-      case 'suv':
-        return 'ðŸš™';
-      case 'hatchback':
-        return 'ðŸš—';
-      case 'coupe':
-        return 'ðŸŽï¸';
-      case 'wagon':
-        return 'ðŸš™';
-      case 'pickup':
-        return 'ðŸ›»';
-      case 'van':
-        return 'ðŸš';
-      case 'minivan':
-        return 'ðŸš';
-      case 'motorcycle':
-        return 'ðŸï¸';
-      case 'utv':
-        return 'ðŸšœ';
-      case 'atv':
-        return 'ðŸŽï¸';
-      default:
-        return 'ðŸš˜';
-    }
-  }
-
   void _showSearchDialog(BuildContext context) {
     showDialog(
       context: context,
@@ -8315,7 +7940,7 @@ Future<void> _markPendingSavedSearchFetch() async {
   try {
     final sp = await SharedPreferences.getInstance();
     await sp.setBool(_homePendingSavedSearchFetchKey, true);
-  } catch (_) {}
+  } catch (e, st) { logNonFatal(e, st); }
 }
 
 Future<bool> _consumePendingSavedSearchFetch() async {
@@ -8326,7 +7951,7 @@ Future<bool> _consumePendingSavedSearchFetch() async {
       await sp.remove(_homePendingSavedSearchFetchKey);
     }
     return pending;
-  } catch (_) {
+  } catch (e, st) { logNonFatal(e, st); 
     return false;
   }
 }
@@ -8340,7 +7965,7 @@ Future<Map<String, dynamic>?> _consumeOneTimeSavedSearchFilters() async {
     final decoded = json.decode(raw);
     if (decoded is! Map) return null;
     return Map<String, dynamic>.from(decoded.cast<String, dynamic>());
-  } catch (_) {
+  } catch (e, st) { logNonFatal(e, st); 
     return null;
   }
 }
@@ -8382,5 +8007,5 @@ Future<void> persistSavedSearchFiltersForHome(
     await sp.remove('home_filters_v1');
     await sp.setString(_homeOneTimeFiltersKey, json.encode(map));
     await _markPendingSavedSearchFetch();
-  } catch (_) {}
+  } catch (e, st) { logNonFatal(e, st); }
 }
