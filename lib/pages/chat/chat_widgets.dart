@@ -151,40 +151,6 @@ const Color _kChatListRowInkLight = Color(0xFF000000);
 const Color _kChatListRowInkDarkPrimary = Color(0xFFF5F5F5);
 const Color _kChatListRowInkDarkMuted = Color(0xFFCFCFCF);
 
-void _showFullImage(BuildContext context, String url) {
-  Navigator.of(context).push(
-    MaterialPageRoute<void>(
-      builder: (_) => Scaffold(
-        backgroundColor: Colors.black,
-        body: SafeArea(
-          child: Stack(
-            alignment: Alignment.topRight,
-            children: [
-              Center(
-                child: InteractiveViewer(
-                  child: Image.network(
-                    url,
-                    fit: BoxFit.contain,
-                    errorBuilder: (context, error, stackTrace) => const Icon(
-                      Icons.broken_image,
-                      color: Colors.white,
-                      size: 64,
-                    ),
-                  ),
-                ),
-              ),
-              IconButton(
-                icon: const Icon(Icons.close, color: Colors.white, size: 30),
-                onPressed: () => Navigator.of(context).pop(),
-              ),
-            ],
-          ),
-        ),
-      ),
-    ),
-  );
-}
-
 bool _isIgnorableSocketError(String err) {
   final text = err.toLowerCase();
   return text.contains('was not upgraded to websocket') ||

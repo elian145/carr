@@ -11,7 +11,6 @@ import '../shared/prefs/listing_layout_prefs.dart';
 import '../shared/shell/home_feed_scroll_persistence.dart';
 import '../shared/shell/main_bottom_nav.dart';
 import '../shared/errors/user_error_text.dart';
-import '../shared/media/media_url.dart';
 import '../shared/listings/global_listing_card.dart';
 
 
@@ -220,42 +219,6 @@ class _HomePageState extends State<HomePage>
     if (_loadingMore || !_hasNext) return;
     _page += 1;
     await _fetch(refresh: false);
-  }
-
-  Widget _carImage(Map<String, dynamic> car) {
-    final primary = (car['image_url'] ?? '').toString();
-    final url = buildMediaUrl(primary);
-    if (url.isEmpty) {
-      return Container(
-        color: Colors.black12,
-        child: const Center(child: Icon(Icons.directions_car)),
-      );
-    }
-
-    return Image.network(
-      url,
-      fit: BoxFit.cover,
-      filterQuality: FilterQuality.low,
-      errorBuilder: (context, error, stackTrace) {
-        return Container(
-          color: Colors.black12,
-          child: const Center(child: Icon(Icons.broken_image)),
-        );
-      },
-      loadingBuilder: (context, child, progress) {
-        if (progress == null) return child;
-        return Container(
-          color: Colors.black12,
-          child: const Center(
-            child: SizedBox(
-              width: 20,
-              height: 20,
-              child: CircularProgressIndicator(strokeWidth: 2),
-            ),
-          ),
-        );
-      },
-    );
   }
 
   void _onShellTab(int idx) {

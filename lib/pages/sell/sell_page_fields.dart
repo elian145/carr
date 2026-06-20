@@ -3,31 +3,6 @@ part of '../sell_page.dart';
 // Extensions on [_SellPageState] call [setState] legitimately.
 // ignore_for_file: invalid_use_of_protected_member, library_private_types_in_public_api
 
-const Map<String, String> _kEngineTypeLabels = {
-    'gasoline': 'Gasoline',
-    'diesel': 'Diesel',
-    'hybrid': 'Hybrid',
-    'electric': 'Electric',
-  };
-
-const Map<String, String> _kDriveLabels = {
-    'fwd': 'FWD',
-    'rwd': 'RWD',
-    'awd': 'AWD',
-    '4wd': '4WD',
-  };
-
-const Map<String, String> _kBodyLabels = {
-    'sedan': 'Sedan',
-    'suv': 'SUV',
-    'hatchback': 'Hatchback',
-    'coupe': 'Coupe',
-    'pickup': 'Pickup',
-    'van': 'Van',
-    'convertible': 'Convertible',
-    'wagon': 'Wagon',
-  };
-
 extension SellPageFields on _SellPageState {
   static const Map<String, String> _kEngineTypeLabels = {
     'gasoline': 'Gasoline',

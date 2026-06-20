@@ -281,17 +281,6 @@ String _smsResetHint(BuildContext context) {
   return 'SMS may take a minute or two. A code is only sent if an account exists for this number.';
 }
 
-String _registrationSuccess(BuildContext context) {
-  final c = _lang(context);
-  if (c == 'ar') {
-    return 'تم التسجيل بنجاح! يرجى التحقق من بريدك الإلكتروني للتفعيل.';
-  }
-  if (c == 'ku') {
-    return 'خۆتۆمارکردن سەرکەوتوو بوو! تکایە ئیمەیڵەکەت بپشکنە بۆ پشتڕاستکردن.';
-  }
-  return 'Registration successful! Please check your email for verification.';
-}
-
 /// User-facing message for registration failure (no server/exception details).
 String _registrationFailedMessage(BuildContext context) {
   final c = _lang(context);

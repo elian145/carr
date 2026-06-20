@@ -79,12 +79,6 @@ class _MyListingsPageState extends State<MyListingsPage> {
     });
   }
 
-  void _removeListingFromList(String carId) {
-    setState(() {
-      _cars.removeWhere((c) => listingMatchesId(c, carId));
-    });
-  }
-
   Future<void> _fetch({required bool refresh}) async {
     final auth = Provider.of<AuthService>(context, listen: false);
     if (!auth.isAuthenticated) {
