@@ -14,7 +14,6 @@ import '../models/online_spec_variant.dart';
 import '../shared/auth/phone_verification_gate.dart';
 import '../shared/errors/user_error_text.dart';
 import '../shared/listings/listing_identity.dart';
-import '../shared/prefs/sell_listing_draft_prefs.dart';
 import '../shared/prefs/sell_draft_media_persistence.dart';
 import '../shared/prefs/sell_draft_prefs.dart';
 

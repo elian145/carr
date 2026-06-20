@@ -154,7 +154,7 @@ extension SellPageSubmit on _SellPageState {
       }
 
       if (!mounted) return;
-      await SellListingDraftPrefs.clear(
+      await SellDraftPrefs.clearListingDraft(
         _draftOwnerKey ?? _buildDraftOwnerKey(),
       );
       _skipDraftSaveOnDispose = true;

@@ -13,8 +13,8 @@ import '../models/analytics_model.dart';
 import '../shared/errors/user_error_text.dart';
 import '../shared/listings/listing_events.dart';
 import '../shared/listings/listing_identity.dart';
-import '../shared/prefs/sell_listing_draft_prefs.dart';
 import '../shared/prefs/sell_draft_media_persistence.dart';
+import '../shared/prefs/sell_draft_prefs.dart';
 import '../shared/prefs/sell_draft_list.dart';
 import '../shared/text/pretty_title_case.dart';
 import '../shared/prefs/listing_layout_prefs.dart';
@@ -159,7 +159,7 @@ class _MyListingsPageState extends State<MyListingsPage> {
     try {
       final drafts = <Map<String, dynamic>>[];
       final ownerKey = _buildDraftOwnerKey();
-      final modernDraft = await SellListingDraftPrefs.load(ownerKey);
+      final modernDraft = await SellDraftPrefs.loadListingDraft(ownerKey);
       if (modernDraft != null && _hasMeaningfulDraftData(modernDraft)) {
         drafts.add(<String, dynamic>{
           'draftId': 'modern_$ownerKey',
@@ -186,7 +186,7 @@ class _MyListingsPageState extends State<MyListingsPage> {
   Future<void> _discardDraft(Map<String, dynamic> draft) async {
     final draftId = (draft['draftId'] ?? '').toString();
     if (draft['isModern'] == true) {
-      await SellListingDraftPrefs.clear(_buildDraftOwnerKey());
+      await SellDraftPrefs.clearListingDraft(_buildDraftOwnerKey());
     } else {
       await SellDraftList.discard(draft);
     }

@@ -92,7 +92,7 @@ extension SellPageDraft on _SellPageState {
   Future<void> _startFreshFromRoute() async {
     final owner = _draftOwnerKey ??= _buildDraftOwnerKey();
     await SellDraftPrefs.beginFreshListing();
-    await SellListingDraftPrefs.clear(owner);
+    await SellDraftPrefs.clearListingDraft(owner);
     SellDraftPrefs.allowPersist(); // step scratch only; archive untouched
     if (!mounted) return;
     setState(() {
@@ -114,7 +114,7 @@ extension SellPageDraft on _SellPageState {
       await _loadDraftPreview();
       return;
     }
-    await SellListingDraftPrefs.save(owner, draft);
+    await SellDraftPrefs.saveListingDraft(owner, draft);
     if (!mounted) return;
     final editId = (draft['_editListingId'] ?? '').toString().trim();
     setState(() {
@@ -176,7 +176,7 @@ extension SellPageDraft on _SellPageState {
 
   Future<void> _loadDraftPreview() async {
     final owner = _draftOwnerKey ??= _buildDraftOwnerKey();
-    final draft = await SellListingDraftPrefs.load(owner);
+    final draft = await SellDraftPrefs.loadListingDraft(owner);
     if (!mounted) return;
     if (draft == null || !_hasMeaningfulDraftData(draft)) {
       setState(() {
@@ -293,7 +293,7 @@ extension SellPageDraft on _SellPageState {
     final owner = _draftOwnerKey ??= _buildDraftOwnerKey();
     final hasContent = _hasMeaningfulDraftContent();
     if (!hasContent) {
-      await SellListingDraftPrefs.clear(owner);
+      await SellDraftPrefs.clearListingDraft(owner);
       if (mounted) {
         setState(() {
           _draftExists = false;
@@ -309,7 +309,7 @@ extension SellPageDraft on _SellPageState {
       draft,
       draftId: owner,
     );
-    await SellListingDraftPrefs.save(owner, draft);
+    await SellDraftPrefs.saveListingDraft(owner, draft);
     if (!mounted) return;
     setState(() {
       _images
@@ -348,7 +348,7 @@ extension SellPageDraft on _SellPageState {
 
   Future<void> _restoreDraft() async {
     final owner = _draftOwnerKey ??= _buildDraftOwnerKey();
-    final draft = await SellListingDraftPrefs.load(owner);
+    final draft = await SellDraftPrefs.loadListingDraft(owner);
     if (!mounted) return;
     if (draft == null) {
       setState(() {
@@ -492,7 +492,7 @@ extension SellPageDraft on _SellPageState {
               damageImagePaths.isNotEmpty ||
               loadedDraft['vin'].toString().trim().isNotEmpty);
       if (!hasMeaningfulContent) {
-        await SellListingDraftPrefs.clear(owner);
+        await SellDraftPrefs.clearListingDraft(owner);
         if (!mounted) return;
         setState(() {
           _draftLoaded = true;
@@ -566,7 +566,7 @@ extension SellPageDraft on _SellPageState {
     _draftSaveTimer?.cancel();
     _restoringDraft = true;
     try {
-      await SellListingDraftPrefs.clear(owner);
+      await SellDraftPrefs.clearListingDraft(owner);
       if (!mounted) return;
       setState(() {
         _selectedBrand = null;
