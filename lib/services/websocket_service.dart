@@ -195,7 +195,7 @@ class WebSocketService {
 
       _socket!.on('error', (err) {
         if (err is Map) {
-          final map = Map<String, dynamic>.from(err as Map);
+          final map = Map<String, dynamic>.from(err);
           final code = map['code']?.toString().trim() ?? '';
           final msg = (map['message'] ?? err).toString();
           _emitError(code.isNotEmpty ? '$code|$msg' : msg);
@@ -207,7 +207,7 @@ class WebSocketService {
 
       _socket!.on('new_message', (payload) {
         if (payload is Map) {
-          final m = Map<String, dynamic>.from(payload as Map);
+          final m = Map<String, dynamic>.from(payload);
           _messagesController.add(m);
           onMessage?.call(m);
         }
@@ -215,19 +215,19 @@ class WebSocketService {
 
       _socket!.on('message_updated', (payload) {
         if (payload is Map) {
-          _messageUpdatesController.add(Map<String, dynamic>.from(payload as Map));
+          _messageUpdatesController.add(Map<String, dynamic>.from(payload));
         }
       });
 
       _socket!.on('message_deleted', (payload) {
         if (payload is Map) {
-          _messageDeletesController.add(Map<String, dynamic>.from(payload as Map));
+          _messageDeletesController.add(Map<String, dynamic>.from(payload));
         }
       });
 
       _socket!.on('new_notification', (payload) {
         if (payload is Map) {
-          final n = Map<String, dynamic>.from(payload as Map);
+          final n = Map<String, dynamic>.from(payload);
           _notificationsController.add(n);
           onNotification?.call(n);
         }
@@ -235,7 +235,7 @@ class WebSocketService {
 
       _socket!.on('typing', (payload) {
         if (payload is Map) {
-          final t = Map<String, dynamic>.from(payload as Map);
+          final t = Map<String, dynamic>.from(payload);
           _typingController.add(t);
         }
       });

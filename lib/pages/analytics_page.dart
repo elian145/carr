@@ -101,7 +101,6 @@ class _AnalyticsPageState extends State<AnalyticsPage> {
     'maruti-suzuki': 'maruti-suzuki',
     'proton': 'proton',
     'perodua': 'perodua',
-    'dacia': 'dacia',
     'lada': 'lada',
     'uaz': 'uaz',
     'gaz': 'gaz',
@@ -118,11 +117,9 @@ class _AnalyticsPageState extends State<AnalyticsPage> {
     'wey': 'wey',
     'lynk-co': 'lynk-co',
     'polestar': 'polestar',
-    'genesis': 'genesis',
     'ds': 'ds',
     'alpine': 'alpine',
     'cupra': 'cupra',
-    'smart': 'smart',
     'maybach': 'maybach',
     'amg': 'amg',
     'brabus': 'brabus',
@@ -434,9 +431,9 @@ class _AnalyticsPageState extends State<AnalyticsPage> {
     final isSelected = _selectedListing?.listingId == listing.listingId;
 
     // Convert analytics data to match home page car format EXACTLY like My Listings
-    final String brand = (listing.brand ?? '').trim();
-    final String model = (listing.model).trim();
-    final String yearStr = (listing.year?.toString() ?? '').trim();
+    final String brand = listing.brand.trim();
+    final String model = listing.model.trim();
+    final String yearStr = listing.year.toString().trim();
     final String apiTitle = (listing.title).trim();
     String displayTitle;
     if (apiTitle.isNotEmpty) {
@@ -740,7 +737,7 @@ class _AnalyticsPageState extends State<AnalyticsPage> {
                             border: Border.all(color: Colors.grey[100]!),
                             boxShadow: [
                               BoxShadow(
-                                color: Colors.black.withOpacity(0.03),
+                                color: Colors.black.withValues(alpha: 0.03),
                                 blurRadius: 15,
                                 offset: Offset(0, 5),
                               ),

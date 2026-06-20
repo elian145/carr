@@ -12,10 +12,10 @@ extension ChatConversationComposerUi on _ChatConversationPageState {
   }) {
     final theme = Theme.of(context);
     final baseColor = isMe
-        ? Colors.white.withOpacity(0.14)
+        ? Colors.white.withValues(alpha: 0.14)
         : _homeListingCardBackgroundFill(context);
     final borderColor = isMe
-        ? Colors.white.withOpacity(0.5)
+        ? Colors.white.withValues(alpha: 0.5)
         : Colors.white.withValues(alpha: 0.12);
     final inner = Container(
       width: double.infinity,

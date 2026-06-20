@@ -195,7 +195,8 @@ class _AdminReportsPageState extends State<AdminReportsPage> {
               children: [
                 Expanded(
                   child: DropdownButtonFormField<String>(
-                    value: _status,
+                    key: ValueKey('admin_status_$_status'),
+                    initialValue: _status,
                     decoration: InputDecoration(
                       labelText: _tr('Status'),
                       border: const OutlineInputBorder(),
@@ -217,7 +218,8 @@ class _AdminReportsPageState extends State<AdminReportsPage> {
                 const SizedBox(width: 8),
                 Expanded(
                   child: DropdownButtonFormField<String>(
-                    value: _type,
+                    key: ValueKey('admin_type_$_type'),
+                    initialValue: _type,
                     decoration: InputDecoration(
                       labelText: _tr('Type'),
                       border: const OutlineInputBorder(),

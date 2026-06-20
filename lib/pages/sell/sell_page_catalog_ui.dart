@@ -169,12 +169,12 @@ extension SellPageCatalogUi on _SellPageState {
                   vertical: 10,
                 ),
                 decoration: BoxDecoration(
-                  color: Theme.of(context).colorScheme.primary.withOpacity(0.1),
+                  color: Theme.of(context).colorScheme.primary.withValues(alpha: 0.1),
                   borderRadius: BorderRadius.circular(8),
                   border: Border.all(
                     color: Theme.of(
                       context,
-                    ).colorScheme.primary.withOpacity(0.28),
+                    ).colorScheme.primary.withValues(alpha: 0.28),
                   ),
                 ),
                 child: Text(
@@ -223,8 +223,9 @@ extension SellPageCatalogUi on _SellPageState {
             if (years.isNotEmpty) ...[
               const SizedBox(height: 12),
               DropdownButtonFormField<int>(
+                key: ValueKey('catalog_year_${_catalogYear}_${years.join(',')}'),
                 isExpanded: true,
-                value: _catalogYear != null && years.contains(_catalogYear)
+                initialValue: _catalogYear != null && years.contains(_catalogYear)
                     ? _catalogYear
                     : years.first,
                 decoration: InputDecoration(

@@ -217,7 +217,7 @@ extension SellPageFields on _SellPageState {
       key: ValueKey<String>(
         'eng_$_specDropdownKey$value${constrained?.join() ?? 'full'}',
       ),
-      value: value,
+      initialValue: value,
       isExpanded: true,
       decoration: InputDecoration(
         labelText: loc?.engineTypeLabel ?? 'Engine type',
@@ -267,7 +267,7 @@ extension SellPageFields on _SellPageState {
       key: ValueKey<String>(
         'tr_$_specDropdownKey$value${constrained?.join() ?? 'full'}',
       ),
-      value: value,
+      initialValue: value,
       isExpanded: true,
       decoration: InputDecoration(
         labelText: loc?.transmissionLabel ?? 'Transmission',
@@ -317,7 +317,7 @@ extension SellPageFields on _SellPageState {
       key: ValueKey<String>(
         'drv_$_specDropdownKey$value${constrained?.join() ?? 'full'}',
       ),
-      value: value,
+      initialValue: value,
       isExpanded: true,
       decoration: InputDecoration(
         labelText: loc?.driveType ?? 'Drive type',
@@ -364,7 +364,7 @@ extension SellPageFields on _SellPageState {
       key: ValueKey<String>(
         'body_$_specDropdownKey$value${constrained?.join() ?? 'full'}',
       ),
-      value: value,
+      initialValue: value,
       isExpanded: true,
       decoration: InputDecoration(
         labelText: loc?.bodyTypeLabel ?? 'Body type',
@@ -389,7 +389,7 @@ extension SellPageFields on _SellPageState {
       final pick = _coerceEngineDisplayPick(opts);
       return DropdownButtonFormField<String>(
         key: ValueKey<String>('es_${opts.join('|')}'),
-        value: pick,
+        initialValue: pick,
         isExpanded: true,
         decoration: InputDecoration(
           labelText: 'Engine size (L)',
@@ -424,7 +424,7 @@ extension SellPageFields on _SellPageState {
       final value = (cur != null && opts.contains(cur)) ? cur : opts.first;
       return DropdownButtonFormField<int>(
         key: ValueKey<String>('cy_${opts.join(',')}'),
-        value: value,
+        initialValue: value,
         isExpanded: true,
         decoration: InputDecoration(
           labelText: 'Cylinders',
@@ -459,7 +459,7 @@ extension SellPageFields on _SellPageState {
       final value = opts.contains(cur) ? cur : opts.first;
       return DropdownButtonFormField<String>(
         key: ValueKey<String>('mpg_${opts.join('|')}'),
-        value: value,
+        initialValue: value,
         isExpanded: true,
         decoration: InputDecoration(
           labelText: 'Fuel economy',
@@ -503,7 +503,7 @@ extension SellPageFields on _SellPageState {
       final value = (cur != null && opts.contains(cur)) ? cur : opts.first;
       return DropdownButtonFormField<int>(
         key: ValueKey<String>('seat_${opts.join(',')}'),
-        value: value,
+        initialValue: value,
         isExpanded: true,
         decoration: InputDecoration(
           labelText: 'Seating',

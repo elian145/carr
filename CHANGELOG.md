@@ -45,6 +45,8 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 - Stop ignoring `unused_import` in `analysis_options.yaml`; removed 21 stale imports.
 - Stop ignoring `unused_element` and `unused_field`; removed dead helpers and duplicate split-script const maps (~386 lines).
 - Stop ignoring `unused_local_variable`; removed unused seller join date and carousel direction state.
+- Stop ignoring null-safety and map-key analyzer rules; fixed analytics brand map dupes, websocket casts, car detail null check, and video thumbnail guard.
+- Removed all remaining analyzer error suppressions; migrated deprecated APIs (`withValues`, `initialValue` dropdowns, `RadioGroup`, `ExpansibleController`, `SharePlus`).
 - Removed `lib/legacy/` folder and obsolete legacy split tooling under `tools/`.
 - Dropped `lib/legacy/**` from `analysis_options.yaml` excludes.
 - `.gitignore` patterns for common accidental CLI artifacts and scratch listings.

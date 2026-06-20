@@ -380,7 +380,7 @@ Widget _buildGlobalCarCardInnerText(
                   child: Container(
                     width: 1,
                     height: 12,
-                    color: metaTextColor.withOpacity(0.35),
+                    color: metaTextColor.withValues(alpha: 0.35),
                   ),
                 ),
               ),
@@ -699,7 +699,7 @@ Widget buildGlobalCarCard(
   final isLight = Theme.of(context).brightness == Brightness.light;
   final cardFill = isLight
       ? AppThemes.listingCardFillGridOnLightShell()
-      : Colors.white.withOpacity(0.10);
+      : Colors.white.withValues(alpha: 0.10);
   final metaTextColor = Colors.white70;
   final dividerLineColor = Colors.white24;
   final bool showVideoCountBadge =
@@ -733,7 +733,7 @@ Widget buildGlobalCarCard(
       borderRadius: BorderRadius.circular(20),
       boxShadow: [
         BoxShadow(
-          color: Colors.black.withOpacity(0.2),
+          color: Colors.black.withValues(alpha: 0.2),
           blurRadius: 8,
           offset: const Offset(0, 4),
         ),

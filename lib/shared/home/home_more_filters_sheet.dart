@@ -100,7 +100,8 @@ class _HomeMoreFiltersSheetState extends State<_HomeMoreFiltersSheet> {
     return Padding(
       padding: const EdgeInsets.only(bottom: 12),
       child: DropdownButtonFormField<String>(
-        value: options.contains(display) ? display : HomeFilterOptions.any,
+        key: ValueKey('$label-$display'),
+        initialValue: options.contains(display) ? display : HomeFilterOptions.any,
         decoration: InputDecoration(labelText: label),
         isExpanded: true,
         items: options

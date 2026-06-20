@@ -65,12 +65,12 @@ class AppThemes {
   /// Same *appearance* as a frosted listing card on the dark home shell, for use on a white shell.
   /// (Translucent white on white reads as pale grey; this matches the blended color on [darkHomeShellBackground].)
   static Color listingCardFillGridOnLightShell() => Color.alphaBlend(
-        Colors.white.withOpacity(0.10),
+        Colors.white.withValues(alpha: 0.10),
         darkHomeShellBackground,
       );
 
   static Color listingCardFillCompactOnLightShell() => Color.alphaBlend(
-        Colors.white.withOpacity(0.08),
+        Colors.white.withValues(alpha: 0.08),
         darkHomeShellBackground,
       );
 

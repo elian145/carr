@@ -84,13 +84,13 @@ Widget buildFloatingBottomNav(
           borderRadius: BorderRadius.circular(999),
           border: Border.all(
             color: isLight
-                ? Colors.white.withOpacity(0.14)
-                : Colors.white.withOpacity(0.08),
+                ? Colors.white.withValues(alpha: 0.14)
+                : Colors.white.withValues(alpha: 0.08),
             width: 1,
           ),
           boxShadow: [
             BoxShadow(
-              color: Colors.black.withOpacity(isLight ? 0.08 : 0.14),
+              color: Colors.black.withValues(alpha: isLight ? 0.08 : 0.14),
               blurRadius: 24,
               offset: const Offset(0, 10),
             ),

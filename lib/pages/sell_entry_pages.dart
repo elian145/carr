@@ -272,9 +272,9 @@ class _SellDraftGatePageState extends State<SellDraftGatePage> {
     return Container(
       margin: const EdgeInsets.only(bottom: 12),
       decoration: BoxDecoration(
-        color: Colors.orange.withOpacity(0.08),
+        color: Colors.orange.withValues(alpha: 0.08),
         borderRadius: BorderRadius.circular(18),
-        border: Border.all(color: Colors.orange.withOpacity(0.24)),
+        border: Border.all(color: Colors.orange.withValues(alpha: 0.24)),
       ),
       child: Padding(
         padding: const EdgeInsets.all(14),
@@ -287,7 +287,7 @@ class _SellDraftGatePageState extends State<SellDraftGatePage> {
                   width: 42,
                   height: 42,
                   decoration: BoxDecoration(
-                    color: const Color(0xFFFF6B00).withOpacity(0.12),
+                    color: const Color(0xFFFF6B00).withValues(alpha: 0.12),
                     borderRadius: BorderRadius.circular(12),
                   ),
                   child: const Icon(Icons.drafts_outlined, color: Color(0xFFFF6B00)),
@@ -410,9 +410,9 @@ class _SellDraftGatePageState extends State<SellDraftGatePage> {
                     Container(
                       padding: const EdgeInsets.all(16),
                       decoration: BoxDecoration(
-                        color: Colors.orange.withOpacity(0.08),
+                        color: Colors.orange.withValues(alpha: 0.08),
                         borderRadius: BorderRadius.circular(18),
-                        border: Border.all(color: Colors.orange.withOpacity(0.24)),
+                        border: Border.all(color: Colors.orange.withValues(alpha: 0.24)),
                       ),
                       child: Text(
                         _sellEntryTr(

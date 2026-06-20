@@ -13,16 +13,7 @@ include: package:flutter_lints/flutter.yaml
 analyzer:
   # CI/Codemagic: don't fail builds on non-critical warnings while the codebase
   # is being iterated on. (These still show up in IDEs if you want to fix them.)
-  errors:
-    unused_element_parameter: ignore
-    dead_null_aware_expression: ignore
-    invalid_null_aware_operator: ignore
-    unnecessary_null_comparison: ignore
-    unnecessary_cast: ignore
-    equal_keys_in_map: ignore
-    deprecated_member_use: ignore
   exclude:
-    - lib/main_backup.dart
     - tools/scratch/original_main.dart.txt
     - tools/scratch/temp_main.dart.txt
 

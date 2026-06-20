@@ -220,9 +220,9 @@ class _SellPageState extends State<SellPage> {
                 Container(
                   padding: const EdgeInsets.all(12),
                   decoration: BoxDecoration(
-                    color: Colors.red.withOpacity(0.1),
+                    color: Colors.red.withValues(alpha: 0.1),
                     borderRadius: BorderRadius.circular(12),
-                    border: Border.all(color: Colors.red.withOpacity(0.25)),
+                    border: Border.all(color: Colors.red.withValues(alpha: 0.25)),
                   ),
                   child: Text(_error!),
                 ),
@@ -232,9 +232,9 @@ class _SellPageState extends State<SellPage> {
                 Container(
                   padding: const EdgeInsets.all(12),
                   decoration: BoxDecoration(
-                    color: Colors.orange.withOpacity(0.12),
+                    color: Colors.orange.withValues(alpha: 0.12),
                     borderRadius: BorderRadius.circular(12),
-                    border: Border.all(color: Colors.orange.withOpacity(0.35)),
+                    border: Border.all(color: Colors.orange.withValues(alpha: 0.35)),
                   ),
                   child: Text(_specLoadError!),
                 ),
@@ -323,7 +323,8 @@ class _SellPageState extends State<SellPage> {
                 const SizedBox(height: 12),
               ],
               DropdownButtonFormField<String>(
-                value: _selectedBrand,
+                key: ValueKey('sell_brand_${_selectedBrand ?? ''}'),
+                initialValue: _selectedBrand,
                 decoration: InputDecoration(
                   labelText: loc?.brandLabel ?? 'Brand',
                 ),
@@ -349,7 +350,8 @@ class _SellPageState extends State<SellPage> {
               ),
               const SizedBox(height: 10),
               DropdownButtonFormField<String>(
-                value: _selectedModel,
+                key: ValueKey('sell_model_${_selectedBrand}_${_selectedModel ?? ''}'),
+                initialValue: _selectedModel,
                 decoration: InputDecoration(
                   labelText: loc?.modelLabel ?? 'Model',
                 ),
@@ -376,7 +378,8 @@ class _SellPageState extends State<SellPage> {
               ),
               const SizedBox(height: 10),
               DropdownButtonFormField<String>(
-                value: _selectedTrim,
+                key: ValueKey('sell_trim_${_selectedModel}_${_selectedTrim ?? ''}'),
+                initialValue: _selectedTrim,
                 decoration: const InputDecoration(labelText: 'Trim'),
                 hint: const Text('Select trim'),
                 items: trimList
@@ -488,7 +491,8 @@ class _SellPageState extends State<SellPage> {
                   const SizedBox(width: 10),
                   Expanded(
                     child: DropdownButtonFormField<String>(
-                      value: _currency,
+                      key: ValueKey('sell_currency_$_currency'),
+                      initialValue: _currency,
                       decoration: InputDecoration(
                         labelText: loc?.currencyLabel ?? 'Currency',
                       ),
@@ -524,7 +528,8 @@ class _SellPageState extends State<SellPage> {
               _driveTypeField(loc),
               const SizedBox(height: 10),
               DropdownButtonFormField<String>(
-                value: _condition,
+                key: ValueKey('sell_condition_$_condition'),
+                initialValue: _condition,
                 decoration: InputDecoration(
                   labelText: loc?.conditionLabel ?? 'Condition',
                 ),
@@ -539,7 +544,8 @@ class _SellPageState extends State<SellPage> {
               ),
               const SizedBox(height: 10),
               DropdownButtonFormField<String>(
-                value: _titleStatus,
+                key: ValueKey('sell_title_$_titleStatus'),
+                initialValue: _titleStatus,
                 decoration: InputDecoration(
                   labelText: loc?.titleStatus ?? 'Title status',
                 ),
