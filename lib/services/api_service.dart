@@ -49,6 +49,9 @@ class ApiService {
   @visibleForTesting
   static http.Client? get boundTestHttpClient => _testHttpClient;
 
+  /// Whether tests have bound an in-memory HTTP client (skip real-time transports).
+  static bool get isTestHttpClientBound => _testHttpClient != null;
+
   static http.Client get _httpClient => _testHttpClient ?? _productionHttpClient;
 
   // Initialize tokens from storage

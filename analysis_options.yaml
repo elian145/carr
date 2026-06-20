@@ -11,8 +11,6 @@ include: package:flutter_lints/flutter.yaml
 # Scratch/backup files are excluded from analyzer runs.
 
 analyzer:
-  # CI/Codemagic: don't fail builds on non-critical warnings while the codebase
-  # is being iterated on. (These still show up in IDEs if you want to fix them.)
   exclude:
     - tools/scratch/original_main.dart.txt
     - tools/scratch/temp_main.dart.txt
@@ -29,7 +27,7 @@ linter:
   # `// ignore_for_file: name_of_lint` syntax on the line or in the file
   # producing the lint.
   rules:
-    # Keep empty for now (no style lints enforced in CI).
+    # Inherits recommended rules from package:flutter_lints/flutter.yaml above.
 
 # Additional information about this file can be found at
 # https://dart.dev/guides/language/analysis-options

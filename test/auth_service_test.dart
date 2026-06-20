@@ -4,8 +4,18 @@ import 'package:shared_preferences/shared_preferences.dart';
 import 'package:car_listing_app/services/api_service.dart';
 import 'package:car_listing_app/services/auth_service.dart';
 
+import 'fake_api_server.dart';
+
 void main() {
   TestWidgetsFlutterBinding.ensureInitialized();
+
+  setUpAll(() async {
+    await FakeApiServer.ensureStarted();
+  });
+
+  tearDownAll(() async {
+    await FakeApiServer.stop();
+  });
 
   setUp(() async {
     SharedPreferences.setMockInitialValues({'push_enabled': false});
@@ -25,5 +35,11 @@ void main() {
     AuthService().resetTestSession();
     expect(AuthService().isAuthenticated, isFalse);
     expect(AuthService().currentUser, isNull);
+  });
+
+  test('login via mock API sets authenticated user', () async {
+    await AuthService().login('testuser', 'secret');
+    expect(AuthService().isAuthenticated, isTrue);
+    expect(AuthService().currentUser?['username'], 'test');
   });
 }
