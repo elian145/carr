@@ -41,6 +41,8 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 - Unified sell draft prefs: merged `SellListingDraftPrefs` into `SellDraftPrefs` (`loadListingDraft` / `saveListingDraft` / `clearListingDraft`); SharedPreferences key strings unchanged.
 - Widget tests: car detail cached-listing UI check; `AuthService.adoptTestSession` / `resetTestSession` for test auth; `AuthService` registered with `ChangeNotifierProvider.value` so the singleton is not disposed between tests.
 - `ApiService.testHttpClient` + in-memory `FakeApiServer` mock client (replaces loopback `HttpServer` in tests); chat list empty-state widget test; sell flow still covered by route smoke.
+- Sell page widget test with `CarSpecIndex.debugLoadWithResult` test hook; `CarSpecIndex.loadWithResult` caches in-flight load.
+- Stop ignoring `unused_import` in `analysis_options.yaml`; removed 21 stale imports.
 - Removed `lib/legacy/` folder and obsolete legacy split tooling under `tools/`.
 - Dropped `lib/legacy/**` from `analysis_options.yaml` excludes.
 - `.gitignore` patterns for common accidental CLI artifacts and scratch listings.

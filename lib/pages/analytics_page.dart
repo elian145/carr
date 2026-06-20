@@ -1,15 +1,11 @@
 import 'package:flutter/material.dart';
 import '../l10n/app_localizations.dart';
-import 'package:cached_network_image/cached_network_image.dart';
 import 'package:intl/intl.dart';
-import 'dart:io';
 import '../services/config.dart';
 import '../models/analytics_model.dart';
 import '../services/analytics_service.dart';
 import '../shared/errors/user_error_text.dart';
-import '../shared/listings/listing_identity.dart';
 import '../shared/listings/global_listing_card.dart';
-import '../globals.dart';
 import '../theme_provider.dart';
 import '../shared/text/pretty_title_case.dart';
 

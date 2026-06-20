@@ -1,5 +1,4 @@
 import 'dart:async';
-import 'dart:convert';
 import 'dart:io';
 import 'package:flutter/foundation.dart' show kReleaseMode;
 import 'package:socket_io_client/socket_io_client.dart' as io;

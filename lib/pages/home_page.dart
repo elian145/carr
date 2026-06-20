@@ -1,14 +1,7 @@
-import 'package:auto_size_text/auto_size_text.dart';
-import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
-import 'package:intl/intl.dart';
 
-import '../globals.dart';
-import '../data/car_name_translations.dart';
 import '../l10n/app_localizations.dart';
 import '../theme_provider.dart';
-import '../services/api_service.dart';
-import '../services/config.dart';
 import '../shared/home/home_listings_fetch.dart';
 import '../shared/home/home_filter_persistence.dart';
 import '../shared/home/saved_search_apply.dart';
@@ -18,10 +11,7 @@ import '../shared/prefs/listing_layout_prefs.dart';
 import '../shared/shell/home_feed_scroll_persistence.dart';
 import '../shared/shell/main_bottom_nav.dart';
 import '../shared/errors/user_error_text.dart';
-import '../shared/listings/listing_identity.dart';
-import '../shared/listings/listing_card_media.dart';
 import '../shared/media/media_url.dart';
-import '../shared/text/pretty_title_case.dart';
 import '../shared/listings/global_listing_card.dart';
 
 

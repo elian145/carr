@@ -168,11 +168,34 @@ class CarSpecIndex {
 
   static const assetPath = 'assets/car_spec_dataset.json';
 
+  static Future<CarSpecIndexLoadResult>? _cachedLoadFuture;
+
+  /// When set (widget tests), skips asset IO and [compute] parse.
+  @visibleForTesting
+  static Future<CarSpecIndexLoadResult>? debugLoadWithResult;
+
+  @visibleForTesting
+  static void resetLoadCacheForTest() {
+    _cachedLoadFuture = null;
+    debugLoadWithResult = null;
+  }
+
+  @visibleForTesting
+  static Future<CarSpecIndexLoadResult> testEmptyLoadResult() async {
+    return const CarSpecIndexLoadResult._();
+  }
+
   /// Loads the bundled JSON; surfaces failures instead of failing silently.
   ///
   /// Parsing runs in a background isolate ([compute]) so large datasets do not
   /// freeze the UI isolate. Asset IO still happens on the caller isolate.
   static Future<CarSpecIndexLoadResult> loadWithResult() async {
+    final debugLoad = debugLoadWithResult;
+    if (debugLoad != null) return debugLoad;
+    return _cachedLoadFuture ??= _loadWithResultOnce();
+  }
+
+  static Future<CarSpecIndexLoadResult> _loadWithResultOnce() async {
     try {
       final sw = Stopwatch()..start();
       final raw = await rootBundle.loadString(assetPath);
