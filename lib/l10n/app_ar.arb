@@ -418,6 +418,7 @@
   "verifyEmailAction": "التحقق من البريد",
   "sendVerificationLinkToEmail": "إرسال رابط التحقق إلى بريدك",
   "verifyPhoneAction": "التحقق من الهاتف",
+  "phoneVerificationRequiredMessage": "تحقق من رقم هاتفك في الملف الشخصي قبل نشر الإعلانات أو إرسال الرسائل.",
   "receiveCodeBySms": "استلام رمز عبر الرسائل القصيرة",
   "verificationEmailSent": "تم إرسال بريد التحقق. تحقق من صندوق الوارد والرسائل غير المرغوبة.",
   "codeSentEnterAbove": "تم إرسال الرمز. أدخله أعلاه واضغط التحقق.",

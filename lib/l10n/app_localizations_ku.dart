@@ -1190,6 +1190,10 @@ class AppLocalizationsKu extends AppLocalizations {
   String get verifyPhoneAction => 'پشتڕاستکردنەوەی تەلەفۆن';
 
   @override
+  String get phoneVerificationRequiredMessage =>
+      'پێش بڵاوکردنەوەی ڕێکلام یان ناردنی پەیام، ژمارەی تەلەفۆنەکەت لە پرۆفایل پشتڕاست بکە.';
+
+  @override
   String get receiveCodeBySms => 'وەرگرتنی کۆد بە SMS';
 
   @override

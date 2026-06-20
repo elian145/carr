@@ -350,6 +350,36 @@ class AuthService extends ChangeNotifier {
   // Check if user is verified
   bool get isUserVerified => _currentUser?['is_verified'] ?? false;
 
+  Future<void> refreshProfile() async {
+    if (!ApiService.isAuthenticated) return;
+    await _loadUserProfile();
+  }
+
+  /// Test-only: authenticated session without network login.
+  Future<void> adoptTestSession({Map<String, dynamic>? user}) async {
+    await ApiService.setTokens(
+      accessToken: 'test_access_token',
+      refreshToken: 'test_refresh_token',
+    );
+    _currentUser = user ??
+        {
+          'id': 1,
+          'username': 'test',
+          'is_admin': false,
+          'account_type': 'individual',
+        };
+    _isAuthenticated = true;
+    _isLoading = false;
+    notifyListeners();
+  }
+
+  void resetTestSession() {
+    _isAuthenticated = false;
+    _currentUser = null;
+    _isLoading = false;
+    notifyListeners();
+  }
+
   // Get user ID
   String? get userId => _currentUser?['id'];
 

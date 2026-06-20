@@ -1184,6 +1184,10 @@ class AppLocalizationsAr extends AppLocalizations {
   String get verifyPhoneAction => 'التحقق من الهاتف';
 
   @override
+  String get phoneVerificationRequiredMessage =>
+      'تحقق من رقم هاتفك في الملف الشخصي قبل نشر الإعلانات أو إرسال الرسائل.';
+
+  @override
   String get receiveCodeBySms => 'استلام رمز عبر الرسائل القصيرة';
 
   @override

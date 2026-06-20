@@ -16,6 +16,7 @@ import '../services/auth_service.dart';
 import '../services/api_service.dart';
 import '../services/outgoing_chat_send_service.dart';
 import '../shared/errors/user_error_text.dart';
+import '../shared/auth/phone_verification_gate.dart';
 import '../shared/listings/listing_identity.dart';
 import '../shared/media/media_url.dart';
 import '../shared/text/pretty_title_case.dart';
@@ -2194,6 +2195,7 @@ class _ChatConversationPageState extends State<ChatConversationPage>
 
   Future<void> _sendVoiceMessage(XFile file) async {
     if (_isSending) return;
+    if (!await ensurePhoneVerifiedForAction(context)) return;
     setState(() => _isSending = true);
     final replyToMessageId = _replyingToMessage?.id;
     final startedAt = DateTime.now();
@@ -2749,6 +2751,7 @@ class _ChatConversationPageState extends State<ChatConversationPage>
     if (editingMessageId == null && content.isEmpty && !_hasDraftAttachments) {
       return;
     }
+    if (!await ensurePhoneVerifiedForAction(context)) return;
     setState(() => _isSending = true);
     _messageController.clear();
 

@@ -123,6 +123,9 @@ class WebSocketService {
 
   // Connect to Socket.IO (with polling fallback)
   static Future<void> connect() async {
+    // Widget/integration tests stub HTTP via [ApiService.testHttpClient]; skip real sockets.
+    if (ApiService.isTestHttpClientBound) return;
+
     try {
       if (_isConnected) return;
       if (_isConnecting) return;

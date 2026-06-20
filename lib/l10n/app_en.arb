@@ -418,6 +418,7 @@
   "verifyEmailAction": "Verify email",
   "sendVerificationLinkToEmail": "Send a verification link to your email",
   "verifyPhoneAction": "Verify phone",
+  "phoneVerificationRequiredMessage": "Verify your phone number in Profile before posting listings or sending messages.",
   "receiveCodeBySms": "Receive a code by SMS",
   "verificationEmailSent": "Verification email sent. Check your inbox and spam.",
   "codeSentEnterAbove": "Code sent. Enter it above and tap Verify.",

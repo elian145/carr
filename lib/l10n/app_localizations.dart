@@ -2356,6 +2356,12 @@ abstract class AppLocalizations {
   /// **'Verify phone'**
   String get verifyPhoneAction;
 
+  /// No description provided for @phoneVerificationRequiredMessage.
+  ///
+  /// In en, this message translates to:
+  /// **'Verify your phone number in Profile before posting listings or sending messages.'**
+  String get phoneVerificationRequiredMessage;
+
   /// No description provided for @receiveCodeBySms.
   ///
   /// In en, this message translates to:

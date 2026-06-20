@@ -6839,6 +6839,10 @@ class _SellStep4PageState extends State<SellStep4Page> {
       return;
     }
 
+    if (!await ensurePhoneVerifiedForAction(context)) {
+      return;
+    }
+
     _debugLog(
       'AI UI: Starting image processing for ${_selectedImages.length} images',
     );
@@ -6932,9 +6936,22 @@ class _SellStep4PageState extends State<SellStep4Page> {
     } catch (e) {
       _debugLog('AI UI: Error processing images: $e');
       if (!mounted) return;
-      ScaffoldMessenger.of(
-        context,
-      ).showSnackBar(SnackBar(content: Text('Error processing images: $e')));
+      if (isPhoneVerificationRequired(e)) {
+        await ensurePhoneVerifiedForAction(context);
+      }
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(
+            userErrorText(
+              context,
+              e,
+              fallback: 'Failed to blur plates. Please try again.',
+            ),
+          ),
+          backgroundColor: Colors.red,
+          duration: const Duration(seconds: 4),
+        ),
+      );
     } finally {
       if (!mounted) return;
       setState(() {
@@ -8783,6 +8800,20 @@ class _SellStep5PageState extends State<SellStep5Page> {
                                       .findAncestorStateOfType<
                                         _SellCarPageState
                                       >();
+                                  final isEdit =
+                                      parentState?._isEditMode == true;
+                                  if (!isEdit) {
+                                    final auth = context.read<AuthService>();
+                                    if (!auth.isUserVerified) {
+                                      setState(() {
+                                        isSubmitting = false;
+                                      });
+                                      await ensurePhoneVerifiedForAction(
+                                        context,
+                                      );
+                                      return;
+                                    }
+                                  }
                                   final Map<String, dynamic> carData =
                                       Map<String, dynamic>.from(
                                         parentState?.carData ?? {},

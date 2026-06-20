@@ -1,22 +1,15 @@
 import 'dart:convert';
 import 'dart:io';
+import 'package:flutter/foundation.dart';
 import 'package:http/http.dart' as http;
 import 'package:image_picker/image_picker.dart';
 import 'config.dart';
 import '../shared/auth/token_store.dart';
 import '../shared/listings/listing_identity.dart';
 import '../shared/phone/phone_normalizer.dart';
+import 'api_exception.dart';
 
-class ApiException implements Exception {
-  final int statusCode;
-  final String message;
-  final Map<String, dynamic>? body;
-
-  ApiException({required this.statusCode, required this.message, this.body});
-
-  @override
-  String toString() => message;
-}
+export 'api_exception.dart';
 
 class ApiService {
   /// 60s to allow Render (and similar PaaS) cold starts on first request.
@@ -29,6 +22,24 @@ class ApiService {
 
   static String? _accessToken;
   static String? _refreshToken;
+
+  static final http.Client _productionHttpClient = http.Client();
+  static http.Client? _testHttpClient;
+
+  /// Widget/integration tests: route API calls through [FakeApiServer] mock client.
+  @visibleForTesting
+  static set testHttpClient(http.Client? client) {
+    _testHttpClient = client;
+  }
+
+  @visibleForTesting
+  static http.Client? get boundTestHttpClient => _testHttpClient;
+
+  /// Whether tests have bound an in-memory HTTP client (skip real-time transports).
+  static bool get isTestHttpClientBound => _testHttpClient != null;
+
+  static http.Client get _httpClient =>
+      _testHttpClient ?? _productionHttpClient;
 
   // Initialize tokens from storage
   static Future<void> initializeTokens() async {
@@ -262,7 +273,7 @@ class ApiService {
     final rt = (_refreshToken ?? '').trim();
     if (rt.isEmpty) return false;
     try {
-      final response = await http
+      final response = await _httpClient
           .post(
             Uri.parse('$baseUrl/auth/refresh'),
             headers: {
@@ -304,12 +315,12 @@ class ApiService {
 
     switch (method.toUpperCase()) {
       case 'GET':
-        response = await http
+        response = await _httpClient
             .get(url, headers: requestHeaders)
             .timeout(_defaultTimeout);
         break;
       case 'POST':
-        response = await http
+        response = await _httpClient
             .post(
               url,
               headers: requestHeaders,
@@ -318,7 +329,7 @@ class ApiService {
             .timeout(_defaultTimeout);
         break;
       case 'PUT':
-        response = await http
+        response = await _httpClient
             .put(
               url,
               headers: requestHeaders,
@@ -327,7 +338,7 @@ class ApiService {
             .timeout(_defaultTimeout);
         break;
       case 'PATCH':
-        response = await http
+        response = await _httpClient
             .patch(
               url,
               headers: requestHeaders,
@@ -336,7 +347,7 @@ class ApiService {
             .timeout(_defaultTimeout);
         break;
       case 'DELETE':
-        response = await http
+        response = await _httpClient
             .delete(url, headers: requestHeaders)
             .timeout(_defaultTimeout);
         break;
@@ -352,12 +363,12 @@ class ApiService {
 
         switch (method.toUpperCase()) {
           case 'GET':
-            response = await http
+            response = await _httpClient
                 .get(url, headers: requestHeaders)
                 .timeout(_defaultTimeout);
             break;
           case 'POST':
-            response = await http
+            response = await _httpClient
                 .post(
                   url,
                   headers: requestHeaders,
@@ -366,7 +377,7 @@ class ApiService {
                 .timeout(_defaultTimeout);
             break;
           case 'PUT':
-            response = await http
+            response = await _httpClient
                 .put(
                   url,
                   headers: requestHeaders,
@@ -375,7 +386,7 @@ class ApiService {
                 .timeout(_defaultTimeout);
             break;
           case 'PATCH':
-            response = await http
+            response = await _httpClient
                 .patch(
                   url,
                   headers: requestHeaders,
@@ -384,7 +395,7 @@ class ApiService {
                 .timeout(_defaultTimeout);
             break;
           case 'DELETE':
-            response = await http
+            response = await _httpClient
                 .delete(url, headers: requestHeaders)
                 .timeout(_defaultTimeout);
             break;
@@ -415,7 +426,7 @@ class ApiService {
     final normalizedPhone = (phoneNumber != null && phoneNumber.trim().isNotEmpty)
         ? normalizePhoneNumber(phoneNumber)
         : null;
-    final response = await http
+    final response = await _httpClient
         .post(
           Uri.parse('$baseUrl/auth/register-request'),
           headers: _getHeaders(includeAuth: false),
@@ -448,7 +459,7 @@ class ApiService {
   }
 
   static Future<Map<String, dynamic>> confirmSignup(String token) async {
-    final response = await http
+    final response = await _httpClient
         .post(
           Uri.parse('$baseUrl/auth/register-confirm'),
           headers: _getHeaders(includeAuth: false),
@@ -472,7 +483,7 @@ class ApiService {
     String emailOrPhone,
     String password,
   ) async {
-    final response = await http
+    final response = await _httpClient
         .post(
           Uri.parse('$baseUrl/auth/login'),
           headers: _getHeaders(includeAuth: false),
@@ -511,7 +522,7 @@ class ApiService {
     String? dealershipLocation,
   }) async {
     final normalizedPhone = normalizePhoneNumber(phoneNumber);
-    final response = await http
+    final response = await _httpClient
         .post(
           Uri.parse('$baseUrl/auth/phone/start'),
           headers: _getHeaders(includeAuth: false),
@@ -549,7 +560,7 @@ class ApiService {
     String? dealershipLocation,
   }) async {
     final normalizedPhone = normalizePhoneNumber(phoneNumber);
-    final response = await http
+    final response = await _httpClient
         .post(
           Uri.parse('$baseUrl/auth/phone/verify'),
           headers: _getHeaders(includeAuth: false),
@@ -590,7 +601,7 @@ class ApiService {
       final headers = _getHeaders();
       final rt = (_refreshToken ?? '').trim();
       final body = (rt.isNotEmpty) ? json.encode({'refresh_token': rt}) : null;
-      await http
+      await _httpClient
           .post(Uri.parse('$baseUrl/auth/logout'), headers: headers, body: body)
           .timeout(_defaultTimeout);
     } catch (_) {}
@@ -636,7 +647,7 @@ class ApiService {
       // Backwards-compatible: backend historically mirrored email into phone_number.
       body = {'email': trimmed, 'phone_number': trimmed};
     }
-    final response = await http
+    final response = await _httpClient
         .post(
           Uri.parse('$baseUrl/auth/forgot-password'),
           headers: _getHeaders(includeAuth: false),
@@ -651,7 +662,7 @@ class ApiService {
     String token,
     String newPassword,
   ) async {
-    final response = await http
+    final response = await _httpClient
         .post(
           Uri.parse('$baseUrl/auth/reset-password'),
           headers: _getHeaders(includeAuth: false),
@@ -663,7 +674,7 @@ class ApiService {
   }
 
   static Future<Map<String, dynamic>> verifyEmail(String token) async {
-    final response = await http
+    final response = await _httpClient
         .post(
           Uri.parse('$baseUrl/auth/verify-email'),
           headers: _getHeaders(includeAuth: false),
@@ -689,7 +700,7 @@ class ApiService {
     final normalizedPhone = normalizePhoneNumber(phoneNumber);
     final apiRoot = baseUrl.endsWith('/api') ? baseUrl : '$baseUrl/api';
     final url = '$apiRoot/auth/send-verification';
-    final response = await http
+    final response = await _httpClient
         .post(
           Uri.parse(url),
           headers: _getHeaders(includeAuth: false),
@@ -714,7 +725,7 @@ class ApiService {
     final normalizedPhone = normalizePhoneNumber(phoneNumber);
     final apiRoot = baseUrl.endsWith('/api') ? baseUrl : '$baseUrl/api';
     final url = '$apiRoot/auth/verify-phone';
-    final response = await http
+    final response = await _httpClient
         .post(
           Uri.parse(url),
           headers: _getHeaders(includeAuth: false),
@@ -741,7 +752,7 @@ class ApiService {
 
   static Future<Map<String, dynamic>> getDealerProfile(String dealerPublicId) async {
     final id = Uri.encodeComponent(dealerPublicId.trim());
-    final response = await http
+    final response = await _httpClient
         .get(
           Uri.parse('$baseUrl/dealers/$id'),
           headers: _getHeaders(includeAuth: false),
@@ -763,7 +774,7 @@ class ApiService {
     final query = (q ?? '').trim();
     if (query.isNotEmpty) params['q'] = query;
     final uri = Uri.parse('$baseUrl/dealers').replace(queryParameters: params);
-    final response = await http
+    final response = await _httpClient
         .get(uri, headers: _getHeaders(includeAuth: false))
         .timeout(_defaultTimeout);
     return _handleResponse(response);
@@ -886,7 +897,7 @@ class ApiService {
         .map((e) => '${e.key}=${Uri.encodeComponent(e.value)}')
         .join('&');
 
-    final response = await http
+    final response = await _httpClient
         .get(
           Uri.parse('$baseUrl/cars?$queryString'),
           headers: _getHeaders(includeAuth: false),
@@ -898,7 +909,7 @@ class ApiService {
 
   static Future<Map<String, dynamic>> getCar(String carId) async {
     await _ensureTokenLoaded();
-    final response = await http
+    final response = await _httpClient
         .get(
           Uri.parse('$baseUrl/cars/$carId'),
           headers: _getHeaders(includeAuth: true),
@@ -1013,7 +1024,7 @@ class ApiService {
   static Future<void> uploadToSignedUpload(String uploadUrl, XFile file) async {
     final bytes = await file.readAsBytes();
     final uri = Uri.parse(uploadUrl);
-    final response = await http
+    final response = await _httpClient
         .put(
           uri,
           body: bytes,
@@ -1241,7 +1252,7 @@ class ApiService {
     final url = Uri.parse('$baseUrl$endpoint');
     Map<String, String> headers = _getHeaders();
 
-    http.Response response = await http
+    http.Response response = await _httpClient
         .get(url, headers: headers)
         .timeout(_defaultTimeout);
 
@@ -1252,7 +1263,7 @@ class ApiService {
         throw Exception('Authentication failed');
       }
       headers = _getHeaders();
-      response = await http.get(url, headers: headers).timeout(_defaultTimeout);
+      response = await _httpClient.get(url, headers: headers).timeout(_defaultTimeout);
     }
 
     if (response.statusCode < 200 || response.statusCode >= 300) {
@@ -1612,7 +1623,7 @@ class ApiService {
     final url = Uri.parse('$baseUrl$endpoint');
     Map<String, String> headers = _getHeaders();
 
-    http.Response response = await http
+    http.Response response = await _httpClient
         .get(url, headers: headers)
         .timeout(_defaultTimeout);
 
@@ -1623,7 +1634,7 @@ class ApiService {
         throw Exception('Authentication failed');
       }
       headers = _getHeaders();
-      response = await http.get(url, headers: headers).timeout(_defaultTimeout);
+      response = await _httpClient.get(url, headers: headers).timeout(_defaultTimeout);
     }
 
     if (response.statusCode < 200 || response.statusCode >= 300) {

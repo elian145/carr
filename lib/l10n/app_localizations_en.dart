@@ -1189,6 +1189,10 @@ class AppLocalizationsEn extends AppLocalizations {
   String get verifyPhoneAction => 'Verify phone';
 
   @override
+  String get phoneVerificationRequiredMessage =>
+      'Verify your phone number in Profile before posting listings or sending messages.';
+
+  @override
   String get receiveCodeBySms => 'Receive a code by SMS';
 
   @override

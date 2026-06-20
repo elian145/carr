@@ -418,6 +418,7 @@
   "verifyEmailAction": "پشتڕاستکردنەوەی ئیمەیل",
   "sendVerificationLinkToEmail": "لینکی پشتڕاستکردن بۆ ئیمەیلەکەت بنێرە",
   "verifyPhoneAction": "پشتڕاستکردنەوەی تەلەفۆن",
+  "phoneVerificationRequiredMessage": "پێش بڵاوکردنەوەی ڕێکلام یان ناردنی پەیام، ژمارەی تەلەفۆنەکەت لە پرۆفایل پشتڕاست بکە.",
   "receiveCodeBySms": "وەرگرتنی کۆد بە SMS",
   "verificationEmailSent": "ئیمەیلی پشتڕاستکردن نێردرا. صندوقی وەرگرتن و سپام بپشکنە.",
   "codeSentEnterAbove": "کۆد نێردرا. لە سەرەوە بنووسە و کرتە لە پشتڕاستکردن بکە.",
