@@ -10,6 +10,7 @@ import 'api_exception.dart';
 
 export 'api_exception.dart';
 
+part 'api/api_http.dart';
 part 'api/api_auth.dart';
 part 'api/api_listings.dart';
 part 'api/api_chat.dart';
@@ -45,373 +46,61 @@ class ApiService {
   static http.Client get _httpClient =>
       _testHttpClient ?? _productionHttpClient;
 
-  // Initialize tokens from storage
-  static Future<void> initializeTokens() async {
-    await TokenStore.load();
-    _accessToken = TokenStore.token;
-    _refreshToken = TokenStore.refreshToken;
-  }
+  // HTTP + token core (api/api_http.dart)
+  static Future<void> initializeTokens() => _ApiServiceHttp.initializeTokens();
 
-  // Save tokens to storage
-  static Future<void> _saveAccessToken(String accessToken) async {
-    await TokenStore.save(accessToken);
-    _accessToken = TokenStore.token;
-  }
+  static Future<void> _saveAccessToken(String accessToken) =>
+      _ApiServiceHttp._saveAccessToken(accessToken);
 
-  static Future<void> _saveRefreshToken(String? refreshToken) async {
-    await TokenStore.saveRefresh(refreshToken);
-    _refreshToken = TokenStore.refreshToken;
-  }
+  static Future<void> _saveRefreshToken(String? refreshToken) =>
+      _ApiServiceHttp._saveRefreshToken(refreshToken);
 
-  /// Set the current access token (best-effort persisted).
-  /// Use this when the app obtains a token outside of [ApiService.login],
-  /// e.g. after signup or external auth.
-  static Future<void> setAccessToken(String? token) async {
-    final t = (token ?? '').trim();
-    if (t.isEmpty) {
-      await clearTokens();
-      return;
-    }
-    await _saveAccessToken(t);
-  }
+  static Future<void> setAccessToken(String? token) =>
+      _ApiServiceHttp.setAccessToken(token);
 
-  /// Set the current refresh token (best-effort persisted).
-  static Future<void> setRefreshToken(String? token) async {
-    final t = (token ?? '').trim();
-    if (t.isEmpty) {
-      await _saveRefreshToken(null);
-      return;
-    }
-    await _saveRefreshToken(t);
-  }
+  static Future<void> setRefreshToken(String? token) =>
+      _ApiServiceHttp.setRefreshToken(token);
 
-  /// Set both access and refresh tokens (best-effort persisted).
   static Future<void> setTokens({
     String? accessToken,
     String? refreshToken,
-  }) async {
-    await setAccessToken(accessToken);
-    await setRefreshToken(refreshToken);
-  }
-
-  // Clear tokens
-  static Future<void> clearTokens() async {
-    await TokenStore.clear();
-    _accessToken = null;
-    _refreshToken = null;
-  }
-
-  static Future<void> _ensureTokenLoaded() async {
-    if (_accessToken != null && _accessToken!.isNotEmpty) return;
-    await TokenStore.load();
-    final t = TokenStore.token;
-    if (t != null && t.isNotEmpty) {
-      _accessToken = t;
-    }
-  }
-
-  // Get headers with authorization
-  static Map<String, String> _getHeaders({bool includeAuth = true}) {
-    Map<String, String> headers = {'Content-Type': 'application/json'};
-
-    if (includeAuth && _accessToken != null && _accessToken!.isNotEmpty) {
-      headers['Authorization'] = 'Bearer $_accessToken';
-    }
-
-    return headers;
-  }
-
-  // Handle API response
-  static Map<String, dynamic> _handleResponse(http.Response response) {
-    final int code = response.statusCode;
-    final String body = response.body;
-    if (code >= 200 && code < 300) {
-      return body.isNotEmpty ? json.decode(body) : <String, dynamic>{};
-    }
-    if (code == 429) {
-      String message = 'Too many requests. Please try again later.';
-      int? retryAfterSeconds;
-
-      try {
-        final Map<String, dynamic> err = body.isNotEmpty
-            ? json.decode(body)
-            : <String, dynamic>{};
-        final msg = (err['message'] ?? err['error'] ?? '').toString().trim();
-        if (msg.isNotEmpty) {
-          message = msg;
-        }
-        final retryAfter = err['retry_after'];
-        if (retryAfter is int) {
-          retryAfterSeconds = retryAfter;
-        } else if (retryAfter is num) {
-          retryAfterSeconds = retryAfter.toInt();
-        }
-      } catch (_) {}
-
-      final retryHeader = response.headers['retry-after'];
-      if (retryAfterSeconds == null && retryHeader != null) {
-        retryAfterSeconds = int.tryParse(retryHeader.trim());
-      }
-
-      if (retryAfterSeconds != null && retryAfterSeconds > 0) {
-        final minutes = (retryAfterSeconds / 60).ceil();
-        message =
-            '$message Please try again in $minutes minute${minutes == 1 ? '' : 's'}.';
-      }
-
-      throw ApiException(statusCode: code, message: message);
-    }
-    try {
-      final Map<String, dynamic> err = body.isNotEmpty
-          ? json.decode(body) as Map<String, dynamic>
-          : <String, dynamic>{};
-      final messagePart =
-          (err['message'] ?? '').toString().trim();
-      final errorPart = (err['error'] ?? '').toString().trim();
-      String msg = messagePart;
-      if (errorPart.isNotEmpty &&
-          errorPart != messagePart &&
-          !messagePart.contains(errorPart)) {
-        msg = msg.isEmpty ? errorPart : '$msg ($errorPart)';
-      }
-      if (msg.isEmpty) {
-        msg = errorPart;
-      }
-      throw ApiException(
-        statusCode: code,
-        message: msg.isNotEmpty ? msg : 'API request failed ($code)',
-        body: err,
+  }) =>
+      _ApiServiceHttp.setTokens(
+        accessToken: accessToken,
+        refreshToken: refreshToken,
       );
-    } on ApiException {
-      rethrow;
-    } catch (_) {
-      throw ApiException(
-        statusCode: code,
-        message: 'API request failed ($code)',
-      );
-    }
-  }
 
-  static Map<String, dynamic> _decodeMapBody(
-    String body, {
-    required int statusCode,
-    String fallbackMessage = 'API request failed',
-  }) {
-    if (body.trim().isEmpty) {
-      return <String, dynamic>{};
-    }
-    try {
-      final decoded = json.decode(body);
-      if (decoded is Map) {
-        return Map<String, dynamic>.from(decoded.cast<String, dynamic>());
-      }
-      throw ApiException(
-        statusCode: statusCode,
-        message: '$fallbackMessage ($statusCode)',
-      );
-    } on ApiException {
-      rethrow;
-    } catch (_) {
-      throw ApiException(
-        statusCode: statusCode,
-        message: body.trim().isNotEmpty
-            ? body.trim()
-            : '$fallbackMessage ($statusCode)',
-      );
-    }
-  }
+  static Future<void> clearTokens() => _ApiServiceHttp.clearTokens();
 
-  static ApiException _uploadException(int statusCode, String responseBody) {
-    String message = 'Upload failed';
-    Map<String, dynamic>? body;
-    try {
-      final decoded = responseBody.trim().isNotEmpty
-          ? json.decode(responseBody)
-          : <String, dynamic>{};
-      if (decoded is Map) {
-        body = Map<String, dynamic>.from(decoded.cast<String, dynamic>());
-        final msg = (body['message'] ?? body['error'] ?? '').toString().trim();
-        if (msg.isNotEmpty) message = msg;
-      } else if (responseBody.trim().isNotEmpty) {
-        message = responseBody.trim();
-      }
-    } catch (_) {
-      if (responseBody.trim().isNotEmpty) message = responseBody.trim();
-    }
-    return ApiException(statusCode: statusCode, message: message, body: body);
-  }
+  static Future<void> _ensureTokenLoaded() =>
+      _ApiServiceHttp._ensureTokenLoaded();
+
+  static Map<String, String> _getHeaders({bool includeAuth = true}) =>
+      _ApiServiceHttp._getHeaders(includeAuth: includeAuth);
+
+  static Map<String, dynamic> _handleResponse(http.Response response) =>
+      _ApiServiceHttp._handleResponse(response);
 
   static Future<Map<String, dynamic>> _sendAuthenticatedMultipart(
     Future<http.MultipartRequest> Function() buildRequest,
-  ) async {
-    await _ensureTokenLoaded();
+  ) =>
+      _ApiServiceHttp._sendAuthenticatedMultipart(buildRequest);
 
-    Future<http.Response> sendOnce() async {
-      final request = await buildRequest();
-      if (_accessToken != null && _accessToken!.isNotEmpty) {
-        request.headers['Authorization'] = 'Bearer $_accessToken';
-      }
-      final streamed = await request.send().timeout(_uploadTimeout);
-      return http.Response.fromStream(streamed);
-    }
+  static Future<bool> _refreshAccessToken() =>
+      _ApiServiceHttp._refreshAccessToken();
 
-    var response = await sendOnce();
-    if (response.statusCode == 401 && await _refreshAccessToken()) {
-      response = await sendOnce();
-    }
-    if (response.statusCode >= 200 && response.statusCode < 300) {
-      return _decodeMapBody(
-        response.body,
-        statusCode: response.statusCode,
-        fallbackMessage: 'Upload failed',
-      );
-    }
-    if (response.statusCode == 401) {
-      await clearTokens();
-    }
-    throw _uploadException(response.statusCode, response.body);
-  }
-
-  // Refresh access token
-  static Future<bool> _refreshAccessToken() async {
-    final rt = (_refreshToken ?? '').trim();
-    if (rt.isEmpty) return false;
-    try {
-      final response = await _httpClient
-          .post(
-            Uri.parse('$baseUrl/auth/refresh'),
-            headers: {
-              'Content-Type': 'application/json',
-              'Authorization': 'Bearer $rt',
-            },
-          )
-          .timeout(_defaultTimeout);
-      if (response.statusCode >= 200 && response.statusCode < 300) {
-        final data = response.body.isNotEmpty
-            ? json.decode(response.body)
-            : <String, dynamic>{};
-        final String? access = (data['access_token'] as String?)?.trim();
-        final String? refresh = (data['refresh_token'] as String?)?.trim();
-        if (access != null && access.isNotEmpty) {
-          await _saveAccessToken(access);
-          if (refresh != null && refresh.isNotEmpty) {
-            await _saveRefreshToken(refresh);
-          }
-          return true;
-        }
-      }
-    } catch (_) {}
-    return false;
-  }
-
-  // Make authenticated request with automatic token refresh
   static Future<Map<String, dynamic>> _makeAuthenticatedRequest(
     String method,
     String endpoint, {
     Map<String, dynamic>? body,
     Map<String, String>? headers,
-  }) async {
-    await _ensureTokenLoaded();
-    final url = Uri.parse('$baseUrl$endpoint');
-    final requestHeaders = {..._getHeaders(), ...?headers};
-
-    http.Response response;
-
-    switch (method.toUpperCase()) {
-      case 'GET':
-        response = await _httpClient
-            .get(url, headers: requestHeaders)
-            .timeout(_defaultTimeout);
-        break;
-      case 'POST':
-        response = await _httpClient
-            .post(
-              url,
-              headers: requestHeaders,
-              body: body != null ? json.encode(body) : null,
-            )
-            .timeout(_defaultTimeout);
-        break;
-      case 'PUT':
-        response = await _httpClient
-            .put(
-              url,
-              headers: requestHeaders,
-              body: body != null ? json.encode(body) : null,
-            )
-            .timeout(_defaultTimeout);
-        break;
-      case 'PATCH':
-        response = await _httpClient
-            .patch(
-              url,
-              headers: requestHeaders,
-              body: body != null ? json.encode(body) : null,
-            )
-            .timeout(_defaultTimeout);
-        break;
-      case 'DELETE':
-        response = await _httpClient
-            .delete(url, headers: requestHeaders)
-            .timeout(_defaultTimeout);
-        break;
-      default:
-        throw Exception('Unsupported HTTP method: $method');
-    }
-
-    // If unauthorized, try to refresh token
-    if (response.statusCode == 401) {
-      if (await _refreshAccessToken()) {
-        // Retry request with new token
-        requestHeaders['Authorization'] = 'Bearer $_accessToken';
-
-        switch (method.toUpperCase()) {
-          case 'GET':
-            response = await _httpClient
-                .get(url, headers: requestHeaders)
-                .timeout(_defaultTimeout);
-            break;
-          case 'POST':
-            response = await _httpClient
-                .post(
-                  url,
-                  headers: requestHeaders,
-                  body: body != null ? json.encode(body) : null,
-                )
-                .timeout(_defaultTimeout);
-            break;
-          case 'PUT':
-            response = await _httpClient
-                .put(
-                  url,
-                  headers: requestHeaders,
-                  body: body != null ? json.encode(body) : null,
-                )
-                .timeout(_defaultTimeout);
-            break;
-          case 'PATCH':
-            response = await _httpClient
-                .patch(
-                  url,
-                  headers: requestHeaders,
-                  body: body != null ? json.encode(body) : null,
-                )
-                .timeout(_defaultTimeout);
-            break;
-          case 'DELETE':
-            response = await _httpClient
-                .delete(url, headers: requestHeaders)
-                .timeout(_defaultTimeout);
-            break;
-        }
-      } else {
-        await clearTokens();
-        throw Exception('Authentication failed');
-      }
-    }
-
-    return _handleResponse(response);
-  }
+  }) =>
+      _ApiServiceHttp._makeAuthenticatedRequest(
+        method,
+        endpoint,
+        body: body,
+        headers: headers,
+      );
 
   // Authentication & profile (api/api_auth.dart)
   static Future<Map<String, dynamic>> registerEmailRequest({

@@ -13,7 +13,6 @@ import 'package:flutter/services.dart' as services;
 import 'dart:ui' as ui;
 import 'dart:async';
 import 'dart:math' as math;
-import 'dart:typed_data';
 import 'package:image_picker/image_picker.dart';
 import 'package:video_thumbnail/video_thumbnail.dart';
 import 'dart:io';

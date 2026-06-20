@@ -2752,8 +2752,9 @@ class _HomePageState extends State<HomePage> {
   String? _getValidFuelTypeValue() {
     if (selectedFuelType == null ||
         selectedFuelType == 'Any' ||
-        selectedFuelType!.isEmpty)
+        selectedFuelType!.isEmpty) {
       return '';
+    }
 
     final availableTypes = getAvailableFuelTypes();
 

@@ -16,11 +16,11 @@ REPO = Path(__file__).resolve().parents[1]
 SRC = REPO / "lib/services/api_service.dart"
 
 BOUNDARIES = [
-    ("api_http.dart", "Token + HTTP core", 46, 414),
-    ("api_auth.dart", "Auth + profile + dealer admin", 416, 584),
-    ("api_listings.dart", "Cars, favorites, saved searches", 586, 759),
-    ("api_chat.dart", "Chat HTTP + attachments", 771, 878),
-    ("api_admin.dart", "Reports, blocks, push admin", 880, 957),
+    ("api_http.dart", "Token + HTTP core (delegators)", 48, 102),
+    ("api_auth.dart", "Auth + profile + dealer admin", 104, 272),
+    ("api_listings.dart", "Cars, favorites, saved searches", 274, 447),
+    ("api_chat.dart", "Chat HTTP + attachments", 459, 566),
+    ("api_admin.dart", "Reports, blocks, push admin", 568, 645),
 ]
 
 

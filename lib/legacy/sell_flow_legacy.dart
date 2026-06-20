@@ -6609,10 +6609,11 @@ class _SellStep4PageState extends State<SellStep4Page> {
         ),
       );
     } finally {
-      if (!mounted) return;
-      setState(() {
-        _isProcessingImages = false;
-      });
+      if (mounted) {
+        setState(() {
+          _isProcessingImages = false;
+        });
+      }
     }
   }
 
