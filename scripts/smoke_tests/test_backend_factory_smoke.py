@@ -576,6 +576,23 @@ class BackendFactorySmokeTest(unittest.TestCase):
         self.assertIn("car", body)
         self.assertEqual((body.get("car") or {}).get("brand"), "honda")
 
+    def test_list_cars_with_brand_filter(self):
+        r = self.client.get("/api/cars?brand=toyota&page=1&per_page=10")
+        self.assertEqual(r.status_code, 200, r.data)
+        body = r.get_json() or {}
+        self.assertIn("cars", body)
+        self.assertIn("pagination", body)
+        self.assertIsInstance(body.get("cars"), list)
+
+    def test_favorite_status_get(self):
+        r = self.client.get(
+            f"/api/cars/{self.car_public}/favorite",
+            headers=self._auth(self.viewer_token),
+        )
+        self.assertEqual(r.status_code, 200, r.data)
+        body = r.get_json() or {}
+        self.assertIn("is_favorited", body)
+
     def test_favorites_toggle_and_list(self):
         fav = self.client.post(
             f"/api/cars/{self.car_public}/favorite",

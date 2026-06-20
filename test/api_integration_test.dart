@@ -63,4 +63,15 @@ void main() {
     expect(result['cars'], isA<List>());
     expect((result['cars'] as List).length, 1);
   });
+
+  test('getCars with brand filter returns pagination envelope', () async {
+    final result = await ApiService.getCars(page: 1, perPage: 10, brand: 'toyota');
+    expect(result['cars'], isA<List>());
+    expect(result['pagination'], isA<Map>());
+  });
+
+  test('isCarFavorited GET reads favorite status envelope', () async {
+    final favorited = await ApiService.isCarFavorited('list_car_1');
+    expect(favorited, isA<bool>());
+  });
 }
