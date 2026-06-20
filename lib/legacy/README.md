@@ -21,6 +21,10 @@ All `part` files share one library with `main_legacy.dart` (imports only in the 
 
 `lib/legacy/**` is included in `flutter analyze` (no folder exclude). **0 analyzer issues** (warnings and infos) as of the latest hardening pass.
 
+## HTTP / ApiService
+
+All legacy network I/O goes through `ApiService` (`lib/services/api_service.dart` and `lib/services/api/*`). Raw `http` calls were removed from legacy part files; token refresh and timeouts are centralized there.
+
 ## Refactor direction
 
 Prefer new screens under `lib/pages/` and wire them in `MyApp` routes gradually. The modern `lib/pages/home_page.dart` is separate; `/` still uses legacy `HomePage` until parity is complete.

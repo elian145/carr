@@ -162,6 +162,32 @@ class BackendFactorySmokeTest(unittest.TestCase):
         self.assertEqual(m.status_code, 200, m.data)
         self.assertGreaterEqual(len(m.get_json() or []), 1)
 
+    def test_chats_list_after_message(self):
+        send = self.client.post(
+            f"/api/chat/{self.car_id}/send",
+            json={"content": "list me"},
+            headers=self._auth(self.viewer_token),
+        )
+        self.assertEqual(send.status_code, 201, send.data)
+
+        seller_chats = self.client.get("/api/chats", headers=self._auth(self.seller_token))
+        self.assertEqual(seller_chats.status_code, 200, seller_chats.data)
+        rows = seller_chats.get_json()
+        self.assertIsInstance(rows, list)
+        self.assertGreaterEqual(len(rows), 1)
+        first = rows[0]
+        self.assertIn("conversation_id", first)
+        self.assertIn("car_id", first)
+        self.assertIn("last_message", first)
+        self.assertEqual(first.get("car_id"), self.car_public)
+
+        viewer_chats = self.client.get("/api/chats", headers=self._auth(self.viewer_token))
+        self.assertEqual(viewer_chats.status_code, 200, viewer_chats.data)
+        self.assertGreaterEqual(len(viewer_chats.get_json() or []), 1)
+
+        anon = self.client.get("/api/chats")
+        self.assertEqual(anon.status_code, 401, anon.data)
+
     def test_upload_and_process_images(self):
         # minimal jpeg bytes (not necessarily decodable); pipeline must not crash
         jpeg = b"\xff\xd8\xff\xdb" + b"0" * 100 + b"\xff\xd9"
