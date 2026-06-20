@@ -238,7 +238,7 @@ class _TikTokListingCardState extends State<_TikTokListingCard> {
                   end: Alignment.bottomCenter,
                   colors: [
                     Colors.transparent,
-                    Colors.black.withValues(alpha: 0.85),
+                    Colors.black.withOpacity(0.85),
                   ],
                 ),
               ),
@@ -381,7 +381,7 @@ class _TikTokListingCardState extends State<_TikTokListingCard> {
                     padding:
                         const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
                     decoration: BoxDecoration(
-                      color: const Color(0xFFFF6B00).withValues(alpha: 0.9),
+                      color: const Color(0xFFFF6B00).withOpacity(0.9),
                       borderRadius: BorderRadius.circular(20),
                     ),
                     child: Row(
@@ -414,13 +414,13 @@ class _TikTokListingCardState extends State<_TikTokListingCard> {
               children: [
                 Icon(
                   Icons.keyboard_arrow_up,
-                  color: Colors.white.withValues(alpha: 0.5),
+                  color: Colors.white.withOpacity(0.5),
                   size: 28,
                 ),
                 const SizedBox(height: 4),
                 Icon(
                   Icons.keyboard_arrow_down,
-                  color: Colors.white.withValues(alpha: 0.5),
+                  color: Colors.white.withOpacity(0.5),
                   size: 28,
                 ),
               ],

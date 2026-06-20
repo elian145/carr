@@ -2416,12 +2416,6 @@ abstract class AppLocalizations {
   /// **'Send code'**
   String get sendCodeButton;
 
-  /// No description provided for @phoneVerificationRequiredMessage.
-  ///
-  /// In en, this message translates to:
-  /// **'Verify your phone number in Profile before posting listings or sending messages.'**
-  String get phoneVerificationRequiredMessage;
-
   /// No description provided for @noListingsYet.
   ///
   /// In en, this message translates to:

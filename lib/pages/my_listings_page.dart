@@ -13,12 +13,13 @@ import '../models/analytics_model.dart';
 import '../shared/errors/user_error_text.dart';
 import '../shared/listings/listing_events.dart';
 import '../shared/listings/listing_identity.dart';
+import '../shared/prefs/sell_listing_draft_prefs.dart';
 import '../shared/prefs/sell_draft_media_persistence.dart';
-import '../shared/prefs/sell_draft_prefs.dart';
-import '../shared/prefs/sell_draft_list.dart';
+import '../shared/prefs/legacy_sell_draft_list.dart';
 import '../shared/text/pretty_title_case.dart';
 import '../shared/prefs/listing_layout_prefs.dart';
-import '../shared/listings/global_listing_card.dart';
+import '../legacy/main_legacy.dart'
+    show buildGlobalCarCard, mapListingToGlobalCarCardData;
 
 class MyListingsPage extends StatefulWidget {
   const MyListingsPage({super.key});
@@ -76,6 +77,12 @@ class _MyListingsPageState extends State<MyListingsPage> {
     if (id == null || id.isEmpty || !mounted) return;
     setState(() {
       _cars.removeWhere((c) => listingMatchesId(c, id));
+    });
+  }
+
+  void _removeListingFromList(String carId) {
+    setState(() {
+      _cars.removeWhere((c) => listingMatchesId(c, carId));
     });
   }
 
@@ -153,7 +160,7 @@ class _MyListingsPageState extends State<MyListingsPage> {
     try {
       final drafts = <Map<String, dynamic>>[];
       final ownerKey = _buildDraftOwnerKey();
-      final modernDraft = await SellDraftPrefs.loadListingDraft(ownerKey);
+      final modernDraft = await SellListingDraftPrefs.load(ownerKey);
       if (modernDraft != null && _hasMeaningfulDraftData(modernDraft)) {
         drafts.add(<String, dynamic>{
           'draftId': 'modern_$ownerKey',
@@ -162,7 +169,7 @@ class _MyListingsPageState extends State<MyListingsPage> {
           'isModern': true,
         });
       }
-      drafts.addAll(await SellDraftList.loadVisible());
+      drafts.addAll(await LegacySellDraftList.loadVisible());
       if (!mounted) return;
       setState(() {
         _drafts = drafts;
@@ -180,9 +187,9 @@ class _MyListingsPageState extends State<MyListingsPage> {
   Future<void> _discardDraft(Map<String, dynamic> draft) async {
     final draftId = (draft['draftId'] ?? '').toString();
     if (draft['isModern'] == true) {
-      await SellDraftPrefs.clearListingDraft(_buildDraftOwnerKey());
+      await SellListingDraftPrefs.clear(_buildDraftOwnerKey());
     } else {
-      await SellDraftList.discard(draft);
+      await LegacySellDraftList.discard(draft);
     }
     if (!mounted) return;
     setState(() {
@@ -208,7 +215,7 @@ class _MyListingsPageState extends State<MyListingsPage> {
         },
       );
     } else {
-      final prepared = await SellDraftList.prepareForResume(draft);
+      final prepared = await LegacySellDraftList.prepareForResume(draft);
       if (!mounted) return;
       await Navigator.pushNamed(
         context,
@@ -267,7 +274,7 @@ class _MyListingsPageState extends State<MyListingsPage> {
             (snapshot['carData'] as Map).cast<String, dynamic>(),
           )
         : <String, dynamic>{};
-    final currentStep = SellDraftList.readStep(snapshot['currentStep']);
+    final currentStep = LegacySellDraftList.readStep(snapshot['currentStep']);
     const labels = [
       'Step 1: Basic info',
       'Step 2: Details',
@@ -312,7 +319,7 @@ class _MyListingsPageState extends State<MyListingsPage> {
             child: Container(
               padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
               decoration: BoxDecoration(
-                color: Colors.black.withValues(alpha: 0.62),
+                color: Colors.black.withOpacity(0.62),
                 borderRadius: BorderRadius.circular(999),
               ),
               child: const Text(
@@ -330,7 +337,7 @@ class _MyListingsPageState extends State<MyListingsPage> {
             top: 10,
             right: 10,
             child: Material(
-              color: Colors.black.withValues(alpha: 0.62),
+              color: Colors.black.withOpacity(0.62),
               shape: const CircleBorder(),
               child: IconButton(
                 visualDensity: VisualDensity.compact,
@@ -350,7 +357,7 @@ class _MyListingsPageState extends State<MyListingsPage> {
             child: Container(
               padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
               decoration: BoxDecoration(
-                color: Colors.black.withValues(alpha: 0.62),
+                color: Colors.black.withOpacity(0.62),
                 borderRadius: BorderRadius.circular(999),
               ),
               child: Text(
@@ -379,7 +386,7 @@ class _MyListingsPageState extends State<MyListingsPage> {
             Container(
               padding: const EdgeInsets.all(24),
               decoration: BoxDecoration(
-                color: const Color(0xFFFF6B00).withValues(alpha: 0.1),
+                color: const Color(0xFFFF6B00).withOpacity(0.1),
                 shape: BoxShape.circle,
               ),
               child: const Icon(

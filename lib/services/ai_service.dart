@@ -207,20 +207,6 @@ class AiService {
         onTimeout: () => throw TimeoutException('Process images timed out'),
       );
       final response = await http.Response.fromStream(streamed);
-      if (response.statusCode == 403) {
-        try {
-          final data = json.decode(response.body);
-          if (data is Map<String, dynamic>) {
-            throw ApiException(
-              statusCode: 403,
-              message: (data['message'] ?? 'Forbidden').toString(),
-              body: data,
-            );
-          }
-        } catch (e) {
-          if (e is ApiException) rethrow;
-        }
-      }
       if (response.statusCode != 200) {
         appLog(
           'AI Service: Process images failed: ${response.statusCode} ${response.body}',

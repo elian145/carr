@@ -2,7 +2,6 @@ import 'package:flutter/material.dart';
 
 import '../../l10n/app_localizations.dart';
 import '../../services/api_service.dart';
-import '../auth/phone_verification_gate.dart';
 
 String userErrorText(
   BuildContext context,
@@ -20,9 +19,6 @@ String userErrorText(
   }
 
   if (error is ApiException) {
-    if (isPhoneVerificationRequired(error)) {
-      return phoneVerificationRequiredMessage(loc);
-    }
     final msg = normalize(error.message);
     if (msg.isNotEmpty && error.statusCode >= 400 && error.statusCode < 500) {
       return msg;

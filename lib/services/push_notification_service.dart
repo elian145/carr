@@ -3,13 +3,13 @@ import 'dart:io';
 
 import 'package:firebase_core/firebase_core.dart';
 import 'package:firebase_messaging/firebase_messaging.dart';
+import 'package:flutter/foundation.dart';
 import 'package:flutter_local_notifications/flutter_local_notifications.dart';
 import 'package:permission_handler/permission_handler.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 import 'api_service.dart' show ApiException, ApiService;
 import 'config.dart';
-import '../shared/debug/app_log.dart';
 
 const AndroidNotificationChannel _chatChannel = AndroidNotificationChannel(
   'carzo_chat',
@@ -88,7 +88,10 @@ class PushNotificationService {
         await Firebase.initializeApp();
       }
     } catch (e) {
-      appLog('PushNotificationService: Firebase init failed: $e');
+      if (kDebugMode) {
+        // ignore: avoid_print
+        print('PushNotificationService: Firebase init failed: $e');
+      }
       return;
     }
 
@@ -115,10 +118,13 @@ class PushNotificationService {
 
       if (settings.authorizationStatus != AuthorizationStatus.authorized &&
           settings.authorizationStatus != AuthorizationStatus.provisional) {
-        appLog(
-          'PushNotificationService: notification permission not granted '
-          '(${settings.authorizationStatus})',
-        );
+        if (kDebugMode) {
+          // ignore: avoid_print
+          print(
+            'PushNotificationService: notification permission not granted '
+            '(${settings.authorizationStatus})',
+          );
+        }
         return;
       }
 
@@ -135,12 +141,16 @@ class PushNotificationService {
       if (token != null && token.isNotEmpty) {
         await sp.setString('push_token', token);
         await sp.remove('push_last_sync_error');
-        appLog('PushNotificationService: FCM token cached (${token.length} chars)');
+        if (kDebugMode) {
+          // ignore: avoid_print
+          print('PushNotificationService: FCM token cached (${token.length} chars)');
+        }
         if (ApiService.isAuthenticated) {
           await syncTokenWithBackend();
         }
-      } else {
-        appLog(
+      } else if (kDebugMode) {
+        // ignore: avoid_print
+        print(
           'PushNotificationService: no FCM token (emulator without Play Services?)',
         );
       }
@@ -160,12 +170,18 @@ class PushNotificationService {
 
       FirebaseMessaging.onMessage.listen((RemoteMessage message) async {
         await _showLocalNotification(message);
-        appLog(
-          'FCM foreground: ${message.notification?.title ?? message.data}',
-        );
+        if (kDebugMode) {
+          // ignore: avoid_print
+          print(
+            'FCM foreground: ${message.notification?.title ?? message.data}',
+          );
+        }
       });
     } catch (e) {
-      appLog('PushNotificationService: setup failed: $e');
+      if (kDebugMode) {
+        // ignore: avoid_print
+        print('PushNotificationService: setup failed: $e');
+      }
     }
   }
 
@@ -210,11 +226,17 @@ class PushNotificationService {
       await ApiService.registerPushToken(token);
       await sp.setString('push_last_sync_ok', DateTime.now().toIso8601String());
       await sp.remove('push_last_sync_error');
-      appLog('PushNotificationService: token registered with backend');
+      if (kDebugMode) {
+        // ignore: avoid_print
+        print('PushNotificationService: token registered with backend');
+      }
     } catch (e) {
       final sp = await SharedPreferences.getInstance();
       await sp.setString('push_last_sync_error', e.toString());
-      appLog('PushNotificationService: backend register failed: $e');
+      if (kDebugMode) {
+        // ignore: avoid_print
+        print('PushNotificationService: backend register failed: $e');
+      }
     }
   }
 
@@ -259,7 +281,10 @@ class PushNotificationService {
         enabled: enabled,
       );
     } catch (e) {
-      appLog('PushNotificationService: setPushEnabled failed: $e');
+      if (kDebugMode) {
+        // ignore: avoid_print
+        print('PushNotificationService: setPushEnabled failed: $e');
+      }
     }
   }
 }

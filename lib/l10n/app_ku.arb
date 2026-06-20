@@ -428,7 +428,6 @@
   "verifyPhoneDialogMessage": "کۆدێکی ٦ ژمارە دەنێردرێت بۆ {phone}.",
   "sixDigitCodeLabel": "کۆدی ٦ ژمارە",
   "sendCodeButton": "ناردنی کۆد",
-  "phoneVerificationRequiredMessage": "پێش بڵاوکردنەوەی ڕێکلام یان ناردنی پەیام، ژمارەی تەلەفۆنت لە پرۆفایلدا پشتڕاست بکەرەوە.",
 
   "noListingsYet": "هێشتا هیچ ڕێکلامێک نییە",
   "noListingsEmptyHint": "هێشتا هیچ ڕێکلامی ئۆتۆمبێلێکت دروست نەکردووە.\nدەست پێبکە بە زیادکردنی یەکەم ئۆتۆمبێلت!",

@@ -6,6 +6,7 @@ import '../../services/api_service.dart';
 import '../../services/auth_service.dart';
 import '../../shared/errors/user_error_text.dart';
 import 'listing_events.dart' show ListingEvents, invalidateListingDiskCaches;
+import 'listing_identity.dart';
 import 'listing_to_sell_draft.dart';
 
 /// Confirms deletion, calls API, shows errors. Returns true when deleted.

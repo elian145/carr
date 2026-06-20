@@ -7,8 +7,6 @@ import '../services/auth_service.dart';
 import '../shared/account/delete_account_dialog.dart';
 import '../shared/errors/user_error_text.dart';
 import '../shared/media/media_url.dart';
-import '../shared/shell/main_bottom_nav.dart';
-import '../shared/shell/main_shell_navigation.dart';
 import '../theme_provider.dart';
 
 class ProfilePage extends StatefulWidget {
@@ -331,9 +329,9 @@ class _ProfilePageState extends State<ProfilePage> {
                   Container(
                     padding: const EdgeInsets.all(12),
                     decoration: BoxDecoration(
-                      color: Colors.orange.withValues(alpha: 0.15),
+                      color: Colors.orange.withOpacity(0.15),
                       borderRadius: BorderRadius.circular(12),
-                      border: Border.all(color: Colors.orange.withValues(alpha: 0.3)),
+                      border: Border.all(color: Colors.orange.withOpacity(0.3)),
                     ),
                     child: Text(_error!),
                   ),
@@ -703,29 +701,6 @@ class _ProfilePageState extends State<ProfilePage> {
             ),
           ),
         ],
-      ),
-      extendBody: true,
-      bottomNavigationBar: buildFloatingBottomNav(
-        context,
-        currentIndex: 3,
-        onTap: (idx) {
-          switch (idx) {
-            case 0:
-              navigateMainShellTab(context, '/');
-              break;
-            case 1:
-              navigateMainShellTab(context, '/favorites');
-              break;
-            case 2:
-              navigateMainShellTab(context, '/dealers');
-              break;
-            case 3:
-              if (!isAuthenticated) {
-                Navigator.pushReplacementNamed(context, '/login');
-              }
-              break;
-          }
-        },
       ),
     );
   }

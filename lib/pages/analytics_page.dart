@@ -1,11 +1,15 @@
 import 'package:flutter/material.dart';
 import '../l10n/app_localizations.dart';
+import 'package:cached_network_image/cached_network_image.dart';
 import 'package:intl/intl.dart';
+import 'dart:io';
 import '../services/config.dart';
 import '../models/analytics_model.dart';
 import '../services/analytics_service.dart';
 import '../shared/errors/user_error_text.dart';
-import '../shared/listings/global_listing_card.dart';
+import '../shared/listings/listing_identity.dart';
+import 'home_page.dart' as home show buildGlobalCarCard;
+import '../globals.dart';
 import '../theme_provider.dart';
 import '../shared/text/pretty_title_case.dart';
 
@@ -18,9 +22,14 @@ class AnalyticsPage extends StatefulWidget {
 
 class _AnalyticsPageState extends State<AnalyticsPage> {
   List<ListingAnalytics> _listings = [];
+  ListingAnalytics? _selectedListing;
   bool _isLoading = true;
   String? _error;
   AnalyticsSummary? _summary;
+
+  // Currency symbol getter (match Home page)
+  String _currencySymbol(BuildContext context) =>
+      AppLocalizations.of(context)!.currencySymbol;
 
   // Brand logo filenames map (copied from main.dart)
   final Map<String, String> brandLogoFilenames = {
@@ -100,6 +109,7 @@ class _AnalyticsPageState extends State<AnalyticsPage> {
     'maruti-suzuki': 'maruti-suzuki',
     'proton': 'proton',
     'perodua': 'perodua',
+    'dacia': 'dacia',
     'lada': 'lada',
     'uaz': 'uaz',
     'gaz': 'gaz',
@@ -116,9 +126,11 @@ class _AnalyticsPageState extends State<AnalyticsPage> {
     'wey': 'wey',
     'lynk-co': 'lynk-co',
     'polestar': 'polestar',
+    'genesis': 'genesis',
     'ds': 'ds',
     'alpine': 'alpine',
     'cupra': 'cupra',
+    'smart': 'smart',
     'maybach': 'maybach',
     'amg': 'amg',
     'brabus': 'brabus',
@@ -136,6 +148,22 @@ class _AnalyticsPageState extends State<AnalyticsPage> {
     return apiBase();
   }
 
+  String _localizeDigitsGlobal(BuildContext context, String input) {
+    final locale = Localizations.localeOf(context);
+    if (locale.languageCode == 'ar' ||
+        locale.languageCode == 'ku' ||
+        locale.languageCode == 'ckb') {
+      const western = ['0', '1', '2', '3', '4', '5', '6', '7', '8', '9', ','];
+      const eastern = ['٠', '١', '٢', '٣', '٤', '٥', '٦', '٧', '٨', '٩', '٬'];
+      String out = input;
+      for (int i = 0; i < western.length; i++) {
+        out = out.replaceAll(western[i], eastern[i]);
+      }
+      return out;
+    }
+    return input;
+  }
+
   NumberFormat _decimalFormatterGlobal(BuildContext context) {
     final locale = Localizations.localeOf(context);
     if (locale.languageCode == 'ar' ||
@@ -144,6 +172,94 @@ class _AnalyticsPageState extends State<AnalyticsPage> {
       return NumberFormat.decimalPattern('en_US');
     }
     return NumberFormat.decimalPattern(locale.toLanguageTag());
+  }
+
+  String _formatCurrencyGlobal(BuildContext context, dynamic raw) {
+    final symbol = _currencySymbol(context);
+    num? value;
+    if (raw is num) {
+      value = raw;
+    } else {
+      value = num.tryParse(
+        raw?.toString().replaceAll(RegExp(r'[^0-9.-]'), '') ?? '',
+      );
+    }
+    if (value == null) {
+      return symbol + _localizeDigitsGlobal(context, '0');
+    }
+    final formatter = _decimalFormatterGlobal(context);
+    return symbol + _localizeDigitsGlobal(context, formatter.format(value));
+  }
+
+  String? _translateValueGlobal(BuildContext context, String? raw) {
+    if (raw == null) return null;
+    final l = raw.trim().toLowerCase();
+    final loc = AppLocalizations.of(context)!;
+    switch (l) {
+      case 'new':
+        return loc.value_condition_new;
+      case 'used':
+        return loc.value_condition_used;
+      case 'automatic':
+        return loc.value_transmission_automatic;
+      case 'manual':
+        return loc.value_transmission_manual;
+      case 'gasoline':
+        return loc.value_fuel_gasoline;
+      case 'diesel':
+        return loc.value_fuel_diesel;
+      case 'electric':
+        return loc.value_fuel_electric;
+      case 'hybrid':
+        return loc.value_fuel_hybrid;
+      case 'lpg':
+        return loc.value_fuel_lpg;
+      case 'clean':
+        return loc.value_title_clean;
+      case 'damaged':
+        return loc.value_title_damaged;
+      case 'fwd':
+        return loc.value_drive_fwd;
+      case 'rwd':
+        return loc.value_drive_rwd;
+      case 'awd':
+        return loc.value_drive_awd;
+      // Cities (match Home page mapping)
+      case 'baghdad':
+        return loc.city_baghdad;
+      case 'basra':
+        return loc.city_basra;
+      case 'erbil':
+        return loc.city_erbil;
+      case 'najaf':
+        return loc.city_najaf;
+      case 'karbala':
+        return loc.city_karbala;
+      case 'kirkuk':
+        return loc.city_kirkuk;
+      case 'mosul':
+        return loc.city_mosul;
+      case 'sulaymaniyah':
+        return loc.city_sulaymaniyah;
+      case 'dohuk':
+        return loc.city_dohuk;
+      case 'anbar':
+        return loc.city_anbar;
+      case 'halabja':
+        return loc.city_halabja;
+      case 'diyala':
+        return loc.city_diyala;
+      case 'dhi qar':
+        return loc.city_dhi_qar;
+      case 'maysan':
+        return loc.city_maysan;
+      case 'muthanna':
+        return loc.city_muthanna;
+      case 'salaheldeen':
+        return loc.city_salaheldeen;
+      default:
+        return raw;
+    }
   }
 
   @override
@@ -427,10 +543,12 @@ class _AnalyticsPageState extends State<AnalyticsPage> {
   }
 
   Widget _buildListingCard(ListingAnalytics listing) {
+    final isSelected = _selectedListing?.listingId == listing.listingId;
+
     // Convert analytics data to match home page car format EXACTLY like My Listings
-    final String brand = listing.brand.trim();
-    final String model = listing.model.trim();
-    final String yearStr = listing.year.toString().trim();
+    final String brand = (listing.brand ?? '').trim();
+    final String model = (listing.model).trim();
+    final String yearStr = (listing.year?.toString() ?? '').trim();
     final String apiTitle = (listing.title).trim();
     String displayTitle;
     if (apiTitle.isNotEmpty) {
@@ -467,10 +585,19 @@ class _AnalyticsPageState extends State<AnalyticsPage> {
       'is_quick_sell': false,
     };
 
-    Widget cardWidget = buildGlobalCarCard(
+    Widget cardWidget = home.buildGlobalCarCard(
       context,
       Map<String, dynamic>.from(car),
     );
+    if (isSelected) {
+      cardWidget = Container(
+        decoration: BoxDecoration(
+          borderRadius: BorderRadius.circular(20),
+          border: Border.all(color: const Color(0xFFFF6B00), width: 2),
+        ),
+        child: cardWidget,
+      );
+    }
 
     // Override tap behavior for analytics modal
     return GestureDetector(
@@ -725,7 +852,7 @@ class _AnalyticsPageState extends State<AnalyticsPage> {
                             border: Border.all(color: Colors.grey[100]!),
                             boxShadow: [
                               BoxShadow(
-                                color: Colors.black.withValues(alpha: 0.03),
+                                color: Colors.black.withOpacity(0.03),
                                 blurRadius: 15,
                                 offset: Offset(0, 5),
                               ),
@@ -864,6 +991,164 @@ class _AnalyticsPageState extends State<AnalyticsPage> {
               letterSpacing: 0.3,
             ),
             textAlign: TextAlign.center,
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildSelectedListingAnalytics() {
+    final listing = _selectedListing!;
+
+    return Container(
+      width: double.infinity,
+      padding: EdgeInsets.all(20),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(16),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withValues(alpha: 0.05),
+            blurRadius: 10,
+            offset: Offset(0, 5),
+          ),
+        ],
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              Container(
+                width: 60,
+                height: 60,
+                decoration: BoxDecoration(
+                  color: Color(0xFFFF6B00).withValues(alpha: 0.1),
+                  borderRadius: BorderRadius.circular(8),
+                ),
+                child: Icon(
+                  Icons.directions_car,
+                  color: Color(0xFFFF6B00),
+                  size: 30,
+                ),
+              ),
+              SizedBox(width: 16),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      listing.carTitle,
+                      style: TextStyle(
+                        fontSize: 18,
+                        fontWeight: FontWeight.bold,
+                        color: Colors.grey[800],
+                      ),
+                    ),
+                    Text(
+                      listing.formattedPrice,
+                      style: TextStyle(
+                        fontSize: 16,
+                        color: Color(0xFFFF6B00),
+                        fontWeight: FontWeight.w600,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ],
+          ),
+          SizedBox(height: 24),
+
+          // Analytics Metrics
+          Text(
+            'Performance Metrics',
+            style: TextStyle(
+              fontSize: 16,
+              fontWeight: FontWeight.bold,
+              color: Colors.grey[800],
+            ),
+          ),
+          SizedBox(height: 16),
+
+          _buildMetricRow(
+            'Views',
+            listing.views,
+            Icons.visibility,
+            Colors.blue,
+          ),
+          _buildMetricRow(
+            'Messages',
+            listing.messages,
+            Icons.message,
+            Colors.green,
+          ),
+          _buildMetricRow('Calls', listing.calls, Icons.phone, Colors.orange),
+          _buildMetricRow('Shares', listing.shares, Icons.share, Colors.purple),
+          _buildMetricRow(
+            'Favorites',
+            listing.favorites,
+            Icons.favorite,
+            Colors.red,
+          ),
+
+          SizedBox(height: 20),
+
+          // Engagement Rate
+          Container(
+            width: double.infinity,
+            padding: EdgeInsets.all(16),
+            decoration: BoxDecoration(
+              color: Color(0xFFFF6B00).withValues(alpha: 0.1),
+              borderRadius: BorderRadius.circular(8),
+            ),
+            child: Column(
+              children: [
+                Text(
+                  'Engagement Rate',
+                  style: TextStyle(
+                    fontSize: 14,
+                    fontWeight: FontWeight.w600,
+                    color: Colors.grey[700],
+                  ),
+                ),
+                SizedBox(height: 8),
+                Text(
+                  '${listing.engagementRate.toStringAsFixed(1)}%',
+                  style: TextStyle(
+                    fontSize: 24,
+                    fontWeight: FontWeight.bold,
+                    color: Color(0xFFFF6B00),
+                  ),
+                ),
+                Text(
+                  '${listing.totalInteractions} total interactions',
+                  style: TextStyle(fontSize: 12, color: Colors.grey[600]),
+                ),
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildMetricRow(String label, int value, IconData icon, Color color) {
+    return Padding(
+      padding: EdgeInsets.symmetric(vertical: 8),
+      child: Row(
+        children: [
+          Icon(icon, color: color, size: 20),
+          SizedBox(width: 12),
+          Text(label, style: TextStyle(fontSize: 14, color: Colors.grey[700])),
+          Spacer(),
+          Text(
+            value.toString(),
+            style: TextStyle(
+              fontSize: 16,
+              fontWeight: FontWeight.bold,
+              color: Colors.grey[800],
+            ),
           ),
         ],
       ),

@@ -19,9 +19,6 @@ import '../shared/listings/listing_identity.dart';
 import '../shared/listings/listing_management.dart';
 import '../shared/listings/listing_owner.dart';
 import '../shared/listings/listing_share.dart';
-import '../shared/listings/listing_status.dart';
-import '../shared/listings/listing_sold_badge.dart';
-import '../shared/trust/report_dialog.dart';
 import '../shared/text/pretty_title_case.dart';
 import '../shared/vin/open_vin_search.dart';
 import 'listing_image_gallery_page.dart';
@@ -188,60 +185,6 @@ class _CarDetailPageState extends State<CarDetailPage> {
     return isListingOwner(_car, auth.userId);
   }
 
-  bool get _isListingSold => isListingSold(_car);
-
-  Future<void> _toggleListingSoldStatus() async {
-    final id = listingPrimaryId(_car ?? {});
-    if (id.isEmpty) return;
-    if (!_isListingSold) {
-      final ok = await confirmMarkListingSold(context);
-      if (!ok || !mounted) return;
-    }
-    final updated = await setListingSoldStatus(
-      context,
-      id,
-      sold: !_isListingSold,
-    );
-    if (!mounted || updated == null) return;
-    setState(() {
-      _car = {...?_car, ...updated};
-    });
-    final nowSold = isListingSold(updated);
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: Text(
-          nowSold
-              ? _tr(
-                  'Listing marked as sold',
-                  ar: 'تم تحديد الإعلان كمباع',
-                  ku: 'ڕیکلام وەک فرۆشراو نیشانکرا',
-                )
-              : _tr(
-                  'Listing is available again',
-                  ar: 'الإعلان متاح مجدداً',
-                  ku: 'ڕیکلام دووبارە بەردەستە',
-                ),
-        ),
-      ),
-    );
-  }
-
-  void _onDetailMenuSelected(String value) {
-    final listingId = listingPrimaryId(_car ?? {'id': widget.carId});
-    if (value == 'report_listing' && listingId.isNotEmpty) {
-      unawaited(showReportListingDialog(context, listingId: listingId));
-      return;
-    }
-    if (value == 'report_user') {
-      final seller = (_car?['seller'] is Map) ? (_car!['seller'] as Map) : null;
-      final sellerId =
-          (seller?['id'] ?? seller?['user_id'] ?? '').toString().trim();
-      if (sellerId.isNotEmpty) {
-        unawaited(showReportUserDialog(context, userPublicId: sellerId));
-      }
-    }
-  }
-
   Future<void> _editOwnListing() async {
     final car = _car;
     if (car == null) return;
@@ -289,6 +232,7 @@ class _CarDetailPageState extends State<CarDetailPage> {
       } else {
         car = Map<String, dynamic>.from(data);
       }
+      if (car == null) throw StateError('Invalid car response');
 
       if (!mounted) return;
       setState(() {
@@ -583,6 +527,16 @@ class _CarDetailPageState extends State<CarDetailPage> {
     return '';
   }
 
+  static String _formatDateYmd(String raw) {
+    if (raw.trim().isEmpty) return '';
+    final parsed = DateTime.tryParse(raw.trim());
+    if (parsed == null) return raw;
+    final y = parsed.year.toString().padLeft(4, '0');
+    final m = parsed.month.toString().padLeft(2, '0');
+    final d = parsed.day.toString().padLeft(2, '0');
+    return '$y-$m-$d';
+  }
+
   void _showDescriptionDialog(String description) {
     showDialog<void>(
       context: context,
@@ -615,6 +569,12 @@ class _CarDetailPageState extends State<CarDetailPage> {
     ]);
     final email = _firstNonEmptyFromMap(seller, ['email']);
     final city = _firstNonEmptyFromMap(seller, ['city', 'location']);
+    final joinedRaw = _firstNonEmptyFromMap(seller, [
+      'created_at',
+      'joined_at',
+      'member_since',
+    ]);
+    final joined = _formatDateYmd(joinedRaw);
     final avatarRaw = _firstNonEmptyFromMap(seller, [
       'profile_picture',
       'avatar',
@@ -731,10 +691,10 @@ class _CarDetailPageState extends State<CarDetailPage> {
       decoration: BoxDecoration(
         color: Theme.of(
           context,
-        ).colorScheme.surfaceContainerHighest.withValues(alpha: 0.38),
+        ).colorScheme.surfaceContainerHighest.withOpacity(0.38),
         borderRadius: BorderRadius.circular(12),
         border: Border.all(
-          color: Theme.of(context).colorScheme.outlineVariant.withValues(alpha: 0.55),
+          color: Theme.of(context).colorScheme.outlineVariant.withOpacity(0.55),
         ),
       ),
       child: Column(
@@ -747,7 +707,7 @@ class _CarDetailPageState extends State<CarDetailPage> {
                 radius: 24,
                 backgroundColor: Theme.of(
                   context,
-                ).colorScheme.primary.withValues(alpha: 0.14),
+                ).colorScheme.primary.withOpacity(0.14),
                 backgroundImage: isDealerSeller && avatarUrl.isNotEmpty
                     ? NetworkImage(avatarUrl)
                     : null,
@@ -803,7 +763,7 @@ class _CarDetailPageState extends State<CarDetailPage> {
                     vertical: 4,
                   ),
                   decoration: BoxDecoration(
-                    color: Colors.green.withValues(alpha: 0.12),
+                    color: Colors.green.withOpacity(0.12),
                     borderRadius: BorderRadius.circular(999),
                   ),
                   child: Row(
@@ -885,7 +845,7 @@ class _CarDetailPageState extends State<CarDetailPage> {
                 decoration: BoxDecoration(
                   color: Theme.of(
                     context,
-                  ).colorScheme.surfaceContainerHighest.withValues(alpha: 0.5),
+                  ).colorScheme.surfaceContainerHighest.withOpacity(0.5),
                   borderRadius: BorderRadius.circular(8),
                 ),
                 child: Column(
@@ -934,7 +894,7 @@ class _CarDetailPageState extends State<CarDetailPage> {
             decoration: BoxDecoration(
               color: Theme.of(
                 context,
-              ).colorScheme.surfaceContainerHighest.withValues(alpha: 0.5),
+              ).colorScheme.surfaceContainerHighest.withOpacity(0.5),
               borderRadius: BorderRadius.circular(8),
             ),
             child: Column(
@@ -998,7 +958,7 @@ class _CarDetailPageState extends State<CarDetailPage> {
             decoration: BoxDecoration(
               color: Theme.of(
                 context,
-              ).colorScheme.surfaceContainerHighest.withValues(alpha: 0.5),
+              ).colorScheme.surfaceContainerHighest.withOpacity(0.5),
               borderRadius: BorderRadius.circular(8),
             ),
             child: Row(
@@ -1147,7 +1107,7 @@ class _CarDetailPageState extends State<CarDetailPage> {
                   decoration: BoxDecoration(
                     color: listOnLight
                         ? AppThemes.listingCardFillCompactOnLightShell()
-                        : Colors.white.withValues(alpha: 0.08),
+                        : Colors.white.withOpacity(0.08),
                     borderRadius: BorderRadius.circular(12),
                     border: Border.all(color: Colors.white12),
                   ),
@@ -1293,10 +1253,6 @@ class _CarDetailPageState extends State<CarDetailPage> {
     final detailColumn = Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        if (_isListingSold) ...[
-          buildListingSoldBadge(context),
-          const SizedBox(height: 12),
-        ],
         Row(
           crossAxisAlignment: CrossAxisAlignment.center,
           children: [
@@ -1483,14 +1439,14 @@ class _CarDetailPageState extends State<CarDetailPage> {
                 ),
                 decoration: BoxDecoration(
                   color: Theme.of(context).colorScheme.surfaceContainerHighest
-                      .withValues(alpha: 0.55),
+                      .withOpacity(0.55),
                   borderRadius: BorderRadius.circular(14),
                   border: Border.all(
-                    color: const Color(0xFFFF6B00).withValues(alpha: 0.28),
+                    color: const Color(0xFFFF6B00).withOpacity(0.28),
                   ),
                   boxShadow: [
                     BoxShadow(
-                      color: Colors.black.withValues(alpha: 
+                      color: Colors.black.withOpacity(
                         isLightShell ? 0.04 : 0.16,
                       ),
                       blurRadius: 12,
@@ -1593,23 +1549,6 @@ class _CarDetailPageState extends State<CarDetailPage> {
         actions: [
           if (_isOwner) ...[
             IconButton(
-              tooltip: _isListingSold
-                  ? _tr(
-                      'Mark as available',
-                      ar: 'متاح مجدداً',
-                      ku: 'بەردەست بکەرەوە',
-                    )
-                  : _tr(
-                      'Mark as sold',
-                      ar: 'تحديد كمباع',
-                      ku: 'وەک فرۆشراو',
-                    ),
-              onPressed: _toggleListingSoldStatus,
-              icon: Icon(
-                _isListingSold ? Icons.undo_outlined : Icons.sell_outlined,
-              ),
-            ),
-            IconButton(
               tooltip: loc?.editAction ?? 'Edit',
               onPressed: _editOwnListing,
               icon: const Icon(Icons.edit_outlined),
@@ -1638,35 +1577,6 @@ class _CarDetailPageState extends State<CarDetailPage> {
             onPressed: _toggleFavorite,
             icon: Icon(_isFavorite ? Icons.favorite : Icons.favorite_border),
           ),
-          if (!_isOwner &&
-              ApiService.accessToken != null &&
-              ApiService.accessToken!.isNotEmpty)
-            PopupMenuButton<String>(
-              onSelected: _onDetailMenuSelected,
-              itemBuilder: (ctx) => [
-                PopupMenuItem(
-                  value: 'report_listing',
-                  child: Text(
-                    _tr(
-                      'Report listing',
-                      ar: 'الإبلاغ عن الإعلان',
-                      ku: 'ڕاپۆرتکردنی ڕیکلام',
-                    ),
-                  ),
-                ),
-                if (receiverId != null && receiverId.trim().isNotEmpty)
-                  PopupMenuItem(
-                    value: 'report_user',
-                    child: Text(
-                      _tr(
-                        'Report seller',
-                        ar: 'الإبلاغ عن البائع',
-                        ku: 'ڕاپۆرتکردنی فرۆشیار',
-                      ),
-                    ),
-                  ),
-              ],
-            ),
         ],
       ),
       body: RefreshIndicator(

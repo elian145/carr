@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'dart:convert';
 import 'dart:io';
 import 'package:flutter/foundation.dart' show kReleaseMode;
 import 'package:socket_io_client/socket_io_client.dart' as io;
@@ -122,9 +123,6 @@ class WebSocketService {
 
   // Connect to Socket.IO (with polling fallback)
   static Future<void> connect() async {
-    // Widget/integration tests stub HTTP via [ApiService.testHttpClient]; skip real sockets.
-    if (ApiService.isTestHttpClientBound) return;
-
     try {
       if (_isConnected) return;
       if (_isConnecting) return;
@@ -197,20 +195,13 @@ class WebSocketService {
       });
 
       _socket!.on('error', (err) {
-        if (err is Map) {
-          final map = Map<String, dynamic>.from(err);
-          final code = map['code']?.toString().trim() ?? '';
-          final msg = (map['message'] ?? err).toString();
-          _emitError(code.isNotEmpty ? '$code|$msg' : msg);
-          return;
-        }
-        final msg = err.toString();
+        final msg = (err is Map && err['message'] != null) ? err['message'].toString() : err.toString();
         _emitError(msg);
       });
 
       _socket!.on('new_message', (payload) {
         if (payload is Map) {
-          final m = Map<String, dynamic>.from(payload);
+          final m = Map<String, dynamic>.from(payload as Map);
           _messagesController.add(m);
           onMessage?.call(m);
         }
@@ -218,19 +209,19 @@ class WebSocketService {
 
       _socket!.on('message_updated', (payload) {
         if (payload is Map) {
-          _messageUpdatesController.add(Map<String, dynamic>.from(payload));
+          _messageUpdatesController.add(Map<String, dynamic>.from(payload as Map));
         }
       });
 
       _socket!.on('message_deleted', (payload) {
         if (payload is Map) {
-          _messageDeletesController.add(Map<String, dynamic>.from(payload));
+          _messageDeletesController.add(Map<String, dynamic>.from(payload as Map));
         }
       });
 
       _socket!.on('new_notification', (payload) {
         if (payload is Map) {
-          final n = Map<String, dynamic>.from(payload);
+          final n = Map<String, dynamic>.from(payload as Map);
           _notificationsController.add(n);
           onNotification?.call(n);
         }
@@ -238,7 +229,7 @@ class WebSocketService {
 
       _socket!.on('typing', (payload) {
         if (payload is Map) {
-          final t = Map<String, dynamic>.from(payload);
+          final t = Map<String, dynamic>.from(payload as Map);
           _typingController.add(t);
         }
       });

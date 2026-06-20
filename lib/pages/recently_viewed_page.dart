@@ -1,9 +1,8 @@
 import 'package:flutter/material.dart';
 
 import '../l10n/app_localizations.dart';
-import '../shared/listings/global_listing_card.dart';
-import '../shared/shell/main_bottom_nav.dart';
-import '../shared/shell/main_shell_navigation.dart';
+import '../legacy/main_legacy.dart'
+    show buildGlobalCarCard, buildFloatingBottomNav, mapListingToGlobalCarCardData, navigateMainShellTab;
 import '../services/api_service.dart';
 import '../services/recently_viewed_service.dart';
 import '../shared/auth/token_store.dart';
@@ -234,14 +233,14 @@ class _RecentlyViewedPageState extends State<RecentlyViewedPage> {
             Icon(
               Icons.history,
               size: 64,
-              color: theme.colorScheme.onSurface.withValues(alpha: 0.35),
+              color: theme.colorScheme.onSurface.withOpacity(0.35),
             ),
             const SizedBox(height: 16),
             Text(
               message,
               textAlign: TextAlign.center,
               style: theme.textTheme.bodyLarge?.copyWith(
-                color: theme.colorScheme.onSurface.withValues(alpha: 0.65),
+                color: theme.colorScheme.onSurface.withOpacity(0.65),
               ),
             ),
           ],

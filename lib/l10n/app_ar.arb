@@ -428,7 +428,6 @@
   "verifyPhoneDialogMessage": "سيتم إرسال رمز من 6 أرقام إلى {phone}.",
   "sixDigitCodeLabel": "رمز من 6 أرقام",
   "sendCodeButton": "إرسال الرمز",
-  "phoneVerificationRequiredMessage": "تحقق من رقم هاتفك في الملف الشخصي قبل نشر الإعلانات أو إرسال الرسائل.",
 
   "noListingsYet": "لا توجد إعلانات بعد",
   "noListingsEmptyHint": "لم تنشئ أي إعلانات سيارات بعد.\nابدأ بإضافة سيارتك الأولى!",

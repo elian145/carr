@@ -91,7 +91,7 @@ class DealerLocationMapPreview extends StatelessWidget {
               mapToolbarEnabled: false,
             ),
             Material(
-              color: Colors.black.withValues(alpha: 0.03),
+              color: Colors.black.withOpacity(0.03),
               child: InkWell(
                 onTap: onOpenInGoogleMaps,
                 child: Center(

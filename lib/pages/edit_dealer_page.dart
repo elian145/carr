@@ -59,7 +59,7 @@ class _EditDealerPageState extends State<EditDealerPage> {
   double? _pickLat;
   double? _pickLng;
   late final Map<String, _DayHours> _openingHours;
-  late final Map<String, ExpansibleController> _openingHoursTileControllers;
+  late final Map<String, ExpansionTileController> _openingHoursTileControllers;
   late final Map<String, GlobalKey> _openingHoursTileKeys;
   static const int _maxPhones = 5;
 
@@ -505,7 +505,7 @@ class _EditDealerPageState extends State<EditDealerPage> {
       for (final d in _days) d.key: _DayHours(enabled: false, is24h: false),
     };
     _openingHoursTileControllers = {
-      for (final d in _days) d.key: ExpansibleController(),
+      for (final d in _days) d.key: ExpansionTileController(),
     };
     _openingHoursTileKeys = {
       for (final d in _days) d.key: GlobalKey(),
@@ -790,7 +790,7 @@ class _EditDealerPageState extends State<EditDealerPage> {
     final cardFill = isLightShell
         ? Colors.white
         : Color.alphaBlend(
-            Colors.white.withValues(alpha: 0.06),
+            Colors.white.withOpacity(0.06),
             AppThemes.darkHomeShellBackground,
           );
     final barSurface = Color.alphaBlend(

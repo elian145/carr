@@ -6,7 +6,8 @@ import 'package:provider/provider.dart';
 import 'package:url_launcher/url_launcher.dart';
 
 import '../l10n/app_localizations.dart';
-import '../shared/listings/global_listing_card.dart';
+import '../legacy/main_legacy.dart'
+    show buildGlobalCarCard, mapListingToGlobalCarCardData;
 import '../services/auth_service.dart';
 import '../services/api_service.dart';
 import '../shared/maps/dealer_map_coords.dart';
@@ -33,6 +34,7 @@ class _DealerProfilePageState extends State<DealerProfilePage> {
   String? _error;
   Map<String, dynamic>? _dealer;
   List<Map<String, dynamic>> _listings = const [];
+  Map<String, dynamic> _stats = const {};
 
   @override
   void initState() {
@@ -139,6 +141,7 @@ class _DealerProfilePageState extends State<DealerProfilePage> {
       final data = await ApiService.getDealerProfile(widget.dealerPublicId);
       final dealerRaw = data['dealer'];
       final listingsRaw = data['listings'];
+      final statsRaw = data['stats'];
       setState(() {
         _dealer = dealerRaw is Map
             ? Map<String, dynamic>.from(dealerRaw.cast<String, dynamic>())
@@ -149,6 +152,9 @@ class _DealerProfilePageState extends State<DealerProfilePage> {
                 .map((m) => Map<String, dynamic>.from(m.cast<String, dynamic>()))
                 .toList()
             : <Map<String, dynamic>>[];
+        _stats = statsRaw is Map
+            ? Map<String, dynamic>.from(statsRaw.cast<String, dynamic>())
+            : <String, dynamic>{};
       });
     } catch (e) {
       setState(() {

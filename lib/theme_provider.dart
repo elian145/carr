@@ -1,5 +1,3 @@
-// CupertinoPageTransitionsBuilder lives in cupertino.dart as of Flutter 3.44+.
-// ignore: unnecessary_import
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
@@ -55,7 +53,7 @@ class AppThemes {
   /// Light mode: full-bleed scaffold / home body (pure white).
   static const Color lightAppBackground = Color(0xFFFFFFFF);
 
-  /// Dark home shell gradient.
+  /// Dark home shell gradient (legacy pages).
   static const List<Color> darkShellGradientColors = [
     Color(0xFF0F1115),
     Color(0xFF131722),
@@ -68,12 +66,12 @@ class AppThemes {
   /// Same *appearance* as a frosted listing card on the dark home shell, for use on a white shell.
   /// (Translucent white on white reads as pale grey; this matches the blended color on [darkHomeShellBackground].)
   static Color listingCardFillGridOnLightShell() => Color.alphaBlend(
-        Colors.white.withValues(alpha: 0.10),
+        Colors.white.withOpacity(0.10),
         darkHomeShellBackground,
       );
 
   static Color listingCardFillCompactOnLightShell() => Color.alphaBlend(
-        Colors.white.withValues(alpha: 0.08),
+        Colors.white.withOpacity(0.08),
         darkHomeShellBackground,
       );
 
@@ -91,7 +89,7 @@ class AppThemes {
     return const BoxDecoration(color: lightAppBackground);
   }
 
-  /// Bottom bar colors for main tab navigation.
+  /// Bottom bar colors for legacy CarNet tabs.
   static ({Color backgroundColor, Color unselectedItemColor}) bottomNavChrome(
     Brightness brightness,
   ) {

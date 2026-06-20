@@ -3,7 +3,7 @@ import 'package:provider/provider.dart';
 
 import '../state/car_comparison_store.dart';
 
-/// Reusable comparison toggle button.
+/// Reusable comparison toggle button for non-legacy UI.
 ///
 /// Accepts a raw `car` map (as used across the codebase).
 class ComparisonButton extends StatelessWidget {

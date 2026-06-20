@@ -101,7 +101,7 @@ class _NetworkVideoThumbnailPreviewState
       if (!mounted) return;
       final ok = data != null && data.isNotEmpty;
       double? ratio;
-      if (ok) {
+      if (ok && data != null) {
         ratio = await _aspectRatioFromImageBytes(data);
       }
       if (!mounted) return;

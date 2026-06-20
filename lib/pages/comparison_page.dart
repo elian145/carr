@@ -17,7 +17,7 @@ class ComparisonPage extends StatelessWidget {
     return (s.toLowerCase() == 'null') ? '' : s;
   }
 
-  /// Keep in sync with `carRegionSpecDisplayLabel` in home/sell flow.
+  /// Keep in sync with `carRegionSpecDisplayLabel` in legacy home/sell flow.
   String _regionSpecsDisplay(String raw) {
     switch (raw.trim().toLowerCase()) {
       case 'us':
@@ -76,7 +76,7 @@ class ComparisonPage extends StatelessWidget {
                     Icon(
                       Icons.compare_arrows,
                       size: 72,
-                      color: isDark ? null : lightModeInk.withValues(alpha: 0.25),
+                      color: isDark ? null : lightModeInk.withOpacity(0.25),
                     ),
                     const SizedBox(height: 12),
                     Text(loc?.noCarsSelected ?? 'No cars selected'),
@@ -135,7 +135,7 @@ class ComparisonPage extends StatelessWidget {
                   .where((s) => s.isNotEmpty)
                   .join('\n');
               if (text.trim().isNotEmpty) {
-                SharePlus.instance.share(ShareParams(text: text));
+                Share.share(text);
               }
             },
             icon: const Icon(Icons.share_outlined),

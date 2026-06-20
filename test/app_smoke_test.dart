@@ -1,10 +1,11 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 
-import 'fake_api_server.dart';
-import 'production_test_app.dart';
+import 'package:car_listing_app/legacy/main_legacy.dart' as legacy;
 
-/// Boots the same widget tree as production (`main.dart` → [ProductionApp]).
+import 'fake_api_server.dart';
+
+/// Boots the same widget tree as production (`main.dart` → `legacy.MyApp`).
 ///
 /// Run: `flutter test` (starts an ephemeral local API stub automatically).
 void main() {
@@ -16,10 +17,10 @@ void main() {
     await FakeApiServer.stop();
   });
 
-  testWidgets('Production app smoke: boot production routes', (
+  testWidgets('Production app smoke: boot and visit legacy routes', (
     tester,
   ) async {
-    await tester.pumpWidget(buildProductionTestApp());
+    await tester.pumpWidget(const legacy.MyApp());
     await tester.pump();
     await tester.pump(const Duration(milliseconds: 200));
 
@@ -41,13 +42,9 @@ void main() {
       }
     }
 
-    await pushNamed('/home_filters');
     await pushNamed('/sell');
     await pushNamed('/sell', args: {'startFresh': true});
     await pushNamed('/settings');
-    await pushNamed('/saved-searches');
-    await pushNamed('/change-password');
-    await pushNamed('/notifications');
     await pushNamed('/favorites');
     await pushNamed('/dealers');
     await pushNamed('/chat');
