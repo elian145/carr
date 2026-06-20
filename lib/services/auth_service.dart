@@ -376,4 +376,31 @@ class AuthService extends ChangeNotifier {
 
   // Check if user is admin
   bool get isAdmin => _currentUser?['is_admin'] ?? false;
+
+  /// Widget tests: authenticated session without network I/O.
+  @visibleForTesting
+  Future<void> adoptTestSession({Map<String, dynamic>? user}) async {
+    await ApiService.setTokens(
+      accessToken: 'test_access_token',
+      refreshToken: 'test_refresh_token',
+    );
+    _currentUser = user ??
+        {
+          'id': 1,
+          'username': 'test',
+          'is_admin': false,
+          'account_type': 'individual',
+        };
+    _isAuthenticated = true;
+    _isLoading = false;
+    notifyListeners();
+  }
+
+  @visibleForTesting
+  void resetTestSession() {
+    _isAuthenticated = false;
+    _currentUser = null;
+    _isLoading = false;
+    notifyListeners();
+  }
 }

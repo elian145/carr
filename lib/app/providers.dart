@@ -11,6 +11,6 @@ List<SingleChildWidget> buildAppProviders() {
     ChangeNotifierProvider(create: (_) => ThemeProvider()),
     ChangeNotifierProvider(create: (_) => ChatUiThemeController()),
     ChangeNotifierProvider(create: (_) => CarComparisonStore()),
-    ChangeNotifierProvider(create: (_) => AuthService()),
+    ChangeNotifierProvider<AuthService>.value(value: AuthService()),
   ];
 }
