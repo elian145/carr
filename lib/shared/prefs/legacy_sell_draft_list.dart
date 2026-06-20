@@ -4,6 +4,7 @@ import 'package:image_picker/image_picker.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 import 'legacy_sell_draft_prefs.dart';
+import 'sell_draft_step.dart';
 
 /// Loads and manages multiple legacy sell drafts (active + archive).
 class LegacySellDraftList {
@@ -11,29 +12,11 @@ class LegacySellDraftList {
 
   static String _newDraftId() => DateTime.now().microsecondsSinceEpoch.toString();
 
-  static int readStep(dynamic raw, {int maxIdx = 4}) {
-    if (raw == null) return 0;
-    if (raw is int) return raw.clamp(0, maxIdx);
-    if (raw is double) {
-      if (raw.isNaN || raw.isInfinite) return 0;
-      return raw.round().clamp(0, maxIdx);
-    }
-    final s = raw.toString().trim();
-    if (s.isEmpty) return 0;
-    final asDouble = double.tryParse(s);
-    if (asDouble != null) {
-      return asDouble.round().clamp(0, maxIdx);
-    }
-    return int.tryParse(s)?.clamp(0, maxIdx) ?? 0;
-  }
+  static int readStep(dynamic raw, {int maxIdx = 4}) =>
+      readSellDraftStepDynamic(raw, maxIdx: maxIdx);
 
-  static int _mergeStep({required int jsonStep, int? prefsStep}) {
-    const maxIdx = 4;
-    final j = jsonStep.clamp(0, maxIdx);
-    if (prefsStep == null) return j;
-    final p = prefsStep.clamp(0, maxIdx);
-    return j > p ? j : p;
-  }
+  static int _mergeStep({required int jsonStep, int? prefsStep}) =>
+      mergeSellDraftStep(jsonStep: jsonStep, prefsStep: prefsStep);
 
   static Map<String, dynamic> normalize(Map<String, dynamic> raw) {
     final rawCarData = raw['carData'];

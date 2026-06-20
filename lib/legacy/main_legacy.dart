@@ -27,6 +27,12 @@ import '../models/analytics_model.dart';
 import '../shared/auth/token_store.dart';
 import '../shared/text/pretty_title_case.dart';
 import '../shared/vin/open_vin_search.dart';
+import '../shared/media/media_url.dart';
+import '../shared/i18n/locale_formatting.dart';
+import '../shared/i18n/legacy_inline_text.dart';
+import '../shared/i18n/digits.dart';
+import '../shared/prefs/sell_draft_step.dart';
+import '../shared/ui/keyboard.dart';
 import '../shared/auth/phone_verification_gate.dart';
 import '../shared/errors/user_error_text.dart';
 import '../shared/listings/listing_events.dart';
@@ -186,12 +192,8 @@ String _trLegacyText(
   String en, {
   String? ar,
   String? ku,
-}) {
-  final code = Localizations.localeOf(context).languageCode;
-  if (code == 'ar') return ar ?? en;
-  if (code == 'ku' || code == 'ckb') return ku ?? en;
-  return en;
-}
+}) =>
+    trLegacyText(context, en, ar: ar, ku: ku);
 
 String _translatePlateTypeLegacy(BuildContext context, String raw) {
   final v = raw.trim().toLowerCase().replaceAll('-', ' ').replaceAll('_', ' ');
@@ -557,40 +559,7 @@ String getApiBase() {
   return effectiveApiBase();
 }
 
-// Normalize relative image path into a full URL that works across
-// different backend responses (uploads/, car_photos/, static/, http).
-// Absolute URLs that point to our backend are rewritten to use getApiBase()
-// so they work on emulator (10.0.2.2) and real device (LAN IP).
-String _buildFullImageUrl(String rel) {
-  String s = (rel ?? '').toString().trim().replaceAll(r'\', '/');
-  // Guard against backend sending null-like values in lists/maps.
-  if (s.toLowerCase() == 'null' || s.toLowerCase() == 'none') return '';
-  if (s.isEmpty) return s;
-  if (s.startsWith('http://') || s.startsWith('https://')) {
-    try {
-      final uri = Uri.parse(s);
-      // If this is our static path, use getApiBase() so device/emulator can reach it
-      if (uri.path.startsWith('/static/')) {
-        final path = uri.path + (uri.query.isNotEmpty ? '?${uri.query}' : '');
-        return getApiBase() + path;
-      }
-    } catch (_) {}
-    return s;
-  }
-  // drop leading '/'
-  if (s.startsWith('/')) s = s.substring(1);
-  if (s.startsWith('static/')) {
-    return '${getApiBase()}/$s';
-  }
-  if (s.startsWith('uploads/')) {
-    return '${getApiBase()}/static/$s';
-  }
-  if (s.startsWith('car_photos/')) {
-    return '${getApiBase()}/static/uploads/$s';
-  }
-  // default: assume already a path under uploads (e.g. make, dir/file.jpg)
-  return '${getApiBase()}/static/uploads/$s';
-}
+String _buildFullImageUrl(String rel) => buildLegacyFullImageUrl(rel);
 
 /// Listing image widget using Image.network (avoids CachedNetworkImage HTTP issues on Android).
 /// Includes a small auto-retry to reduce transient "connection closed" failures.
@@ -734,28 +703,8 @@ class _RetryingListingNetworkImageState
   }
 }
 
-String _localizeDigitsGlobal(BuildContext context, String input) {
-  final locale = Localizations.localeOf(context);
-  if (locale.languageCode == 'ar' || locale.languageCode == 'ku') {
-    const western = ['0', '1', '2', '3', '4', '5', '6', '7', '8', '9', ','];
-    const eastern = [
-      'Ù ',
-      'Ù¡',
-      'Ù¢',
-      'Ù£',
-      'Ù¤',
-      'Ù¥',
-      'Ù¦',
-      'Ù§',
-      'Ù¨',
-      'Ù©',
-      'Ù¬',
-    ];
-    // Skip digit conversion to avoid garbled display (mojibake).
-    return input;
-  }
-  return input;
-}
+String _localizeDigitsGlobal(BuildContext context, String input) =>
+    localizeDigits(context, input);
 
 /// Bare number `3.0` → localized + liter unit; values with badges (`3.0 D`) unchanged.
 String _engineSizeChipLabel(BuildContext context, String raw) {
@@ -775,22 +724,8 @@ String _engineSizeSellRowLabel(BuildContext context, String raw) {
 }
 
 // Locale-aware currency formatting with digit localization
-String _formatCurrencyGlobal(BuildContext context, dynamic raw) {
-  final symbol = globalSymbol; // Use global currency symbol
-  num? value;
-  if (raw is num) {
-    value = raw;
-  } else {
-    value = num.tryParse(
-      raw?.toString().replaceAll(RegExp(r'[^0-9.-]'), '') ?? '',
-    );
-  }
-  if (value == null) {
-    return symbol + _localizeDigitsGlobal(context, '0');
-  }
-  final formatter = _decimalFormatterGlobal(context);
-  return symbol + _localizeDigitsGlobal(context, formatter.format(value));
-}
+String _formatCurrencyGlobal(BuildContext context, dynamic raw) =>
+    formatCurrency(context, raw);
 
 // Custom currency icon widget that shows 'IQD' when IQD is selected
 Widget buildCurrencyIcon(String currency) {
@@ -1146,30 +1081,13 @@ String _pleaseFillRequiredGlobal(BuildContext context) {
   return AppLocalizations.of(context)!.pleaseFillRequired;
 }
 
-NumberFormat _decimalFormatterGlobal(BuildContext context) {
-  String tag = Localizations.localeOf(context).toLanguageTag();
-  if (tag.startsWith('ku')) tag = 'ar';
-  try {
-    return NumberFormat.decimalPattern(tag);
-  } catch (_) {
-    return NumberFormat.decimalPattern('en');
-  }
-}
+NumberFormat _decimalFormatterGlobal(BuildContext context) =>
+    decimalFormatterForLocale(context);
 
 // Lightweight helpers for translating UI snippets not covered by AppLocalizations
-String _yesTextGlobal(BuildContext context) {
-  final code = Localizations.localeOf(context).languageCode;
-  if (code == 'ar') return 'Ù†Ø¹Ù…';
-  if (code == 'ku') return 'Ø¨Û•ÚµÛŽ';
-  return 'Yes';
-}
+String _yesTextGlobal(BuildContext context) => yesText(context);
 
-String _noTextGlobal(BuildContext context) {
-  final code = Localizations.localeOf(context).languageCode;
-  if (code == 'ar') return 'Ù„Ø§';
-  if (code == 'ku') return 'Ù†Û•Ø®ÛŽØ±';
-  return 'No';
-}
+String _noTextGlobal(BuildContext context) => noText(context);
 
 String _removedFromComparisonTextGlobal(BuildContext context) {
   return AppLocalizations.of(context)!.removedFromComparison;

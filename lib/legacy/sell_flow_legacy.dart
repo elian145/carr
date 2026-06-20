@@ -4,46 +4,17 @@ const String _sellDraftArchiveKey = 'legacy_sell_draft_archive_v1';
 
 String _newSellDraftId() => DateTime.now().microsecondsSinceEpoch.toString();
 
-/// Robust step index from JSON / route maps (`int`, `double`, `1.0` strings).
-int _readSellDraftStepDynamic(dynamic raw, {int maxIdx = 4}) {
-  if (raw == null) return 0;
-  if (raw is int) return raw.clamp(0, maxIdx);
-  if (raw is double) {
-    if (raw.isNaN || raw.isInfinite) return 0;
-    return raw.round().clamp(0, maxIdx);
-  }
-  final s = raw.toString().trim();
-  if (s.isEmpty) return 0;
-  final asDouble = double.tryParse(s);
-  if (asDouble != null) {
-    return asDouble.round().clamp(0, maxIdx);
-  }
-  return int.tryParse(s)?.clamp(0, maxIdx) ?? 0;
-}
+int _readSellDraftStepDynamic(dynamic raw, {int maxIdx = 4}) =>
+    readSellDraftStepDynamic(raw, maxIdx: maxIdx);
 
-/// Prefer the higher of JSON snapshot step and prefs step when they disagree.
-int _mergeSellDraftStep({int? jsonStep, int? prefsStep}) {
-  const int maxIdx = 4;
-  final j = (jsonStep ?? 0).clamp(0, maxIdx);
-  if (prefsStep == null) return j;
-  final p = prefsStep.clamp(0, maxIdx);
-  return j > p ? j : p;
-}
+int _mergeSellDraftStep({int? jsonStep, int? prefsStep}) =>
+    mergeSellDraftStep(jsonStep: jsonStep, prefsStep: prefsStep);
 
-int _maxSellDraftStep(int a, int b, [int c = 0]) {
-  const int maxIdx = 4;
-  return math.max(math.max(a.clamp(0, maxIdx), b.clamp(0, maxIdx)), c.clamp(0, maxIdx));
-}
+int _maxSellDraftStep(int a, int b, [int c = 0]) =>
+    maxSellDraftStep(a, b, c);
 
-void _dismissAnyKeyboard([BuildContext? context]) {
-  final focus = FocusManager.instance.primaryFocus;
-  if (focus != null && focus.hasFocus) {
-    focus.unfocus();
-  }
-  if (context != null && context.mounted) {
-    FocusScope.of(context).unfocus();
-  }
-}
+void _dismissAnyKeyboard([BuildContext? context]) =>
+    dismissAnyKeyboard(context);
 
 Map<String, dynamic> _normalizeSellDraftSnapshot(Map<String, dynamic> raw) {
   final rawCarData = raw['carData'];

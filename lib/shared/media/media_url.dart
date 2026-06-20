@@ -36,6 +36,34 @@ String buildMediaUrl(String rel) {
   return '$base/static/uploads/$s';
 }
 
+/// Legacy listing image URL builder (preserves pre-extraction behavior for bare filenames).
+String buildLegacyFullImageUrl(String rel) {
+  String s = (rel).toString().trim().replaceAll(r'\', '/');
+  if (s.toLowerCase() == 'null' || s.toLowerCase() == 'none') return '';
+  if (s.isEmpty) return s;
+  if (s.startsWith('http://') || s.startsWith('https://')) {
+    try {
+      final uri = Uri.parse(s);
+      if (uri.path.startsWith('/static/')) {
+        final path = uri.path + (uri.query.isNotEmpty ? '?${uri.query}' : '');
+        return effectiveApiBase() + path;
+      }
+    } catch (_) {}
+    return s;
+  }
+  if (s.startsWith('/')) s = s.substring(1);
+  if (s.startsWith('static/')) {
+    return '${effectiveApiBase()}/$s';
+  }
+  if (s.startsWith('uploads/')) {
+    return '${effectiveApiBase()}/static/$s';
+  }
+  if (s.startsWith('car_photos/')) {
+    return '${effectiveApiBase()}/static/uploads/$s';
+  }
+  return '${effectiveApiBase()}/static/uploads/$s';
+}
+
 String resolveListingImageUrl(String? rel) {
   final trimmed = (rel ?? '').trim();
   if (trimmed.isEmpty) return '';
