@@ -102,10 +102,28 @@ class ApiService {
         headers: headers,
       );
 
+  static Future<Map<String, dynamic>> makeAuthenticatedRequest(
+    String method,
+    String endpoint, {
+    Map<String, dynamic>? body,
+    Map<String, String>? headers,
+  }) =>
+      _makeAuthenticatedRequest(
+        method,
+        endpoint,
+        body: body,
+        headers: headers,
+      );
+
   static Future<List<Map<String, dynamic>>> _makeAuthenticatedListRequest(
     String endpoint,
   ) =>
       _ApiServiceHttp.makeAuthenticatedListRequest(endpoint);
+
+  static Future<List<Map<String, dynamic>>> getAuthenticatedJsonList(
+    String endpoint,
+  ) =>
+      _makeAuthenticatedListRequest(endpoint);
 
   // Authentication & profile (api/api_auth.dart)
   static Future<Map<String, dynamic>> registerEmailRequest({

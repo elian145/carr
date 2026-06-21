@@ -18,7 +18,12 @@
 | `legacy_signup_widget_test.dart` | Signup form fields and terms gate on create account |
 | `legacy_recently_viewed_guest_widget_test.dart` | Recently viewed guest AuthGuard redirect to login |
 | `legacy_recently_viewed_empty_widget_test.dart` | Authenticated recently viewed route smoke |
+| `legacy_analytics_empty_widget_test.dart` | Analytics empty seller state from mock `/analytics/listings` |
+| `legacy_settings_widget_test.dart` | Settings page theme controls |
+| `legacy_comparison_empty_widget_test.dart` | Comparison empty state |
+| `legacy_dealers_directory_widget_test.dart` | Dealers directory empty search state |
 | `api_chat_test.dart` | `getChats`, unread count, send message, message history against mock API |
+| `api_analytics_test.dart` | `AnalyticsService.getUserListingsAnalytics` and `trackView` against mock API |
 | `api_profile_favorites_test.dart` | `getProfile`, `getFavorites`, `getMyListings`, `getCarDetail` against mock API |
 | `api_integration_test.dart` | `createCar`, `toggleFavorite`, `createSavedSearch`, `updateCar`, `getCars`, `getRecentlyViewed` against mock API |
 | `carzo_app_smoke_test.dart` | Migration shell (`CarzoApp` / `lib/app`) — not used in production |

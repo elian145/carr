@@ -719,6 +719,28 @@ class BackendFactorySmokeTest(unittest.TestCase):
         message = body.get("message") or {}
         self.assertEqual(message.get("content"), "hi via public id")
 
+    def test_clear_recently_viewed(self):
+        record = self.client.post(
+            "/api/user/recently-viewed",
+            headers=self._auth(self.viewer_token),
+            json={"listing_id": self.car_public},
+        )
+        self.assertEqual(record.status_code, 200, record.data)
+
+        clear = self.client.delete(
+            "/api/user/recently-viewed",
+            headers=self._auth(self.viewer_token),
+        )
+        self.assertEqual(clear.status_code, 200, clear.data)
+
+        listed = self.client.get(
+            "/api/user/recently-viewed",
+            headers=self._auth(self.viewer_token),
+        )
+        self.assertEqual(listed.status_code, 200, listed.data)
+        payload = listed.get_json() or {}
+        self.assertEqual(payload.get("cars") or [], [])
+
     def test_list_cars_with_brand_filter(self):
         r = self.client.get("/api/cars?brand=toyota&page=1&per_page=10")
         self.assertEqual(r.status_code, 200, r.data)

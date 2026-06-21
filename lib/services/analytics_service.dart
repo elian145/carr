@@ -1,17 +1,71 @@
-import 'dart:convert';
 import 'dart:developer' as developer;
-import 'package:http/http.dart' as http;
+
 import '../models/analytics_model.dart';
 import 'api_service.dart';
 import 'config.dart';
 import 'recently_viewed_service.dart';
 
 class AnalyticsService {
-  static String get _baseUrl => apiBaseApi();
-
   static String get _imageBaseUrl => apiBase();
 
-  static const Duration _timeout = Duration(seconds: 30);
+  static List<ListingAnalytics> _parseListingAnalyticsRows(
+    List<Map<String, dynamic>> rows,
+  ) {
+    final out = <ListingAnalytics>[];
+    for (final map in rows) {
+      final copy = Map<String, dynamic>.from(map);
+      final imageUrl = copy['image_url']?.toString();
+      if (imageUrl != null && imageUrl.isNotEmpty && !imageUrl.startsWith('http')) {
+        copy['image_url'] = '$_imageBaseUrl/static/uploads/$imageUrl';
+      }
+      out.add(ListingAnalytics.fromJson(copy));
+    }
+    return out;
+  }
+
+  static List<ListingAnalytics> _listingsCompatToAnalytics(
+    List<Map<String, dynamic>> listings,
+  ) {
+    int? parseMileage(dynamic v) {
+      if (v == null) return null;
+      if (v is int) return v;
+      if (v is double) return v.toInt();
+      final s = v.toString().replaceAll(RegExp(r'[^0-9]'), '');
+      if (s.isEmpty) return null;
+      return int.tryParse(s);
+    }
+
+    return listings.map((listing) {
+      String? fullImageUrl;
+      final imageUrl = listing['image_url']?.toString();
+      if (imageUrl != null && imageUrl.isNotEmpty) {
+        fullImageUrl = imageUrl.startsWith('http')
+            ? imageUrl
+            : '$_imageBaseUrl/static/uploads/$imageUrl';
+      }
+
+      return ListingAnalytics(
+        listingId: listing['id'].toString(),
+        title: listing['title'] ?? '',
+        brand: listing['brand'] ?? '',
+        model: listing['model'] ?? '',
+        year: listing['year'] ?? 0,
+        price: (listing['price'] ?? 0).toDouble(),
+        imageUrl: fullImageUrl,
+        mileage: parseMileage(
+          listing['mileage'] ?? listing['odometer'] ?? listing['miles'],
+        ),
+        city: listing['city']?.toString() ?? listing['location']?.toString(),
+        views: 0,
+        messages: 0,
+        calls: 0,
+        shares: 0,
+        favorites: 0,
+        createdAt: DateTime.now().subtract(const Duration(days: 30)),
+        lastUpdated: DateTime.now(),
+      );
+    }).toList();
+  }
 
   /// Get analytics for all user's listings
   static Future<List<ListingAnalytics>> getUserListingsAnalytics() async {
@@ -21,37 +75,10 @@ class AnalyticsService {
         throw Exception('User not authenticated');
       }
 
-      // First try to get analytics from the analytics endpoint
       try {
-        final response = await http
-            .get(
-              Uri.parse('$_baseUrl/analytics/listings'),
-              headers: {
-                'Authorization': 'Bearer $token',
-                'Content-Type': 'application/json',
-              },
-            )
-            .timeout(_timeout);
-
-        if (response.statusCode == 200) {
-          final List<dynamic> data = json.decode(response.body);
-          final List<ListingAnalytics> out = [];
-          for (final item in data) {
-            if (item is! Map) continue;
-            final map = Map<String, dynamic>.from(item);
-
-            // Ensure image URLs are full URLs (without mutating decoded JSON in-place)
-            final imageUrl = map['image_url']?.toString();
-            if (imageUrl != null && imageUrl.isNotEmpty) {
-              if (!imageUrl.startsWith('http')) {
-                map['image_url'] = '$_imageBaseUrl/static/uploads/$imageUrl';
-              }
-            }
-
-            out.add(ListingAnalytics.fromJson(map));
-          }
-          return out;
-        }
+        final rows =
+            await ApiService.getAuthenticatedJsonList('/analytics/listings');
+        return _parseListingAnalyticsRows(rows);
       } catch (e) {
         developer.log(
           'Analytics endpoint failed, falling back to my_listings: $e',
@@ -59,67 +86,8 @@ class AnalyticsService {
         );
       }
 
-      // Fallback: Get user's listings and create analytics data
-      final response = await http
-          .get(
-            Uri.parse('$_baseUrl/my_listings'),
-            headers: {
-              'Authorization': 'Bearer $token',
-              'Content-Type': 'application/json',
-            },
-          )
-          .timeout(_timeout);
-
-      if (response.statusCode == 200) {
-        final List<dynamic> listings = json.decode(response.body);
-
-        // Convert listings to analytics format
-        return listings.map((listing) {
-          int? parseMileage(dynamic v) {
-            if (v == null) return null;
-            if (v is int) return v;
-            if (v is double) return v.toInt();
-            final s = v.toString().replaceAll(RegExp(r'[^0-9]'), '');
-            if (s.isEmpty) return null;
-            return int.tryParse(s);
-          }
-
-          // Construct full image URL if image_url exists
-          String? fullImageUrl;
-          final imageUrl = listing['image_url']?.toString();
-          if (imageUrl != null && imageUrl.isNotEmpty) {
-            fullImageUrl = '$_imageBaseUrl/static/uploads/$imageUrl';
-          }
-
-          return ListingAnalytics(
-            listingId: listing['id'].toString(),
-            title: listing['title'] ?? '',
-            brand: listing['brand'] ?? '',
-            model: listing['model'] ?? '',
-            year: listing['year'] ?? 0,
-            price: (listing['price'] ?? 0).toDouble(),
-            imageUrl: fullImageUrl,
-            mileage: parseMileage(
-              listing['mileage'] ?? listing['odometer'] ?? listing['miles'],
-            ),
-            city:
-                listing['city']?.toString() ?? listing['location']?.toString(),
-            views: 0, // Will be populated when analytics are tracked
-            messages: 0,
-            calls: 0,
-            shares: 0,
-            favorites: 0,
-            createdAt: DateTime.now().subtract(
-              Duration(days: 30),
-            ), // Default to 30 days ago
-            lastUpdated: DateTime.now(),
-          );
-        }).toList();
-      } else if (response.statusCode == 401) {
-        throw Exception('Authentication failed');
-      } else {
-        throw Exception('Failed to fetch listings: ${response.statusCode}');
-      }
+      final listings = await ApiService.getMyListingsCompat();
+      return _listingsCompatToAnalytics(listings);
     } catch (e) {
       throw Exception('Error fetching analytics: $e');
     }
@@ -133,28 +101,11 @@ class AnalyticsService {
         throw Exception('User not authenticated');
       }
 
-      final response = await http
-          .get(
-            Uri.parse('$_baseUrl/analytics/listings/$listingId'),
-            headers: {
-              'Authorization': 'Bearer $token',
-              'Content-Type': 'application/json',
-            },
-          )
-          .timeout(_timeout);
-
-      if (response.statusCode == 200) {
-        final data = json.decode(response.body);
-        return ListingAnalytics.fromJson(data);
-      } else if (response.statusCode == 401) {
-        throw Exception('Authentication failed');
-      } else if (response.statusCode == 404) {
-        throw Exception('Listing not found');
-      } else {
-        throw Exception(
-          'Failed to fetch listing analytics: ${response.statusCode}',
-        );
-      }
+      final data = await ApiService.makeAuthenticatedRequest(
+        'GET',
+        '/analytics/listings/$listingId',
+      );
+      return ListingAnalytics.fromJson(data);
     } catch (e) {
       throw Exception('Error fetching listing analytics: $e');
     }
@@ -194,22 +145,11 @@ class AnalyticsService {
       final token = ApiService.accessToken;
       if (token == null || token.isEmpty) return;
 
-      final response = await http
-          .post(
-            Uri.parse('$_baseUrl/analytics/track/view'),
-            headers: {
-              'Authorization': 'Bearer $token',
-              'Content-Type': 'application/json',
-            },
-            body: json.encode({'listing_id': id}),
-          )
-          .timeout(_timeout);
-      if (response.statusCode < 200 || response.statusCode >= 300) {
-        developer.log(
-          'track view failed: ${response.statusCode} ${response.body}',
-          name: 'AnalyticsService',
-        );
-      }
+      await ApiService.makeAuthenticatedRequest(
+        'POST',
+        '/analytics/track/view',
+        body: {'listing_id': id},
+      );
     } catch (e) {
       developer.log('Failed to track view: $e', name: 'AnalyticsService');
     }
@@ -221,16 +161,11 @@ class AnalyticsService {
       final token = ApiService.accessToken;
       if (token == null || token.isEmpty) return;
 
-      await http
-          .post(
-            Uri.parse('$_baseUrl/analytics/track/message'),
-            headers: {
-              'Authorization': 'Bearer $token',
-              'Content-Type': 'application/json',
-            },
-            body: json.encode({'listing_id': listingId}),
-          )
-          .timeout(_timeout);
+      await ApiService.makeAuthenticatedRequest(
+        'POST',
+        '/analytics/track/message',
+        body: {'listing_id': listingId},
+      );
     } catch (e) {
       developer.log('Failed to track message: $e', name: 'AnalyticsService');
     }
@@ -242,16 +177,11 @@ class AnalyticsService {
       final token = ApiService.accessToken;
       if (token == null || token.isEmpty) return;
 
-      await http
-          .post(
-            Uri.parse('$_baseUrl/analytics/track/call'),
-            headers: {
-              'Authorization': 'Bearer $token',
-              'Content-Type': 'application/json',
-            },
-            body: json.encode({'listing_id': listingId}),
-          )
-          .timeout(_timeout);
+      await ApiService.makeAuthenticatedRequest(
+        'POST',
+        '/analytics/track/call',
+        body: {'listing_id': listingId},
+      );
     } catch (e) {
       developer.log('Failed to track call: $e', name: 'AnalyticsService');
     }
@@ -263,16 +193,11 @@ class AnalyticsService {
       final token = ApiService.accessToken;
       if (token == null || token.isEmpty) return;
 
-      await http
-          .post(
-            Uri.parse('$_baseUrl/analytics/track/share'),
-            headers: {
-              'Authorization': 'Bearer $token',
-              'Content-Type': 'application/json',
-            },
-            body: json.encode({'listing_id': listingId}),
-          )
-          .timeout(_timeout);
+      await ApiService.makeAuthenticatedRequest(
+        'POST',
+        '/analytics/track/share',
+        body: {'listing_id': listingId},
+      );
     } catch (e) {
       developer.log('Failed to track share: $e', name: 'AnalyticsService');
     }
@@ -284,16 +209,11 @@ class AnalyticsService {
       final token = ApiService.accessToken;
       if (token == null || token.isEmpty) return;
 
-      await http
-          .post(
-            Uri.parse('$_baseUrl/analytics/track/favorite'),
-            headers: {
-              'Authorization': 'Bearer $token',
-              'Content-Type': 'application/json',
-            },
-            body: json.encode({'listing_id': listingId}),
-          )
-          .timeout(_timeout);
+      await ApiService.makeAuthenticatedRequest(
+        'POST',
+        '/analytics/track/favorite',
+        body: {'listing_id': listingId},
+      );
     } catch (e) {
       developer.log('Failed to track favorite: $e', name: 'AnalyticsService');
     }
@@ -301,8 +221,7 @@ class AnalyticsService {
 
   /// Get mock analytics data for development/testing
   static Future<List<ListingAnalytics>> getMockAnalytics() async {
-    // This is for development when backend analytics endpoints are not ready
-    await Future.delayed(Duration(seconds: 1)); // Simulate network delay
+    await Future.delayed(const Duration(seconds: 1));
 
     return [
       ListingAnalytics(
@@ -318,8 +237,8 @@ class AnalyticsService {
         calls: 8,
         shares: 5,
         favorites: 23,
-        createdAt: DateTime.now().subtract(Duration(days: 30)),
-        lastUpdated: DateTime.now().subtract(Duration(hours: 2)),
+        createdAt: DateTime.now().subtract(const Duration(days: 30)),
+        lastUpdated: DateTime.now().subtract(const Duration(hours: 2)),
       ),
       ListingAnalytics(
         listingId: '2',
@@ -334,8 +253,8 @@ class AnalyticsService {
         calls: 4,
         shares: 2,
         favorites: 15,
-        createdAt: DateTime.now().subtract(Duration(days: 45)),
-        lastUpdated: DateTime.now().subtract(Duration(days: 1)),
+        createdAt: DateTime.now().subtract(const Duration(days: 45)),
+        lastUpdated: DateTime.now().subtract(const Duration(days: 1)),
       ),
       ListingAnalytics(
         listingId: '3',
@@ -350,8 +269,8 @@ class AnalyticsService {
         calls: 12,
         shares: 8,
         favorites: 45,
-        createdAt: DateTime.now().subtract(Duration(days: 15)),
-        lastUpdated: DateTime.now().subtract(Duration(hours: 6)),
+        createdAt: DateTime.now().subtract(const Duration(days: 15)),
+        lastUpdated: DateTime.now().subtract(const Duration(hours: 6)),
       ),
     ];
   }

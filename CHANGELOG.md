@@ -23,7 +23,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 - `docs/DEPLOY_ENV_CHECKLIST.md` for Render production env vars.
 - `assets/icon/app_icon.png` and `flutter_launcher_icons` config in `pubspec.yaml`.
 - Widget tests: profile, sell step 1, chat list/conversation, car detail, my listings, favorites, login, signup, recently viewed; ApiService integration against mock API.
-- Backend smoke: car update/delete owner flow, update forbidden for non-owner, recently viewed GET/POST, chat send by public car id, favorites, filtered `/api/cars`, mark sold/active, paginated my-listings, verified Socket.IO send, saved-search CRUD, chat list, auth refresh/logout.
+- Backend smoke: car update/delete owner flow, update forbidden for non-owner, recently viewed GET/POST/clear, chat send by public car id, favorites, filtered `/api/cars`, mark sold/active, paginated my-listings, verified Socket.IO send, saved-search CRUD, chat list, auth refresh/logout.
 
 ### Changed
 
@@ -64,6 +64,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 - `ApiService.initializeTokens` keeps an in-memory session when secure storage is empty or unreadable.
 - Sell steps 2–5 and chat send widget tests; mock chat send returns a `message` envelope echoing posted content.
 - Sell step 4 draft dispose avoids ancestor lookup after deactivation (widget tests).
+- `AnalyticsService` routes HTTP through `ApiService` (mockable in tests); settings/comparison/dealers/analytics widget smokes.
 
 ### Planned (not yet complete)
 
