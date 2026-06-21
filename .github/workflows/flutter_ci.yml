@@ -47,7 +47,7 @@ jobs:
         run: python scripts/verify_preflight.py --skip-host
 
       - name: Run tests
-        run: flutter test --no-pub --coverage
+        run: flutter test --no-pub --coverage --concurrency=4
 
       - name: Build APK (debug, dev flavor)
         run: flutter build apk --debug --no-pub --flavor dev

@@ -1,3 +1,4 @@
+import 'package:flutter/foundation.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import '../../shared/debug/app_log.dart';
 
@@ -10,10 +11,21 @@ class TokenStore {
   static String? _token;
   static String? _refreshToken;
 
+  /// In-memory only — set by tests that stub HTTP (no secure-storage plugins).
+  @visibleForTesting
+  static bool testMode = false;
+
+  @visibleForTesting
+  static void resetForTests() {
+    _token = null;
+    _refreshToken = null;
+  }
+
   static String? get token => _token;
   static String? get refreshToken => _refreshToken;
 
   static Future<void> load() async {
+    if (testMode) return;
     try {
       _token = await _storage.read(key: 'auth_token');
       _refreshToken = await _storage.read(key: 'auth_refresh_token');
@@ -25,6 +37,10 @@ class TokenStore {
 
   static Future<void> save(String? token) async {
     final t = (token ?? '').trim();
+    if (testMode) {
+      _token = t.isEmpty ? null : t;
+      return;
+    }
     try {
       if (t.isEmpty) {
         await _storage.delete(key: 'auth_token');
@@ -41,6 +57,10 @@ class TokenStore {
 
   static Future<void> saveRefresh(String? token) async {
     final t = (token ?? '').trim();
+    if (testMode) {
+      _refreshToken = t.isEmpty ? null : t;
+      return;
+    }
     try {
       if (t.isEmpty) {
         await _storage.delete(key: 'auth_refresh_token');
@@ -55,6 +75,10 @@ class TokenStore {
   }
 
   static Future<void> clear() async {
+    if (testMode) {
+      resetForTests();
+      return;
+    }
     await save(null);
     await saveRefresh(null);
   }

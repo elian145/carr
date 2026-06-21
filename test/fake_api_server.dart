@@ -2,6 +2,7 @@ import 'dart:convert';
 
 import 'package:car_listing_app/services/api_service.dart';
 import 'package:car_listing_app/services/config.dart';
+import 'package:car_listing_app/shared/auth/token_store.dart';
 import 'package:http/http.dart' as http;
 import 'package:http/testing.dart';
 
@@ -38,6 +39,7 @@ class FakeApiServer {
   /// Starts the stub once per isolate (safe for parallel `flutter test`).
   static Future<void> ensureStarted() async {
     if (_client != null) return;
+    TokenStore.testMode = true;
     setRuntimeApiBaseOverride('http://127.0.0.1:1');
     _client = MockClient(_handle);
     ApiService.testHttpClient = _client;
@@ -47,6 +49,8 @@ class FakeApiServer {
     ApiService.testHttpClient = null;
     _client = null;
     _expectedBearer = null;
+    TokenStore.testMode = false;
+    TokenStore.resetForTests();
     setRuntimeApiBaseOverride(null);
   }
 
