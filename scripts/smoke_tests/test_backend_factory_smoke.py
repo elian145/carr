@@ -396,6 +396,49 @@ class BackendFactorySmokeTest(unittest.TestCase):
             self.assertIsNotNone(user)
             self.assertTrue(user.is_verified)
 
+    def test_report_user_listing_and_block_flow(self):
+        user_report = self.client.post(
+            f"/api/users/{self.seller_public}/report",
+            headers=self._auth(self.viewer_token),
+            json={"reason": "Spam", "details": "Smoke test report"},
+        )
+        self.assertEqual(user_report.status_code, 201, user_report.data)
+
+        listing_report = self.client.post(
+            f"/api/cars/{self.car_public}/report",
+            headers=self._auth(self.viewer_token),
+            json={"reason": "Misleading listing"},
+        )
+        self.assertEqual(listing_report.status_code, 201, listing_report.data)
+
+        pending = self.client.get(
+            "/api/admin/reports?status=pending&type=all",
+            headers=self._auth(self.admin_token),
+        )
+        self.assertEqual(pending.status_code, 200, pending.data)
+        rows = (pending.get_json() or {}).get("reports") or []
+        self.assertGreaterEqual(len(rows), 2)
+
+        block = self.client.post(
+            f"/api/users/{self.seller_public}/block",
+            headers=self._auth(self.viewer_token),
+        )
+        self.assertIn(block.status_code, (200, 201), block.data)
+
+        blocked = self.client.get(
+            "/api/users/blocked",
+            headers=self._auth(self.viewer_token),
+        )
+        self.assertEqual(blocked.status_code, 200, blocked.data)
+        blocked_ids = (blocked.get_json() or {}).get("blocked_users") or []
+        self.assertIn(self.seller_public, blocked_ids)
+
+        unblock = self.client.post(
+            f"/api/users/{self.seller_public}/unblock",
+            headers=self._auth(self.viewer_token),
+        )
+        self.assertEqual(unblock.status_code, 200, unblock.data)
+
     def test_well_known_app_links_require_env(self):
         """Without store env vars, deep-link files must 404 (not serve invalid stubs)."""
         for path in (

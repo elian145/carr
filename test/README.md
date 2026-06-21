@@ -28,6 +28,7 @@
 | `legacy_dealer_profile_widget_test.dart` | Public dealer profile loads mock dealership |
 | `legacy_saved_searches_widget_test.dart` | Saved searches empty state |
 | `legacy_saved_searches_authenticated_widget_test.dart` | Authenticated saved searches loads mock API rows |
+| `legacy_admin_reports_widget_test.dart` | Admin reports queue empty state and filters |
 | `legacy_edit_profile_widget_test.dart` | Edit profile loads session user fields |
 | `legacy_forgot_password_widget_test.dart` | Forgot password recovery UI and empty-email validation |
 | `legacy_reset_password_widget_test.dart` | Reset password prefills token from route args |
@@ -38,6 +39,7 @@
 | `api_trust_config_test.dart` | `TrustConfig.load` reads support/legal URLs from mock `/api/config/trust` |
 | `saved_search_service_test.dart` | `SavedSearchService.loadMerged` against mock API |
 | `api_dealer_test.dart` | `getDealerProfile` and `searchDealers` against mock API |
+| `api_moderation_test.dart` | `reportUser`, `blockUser`, `getBlockedUsers`, and admin report APIs against mock API |
 | `api_profile_favorites_test.dart` | `getProfile`, `getFavorites`, `getMyListings`, `getCarDetail` against mock API |
 | `api_integration_test.dart` | `createCar`, `toggleFavorite`, saved-search CRUD/sync, `updateCar`, `getCars`, `getRecentlyViewed` against mock API |
 | `carzo_app_smoke_test.dart` | Migration shell (`CarzoApp` / `lib/app`) — not used in production |

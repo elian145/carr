@@ -124,7 +124,26 @@ class FakeApiServer {
           'car': {..._sampleCar(id), 'status': 'active'},
         });
       }
+      if (segments.length > 1 && segments[1] == 'report' && method == 'POST') {
+        return _json(201, {'message': 'Report submitted. Thank you.'});
+      }
       return _json(200, {'car': _sampleCar(id)});
+    }
+
+    if (path == '/api/users/blocked') {
+      return _json(200, {'blocked_users': <dynamic>[]});
+    }
+
+    if (path.startsWith('/api/users/') && path.length > '/api/users/'.length) {
+      if (path.endsWith('/block') && method == 'POST') {
+        return _json(201, {'message': 'User blocked'});
+      }
+      if (path.endsWith('/unblock') && method == 'POST') {
+        return _json(200, {'message': 'User unblocked'});
+      }
+      if (path.endsWith('/report') && method == 'POST') {
+        return _json(201, {'message': 'Report submitted. Thank you.'});
+      }
     }
 
     if (path.startsWith('/api/dealers/') && path.length > '/api/dealers/'.length) {
@@ -145,6 +164,16 @@ class FakeApiServer {
     }
 
     if (path.startsWith('/api/admin/reports')) {
+      if (method == 'PATCH') {
+        return _json(200, {
+          'report': {
+            'id': 1,
+            'type': path.contains('/listing/') ? 'listing' : 'user',
+            'status': 'resolved',
+            'reason': 'Spam',
+          },
+        });
+      }
       return _json(200, {'reports': <dynamic>[]});
     }
 
