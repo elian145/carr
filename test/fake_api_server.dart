@@ -223,6 +223,12 @@ class FakeApiServer {
           'refresh_token': 'test_refresh_token',
           'user': {'id': 1, 'username': 'test', 'is_admin': false},
         });
+      case '/api/auth/forgot-password':
+        return _json(200, {
+          'message': 'If the account exists, a reset code has been sent',
+        });
+      case '/api/auth/reset-password':
+        return _json(200, {'message': 'Password reset successful'});
       case '/api/auth/me':
         return _json(200, {
           'id': 1,

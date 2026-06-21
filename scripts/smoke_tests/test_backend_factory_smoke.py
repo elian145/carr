@@ -741,6 +741,32 @@ class BackendFactorySmokeTest(unittest.TestCase):
         payload = listed.get_json() or {}
         self.assertEqual(payload.get("cars") or [], [])
 
+    def test_forgot_password_requires_identifier(self):
+        r = self.client.post("/api/auth/forgot-password", json={})
+        self.assertEqual(r.status_code, 400, r.data)
+
+    def test_forgot_and_reset_password_via_phone(self):
+        forgot = self.client.post(
+            "/api/auth/forgot-password",
+            json={"phone_number": "07000000002"},
+        )
+        self.assertEqual(forgot.status_code, 200, forgot.data)
+        body = forgot.get_json() or {}
+        dev_code = body.get("dev_code")
+        self.assertTrue(dev_code, body)
+
+        reset = self.client.post(
+            "/api/auth/reset-password",
+            json={"token": dev_code, "password": "Bb123456!"},
+        )
+        self.assertEqual(reset.status_code, 200, reset.data)
+
+        login = self.client.post(
+            "/api/auth/login",
+            json={"username": "viewer", "password": "Bb123456!"},
+        )
+        self.assertEqual(login.status_code, 200, login.data)
+
     def test_list_cars_with_brand_filter(self):
         r = self.client.get("/api/cars?brand=toyota&page=1&per_page=10")
         self.assertEqual(r.status_code, 200, r.data)

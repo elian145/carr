@@ -22,8 +22,12 @@
 | `legacy_settings_widget_test.dart` | Settings page theme controls |
 | `legacy_comparison_empty_widget_test.dart` | Comparison empty state |
 | `legacy_dealers_directory_widget_test.dart` | Dealers directory empty search state |
+| `legacy_edit_profile_widget_test.dart` | Edit profile loads session user fields |
+| `legacy_forgot_password_widget_test.dart` | Forgot password recovery UI and empty-email validation |
+| `legacy_reset_password_widget_test.dart` | Reset password prefills token from route args |
 | `api_chat_test.dart` | `getChats`, unread count, send message, message history against mock API |
 | `api_analytics_test.dart` | `AnalyticsService.getUserListingsAnalytics` and `trackView` against mock API |
+| `api_auth_recovery_test.dart` | `forgotPassword` and `resetPassword` against mock API |
 | `api_profile_favorites_test.dart` | `getProfile`, `getFavorites`, `getMyListings`, `getCarDetail` against mock API |
 | `api_integration_test.dart` | `createCar`, `toggleFavorite`, `createSavedSearch`, `updateCar`, `getCars`, `getRecentlyViewed` against mock API |
 | `carzo_app_smoke_test.dart` | Migration shell (`CarzoApp` / `lib/app`) — not used in production |
