@@ -1,21 +1,21 @@
-import 'dart:async';
+﻿import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:provider/provider.dart';
 import 'dart:io';
 
-import '../data/car_catalog.dart';
-import '../l10n/app_localizations.dart';
-import '../services/api_service.dart';
-import '../services/auth_service.dart';
-import '../services/car_spec_index.dart';
-import '../models/online_spec_variant.dart';
-import '../shared/errors/user_error_text.dart';
-import '../shared/listings/listing_identity.dart';
-import '../shared/prefs/sell_listing_draft_prefs.dart';
-import '../shared/prefs/sell_draft_media_persistence.dart';
-import '../shared/prefs/legacy_sell_draft_prefs.dart';
-import '../shared/debug/app_log.dart';
+import '../../data/car_catalog.dart';
+import '../../l10n/app_localizations.dart';
+import '../../services/api_service.dart';
+import '../../services/auth_service.dart';
+import '../../services/car_spec_index.dart';
+import '../../models/online_spec_variant.dart';
+import '../../shared/errors/user_error_text.dart';
+import '../../shared/listings/listing_identity.dart';
+import '../../shared/prefs/sell_listing_draft_prefs.dart';
+import '../../shared/prefs/sell_draft_media_persistence.dart';
+import '../../shared/prefs/legacy_sell_draft_prefs.dart';
+import '../../shared/debug/app_log.dart';
 
 class SellPage extends StatefulWidget {
   const SellPage({

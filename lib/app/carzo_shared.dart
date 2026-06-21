@@ -18,104 +18,84 @@ import 'package:video_thumbnail/video_thumbnail.dart';
 import 'dart:io';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:share_plus/share_plus.dart';
-import '../../services/analytics_service.dart';
-import '../../services/api_service.dart';
-import '../../services/auth_service.dart';
-import '../../models/analytics_model.dart';
-import '../../shared/auth/token_store.dart';
-import '../../shared/text/pretty_title_case.dart';
-import '../../shared/vin/open_vin_search.dart';
-import '../../shared/media/media_url.dart';
-import '../../shared/i18n/locale_formatting.dart';
-import '../../shared/i18n/legacy_inline_text.dart';
-import '../../shared/i18n/digits.dart';
-import '../../shared/prefs/sell_draft_step.dart';
-import '../../shared/ui/keyboard.dart';
-import '../../shared/debug/app_log.dart';
-import '../../shared/navigation/route_args.dart';
-import '../../shared/i18n/listing_field_labels.dart';
-import '../../shared/i18n/listing_value_labels.dart';
-import '../../shared/i18n/sort_api_mapping.dart';
-import '../../shared/listings/transmission_filter.dart';
-import '../../shared/listings/listing_uploaded_ago.dart';
-import '../../shared/auth/phone_verification_gate.dart';
-import '../../shared/errors/user_error_text.dart';
-import '../../shared/listings/listing_events.dart';
-import '../../shared/listings/listing_identity.dart';
-import '../../shared/listings/listing_status.dart';
-import '../../shared/listings/listing_sold_badge.dart';
-import '../../shared/listings/listing_share.dart';
-import '../../shared/listings/listing_card_media.dart';
-import '../../shared/listings/listing_card_data.dart' as listing_card_data;
-import '../../shared/prefs/listing_layout_prefs.dart';
-import '../../shared/prefs/sell_draft_media_persistence.dart';
-import '../../shared/prefs/legacy_sell_draft_prefs.dart';
-import '../../state/locale_controller.dart' as app_state;
-import '../../globals.dart';
-import '../analytics_page.dart';
-import '../edit_profile_page.dart';
-import 'package:firebase_core/firebase_core.dart';
-import 'package:firebase_messaging/firebase_messaging.dart';
-import '../../l10n/app_localizations.dart';
+import '../services/analytics_service.dart';
+import '../services/api_service.dart';
+import '../services/auth_service.dart';
+import '../models/analytics_model.dart';
+import '../shared/auth/token_store.dart';
+import '../shared/text/pretty_title_case.dart';
+import '../shared/vin/open_vin_search.dart';
+import '../shared/media/media_url.dart';
+import '../shared/i18n/locale_formatting.dart';
+import '../shared/i18n/legacy_inline_text.dart';
+import '../shared/i18n/digits.dart';
+import '../shared/prefs/sell_draft_step.dart';
+import '../shared/ui/keyboard.dart';
+import '../shared/debug/app_log.dart';
+import '../shared/navigation/route_args.dart';
+import '../shared/i18n/listing_field_labels.dart';
+import '../shared/i18n/listing_value_labels.dart';
+import '../shared/i18n/sort_api_mapping.dart';
+import '../shared/listings/transmission_filter.dart';
+import '../shared/listings/listing_uploaded_ago.dart';
+import '../shared/auth/phone_verification_gate.dart';
+import '../shared/errors/user_error_text.dart';
+import '../shared/listings/listing_events.dart';
+import '../shared/listings/listing_identity.dart';
+import '../shared/listings/listing_status.dart';
+import '../shared/listings/listing_sold_badge.dart';
+import '../shared/listings/listing_share.dart';
+import '../shared/listings/listing_card_media.dart';
+import '../shared/listings/listing_card_data.dart' as listing_card_data;
+import '../shared/prefs/listing_layout_prefs.dart';
+import '../shared/prefs/sell_draft_media_persistence.dart';
+import '../shared/prefs/legacy_sell_draft_prefs.dart';
+import '../state/locale_controller.dart' as app_state;
+import '../globals.dart';
+import '../l10n/app_localizations.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:intl/intl.dart';
 import 'package:provider/provider.dart';
-import '../../theme_provider.dart';
-import '../../chat_ui_theme_controller.dart';
-import '../../widgets/theme_toggle_widget.dart';
-import '../../services/config.dart';
-import '../../services/ai_service.dart';
-import '../../services/car_service.dart';
-import '../../services/deep_link_service.dart';
-import '../../services/push_notification_service.dart';
-import '../../services/websocket_service.dart';
+import '../theme_provider.dart';
+import '../widgets/theme_toggle_widget.dart';
+import '../services/config.dart';
+import '../services/ai_service.dart';
+import '../services/car_service.dart';
+import '../services/push_notification_service.dart';
+import '../services/websocket_service.dart';
 import 'package:mime/mime.dart';
 import 'package:http_parser/http_parser.dart';
 import 'package:path/path.dart' as p;
-import '../auth_pages.dart' as auth_pages;
-import '../chat_pages.dart' as carzo_chat;
-import '../reset_password_page.dart';
-import '../change_password_page.dart';
-import '../verify_email_page.dart';
-import '../admin_dealers_page.dart';
-import '../dealer_profile_page.dart';
-import '../dealers_directory_page.dart';
-import '../edit_dealer_page.dart';
-import '../my_listings_page.dart' as modern_listings;
-import '../edit_listing_page.dart' as modern_edit;
-import '../../shared/listings/listing_management.dart'
+import '../pages/chat_pages.dart' as carzo_chat;
+import '../pages/dealers_directory_page.dart';
+import '../shared/listings/listing_management.dart'
     show
         confirmAndDeleteListing,
         confirmMarkListingSold,
         openEditListingPage,
         setListingSoldStatus;
-import '../../shared/listings/listing_owner.dart';
-import '../../features/comparison/state/car_comparison_store.dart';
-import '../../data/car_catalog.dart';
-import '../../data/car_name_translations.dart';
-import '../../services/car_spec_index.dart';
-import '../../services/saved_search_service.dart';
-import '../../services/recently_viewed_service.dart';
-import '../recently_viewed_page.dart';
-import '../help_center_page.dart';
-import '../legal_document_page.dart';
-import '../../shared/account/delete_account_dialog.dart';
-import '../admin_reports_page.dart';
-import '../../shared/trust/report_dialog.dart';
-import '../../models/online_spec_variant.dart';
-import '../../widgets/in_app_video_screen.dart';
-import '../listing_image_gallery_page.dart';
-import '../tiktok_scroll_page.dart';
-import '../../widgets/network_video_thumbnail.dart';
-import '../../widgets/edge_swipe_back.dart';
-part 'home_page_part.dart';
-part 'sell_flow_part.dart';
-part 'car_detail_part.dart';
-part 'saved_searches_part.dart';
-part 'comparison_part.dart';
-part 'auth_pages_part.dart';
-part 'account_pages_part.dart';
-part 'legacy_routes_part.dart';
+import '../shared/listings/listing_owner.dart';
+import '../features/comparison/state/car_comparison_store.dart';
+import '../data/car_catalog.dart';
+import '../data/car_name_translations.dart';
+import '../services/car_spec_index.dart';
+import '../services/saved_search_service.dart';
+import '../services/recently_viewed_service.dart';
+import '../pages/legal_document_page.dart';
+import '../shared/account/delete_account_dialog.dart';
+import '../shared/trust/report_dialog.dart';
+import '../models/online_spec_variant.dart';
+import '../widgets/in_app_video_screen.dart';
+import '../pages/listing_image_gallery_page.dart';
+import '../widgets/network_video_thumbnail.dart';
+part '../pages/home_page.dart';
+part '../pages/sell_flow_page.dart';
+part '../pages/car_details_page.dart';
+part '../pages/saved_searches_page.dart';
+part '../pages/comparison_page.dart';
+part '../pages/production_auth_pages.dart';
+part '../pages/production_account_pages.dart';
+part 'legacy_fallback_routes.dart';
 
 const List<String> _kOnlineSpecOptionKeys = [
   '_online_opts_transmission',
@@ -289,7 +269,7 @@ const bool kSideloadBuild = bool.fromEnvironment(
 );
 
 /// Navigator key for deep link handling (e.g. reset-password from email link).
-final GlobalKey<NavigatorState> _appNavigatorKey = GlobalKey<NavigatorState>();
+final GlobalKey<NavigatorState> productionNavigatorKey = GlobalKey<NavigatorState>();
 // Build commit SHA for on-device verification
 const String kBuildSha = String.fromEnvironment(
   'BUILD_COMMIT_SHA',
@@ -2776,81 +2756,6 @@ class _SearchDialogState extends State<_SearchDialog> {
   }
 }
 
-void main() {
-  runZonedGuarded(
-    () async {
-      WidgetsFlutterBinding.ensureInitialized();
-      FlutterError.onError = (FlutterErrorDetails details) async {
-        // Persist the last error for diagnosis on sideload builds
-        try {
-          final sp = await SharedPreferences.getInstance();
-          await sp.setString('last_startup_error', details.exceptionAsString());
-        } catch (e, st) { logNonFatal(e, st); }
-      };
-
-      // Minimal pre-run init only (fast): load tokens if available.
-      // Heavier work is deferred until after first frame to avoid splash hangs.
-      try {
-        await ApiService.initializeTokens();
-      } catch (e, st) { logNonFatal(e, st); }
-
-      // Initialize global currency symbol
-      globalSymbol = r'$';
-
-      runApp(MyApp());
-
-      // Defer heavy initializations to post-frame to avoid blocking first paint
-      // Firebase, locale, and auth init can take time on emulators
-      Future.microtask(() async {
-        // Skip Firebase/Push init for sideload builds on iOS to avoid entitlement crashes
-        if (!(kSideloadBuild && Platform.isIOS)) {
-          try {
-            await Firebase.initializeApp();
-          } catch (e, st) { logNonFatal(e, st); }
-          try {
-            await _initPushToken();
-          } catch (e, st) { logNonFatal(e, st); }
-        }
-        try {
-          await LocaleController.loadSavedLocale();
-        } catch (e, st) { logNonFatal(e, st); }
-        try {
-          await AuthService().initialize();
-        } catch (e, st) { logNonFatal(e, st); }
-      });
-    },
-    (error, stack) async {
-      try {
-        final sp = await SharedPreferences.getInstance();
-        await sp.setString('last_startup_error', error.toString());
-      } catch (e, st) { logNonFatal(e, st); }
-    },
-  );
-}
-
-Future<void> _initPushToken() async {
-  try {
-    final sp = await SharedPreferences.getInstance();
-    final enabled = sp.getBool('push_enabled') ?? true;
-    if (!enabled) return;
-    final messaging = FirebaseMessaging.instance;
-    final settings = await messaging.requestPermission(
-      alert: true,
-      badge: true,
-      sound: true,
-      provisional: false,
-    );
-    if (settings.authorizationStatus == AuthorizationStatus.authorized ||
-        settings.authorizationStatus == AuthorizationStatus.provisional) {
-      final token = await messaging.getToken();
-      if (token != null && token.isNotEmpty) {
-        final sp = await SharedPreferences.getInstance();
-        await sp.setString('push_token', token);
-      }
-    }
-  } catch (e, st) { logNonFatal(e, st); }
-}
-
 // Car Comparison State Management
 // NOTE: `CarComparisonStore` now lives in `lib/features/comparison/state/`.
 
@@ -3073,263 +2978,6 @@ class AuthGuard extends StatelessWidget {
       }
     });
     return const Scaffold(body: Center(child: CircularProgressIndicator()));
-  }
-}
-
-/// Wraps [MaterialApp] and inits deep link handling after first frame.
-class _AppWithDeepLinks extends StatefulWidget {
-  const _AppWithDeepLinks({required this.child});
-  final Widget child;
-
-  @override
-  State<_AppWithDeepLinks> createState() => _AppWithDeepLinksState();
-}
-
-class _AppWithDeepLinksState extends State<_AppWithDeepLinks> {
-  @override
-  void initState() {
-    super.initState();
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      DeepLinkService.instance.init(_appNavigatorKey);
-    });
-  }
-
-  @override
-  Widget build(BuildContext context) => widget.child;
-}
-
-class MyApp extends StatelessWidget {
-  const MyApp({super.key});
-
-  @override
-  Widget build(BuildContext context) {
-    return MultiProvider(
-      providers: [
-        ChangeNotifierProvider(create: (context) => ThemeProvider()),
-        ChangeNotifierProvider(create: (context) => ChatUiThemeController()),
-        ChangeNotifierProvider(create: (context) => CarComparisonStore()),
-        ChangeNotifierProvider.value(value: AuthService()),
-      ],
-      child: ValueListenableBuilder<Locale?>(
-        valueListenable: LocaleController.currentLocale,
-        builder: (context, locale, _) => Consumer<ThemeProvider>(
-          builder: (context, themeProvider, child) => _AppWithDeepLinks(
-            child: MaterialApp(
-              navigatorKey: _appNavigatorKey,
-              title: 'CarNet',
-              builder: (context, child) => EdgeSwipeBack(
-                navigatorKey: _appNavigatorKey,
-                child: child ?? const SizedBox.shrink(),
-              ),
-              locale: locale,
-              supportedLocales: const [
-                Locale('en'),
-                Locale('ar'),
-                Locale('ku'),
-              ],
-              localizationsDelegates: [
-                AppLocalizations.delegate,
-                GlobalMaterialLocalizations.delegate,
-                GlobalWidgetsLocalizations.delegate,
-                GlobalCupertinoLocalizations.delegate,
-                const KuMaterialLocalizationsDelegate(),
-                const KuWidgetsLocalizationsDelegate(),
-                const KuCupertinoLocalizationsDelegate(),
-              ],
-              localeResolutionCallback: (deviceLocale, supported) {
-                if (locale != null) return locale;
-                if (deviceLocale == null) return const Locale('en');
-                for (final l in supported) {
-                  if (l.languageCode == deviceLocale.languageCode) return l;
-                }
-                return const Locale('en');
-              },
-              theme: AppThemes.lightTheme,
-              darkTheme: AppThemes.darkTheme,
-              themeMode: themeProvider.themeMode,
-              debugShowCheckedModeBanner: false,
-              initialRoute: '/',
-              routes: {
-                '/': (context) => HomePage(),
-                '/sell': (context) {
-                  final args = ModalRoute.of(context)?.settings.arguments;
-                  final initialDraftSnapshot = args is Map
-                      ? (args['draftSnapshot'] is Map
-                          ? Map<String, dynamic>.from(
-                              (args['draftSnapshot'] as Map).cast<String, dynamic>(),
-                            )
-                          : null)
-                      : null;
-                  final startFresh = args is Map && args['startFresh'] == true;
-                  final showDraftGate = args is Map && args['showDraftGate'] == true;
-                  if (initialDraftSnapshot != null) {
-                    return AuthGuard(
-                      child: SellCarPage(
-                        initialDraftSnapshot: initialDraftSnapshot,
-                      ),
-                    );
-                  }
-                  if (startFresh) {
-                    return AuthGuard(
-                      child: const SellCarPage(startFreshListing: true),
-                    );
-                  }
-                  if (showDraftGate) {
-                    return AuthGuard(
-                      child: const SellDraftGatePage(),
-                    );
-                  }
-                  return AuthGuard(
-                    child: const SellEntryRouterPage(),
-                  );
-                },
-                '/settings': (context) => SettingsPage(),
-                '/favorites': (context) => AuthGuard(child: FavoritesPage()),
-                '/dealers': (context) => const DealersDirectoryPage(),
-                '/chat': (context) => AuthGuard(child: ChatListPage()),
-                '/login': (context) => LoginPage(),
-                '/signup': (context) => SignupPage(),
-                '/profile': (context) => AuthGuard(child: ProfilePage()),
-                '/edit-profile': (context) =>
-                    AuthGuard(child: EditProfilePage()),
-                '/car_detail': (context) {
-                  final args = readRouteArgs(context);
-                  final carId = (args?['carId'] ?? '').toString().trim();
-                  if (carId.isEmpty) {
-                    return navigationErrorScaffold('Missing listing id');
-                  }
-                  return CarDetailsPage(carId: carId);
-                },
-                '/tiktok_scroll': (context) {
-                  final args = readRouteArgs(context);
-                  final cars = (args?['cars'] as List?)
-                          ?.whereType<Map>()
-                          .map((m) => Map<String, dynamic>.from(m))
-                          .toList() ??
-                      <Map<String, dynamic>>[];
-                  final initialIndex = (args?['initialIndex'] as int?) ?? 0;
-                  return TikTokScrollPage(
-                    cars: cars,
-                    initialIndex: initialIndex,
-                  );
-                },
-                '/chat/conversation': (context) {
-                  final args = readRouteArgs(context);
-                  final rawId = (args?['carId'] ?? args?['conversationId'] ?? '')
-                      .toString()
-                      .trim();
-                  if (rawId.isEmpty) {
-                    return Scaffold(
-                      appBar: AppBar(title: const Text('Navigation error')),
-                      body: Center(
-                        child: Text('Missing chat conversation id'),
-                      ),
-                    );
-                  }
-                  return AuthGuard(
-                    child: carzo_chat.ChatConversationPage(
-                      carId: rawId,
-                      receiverId: args?['receiverId']?.toString(),
-                      initialDraft: args?['initialDraft']?.toString(),
-                      initialListingPreview: args?['listingPreview'] is Map
-                          ? Map<String, dynamic>.from(
-                              (args?['listingPreview'] as Map)
-                                  .cast<String, dynamic>(),
-                            )
-                          : null,
-                    ),
-                  );
-                },
-                '/edit': (context) {
-                  final args = readRouteArgs(context);
-                  final car = args?['car'];
-                  if (car is! Map) {
-                    return Scaffold(
-                      appBar: AppBar(title: const Text('Navigation error')),
-                      body: const Center(child: Text('Missing listing data')),
-                    );
-                  }
-                  return AuthGuard(
-                    child: modern_edit.EditListingPage(
-                      car: Map<String, dynamic>.from(
-                        car.cast<String, dynamic>(),
-                      ),
-                    ),
-                  );
-                },
-                '/edit_listing': (context) {
-                  final args = ModalRoute.of(context)?.settings.arguments;
-                  final car = args is Map ? args['car'] : null;
-                  if (car is! Map) {
-                    return Scaffold(
-                      appBar: AppBar(title: const Text('Navigation error')),
-                      body: const Center(child: Text('Missing listing data')),
-                    );
-                  }
-                  return AuthGuard(
-                    child: modern_edit.EditListingPage(
-                      car: Map<String, dynamic>.from(
-                        car.cast<String, dynamic>(),
-                      ),
-                    ),
-                  );
-                },
-                '/my_listings': (context) =>
-                    AuthGuard(child: modern_listings.MyListingsPage()),
-                '/comparison': (context) => CarComparisonPage(),
-                '/recently-viewed': (context) =>
-                    AuthGuard(child: const RecentlyViewedPage()),
-                '/analytics': (context) => AnalyticsPage(),
-                '/reset-password': (context) => ResetPasswordPage(),
-                '/verify-email': (context) {
-                  final args = ModalRoute.of(context)?.settings.arguments;
-                  final token = args is Map
-                      ? (args['token'] ?? '').toString().trim()
-                      : '';
-                  return VerifyEmailPage(
-                    initialToken: token.isNotEmpty ? token : null,
-                  );
-                },
-                '/forgot-password': (context) =>
-                    auth_pages.ForgotPasswordPage(),
-                '/change-password': (context) =>
-                    AuthGuard(child: const ChangePasswordPage()),
-                '/admin/dealers': (context) =>
-                    AuthGuard(child: AdminDealersPage()),
-                '/admin/reports': (context) =>
-                    AuthGuard(child: const AdminReportsPage()),
-                '/help': (context) => const HelpCenterPage(),
-                '/dealer/edit': (context) =>
-                    AuthGuard(child: EditDealerPage()),
-                '/dealer/profile': (context) {
-                  final args =
-                      ModalRoute.of(context)?.settings.arguments
-                          as Map<String, dynamic>?;
-                  final dealerPublicId =
-                      (args?['dealerPublicId'] ?? '').toString().trim();
-                  if (dealerPublicId.isEmpty) {
-                    return Scaffold(
-                      appBar: AppBar(title: const Text('Navigation error')),
-                      body: Center(
-                        child: Text(
-                          _trLegacyText(
-                            context,
-                            'Missing dealer id',
-                            ar: 'معرّف الوكيل مفقود',
-                            ku: 'ناسنامەی وەکیل ونە',
-                          ),
-                        ),
-                      ),
-                    );
-                  }
-                  return DealerProfilePage(dealerPublicId: dealerPublicId);
-                },
-              },
-            ),
-          ),
-        ),
-      ),
-    );
   }
 }
 

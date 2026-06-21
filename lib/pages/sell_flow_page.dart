@@ -1,4 +1,4 @@
-part of 'carzo_pages.dart';
+part of '../app/carzo_shared.dart';
 
 const String _sellDraftArchiveKey = 'legacy_sell_draft_archive_v1';
 

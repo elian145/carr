@@ -1,4 +1,4 @@
-import 'dart:async';
+﻿import 'dart:async';
 import 'dart:convert';
 
 import 'package:flutter/material.dart';
@@ -7,22 +7,22 @@ import 'package:provider/provider.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:url_launcher/url_launcher.dart';
 
-import '../l10n/app_localizations.dart';
-import '../theme_provider.dart';
-import '../services/analytics_service.dart';
-import '../services/api_service.dart';
-import '../services/auth_service.dart';
-import '../services/config.dart';
-import '../shared/media/media_url.dart';
-import '../shared/errors/user_error_text.dart';
-import '../shared/listings/listing_identity.dart';
-import '../shared/listings/listing_management.dart';
-import '../shared/listings/listing_owner.dart';
-import '../shared/listings/listing_share.dart';
-import '../shared/text/pretty_title_case.dart';
-import '../shared/vin/open_vin_search.dart';
-import 'listing_image_gallery_page.dart';
-import '../shared/debug/app_log.dart';
+import '../../l10n/app_localizations.dart';
+import '../../theme_provider.dart';
+import '../../services/analytics_service.dart';
+import '../../services/api_service.dart';
+import '../../services/auth_service.dart';
+import '../../services/config.dart';
+import '../../shared/media/media_url.dart';
+import '../../shared/errors/user_error_text.dart';
+import '../../shared/listings/listing_identity.dart';
+import '../../shared/listings/listing_management.dart';
+import '../../shared/listings/listing_owner.dart';
+import '../../shared/listings/listing_share.dart';
+import '../../shared/text/pretty_title_case.dart';
+import '../../shared/vin/open_vin_search.dart';
+import '../listing_image_gallery_page.dart';
+import '../../shared/debug/app_log.dart';
 
 class CarDetailPage extends StatefulWidget {
   final String carId;

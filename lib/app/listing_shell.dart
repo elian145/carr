@@ -1,6 +1,10 @@
-export '../pages/production/carzo_pages.dart'
+export 'carzo_shared.dart'
     show
+        AuthGuard,
         buildGlobalCarCard,
         buildFloatingBottomNav,
         navigateMainShellTab,
-        mapListingToGlobalCarCardData;
+        mapListingToGlobalCarCardData,
+        buildLegacyFallbackRoutes;
+
+export 'production_app.dart' show MyApp;

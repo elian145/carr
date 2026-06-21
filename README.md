@@ -438,9 +438,9 @@ car_listing_app/
 ├── kk/                    # Backend (Flask) — production via kk.wsgi / app_factory
 ├── backend/               # Local dev proxy (:5003 → kk :5000)
 ├── lib/
-│   ├── main.dart          # bootstrapAndRun(legacy.MyApp)
-│   ├── pages/production/  # Production UI (part library)
-│   ├── pages/             # Modern screens (migration)
+│   ├── main.dart          # bootstrapAndRun(MyApp)
+│   ├── app/carzo_shared.dart  # Production part library (shared + routes)
+│   ├── pages/             # Production screens (part of carzo_shared) + standalone
 │   └── services/          # API, auth, WebSocket, config
 ├── test/                  # Flutter tests + fake API server
 ├── scripts/               # CI helpers, smoke tests, dev servers

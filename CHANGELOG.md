@@ -27,11 +27,11 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ### Changed
 
-- Support/legal defaults use `support@carzo.app` (removed `support@carlistings.com` client fallback).
+- Extract production part library into `lib/pages/` (`home_page.dart`, `sell_flow_page.dart`, etc.) with shared code in `lib/app/carzo_shared.dart`; removed `lib/pages/production/`.
 - README release steps reference verify scripts and `--dart-define=API_BASE`.
 - Renamed sell draft prefs modules to `sell_draft_prefs.dart` / `sell_draft_list.dart` (`SellDraftPrefs`, `SellDraftList`); SharedPreferences key strings unchanged.
 - Removed `/legacy_*` route aliases from `buildProductionRoutes()`.
-- Production entry uses `MyApp` from `lib/app/production_app.dart` (`lib/pages/production/` part library); `CarzoApp` remains for simplified-route smoke tests.
+- Production entry uses `MyApp` from `lib/app/production_app.dart` with screens as `part of carzo_shared.dart`; `CarzoApp` remains for simplified-route smoke tests.
 - `SellDraftList` delegates shared logic to `SellDraftArchive`.
 - Split `sell_page.dart` into extension parts under `lib/pages/sell/` (~809-line shell + 6 modules).
 - Split `chat_pages.dart` into extension parts under `lib/pages/chat/` (~1,072-line shell + 9 modules); `tools/split_chat_pages.py` for regeneration from monolith.
@@ -76,7 +76,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ### Planned (not yet complete)
 
-- Extract production part screens into standalone `lib/pages/*.dart` files (home, sell wizard, comparison, etc.).
+- Split `carzo_shared.dart` helpers into smaller standalone modules (listing card, galleries, search).
 - Set `REDIS_URL` in production for multi-worker rate limits (see `docs/DEPLOY_ENV_CHECKLIST.md`).
 
 ## [1.0.0] - 2026-05-20

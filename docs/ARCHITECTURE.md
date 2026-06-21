@@ -8,7 +8,7 @@ CARZO (CarNet) is a Flutter client + Flask backend monorepo for a car marketplac
 
 | Layer | Entry | Notes |
 |-------|-------|-------|
-| Flutter | `lib/main.dart` → `MyApp` | Production UI in `lib/pages/production/` (part library) |
+| Flutter | `lib/main.dart` → `MyApp` | Production UI as `part of` library in `lib/app/carzo_shared.dart` + `lib/pages/` |
 | Backend (prod) | `kk.wsgi:app` / `create_app()` in `kk/app_factory.py` | Do not use `kk/legacy/app.py` in production |
 | Local dev API | `python -m kk.app_new` on **5000**, proxy `backend/server.py` on **5003** | App default `API_BASE` targets the proxy |
 
@@ -17,17 +17,22 @@ CARZO (CarNet) is a Flutter client + Flask backend monorepo for a car marketplac
 ```
 lib/
 ├── main.dart              # bootstrapAndRun(MyApp)
+├── app/
+│   ├── carzo_shared.dart  # Shared helpers, listing cards, galleries (~3k lines)
+│   ├── production_app.dart
+│   ├── production_routes.dart
+│   └── listing_shell.dart # Re-exports listing card / nav helpers
 ├── pages/
-│   ├── production/        # Production UI (part library, ~25k lines)
-│   └── …                  # Standalone screens + CarzoApp-only stubs
-├── app/                   # production_app, listing_shell, CarzoApp (migration tests)
+│   ├── home_page.dart, sell_flow_page.dart, …  # part of carzo_shared
+│   ├── carzo_app/         # Simplified CarzoApp-only stubs (smoke tests)
+│   └── …                  # Standalone screens (edit listing, my listings, …)
 ├── services/              # API, auth, WebSocket, push, config
 │   ├── api_service.dart   # HTTP core + delegators (~650 lines)
 │   └── api/               # api_http, api_auth, api_listings, api_chat, api_admin
 └── shared/                # Reusable helpers, prefs, i18n
 ```
 
-**Migration status:** Production screens moved from `lib/legacy/` to `lib/pages/production/`. Standalone extracts under `lib/pages/` (e.g. `home_page.dart`, `sell_page.dart`) remain for `CarzoApp` smoke tests until each production screen is fully ported out of the part library. See `lib/pages/production/README.md`.
+**Migration status:** Production screens are `part of '../app/carzo_shared.dart'` under `lib/pages/` (see `lib/pages/README.md`). Shared shell code lives in `carzo_shared.dart`; routes in `production_routes.dart`. Simplified **CarzoApp** stubs under `lib/pages/carzo_app/` remain for migration smoke tests.
 
 ## Backend layout
 

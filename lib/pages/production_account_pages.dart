@@ -1,4 +1,4 @@
-part of 'carzo_pages.dart';
+part of '../app/carzo_shared.dart';
 
 class ProfilePage extends StatefulWidget {
   const ProfilePage({super.key});

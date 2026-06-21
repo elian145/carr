@@ -1,15 +1,15 @@
-import 'package:flutter/material.dart';
+﻿import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
-import '../l10n/app_localizations.dart';
-import '../app/listing_shell.dart'
+import '../../l10n/app_localizations.dart';
+import '../../app/listing_shell.dart'
     show buildGlobalCarCard, mapListingToGlobalCarCardData;
-import '../services/api_service.dart';
-import '../services/auth_service.dart';
-import '../shared/errors/user_error_text.dart';
-import '../shared/prefs/listing_layout_prefs.dart';
-import '../theme_provider.dart';
-import '../shared/debug/app_log.dart';
+import '../../services/api_service.dart';
+import '../../services/auth_service.dart';
+import '../../shared/errors/user_error_text.dart';
+import '../../shared/prefs/listing_layout_prefs.dart';
+import '../../theme_provider.dart';
+import '../../shared/debug/app_log.dart';
 
 class FavoritesPage extends StatefulWidget {
   const FavoritesPage({super.key});

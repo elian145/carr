@@ -1,18 +1,18 @@
-import 'package:flutter/material.dart';
+﻿import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
-import '../l10n/app_localizations.dart';
-import '../services/auth_service.dart';
-import '../services/config.dart';
-import '../shared/account/delete_account_dialog.dart';
-import '../shared/errors/user_error_text.dart';
-import '../state/locale_controller.dart';
-import '../theme_provider.dart';
-import 'help_center_page.dart';
-import 'legal_document_page.dart';
-import '../services/trust_config.dart';
-import '../shared/debug/app_log.dart';
+import '../../l10n/app_localizations.dart';
+import '../../services/auth_service.dart';
+import '../../services/config.dart';
+import '../../shared/account/delete_account_dialog.dart';
+import '../../shared/errors/user_error_text.dart';
+import '../../state/locale_controller.dart';
+import '../../theme_provider.dart';
+import '../help_center_page.dart';
+import '../legal_document_page.dart';
+import '../../services/trust_config.dart';
+import '../../shared/debug/app_log.dart';
 
 class SettingsPage extends StatefulWidget {
   const SettingsPage({super.key});

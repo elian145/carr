@@ -1,4 +1,4 @@
-part of 'carzo_pages.dart';
+part of '../app/carzo_shared.dart';
 
 class SavedSearchesPage extends StatefulWidget {
   final dynamic parentState;
