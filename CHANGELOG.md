@@ -71,6 +71,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 - Saved searches empty-state widget test; auth profile API tests (`changePassword`, `updateProfile`, `confirmSignup`); `TrustConfig` uses mock HTTP client in tests.
 - Sell step 1→2 navigation widget test; authenticated saved searches list test; saved-search update/sync/delete API tests.
 - Admin reports empty-queue widget test; moderation API tests (`reportUser`, `blockUser`, admin report updates); backend smoke for report/block flow.
+- Admin dealers empty-queue widget test; edit listing form hydration widget test; admin dealer approve/reject API tests.
 
 ### Planned (not yet complete)
 

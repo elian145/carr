@@ -160,6 +160,9 @@ class FakeApiServer {
     }
 
     if (path.startsWith('/api/admin/dealers/')) {
+      if (path == '/api/admin/dealers/pending' && method == 'GET') {
+        return _json(200, {'dealers': <dynamic>[]});
+      }
       return _json(200, {'message': 'ok'});
     }
 
