@@ -43,6 +43,14 @@ class ApiService {
   /// Whether tests have bound an in-memory HTTP client (skip real-time transports).
   static bool get isTestHttpClientBound => _testHttpClient != null;
 
+  /// Shared GET helper for services that are not yet on [ApiService] endpoints.
+  static Future<http.Response> getHttp(
+    Uri uri, {
+    Duration timeout = const Duration(seconds: 8),
+  }) {
+    return _httpClient.get(uri).timeout(timeout);
+  }
+
   static http.Client get _httpClient =>
       _testHttpClient ?? _productionHttpClient;
 

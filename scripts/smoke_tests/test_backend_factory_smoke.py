@@ -325,6 +325,77 @@ class BackendFactorySmokeTest(unittest.TestCase):
             self.assertIsNotNone(user)
             self.assertTrue(user.is_verified)
 
+    def test_change_password(self):
+        r = self.client.post(
+            "/api/auth/change-password",
+            headers=self._auth(self.viewer_token),
+            json={"current_password": "Aa123456", "new_password": "Cc123456!"},
+        )
+        self.assertEqual(r.status_code, 200, r.data)
+
+        login = self.client.post(
+            "/api/auth/login",
+            json={"username": "viewer", "password": "Cc123456!"},
+        )
+        self.assertEqual(login.status_code, 200, login.data)
+
+    def test_update_profile_first_name(self):
+        r = self.client.put(
+            "/api/user/profile",
+            headers=self._auth(self.viewer_token),
+            json={"first_name": "UpdatedName"},
+        )
+        self.assertEqual(r.status_code, 200, r.data)
+
+        me = self.client.get("/api/auth/me", headers=self._auth(self.viewer_token))
+        self.assertEqual(me.status_code, 200, me.data)
+        self.assertEqual((me.get_json() or {}).get("first_name"), "UpdatedName")
+
+    def test_register_confirm_creates_user(self):
+        with self.app.app_context():
+            from datetime import timedelta
+
+            from kk.models import PendingSignup
+            from kk.time_utils import utcnow
+
+            token = f"confirm_{uuid.uuid4().hex}"
+            temp = self._User(
+                username="tmp_hash",
+                phone_number="07000000111",
+                first_name="T",
+                last_name="H",
+                email=None,
+                is_active=True,
+                is_verified=True,
+                public_id="ph",
+            )
+            temp.set_password("Aa123456!")
+            pending = PendingSignup(
+                email="confirm@test.example",
+                username=f"confirm_{uuid.uuid4().hex[:8]}",
+                password_hash=temp.password_hash,
+                first_name="C",
+                last_name="U",
+                phone_number="07000000112",
+                token=token,
+                expires_at=utcnow() + timedelta(days=1),
+            )
+            self._db.session.add(pending)
+            self._db.session.commit()
+
+        missing = self.client.post("/api/auth/register-confirm", json={})
+        self.assertEqual(missing.status_code, 400, missing.data)
+
+        r = self.client.post("/api/auth/register-confirm", json={"token": token})
+        self.assertIn(r.status_code, (200, 201), r.data)
+        body = r.get_json() or {}
+        self.assertIn("access_token", body)
+
+        with self.app.app_context():
+            user = self._User.query.filter_by(email="confirm@test.example").first()
+            self.assertIsNotNone(user)
+            self.assertTrue(user.is_verified)
+
     def test_well_known_app_links_require_env(self):
         """Without store env vars, deep-link files must 404 (not serve invalid stubs)."""
         for path in (

@@ -183,8 +183,20 @@ class FakeApiServer {
       return _json(200, <String, dynamic>{});
     }
 
-    if (path.startsWith('/api/saved-searches/') && method == 'DELETE') {
-      return _json(200, {'message': 'deleted'});
+    if (path.startsWith('/api/saved-searches/')) {
+      if (method == 'DELETE') {
+        return _json(200, {'message': 'deleted'});
+      }
+      if (method == 'PUT') {
+        return _json(200, {
+          'saved_search': {
+            'id': path.substring('/api/saved-searches/'.length).split('/').first,
+            'name': 'Updated search',
+            'filters': {'brand': 'toyota'},
+            'notify': true,
+          },
+        });
+      }
     }
 
     if (path.startsWith('/api/analytics/')) {
@@ -231,6 +243,15 @@ class FakeApiServer {
         return _json(200, {'message': 'Password reset successful'});
       case '/api/auth/verify-email':
         return _json(200, {'message': 'Email verified successfully'});
+      case '/api/auth/register-confirm':
+        return _json(200, {
+          'message': 'Account created successfully',
+          'access_token': 'test_access_token',
+          'refresh_token': 'test_refresh_token',
+          'user': {'id': 2, 'username': 'newuser', 'is_verified': true},
+        });
+      case '/api/auth/change-password':
+        return _json(200, {'message': 'Password changed successfully'});
       case '/api/auth/me':
         return _json(200, {
           'id': 1,
@@ -242,6 +263,19 @@ class FakeApiServer {
           'last_name': 'User',
         });
       case '/api/user/profile':
+        if (method == 'PUT') {
+          return _json(200, {
+            'message': 'Profile updated successfully',
+            'user': {
+              'id': 1,
+              'username': 'test',
+              'first_name': 'Updated',
+              'last_name': 'User',
+              'is_admin': false,
+              'account_type': 'individual',
+            },
+          });
+        }
         return _json(200, {
           'user': {
             'id': 1,
@@ -263,6 +297,8 @@ class FakeApiServer {
             'dealership_location': 'Erbil',
           },
         });
+      case '/api/saved-searches/sync':
+        return _json(200, {'saved_searches': <dynamic>[]});
       case '/api/saved-searches':
         if (method == 'POST') {
           return _json(201, {

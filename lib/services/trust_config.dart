@@ -1,7 +1,8 @@
 import 'dart:convert';
 
-import 'package:http/http.dart' as http;
+import 'package:flutter/foundation.dart';
 
+import 'api_service.dart';
 import 'config.dart';
 import '../shared/debug/app_log.dart';
 
@@ -11,13 +12,18 @@ class TrustConfig {
 
   static TrustConfigData? _cached;
 
+  @visibleForTesting
+  static void resetCacheForTests() {
+    _cached = null;
+  }
+
   static Future<TrustConfigData> load({bool forceRefresh = false}) async {
     if (!forceRefresh && _cached != null) return _cached!;
 
     TrustConfigData fromApi = const TrustConfigData();
     try {
       final uri = Uri.parse('${effectiveApiBase()}/api/config/trust');
-      final res = await http.get(uri).timeout(const Duration(seconds: 8));
+      final res = await ApiService.getHttp(uri);
       if (res.statusCode == 200) {
         final decoded = json.decode(res.body);
         if (decoded is Map) {

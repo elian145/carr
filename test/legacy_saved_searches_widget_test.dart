@@ -3,7 +3,6 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 import 'package:car_listing_app/legacy/main_legacy.dart' as legacy;
-import 'package:car_listing_app/services/trust_config.dart';
 
 import 'fake_api_server.dart';
 
@@ -14,7 +13,6 @@ void main() {
   });
 
   setUp(() {
-    TrustConfig.resetCacheForTests();
     SharedPreferences.setMockInitialValues({
       'push_enabled': false,
       'app_locale': 'en',
@@ -25,36 +23,30 @@ void main() {
     await FakeApiServer.stop();
   });
 
-  testWidgets('Legacy help center shows FAQ sections', (tester) async {
+  testWidgets('Legacy saved searches shows empty state', (tester) async {
     await tester.pumpWidget(const legacy.MyApp());
     await tester.pump();
     await tester.pump(const Duration(milliseconds: 300));
 
+    final routes = legacy.buildLegacyFallbackRoutes();
     final nav = tester.state<NavigatorState>(find.byType(Navigator));
-    nav.pushNamed('/help');
+    nav.push(
+      MaterialPageRoute<void>(
+        builder: routes['/legacy_saved_searches']!,
+      ),
+    );
     await tester.pump();
 
     var ready = false;
     for (var i = 0; i < 80; i++) {
       await tester.pump(const Duration(milliseconds: 50));
-      if (find.text('How can we help?').evaluate().isNotEmpty) {
+      if (find.text('No saved searches yet').evaluate().isNotEmpty) {
         ready = true;
         break;
       }
     }
 
-    expect(ready, isTrue, reason: 'Help center should finish loading FAQ content');
-    expect(find.text('Help & Support'), findsWidgets);
-    expect(find.text('Buying'), findsOneWidget);
-    expect(find.text('Selling'), findsOneWidget);
-
-    await tester.scrollUntilVisible(
-      find.text('support@test.example'),
-      500,
-      scrollable: find.byType(Scrollable).first,
-    );
-    await tester.pump(const Duration(milliseconds: 200));
-
-    expect(find.text('support@test.example'), findsOneWidget);
+    expect(ready, isTrue, reason: 'Saved searches should show empty state');
+    expect(find.text('Saved Searches'), findsWidgets);
   });
 }
