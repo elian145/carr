@@ -664,6 +664,47 @@ class BackendFactorySmokeTest(unittest.TestCase):
         )
         self.assertEqual(delete.status_code, 200, delete.data)
 
+    def test_update_car_forbidden_for_non_owner(self):
+        update = self.client.put(
+            f"/api/cars/{self.car_public}",
+            headers=self._auth(self.viewer_token),
+            json={"price": 9999},
+        )
+        self.assertEqual(update.status_code, 403, update.data)
+        body = update.get_json() or {}
+        self.assertIn("Not authorized", body.get("message", ""))
+
+    def test_user_recently_viewed_get(self):
+        empty = self.client.get(
+            "/api/user/recently-viewed",
+            headers=self._auth(self.viewer_token),
+        )
+        self.assertEqual(empty.status_code, 200, empty.data)
+        empty_body = empty.get_json() or {}
+        self.assertEqual(empty_body.get("cars") or [], [])
+
+        record = self.client.post(
+            "/api/user/recently-viewed",
+            headers=self._auth(self.viewer_token),
+            json={"listing_id": self.car_public},
+        )
+        self.assertEqual(record.status_code, 200, record.data)
+
+        listed = self.client.get(
+            "/api/user/recently-viewed",
+            headers=self._auth(self.viewer_token),
+        )
+        self.assertEqual(listed.status_code, 200, listed.data)
+        payload = listed.get_json() or {}
+        cars = payload.get("cars") or []
+        self.assertGreaterEqual(len(cars), 1)
+        ids = {
+            (c.get("public_id") or c.get("id"))
+            for c in cars
+            if isinstance(c, dict)
+        }
+        self.assertIn(self.car_public, ids)
+
     def test_list_cars_with_brand_filter(self):
         r = self.client.get("/api/cars?brand=toyota&page=1&per_page=10")
         self.assertEqual(r.status_code, 200, r.data)

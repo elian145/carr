@@ -4,11 +4,18 @@ part of '../api_service.dart';
 abstract final class _ApiServiceHttp {
   _ApiServiceHttp._();
 
-    // Initialize tokens from storage
+    // Initialize tokens from storage without discarding an in-memory session
+    // when secure storage is empty or temporarily unreadable (tests, keychain).
     static Future<void> initializeTokens() async {
       await TokenStore.load();
-      ApiService._accessToken = TokenStore.token;
-      ApiService._refreshToken = TokenStore.refreshToken;
+      final storedAccess = TokenStore.token;
+      final storedRefresh = TokenStore.refreshToken;
+      if (storedAccess != null && storedAccess.isNotEmpty) {
+        ApiService._accessToken = storedAccess;
+      }
+      if (storedRefresh != null && storedRefresh.isNotEmpty) {
+        ApiService._refreshToken = storedRefresh;
+      }
     }
 
     // Save tokens to storage

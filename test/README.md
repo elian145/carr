@@ -13,9 +13,12 @@
 | `legacy_favorites_widget_test.dart` | Favorites guest login prompt |
 | `legacy_favorites_empty_widget_test.dart` | Authenticated favorites empty state from mock API |
 | `legacy_login_widget_test.dart` | Login form fields and empty-credential validation |
+| `legacy_signup_widget_test.dart` | Signup form fields and terms gate on create account |
+| `legacy_recently_viewed_guest_widget_test.dart` | Recently viewed guest AuthGuard redirect to login |
+| `legacy_recently_viewed_empty_widget_test.dart` | Authenticated recently viewed route smoke |
 | `api_chat_test.dart` | `getChats`, unread count, send message, message history against mock API |
 | `api_profile_favorites_test.dart` | `getProfile`, `getFavorites`, `getMyListings`, `getCarDetail` against mock API |
-| `api_integration_test.dart` | `createCar`, `toggleFavorite`, `createSavedSearch`, `updateCar`, `getCars` against mock API |
+| `api_integration_test.dart` | `createCar`, `toggleFavorite`, `createSavedSearch`, `updateCar`, `getCars`, `getRecentlyViewed` against mock API |
 | `carzo_app_smoke_test.dart` | Migration shell (`CarzoApp` / `lib/app`) — not used in production |
 
 All tests use `fake_api_server.dart`, which binds [ApiService.testHttpClient] to an in-memory [MockClient] (no loopback server or fixed ports).

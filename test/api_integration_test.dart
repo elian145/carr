@@ -102,4 +102,10 @@ void main() {
     final active = await ApiService.markListingActive('list_car_1');
     expect(active['message'], isNotEmpty);
   });
+
+  test('getRecentlyViewed GET returns cars envelope', () async {
+    final result = await ApiService.getRecentlyViewed();
+    expect(result['cars'], isA<List>());
+    expect(result['pagination'], isA<Map>());
+  });
 }
