@@ -144,3 +144,81 @@ Future<void> openSellDraftStep(
   await tester.pump(const Duration(milliseconds: 400));
   await tester.pump(const Duration(milliseconds: 400));
 }
+
+/// Opens `/sell` with `startFresh` and waits for step 1.
+Future<void> openSellStep1Fresh(WidgetTester tester) async {
+  final nav = tester.state<NavigatorState>(find.byType(Navigator));
+  nav.pushNamed('/sell', arguments: const {'startFresh': true});
+  await tester.pump();
+
+  var ready = false;
+  for (var i = 0; i < 80; i++) {
+    await tester.pump(const Duration(milliseconds: 50));
+    if (find.text('Step 1 of 5').evaluate().isNotEmpty) {
+      ready = true;
+      break;
+    }
+  }
+  expect(ready, isTrue, reason: 'Sell wizard should show Step 1 of 5');
+  await tester.pump(const Duration(milliseconds: 400));
+}
+
+Future<void> tapSellSelector(WidgetTester tester, String label) async {
+  final finder = find.text(label);
+  await tester.scrollUntilVisible(
+    finder,
+    500,
+    scrollable: find.byType(Scrollable).first,
+  );
+  await tester.pump(const Duration(milliseconds: 100));
+  await tester.tap(finder);
+  await tester.pump();
+  await tester.pump(const Duration(milliseconds: 300));
+}
+
+Future<void> pickListDialogOption(
+  WidgetTester tester,
+  String option, {
+  String? search,
+}) async {
+  if (search != null) {
+    await tester.enterText(find.byType(TextField).first, search);
+    await tester.pump();
+    await tester.pump(const Duration(milliseconds: 200));
+  }
+  final optionFinder = find.text(option).last;
+  final dialogScrollables = find.descendant(
+    of: find.byType(Dialog),
+    matching: find.byType(Scrollable),
+  );
+  if (dialogScrollables.evaluate().isNotEmpty) {
+    await tester.scrollUntilVisible(
+      optionFinder,
+      100,
+      scrollable: dialogScrollables.first,
+    );
+  }
+  await tester.pump(const Duration(milliseconds: 100));
+  await tester.tap(optionFinder);
+  await tester.pump();
+  await tester.pump(const Duration(milliseconds: 400));
+}
+
+Future<void> pickSellBrand(WidgetTester tester, String brand) async {
+  await tapSellSelector(tester, 'Brand *');
+  expect(find.text('Select Brand'), findsOneWidget);
+  await pickListDialogOption(tester, brand, search: brand);
+}
+
+Future<void> tapNextSellStep(WidgetTester tester) async {
+  final finder = find.text('Next Step');
+  await tester.scrollUntilVisible(
+    finder,
+    500,
+    scrollable: find.byType(Scrollable).first,
+  );
+  await tester.pump(const Duration(milliseconds: 100));
+  await tester.tap(finder);
+  await tester.pump();
+  await tester.pump(const Duration(milliseconds: 400));
+}

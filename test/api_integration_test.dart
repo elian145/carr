@@ -93,6 +93,33 @@ void main() {
   test('getSavedSearches GET returns saved_searches envelope', () async {
     final result = await ApiService.getSavedSearches();
     expect(result['saved_searches'], isA<List>());
+    expect((result['saved_searches'] as List).length, greaterThanOrEqualTo(1));
+  });
+
+  test('updateSavedSearch PUT returns saved_search envelope', () async {
+    final result = await ApiService.updateSavedSearch(
+      '550e8400-e29b-41d4-a716-446655440000',
+      name: 'Updated search',
+      filters: {'brand': 'toyota', 'model': 'camry'},
+    );
+    expect(result['saved_search'], isA<Map<String, dynamic>>());
+    expect(result['saved_search']['name'], 'Updated search');
+  });
+
+  test('syncSavedSearches POST returns saved_searches envelope', () async {
+    final result = await ApiService.syncSavedSearches([
+      {
+        'id': 'local_1',
+        'name': 'Local search',
+        'filters': {'brand': 'toyota'},
+        'notify': true,
+      },
+    ]);
+    expect(result['saved_searches'], isA<List>());
+  });
+
+  test('deleteSavedSearch DELETE succeeds on mock API', () async {
+    await ApiService.deleteSavedSearch('550e8400-e29b-41d4-a716-446655440000');
   });
 
   test('markListingSold and markListingActive POST succeed on mock API', () async {

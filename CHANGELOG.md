@@ -68,6 +68,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 - Edit profile, forgot/reset password widget tests and auth recovery API smoke.
 - Help center, verify-email, and dealer profile widget tests; dealer profile and verify-email API tests.
 - Saved searches empty-state widget test; auth profile API tests (`changePassword`, `updateProfile`, `confirmSignup`); `TrustConfig` uses mock HTTP client in tests.
+- Sell step 1→2 navigation widget test; authenticated saved searches list test; saved-search update/sync/delete API tests.
 
 ### Planned (not yet complete)
 

@@ -7,6 +7,7 @@
 | `legacy_profile_widget_test.dart` | Profile page loads username via `ApiService.getProfile()` |
 | `legacy_sell_step1_widget_test.dart` | Sell flow step 1 (`/sell` + `startFresh`) shows listing wizard UI |
 | `legacy_sell_steps_widget_test.dart` | Sell flow steps 2–5 via draft snapshot resume |
+| `legacy_sell_step1_navigation_widget_test.dart` | Sell step 1 advances to step 2 when draft fields are set |
 | `legacy_chat_list_widget_test.dart` | Chat list loads rows from `/api/chats` via `ApiService.getChats()` |
 | `legacy_car_detail_widget_test.dart` | Car detail from cache and from mock GET `/cars/:id` |
 | `legacy_chat_conversation_widget_test.dart` | Chat conversation composer + empty history state |
@@ -26,6 +27,7 @@
 | `legacy_verify_email_widget_test.dart` | Verify email prefills token from route args |
 | `legacy_dealer_profile_widget_test.dart` | Public dealer profile loads mock dealership |
 | `legacy_saved_searches_widget_test.dart` | Saved searches empty state |
+| `legacy_saved_searches_authenticated_widget_test.dart` | Authenticated saved searches loads mock API rows |
 | `legacy_edit_profile_widget_test.dart` | Edit profile loads session user fields |
 | `legacy_forgot_password_widget_test.dart` | Forgot password recovery UI and empty-email validation |
 | `legacy_reset_password_widget_test.dart` | Reset password prefills token from route args |
@@ -34,9 +36,10 @@
 | `api_auth_recovery_test.dart` | `forgotPassword`, `resetPassword`, and `verifyEmail` against mock API |
 | `api_auth_profile_test.dart` | `changePassword`, `updateProfile`, and `confirmSignup` against mock API |
 | `api_trust_config_test.dart` | `TrustConfig.load` reads support/legal URLs from mock `/api/config/trust` |
+| `saved_search_service_test.dart` | `SavedSearchService.loadMerged` against mock API |
 | `api_dealer_test.dart` | `getDealerProfile` and `searchDealers` against mock API |
 | `api_profile_favorites_test.dart` | `getProfile`, `getFavorites`, `getMyListings`, `getCarDetail` against mock API |
-| `api_integration_test.dart` | `createCar`, `toggleFavorite`, `createSavedSearch`, `updateCar`, `getCars`, `getRecentlyViewed` against mock API |
+| `api_integration_test.dart` | `createCar`, `toggleFavorite`, saved-search CRUD/sync, `updateCar`, `getCars`, `getRecentlyViewed` against mock API |
 | `carzo_app_smoke_test.dart` | Migration shell (`CarzoApp` / `lib/app`) — not used in production |
 
 All tests use `fake_api_server.dart`, which binds [ApiService.testHttpClient] to an in-memory [MockClient] (no loopback server or fixed ports).

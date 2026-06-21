@@ -298,19 +298,39 @@ class FakeApiServer {
           },
         });
       case '/api/saved-searches/sync':
-        return _json(200, {'saved_searches': <dynamic>[]});
+        return _json(200, {
+          'saved_searches': [
+            {
+              'id': '550e8400-e29b-41d4-a716-446655440000',
+              'name': 'Camry deals',
+              'filters': {'brand': 'toyota', 'model': 'camry'},
+              'notify': true,
+              'created_at': '2026-01-01T12:00:00.000Z',
+            },
+          ],
+        });
       case '/api/saved-searches':
         if (method == 'POST') {
           return _json(201, {
             'saved_search': {
-              'id': 'ss_mock_1',
+              'id': '550e8400-e29b-41d4-a716-446655440000',
               'name': 'Mock search',
               'filters': {'brand': 'toyota'},
               'notify': true,
             },
           });
         }
-        return _json(200, {'saved_searches': <dynamic>[]});
+        return _json(200, {
+          'saved_searches': [
+            {
+              'id': '550e8400-e29b-41d4-a716-446655440000',
+              'name': 'Camry deals',
+              'filters': {'brand': 'toyota', 'model': 'camry'},
+              'notify': true,
+              'created_at': '2026-01-01T12:00:00.000Z',
+            },
+          ],
+        });
       case '/api/auth/send_otp':
         return _json(200, {'sent': false, 'message': 'stub'});
       case '/api/auth/delete-account':

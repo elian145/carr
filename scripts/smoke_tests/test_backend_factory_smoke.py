@@ -956,6 +956,18 @@ class BackendFactorySmokeTest(unittest.TestCase):
         rows = (listed.get_json() or {}).get("saved_searches") or []
         self.assertGreaterEqual(len(rows), 1)
 
+        update = self.client.put(
+            f"/api/saved-searches/{search_id}",
+            headers=self._auth(self.viewer_token),
+            json={"name": "Camry under 12k", "notify": False},
+        )
+        self.assertEqual(update.status_code, 200, update.data)
+        updated = update.get_json() or {}
+        self.assertEqual(
+            (updated.get("saved_search") or {}).get("name"),
+            "Camry under 12k",
+        )
+
         delete = self.client.delete(
             f"/api/saved-searches/{search_id}",
             headers=self._auth(self.viewer_token),
