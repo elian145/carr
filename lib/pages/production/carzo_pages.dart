@@ -75,6 +75,7 @@ import 'package:path/path.dart' as p;
 import '../auth_pages.dart' as auth_pages;
 import '../chat_pages.dart' as carzo_chat;
 import '../reset_password_page.dart';
+import '../change_password_page.dart';
 import '../verify_email_page.dart';
 import '../admin_dealers_page.dart';
 import '../dealer_profile_page.dart';
@@ -3291,6 +3292,8 @@ class MyApp extends StatelessWidget {
                 },
                 '/forgot-password': (context) =>
                     auth_pages.ForgotPasswordPage(),
+                '/change-password': (context) =>
+                    AuthGuard(child: const ChangePasswordPage()),
                 '/admin/dealers': (context) =>
                     AuthGuard(child: AdminDealersPage()),
                 '/admin/reports': (context) =>

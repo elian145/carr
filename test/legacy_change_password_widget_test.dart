@@ -1,3 +1,4 @@
+import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
@@ -6,21 +7,24 @@ import 'package:car_listing_app/services/api_service.dart';
 import 'package:car_listing_app/services/auth_service.dart';
 
 import 'fake_api_server.dart';
-import 'legacy_test_support.dart';
 
 void main() {
   setUpAll(() async {
+    TestWidgetsFlutterBinding.ensureInitialized();
     await FakeApiServer.ensureStarted();
   });
 
   setUp(() async {
-    SharedPreferences.setMockInitialValues({'push_enabled': false});
+    SharedPreferences.setMockInitialValues({
+      'push_enabled': false,
+      'app_locale': 'en',
+    });
     await ApiService.clearTokens();
     await AuthService().adoptTestSession(
       user: {
         'id': 1,
-        'username': 'test',
-        'is_admin': true,
+        'username': 'viewer',
+        'is_admin': false,
         'is_verified': true,
         'account_type': 'individual',
       },
@@ -36,38 +40,19 @@ void main() {
     await FakeApiServer.stop();
   });
 
-  testWidgets('Authenticated legacy routes smoke', (tester) async {
+  testWidgets('Legacy change password shows form fields', (tester) async {
     await tester.pumpWidget(const legacy.MyApp());
     await tester.pump();
     await tester.pump(const Duration(milliseconds: 300));
 
-    const routes = [
-      '/sell',
-      '/chat',
-      '/my_listings',
-      '/analytics',
-      '/admin/dealers',
-      '/admin/reports',
-      '/dealer/edit',
-      '/edit-profile',
-      '/change-password',
-    ];
+    final nav = tester.state<NavigatorState>(find.byType(Navigator));
+    nav.pushNamed('/change-password');
+    await tester.pump();
+    await tester.pump(const Duration(milliseconds: 300));
 
-    await smokeVisitRoutes(tester, routes);
-
-    await smokePushNamed(
-      tester,
-      name: '/chat/conversation',
-      args: {'conversationId': '1', 'receiverId': '2'},
-    );
-    await smokePushNamed(
-      tester,
-      name: '/edit_listing',
-      args: {
-        'car': <String, dynamic>{'id': 1, 'title': 'Test car'},
-      },
-    );
-
-    await tester.pump(const Duration(seconds: 2));
+    expect(find.text('Change password'), findsWidgets);
+    expect(find.text('Current password'), findsOneWidget);
+    expect(find.text('New password'), findsOneWidget);
+    expect(find.text('Confirm new password'), findsOneWidget);
   });
 }

@@ -258,6 +258,77 @@ class BackendFactorySmokeTest(unittest.TestCase):
         body = reports.get_json() or {}
         self.assertIn("reports", body)
 
+    def test_admin_dealer_approve_and_reject(self):
+        with self.app.app_context():
+            pending_approve = self._User(
+                username="dealer_pending_ok",
+                phone_number="07000000091",
+                first_name="P",
+                last_name="A",
+                email="pending_ok@test.example",
+                is_active=True,
+                is_verified=True,
+                account_type="user",
+                dealer_status="pending",
+                dealership_name="Approve Motors",
+                dealership_location="Erbil",
+                public_id="pd_appr",
+            )
+            pending_approve.set_password("Aa123456")
+
+            pending_reject = self._User(
+                username="dealer_pending_no",
+                phone_number="07000000092",
+                first_name="P",
+                last_name="R",
+                email="pending_no@test.example",
+                is_active=True,
+                is_verified=True,
+                account_type="user",
+                dealer_status="pending",
+                dealership_name="Reject Motors",
+                dealership_location="Baghdad",
+                public_id="pd_rej",
+            )
+            pending_reject.set_password("Aa123456")
+            self._db.session.add_all([pending_approve, pending_reject])
+            self._db.session.commit()
+            approve_id = pending_approve.public_id
+            reject_id = pending_reject.public_id
+
+        pending = self.client.get(
+            "/api/admin/dealers/pending",
+            headers=self._auth(self.admin_token),
+        )
+        self.assertEqual(pending.status_code, 200, pending.data)
+        rows = (pending.get_json() or {}).get("dealers") or []
+        public_ids = {row.get("id") for row in rows}
+        self.assertIn(approve_id, public_ids)
+        self.assertIn(reject_id, public_ids)
+
+        approved = self.client.post(
+            f"/api/admin/dealers/{approve_id}/approve",
+            headers=self._auth(self.admin_token),
+        )
+        self.assertEqual(approved.status_code, 200, approved.data)
+        approved_body = approved.get_json() or {}
+        self.assertEqual(
+            (approved_body.get("user") or {}).get("dealer_status"),
+            "approved",
+        )
+
+        rejected = self.client.post(
+            f"/api/admin/dealers/{reject_id}/reject",
+            headers=self._auth(self.admin_token),
+            json={"reason": "Incomplete paperwork"},
+        )
+        self.assertEqual(rejected.status_code, 200, rejected.data)
+        rejected_body = rejected.get_json() or {}
+        self.assertEqual(
+            (rejected_body.get("user") or {}).get("dealer_status"),
+            "rejected",
+        )
+
     def test_public_dealers_list(self):
         r = self.client.get("/api/dealers?page=1&per_page=5")
         self.assertEqual(r.status_code, 200, r.data)
