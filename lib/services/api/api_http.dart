@@ -65,6 +65,7 @@ abstract final class _ApiServiceHttp {
       await TokenStore.clear();
       ApiService._accessToken = null;
       ApiService._refreshToken = null;
+      ApiService.onTokensCleared?.call();
     }
 
     static Future<void> _ensureTokenLoaded() async {
@@ -81,7 +82,7 @@ abstract final class _ApiServiceHttp {
       Map<String, String> headers = {'Content-Type': 'application/json'};
 
       if (includeAuth && ApiService._accessToken != null && ApiService._accessToken!.isNotEmpty) {
-        headers['Authorization'] = 'Bearer $ApiService._accessToken';
+        headers['Authorization'] = 'Bearer ${ApiService._accessToken}';
       }
 
       return headers;
@@ -215,7 +216,7 @@ abstract final class _ApiServiceHttp {
       Future<http.Response> sendOnce() async {
         final request = await buildRequest();
         if (ApiService._accessToken != null && ApiService._accessToken!.isNotEmpty) {
-          request.headers['Authorization'] = 'Bearer $ApiService._accessToken';
+          request.headers['Authorization'] = 'Bearer ${ApiService._accessToken}';
         }
         final streamed = await request.send().timeout(ApiService._uploadTimeout);
         return http.Response.fromStream(streamed);
@@ -238,8 +239,22 @@ abstract final class _ApiServiceHttp {
       throw _uploadException(response.statusCode, response.body);
     }
 
-    // Refresh access token
-    static Future<bool> _refreshAccessToken() async {
+    // Refresh access token (single-flight so rotating refresh tokens are not raced).
+    static Future<bool>? _refreshInFlight;
+
+    static Future<bool> _refreshAccessToken() {
+      final inFlight = _refreshInFlight;
+      if (inFlight != null) return inFlight;
+      final future = _refreshAccessTokenOnce();
+      _refreshInFlight = future;
+      return future.whenComplete(() {
+        if (identical(_refreshInFlight, future)) {
+          _refreshInFlight = null;
+        }
+      });
+    }
+
+    static Future<bool> _refreshAccessTokenOnce() async {
       final rt = (ApiService._refreshToken ?? '').trim();
       if (rt.isEmpty) return false;
       try {
@@ -329,7 +344,7 @@ abstract final class _ApiServiceHttp {
       if (response.statusCode == 401) {
         if (await _refreshAccessToken()) {
           // Retry request with new token
-          requestHeaders['Authorization'] = 'Bearer $ApiService._accessToken';
+          requestHeaders['Authorization'] = 'Bearer ${ApiService._accessToken}';
 
           switch (method.toUpperCase()) {
             case 'GET':

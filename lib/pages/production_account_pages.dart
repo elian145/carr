@@ -67,10 +67,13 @@ class _ProfilePageState extends State<ProfilePage> {
   @override
   void initState() {
     super.initState();
-    _loadMe();
-    // Listen to auth service changes
     _authService = Provider.of<AuthService>(context, listen: false);
     _authService.addListener(_onAuthChange);
+    final cached = _authService.currentUser;
+    if (cached != null) {
+      me = Map<String, dynamic>.from(cached);
+    }
+    _loadMe();
     _chatNotificationSub = WebSocketService.notifications.listen((
       notification,
     ) {
@@ -96,24 +99,32 @@ class _ProfilePageState extends State<ProfilePage> {
     }
   }
 
+  Map<String, dynamic>? _effectiveProfile() => me ?? _authService.currentUser;
+
   Future<void> _loadMe() async {
+    final cached = _authService.currentUser;
+    if (cached != null) {
+      me = Map<String, dynamic>.from(cached);
+    }
     try {
       final tok = ApiService.accessToken;
       if (tok == null || tok.isEmpty) {
         setState(() {
+          me = null;
           _loading = false;
           _unreadChatCount = 0;
         });
         return;
       }
       final response = await ApiService.getProfile();
-      me = (response['user'] is Map<String, dynamic>)
-          ? Map<String, dynamic>.from(response['user'] as Map)
-          : Map<String, dynamic>.from(response);
+      me = AuthService.profileFromResponse(response);
     } on ApiException catch (e, st) {
       logNonFatal(e, st);
     } catch (e, st) {
       logNonFatal(e, st);
+    }
+    if (me == null && _authService.currentUser != null) {
+      me = Map<String, dynamic>.from(_authService.currentUser!);
     }
     await _loadUnreadChatCount();
     if (mounted) {
@@ -180,14 +191,13 @@ class _ProfilePageState extends State<ProfilePage> {
   }
 
   Future<void> _logout() async {
-    await AuthStore.saveToken(null);
-    await ApiService.setAccessToken(null);
-    await ApiService.logout(); // Clear ApiService tokens too
+    await _authService.logout();
     if (!mounted) return;
     Navigator.pushReplacementNamed(context, '/login');
   }
 
   Widget _buildLoggedInState(BuildContext context) {
+    final profile = _effectiveProfile();
     final isLoggedIn =
         ApiService.accessToken != null && ApiService.accessToken!.isNotEmpty;
     final isLightShell = _profileLightShell(context);
@@ -279,42 +289,43 @@ class _ProfilePageState extends State<ProfilePage> {
                           color: Color(0xFFFF6B00).withValues(alpha: 0.1),
                           shape: BoxShape.circle,
                         ),
-                        child:
-                            (me?['profile_picture'] != null &&
-                                me!['profile_picture'].toString().isNotEmpty)
-                            ? CircleAvatar(
-                                radius: 24,
-                                backgroundImage: NetworkImage(
-                                  _buildFullImageUrl(
-                                    me!['profile_picture'].toString(),
-                                  ),
-                                ),
-                                backgroundColor: isLightShell
-                                    ? Colors.grey[200]
-                                    : Colors.white.withValues(alpha: 0.12),
-                              )
-                            : Icon(
-                                Icons.person,
-                                size: 48,
-                                color: Color(0xFFFF6B00),
+                        child: () {
+                          final picture =
+                              profile?['profile_picture']?.toString() ?? '';
+                          if (picture.isNotEmpty) {
+                            return CircleAvatar(
+                              radius: 24,
+                              backgroundImage: NetworkImage(
+                                _buildFullImageUrl(picture),
                               ),
+                              backgroundColor: isLightShell
+                                  ? Colors.grey[200]
+                                  : Colors.white.withValues(alpha: 0.12),
+                            );
+                          }
+                          return Icon(
+                            Icons.person,
+                            size: 48,
+                            color: Color(0xFFFF6B00),
+                          );
+                        }(),
                       ),
                       SizedBox(height: 16),
                       Text(
                         () {
                           final at =
-                              (me?['account_type'] ?? 'user').toString().trim();
+                              (profile?['account_type'] ?? 'user').toString().trim();
                           final dn =
-                              (me?['dealership_name'] ?? '').toString().trim();
+                              (profile?['dealership_name'] ?? '').toString().trim();
                           final fn =
-                              (me?['first_name'] ?? '').toString().trim();
+                              (profile?['first_name'] ?? '').toString().trim();
                           final ln =
-                              (me?['last_name'] ?? '').toString().trim();
+                              (profile?['last_name'] ?? '').toString().trim();
                           final full = '$fn $ln'.trim();
                           if (at == 'dealer' && dn.isNotEmpty) return dn;
                           if (at == 'dealer' && full.isNotEmpty) return full;
                           if (at == 'dealer') return 'Dealer';
-                          return me?['username']?.toString() ?? 'User';
+                          return profile?['username']?.toString() ?? 'User';
                         }(),
                         style: TextStyle(
                           fontSize: 24,
@@ -325,10 +336,10 @@ class _ProfilePageState extends State<ProfilePage> {
                       SizedBox(height: 8),
                       Text(
                         () {
-                          final e = me?['email']?.toString() ?? '';
+                          final e = profile?['email']?.toString() ?? '';
                           final p =
-                              me?['phone_number']?.toString() ??
-                              me?['phone']?.toString() ??
+                              profile?['phone_number']?.toString() ??
+                              profile?['phone']?.toString() ??
                               '';
                           final realEmail =
                               e.isNotEmpty && !e.endsWith('@phone.local');
@@ -343,9 +354,9 @@ class _ProfilePageState extends State<ProfilePage> {
                       Builder(
                         builder: (ctx) {
                           final accountType =
-                              (me?['account_type'] ?? 'user').toString();
+                              (profile?['account_type'] ?? 'user').toString();
                           final dealerStatus =
-                              (me?['dealer_status'] ?? 'none').toString();
+                              (profile?['dealer_status'] ?? 'none').toString();
                           final isVerifiedDealer =
                               dealerStatus == 'approved' ||
                               accountType == 'dealer';
@@ -431,7 +442,7 @@ class _ProfilePageState extends State<ProfilePage> {
                       ...(() {
                         final loc = AppLocalizations.of(context)!;
                         final isDealer =
-                            (me?['account_type'] ?? 'user').toString() ==
+                            (profile?['account_type'] ?? 'user').toString() ==
                                 'dealer';
                         final rows = <Widget>[];
                         if (!isDealer) {
@@ -439,11 +450,11 @@ class _ProfilePageState extends State<ProfilePage> {
                             _buildInfoRow(
                               Icons.person_outline,
                               loc.usernameLabel,
-                              me?['username']?.toString() ?? '',
+                              profile?['username']?.toString() ?? '',
                             ),
                           );
                         }
-                        final emailStr = me?['email']?.toString() ?? '';
+                        final emailStr = profile?['email']?.toString() ?? '';
                         if (emailStr.isNotEmpty &&
                             !emailStr.endsWith('@phone.local')) {
                           rows.add(
@@ -455,7 +466,7 @@ class _ProfilePageState extends State<ProfilePage> {
                           );
                         }
                         final phoneStr =
-                            (me?['phone_number'] ?? me?['phone'] ?? '')
+                            (profile?['phone_number'] ?? profile?['phone'] ?? '')
                                 .toString();
                         if (phoneStr.trim().isNotEmpty) {
                           rows.add(
@@ -467,7 +478,7 @@ class _ProfilePageState extends State<ProfilePage> {
                           );
                         }
                         final dealership =
-                            (me?['dealership_name'] ?? '').toString().trim();
+                            (profile?['dealership_name'] ?? '').toString().trim();
                         if (dealership.isNotEmpty) {
                           rows.add(
                             _buildInfoRow(
@@ -561,7 +572,7 @@ class _ProfilePageState extends State<ProfilePage> {
                         Navigator.pushNamed(context, '/settings');
                       },
                     ),
-                    if (me?['is_admin'] == true) ...[
+                    if (profile?['is_admin'] == true) ...[
                       SizedBox(height: 12),
                       _buildActionButton(
                         Icons.verified_user_outlined,
@@ -638,7 +649,7 @@ class _ProfilePageState extends State<ProfilePage> {
                         }
                       },
                     ),
-                    if ((me?['account_type'] ?? 'user').toString() == 'dealer') ...[
+                    if ((profile?['account_type'] ?? 'user').toString() == 'dealer') ...[
                       SizedBox(height: 12),
                       _buildActionButton(
                         Icons.storefront_outlined,

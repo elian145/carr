@@ -10,6 +10,7 @@ void main() {
   });
 
   setUp(() async {
+    FakeApiServer.expectBearer(null);
     await ApiService.setTokens(
       accessToken: 'test_access_token',
       refreshToken: 'test_refresh_token',
@@ -43,5 +44,11 @@ void main() {
     final result = await ApiService.confirmSignup('signup-token-abc');
     expect(result['message'], isNotEmpty);
     expect(result['access_token'], isNotEmpty);
+  });
+
+  test('getProfile sends stored access token in Authorization header', () async {
+    FakeApiServer.expectBearer('test_access_token');
+    final profile = await ApiService.getProfile();
+    expect(profile['username'], 'testuser');
   });
 }

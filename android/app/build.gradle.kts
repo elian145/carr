@@ -26,7 +26,7 @@ val appLinkHost = (
 android {
     namespace = "com.carzo.app"
     compileSdk = flutter.compileSdkVersion
-    ndkVersion = "27.0.12077973"
+    ndkVersion = "28.2.13676358"
 
     buildFeatures {
         buildConfig = true

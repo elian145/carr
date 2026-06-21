@@ -7,19 +7,39 @@ import 'websocket_service.dart';
 class AuthService extends ChangeNotifier {
   static final AuthService _instance = AuthService._internal();
   factory AuthService() => _instance;
-  AuthService._internal();
+  AuthService._internal() {
+    ApiService.onTokensCleared = onApiTokensCleared;
+  }
+
+  /// JSON maps from [ApiService] may be [Map<dynamic, dynamic>]; normalize safely.
+  static Map<String, dynamic>? userMapFrom(Object? raw) {
+    if (raw is! Map) return null;
+    return Map<String, dynamic>.from(
+      raw.map((key, value) => MapEntry(key.toString(), value)),
+    );
+  }
+
+  static Map<String, dynamic> profileFromResponse(Map<String, dynamic> response) {
+    return userMapFrom(response['user']) ??
+        Map<String, dynamic>.from(response);
+  }
 
   bool _isAuthenticated = false;
   Map<String, dynamic>? _currentUser;
   bool _isLoading = false;
+  Future<void>? _initFuture;
 
   // Getters
   bool get isAuthenticated => _isAuthenticated;
   Map<String, dynamic>? get currentUser => _currentUser;
   bool get isLoading => _isLoading;
 
-  // Initialize authentication state
-  Future<void> initialize() async {
+  // Initialize authentication state (runs once per app session).
+  Future<void> initialize() {
+    return _initFuture ??= _initializeOnce();
+  }
+
+  Future<void> _initializeOnce() async {
     _setLoading(true);
 
     try {
@@ -38,6 +58,32 @@ class AuthService extends ChangeNotifier {
     }
   }
 
+  /// After tokens are saved elsewhere (signup OTP, external auth), adopt the session.
+  Future<void> activateSession({Map<String, dynamic>? user}) async {
+    if (!ApiService.isAuthenticated) {
+      await _clearAuthState();
+      return;
+    }
+    if (user != null) {
+      _currentUser = Map<String, dynamic>.from(user);
+      _isAuthenticated = true;
+    } else {
+      await _loadUserProfile();
+      if (!ApiService.isAuthenticated) return;
+    }
+    await WebSocketService.connect();
+    await PushNotificationService.syncTokenWithBackend();
+    notifyListeners();
+  }
+
+  /// Called when [ApiService.clearTokens] drops the HTTP session out-of-band (401 refresh fail).
+  void onApiTokensCleared() {
+    if (!_isAuthenticated && _currentUser == null) return;
+    _isAuthenticated = false;
+    _currentUser = null;
+    notifyListeners();
+  }
+
   // Set loading state
   void _setLoading(bool loading) {
     _isLoading = loading;
@@ -46,17 +92,22 @@ class AuthService extends ChangeNotifier {
 
   // Load user profile
   Future<void> _loadUserProfile() async {
+    final tokenAtStart = ApiService.accessToken;
+    if (tokenAtStart == null || tokenAtStart.isEmpty) return;
+
     try {
       final response = await ApiService.getProfile();
-      // Backend returns bare user object {id, username, email}
-      // or sometimes {user:{...}}. Support both.
-      _currentUser = (response['user'] is Map<String, dynamic>)
-          ? Map<String, dynamic>.from(response['user'])
-          : Map<String, dynamic>.from(response);
+      if (ApiService.accessToken != tokenAtStart) {
+        return;
+      }
+      _currentUser = profileFromResponse(response);
       _isAuthenticated = true;
       notifyListeners();
     } catch (e) {
       developer.log('Load profile error: $e', name: 'AuthService');
+      if (ApiService.accessToken != tokenAtStart) {
+        return;
+      }
       await _clearAuthState();
     }
   }
@@ -98,12 +149,12 @@ class AuthService extends ChangeNotifier {
     _setLoading(true);
     try {
       final data = await ApiService.confirmSignup(token);
-      if (data['user'] is Map<String, dynamic>) {
-        _currentUser = Map<String, dynamic>.from(data['user']);
-        _isAuthenticated = true;
-        await WebSocketService.connect();
-        await PushNotificationService.syncTokenWithBackend();
-        notifyListeners();
+      if (data['user'] is Map) {
+        await activateSession(
+          user: userMapFrom(data['user']),
+        );
+      } else if (ApiService.isAuthenticated) {
+        await activateSession();
       }
       return data;
     } finally {
@@ -116,20 +167,18 @@ class AuthService extends ChangeNotifier {
     String emailOrPhone,
     String password,
   ) async {
+    await initialize();
     _setLoading(true);
 
     try {
       final response = await ApiService.login(emailOrPhone, password);
-      // Save user from response or fetch via /auth/me when absent
-      if (response['user'] != null &&
-          response['user'] is Map<String, dynamic>) {
-        _currentUser = Map<String, dynamic>.from(response['user']);
+      final userFromLogin = userMapFrom(response['user']);
+      if (userFromLogin != null) {
+        _currentUser = userFromLogin;
       } else {
         try {
           final me = await ApiService.getProfile();
-          _currentUser = (me['user'] is Map<String, dynamic>)
-              ? Map<String, dynamic>.from(me['user'])
-              : Map<String, dynamic>.from(me);
+          _currentUser = profileFromResponse(me);
         } catch (e) {
           if (kDebugMode) {
             developer.log('Profile fetch failed: $e', name: 'AuthService');
@@ -239,7 +288,9 @@ class AuthService extends ChangeNotifier {
     _setLoading(true);
     try {
       final response = await ApiService.verifyEmail(token);
-      await initialize();
+      if (ApiService.isAuthenticated) {
+        await _loadUserProfile();
+      }
       return response;
     } catch (e) {
       rethrow;
@@ -271,9 +322,9 @@ class AuthService extends ChangeNotifier {
       final response = await ApiService.updateProfile(profileData);
 
       // Update current user data
-      if (response['user'] != null &&
-          response['user'] is Map<String, dynamic>) {
-        _currentUser = Map<String, dynamic>.from(response['user']);
+      final user = userMapFrom(response['user']);
+      if (user != null) {
+        _currentUser = user;
         notifyListeners();
       }
 
@@ -291,8 +342,9 @@ class AuthService extends ChangeNotifier {
     _setLoading(true);
     try {
       final response = await ApiService.updateDealerProfile(dealerData);
-      if (response['user'] != null && response['user'] is Map<String, dynamic>) {
-        _currentUser = Map<String, dynamic>.from(response['user'] as Map);
+      final user = userMapFrom(response['user']);
+      if (user != null) {
+        _currentUser = user;
         notifyListeners();
       }
       return response;
@@ -374,6 +426,7 @@ class AuthService extends ChangeNotifier {
   }
 
   void resetTestSession() {
+    _initFuture = null;
     _isAuthenticated = false;
     _currentUser = null;
     _isLoading = false;

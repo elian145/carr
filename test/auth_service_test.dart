@@ -42,4 +42,22 @@ void main() {
     expect(AuthService().isAuthenticated, isTrue);
     expect(AuthService().currentUser?['username'], 'test');
   });
+
+  test('userMapFrom accepts generic Map payloads from JSON', () {
+    final raw = <dynamic, dynamic>{'username': 'elian', 'id': 'abc123'};
+    expect(AuthService.userMapFrom(raw)?['username'], 'elian');
+  });
+
+  test('login survives stale profile load from startup init', () async {
+    await ApiService.setTokens(
+      accessToken: 'stale_access_token',
+      refreshToken: 'stale_refresh_token',
+    );
+    final initFuture = AuthService().initialize();
+    final loginFuture = AuthService().login('testuser', 'secret');
+    await Future.wait([initFuture, loginFuture]);
+    expect(AuthService().isAuthenticated, isTrue);
+    expect(AuthService().currentUser?['username'], 'test');
+    expect(ApiService.accessToken, 'test_access_token');
+  });
 }

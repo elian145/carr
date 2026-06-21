@@ -307,7 +307,7 @@ class _LoginPageState extends State<LoginPage> {
         _passwordController.text,
       );
       if (!mounted) return;
-      Navigator.pushReplacementNamed(context, '/');
+      Navigator.of(context).pushNamedAndRemoveUntil('/', (route) => false);
     } catch (e) {
       if (!mounted) return;
       developer.log('Login failed', name: 'LoginPage', error: e);
@@ -708,9 +708,12 @@ class _SignupPageState extends State<SignupPage> {
         if (refresh != null && refresh.isNotEmpty) {
           await ApiService.setRefreshToken(refresh);
         }
-        await authService.initialize();
+        final user = data['user'];
+        await authService.activateSession(
+          user: user is Map ? Map<String, dynamic>.from(user.cast<String, dynamic>()) : null,
+        );
         if (!mounted) return;
-        Navigator.pushReplacementNamed(context, '/');
+        Navigator.of(context).pushNamedAndRemoveUntil('/', (route) => false);
         return;
       }
       // No token: try login so we get tokens and profile
@@ -720,7 +723,7 @@ class _SignupPageState extends State<SignupPage> {
             : username;
         await authService.login(loginIdent, _passwordController.text);
         if (!mounted) return;
-        Navigator.pushReplacementNamed(context, '/');
+        Navigator.of(context).pushNamedAndRemoveUntil('/', (route) => false);
       } catch (e, st) {
         logNonFatal(e, st);
         if (!mounted) return;

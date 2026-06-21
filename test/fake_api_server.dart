@@ -13,6 +13,27 @@ class FakeApiServer {
   FakeApiServer._();
 
   static MockClient? _client;
+  static String? _expectedBearer;
+
+  /// When set, protected routes reject requests whose Authorization header
+  /// is not `Bearer <token>`.
+  static void expectBearer(String? token) {
+    final t = (token ?? '').trim();
+    _expectedBearer = t.isEmpty ? null : t;
+  }
+
+  static http.Response? _authGuard(http.Request request) {
+    final expected = _expectedBearer;
+    if (expected == null) return null;
+    final auth = (request.headers['authorization'] ??
+            request.headers['Authorization'] ??
+            '')
+        .trim();
+    if (auth != 'Bearer $expected') {
+      return _json(401, {'message': 'Invalid token'});
+    }
+    return null;
+  }
 
   /// Starts the stub once per isolate (safe for parallel `flutter test`).
   static Future<void> ensureStarted() async {
@@ -25,6 +46,7 @@ class FakeApiServer {
   static Future<void> stop() async {
     ApiService.testHttpClient = null;
     _client = null;
+    _expectedBearer = null;
     setRuntimeApiBaseOverride(null);
   }
 
@@ -285,6 +307,8 @@ class FakeApiServer {
       case '/api/auth/change-password':
         return _json(200, {'message': 'Password changed successfully'});
       case '/api/auth/me':
+        final authFail = _authGuard(request);
+        if (authFail != null) return authFail;
         return _json(200, {
           'id': 1,
           'username': 'testuser',

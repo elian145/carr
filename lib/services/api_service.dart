@@ -28,6 +28,9 @@ class ApiService {
   static String? _accessToken;
   static String? _refreshToken;
 
+  /// Optional hook when [clearTokens] runs outside [AuthService.logout].
+  static void Function()? onTokensCleared;
+
   static final http.Client _productionHttpClient = http.Client();
   static http.Client? _testHttpClient;
 
