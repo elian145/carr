@@ -630,6 +630,40 @@ class BackendFactorySmokeTest(unittest.TestCase):
         ]
         self.assertTrue(success_events, received)
 
+    def test_update_and_delete_car_as_owner(self):
+        create = self.client.post(
+            "/api/cars",
+            headers=self._auth(self.seller_token),
+            json={
+                "brand": "mazda",
+                "model": "cx5",
+                "year": 2018,
+                "mileage": 2000,
+                "price": 18000,
+                "location": "Erbil",
+            },
+        )
+        self.assertEqual(create.status_code, 201, create.data)
+        created = create.get_json() or {}
+        car = created.get("car") or {}
+        car_public = car.get("public_id") or car.get("id")
+        self.assertTrue(car_public)
+
+        update = self.client.put(
+            f"/api/cars/{car_public}",
+            headers=self._auth(self.seller_token),
+            json={"price": 17500},
+        )
+        self.assertEqual(update.status_code, 200, update.data)
+        updated = (update.get_json() or {}).get("car") or {}
+        self.assertEqual(float(updated.get("price", 0)), 17500.0)
+
+        delete = self.client.delete(
+            f"/api/cars/{car_public}",
+            headers=self._auth(self.seller_token),
+        )
+        self.assertEqual(delete.status_code, 200, delete.data)
+
     def test_list_cars_with_brand_filter(self):
         r = self.client.get("/api/cars?brand=toyota&page=1&per_page=10")
         self.assertEqual(r.status_code, 200, r.data)

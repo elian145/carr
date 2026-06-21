@@ -85,6 +85,16 @@ void main() {
     expect(response.body, isNotEmpty);
   });
 
+  test('deleteCar DELETE returns success message', () async {
+    final result = await ApiService.deleteCar('list_car_1');
+    expect(result['message'], isNotEmpty);
+  });
+
+  test('getSavedSearches GET returns saved_searches envelope', () async {
+    final result = await ApiService.getSavedSearches();
+    expect(result['saved_searches'], isA<List>());
+  });
+
   test('markListingSold and markListingActive POST succeed on mock API', () async {
     final sold = await ApiService.markListingSold('list_car_1');
     expect(sold['message'], isNotEmpty);

@@ -10,6 +10,9 @@
 | `legacy_car_detail_widget_test.dart` | Car detail from cache and from mock GET `/cars/:id` |
 | `legacy_chat_conversation_widget_test.dart` | Chat conversation composer + empty history state |
 | `legacy_my_listings_widget_test.dart` | My listings empty state via `/api/my_listings` compat |
+| `legacy_favorites_widget_test.dart` | Favorites guest login prompt |
+| `legacy_favorites_empty_widget_test.dart` | Authenticated favorites empty state from mock API |
+| `legacy_login_widget_test.dart` | Login form fields and empty-credential validation |
 | `api_chat_test.dart` | `getChats`, unread count, send message, message history against mock API |
 | `api_profile_favorites_test.dart` | `getProfile`, `getFavorites`, `getMyListings`, `getCarDetail` against mock API |
 | `api_integration_test.dart` | `createCar`, `toggleFavorite`, `createSavedSearch`, `updateCar`, `getCars` against mock API |
