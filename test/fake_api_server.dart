@@ -153,7 +153,32 @@ class FakeApiServer {
         return _json(200, <dynamic>[]);
       }
       if (path.contains('/send') && method == 'POST') {
-        return _json(201, {'id': 1, 'content': 'stub'});
+        var content = 'stub';
+        try {
+          if (request.body.isNotEmpty) {
+            final decoded = json.decode(request.body);
+            if (decoded is Map && decoded['content'] != null) {
+              content = decoded['content'].toString();
+            }
+          }
+        } catch (_) {}
+        final conversationId = path
+            .substring('/api/chat/'.length)
+            .split('/')
+            .first;
+        return _json(201, {
+          'success': true,
+          'message': {
+            'id': 'msg_stub_1',
+            'sender_id': '1',
+            'receiver_id': 'buyer_1',
+            'car_id': conversationId,
+            'content': content,
+            'message_type': 'text',
+            'is_read': false,
+            'created_at': '2026-01-01T12:00:00.000Z',
+          },
+        });
       }
       return _json(200, <String, dynamic>{});
     }

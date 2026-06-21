@@ -6220,6 +6220,7 @@ class SellStep4Page extends StatefulWidget {
 class _SellStep4PageState extends State<SellStep4Page> {
   static const String _draftKey = 'legacy_sell_draft_step4_v1';
   final ImagePicker _imagePicker = ImagePicker();
+  _SellCarPageState? _parentState;
   // Can contain either local XFile (original picks) or server-relative paths (after "Blur Plates").
   List<dynamic> _selectedImages = [];
   /// Local picks and/or server-relative paths for damage / crash disclosure.
@@ -6332,12 +6333,13 @@ class _SellStep4PageState extends State<SellStep4Page> {
   @override
   void didChangeDependencies() {
     super.didChangeDependencies();
+    _parentState ??= context.findAncestorStateOfType<_SellCarPageState>();
   }
 
   @override
   void dispose() {
     if (!LegacySellDraftPrefs.suppressPersist) {
-      final parentState = context.findAncestorStateOfType<_SellCarPageState>();
+      final parentState = _parentState;
       if (parentState != null) {
         parentState.carData['images'] = List<dynamic>.from(_selectedImages);
         parentState.carData['damage_images'] =
@@ -6347,7 +6349,7 @@ class _SellStep4PageState extends State<SellStep4Page> {
       }
       unawaited(
         _saveDraft().then((_) {
-          parentState?._saveSellDraftSnapshot();
+          _parentState?._saveSellDraftSnapshot();
         }),
       );
     }

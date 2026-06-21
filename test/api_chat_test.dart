@@ -37,14 +37,14 @@ void main() {
     expect(count, 0);
   });
 
-  test('sendChatMessageByConversation POST returns stub payload', () async {
+  test('sendChatMessageByConversation POST returns message envelope', () async {
     final result = await ApiService.sendChatMessageByConversation(
       conversationId: '1',
       content: 'Hello',
       receiverId: 'buyer_1',
     );
-    expect(result['id'], 1);
-    expect(result['content'], 'stub');
+    expect(result['message'], isA<Map<String, dynamic>>());
+    expect(result['message']['content'], 'Hello');
   });
 
   test('getChatMessagesByConversation returns messages envelope', () async {

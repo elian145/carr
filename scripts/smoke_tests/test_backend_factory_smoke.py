@@ -705,6 +705,20 @@ class BackendFactorySmokeTest(unittest.TestCase):
         }
         self.assertIn(self.car_public, ids)
 
+    def test_chat_send_by_public_car_id(self):
+        send = self.client.post(
+            f"/api/chat/{self.car_public}/send",
+            headers=self._auth(self.viewer_token),
+            json={
+                "content": "hi via public id",
+                "receiver_id": self.seller_public,
+            },
+        )
+        self.assertEqual(send.status_code, 201, send.data)
+        body = send.get_json() or {}
+        message = body.get("message") or {}
+        self.assertEqual(message.get("content"), "hi via public id")
+
     def test_list_cars_with_brand_filter(self):
         r = self.client.get("/api/cars?brand=toyota&page=1&per_page=10")
         self.assertEqual(r.status_code, 200, r.data)

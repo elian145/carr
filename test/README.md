@@ -6,9 +6,11 @@
 | `widget_test.dart` | Production shell builds without crashing |
 | `legacy_profile_widget_test.dart` | Profile page loads username via `ApiService.getProfile()` |
 | `legacy_sell_step1_widget_test.dart` | Sell flow step 1 (`/sell` + `startFresh`) shows listing wizard UI |
+| `legacy_sell_steps_widget_test.dart` | Sell flow steps 2–5 via draft snapshot resume |
 | `legacy_chat_list_widget_test.dart` | Chat list loads rows from `/api/chats` via `ApiService.getChats()` |
 | `legacy_car_detail_widget_test.dart` | Car detail from cache and from mock GET `/cars/:id` |
 | `legacy_chat_conversation_widget_test.dart` | Chat conversation composer + empty history state |
+| `legacy_chat_send_widget_test.dart` | Chat conversation sends text through mock `/chat/:id/send` |
 | `legacy_my_listings_widget_test.dart` | My listings empty state via `/api/my_listings` compat |
 | `legacy_favorites_widget_test.dart` | Favorites guest login prompt |
 | `legacy_favorites_empty_widget_test.dart` | Authenticated favorites empty state from mock API |
