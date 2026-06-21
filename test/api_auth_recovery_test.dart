@@ -22,4 +22,9 @@ void main() {
     final result = await ApiService.resetPassword('reset-token-123', 'Aa123456!');
     expect(result['message'], isNotEmpty);
   });
+
+  test('verifyEmail POST returns success message', () async {
+    final result = await ApiService.verifyEmail('verify-token-abc');
+    expect(result['message'], isNotEmpty);
+  });
 }

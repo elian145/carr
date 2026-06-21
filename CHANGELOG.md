@@ -23,7 +23,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 - `docs/DEPLOY_ENV_CHECKLIST.md` for Render production env vars.
 - `assets/icon/app_icon.png` and `flutter_launcher_icons` config in `pubspec.yaml`.
 - Widget tests: profile, sell step 1, chat list/conversation, car detail, my listings, favorites, login, signup, recently viewed; ApiService integration against mock API.
-- Backend smoke: car update/delete owner flow, update forbidden for non-owner, recently viewed GET/POST/clear, forgot/reset password via phone, chat send by public car id, favorites, filtered `/api/cars`, mark sold/active, paginated my-listings, verified Socket.IO send, saved-search CRUD, chat list, auth refresh/logout.
+- Backend smoke: car update/delete owner flow, update forbidden for non-owner, recently viewed GET/POST/clear, forgot/reset password via phone, chat send by public car id, favorites, filtered `/api/cars`, mark sold/active, paginated my-listings, verified Socket.IO send, saved-search CRUD, chat list, auth refresh/logout, email verify token, dealer profile by public id.
 
 ### Changed
 
@@ -66,6 +66,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 - Sell step 4 draft dispose avoids ancestor lookup after deactivation (widget tests).
 - `AnalyticsService` routes HTTP through `ApiService` (mockable in tests); settings/comparison/dealers/analytics widget smokes.
 - Edit profile, forgot/reset password widget tests and auth recovery API smoke.
+- Help center, verify-email, and dealer profile widget tests; dealer profile and verify-email API tests.
 
 ### Planned (not yet complete)
 

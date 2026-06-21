@@ -265,6 +265,66 @@ class BackendFactorySmokeTest(unittest.TestCase):
         self.assertIn("dealers", body)
         self.assertIn("pagination", body)
 
+    def test_get_dealer_by_public_id(self):
+        with self.app.app_context():
+            dealer = self._User(
+                username="dealer1",
+                phone_number="07000000088",
+                first_name="D",
+                last_name="1",
+                email="dealer@test.example",
+                is_active=True,
+                is_verified=True,
+                account_type="dealer",
+                dealership_name="Smoke Test Dealer",
+                dealership_location="Erbil",
+                public_id="pd_smoke_dealer",
+            )
+            dealer.set_password("Aa123456")
+            self._db.session.add(dealer)
+            self._db.session.commit()
+            dealer_public = dealer.public_id
+
+        r = self.client.get(f"/api/dealers/{dealer_public}")
+        self.assertEqual(r.status_code, 200, r.data)
+        body = r.get_json() or {}
+        self.assertEqual(
+            (body.get("dealer") or {}).get("dealership_name"),
+            "Smoke Test Dealer",
+        )
+        self.assertIn("listings", body)
+        self.assertIn("stats", body)
+
+    def test_verify_email_with_token(self):
+        with self.app.app_context():
+            from kk.auth import create_email_verification_token
+
+            user = self._User(
+                username="emailverify",
+                phone_number="07000000099",
+                first_name="E",
+                last_name="V",
+                email="verify@test.example",
+                is_active=True,
+                is_verified=False,
+                public_id="pv_email_verify",
+            )
+            user.set_password("Aa123456")
+            self._db.session.add(user)
+            self._db.session.commit()
+            token = create_email_verification_token(user)
+
+        missing = self.client.post("/api/auth/verify-email", json={})
+        self.assertEqual(missing.status_code, 400, missing.data)
+
+        r = self.client.post("/api/auth/verify-email", json={"token": token})
+        self.assertEqual(r.status_code, 200, r.data)
+
+        with self.app.app_context():
+            user = self._User.query.filter_by(email="verify@test.example").first()
+            self.assertIsNotNone(user)
+            self.assertTrue(user.is_verified)
+
     def test_well_known_app_links_require_env(self):
         """Without store env vars, deep-link files must 404 (not serve invalid stubs)."""
         for path in (

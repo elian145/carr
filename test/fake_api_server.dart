@@ -229,6 +229,8 @@ class FakeApiServer {
         });
       case '/api/auth/reset-password':
         return _json(200, {'message': 'Password reset successful'});
+      case '/api/auth/verify-email':
+        return _json(200, {'message': 'Email verified successfully'});
       case '/api/auth/me':
         return _json(200, {
           'id': 1,
