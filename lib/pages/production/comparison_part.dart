@@ -1,4 +1,4 @@
-part of 'main_legacy.dart';
+part of 'carzo_pages.dart';
 
 // Car Comparison Page
 class CarComparisonPage extends StatelessWidget {

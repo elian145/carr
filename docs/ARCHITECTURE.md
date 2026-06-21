@@ -8,7 +8,7 @@ CARZO (CarNet) is a Flutter client + Flask backend monorepo for a car marketplac
 
 | Layer | Entry | Notes |
 |-------|-------|-------|
-| Flutter | `lib/main.dart` → `legacy.MyApp` | All production UI lives under `lib/legacy/` |
+| Flutter | `lib/main.dart` → `MyApp` | Production UI in `lib/pages/production/` (part library) |
 | Backend (prod) | `kk.wsgi:app` / `create_app()` in `kk/app_factory.py` | Do not use `kk/legacy/app.py` in production |
 | Local dev API | `python -m kk.app_new` on **5000**, proxy `backend/server.py` on **5003** | App default `API_BASE` targets the proxy |
 
@@ -16,17 +16,18 @@ CARZO (CarNet) is a Flutter client + Flask backend monorepo for a car marketplac
 
 ```
 lib/
-├── main.dart              # bootstrapAndRun(legacy.MyApp)
-├── legacy/                # Production UI (part library, ~25k lines)
-├── pages/                 # Modern screens; partially wired, migration in progress
-├── app/                   # CarzoApp shell + routes (migration / tests only)
+├── main.dart              # bootstrapAndRun(MyApp)
+├── pages/
+│   ├── production/        # Production UI (part library, ~25k lines)
+│   └── …                  # Standalone screens + CarzoApp-only stubs
+├── app/                   # production_app, listing_shell, CarzoApp (migration tests)
 ├── services/              # API, auth, WebSocket, push, config
 │   ├── api_service.dart   # HTTP core + delegators (~650 lines)
 │   └── api/               # api_http, api_auth, api_listings, api_chat, api_admin
 └── shared/                # Reusable helpers, prefs, i18n
 ```
 
-**Migration status:** `/` and most tabs still use legacy screens. Modern duplicates under `lib/pages/` (e.g. `home_page.dart`) are exercised by `CarzoApp` smoke tests until parity is complete. See `lib/legacy/README.md`.
+**Migration status:** Production screens moved from `lib/legacy/` to `lib/pages/production/`. Standalone extracts under `lib/pages/` (e.g. `home_page.dart`, `sell_page.dart`) remain for `CarzoApp` smoke tests until each production screen is fully ported out of the part library. See `lib/pages/production/README.md`.
 
 ## Backend layout
 

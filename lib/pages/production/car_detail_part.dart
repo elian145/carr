@@ -1,4 +1,4 @@
-part of 'main_legacy.dart';
+part of 'carzo_pages.dart';
 
 // Placeholder classes for other pages
 class CarDetailsPage extends StatefulWidget {

@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
-import 'package:car_listing_app/legacy/main_legacy.dart' as legacy;
+import 'package:car_listing_app/app/production_app.dart' as legacy;
 import 'package:car_listing_app/services/api_service.dart';
 
 import 'fake_api_server.dart';

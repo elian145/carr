@@ -1,4 +1,4 @@
-part of 'main_legacy.dart';
+part of 'carzo_pages.dart';
 
 class FavoritesPage extends StatefulWidget {
   const FavoritesPage({super.key});

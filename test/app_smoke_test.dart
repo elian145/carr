@@ -1,11 +1,11 @@
 import 'package:flutter_test/flutter_test.dart';
 
-import 'package:car_listing_app/legacy/main_legacy.dart' as legacy;
+import 'package:car_listing_app/app/production_app.dart' as legacy;
 
 import 'fake_api_server.dart';
 import 'legacy_test_support.dart';
 
-/// Boots the same widget tree as production (`main.dart` → `legacy.MyApp`).
+/// Boots the same widget tree as production (`main.dart` → `MyApp`).
 ///
 /// Run: `flutter test` (starts an ephemeral local API stub automatically).
 void main() {

@@ -4,7 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 
 import '../l10n/app_localizations.dart';
-import '../legacy/main_legacy.dart' show buildFloatingBottomNav, navigateMainShellTab;
+import '../app/listing_shell.dart' show buildFloatingBottomNav, navigateMainShellTab;
 import '../services/api_service.dart';
 import '../shared/errors/user_error_text.dart';
 import '../shared/media/media_url.dart';

@@ -31,7 +31,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 - README release steps reference verify scripts and `--dart-define=API_BASE`.
 - Renamed sell draft prefs modules to `sell_draft_prefs.dart` / `sell_draft_list.dart` (`SellDraftPrefs`, `SellDraftList`); SharedPreferences key strings unchanged.
 - Removed `/legacy_*` route aliases from `buildProductionRoutes()`.
-- Production entry uses `legacy.MyApp` from `lib/main.dart`; `CarzoApp` remains for migration smoke tests only.
+- Production entry uses `MyApp` from `lib/app/production_app.dart` (`lib/pages/production/` part library); `CarzoApp` remains for simplified-route smoke tests.
 - `SellDraftList` delegates shared logic to `SellDraftArchive`.
 - Split `sell_page.dart` into extension parts under `lib/pages/sell/` (~809-line shell + 6 modules).
 - Split `chat_pages.dart` into extension parts under `lib/pages/chat/` (~1,072-line shell + 9 modules); `tools/split_chat_pages.py` for regeneration from monolith.
@@ -52,7 +52,8 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 - Split `api_service.dart` into `lib/services/api/{api_http,api_auth,api_listings,api_chat,api_admin}.dart` (~650-line delegator shell).
 - Cleared legacy deprecated APIs and style lints (RadioGroup, SharePlus, `Color.r/g/b`, etc.) — zero analyzer infos.
 - Migrated deprecated Flutter APIs in `lib/pages/` (Dropdown `initialValue`, `RadioGroup`, `ExpansibleController`, `withValues`).
-- Migrated legacy `withOpacity` → `withValues` across all `lib/legacy/` part files.
+- Migrated production UI from `lib/legacy/` to `lib/pages/production/`; added `lib/app/production_app.dart` and `lib/app/listing_shell.dart`.
+- Migrated legacy `withOpacity` → `withValues` across production part files.
 - Bumped backend dependencies for pip-audit (Flask 3.1.3, Flask-CORS 6, Flask-SocketIO 5.6.1, Werkzeug, Pillow, etc.) and removed unused `python-jose`.
 - Legacy profile/favorites/signup OTP use `ApiService` (token refresh) instead of raw `http`; `FakeApiServer` matches `/auth/me` and `/api/my_listings` response shapes.
 - `DeepLinkService` skips platform app-link plugins when `ApiService.isTestHttpClientBound` (widget tests).
@@ -73,7 +74,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ### Planned (not yet complete)
 
-- Finish migrating production UI from `lib/legacy/` to `lib/pages/` (see `lib/legacy/README.md`).
+- Extract production part screens into standalone `lib/pages/*.dart` files (home, sell wizard, comparison, etc.).
 - Set `REDIS_URL` in production for multi-worker rate limits (see `docs/DEPLOY_ENV_CHECKLIST.md`).
 
 ## [1.0.0] - 2026-05-20

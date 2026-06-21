@@ -6,7 +6,7 @@ import 'package:provider/provider.dart';
 import 'package:url_launcher/url_launcher.dart';
 
 import '../l10n/app_localizations.dart';
-import '../legacy/main_legacy.dart'
+import '../app/listing_shell.dart'
     show buildGlobalCarCard, mapListingToGlobalCarCardData;
 import '../services/auth_service.dart';
 import '../services/api_service.dart';

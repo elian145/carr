@@ -439,7 +439,7 @@ car_listing_app/
 ├── backend/               # Local dev proxy (:5003 → kk :5000)
 ├── lib/
 │   ├── main.dart          # bootstrapAndRun(legacy.MyApp)
-│   ├── legacy/            # Production UI
+│   ├── pages/production/  # Production UI (part library)
 │   ├── pages/             # Modern screens (migration)
 │   └── services/          # API, auth, WebSocket, config
 ├── test/                  # Flutter tests + fake API server

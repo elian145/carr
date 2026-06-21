@@ -1,4 +1,4 @@
-part of 'main_legacy.dart';
+part of 'carzo_pages.dart';
 
 /// Optional rollback routes (`/legacy_*`) — not registered in [MyApp] by default.
 /// Use in tests or temporary rollback by merging into [MaterialApp.routes].
