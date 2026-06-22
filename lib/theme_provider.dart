@@ -132,6 +132,8 @@ class AppThemes {
     );
   }
 
+  static const _mobilePageTransitions = FadeUpwardsPageTransitionsBuilder();
+
   static ThemeData get lightTheme {
     final scheme = ColorScheme.fromSeed(
       seedColor: _brandOrange,
@@ -161,8 +163,8 @@ class AppThemes {
       scaffoldBackgroundColor: lightAppBackground,
       pageTransitionsTheme: PageTransitionsTheme(
         builders: const {
-          TargetPlatform.android: CupertinoPageTransitionsBuilder(),
-          TargetPlatform.iOS: CupertinoPageTransitionsBuilder(),
+          TargetPlatform.android: _mobilePageTransitions,
+          TargetPlatform.iOS: _mobilePageTransitions,
           TargetPlatform.linux: AppNoTransitionsPageTransitionsBuilder(),
           TargetPlatform.macOS: AppNoTransitionsPageTransitionsBuilder(),
           TargetPlatform.windows: AppNoTransitionsPageTransitionsBuilder(),
@@ -237,8 +239,8 @@ class AppThemes {
       scaffoldBackgroundColor: scheme.surfaceContainerLowest,
       pageTransitionsTheme: PageTransitionsTheme(
         builders: const {
-          TargetPlatform.android: CupertinoPageTransitionsBuilder(),
-          TargetPlatform.iOS: CupertinoPageTransitionsBuilder(),
+          TargetPlatform.android: _mobilePageTransitions,
+          TargetPlatform.iOS: _mobilePageTransitions,
           TargetPlatform.linux: AppNoTransitionsPageTransitionsBuilder(),
           TargetPlatform.macOS: AppNoTransitionsPageTransitionsBuilder(),
           TargetPlatform.windows: AppNoTransitionsPageTransitionsBuilder(),
