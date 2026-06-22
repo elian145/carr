@@ -159,8 +159,8 @@ class AppThemes {
       useMaterial3: true,
       colorScheme: scheme,
       scaffoldBackgroundColor: lightAppBackground,
-      pageTransitionsTheme: const PageTransitionsTheme(
-        builders: {
+      pageTransitionsTheme: PageTransitionsTheme(
+        builders: const {
           TargetPlatform.android: CupertinoPageTransitionsBuilder(),
           TargetPlatform.iOS: CupertinoPageTransitionsBuilder(),
           TargetPlatform.linux: AppNoTransitionsPageTransitionsBuilder(),
@@ -235,8 +235,8 @@ class AppThemes {
       useMaterial3: true,
       colorScheme: scheme,
       scaffoldBackgroundColor: scheme.surfaceContainerLowest,
-      pageTransitionsTheme: const PageTransitionsTheme(
-        builders: {
+      pageTransitionsTheme: PageTransitionsTheme(
+        builders: const {
           TargetPlatform.android: CupertinoPageTransitionsBuilder(),
           TargetPlatform.iOS: CupertinoPageTransitionsBuilder(),
           TargetPlatform.linux: AppNoTransitionsPageTransitionsBuilder(),

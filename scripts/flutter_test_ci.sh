@@ -18,14 +18,22 @@ HEAVY=(
   test/legacy_*_test.dart
 )
 
-declare -A HEAVY_SET=()
-for f in "${HEAVY[@]}"; do
-  HEAVY_SET["$f"]=1
-done
+is_heavy_file() {
+  local target="$1"
+  local f
+  for f in "${HEAVY[@]}"; do
+    if [ "$f" = "$target" ]; then
+      return 0
+    fi
+  done
+  return 1
+}
 
 LIGHT=()
 for f in test/*_test.dart; do
-  [[ -n "${HEAVY_SET[$f]+x}" ]] || LIGHT+=("$f")
+  if ! is_heavy_file "$f"; then
+    LIGHT+=("$f")
+  fi
 done
 
 echo "flutter_test_ci: ${#LIGHT[@]} lightweight + ${#HEAVY[@]} widget/smoke test file(s)"
