@@ -73,10 +73,11 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 - Admin reports empty-queue widget test; moderation API tests (`reportUser`, `blockUser`, admin report updates); backend smoke for report/block flow.
 - Admin dealers empty-queue widget test; edit listing form hydration widget test; admin dealer approve/reject API tests.
 - Production `/change-password` route; change-password and home shell widget tests; backend smoke for dealer approve/reject.
+- Split `carzo_shared.dart` listing UI into standalone modules under `lib/app/widgets/` (`global_listing_card.dart`, `listing_galleries.dart`, `home_search_dialog.dart`, `listing_network_image.dart`); moved `brandLogoFilenames` to `lib/data/brand_logo_filenames.dart` and `getApiBase()` to `lib/app/app_api_base.dart`.
+- Removed duplicate legacy `EditListingPage` / `MyListingsPage` stubs from `production_account_pages.dart` (production routes use `lib/pages/edit_listing_page.dart` and `my_listings_page.dart`).
 
 ### Planned (not yet complete)
 
-- Split `carzo_shared.dart` helpers into smaller standalone modules (listing card, galleries, search).
 - Set `REDIS_URL` in production for multi-worker rate limits (see `docs/DEPLOY_ENV_CHECKLIST.md`).
 
 ## [1.0.0] - 2026-05-20

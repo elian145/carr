@@ -7888,7 +7888,7 @@ class _HomePageState extends State<HomePage> {
   void _showSearchDialog(BuildContext context) {
     showDialog(
       context: context,
-      builder: (context) => _SearchDialog(
+      builder: (context) => HomeSearchDialog(
         brands: homeBrands,
         models: models,
         onBrandSelected: (brand) {

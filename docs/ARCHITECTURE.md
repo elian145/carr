@@ -18,7 +18,9 @@ CARZO (CarNet) is a Flutter client + Flask backend monorepo for a car marketplac
 lib/
 ├── main.dart              # bootstrapAndRun(MyApp)
 ├── app/
-│   ├── carzo_shared.dart  # Shared helpers, listing cards, galleries (~3k lines)
+│   ├── carzo_shared.dart  # Shared helpers + part library host (~1.6k lines)
+│   ├── app_api_base.dart  # getApiBase()
+│   ├── widgets/           # global_listing_card, listing_galleries, home_search_dialog, listing_network_image
 │   ├── production_app.dart
 │   ├── production_routes.dart
 │   └── listing_shell.dart # Re-exports listing card / nav helpers
