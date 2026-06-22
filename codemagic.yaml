@@ -35,10 +35,8 @@ workflows:
     scripts:
       - name: Flutter version
         script: flutter --version
-      - name: Clean + pub get
-        script: |
-          flutter clean
-          flutter pub get
+      - name: Pub get
+        script: flutter pub get
       - name: Sideloadly compatibility (ATS + entitlements)
         script: |
           # Allow HTTP for LAN testing when API_BASE is http://...
@@ -96,7 +94,11 @@ workflows:
       - name: Analyze + tests
         script: |
           flutter analyze
-          flutter test --concurrency=4
+          bash scripts/flutter_test_ci.sh
+      - name: Clean + pub get (release build)
+        script: |
+          flutter clean
+          flutter pub get
       - name: Build iOS app (no codesign)
         script: |
           bash scripts/ios_ci_prepare_unsigned.sh
@@ -181,7 +183,7 @@ workflows:
       - name: Analyze + tests
         script: |
           flutter analyze
-          flutter test --concurrency=4
+          bash scripts/flutter_test_ci.sh
       - name: Set up keychain and apply UI signing files
         script: |
           set -e
@@ -330,7 +332,7 @@ workflows:
       - name: Analyze
         script: flutter analyze
       - name: Tests
-        script: flutter test --no-pub --concurrency=4
+        script: bash scripts/flutter_test_ci.sh --no-pub
       - name: Build APK (debug)
         script: flutter build apk --debug --no-pub --flavor "$FLAVOR"
     artifacts:
@@ -415,7 +417,7 @@ workflows:
       - name: Analyze
         script: flutter analyze
       - name: Tests
-        script: flutter test --no-pub --concurrency=4
+        script: bash scripts/flutter_test_ci.sh --no-pub
       - name: Publish preflight (static)
         script: python scripts/verify_publish_ready.py
       - name: Build APK (release)
