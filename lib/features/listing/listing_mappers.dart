@@ -48,6 +48,18 @@ List<Map<String, dynamic>> listingMapsFromApiResponse(Object? decoded) {
   return const [];
 }
 
+/// Favorites endpoint may return `cars`, `favorites`, or a bare list.
+List<Map<String, dynamic>> listingMapsFromFavoritesResponse(
+  Object? decoded,
+) {
+  if (decoded is! Map) return listingMapsFromApiList(decoded);
+  final map = decoded;
+  final data = (map['cars'] is List)
+      ? map['cars']
+      : ((map['favorites'] is List) ? map['favorites'] : map);
+  return listingMapsFromApiList(data);
+}
+
 /// Typed listing summary for cards and list rows.
 typedef ListingMap = Map<String, dynamic>;
 

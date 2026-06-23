@@ -55,7 +55,7 @@ class _FavoritesPageState extends State<FavoritesPage> {
           final data = json.decode(cached);
           if (data is List) {
             setState(() {
-              _favorites = data.cast<Map<String, dynamic>>();
+              _favorites = listingMapsFromApiList(data);
               _favorites.sort(
                 (a, b) => _favoritedAtMs(b).compareTo(_favoritedAtMs(a)),
               );
@@ -65,20 +65,14 @@ class _FavoritesPageState extends State<FavoritesPage> {
         } catch (e, st) { logNonFatal(e, st); }
       }
       final decoded = await ApiService.getFavorites();
-      final data = (decoded['cars'] is List)
-          ? decoded['cars']
-          : ((decoded['favorites'] is List)
-                ? decoded['favorites']
-                : decoded);
-      if (data is List) {
-        setState(() {
-          _favorites = data.cast<Map<String, dynamic>>();
-          _favorites.sort(
-            (a, b) => _favoritedAtMs(b).compareTo(_favoritedAtMs(a)),
-          );
-        });
-        unawaited(sp.setString(cacheKey, json.encode(_favorites)));
-      }
+      final parsed = listingMapsFromFavoritesResponse(decoded);
+      setState(() {
+        _favorites = parsed;
+        _favorites.sort(
+          (a, b) => _favoritedAtMs(b).compareTo(_favoritedAtMs(a)),
+        );
+      });
+      unawaited(sp.setString(cacheKey, json.encode(_favorites)));
     } on ApiException catch (e) {
       if (e.statusCode == 401) {
         setState(() {
@@ -86,7 +80,7 @@ class _FavoritesPageState extends State<FavoritesPage> {
         });
       } else {
         setState(() {
-          _error = AppLocalizations.of(context)!.couldNotSubmitListing;
+          _error = AppLocalizations.of(context)!.failedToLoadListings;
         });
       }
     } catch (e) {

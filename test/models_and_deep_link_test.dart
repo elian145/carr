@@ -69,4 +69,21 @@ void main() {
     expect(wrapped.length, 1);
     expect(wrapped.first['id'], 'w1');
   });
+
+  test('listingMapsFromFavoritesResponse handles cars and favorites keys', () {
+    final fromCars = listingMapsFromFavoritesResponse({
+      'cars': [
+        {'id': '1', 'title': 'A'},
+      ],
+    });
+    expect(fromCars.length, 1);
+
+    final fromFavorites = listingMapsFromFavoritesResponse({
+      'favorites': [
+        {'car_id': '2', 'title': 'B'},
+      ],
+    });
+    expect(fromFavorites.length, 1);
+    expect(fromFavorites.first['id'], '2');
+  });
 }

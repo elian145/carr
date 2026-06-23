@@ -14,6 +14,7 @@ import '../shared/maps/dealer_map_coords.dart';
 import '../shared/maps/open_google_maps.dart';
 import '../shared/media/media_url.dart';
 import '../shared/prefs/listing_layout_prefs.dart';
+import '../features/listing/listing_mappers.dart';
 import '../shared/errors/user_error_text.dart';
 import '../theme_provider.dart';
 import '../widgets/dealer_location_map_preview.dart';
@@ -146,10 +147,7 @@ class _DealerProfilePageState extends State<DealerProfilePage> {
             ? Map<String, dynamic>.from(dealerRaw.cast<String, dynamic>())
             : null;
         _listings = listingsRaw is List
-            ? listingsRaw
-                .whereType<Map>()
-                .map((m) => Map<String, dynamic>.from(m.cast<String, dynamic>()))
-                .toList()
+            ? listingMapsFromApiList(listingsRaw)
             : <Map<String, dynamic>>[];
       });
     } catch (e) {

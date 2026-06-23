@@ -18,6 +18,7 @@ import '../shared/prefs/sell_draft_media_persistence.dart';
 import '../shared/prefs/legacy_sell_draft_list.dart';
 import '../shared/text/pretty_title_case.dart';
 import '../shared/prefs/listing_layout_prefs.dart';
+import '../features/listing/listing_mappers.dart';
 import '../app/listing_shell.dart'
     show buildGlobalCarCard, mapListingToGlobalCarCardData;
 
@@ -107,11 +108,7 @@ class _MyListingsPageState extends State<MyListingsPage> {
 
     try {
       final data = await ApiService.getMyListings(page: _page, perPage: 20);
-      final list = (data['cars'] is List) ? (data['cars'] as List) : const [];
-      final items = list
-          .whereType<Map>()
-          .map((m) => Map<String, dynamic>.from(m.cast<String, dynamic>()))
-          .toList();
+      final items = listingMapsFromApiResponse(data);
 
       bool hasNext = false;
       final pagination = data['pagination'];

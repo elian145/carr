@@ -6,6 +6,7 @@ import 'api_service.dart';
 import '../shared/auth/token_store.dart';
 import '../shared/listings/listing_events.dart';
 import '../shared/listings/listing_identity.dart';
+import '../features/listing/listing_mappers.dart';
 import '../shared/debug/app_log.dart';
 
 /// Local cache + server sync for recently viewed listings.
@@ -35,11 +36,8 @@ class RecentlyViewedService {
   static List<Map<String, dynamic>> _decode(String? raw) {
     if (raw == null || raw.isEmpty) return [];
     try {
-      final list = json.decode(raw) as List;
-      return list
-          .whereType<Map>()
-          .map((e) => Map<String, dynamic>.from(e.cast<String, dynamic>()))
-          .toList();
+      final list = json.decode(raw);
+      return listingMapsFromApiList(list);
     } catch (e, st) { logNonFatal(e, st); 
       return [];
     }
@@ -191,10 +189,7 @@ class RecentlyViewedService {
       final data = await ApiService.getRecentlyViewed(page: 1, perPage: maxItems);
       final raw = data['cars'];
       if (raw is List) {
-        final serverCars = raw
-            .whereType<Map>()
-            .map((m) => Map<String, dynamic>.from(m.cast<String, dynamic>()))
-            .toList();
+        final serverCars = listingMapsFromApiList(raw);
         if (serverCars.isNotEmpty) {
           return _mergeById(serverCars, localDisplay);
         }
