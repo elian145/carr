@@ -13,9 +13,12 @@ class CarComparisonPage extends StatelessWidget {
         title: Text(AppLocalizations.of(context)!.specificationsLabel),
         elevation: 0,
         actions: [
-          IconButton(
-            tooltip: AppLocalizations.of(context)!.shareAction,
-            onPressed: () async {
+          Semantics(
+            button: true,
+            label: AppLocalizations.of(context)!.shareAction,
+            child: IconButton(
+              tooltip: AppLocalizations.of(context)!.shareAction,
+              onPressed: () async {
               try {
                 final store = Provider.of<CarComparisonStore>(
                   context,
@@ -34,6 +37,7 @@ class CarComparisonPage extends StatelessWidget {
               } catch (e, st) { logNonFatal(e, st); }
             },
             icon: Icon(Icons.share_outlined),
+            ),
           ),
           Consumer<CarComparisonStore>(
             builder: (context, comparisonStore, child) {

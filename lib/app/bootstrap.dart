@@ -14,6 +14,7 @@ import '../services/push_notification_service.dart'
     show PushNotificationService, firebaseMessagingBackgroundHandler;
 import '../state/locale_controller.dart';
 import '../data/car_catalog_loader.dart';
+import '../features/saved_searches/saved_search_home_bridge.dart';
 import '../shared/debug/app_log.dart';
 
 const String _apiBaseOverrideKey = 'api_base_override';
@@ -64,9 +65,7 @@ void _runZonedApp(Widget app) {
 
       // Drop orphaned one-time saved-search keys if the app was killed before Home mounted.
       try {
-        final sp = await SharedPreferences.getInstance();
-        await sp.remove('home_apply_filters_once_v1');
-        await sp.remove('home_pending_saved_search_fetch_v1');
+        await SavedSearchHomeBridge.clearOrphanedStartupKeys();
       } catch (e, st) { logNonFatal(e, st); }
 
       // Catalog must load before sell/home filters use brand-model data.

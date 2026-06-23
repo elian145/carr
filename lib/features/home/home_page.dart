@@ -1215,8 +1215,8 @@ class _HomePageState extends State<HomePage> {
       }
       await _restoreFilters();
       if (!mounted) return;
-      final oneTimeFilters = await _consumeOneTimeSavedSearchFilters();
-      final pendingSavedSearch = await _consumePendingSavedSearchFetch();
+      final oneTimeFilters = await SavedSearchHomeBridge.consumeOneTimeFilters();
+      final pendingSavedSearch = await SavedSearchHomeBridge.consumePendingFetch();
       if (oneTimeFilters != null) {
         setState(() {
           applyFiltersFromHomePersistMap(oneTimeFilters);
@@ -7763,81 +7763,4 @@ class _HomePageState extends State<HomePage> {
       ),
     );
   }
-}
-
-const String _homePendingSavedSearchFetchKey = 'home_pending_saved_search_fetch_v1';
-const String _homeOneTimeFiltersKey = 'home_apply_filters_once_v1';
-
-Future<void> _markPendingSavedSearchFetch() async {
-  try {
-    final sp = await SharedPreferences.getInstance();
-    await sp.setBool(_homePendingSavedSearchFetchKey, true);
-  } catch (e, st) { logNonFatal(e, st); }
-}
-
-Future<bool> _consumePendingSavedSearchFetch() async {
-  try {
-    final sp = await SharedPreferences.getInstance();
-    final pending = sp.getBool(_homePendingSavedSearchFetchKey) ?? false;
-    if (pending) {
-      await sp.remove(_homePendingSavedSearchFetchKey);
-    }
-    return pending;
-  } catch (e, st) { logNonFatal(e, st); 
-    return false;
-  }
-}
-
-Future<Map<String, dynamic>?> _consumeOneTimeSavedSearchFilters() async {
-  try {
-    final sp = await SharedPreferences.getInstance();
-    final raw = sp.getString(_homeOneTimeFiltersKey);
-    if (raw == null || raw.isEmpty) return null;
-    await sp.remove(_homeOneTimeFiltersKey);
-    final decoded = json.decode(raw);
-    if (decoded is! Map) return null;
-    return Map<String, dynamic>.from(decoded.cast<String, dynamic>());
-  } catch (e, st) { logNonFatal(e, st); 
-    return null;
-  }
-}
-
-/// One-time saved-search apply (not restored on next app launch).
-Future<void> persistSavedSearchFiltersForHome(
-  Map<String, dynamic> filters,
-) async {
-  try {
-    final sp = await SharedPreferences.getInstance();
-    final map = <String, dynamic>{
-      'brand': filters['brand'],
-      'model': filters['model'],
-      'trim': filters['trim'],
-      'price_min': filters['min_price'] ?? filters['price_min'],
-      'price_max': filters['max_price'] ?? filters['price_max'],
-      'year_min': filters['min_year'] ?? filters['year_min'],
-      'year_max': filters['max_year'] ?? filters['year_max'],
-      'min_mileage': filters['min_mileage'],
-      'max_mileage': filters['max_mileage'],
-      'condition': filters['condition'],
-      'transmission': filters['transmission'],
-      'fuel_type': filters['fuel_type'],
-      'body_type': filters['body_type'],
-      'color': filters['color'],
-      'drive_type': filters['drive_type'],
-      'region_specs': filters['region_specs'],
-      'cylinders': filters['cylinder_count'] ?? filters['cylinders'],
-      'seating': filters['seating'],
-      'engine_size': filters['engine_size'],
-      'city': filters['city'],
-      'plate_type': filters['plate_type'],
-      'plate_city': filters['plate_city'],
-      'title_status': filters['title_status'],
-      'damaged_parts': filters['damaged_parts'],
-      'sort_by': filters['sort_by'],
-    };
-    map.removeWhere((_, v) => v == null || v.toString().trim().isEmpty);
-    await sp.remove('home_filters_v1');
-    await sp.setString(_homeOneTimeFiltersKey, json.encode(map));
-    await _markPendingSavedSearchFetch();
-  } catch (e, st) { logNonFatal(e, st); }
 }

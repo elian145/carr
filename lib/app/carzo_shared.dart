@@ -73,6 +73,7 @@ import '../shared/listings/listing_management.dart'
         setListingSoldStatus;
 import '../shared/listings/listing_owner.dart';
 import '../features/comparison/state/car_comparison_store.dart';
+import '../features/saved_searches/saved_search_home_bridge.dart';
 import '../features/listing/listing_mappers.dart';
 import '../data/car_catalog.dart';
 import '../data/car_name_translations.dart';

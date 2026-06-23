@@ -503,7 +503,7 @@ class _SavedSearchesPageState extends State<SavedSearchesPage> {
 
   void _applySearch(Map<String, dynamic> filters) async {
     final normalized = SavedSearchService.normalizeFilters(filters);
-    await persistSavedSearchFiltersForHome(normalized);
+    await SavedSearchHomeBridge.persistFiltersForHome(normalized);
 
     if (!mounted) return;
     final messenger = ScaffoldMessenger.of(context);
@@ -532,7 +532,7 @@ class _SavedSearchesPageState extends State<SavedSearchesPage> {
     }
 
     Navigator.pop(context);
-    await _markPendingSavedSearchFetch();
+    await SavedSearchHomeBridge.markPendingFetch();
     if (!mounted) return;
     navigateMainShellTab(context, '/');
     messenger.showSnackBar(
