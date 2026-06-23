@@ -1,4 +1,4 @@
-part of '../../app/carzo_shared.dart';
+part of 'home_flow.dart';
 
 class HomePage extends StatefulWidget {
   const HomePage({super.key});

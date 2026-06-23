@@ -7,7 +7,8 @@ import '../pages/production_account_pages.dart';
 import '../pages/production_auth_pages.dart';
 import '../pages/saved_searches_page.dart';
 import '../shared/navigation/route_args.dart';
-import 'carzo_shared.dart' show AuthGuard, HomePage;
+import '../features/home/home_flow.dart' show HomePage;
+import 'carzo_shared.dart' show AuthGuard;
 
 /// Optional rollback routes (`/legacy_*`) — not registered in [MyApp] by default.
 /// Use in tests or temporary rollback by merging into [MaterialApp.routes].
