@@ -786,7 +786,9 @@ class _SellStep5PageState extends State<SellStep5Page> {
                 content: Text(
                   AppLocalizations.of(
                     context,
-                  )!.listingUploadPartialFail(e.toString()),
+                  )!.listingUploadPartialFail(
+                    AppLocalizations.of(context)!.errorTitle,
+                  ),
                 ),
               ),
             );
@@ -802,10 +804,6 @@ class _SellStep5PageState extends State<SellStep5Page> {
 
       throw Exception('Failed to create listing');
     } catch (e) {
-      if (e.toString().contains('SocketException') ||
-          e.toString().contains('HandshakeException')) {
-        throw Exception('Network error. Please check your connection.');
-      }
       rethrow;
     }
   }

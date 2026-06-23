@@ -3,7 +3,7 @@ import 'package:flutter/material.dart';
 import '../pages/admin_dealers_page.dart';
 import '../pages/admin_reports_page.dart';
 import '../pages/analytics_page.dart';
-import '../pages/auth_pages.dart' as auth_pages;
+import '../pages/forgot_password_page.dart';
 import '../pages/change_password_page.dart';
 import '../features/chat/chat_pages.dart' as carzo_chat;
 import '../pages/dealer_profile_page.dart';
@@ -163,8 +163,7 @@ Map<String, WidgetBuilder> buildProductionRoutes() {
                     initialToken: token.isNotEmpty ? token : null,
                   );
                 },
-                '/forgot-password': (context) =>
-                    auth_pages.ForgotPasswordPage(),
+                '/forgot-password': (context) => const ForgotPasswordPage(),
                 '/change-password': (context) =>
                     AuthGuard(child: const ChangePasswordPage()),
                 '/admin/dealers': (context) =>

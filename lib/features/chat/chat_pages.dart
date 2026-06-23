@@ -16,6 +16,7 @@ import '../../services/auth_service.dart';
 import '../../services/api_service.dart';
 import '../../services/outgoing_chat_send_service.dart';
 import '../../shared/errors/user_error_text.dart';
+import '../../shared/i18n/legacy_inline_text.dart';
 import '../../shared/auth/phone_verification_gate.dart';
 import '../../shared/listings/listing_identity.dart';
 import '../../shared/media/media_url.dart';
@@ -4179,14 +4180,23 @@ class _ChatConversationPageState extends State<ChatConversationPage>
                                   ),
                           ),
                           const SizedBox(width: 8),
-                          IconButton(
-                            onPressed: (_isSending || _isRecordingVoice)
-                                ? null
-                                : _sendMessage,
-                            icon: const Icon(Icons.send),
-                            style: IconButton.styleFrom(
-                              backgroundColor: Theme.of(context).primaryColor,
-                              foregroundColor: Colors.white,
+                          Semantics(
+                            button: true,
+                            label: trLegacyText(
+                              context,
+                              'Send message',
+                              ar: 'إرسال رسالة',
+                              ku: 'ناردنی پەیام',
+                            ),
+                            child: IconButton(
+                              onPressed: (_isSending || _isRecordingVoice)
+                                  ? null
+                                  : _sendMessage,
+                              icon: const Icon(Icons.send),
+                              style: IconButton.styleFrom(
+                                backgroundColor: Theme.of(context).primaryColor,
+                                foregroundColor: Colors.white,
+                              ),
                             ),
                           ),
                         ],

@@ -205,7 +205,17 @@ class _CarDetailsPageState extends State<CarDetailsPage> {
       if (!mounted) return;
       ScaffoldMessenger.of(
         context,
-      ).showSnackBar(SnackBar(content: Text(e.toString())));
+      ).showSnackBar(
+        SnackBar(
+          content: Text(
+            userErrorText(
+              context,
+              e,
+              fallback: AppLocalizations.of(context)!.error,
+            ),
+          ),
+        ),
+      );
     }
   }
 

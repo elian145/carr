@@ -376,15 +376,19 @@ class _LoginPageState extends State<LoginPage> {
                     : null,
               ),
               SizedBox(height: 20),
-              ElevatedButton(
-                onPressed: _loading ? null : _login,
-                child: _loading
-                    ? SizedBox(
-                        width: 18,
-                        height: 18,
-                        child: CircularProgressIndicator(strokeWidth: 2),
-                      )
-                    : Text(AppLocalizations.of(context)!.navLogin),
+              Semantics(
+                button: true,
+                label: AppLocalizations.of(context)!.navLogin,
+                child: ElevatedButton(
+                  onPressed: _loading ? null : _login,
+                  child: _loading
+                      ? SizedBox(
+                          width: 18,
+                          height: 18,
+                          child: CircularProgressIndicator(strokeWidth: 2),
+                        )
+                      : Text(AppLocalizations.of(context)!.navLogin),
+                ),
               ),
               TextButton(
                 onPressed: () =>
@@ -622,14 +626,7 @@ class _SignupPageState extends State<SignupPage> {
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
-          content: Text(
-            _trLegacyText(
-              context,
-              'Please accept the Terms and Privacy Policy',
-              ar: 'يرجى الموافقة على الشروط وسياسة الخصوصية',
-              ku: 'تکایە مەرج و سیاسەتی تایبەتمەندی قبوڵ بکە',
-            ),
-          ),
+          content: Text(acceptTermsRequiredText(context)),
         ),
       );
       return;

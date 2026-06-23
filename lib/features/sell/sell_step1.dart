@@ -1415,8 +1415,11 @@ class _SellStep1PageState extends State<SellStep1Page> {
             SizedBox(
               width: double.infinity,
               height: 50,
-              child: ElevatedButton(
-                onPressed: () {
+              child: Semantics(
+                button: true,
+                label: AppLocalizations.of(context)!.nextStep,
+                child: ElevatedButton(
+                  onPressed: () {
                   // Manual validation for required selectors (since we use custom tiles)
                   final List<String> missing = [];
                   if (selectedBrand == null || (selectedBrand ?? '').isEmpty) {
@@ -1484,6 +1487,7 @@ class _SellStep1PageState extends State<SellStep1Page> {
                   style: TextStyle(fontSize: 16, fontWeight: FontWeight.w600),
                 ),
               ),
+            ),
             ),
           ],
         ),

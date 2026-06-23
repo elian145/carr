@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:video_player/video_player.dart';
 import 'dart:io';
 
+import '../shared/i18n/legacy_inline_text.dart';
 import 'network_video_thumbnail.dart';
 
 String _formatVideoTime(Duration d) {
@@ -105,7 +106,7 @@ class _GalleryEmbeddedVideoPlayerState extends State<GalleryEmbeddedVideoPlayer>
       if (!mounted) return;
       setState(() {
         _loading = false;
-        _error = e.toString();
+        _error = videoPlaybackFailedText(context);
       });
     }
   }
@@ -395,7 +396,7 @@ class _InAppVideoScreenState extends State<InAppVideoScreen> {
       if (!mounted) return;
       setState(() {
         _loading = false;
-        _error = e.toString();
+        _error = videoPlaybackFailedText(context);
       });
     }
   }

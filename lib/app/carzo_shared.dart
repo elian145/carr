@@ -38,6 +38,7 @@ import '../shared/listings/transmission_filter.dart';
 import '../shared/listings/listing_uploaded_ago.dart';
 import '../shared/auth/phone_verification_gate.dart';
 import '../shared/errors/user_error_text.dart';
+import '../features/home/home_feed_errors.dart';
 import '../shared/listings/listing_events.dart';
 import '../shared/listings/listing_identity.dart';
 import '../shared/listings/listing_status.dart';
@@ -880,9 +881,6 @@ String _pleaseSelectPhotoTextGlobal(BuildContext context) =>
 
 String _listingSubmittedSuccessTextGlobal(BuildContext context) =>
     listingSubmittedSuccessText(context);
-
-String _couldNotLoadListingsTextGlobal(BuildContext context) =>
-    couldNotLoadListingsText(context);
 
 String? _convertSortToApiValue(BuildContext context, String? sortOption) =>
     convertSortToApiValue(context, sortOption);

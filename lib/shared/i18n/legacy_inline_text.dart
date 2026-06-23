@@ -54,6 +54,60 @@ String couldNotLoadListingsText(BuildContext context) {
   );
 }
 
+String homeFeedLoadingListingsText(BuildContext context) {
+  return trLegacyText(
+    context,
+    'Loading listings...',
+    ar: 'جاري تحميل الإعلانات...',
+    ku: 'بارکردنی ڕیکلامەکان...',
+  );
+}
+
+String homeFeedSortingListingsText(BuildContext context) {
+  return trLegacyText(
+    context,
+    'Sorting listings...',
+    ar: 'جاري ترتيب الإعلانات...',
+    ku: 'ڕیزکردنی ڕیکلامەکان...',
+  );
+}
+
+String homeFeedNetworkErrorText(BuildContext context) {
+  return trLegacyText(
+    context,
+    'Could not reach the server. Check your connection and try again.',
+    ar: 'تعذر الوصول إلى الخادم. تحقق من الاتصال وحاول مرة أخرى.',
+    ku: 'نەتوانرا پەیوەندی بە سێرڤەر بکرێت. پەیوەندییەکەت بپشکنە و دووبارە هەوڵ بدەرەوە.',
+  );
+}
+
+String homeFeedServerErrorText(BuildContext context, String statusCode) {
+  return trLegacyText(
+    context,
+    'Server error ($statusCode). Please try again later.',
+    ar: 'خطأ في الخادم ($statusCode). يرجى المحاولة لاحقاً.',
+    ku: 'هەڵەی سێرڤەر ($statusCode). تکایە دواتر دووبارە هەوڵ بدەرەوە.',
+  );
+}
+
+String acceptTermsRequiredText(BuildContext context) {
+  return trLegacyText(
+    context,
+    'Please accept the Terms and Privacy Policy',
+    ar: 'يرجى الموافقة على الشروط وسياسة الخصوصية',
+    ku: 'تکایە مەرج و سیاسەتی تایبەتمەندی قبوڵ بکە',
+  );
+}
+
+String videoPlaybackFailedText(BuildContext context) {
+  return trLegacyText(
+    context,
+    'Could not play this video.',
+    ar: 'تعذر تشغيل هذا الفيديو.',
+    ku: 'نەتوانرا ئەم ڤیدیۆیە لێ بدرێت.',
+  );
+}
+
 String photosUploadedText(BuildContext context) {
   return trLegacyText(
     context,

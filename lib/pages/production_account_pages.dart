@@ -879,7 +879,11 @@ class _ProfilePageState extends State<ProfilePage> {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
           content: Text(
-            e.toString().replaceFirst('Exception: ', ''),
+            userErrorText(
+              context,
+              e,
+              fallback: loc.error,
+            ),
           ),
           backgroundColor: Colors.red,
         ),

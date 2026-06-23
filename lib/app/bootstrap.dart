@@ -13,6 +13,7 @@ import '../services/config.dart';
 import '../services/push_notification_service.dart'
     show PushNotificationService, firebaseMessagingBackgroundHandler;
 import '../state/locale_controller.dart';
+import '../data/car_catalog_loader.dart';
 import '../shared/debug/app_log.dart';
 
 const String _apiBaseOverrideKey = 'api_base_override';
@@ -72,6 +73,9 @@ void _runZonedApp(Widget app) {
 
       // Defer heavy initializations to post-frame to avoid blocking first paint.
       Future.microtask(() async {
+        try {
+          await CarCatalogLoader.ensureLoaded();
+        } catch (e, st) { logNonFatal(e, st); }
         try {
           await PushNotificationService.initialize();
         } catch (e, st) { logNonFatal(e, st); }

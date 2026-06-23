@@ -6,6 +6,7 @@ import 'package:flutter/material.dart';
 import 'config.dart';
 import 'api_service.dart';
 import '../shared/listings/listing_share_urls.dart';
+import 'deep_link_navigation.dart';
 
 /// Handles app deep links (e.g. carzo://auth/reset-password?token=xxx).
 /// Call [init] with the app's [NavigatorState] key after [MaterialApp] is built.
@@ -127,46 +128,10 @@ class DeepLinkService {
 
   /// Returns true if this URI was recognized and a route was pushed.
   bool _performNavigation(Uri uri, NavigatorState nav) {
-    final path = uri.path;
-    final token = uri.queryParameters['token']?.trim();
-    if (path.endsWith('reset-password') && token != null && token.isNotEmpty) {
-      nav.pushNamed('/reset-password', arguments: <String, String>{'token': token});
-      return true;
-    }
-    if (path.endsWith('verify-email') && token != null && token.isNotEmpty) {
-      nav.pushNamed('/verify-email', arguments: <String, dynamic>{'token': token});
-      return true;
-    }
-    if (path.endsWith('confirm-signup') && token != null && token.isNotEmpty) {
-      nav.pushNamed(
-        '/verify-email',
-        arguments: <String, dynamic>{'token': token, 'mode': 'signup'},
-      );
-      return true;
-    }
-    // https://<api-or-share-host>/listing/<id> (Universal / App Links) → in-app listing
-    final httpsListingId = listingIdFromSharedHttpsUri(uri);
-    if (httpsListingId != null) {
-      nav.pushNamed(
-        '/car_detail',
-        arguments: <String, dynamic>{'carId': httpsListingId},
-      );
-      return true;
-    }
-    // carzo://listing?id=<public_id>
-    if (uri.scheme == 'carzo' && uri.host == 'listing') {
-      final carId = (uri.queryParameters['id'] ??
-              uri.queryParameters['carId'] ??
-              '')
-          .trim();
-      if (carId.isEmpty) return false;
-      nav.pushNamed(
-        '/car_detail',
-        arguments: <String, dynamic>{'carId': carId},
-      );
-      return true;
-    }
-    return false;
+    final target = resolveDeepLinkTarget(uri);
+    if (target == null) return false;
+    nav.pushNamed(target.route, arguments: target.arguments);
+    return true;
   }
 
   void dispose() {

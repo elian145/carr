@@ -269,9 +269,11 @@ class PushNotificationService {
       }
       return 'Push token registered on server.';
     } catch (e) {
-      final sp = await SharedPreferences.getInstance();
-      final err = sp.getString('push_last_sync_error');
-      return err?.isNotEmpty == true ? err! : e.toString();
+      if (kDebugMode) {
+        // ignore: avoid_print
+        print('PushNotificationService: diagnostics failed: $e');
+      }
+      return 'Push diagnostics failed. Try again from Settings.';
     }
   }
 

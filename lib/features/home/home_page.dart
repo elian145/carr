@@ -1648,7 +1648,7 @@ class _HomePageState extends State<HomePage> {
         await _handleFetchError(
           bypassCache,
           cached,
-          'Server ${response.statusCode}',
+          HomeFeedErrors.server(response.statusCode),
           isRetry: isRetry,
         );
       }
@@ -1657,7 +1657,7 @@ class _HomePageState extends State<HomePage> {
       await _handleFetchError(
         bypassCache,
         cached,
-        'Network error',
+        HomeFeedErrors.network,
         isRetry: isRetry,
       );
     }
@@ -1694,7 +1694,7 @@ class _HomePageState extends State<HomePage> {
 
     // Auto-retry logic for network errors
     if (_fetchRetryCount < _maxRetries &&
-        errorMessage == 'Network error' &&
+        errorMessage == HomeFeedErrors.network &&
         !isRetry) {
       _fetchRetryCount++;
       _debugLog(
@@ -1718,9 +1718,7 @@ class _HomePageState extends State<HomePage> {
         hasLoadedOnce = true;
         // Only show error if bypassing cache OR no cached data is available
         if (bypassCache || cached == null) {
-          final base = getApiBase();
-          loadErrorMessage =
-              '$errorMessage. Check server at $base and same Wi‑Fi.';
+          loadErrorMessage = errorMessage;
         } else {
           loadErrorMessage = null; // Clear error when using cached data
         }
@@ -1892,7 +1890,7 @@ class _HomePageState extends State<HomePage> {
         _debugLog('âŒ Fallback fetch failed: ${response.statusCode}');
         if (mounted) {
           setState(() {
-            loadErrorMessage = 'Server error: ${response.statusCode}';
+            loadErrorMessage = HomeFeedErrors.server(response.statusCode);
             isLoading = false;
           });
         }
@@ -1901,7 +1899,7 @@ class _HomePageState extends State<HomePage> {
       _debugLog('âŒ Fallback fetch error: $e');
       if (mounted) {
         setState(() {
-          loadErrorMessage = 'Network error';
+          loadErrorMessage = HomeFeedErrors.network;
           isLoading = false;
         });
       }
@@ -7508,8 +7506,8 @@ class _HomePageState extends State<HomePage> {
                             SizedBox(height: 16),
                             Text(
                               selectedSortBy != null
-                                  ? 'Sorting listings...'
-                                  : 'Loading listings...',
+                                  ? homeFeedSortingListingsText(context)
+                                  : homeFeedLoadingListingsText(context),
                               style: TextStyle(
                                 color: Colors.white70,
                                 fontSize: 16,
@@ -7522,37 +7520,16 @@ class _HomePageState extends State<HomePage> {
                   else if (loadErrorMessage != null && cars.isEmpty)
                     SliverFillRemaining(
                       hasScrollBody: false,
-                      child: Center(
-                        child: Column(
-                          mainAxisSize: MainAxisSize.min,
-                          children: [
-                            Text(
-                              _couldNotLoadListingsTextGlobal(context),
-                              style: TextStyle(color: Colors.white70),
-                            ),
-                            SizedBox(height: 8),
-                            Wrap(
-                              spacing: 8,
-                              children: [
-                                OutlinedButton(
-                                  onPressed: () {
-                                    _fetchRetryCount = 0;
-                                    fetchCars(bypassCache: true);
-                                  },
-                                  child: Text(
-                                    AppLocalizations.of(context)!.retryAction,
-                                  ),
-                                ),
-                                OutlinedButton(
-                                  onPressed: () => onFilterChanged(),
-                                  child: Text(
-                                    AppLocalizations.of(context)!.clearFilters,
-                                  ),
-                                ),
-                              ],
-                            ),
-                          ],
+                      child: HomeFeedErrorState(
+                        message: formatHomeFeedErrorMessage(
+                          context,
+                          loadErrorMessage,
                         ),
+                        onRetry: () {
+                          _fetchRetryCount = 0;
+                          fetchCars(bypassCache: true);
+                        },
+                        onClearFilters: () => onFilterChanged(),
                       ),
                     )
                   else if (cars.isEmpty)
