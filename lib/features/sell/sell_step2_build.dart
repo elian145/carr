@@ -1,6 +1,6 @@
 part of 'sell_flow.dart';
 
-mixin _SellStep2Build on _SellStep2Logic {
+mixin _SellStep2Build on _SellStep2Pickers {
   @override
   Widget build(BuildContext context) {
     return SingleChildScrollView(
