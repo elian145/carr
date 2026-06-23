@@ -59,7 +59,6 @@ import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:intl/intl.dart';
 import 'package:provider/provider.dart';
 import '../theme_provider.dart';
-import '../widgets/theme_toggle_widget.dart';
 import '../services/ai_service.dart';
 import '../services/car_service.dart';
 import '../services/push_notification_service.dart';
@@ -79,6 +78,8 @@ import '../shared/listings/listing_owner.dart';
 import '../features/comparison/state/car_comparison_store.dart';
 import '../features/saved_searches/saved_search_home_bridge.dart';
 import '../pages/saved_searches_page.dart';
+import '../pages/comparison_page.dart';
+export '../pages/comparison_page.dart';
 import '../features/listing/listing_mappers.dart';
 import '../data/car_catalog.dart';
 import '../data/car_name_translations.dart';
@@ -116,7 +117,6 @@ part '../features/sell/sell_step3.dart';
 part '../features/sell/sell_step4.dart';
 part '../features/sell/sell_step5.dart';
 part '../pages/car_details_page.dart';
-part '../pages/comparison_page.dart';
 part '../pages/production_auth_pages.dart';
 part '../pages/production_account_pages.dart';
 part 'legacy_fallback_routes.dart';
@@ -412,12 +412,6 @@ Widget _listingNetworkImage(
 
 String? _translateValueGlobal(BuildContext context, String? raw) =>
     translateListingValue(context, raw);
-
-String _localizedCarTitleForCard(BuildContext context, Map car) =>
-    localizedCarTitleForCard(context, car);
-
-String _localizedTrimForCard(BuildContext context, Map car) =>
-    localizedTrimForCard(context, car);
 
 String _listingUploadedAgo(BuildContext context, Map car) =>
     listingUploadedAgo(context, car);
@@ -786,11 +780,6 @@ String _pleaseFillRequiredGlobal(BuildContext context) {
 NumberFormat _decimalFormatterGlobal(BuildContext context) =>
     decimalFormatterForLocale(context);
 
-// Lightweight helpers for translating UI snippets not covered by AppLocalizations
-String _yesTextGlobal(BuildContext context) => yesText(context);
-
-String _noTextGlobal(BuildContext context) => noText(context);
-
 String _removedFromComparisonTextGlobal(BuildContext context) {
   return AppLocalizations.of(context)!.removedFromComparison;
 }
@@ -811,20 +800,8 @@ String _addedLabelGlobal(BuildContext context) {
   return AppLocalizations.of(context)!.addedLabel;
 }
 
-String _clearAllTextGlobal(BuildContext context) {
-  return AppLocalizations.of(context)!.clearAll;
-}
-
 String _tapToSelectTextGlobal(BuildContext context) {
   return AppLocalizations.of(context)!.tapToSelect;
-}
-
-String _comparisonClearedTextGlobal(BuildContext context) {
-  return AppLocalizations.of(context)!.comparisonCleared;
-}
-
-String _statusTitleGlobal(BuildContext context) {
-  return AppLocalizations.of(context)!.status;
 }
 
 String _quickSellTextGlobal(BuildContext context) {
@@ -875,20 +852,6 @@ class LocaleController {
 
   static Future<void> setLocale(Locale? locale) =>
       app_state.LocaleController.setLocale(locale);
-}
-
-Widget buildLanguageMenu() {
-  return PopupMenuButton<String>(
-    icon: const Icon(Icons.language),
-    onSelected: (code) {
-      LocaleController.setLocale(Locale(code));
-    },
-    itemBuilder: (context) => const [
-      PopupMenuItem(value: 'en', child: Text('English')),
-      PopupMenuItem(value: 'ar', child: Text('العربية')),
-      PopupMenuItem(value: 'ku', child: Text('کوردی')),
-    ],
-  );
 }
 
 class NoAnimationsPageTransitionsBuilder extends PageTransitionsBuilder {

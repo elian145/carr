@@ -1,4 +1,23 @@
-﻿part of '../app/carzo_shared.dart';
+﻿import 'package:auto_size_text/auto_size_text.dart';
+import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
+import 'package:share_plus/share_plus.dart';
+
+import '../app/widgets/global_listing_card.dart'
+    show localizedCarTitleForCard, localizedTrimForCard;
+import '../app/widgets/language_menu.dart';
+import '../app/widgets/listing_network_image.dart';
+import '../features/comparison/state/car_comparison_store.dart';
+import '../l10n/app_localizations.dart';
+import '../shared/debug/app_log.dart';
+import '../shared/i18n/digits.dart';
+import '../shared/i18n/legacy_inline_text.dart';
+import '../shared/i18n/listing_value_labels.dart';
+import '../shared/i18n/locale_formatting.dart';
+import '../shared/i18n/region_spec_labels.dart';
+import '../shared/media/media_url.dart';
+import '../theme_provider.dart';
+import '../widgets/theme_toggle_widget.dart';
 
 // Car Comparison Page
 class CarComparisonPage extends StatelessWidget {
@@ -28,7 +47,7 @@ class CarComparisonPage extends StatelessWidget {
                 final text = cars
                     .map(
                       (c) =>
-                          '${c['title'] ?? ''} â€¢ ${c['year'] ?? ''} â€¢ ${c['price'] ?? ''}',
+                          '${c['title'] ?? ''} • ${c['year'] ?? ''} • ${c['price'] ?? ''}',
                     )
                     .join('\n');
                 if (text.trim().isNotEmpty) {
@@ -216,7 +235,7 @@ class CarComparisonPage extends StatelessWidget {
                                   ),
                                   Semantics(
                                     button: true,
-                                    label: _clearAllTextGlobal(context),
+                                    label: AppLocalizations.of(context)!.clearAll,
                                     child: OutlinedButton.icon(
                                     style: OutlinedButton.styleFrom(
                                       side: BorderSide(
@@ -242,9 +261,7 @@ class CarComparisonPage extends StatelessWidget {
                                       ).showSnackBar(
                                         SnackBar(
                                           content: Text(
-                                            _comparisonClearedTextGlobal(
-                                              context,
-                                            ),
+                                            AppLocalizations.of(context)!.comparisonCleared,
                                           ),
                                           backgroundColor: Color(0xFFFF6B00),
                                         ),
@@ -257,7 +274,7 @@ class CarComparisonPage extends StatelessWidget {
                                           : lightInkMuted,
                                       size: 18,
                                     ),
-                                    label: Text(_clearAllTextGlobal(context)),
+                                    label: Text(AppLocalizations.of(context)!.clearAll),
                                   ),
                                   ),
                                 ],
@@ -401,7 +418,7 @@ class CarComparisonPage extends StatelessWidget {
                                                   height: headerPriceHeight,
                                                   child: Center(
                                                     child: Text(
-                                                      _formatCurrencyGlobal(
+                                                      formatCurrency(
                                                         context,
                                                         cars[0]['price']
                                                                 ?.toString() ??
@@ -504,7 +521,7 @@ class CarComparisonPage extends StatelessWidget {
                                                   height: headerPriceHeight,
                                                   child: Center(
                                                     child: Text(
-                                                      _formatCurrencyGlobal(
+                                                      formatCurrency(
                                                         context,
                                                         cars[1]['price']
                                                                 ?.toString() ??
@@ -583,11 +600,11 @@ class CarComparisonPage extends StatelessWidget {
                                                     child: Center(
                                                       child: AutoSizeText(
                                                         [
-                                                              _localizedCarTitleForCard(
+                                                              localizedCarTitleForCard(
                                                                 context,
                                                                 car,
                                                               ),
-                                                              _localizedTrimForCard(
+                                                              localizedTrimForCard(
                                                                 context,
                                                                 car,
                                                               ),
@@ -623,7 +640,7 @@ class CarComparisonPage extends StatelessWidget {
                                                     height: headerPriceHeight,
                                                     child: Center(
                                                       child: Text(
-                                                        _formatCurrencyGlobal(
+                                                        formatCurrency(
                                                           context,
                                                           car['price']
                                                                   ?.toString() ??
@@ -700,8 +717,8 @@ class CarComparisonPage extends StatelessWidget {
   Widget _buildCarImage(Map<String, dynamic> car) {
     final imageUrl = car['image_url']?.toString();
     if (imageUrl != null && imageUrl.isNotEmpty) {
-      final built = _buildFullImageUrl(imageUrl);
-      return _listingNetworkImage(built, fit: BoxFit.cover);
+      final built = buildLegacyFullImageUrl(imageUrl);
+      return listingNetworkImage(built, fit: BoxFit.cover);
     }
     return Container(
       color: Colors.white10,
@@ -828,7 +845,7 @@ class CarComparisonPage extends StatelessWidget {
         ],
       },
       {
-        'title': _statusTitleGlobal(context),
+        'title': AppLocalizations.of(context)!.status,
         'icon': Icons.assignment_turned_in,
         'rows': [
           {
@@ -843,7 +860,7 @@ class CarComparisonPage extends StatelessWidget {
             'icon': Icons.build,
           },
           {
-            'label': _quickSellTextGlobal(context),
+            'label': AppLocalizations.of(context)!.quickSell,
             'key': 'is_quick_sell',
             'isBoolean': true,
             'icon': Icons.flash_on,
@@ -1079,7 +1096,7 @@ class CarComparisonPage extends StatelessWidget {
             ),
           ),
           child: Text(
-            boolVal ? _yesTextGlobal(context) : _noTextGlobal(context),
+            boolVal ? yesText(context) : noText(context),
             style: TextStyle(
               color: boolVal ? Colors.greenAccent : Colors.redAccent,
               fontWeight: FontWeight.w600,
@@ -1109,7 +1126,7 @@ class CarComparisonPage extends StatelessWidget {
 
     if (value == null) return '-';
     if (key == 'price') {
-      return _formatCurrencyGlobal(context, value);
+      return formatCurrency(context, value);
     }
     if (key == 'region_specs') {
       final c = value.toString().trim().toLowerCase();
@@ -1119,8 +1136,8 @@ class CarComparisonPage extends StatelessWidget {
 
     if (property['isBoolean'] == true || property['isBoolean'] == 'true') {
       return value == true || value == 'true'
-          ? _yesTextGlobal(context)
-          : _noTextGlobal(context);
+          ? yesText(context)
+          : noText(context);
     }
 
     final suffix = property['suffix'] ?? '';
@@ -1137,10 +1154,10 @@ class CarComparisonPage extends StatelessWidget {
       'title_status',
     };
     if (translatableKeys.contains(key)) {
-      final translated = _translateValueGlobal(context, raw) ?? raw;
+      final translated = translateListingValue(context, raw) ?? raw;
       return translated + (suffix?.toString() ?? '');
     }
     // Localize digits for numeric-like strings
-    return _localizeDigitsGlobal(context, raw + (suffix?.toString() ?? ''));
+    return localizeDigits(context, raw + (suffix?.toString() ?? ''));
   }
 }
