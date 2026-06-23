@@ -93,6 +93,19 @@ def _check_no_example_app_id() -> None:
     _ok("no com.example in core Android/pubspec files")
 
 
+def _check_car_catalog_asset() -> None:
+    path = ROOT / "assets/car_catalog.json"
+    _check_file(path, "car catalog asset")
+    data = json.loads(path.read_text(encoding="utf-8"))
+    brands = data.get("brands")
+    models = data.get("models")
+    if not isinstance(brands, list) or len(brands) < 10:
+        _fail("car_catalog.json must include brands list (run flutter pub run bin/export_car_catalog.dart)")
+    if not isinstance(models, dict) or not models:
+        _fail("car_catalog.json must include models map (run flutter pub run bin/export_car_catalog.dart)")
+    _ok(f"car catalog asset ({len(brands)} brands, {len(models)} model groups)")
+
+
 def main() -> None:
     print(f"Publish preflight ({ROOT.name})")
     _check_license()
@@ -102,6 +115,7 @@ def main() -> None:
     _check_splash_assets()
     _check_signing_example()
     _check_no_example_app_id()
+    _check_car_catalog_asset()
     print("All static publish checks passed.")
 
 

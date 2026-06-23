@@ -1,23 +1,11 @@
-import 'package:flutter/foundation.dart';
-
 /// Single source of truth for car brands, models, and trims.
 /// Generated from kk/legacy/app.py, tools/data/*.json, and recovered_*.json - run: python tools/extract_car_catalog.py
 class CarCatalog {
   CarCatalog._();
 
   static List<String>? _runtimeBrands;
-
-  /// Optional brand list from [assets/car_catalog.json] (set by [CarCatalogLoader]).
-  static void applyBrandsFromAsset(List<String> brands) {
-    if (brands.isEmpty) return;
-    _runtimeBrands = List.unmodifiable(brands);
-  }
-
-  /// Clears asset override (tests only).
-  @visibleForTesting
-  static void resetBrandsOverrideForTest() {
-    _runtimeBrands = null;
-  }
+  static Map<String, List<String>>? _runtimeModels;
+  static Map<String, Map<String, List<String>>>? _runtimeTrims;
 
   static List<String> get brands => _runtimeBrands ?? _embeddedBrands;
 
@@ -106,7 +94,7 @@ class CarCatalog {
     'Škoda',
   ];
 
-  static final Map<String, List<String>> models = {
+  static final Map<String, List<String>> _embeddedModels = {
     'Acura': [
       'ILX',
       'MDX',
@@ -1546,7 +1534,7 @@ class CarCatalog {
     ],
   };
 
-  static final Map<String, Map<String, List<String>>> trimsByBrandModel = {
+  static final Map<String, Map<String, List<String>>> _embeddedTrimsByBrandModel = {
     'Acura': {
       'ILX': [
         'Base',
@@ -10810,6 +10798,76 @@ class CarCatalog {
       ],
     },
   };
+
+  /// Clears asset overrides (tests only).
+  static void resetCatalogOverrideForTest() {
+    _runtimeBrands = null;
+    _runtimeModels = null;
+    _runtimeTrims = null;
+  }
+
+  static void resetBrandsOverrideForTest() => resetCatalogOverrideForTest();
+
+  static Map<String, List<String>> get models =>
+      _runtimeModels ?? _embeddedModels;
+
+  static Map<String, Map<String, List<String>>> get trimsByBrandModel =>
+      _runtimeTrims ?? _embeddedTrimsByBrandModel;
+
+  /// JSON payload for [assets/car_catalog.json] (run `flutter pub run bin/export_car_catalog.dart`).
+  static Map<String, dynamic> toAssetJson() => {
+        'brands': _embeddedBrands,
+        'models': _embeddedModels,
+        'trimsByBrandModel': _embeddedTrimsByBrandModel,
+      };
+
+  /// Applies catalog sections from decoded asset JSON.
+  static void applyCatalogFromAsset(Map<String, dynamic> data) {
+    final brands = data['brands'];
+    if (brands is List && brands.isNotEmpty) {
+      _runtimeBrands = List.unmodifiable(
+        brands.map((e) => e.toString()).toList(growable: false),
+      );
+    }
+
+    final models = data['models'];
+    if (models is Map && models.isNotEmpty) {
+      final parsed = <String, List<String>>{};
+      for (final entry in models.entries) {
+        final key = entry.key.toString();
+        final value = entry.value;
+        if (value is! List) continue;
+        parsed[key] = value.map((e) => e.toString()).toList(growable: false);
+      }
+      if (parsed.isNotEmpty) {
+        _runtimeModels = parsed;
+      }
+    }
+
+    final trims = data['trimsByBrandModel'];
+    if (trims is Map && trims.isNotEmpty) {
+      final parsed = <String, Map<String, List<String>>>{};
+      for (final brandEntry in trims.entries) {
+        final brand = brandEntry.key.toString();
+        final modelMap = brandEntry.value;
+        if (modelMap is! Map) continue;
+        final modelsForBrand = <String, List<String>>{};
+        for (final modelEntry in modelMap.entries) {
+          final model = modelEntry.key.toString();
+          final trimList = modelEntry.value;
+          if (trimList is! List) continue;
+          modelsForBrand[model] =
+              trimList.map((e) => e.toString()).toList(growable: false);
+        }
+        if (modelsForBrand.isNotEmpty) {
+          parsed[brand] = modelsForBrand;
+        }
+      }
+      if (parsed.isNotEmpty) {
+        _runtimeTrims = parsed;
+      }
+    }
+  }
 
   /// Trims for a given brand and model; returns ['Base'] only when no trim data exists.
   static List<String> trimsFor(String? brand, String? model) {
