@@ -7,7 +7,6 @@ import 'dart:convert';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:auto_size_text/auto_size_text.dart';
 import 'package:cached_network_image/cached_network_image.dart';
-import 'package:url_launcher/url_launcher.dart';
 import 'package:flutter/services.dart' as services;
 import 'dart:ui' as ui;
 import 'dart:async';
@@ -16,13 +15,11 @@ import 'package:image_picker/image_picker.dart';
 import 'package:video_thumbnail/video_thumbnail.dart';
 import 'dart:io';
 import 'package:shared_preferences/shared_preferences.dart';
-import 'package:share_plus/share_plus.dart';
 import '../services/analytics_service.dart';
 import '../services/api_service.dart';
 import '../services/auth_service.dart';
 import '../shared/auth/token_store.dart';
 import '../shared/text/pretty_title_case.dart';
-import '../shared/vin/open_vin_search.dart';
 import '../shared/media/media_url.dart';
 import '../shared/i18n/locale_formatting.dart';
 import '../shared/i18n/legacy_inline_text.dart';
@@ -45,9 +42,6 @@ import '../shared/errors/user_error_text.dart';
 import '../features/home/home_feed_errors.dart';
 import '../shared/listings/listing_events.dart';
 import '../shared/listings/listing_identity.dart';
-import '../shared/listings/listing_status.dart';
-import '../shared/listings/listing_sold_badge.dart';
-import '../shared/listings/listing_share.dart';
 import '../shared/listings/listing_card_data.dart' as listing_card_data;
 import '../shared/prefs/listing_layout_prefs.dart';
 import '../shared/prefs/sell_draft_media_persistence.dart';
@@ -68,18 +62,16 @@ import 'package:http_parser/http_parser.dart';
 import 'package:path/path.dart' as p;
 import '../features/chat/chat_pages.dart' as carzo_chat;
 import '../pages/dealers_directory_page.dart';
-import '../shared/listings/listing_management.dart'
-    show
-        confirmAndDeleteListing,
-        confirmMarkListingSold,
-        openEditListingPage,
-        setListingSoldStatus;
-import '../shared/listings/listing_owner.dart';
 import '../features/comparison/state/car_comparison_store.dart';
 import '../features/saved_searches/saved_search_home_bridge.dart';
 import '../pages/saved_searches_page.dart';
 import '../pages/comparison_page.dart';
 export '../pages/comparison_page.dart';
+import '../pages/car_details_page.dart';
+export '../pages/car_details_page.dart';
+import '../features/listing/car_listing_specs_grid.dart' as car_listing_specs_grid;
+import '../features/listing/listing_spec_item.dart';
+export '../features/listing/car_listing_specs_grid.dart';
 import '../features/listing/listing_mappers.dart';
 import '../data/car_catalog.dart';
 import '../data/car_name_translations.dart';
@@ -87,10 +79,8 @@ import '../services/car_spec_index.dart';
 import '../services/saved_search_service.dart';
 import '../pages/legal_document_page.dart';
 import '../shared/account/delete_account_dialog.dart';
-import '../shared/trust/report_dialog.dart';
 import '../models/online_spec_variant.dart';
 import '../pages/listing_image_gallery_page.dart';
-import '../widgets/network_video_thumbnail.dart';
 import 'app_api_base.dart';
 import '../data/brand_logo_filenames.dart';
 import 'widgets/global_listing_card.dart';
@@ -116,7 +106,6 @@ part '../features/sell/sell_step2.dart';
 part '../features/sell/sell_step3.dart';
 part '../features/sell/sell_step4.dart';
 part '../features/sell/sell_step5.dart';
-part '../pages/car_details_page.dart';
 part '../pages/production_auth_pages.dart';
 part '../pages/production_account_pages.dart';
 part 'legacy_fallback_routes.dart';
@@ -142,6 +131,14 @@ String carRegionSpecDisplayLabelLocalized(BuildContext context, String code) =>
 
 bool isValidCarRegionSpecCode(String? s) =>
     region_spec_labels.isValidCarRegionSpecCode(s);
+
+Widget buildCarListingSpecsGrid(
+  BuildContext context,
+  Map<String, dynamic> car,
+) =>
+    car_listing_specs_grid.buildCarListingSpecsGrid(context, car);
+
+typedef _SpecItem = ListingSpecItem;
 
 // Part libraries cannot see imports; forward body-type asset state for home/sell UIs.
 List<String> get globalBodyTypes => body_type_assets.globalBodyTypes;

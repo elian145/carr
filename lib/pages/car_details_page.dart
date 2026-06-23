@@ -1,4 +1,46 @@
-part of '../app/carzo_shared.dart';
+﻿import 'dart:async';
+import 'dart:convert';
+
+import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
+import 'package:shared_preferences/shared_preferences.dart';
+import 'package:url_launcher/url_launcher.dart';
+
+import '../app/widgets/global_listing_card.dart'
+    show buildGlobalCarCard, mapListingToGlobalCarCardData;
+import '../app/widgets/listing_network_image.dart';
+import '../data/car_name_translations.dart';
+import '../features/chat/chat_pages.dart' as carzo_chat;
+import '../features/comparison/widgets/comparison_button.dart';
+import '../features/listing/car_listing_specs_grid.dart';
+import '../l10n/app_localizations.dart';
+import '../pages/listing_image_gallery_page.dart';
+import '../services/analytics_service.dart';
+import '../services/api_service.dart';
+import '../services/auth_service.dart';
+import '../shared/debug/app_log.dart';
+import '../shared/errors/user_error_text.dart';
+import '../shared/i18n/legacy_inline_text.dart';
+import '../shared/i18n/listing_value_labels.dart';
+import '../shared/i18n/locale_formatting.dart';
+import '../shared/listings/listing_identity.dart';
+import '../shared/listings/listing_management.dart'
+    show
+        confirmAndDeleteListing,
+        confirmMarkListingSold,
+        openEditListingPage,
+        setListingSoldStatus;
+import '../shared/listings/listing_owner.dart';
+import '../shared/listings/listing_share.dart';
+import '../shared/listings/listing_sold_badge.dart';
+import '../shared/listings/listing_status.dart';
+import '../shared/listings/listing_uploaded_ago.dart';
+import '../shared/media/media_url.dart';
+import '../shared/prefs/listing_layout_prefs.dart';
+import '../shared/text/pretty_title_case.dart';
+import '../shared/trust/report_dialog.dart';
+import '../theme_provider.dart';
+import '../widgets/network_video_thumbnail.dart';
 
 // Placeholder classes for other pages
 class CarDetailsPage extends StatefulWidget {
@@ -150,7 +192,7 @@ class _CarDetailsPageState extends State<CarDetailsPage> {
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
         content: Text(
-          _trLegacyText(
+          trLegacyText(
             context,
             nowSold ? 'Listing marked as sold' : 'Listing is available again',
             ar: nowSold ? 'تم تحديد الإعلان كمباع' : 'الإعلان متاح مجدداً',
@@ -227,7 +269,7 @@ class _CarDetailsPageState extends State<CarDetailsPage> {
           ? (car!['images'] as List)
           : const [];
       if (primary.isNotEmpty) {
-        urls.add(_buildFullImageUrl(primary));
+        urls.add(buildLegacyFullImageUrl(primary));
       }
       for (final dynamic it in imgs) {
         if (it is Map &&
@@ -242,7 +284,7 @@ class _CarDetailsPageState extends State<CarDetailsPage> {
           s = it.toString();
         }
         if (s.isNotEmpty) {
-          final full = _buildFullImageUrl(s);
+          final full = buildLegacyFullImageUrl(s);
           if (!urls.contains(full)) urls.add(full);
         }
       }
@@ -266,7 +308,7 @@ class _CarDetailsPageState extends State<CarDetailsPage> {
                       .toString()
                 : it.toString();
             if (s.isNotEmpty) {
-              urls.add(_buildFullImageUrl(s));
+              urls.add(buildLegacyFullImageUrl(s));
               break;
             }
           }
@@ -279,7 +321,7 @@ class _CarDetailsPageState extends State<CarDetailsPage> {
                         '')
                     .toString()
               : first.toString();
-          if (s.isNotEmpty) urls.add(_buildFullImageUrl(s));
+          if (s.isNotEmpty) urls.add(buildLegacyFullImageUrl(s));
         }
       }
     }
@@ -321,7 +363,7 @@ class _CarDetailsPageState extends State<CarDetailsPage> {
     if (car == null) return urls;
     final paths = _normalizeVideoPaths(car!['videos']);
     for (final String s in paths) {
-      final full = _buildFullImageUrl(s);
+      final full = buildLegacyFullImageUrl(s);
       if (full.isNotEmpty && !urls.contains(full)) urls.add(full);
     }
     return urls;
@@ -531,7 +573,7 @@ class _CarDetailsPageState extends State<CarDetailsPage> {
           : null;
       await AnalyticsService.trackView(id, listingSnapshot: snap);
     } catch (e) {
-      _debugLog('Failed to track view: $e');
+      appLog('Failed to track view: $e');
     }
   }
 
@@ -575,7 +617,7 @@ class _CarDetailsPageState extends State<CarDetailsPage> {
             height: 46,
             child: Semantics(
               button: true,
-              label: _trLegacyText(
+              label: trLegacyText(
                 context,
                 'Call Seller',
                 ar: 'اتصل بالبائع',
@@ -596,7 +638,7 @@ class _CarDetailsPageState extends State<CarDetailsPage> {
                 ),
                 icon: const Icon(Icons.phone, size: 19),
                 label: Text(
-                  _trLegacyText(context, 'Call Seller', ar: 'اتصل بالبائع', ku: 'پەیوەندی بە فرۆشیار'),
+                  trLegacyText(context, 'Call Seller', ar: 'اتصل بالبائع', ku: 'پەیوەندی بە فرۆشیار'),
                   style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w600),
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,
@@ -784,8 +826,7 @@ class _CarDetailsPageState extends State<CarDetailsPage> {
     Navigator.push<void>(
       context,
       MaterialPageRoute<void>(
-        builder: (ctx) => AuthGuard(
-          child: carzo_chat.ChatConversationPage(
+        builder: (ctx) => carzo_chat.ChatConversationPage(
             carId: carIdForChat,
             receiverId: receiverId,
             receiverName: receiverName,
@@ -803,7 +844,6 @@ class _CarDetailsPageState extends State<CarDetailsPage> {
               'trim': car!['trim'],
               'year': car!['year'],
             },
-          ),
         ),
       ),
     );
@@ -826,7 +866,7 @@ class _CarDetailsPageState extends State<CarDetailsPage> {
       // Track share for analytics
       await AnalyticsService.trackShare(widget.carId.toString());
     } catch (e) {
-      _debugLog('Failed to share car: $e');
+      appLog('Failed to share car: $e');
     }
   }
 
@@ -962,7 +1002,7 @@ class _CarDetailsPageState extends State<CarDetailsPage> {
       if (mounted) setState(() => relatedCars = list);
       unawaited(sp.setString(relKey, json.encode(relatedCars)));
     } catch (e) {
-      _debugLog('Failed to load similar/related: $e');
+      appLog('Failed to load similar/related: $e');
     } finally {
       if (mounted) {
         setState(() {
@@ -1007,13 +1047,13 @@ class _CarDetailsPageState extends State<CarDetailsPage> {
                       Semantics(
                         button: true,
                         label: _isListingSold
-                            ? _trLegacyText(
+                            ? trLegacyText(
                                 context,
                                 'Mark as available',
                                 ar: 'متاح مجدداً',
                                 ku: 'بەردەست بکەرەوە',
                               )
-                            : _trLegacyText(
+                            : trLegacyText(
                                 context,
                                 'Mark as sold',
                                 ar: 'تحديد كمباع',
@@ -1021,13 +1061,13 @@ class _CarDetailsPageState extends State<CarDetailsPage> {
                               ),
                         child: IconButton(
                           tooltip: _isListingSold
-                              ? _trLegacyText(
+                              ? trLegacyText(
                                   context,
                                   'Mark as available',
                                   ar: 'متاح مجدداً',
                                   ku: 'بەردەست بکەرەوە',
                                 )
-                              : _trLegacyText(
+                              : trLegacyText(
                                   context,
                                   'Mark as sold',
                                   ar: 'تحديد كمباع',
@@ -1092,7 +1132,7 @@ class _CarDetailsPageState extends State<CarDetailsPage> {
                           PopupMenuItem(
                             value: 'report_listing',
                             child: Text(
-                              _trLegacyText(
+                              trLegacyText(
                                 ctx,
                                 'Report listing',
                                 ar: 'الإبلاغ عن الإعلان',
@@ -1109,7 +1149,7 @@ class _CarDetailsPageState extends State<CarDetailsPage> {
                             PopupMenuItem(
                               value: 'report_user',
                               child: Text(
-                                _trLegacyText(
+                                trLegacyText(
                                   ctx,
                                   'Report seller',
                                   ar: 'الإبلاغ عن البائع',
@@ -1153,7 +1193,7 @@ class _CarDetailsPageState extends State<CarDetailsPage> {
                                     itemBuilder: (context, index) {
                                       if (index < _imageUrls.length) {
                                         final url = _imageUrls[index];
-                                        return _listingNetworkImage(
+                                        return listingNetworkImage(
                                           url,
                                           fit: BoxFit.cover,
                                           width: double.infinity,
@@ -1348,7 +1388,7 @@ class _CarDetailsPageState extends State<CarDetailsPage> {
                                       _displayModelName(context).isEmpty) ...[
                                     SizedBox(width: 12),
                                     Text(
-                                      _formatCurrencyGlobal(
+                                      formatCurrency(
                                         context,
                                         car!['price'],
                                       ),
@@ -1385,7 +1425,7 @@ class _CarDetailsPageState extends State<CarDetailsPage> {
                                     if (car!['price'] != null) ...[
                                       SizedBox(width: 12),
                                       Text(
-                                        _formatCurrencyGlobal(
+                                        formatCurrency(
                                           context,
                                           car!['price'],
                                         ),
@@ -1418,7 +1458,7 @@ class _CarDetailsPageState extends State<CarDetailsPage> {
                                     ? const Color(0xFF757575)
                                     : Colors.white70,
                               );
-                              final uploadedDetail = _listingUploadedAgo(
+                              final uploadedDetail = listingUploadedAgo(
                                 context,
                                 car!,
                               );
@@ -1453,7 +1493,7 @@ class _CarDetailsPageState extends State<CarDetailsPage> {
                                                   Flexible(
                                                     child: Text(
                                                       '${AppLocalizations.of(context)!.cityLabel}: '
-                                                      '${_translateValueGlobal(context, _getFirstNonEmpty(car!, ['city', 'location'])) ?? _getFirstNonEmpty(car!, ['city', 'location'])}',
+                                                      '${translateListingValue(context, _getFirstNonEmpty(car!, ['city', 'location'])) ?? _getFirstNonEmpty(car!, ['city', 'location'])}',
                                                       style: cityLabelStyle,
                                                       // Allow long cities like "Sulaymaniyah" to show fully.
                                                       maxLines: 2,
@@ -1713,7 +1753,7 @@ class _CarDetailsPageState extends State<CarDetailsPage> {
             .trim();
     final String avatarUrl = avatarRaw.isEmpty
         ? ''
-        : _buildFullImageUrl(avatarRaw);
+        : buildLegacyFullImageUrl(avatarRaw);
 
     final bool isVerified =
         seller['is_verified'] == true || seller['verified'] == true;
@@ -1731,8 +1771,8 @@ class _CarDetailsPageState extends State<CarDetailsPage> {
         accountType == 'dealer' && dealerStatus == 'approved';
     final bool isDealerSeller = accountType == 'dealer';
     final String sellerTypeLabel = isDealerSeller
-        ? _trLegacyText(context, 'Dealership', ar: 'معرض', ku: 'نمایشگا')
-        : _trLegacyText(
+        ? trLegacyText(context, 'Dealership', ar: 'معرض', ku: 'نمایشگا')
+        : trLegacyText(
             context,
             'Private seller',
             ar: 'بائع فردي',
@@ -1750,7 +1790,7 @@ class _CarDetailsPageState extends State<CarDetailsPage> {
                     ? name
                     : (fullName.isNotEmpty
                           ? fullName
-                          : _trLegacyText(
+                          : trLegacyText(
                               context,
                               'Dealer',
                               ar: 'وكيل',
@@ -1912,7 +1952,7 @@ class _CarDetailsPageState extends State<CarDetailsPage> {
                           ),
                           SizedBox(width: 4),
                           Text(
-                            _trLegacyText(
+                            trLegacyText(
                               context,
                               'Verified',
                               ar: 'موثّق',
@@ -1932,19 +1972,19 @@ class _CarDetailsPageState extends State<CarDetailsPage> {
               if (isDealerSeller) ...[
                 detailRow(
                   Icons.phone_outlined,
-                  _trLegacyText(context, 'Phone', ar: 'الهاتف', ku: 'تەلەفۆن'),
+                  trLegacyText(context, 'Phone', ar: 'الهاتف', ku: 'تەلەفۆن'),
                   phone,
                 ),
                 detailRow(
                   Icons.email_outlined,
-                  _trLegacyText(context, 'Email', ar: 'البريد الإلكتروني', ku: 'ئیمەیل'),
+                  trLegacyText(context, 'Email', ar: 'البريد الإلكتروني', ku: 'ئیمەیل'),
                   email,
                 ),
               ],
               if (isDealerSeller)
                 detailRow(
                   Icons.location_on_outlined,
-                  _trLegacyText(context, 'Location', ar: 'الموقع', ku: 'شوێن'),
+                  trLegacyText(context, 'Location', ar: 'الموقع', ku: 'شوێن'),
                   locationShown,
                 ),
               if (isDealerSeller)
@@ -1957,7 +1997,7 @@ class _CarDetailsPageState extends State<CarDetailsPage> {
                 Padding(
                   padding: const EdgeInsets.only(top: 10),
                   child: Text(
-                    _trLegacyText(
+                    trLegacyText(
                       context,
                       'Tap to open dealership page',
                       ar: 'اضغط لفتح صفحة المعرض',
@@ -2047,612 +2087,3 @@ class _CarDetailsPageState extends State<CarDetailsPage> {
   }
 }
 
-/// Full URLs for listing images tagged `kind: damage` (shared by detail + specs grid).
-List<String> listingDamageImageFullUrls(Map<String, dynamic> car) {
-  final List<String> urls = [];
-  final List<dynamic> imgs =
-      (car['images'] is List) ? (car['images'] as List) : const [];
-  for (final dynamic it in imgs) {
-    if (it is! Map) continue;
-    if ((it['kind'] ?? '').toString().toLowerCase() != 'damage') continue;
-    final s =
-        (it['image_url'] ?? it['url'] ?? it['path'] ?? it['src'] ?? '').toString();
-    if (s.isNotEmpty) {
-      final full = _buildFullImageUrl(s);
-      if (!urls.contains(full)) urls.add(full);
-    }
-  }
-  return urls;
-}
-
-/// Damage photos for preview / review: API `images` with `kind: damage`, else
-/// sell-flow `damage_images` (XFile or path strings) before submit.
-List<dynamic> listingDamagePreviewEntries(Map<String, dynamic> car) {
-  final List<dynamic> out = [];
-  for (final url in listingDamageImageFullUrls(car)) {
-    if (url.trim().isNotEmpty) out.add(url);
-  }
-  if (out.isNotEmpty) return out;
-  final raw = car['damage_images'];
-  if (raw is! List) return out;
-  for (final e in raw) {
-    if (e is XFile) {
-      if (e.path.trim().isNotEmpty) out.add(e);
-    } else {
-      final s = e?.toString().trim() ?? '';
-      if (s.isNotEmpty) out.add(e);
-    }
-  }
-  return out;
-}
-
-/// Specification grid matching [CarDetailsPage] (shared with sell-flow review).
-Widget buildCarListingSpecsGrid(
-  BuildContext context,
-  Map<String, dynamic> car,
-) {
-  final List<dynamic> damagePreviewEntries = listingDamagePreviewEntries(car);
-  String? pickNE(Map<String, dynamic> map, List<String> keys) {
-    for (final key in keys) {
-      final dynamic value = map[key];
-      if (value == null) continue;
-      final String stringValue = value.toString().trim();
-      if (stringValue.isNotEmpty) return stringValue;
-    }
-    return null;
-  }
-
-  String formatNumericLabel(String raw) {
-    try {
-      final num? value = num.tryParse(raw.replaceAll(RegExp(r'[^0-9\.-]'), ''));
-      if (value == null) return raw;
-      return _decimalFormatterGlobal(context).format(value);
-    } catch (e, st) { logNonFatal(e, st); 
-      return raw;
-    }
-  }
-
-  String orDash(String? s) {
-    final v = (s ?? '').toString().trim();
-    return v.isEmpty ? '—' : v;
-  }
-
-  Widget detailRowSpec({
-    required IconData icon,
-    required String label,
-    required String? value,
-    Widget? valueWidget,
-    VoidCallback? onTap,
-  }) {
-    if (valueWidget == null && (value == null || value.isEmpty)) {
-      return SizedBox.shrink();
-    }
-    final isLight = Theme.of(context).brightness == Brightness.light;
-    final content = Container(
-      margin: EdgeInsets.only(bottom: 8),
-      padding: EdgeInsets.symmetric(horizontal: 12, vertical: 10),
-      decoration: BoxDecoration(
-        color: onTap != null
-            ? (isLight ? const Color(0xFFFFF2E8) : Colors.white.withValues(alpha: 0.09))
-            : (isLight ? const Color(0xFFF3F3F3) : Colors.white.withValues(alpha: 0.06)),
-        borderRadius: BorderRadius.circular(12),
-        border: Border.all(
-          color: onTap != null
-              ? const Color(0xFFFF6B00).withValues(alpha: isLight ? 0.34 : 0.42)
-              : (isLight ? const Color(0xFFE0E0E0) : Colors.white12),
-          width: onTap != null ? 1.2 : 1,
-        ),
-        boxShadow: onTap != null
-            ? [
-                BoxShadow(
-                  color: Colors.black.withValues(alpha: isLight ? 0.04 : 0.18),
-                  blurRadius: 10,
-                  offset: const Offset(0, 4),
-                ),
-              ]
-            : const [],
-      ),
-      child: Row(
-        children: [
-          Container(
-            padding: const EdgeInsets.all(8),
-            decoration: BoxDecoration(
-              color: onTap != null
-                  ? const Color(0xFFFF6B00)
-                  : const Color(0xFFFF6B00),
-              borderRadius: BorderRadius.circular(10),
-            ),
-            child: Icon(icon, size: 18, color: Colors.black),
-          ),
-          const SizedBox(width: 12),
-          Expanded(
-            child: Text(
-              label,
-              style: TextStyle(
-                color: isLight ? const Color(0xFF3A3A3A) : Colors.white70,
-                fontSize: 14,
-                fontWeight: FontWeight.w600,
-              ),
-            ),
-          ),
-          if (valueWidget != null)
-            valueWidget
-          else if (onTap != null)
-            Row(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                Container(
-                  padding:
-                      const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
-                  decoration: BoxDecoration(
-                    color: const Color(0xFFFF6B00),
-                    borderRadius: BorderRadius.circular(999),
-                  ),
-                  child: Text(
-                    value!,
-                    style: const TextStyle(
-                      color: Colors.black,
-                      fontWeight: FontWeight.w800,
-                      fontSize: 12,
-                    ),
-                  ),
-                ),
-                const SizedBox(width: 8),
-                const Icon(Icons.chevron_right, color: Color(0xFFFF6B00)),
-              ],
-            )
-          else
-            Container(
-              padding: EdgeInsets.symmetric(horizontal: 10, vertical: 6),
-              decoration: BoxDecoration(
-                color: Color(0xFFFF6B00),
-                borderRadius: BorderRadius.circular(999),
-              ),
-              child: Text(
-                value!,
-                style: TextStyle(
-                  color: Colors.black,
-                  fontWeight: FontWeight.w800,
-                  fontSize: 12,
-                ),
-              ),
-            ),
-        ],
-      ),
-    );
-    if (onTap == null) return content;
-    return Material(
-      color: Colors.transparent,
-      child: InkWell(
-        borderRadius: BorderRadius.circular(12),
-        onTap: onTap,
-        child: content,
-      ),
-    );
-  }
-
-  Widget specCard(_SpecItem item) {
-    return Container(
-      padding: EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-      decoration: BoxDecoration(
-        color: Color(0xFFFF6B00),
-        borderRadius: BorderRadius.circular(12),
-      ),
-      child: LayoutBuilder(
-        builder: (context, constraints) {
-          final double labelFontSize =
-              (constraints.maxWidth * 0.13).clamp(9.0, 11.0);
-          final double valueFontSize =
-              (constraints.maxWidth * 0.16).clamp(10.0, 14.0);
-
-          final labelStyle = TextStyle(
-            fontSize: labelFontSize,
-            color: Colors.black87,
-            fontWeight: FontWeight.w700,
-            letterSpacing: 0.3,
-            height: 1.05,
-          );
-          final valueStyle = TextStyle(
-            fontSize: valueFontSize,
-            height: 1.0,
-            color: Colors.black,
-            fontWeight: FontWeight.w800,
-          );
-
-          return Column(
-            crossAxisAlignment: CrossAxisAlignment.center,
-            children: [
-              Expanded(
-                flex: 6,
-                child: Center(
-                  child: Row(
-                    mainAxisSize: MainAxisSize.min,
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    crossAxisAlignment: CrossAxisAlignment.center,
-                    children: [
-                      Icon(
-                        item.icon,
-                        size: constraints.maxWidth * 0.13,
-                        color: Colors.black87,
-                      ),
-                      const SizedBox(width: 4),
-                      ConstrainedBox(
-                        constraints: BoxConstraints(
-                          maxWidth:
-                              constraints.maxWidth - (constraints.maxWidth * 0.13) - 4,
-                        ),
-                        child: AutoSizeText(
-                          item.label,
-                          maxLines: 1,
-                          textAlign: TextAlign.center,
-                          softWrap: false,
-                          textScaleFactor: 1.0,
-                          style: labelStyle,
-                          minFontSize: 7,
-                          stepGranularity: 0.5,
-                          overflow: TextOverflow.clip,
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-              ),
-              Padding(
-                padding: EdgeInsets.symmetric(
-                  vertical: math.max(3.0, constraints.maxHeight * 0.02),
-                  horizontal: 6,
-                ),
-                child: Divider(
-                  height: 1,
-                  thickness: 1,
-                  color: Colors.black.withValues(alpha: 0.22),
-                ),
-              ),
-              Expanded(
-                flex: 5,
-                child: Center(
-                  child: AutoSizeText(
-                    item.value!,
-                    maxLines: 1,
-                    textAlign: TextAlign.center,
-                    textScaleFactor: 1.0,
-                    style: valueStyle,
-                    minFontSize: 9,
-                    stepGranularity: 0.5,
-                    overflow: TextOverflow.clip,
-                  ),
-                ),
-              ),
-            ],
-          );
-        },
-      ),
-    );
-  }
-
-  final String mileageVal = car['mileage'] != null
-      ? '${_localizeDigitsGlobal(context, formatNumericLabel(car['mileage'].toString()))} ${AppLocalizations.of(context)!.unit_km}'
-      : '—';
-
-  final String? transRaw = pickNE(car, ['transmission']);
-  final String transmissionVal = orDash(
-    _translateValueGlobal(context, transRaw) ?? transRaw,
-  );
-
-  final String? engineSizePrimary = pickNE(car, [
-    'engine_size',
-    'engine_size_liters',
-    'engine_size_l',
-    'engineSize',
-    'engineSizeLiters',
-    'engine',
-  ]) ??
-      () {
-        final dynamic specsRaw = car['specs'] ?? car['spec'] ?? car['details'];
-        if (specsRaw is Map) {
-          final specs = Map<String, dynamic>.from(specsRaw);
-          return pickNE(specs, [
-            'engine_size',
-            'engine_size_liters',
-            'engine_size_l',
-            'engineSize',
-            'engineSizeLiters',
-            'engine',
-          ]);
-        }
-        return null;
-      }();
-  final String engineCardVal = () {
-    final raw = engineSizePrimary?.toString().trim() ?? '';
-    if (raw.isEmpty) return '—';
-    final eng = OnlineSpecVariant.parseLeadingEngineLiters(raw) ??
-        double.tryParse(raw);
-    if (eng != null && eng > 0) {
-      return '${_localizeDigitsGlobal(context, eng.toStringAsFixed(1))}${AppLocalizations.of(context)!.unit_liter_suffix}';
-    }
-    return _localizeDigitsGlobal(context, raw);
-  }();
-
-  final String? cylRawPrimary = pickNE(car, [
-    'cylinder_count',
-    'cylinders',
-    'cylinderCount',
-  ]);
-  final String cylinderVal = cylRawPrimary != null
-      ? _localizeDigitsGlobal(context, cylRawPrimary)
-      : '—';
-
-  final String titleStatusVal = orDash(
-    car['title_status'] != null
-        ? (car['title_status'].toString().toLowerCase() == 'damaged'
-              ? (car['damaged_parts'] != null
-                    ? AppLocalizations.of(context)!.titleStatusDamagedWithParts(
-                        _localizeDigitsGlobal(
-                          context,
-                          car['damaged_parts'].toString(),
-                        ),
-                      )
-                    : AppLocalizations.of(context)!.value_title_damaged)
-              : AppLocalizations.of(context)!.value_title_clean)
-        : null,
-  );
-
-  final String? fuelRaw = pickNE(car, ['fuel_type', 'fuelType', 'fuel']);
-  final String fuelVal = orDash(
-    _translateValueGlobal(context, fuelRaw) ?? fuelRaw,
-  );
-
-  final List<_SpecItem> primary = [
-    _SpecItem(
-      icon: Icons.speed,
-      label: AppLocalizations.of(context)!.mileageLabel,
-      value: mileageVal,
-    ),
-    _SpecItem(
-      icon: Icons.settings_input_component,
-      label: AppLocalizations.of(context)!.detail_cylinders,
-      value: cylinderVal,
-    ),
-    _SpecItem(
-      icon: Icons.straighten,
-      label: AppLocalizations.of(context)!.detail_engine,
-      value: engineCardVal,
-    ),
-    _SpecItem(
-      icon: Icons.public,
-      label: AppLocalizations.of(context)!.regionSpecsLabel,
-      value: orDash(() {
-        final raw = pickNE(car, ['region_specs', 'regionSpecs']) ?? '';
-        final c = raw.toString().trim().toLowerCase();
-        if (!isValidCarRegionSpecCode(c)) return '';
-        return carRegionSpecDisplayLabel(c);
-      }()),
-    ),
-    _SpecItem(
-      icon: Icons.settings,
-      label: AppLocalizations.of(context)!.transmissionLabel,
-      value: transmissionVal,
-    ),
-    _SpecItem(
-      icon: Icons.local_gas_station,
-      label: AppLocalizations.of(context)!.detail_fuel,
-      value: fuelVal,
-    ),
-  ];
-
-  final List<Widget> details = [
-    detailRowSpec(
-      icon: Icons.layers,
-      label: AppLocalizations.of(context)!.trimLabel,
-      value: orDash(
-        _translateValueGlobal(context, pickNE(car, ['trim'])) ??
-            pickNE(car, ['trim']),
-      ),
-    ),
-    detailRowSpec(
-      icon: Icons.check_circle,
-      label: AppLocalizations.of(context)!.detail_condition,
-      value: orDash(
-        _translateValueGlobal(context, pickNE(car, ['condition'])),
-      ),
-    ),
-    detailRowSpec(
-      icon: Icons.assignment_turned_in,
-      label: AppLocalizations.of(context)!.titleStatus,
-      value: titleStatusVal,
-      onTap: damagePreviewEntries.isEmpty
-          ? null
-          : () {
-              Navigator.of(context).push(
-                MaterialPageRoute(
-                  builder: (_) => ListingPreviewMediaGridPage(
-                    imageFilesOrUrls: List<dynamic>.from(damagePreviewEntries),
-                    videoFilesOrUrls: const <dynamic>[],
-                    initialIndex: 0,
-                    appBarTitle: AppLocalizations.of(context)!.damageImagesTitle,
-                  ),
-                ),
-              );
-            },
-    ),
-    if ((car['vin'] ?? '').toString().trim().isNotEmpty)
-      GestureDetector(
-        onLongPress: () {
-          final vin = car['vin'].toString().trim();
-          services.Clipboard.setData(services.ClipboardData(text: vin));
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(
-              content: Text(
-                _trLegacyText(context, 'VIN copied', ar: 'تم نسخ رقم الهيكل', ku: 'ژمارەی شاسی کۆپی کرا'),
-              ),
-            ),
-          );
-        },
-        child: detailRowSpec(
-          icon: Icons.pin_outlined,
-          label: 'VIN',
-          value: car['vin'].toString().trim(),
-          onTap: () {
-            final vin = car['vin'].toString().trim();
-            openVinSearch(vin);
-          },
-        ),
-      ),
-    detailRowSpec(
-      icon: Icons.drive_eta,
-      label: AppLocalizations.of(context)!.detail_drive,
-      value: orDash(
-        _translateValueGlobal(
-          context,
-          pickNE(car, ['drive_type', 'driveType', 'drivetrain', 'drive']),
-        ),
-      ),
-    ),
-    detailRowSpec(
-      icon: Icons.directions_car_filled,
-      label: AppLocalizations.of(context)!.detail_body,
-      value: orDash(
-        _translateValueGlobal(
-          context,
-          pickNE(car, ['body_type', 'bodyType', 'body']),
-        ),
-      ),
-    ),
-    detailRowSpec(
-      icon: Icons.color_lens,
-      label: AppLocalizations.of(context)!.detail_color,
-      value: orDash(_translateValueGlobal(context, pickNE(car, ['color']))),
-    ),
-    detailRowSpec(
-      icon: Icons.airline_seat_recline_normal,
-      label: AppLocalizations.of(context)!.detail_seating,
-      value: orDash(
-        _localizeDigitsGlobal(
-          context,
-          pickNE(car, ['seating', 'seats', 'seatCount']) ?? '',
-        ),
-      ),
-    ),
-    detailRowSpec(
-      icon: Icons.confirmation_number_outlined,
-      label: _trLegacyText(
-        context,
-        'Plate',
-        ar: 'اللوحة',
-        ku: 'پڵەیت',
-      ),
-      value: orDash(() {
-        final rawCity = pickNE(car, ['plate_city', 'plateCity'])?.trim();
-        final rawType = pickNE(car, ['plate_type', 'plateType'])?.trim();
-
-        final String? city = (rawCity == null || rawCity.isEmpty)
-            ? null
-            : (_translateValueGlobal(context, rawCity) ?? rawCity);
-        final String? type = (rawType == null || rawType.isEmpty)
-            ? null
-            : _translatePlateTypeLegacy(context, rawType);
-
-        if (city == null && type == null) return null;
-        if (city != null && type != null) return '$city/$type';
-        return city ?? type;
-      }()),
-    ),
-  ];
-  final description = pickNE(car, ['description'])?.trim() ?? '';
-  if (description.isNotEmpty) {
-    details.add(
-      detailRowSpec(
-        icon: Icons.description_outlined,
-        label: AppLocalizations.of(context)?.descriptionTitle ?? 'Description',
-        value: _trLegacyText(
-          context,
-          'View description',
-          ar: 'عرض الوصف',
-          ku: 'پیشاندانی وەسف',
-        ),
-        onTap: () {
-          showDialog<void>(
-            context: context,
-            builder: (dialogContext) => AlertDialog(
-              title: Text(
-                AppLocalizations.of(context)?.descriptionTitle ?? 'Description',
-              ),
-              content: SingleChildScrollView(child: Text(description)),
-              actions: [
-                TextButton(
-                  onPressed: () => Navigator.pop(dialogContext),
-                  child: Text(
-                    _trLegacyText(
-                      context,
-                      'Close',
-                      ar: 'إغلاق',
-                      ku: 'داخستن',
-                    ),
-                  ),
-                ),
-              ],
-            ),
-          );
-        },
-      ),
-    );
-  }
-
-  final isLightSpecs = Theme.of(context).brightness == Brightness.light;
-  // Width-based row height: tighter than childAspectRatio 1.5 so the outer
-  // shell does not grow vertically on narrow phones (GridView + padding).
-  final primGrid = LayoutBuilder(
-    builder: (context, constraints) {
-      const double crossGap = 12;
-      const int crossCount = 3;
-      final double maxW = constraints.maxWidth;
-      final double tileW = (maxW - crossGap * (crossCount - 1)) / crossCount;
-      // Was ~1.5 (height = tileW/1.5); 1.72 shortens each row ~13%.
-      final double rowH = tileW / 1.72;
-      return GridView.builder(
-        shrinkWrap: true,
-        physics: const NeverScrollableScrollPhysics(),
-        padding: EdgeInsets.zero,
-        gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
-          crossAxisCount: crossCount,
-          crossAxisSpacing: crossGap,
-          mainAxisSpacing: 12,
-          mainAxisExtent: rowH,
-        ),
-        itemCount: primary.length,
-        itemBuilder: (context, index) => specCard(primary[index]),
-      );
-    },
-  );
-
-  final topSpecs = Container(
-    width: double.infinity,
-    padding: const EdgeInsets.fromLTRB(12, 10, 12, 10),
-    decoration: BoxDecoration(
-      color: isLightSpecs
-          ? const Color(0xFFEEEEEE)
-          : Colors.white.withValues(alpha: 0.08),
-      borderRadius: BorderRadius.circular(14),
-      border: Border.all(
-        color: isLightSpecs ? const Color(0xFFE0E0E0) : Colors.white24,
-      ),
-    ),
-    child: primGrid,
-  );
-
-  return Column(
-    crossAxisAlignment: CrossAxisAlignment.start,
-    children: [topSpecs, SizedBox(height: 12), ...details],
-  );
-}
-
-class _SpecItem {
-  final IconData icon;
-  final String label;
-  final String? value;
-  _SpecItem({
-    required this.icon,
-    required this.label,
-    required this.value,
-  });
-}
