@@ -253,6 +253,9 @@ String _formatVoiceDuration(Duration duration) {
   return '${minutes.toString().padLeft(2, '0')}:${seconds.toString().padLeft(2, '0')}';
 }
 
+const double _kOutgoingMetaMinGap = 14;
+const double _kBubbleHorizontalPadding = 32;
+
 bool _isAudioMessage(ChatMessage message) {
   if (message.messageType.toLowerCase() == 'audio') return true;
   if (message.attachments.length == 1 &&

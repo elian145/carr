@@ -31,4 +31,7 @@ part 'chat_shared.dart';
 part 'chat_widgets.dart';
 part 'chat_list_page.dart';
 part 'chat_notifications_page.dart';
+part 'chat_conversation_fields.dart';
+part 'chat_conversation_actions.dart';
+part 'chat_conversation_message_ui.dart';
 part 'chat_conversation_page.dart';
