@@ -32,8 +32,10 @@ Map<String, WidgetBuilder> buildLegacyFallbackRoutes() {
       return CarDetailsPage(carId: carId);
     },
     '/legacy_comparison': (context) => CarComparisonPage(),
-    '/legacy_favorites': (context) => AuthGuard(child: FavoritesPage()),
-    '/legacy_profile': (context) => AuthGuard(child: ProfilePage()),
+    '/legacy_favorites': (context) =>
+        AuthGuard(allowWhenLoggedOut: true, child: FavoritesPage()),
+    '/legacy_profile': (context) =>
+        AuthGuard(allowWhenLoggedOut: true, child: ProfilePage()),
     '/legacy_settings': (context) => SettingsPage(),
     '/legacy_login': (context) => LoginPage(),
     '/legacy_saved_searches': (context) => const SavedSearchesPage(),

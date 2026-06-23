@@ -1,4 +1,25 @@
-part of '../app/carzo_shared.dart';
+import 'dart:async';
+
+import 'package:flutter/material.dart';
+import 'package:google_fonts/google_fonts.dart';
+import 'package:provider/provider.dart';
+import 'package:shared_preferences/shared_preferences.dart';
+
+import '../app/widgets/main_shell_navigation.dart'
+    show buildFloatingBottomNav, navigateMainShellTab;
+import '../l10n/app_localizations.dart';
+import '../pages/saved_searches_page.dart';
+import '../services/api_service.dart';
+import '../services/auth_service.dart';
+import '../services/push_notification_service.dart';
+import '../services/websocket_service.dart';
+import '../shared/account/delete_account_dialog.dart';
+import '../shared/debug/app_log.dart';
+import '../shared/errors/user_error_text.dart';
+import '../shared/i18n/legacy_inline_text.dart';
+import '../shared/media/media_url.dart';
+import '../state/locale_controller.dart';
+import '../theme_provider.dart';
 
 class ProfilePage extends StatefulWidget {
   const ProfilePage({super.key});
@@ -296,7 +317,7 @@ class _ProfilePageState extends State<ProfilePage> {
                             return CircleAvatar(
                               radius: 24,
                               backgroundImage: NetworkImage(
-                                _buildFullImageUrl(picture),
+                                buildLegacyFullImageUrl(picture),
                               ),
                               backgroundColor: isLightShell
                                   ? Colors.grey[200]
@@ -533,7 +554,7 @@ class _ProfilePageState extends State<ProfilePage> {
                     SizedBox(height: 12),
                     _buildActionButton(
                       Icons.history,
-                      _trLegacyText(
+                      trLegacyText(
                         context,
                         'Recently viewed',
                         ar: 'شوهد مؤخراً',
@@ -589,7 +610,7 @@ class _ProfilePageState extends State<ProfilePage> {
                       SizedBox(height: 12),
                       _buildActionButton(
                         Icons.flag_outlined,
-                        _trLegacyText(
+                        trLegacyText(
                           context,
                           'Reports queue (admin)',
                           ar: 'قائمة البلاغات (مسؤول)',
@@ -653,7 +674,7 @@ class _ProfilePageState extends State<ProfilePage> {
                       SizedBox(height: 12),
                       _buildActionButton(
                         Icons.storefront_outlined,
-                        _trLegacyText(
+                        trLegacyText(
                           context,
                           'Edit dealer page',
                           ar: 'تعديل صفحة الوكيل',
@@ -952,20 +973,20 @@ class _ProfilePageState extends State<ProfilePage> {
         onTap: (idx) {
           switch (idx) {
             case 0:
-              _switchMainTabNoAnimation(context, '/');
+              navigateMainShellTab(context, '/');
               break;
             case 1:
-              _switchMainTabNoAnimation(context, '/favorites');
+              navigateMainShellTab(context, '/favorites');
               break;
             case 2:
-              _switchMainTabNoAnimation(context, '/dealers');
+              navigateMainShellTab(context, '/dealers');
               break;
             case 3:
               if (ApiService.accessToken == null ||
                   ApiService.accessToken!.isEmpty) {
                 Navigator.pushReplacementNamed(context, '/login');
               } else {
-                _switchMainTabNoAnimation(context, '/profile');
+                navigateMainShellTab(context, '/profile');
               }
               break;
           }

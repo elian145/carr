@@ -15,7 +15,6 @@ import 'package:image_picker/image_picker.dart';
 import 'package:video_thumbnail/video_thumbnail.dart';
 import 'dart:io';
 import 'package:shared_preferences/shared_preferences.dart';
-import '../services/analytics_service.dart';
 import '../services/api_service.dart';
 import '../services/auth_service.dart';
 import '../shared/auth/token_store.dart';
@@ -55,13 +54,9 @@ import 'package:provider/provider.dart';
 import '../theme_provider.dart';
 import '../services/ai_service.dart';
 import '../services/car_service.dart';
-import '../services/push_notification_service.dart';
-import '../services/websocket_service.dart';
 import 'package:mime/mime.dart';
 import 'package:http_parser/http_parser.dart';
 import 'package:path/path.dart' as p;
-import '../features/chat/chat_pages.dart' as carzo_chat;
-import '../pages/dealers_directory_page.dart';
 import '../features/saved_searches/saved_search_home_bridge.dart';
 import '../pages/saved_searches_page.dart';
 import '../pages/comparison_page.dart';
@@ -76,10 +71,14 @@ import '../data/car_catalog.dart';
 import '../data/car_name_translations.dart';
 import '../services/car_spec_index.dart';
 import '../services/saved_search_service.dart';
-import '../pages/legal_document_page.dart';
-import '../shared/account/delete_account_dialog.dart';
 import '../models/online_spec_variant.dart';
 import '../pages/listing_image_gallery_page.dart';
+import 'widgets/main_shell_navigation.dart' as main_shell_navigation;
+export 'widgets/main_shell_navigation.dart';
+import '../pages/production_auth_pages.dart';
+export '../pages/production_auth_pages.dart';
+import '../pages/production_account_pages.dart';
+export '../pages/production_account_pages.dart';
 import 'app_api_base.dart';
 import '../data/brand_logo_filenames.dart';
 import 'widgets/global_listing_card.dart';
@@ -105,8 +104,6 @@ part '../features/sell/sell_step2.dart';
 part '../features/sell/sell_step3.dart';
 part '../features/sell/sell_step4.dart';
 part '../features/sell/sell_step5.dart';
-part '../pages/production_auth_pages.dart';
-part '../pages/production_account_pages.dart';
 part 'legacy_fallback_routes.dart';
 
 const List<String> _kOnlineSpecOptionKeys = [
@@ -502,46 +499,12 @@ class _HomeFeedScrollPersistence {
 }
 
 void _switchMainTabNoAnimation(BuildContext context, String routeName) {
-  final currentRoute = ModalRoute.of(context)?.settings.name;
-  if (currentRoute == routeName) return;
-
-  Widget? page;
-  switch (routeName) {
-    case '/':
-      page = HomePage();
-      break;
-    case '/favorites':
-      page = AuthGuard(child: FavoritesPage());
-      break;
-    case '/sell':
-      page = AuthGuard(child: const SellEntryRouterPage());
-      break;
-    case '/dealers':
-      page = const DealersDirectoryPage();
-      break;
-    case '/profile':
-      page = AuthGuard(child: ProfilePage());
-      break;
-  }
-
-  if (page == null) {
-    Navigator.pushReplacementNamed(context, routeName);
-    return;
-  }
-
-  Navigator.of(context).pushReplacement(
-    PageRouteBuilder(
-      settings: RouteSettings(name: routeName),
-      pageBuilder: (context, _, _) => page!,
-      transitionDuration: Duration.zero,
-      reverseTransitionDuration: Duration.zero,
-    ),
-  );
+  main_shell_navigation.navigateMainShellTab(context, routeName);
 }
 
-/// Same as [_switchMainTabNoAnimation] but callable from other libraries (e.g. shell pages).
+/// Callable from standalone shell pages (e.g. dealers directory).
 void navigateMainShellTab(BuildContext context, String routeName) {
-  _switchMainTabNoAnimation(context, routeName);
+  main_shell_navigation.navigateMainShellTab(context, routeName);
 }
 
 Widget buildFloatingBottomNav(
@@ -549,104 +512,13 @@ Widget buildFloatingBottomNav(
   required int currentIndex,
   required ValueChanged<int> onTap,
   bool solidBackground = false,
-}) {
-  final brightness = Theme.of(context).brightness;
-  final isLight = brightness == Brightness.light;
-  final unselectedItemColor = isLight
-      ? const Color(0xFF666666)
-      : const Color(0xD9FFFFFF);
-  final solidFill = isLight ? Colors.white : const Color(0xFF1C1C1E);
-
-  final bar = Theme(
-    data: Theme.of(context).copyWith(
-      canvasColor: Colors.transparent,
-      splashColor: Colors.transparent,
-      highlightColor: Colors.transparent,
-      bottomNavigationBarTheme: BottomNavigationBarThemeData(
-        backgroundColor: solidBackground ? solidFill : Colors.transparent,
-        elevation: 0,
-      ),
-    ),
-    child: BottomNavigationBar(
-      key: ValueKey<int>(currentIndex),
-      type: BottomNavigationBarType.fixed,
-      backgroundColor: solidBackground ? solidFill : Colors.transparent,
-      elevation: 0,
-      selectedItemColor: const Color(0xFFFF6B00),
-      unselectedItemColor: unselectedItemColor,
-      selectedLabelStyle: const TextStyle(
-        fontWeight: FontWeight.w700,
-        letterSpacing: 0.15,
-      ),
-      unselectedLabelStyle: const TextStyle(
-        fontWeight: FontWeight.w600,
-        letterSpacing: 0.1,
-      ),
-      showSelectedLabels: true,
-      showUnselectedLabels: true,
+}) =>
+    main_shell_navigation.buildFloatingBottomNav(
+      context,
       currentIndex: currentIndex,
       onTap: onTap,
-      items: [
-        BottomNavigationBarItem(
-          icon: Icon(Icons.home),
-          label: AppLocalizations.of(context)!.navHome,
-        ),
-        BottomNavigationBarItem(
-          icon: Icon(Icons.favorite),
-          label: AppLocalizations.of(context)!.navSaved,
-        ),
-        BottomNavigationBarItem(
-          icon: Icon(Icons.storefront_outlined),
-          label: AppLocalizations.of(context)!.navDealers,
-        ),
-        BottomNavigationBarItem(
-          icon: Icon(Icons.person),
-          label: AppLocalizations.of(context)!.navProfile,
-        ),
-      ],
-    ),
-  );
-
-  final Widget navBody = solidBackground
-      ? bar
-      : BackdropFilter(
-          filter: ui.ImageFilter.blur(sigmaX: 30, sigmaY: 30),
-          child: bar,
-        );
-
-  return Semantics(
-    label: AppLocalizations.of(context)!.navHome,
-    child: Padding(
-    padding: const EdgeInsets.fromLTRB(12, 0, 12, 10),
-    child: SafeArea(
-      top: false,
-      child: Container(
-        decoration: BoxDecoration(
-          color: solidBackground ? solidFill : null,
-          borderRadius: BorderRadius.circular(999),
-          border: Border.all(
-            color: isLight
-                ? Colors.white.withValues(alpha: 0.14)
-                : Colors.white.withValues(alpha: 0.08),
-            width: 1,
-          ),
-          boxShadow: [
-            BoxShadow(
-              color: Colors.black.withValues(alpha: isLight ? 0.08 : 0.14),
-              blurRadius: 24,
-              offset: const Offset(0, 10),
-            ),
-          ],
-        ),
-        child: ClipRRect(
-          borderRadius: BorderRadius.circular(999),
-          child: navBody,
-        ),
-      ),
-    ),
-    ),
-  );
-}
+      solidBackground: solidBackground,
+    );
 
 // Fancy selector tile used in Sell page pickers
 Widget buildFancySelector(
@@ -1170,17 +1042,18 @@ class _SellAuthPromptState extends State<_SellAuthPrompt> {
 /// so it can display its own "login/signup required" message.
 /// Sell shows a login/signup dialog instead of an immediate redirect.
 class AuthGuard extends StatelessWidget {
-  const AuthGuard({super.key, required this.child});
+  const AuthGuard({
+    super.key,
+    required this.child,
+    this.allowWhenLoggedOut = false,
+  });
   final Widget child;
+  final bool allowWhenLoggedOut;
 
   @override
   Widget build(BuildContext context) {
     final auth = Provider.of<AuthService>(context);
-    // Allow FavoritesPage and ProfilePage for logged-out users so they can
-    // show their own friendly login/signup prompts and UI.
-    if (auth.isAuthenticated ||
-        child is FavoritesPage ||
-        child is ProfilePage) {
+    if (auth.isAuthenticated || allowWhenLoggedOut) {
       return child;
     }
     if (auth.isLoading || ApiService.isAuthenticated) {

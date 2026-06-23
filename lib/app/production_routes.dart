@@ -57,12 +57,14 @@ Map<String, WidgetBuilder> buildProductionRoutes() {
                   );
                 },
                 '/settings': (context) => SettingsPage(),
-                '/favorites': (context) => AuthGuard(child: FavoritesPage()),
+                '/favorites': (context) =>
+                    AuthGuard(allowWhenLoggedOut: true, child: FavoritesPage()),
                 '/dealers': (context) => const DealersDirectoryPage(),
                 '/chat': (context) => AuthGuard(child: ChatListPage()),
                 '/login': (context) => LoginPage(),
                 '/signup': (context) => SignupPage(),
-                '/profile': (context) => AuthGuard(child: ProfilePage()),
+                '/profile': (context) =>
+                    AuthGuard(allowWhenLoggedOut: true, child: ProfilePage()),
                 '/edit-profile': (context) =>
                     AuthGuard(child: EditProfilePage()),
                 '/car_detail': (context) {

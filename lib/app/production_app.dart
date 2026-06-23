@@ -9,6 +9,7 @@ import '../services/auth_service.dart';
 import '../theme_provider.dart';
 import '../widgets/edge_swipe_back.dart';
 import 'carzo_shared.dart';
+import 'route_registry.dart';
 import 'production_routes.dart';
 import 'widgets/app_with_deep_links.dart';
 
@@ -16,10 +17,10 @@ export 'carzo_shared.dart'
     show
         AuthGuard,
         buildGlobalCarCard,
-        buildFloatingBottomNav,
-        navigateMainShellTab,
         mapListingToGlobalCarCardData,
         buildLegacyFallbackRoutes;
+export 'widgets/main_shell_navigation.dart'
+    show buildFloatingBottomNav, navigateMainShellTab;
 
 /// Production app shell (`lib/main.dart` entry).
 class MyApp extends StatelessWidget {
@@ -37,7 +38,10 @@ class MyApp extends StatelessWidget {
       child: ValueListenableBuilder<Locale?>(
         valueListenable: LocaleController.currentLocale,
         builder: (context, locale, _) => Consumer<ThemeProvider>(
-          builder: (context, themeProvider, child) => AppWithDeepLinks(
+          builder: (context, themeProvider, child) {
+          final routes = buildProductionRoutes();
+          registerAppRoutes(routes);
+          return AppWithDeepLinks(
             navigatorKey: productionNavigatorKey,
             child: MaterialApp(
               navigatorKey: productionNavigatorKey,
@@ -74,9 +78,10 @@ class MyApp extends StatelessWidget {
               themeMode: themeProvider.themeMode,
               debugShowCheckedModeBanner: false,
               initialRoute: '/',
-              routes: buildProductionRoutes(),
+              routes: routes,
             ),
-          ),
+          );
+        },
         ),
       ),
     );

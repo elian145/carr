@@ -1,4 +1,30 @@
-part of '../app/carzo_shared.dart';
+import 'dart:async';
+import 'dart:convert';
+
+import 'dart:io';
+
+import 'package:flutter/foundation.dart';
+import 'package:flutter/material.dart';
+import 'package:flutter/services.dart' as services;
+import 'package:provider/provider.dart';
+import 'package:shared_preferences/shared_preferences.dart';
+
+import '../app/widgets/global_listing_card.dart'
+    show buildGlobalCarCard, mapListingToGlobalCarCardData;
+import '../app/widgets/main_shell_navigation.dart'
+    show buildFloatingBottomNav, navigateMainShellTab;
+import '../features/chat/chat_pages.dart' as carzo_chat;
+import '../features/listing/listing_mappers.dart';
+import '../l10n/app_localizations.dart';
+import '../pages/legal_document_page.dart';
+import '../services/analytics_service.dart';
+import '../services/api_service.dart';
+import '../services/auth_service.dart';
+import '../shared/debug/app_log.dart';
+import '../shared/errors/user_error_text.dart';
+import '../shared/i18n/legacy_inline_text.dart';
+import '../shared/prefs/listing_layout_prefs.dart';
+import '../theme_provider.dart';
 
 class FavoritesPage extends StatefulWidget {
   const FavoritesPage({super.key});
@@ -248,16 +274,16 @@ class _FavoritesPageState extends State<FavoritesPage> {
         onTap: (idx) {
           switch (idx) {
             case 0:
-              _switchMainTabNoAnimation(context, '/');
+              navigateMainShellTab(context, '/');
               break;
             case 1:
               // Already on favorites
               break;
             case 2:
-              _switchMainTabNoAnimation(context, '/dealers');
+              navigateMainShellTab(context, '/dealers');
               break;
             case 3:
-              _switchMainTabNoAnimation(context, '/profile');
+              navigateMainShellTab(context, '/profile');
               break;
           }
         },
@@ -405,13 +431,13 @@ class _LoginPageState extends State<LoginPage> {
         onTap: (idx) {
           switch (idx) {
             case 0:
-              _switchMainTabNoAnimation(context, '/');
+              navigateMainShellTab(context, '/');
               break;
             case 1:
-              _switchMainTabNoAnimation(context, '/favorites');
+              navigateMainShellTab(context, '/favorites');
               break;
             case 2:
-              _switchMainTabNoAnimation(context, '/dealers');
+              navigateMainShellTab(context, '/dealers');
               break;
             case 3:
               // Already on login
@@ -1101,7 +1127,7 @@ class _SignupPageState extends State<SignupPage> {
                   crossAxisAlignment: WrapCrossAlignment.center,
                   children: [
                     Text(
-                      _trLegacyText(
+                      trLegacyText(
                         context,
                         'I agree to the ',
                         ar: 'أوافق على ',
@@ -1118,7 +1144,7 @@ class _SignupPageState extends State<SignupPage> {
                         ),
                       ),
                       child: Text(
-                        _trLegacyText(
+                        trLegacyText(
                           context,
                           'Terms',
                           ar: 'الشروط',
@@ -1131,7 +1157,7 @@ class _SignupPageState extends State<SignupPage> {
                       ),
                     ),
                     Text(
-                      _trLegacyText(context, ' and ', ar: ' و', ku: ' و'),
+                      trLegacyText(context, ' and ', ar: ' و', ku: ' و'),
                     ),
                     GestureDetector(
                       onTap: () => Navigator.push(
@@ -1143,7 +1169,7 @@ class _SignupPageState extends State<SignupPage> {
                         ),
                       ),
                       child: Text(
-                        _trLegacyText(
+                        trLegacyText(
                           context,
                           'Privacy Policy',
                           ar: 'سياسة الخصوصية',
@@ -1189,20 +1215,20 @@ class _SignupPageState extends State<SignupPage> {
         onTap: (idx) {
           switch (idx) {
             case 0:
-              _switchMainTabNoAnimation(context, '/');
+              navigateMainShellTab(context, '/');
               break;
             case 1:
-              _switchMainTabNoAnimation(context, '/favorites');
+              navigateMainShellTab(context, '/favorites');
               break;
             case 2:
-              _switchMainTabNoAnimation(context, '/dealers');
+              navigateMainShellTab(context, '/dealers');
               break;
             case 3:
               if (ApiService.accessToken == null ||
                   ApiService.accessToken!.isEmpty) {
                 Navigator.pushReplacementNamed(context, '/login');
               } else {
-                _switchMainTabNoAnimation(context, '/profile');
+                navigateMainShellTab(context, '/profile');
               }
               break;
           }
