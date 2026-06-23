@@ -62,7 +62,6 @@ import 'package:http_parser/http_parser.dart';
 import 'package:path/path.dart' as p;
 import '../features/chat/chat_pages.dart' as carzo_chat;
 import '../pages/dealers_directory_page.dart';
-import '../features/comparison/state/car_comparison_store.dart';
 import '../features/saved_searches/saved_search_home_bridge.dart';
 import '../pages/saved_searches_page.dart';
 import '../pages/comparison_page.dart';
@@ -777,26 +776,6 @@ String _pleaseFillRequiredGlobal(BuildContext context) {
 NumberFormat _decimalFormatterGlobal(BuildContext context) =>
     decimalFormatterForLocale(context);
 
-String _removedFromComparisonTextGlobal(BuildContext context) {
-  return AppLocalizations.of(context)!.removedFromComparison;
-}
-
-String _addedToComparisonTextGlobal(BuildContext context, int count) {
-  return AppLocalizations.of(context)!.addedToComparison(count, 5);
-}
-
-String _comparisonMaxLimitTextGlobal(BuildContext context) {
-  return AppLocalizations.of(context)!.comparisonMaxLimit(5);
-}
-
-String _compareLabelGlobal(BuildContext context) {
-  return AppLocalizations.of(context)!.compareLabel;
-}
-
-String _addedLabelGlobal(BuildContext context) {
-  return AppLocalizations.of(context)!.addedLabel;
-}
-
 String _tapToSelectTextGlobal(BuildContext context) {
   return AppLocalizations.of(context)!.tapToSelect;
 }
@@ -1118,128 +1097,6 @@ globalVehicleSpecs = {
 
 // Car Comparison State Management
 // NOTE: `CarComparisonStore` now lives in `lib/features/comparison/state/`.
-
-// Comparison Button Widget
-class ComparisonButton extends StatelessWidget {
-  final Map<String, dynamic> car;
-  final bool isCompact;
-
-  const ComparisonButton({
-    super.key,
-    required this.car,
-    this.isCompact = false,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    return Consumer<CarComparisonStore>(
-      builder: (context, comparisonStore, child) {
-        // Comparison store uses string IDs (public_id preferred).
-        final String carId =
-            (car['public_id'] ??
-                    car['id'] ??
-                    car['car_id'] ??
-                    car['carId'] ??
-                    car['uuid'])
-                .toString()
-                .trim();
-        final isInComparison = carId.isNotEmpty
-            ? comparisonStore.isCarInComparison(carId)
-            : false;
-        final canAddMore = comparisonStore.canAddMore;
-
-        return Container(
-          decoration: BoxDecoration(
-            color: isInComparison ? Colors.green : Colors.orange,
-            borderRadius: BorderRadius.circular(isCompact ? 14 : 17),
-            boxShadow: [
-              BoxShadow(
-                color: Colors.black.withValues(alpha: 0.2),
-                blurRadius: 4,
-                offset: Offset(0, 2),
-              ),
-            ],
-          ),
-          child: Material(
-            color: Colors.transparent,
-            child: InkWell(
-              borderRadius: BorderRadius.circular(isCompact ? 14 : 17),
-              onTap: () {
-                if (isInComparison) {
-                  comparisonStore.removeCarFromComparison(carId);
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    SnackBar(
-                      content: Text(_removedFromComparisonTextGlobal(context)),
-                      backgroundColor: Colors.red,
-                      duration: Duration(seconds: 1),
-                    ),
-                  );
-                } else if (canAddMore && carId.isNotEmpty) {
-                  final normalized = Map<String, dynamic>.from(car);
-                  normalized['id'] =
-                      carId; // ensure consistent string ID stored
-                  comparisonStore.addCarToComparison(normalized);
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    SnackBar(
-                      content: Text(
-                        _addedToComparisonTextGlobal(
-                          context,
-                          comparisonStore.comparisonCount,
-                        ),
-                      ),
-                      backgroundColor: Colors.green,
-                      duration: Duration(seconds: 1),
-                    ),
-                  );
-                  Navigator.pushNamed(context, '/comparison');
-                } else {
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    SnackBar(
-                      content: Text(_comparisonMaxLimitTextGlobal(context)),
-                      backgroundColor: Colors.orange,
-                      duration: Duration(seconds: 2),
-                    ),
-                  );
-                }
-              },
-              child: Center(
-                child: Padding(
-                  padding: EdgeInsets.symmetric(
-                    horizontal: isCompact ? 7 : 10,
-                    vertical: isCompact ? 6 : 8,
-                  ),
-                  child: Row(
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      Icon(
-                        isInComparison ? Icons.check : Icons.compare_arrows,
-                        color: Colors.white,
-                        size: isCompact ? 16 : 19,
-                      ),
-                      if (!isCompact) ...[
-                        SizedBox(width: 4),
-                        Text(
-                          isInComparison
-                              ? _addedLabelGlobal(context)
-                              : _compareLabelGlobal(context),
-                          style: TextStyle(
-                            color: Colors.white,
-                            fontSize: 13,
-                            fontWeight: FontWeight.w600,
-                          ),
-                        ),
-                      ],
-                    ],
-                  ),
-                ),
-              ),
-            ),
-          ),
-        );
-      },
-    );
-  }
-}
 
 /// Shown when a logged-out user opens Sell; offers login / signup or cancel.
 class _SellAuthPrompt extends StatefulWidget {
