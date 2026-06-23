@@ -52,6 +52,7 @@ import '../../shared/text/pretty_title_case.dart';
 import '../../shared/ui/keyboard.dart';
 import '../../theme_provider.dart';
 import 'sell_draft_helpers.dart' as sell_draft_helpers;
+import 'sell_listing_payload.dart';
 import 'sell_fancy_selector.dart' as sell_fancy_selector;
 import 'sell_video_helpers.dart' as sell_video_helpers;
 
