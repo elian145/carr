@@ -434,7 +434,7 @@ abstract class _HomePageFields extends State<HomePage> {
 }
 
 class _HomePageState extends _HomePageFields
-    with _HomePageFetch, _HomePageFilterLogic, _HomePageBuild {
+    with _HomePageFetch, _HomePageFilterLogic, _HomePageMoreFiltersDialog, _HomePageBuild {
   @override
   void initState() {
     super.initState();
