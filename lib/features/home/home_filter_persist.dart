@@ -60,6 +60,34 @@ mixin _HomePageFilterPersist on _HomePageFilterCatalog {
     selectedSortBy = parsed.sortBy;
   }
 
+  void _applyHomeFiltersSnapshot(HomeFiltersSnapshot snap) {
+    selectedBrand = snap.brand;
+    selectedModel = snap.model;
+    selectedTrim = snap.trim;
+    selectedMinPrice = snap.minPrice;
+    selectedMaxPrice = snap.maxPrice;
+    selectedMinYear = snap.minYear;
+    selectedMaxYear = snap.maxYear;
+    selectedMinMileage = snap.minMileage;
+    selectedMaxMileage = snap.maxMileage;
+    selectedCondition = snap.condition;
+    selectedTransmission = snap.transmission;
+    selectedFuelType = snap.fuelType;
+    selectedBodyType = snap.bodyType;
+    selectedColor = snap.color;
+    selectedDriveType = snap.driveType;
+    selectedRegionSpecs = snap.regionSpecs;
+    selectedCylinderCount = snap.cylinderCount;
+    selectedSeating = snap.seating;
+    selectedEngineSize = snap.engineSize;
+    selectedCity = snap.city;
+    selectedPlateType = snap.plateType;
+    selectedPlateCity = snap.plateCity;
+    selectedTitleStatus = snap.titleStatus;
+    selectedDamagedParts = snap.damagedParts;
+    selectedSortBy = snap.sortByUi;
+  }
+
   /// Apply filters from a saved-search map (`min_price`, `cylinder_count`, etc.).
   void applyFiltersFromSavedSearch(Map<String, dynamic> normalized) {
     _resetAllFiltersInMemory();

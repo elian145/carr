@@ -16,81 +16,9 @@ mixin _HomePageFilterLogic on _HomePageFilterPersist {
   // Helper method to clear a specific filter
   void _clearFilter(String filterType) {
     setState(() {
-      switch (filterType) {
-        case 'brand':
-          selectedBrand = null;
-          selectedModel = null;
-          selectedTrim = null;
-          break;
-        case 'model':
-          selectedModel = null;
-          selectedTrim = null;
-          break;
-        case 'trim':
-          selectedTrim = null;
-          break;
-        case 'price':
-          selectedMinPrice = null;
-          selectedMaxPrice = null;
-          break;
-        case 'year':
-          selectedMinYear = null;
-          selectedMaxYear = null;
-          break;
-        case 'mileage':
-          selectedMinMileage = null;
-          selectedMaxMileage = null;
-          break;
-        case 'condition':
-          selectedCondition = null;
-          break;
-        case 'transmission':
-          selectedTransmission = null;
-          break;
-        case 'fuelType':
-          selectedFuelType = null;
-          break;
-        case 'titleStatus':
-          selectedTitleStatus = null;
-          selectedDamagedParts = null;
-          break;
-        case 'damagedParts':
-          selectedDamagedParts = null;
-          break;
-        case 'bodyType':
-          selectedBodyType = null;
-          break;
-        case 'color':
-          selectedColor = null;
-          break;
-        case 'driveType':
-          selectedDriveType = null;
-          break;
-        case 'regionSpecs':
-          selectedRegionSpecs = null;
-          break;
-        case 'cylinderCount':
-          selectedCylinderCount = null;
-          break;
-        case 'seating':
-          selectedSeating = null;
-          break;
-        case 'engineSize':
-          selectedEngineSize = null;
-          break;
-        case 'city':
-          selectedCity = null;
-          break;
-        case 'plateType':
-          selectedPlateType = null;
-          break;
-        case 'plateCity':
-          selectedPlateCity = null;
-          break;
-        case 'sortBy':
-          selectedSortBy = null;
-          break;
-      }
+      _applyHomeFiltersSnapshot(
+        clearHomeFilterChip(_homeFiltersSnapshot(), filterType),
+      );
       _syncHomeFilterTextControllersFromSelection();
     });
     unawaited(_persistFilters());

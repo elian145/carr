@@ -120,6 +120,61 @@ bool homeFilterSortChipActive(String? sortBy) {
   return lower != 'default';
 }
 
+/// Clears one chip filter (and dependent fields) from [filters].
+HomeFiltersSnapshot clearHomeFilterChip(
+  HomeFiltersSnapshot filters,
+  String filterType,
+) {
+  switch (filterType) {
+    case 'brand':
+      return filters.copyWith(clearBrand: true, clearModel: true, clearTrim: true);
+    case 'model':
+      return filters.copyWith(clearModel: true, clearTrim: true);
+    case 'trim':
+      return filters.copyWith(clearTrim: true);
+    case 'price':
+      return filters.copyWith(clearMinPrice: true, clearMaxPrice: true);
+    case 'year':
+      return filters.copyWith(clearMinYear: true, clearMaxYear: true);
+    case 'mileage':
+      return filters.copyWith(clearMinMileage: true, clearMaxMileage: true);
+    case 'condition':
+      return filters.copyWith(clearCondition: true);
+    case 'transmission':
+      return filters.copyWith(clearTransmission: true);
+    case 'fuelType':
+      return filters.copyWith(clearFuelType: true);
+    case 'titleStatus':
+      return filters.copyWith(clearTitleStatus: true, clearDamagedParts: true);
+    case 'damagedParts':
+      return filters.copyWith(clearDamagedParts: true);
+    case 'bodyType':
+      return filters.copyWith(clearBodyType: true);
+    case 'color':
+      return filters.copyWith(clearColor: true);
+    case 'driveType':
+      return filters.copyWith(clearDriveType: true);
+    case 'regionSpecs':
+      return filters.copyWith(clearRegionSpecs: true);
+    case 'cylinderCount':
+      return filters.copyWith(clearCylinderCount: true);
+    case 'seating':
+      return filters.copyWith(clearSeating: true);
+    case 'engineSize':
+      return filters.copyWith(clearEngineSize: true);
+    case 'city':
+      return filters.copyWith(clearCity: true);
+    case 'plateType':
+      return filters.copyWith(clearPlateType: true);
+    case 'plateCity':
+      return filters.copyWith(clearPlateCity: true);
+    case 'sortBy':
+      return filters.copyWith(clearSortByUi: true);
+    default:
+      return filters;
+  }
+}
+
 String _rangeText({
   required String? min,
   required String? max,

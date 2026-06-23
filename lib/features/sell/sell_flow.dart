@@ -62,6 +62,7 @@ part 'sell_step1_build.dart';
 part 'sell_step1.dart';
 part 'sell_step2_fields.dart';
 part 'sell_step2_logic.dart';
+part 'sell_step2_build.dart';
 part 'sell_step2.dart';
 part 'sell_step3.dart';
 part 'sell_step4.dart';

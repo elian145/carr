@@ -107,6 +107,29 @@ void main() {
     });
   });
 
+  group('clearHomeFilterChip', () {
+    test('clearing brand also clears model and trim', () {
+      const filters = HomeFiltersSnapshot(
+        brand: 'Toyota',
+        model: 'Camry',
+        trim: 'LE',
+        city: 'Baghdad',
+      );
+      final cleared = clearHomeFilterChip(filters, 'brand');
+      expect(cleared.brand, isNull);
+      expect(cleared.model, isNull);
+      expect(cleared.trim, isNull);
+      expect(cleared.city, 'Baghdad');
+    });
+
+    test('clearing price clears both bounds', () {
+      const filters = HomeFiltersSnapshot(minPrice: '1', maxPrice: '9');
+      final cleared = clearHomeFilterChip(filters, 'price');
+      expect(cleared.minPrice, isNull);
+      expect(cleared.maxPrice, isNull);
+    });
+  });
+
   group('homeFilterBodyTypeIcon', () {
     test('maps known body types', () {
       expect(homeFilterBodyTypeIcon('suv'), Icons.directions_car_filled);
