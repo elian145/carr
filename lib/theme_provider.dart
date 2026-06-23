@@ -132,7 +132,7 @@ class AppThemes {
     );
   }
 
-  static const _mobilePageTransitions = FadeUpwardsPageTransitionsBuilder();
+  static const _pageTransitions = AppNoTransitionsPageTransitionsBuilder();
 
   static ThemeData get lightTheme {
     final scheme = ColorScheme.fromSeed(
@@ -163,12 +163,12 @@ class AppThemes {
       scaffoldBackgroundColor: lightAppBackground,
       pageTransitionsTheme: PageTransitionsTheme(
         builders: const {
-          TargetPlatform.android: _mobilePageTransitions,
-          TargetPlatform.iOS: _mobilePageTransitions,
-          TargetPlatform.linux: AppNoTransitionsPageTransitionsBuilder(),
-          TargetPlatform.macOS: AppNoTransitionsPageTransitionsBuilder(),
-          TargetPlatform.windows: AppNoTransitionsPageTransitionsBuilder(),
-          TargetPlatform.fuchsia: AppNoTransitionsPageTransitionsBuilder(),
+          TargetPlatform.android: _pageTransitions,
+          TargetPlatform.iOS: _pageTransitions,
+          TargetPlatform.linux: _pageTransitions,
+          TargetPlatform.macOS: _pageTransitions,
+          TargetPlatform.windows: _pageTransitions,
+          TargetPlatform.fuchsia: _pageTransitions,
         },
       ),
       appBarTheme: AppBarTheme(
@@ -239,12 +239,12 @@ class AppThemes {
       scaffoldBackgroundColor: scheme.surfaceContainerLowest,
       pageTransitionsTheme: PageTransitionsTheme(
         builders: const {
-          TargetPlatform.android: _mobilePageTransitions,
-          TargetPlatform.iOS: _mobilePageTransitions,
-          TargetPlatform.linux: AppNoTransitionsPageTransitionsBuilder(),
-          TargetPlatform.macOS: AppNoTransitionsPageTransitionsBuilder(),
-          TargetPlatform.windows: AppNoTransitionsPageTransitionsBuilder(),
-          TargetPlatform.fuchsia: AppNoTransitionsPageTransitionsBuilder(),
+          TargetPlatform.android: _pageTransitions,
+          TargetPlatform.iOS: _pageTransitions,
+          TargetPlatform.linux: _pageTransitions,
+          TargetPlatform.macOS: _pageTransitions,
+          TargetPlatform.windows: _pageTransitions,
+          TargetPlatform.fuchsia: _pageTransitions,
         },
       ),
       appBarTheme: AppBarTheme(

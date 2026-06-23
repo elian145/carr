@@ -1149,9 +1149,7 @@ class _CarDetailsPageState extends State<CarDetailsPage> {
                                       children: List.generate(visible, (j) {
                                         final i = startIndex + j;
                                         final active = i == _currentImageIndex;
-                                        return AnimatedContainer(
-                                          duration:
-                                              const Duration(milliseconds: 180),
+                                        return Container(
                                           margin: const EdgeInsets.symmetric(
                                             horizontal: 3,
                                           ),
@@ -1168,25 +1166,7 @@ class _CarDetailsPageState extends State<CarDetailsPage> {
                                     );
                                   }
 
-                                  return AnimatedSwitcher(
-                                    duration: const Duration(milliseconds: 180),
-                                    switchInCurve: Curves.easeOutCubic,
-                                    switchOutCurve: Curves.easeInCubic,
-                                    transitionBuilder: (child, anim) {
-                                      final offset = Tween<Offset>(
-                                        begin: Offset(start == 0 ? 0.12 : -0.12, 0),
-                                        end: Offset.zero,
-                                      ).animate(anim);
-                                      return FadeTransition(
-                                        opacity: anim,
-                                        child: SlideTransition(
-                                          position: offset,
-                                          child: child,
-                                        ),
-                                      );
-                                    },
-                                    child: buildDotRow(start),
-                                  );
+                                  return buildDotRow(start);
                                 }(),
                               ),
                             ),

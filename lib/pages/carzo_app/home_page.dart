@@ -506,8 +506,7 @@ Widget _buildGlobalCardImageCarousel(BuildContext context, Map<String, dynamic> 
                       children: List.generate(visible, (j) {
                         final i = startIndex + j;
                         final active = i == currentIndex;
-                        return AnimatedContainer(
-                          duration: const Duration(milliseconds: 180),
+                        return Container(
                           margin: const EdgeInsets.symmetric(horizontal: 3),
                           width: active ? 8 : 6,
                           height: active ? 8 : 6,
@@ -525,21 +524,7 @@ Widget _buildGlobalCardImageCarousel(BuildContext context, Map<String, dynamic> 
                     (slots.length - visible).clamp(0, slots.length),
                   );
 
-                  return AnimatedSwitcher(
-                    duration: const Duration(milliseconds: 180),
-                    switchInCurve: Curves.easeOutCubic,
-                    switchOutCurve: Curves.easeInCubic,
-                    layoutBuilder: (currentChild, previousChildren) {
-                      return Stack(
-                        alignment: Alignment.center,
-                        children: [
-                          ...previousChildren,
-                          if (currentChild != null) currentChild,
-                        ],
-                      );
-                    },
-                    child: buildDotRow(start),
-                  );
+                  return buildDotRow(start);
                 }(),
               ),
             ),

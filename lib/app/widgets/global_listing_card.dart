@@ -671,7 +671,6 @@ Widget _buildGlobalCardImageCarousel(
   int currentIndex = 0;
   const int kMaxVisibleDots = 6;
   int dotWindowStart = 0;
-  bool dotWindowForward = true;
 
   return StatefulBuilder(
     key: ValueKey(
@@ -692,7 +691,6 @@ Widget _buildGlobalCardImageCarousel(
             currentIndex = i;
             final nextStart = computeDotStart(i);
             if (nextStart != dotWindowStart) {
-              dotWindowForward = nextStart > dotWindowStart;
               dotWindowStart = nextStart;
             }
           });
@@ -744,8 +742,7 @@ Widget _buildGlobalCardImageCarousel(
                       children: List.generate(visible, (j) {
                         final i = startIndex + j;
                         final active = i == currentIndex;
-                        return AnimatedContainer(
-                          duration: const Duration(milliseconds: 180),
+                        return Container(
                           margin: const EdgeInsets.symmetric(horizontal: 3),
                           width: active ? 8 : 6,
                           height: active ? 8 : 6,
@@ -763,40 +760,7 @@ Widget _buildGlobalCardImageCarousel(
                     (slots.length - visible).clamp(0, slots.length),
                   );
 
-                  return AnimatedSwitcher(
-                    duration: const Duration(milliseconds: 180),
-                    switchInCurve: Curves.easeOutCubic,
-                    switchOutCurve: Curves.easeInCubic,
-                    layoutBuilder: (currentChild, previousChildren) {
-                      return Stack(
-                        alignment: Alignment.center,
-                        children: [
-                          ...previousChildren,
-                          if (currentChild != null) currentChild,
-                        ],
-                      );
-                    },
-                    transitionBuilder: (child, animation) {
-                      final beginX = dotWindowForward ? 1.0 : -1.0;
-                      final slide = Tween<Offset>(
-                        begin: Offset(beginX, 0),
-                        end: Offset.zero,
-                      ).animate(animation);
-                      final fade = Tween<double>(begin: 0, end: 1).animate(
-                        CurvedAnimation(
-                          parent: animation,
-                          curve: Curves.easeOut,
-                        ),
-                      );
-                      return ClipRect(
-                        child: SlideTransition(
-                          position: slide,
-                          child: FadeTransition(opacity: fade, child: child),
-                        ),
-                      );
-                    },
-                    child: buildDotRow(start),
-                  );
+                  return buildDotRow(start);
                 }(),
               ),
             ),

@@ -3810,15 +3810,7 @@ class _SellStep2PageState extends State<SellStep2Page> {
       barrierLabel: 'dismiss',
       pageBuilder: (context, a1, a2) => const SizedBox.shrink(),
       transitionBuilder: (context, animation, secondaryAnimation, child) {
-        final curved = CurvedAnimation(
-          parent: animation,
-          curve: Curves.easeOutCubic,
-        );
-        return Transform.translate(
-          offset: Offset(0, (1 - curved.value) * 30),
-          child: Opacity(
-            opacity: curved.value,
-            child: Dialog(
+        return Dialog(
               backgroundColor: Colors.grey[900]?.withValues(alpha: 0.98),
               shape: RoundedRectangleBorder(
                 borderRadius: BorderRadius.circular(20),
@@ -3941,11 +3933,9 @@ class _SellStep2PageState extends State<SellStep2Page> {
                   ],
                 ),
               ),
-            ),
-          ),
         );
       },
-      transitionDuration: const Duration(milliseconds: 220),
+      transitionDuration: Duration.zero,
     );
   }
 
