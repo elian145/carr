@@ -11,7 +11,13 @@ class SellStep2Page extends StatefulWidget {
 }
 
 class _SellStep2PageState extends _SellStep2Fields
-    with _SellStep2Catalog, _SellStep2Pickers, _SellStep2Build {
+    with
+        _SellStep2Catalog,
+        _SellStep2Pickers,
+        _SellStep2BuildCore,
+        _SellStep2BuildAppearance,
+        _SellStep2BuildMechanical,
+        _SellStep2Build {
   @override
   void initState() {
     super.initState();
