@@ -42,6 +42,7 @@ import '../../shared/i18n/locale_formatting.dart';
 import '../../shared/i18n/region_spec_labels.dart' as region_spec_labels;
 import '../../shared/listings/body_type_assets.dart' as body_type_assets;
 import '../../shared/listings/body_type_image_widget.dart' as body_type_image;
+import '../../shared/listings/engine_size_filter_options.dart';
 import '../../shared/listings/listing_uploaded_ago.dart';
 import '../../shared/media/media_url.dart';
 import '../../shared/prefs/legacy_sell_draft_prefs.dart';
@@ -59,6 +60,7 @@ part 'sell_step1.dart';
 part 'sell_step2.dart';
 part 'sell_step3.dart';
 part 'sell_step4.dart';
+part 'sell_step4_preview.dart';
 part 'sell_step5.dart';
 
 const List<String> _kOnlineSpecOptionKeys = [
