@@ -60,6 +60,13 @@ List<Map<String, dynamic>> listingMapsFromFavoritesResponse(
   return listingMapsFromApiList(data);
 }
 
+/// Shallow copy for in-memory feed caches (prefs / scroll restore).
+List<Map<String, dynamic>> copyListingMapList(
+  Iterable<Map<String, dynamic>> source, {
+  bool growable = true,
+}) =>
+    source.map((e) => Map<String, dynamic>.from(e)).toList(growable: growable);
+
 /// Typed listing summary for cards and list rows.
 typedef ListingMap = Map<String, dynamic>;
 

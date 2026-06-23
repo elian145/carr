@@ -1177,9 +1177,7 @@ class _HomePageState extends State<HomePage> {
     _maxMileageController = TextEditingController();
     _engineSizeController = TextEditingController();
     if (_homeFeedCache.isNotEmpty) {
-      cars = _homeFeedCache
-          .map((e) => Map<String, dynamic>.from(e))
-          .toList(growable: true);
+      cars = copyListingMapList(_homeFeedCache);
       isLoading = false;
       hasLoadedOnce = true;
       _page = _homeFeedCachePage;
@@ -1312,9 +1310,7 @@ class _HomePageState extends State<HomePage> {
         best = _pendingHomeScrollRestore!;
       }
       _HomeFeedScrollPersistence.savePixels(best);
-      _homeFeedCache = cars
-          .map((e) => Map<String, dynamic>.from(e))
-          .toList(growable: true);
+      _homeFeedCache = copyListingMapList(cars);
       _homeFeedCachePage = _page;
       _homeFeedCacheHasNext = _hasNext;
       _homeScrollController.dispose();
@@ -1610,9 +1606,7 @@ class _HomePageState extends State<HomePage> {
                 null; // Clear any previous error message on success
             if (parsed.isNotEmpty) _autoFetchedForEmptyWithSort = false;
           });
-          _homeFeedCache = cars
-              .map((e) => Map<String, dynamic>.from(e))
-              .toList(growable: true);
+          _homeFeedCache = copyListingMapList(cars);
           _homeFeedCachePage = _page;
           _homeFeedCacheHasNext = _hasNext;
         }
@@ -1734,9 +1728,7 @@ class _HomePageState extends State<HomePage> {
           setState(() {
             cars.addAll(_applyDamagedPartsExactFilter(more));
           });
-          _homeFeedCache = cars
-              .map((e) => Map<String, dynamic>.from(e))
-              .toList(growable: true);
+          _homeFeedCache = copyListingMapList(cars);
           _homeFeedCachePage = _page;
           _homeFeedCacheHasNext = _hasNext;
         }

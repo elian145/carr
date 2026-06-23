@@ -1,4 +1,17 @@
-part of '../app/carzo_shared.dart';
+import 'dart:async';
+
+import 'package:flutter/material.dart';
+
+import '../app/listing_shell.dart' show navigateMainShellTab;
+import '../data/car_name_translations.dart';
+import '../features/saved_searches/saved_search_home_bridge.dart';
+import '../l10n/app_localizations.dart';
+import '../services/saved_search_service.dart';
+import '../shared/errors/user_error_text.dart';
+import '../shared/i18n/legacy_inline_text.dart';
+import '../shared/i18n/listing_field_labels.dart';
+import '../shared/i18n/listing_value_labels.dart';
+import '../shared/i18n/region_spec_labels.dart';
 
 class SavedSearchesPage extends StatefulWidget {
   final dynamic parentState;
@@ -190,7 +203,7 @@ class _SavedSearchesPageState extends State<SavedSearchesPage> {
                             index,
                             item['notify'] != true,
                           ),
-                          tooltip: _trLegacyText(
+                          tooltip: trLegacyText(
                             context,
                             'Alerts',
                             ar: 'التنبيهات',
@@ -248,7 +261,7 @@ class _SavedSearchesPageState extends State<SavedSearchesPage> {
     final chips = <Widget>[];
     final l = AppLocalizations.of(context)!;
     String tr(String? v) =>
-        _translateValueGlobal(context, v?.toString()) ?? v ?? '';
+        translateListingValue(context, v?.toString()) ?? v ?? '';
 
     if (filters['brand'] != null) {
       chips.add(
@@ -289,8 +302,8 @@ class _SavedSearchesPageState extends State<SavedSearchesPage> {
       chips.add(
         _buildFilterChip(
           context,
-          _trLegacyText(context, 'Plate type', ar: 'نوع اللوحة', ku: 'جۆری پڵەیت'),
-          _translatePlateTypeLegacy(context, filters['plate_type'].toString()),
+          trLegacyText(context, 'Plate type', ar: 'نوع اللوحة', ku: 'جۆری پڵەیت'),
+          translatePlateTypeLabel(context, filters['plate_type'].toString()),
         ),
       );
     }
@@ -298,7 +311,7 @@ class _SavedSearchesPageState extends State<SavedSearchesPage> {
       chips.add(
         _buildFilterChip(
           context,
-          _trLegacyText(context, 'Plate city', ar: 'مدينة اللوحة', ku: 'شاری پڵەیت'),
+          trLegacyText(context, 'Plate city', ar: 'مدينة اللوحة', ku: 'شاری پڵەیت'),
           tr(filters['plate_city'].toString()),
         ),
       );
@@ -405,7 +418,7 @@ class _SavedSearchesPageState extends State<SavedSearchesPage> {
         _buildFilterChip(
           context,
           l.engineSizeL,
-          _engineSizeChipLabel(context, filters['engine_size'].toString()),
+          engineSizeChipLabel(context, filters['engine_size'].toString()),
         ),
       );
     }
@@ -507,7 +520,7 @@ class _SavedSearchesPageState extends State<SavedSearchesPage> {
 
     if (!mounted) return;
     final messenger = ScaffoldMessenger.of(context);
-    final successText = _trLegacyText(
+    final successText = trLegacyText(
       context,
       'Search applied successfully!',
       ar: 'تم تطبيق البحث بنجاح!',
@@ -568,7 +581,7 @@ class _SavedSearchesPageState extends State<SavedSearchesPage> {
                   Icon(Icons.filter_list, color: Color(0xFFFF6B00), size: 20),
                   SizedBox(width: 8),
                   Text(
-                    _trLegacyText(
+                    trLegacyText(
                       context,
                       'Applied Filters:',
                       ar: 'الفلاتر المطبقة:',
@@ -592,7 +605,7 @@ class _SavedSearchesPageState extends State<SavedSearchesPage> {
             onPressed: () => Navigator.pop(context),
             style: TextButton.styleFrom(foregroundColor: Colors.grey[400]),
             child: Text(
-              _trLegacyText(
+              trLegacyText(
                 context,
                 'Close',
                 ar: 'إغلاق',
@@ -613,7 +626,7 @@ class _SavedSearchesPageState extends State<SavedSearchesPage> {
               ),
             ),
             child: Text(
-              _trLegacyText(
+              trLegacyText(
                 context,
                 'Apply Search',
                 ar: 'تطبيق البحث',
@@ -630,7 +643,7 @@ class _SavedSearchesPageState extends State<SavedSearchesPage> {
     final l = AppLocalizations.of(context)!;
     final any = l.anyOption;
     String tr(String? v) =>
-        _translateValueGlobal(context, v?.toString()) ?? v ?? '';
+        translateListingValue(context, v?.toString()) ?? v ?? '';
     final List<Widget> filterItems = [];
 
     // Vehicle Information
@@ -772,7 +785,7 @@ class _SavedSearchesPageState extends State<SavedSearchesPage> {
       filterItems.add(
         _buildFilterDetailItem(
           l.engineSizeL,
-          _engineSizeChipLabel(context, es),
+          engineSizeChipLabel(context, es),
         ),
       );
     }
@@ -797,7 +810,7 @@ class _SavedSearchesPageState extends State<SavedSearchesPage> {
     if (filters['damaged_parts'] != null) {
       filterItems.add(
         _buildFilterDetailItem(
-          _trLegacyText(
+          trLegacyText(
             context,
             'Damaged Parts',
             ar: 'الأجزاء التالفة',
@@ -818,7 +831,7 @@ class _SavedSearchesPageState extends State<SavedSearchesPage> {
     if (filters['owners'] != null) {
       filterItems.add(
         _buildFilterDetailItem(
-          _trLegacyText(
+          trLegacyText(
             context,
             'Owners',
             ar: 'المالكون',
@@ -836,7 +849,7 @@ class _SavedSearchesPageState extends State<SavedSearchesPage> {
     if (filters['accident_history'] != null) {
       filterItems.add(
         _buildFilterDetailItem(
-          _trLegacyText(
+          trLegacyText(
             context,
             'Accident History',
             ar: 'سجل الحوادث',
@@ -911,98 +924,4 @@ class _SavedSearchesPageState extends State<SavedSearchesPage> {
     return text[0].toUpperCase() + text.substring(1).toLowerCase();
   }
 }
-
-// Library-wide helper to map body types to emojis for all pages
-String _getBodyTypeAsset(String bodyType) {
-  // First try dynamic map built from assets
-  if (bodyType.toLowerCase() == 'any') {
-    // No dedicated "default" asset; use a safe built-in icon.
-    return 'assets/body_types_png/sedan.png';
-  }
-
-  // Try direct label match from dynamic map
-  // We store labels in title case keys (e.g., 'Mini Truck'), so we normalize here
-  String normalizeTitle(String s) {
-    final words = s
-        .replaceAll(RegExp(r'[_\\-]+'), ' ')
-        .trim()
-        .split(RegExp(r'\\s+'));
-    return words
-        .map((w) {
-          if (w.isEmpty) return w;
-          final lettersOnly = w.replaceAll(RegExp(r'[^a-zA-Z]'), '');
-          // Preserve short acronyms like "ATV" / "UTV".
-          if (lettersOnly.isNotEmpty && lettersOnly.length <= 3) {
-            return w.toUpperCase();
-          }
-          return w[0].toUpperCase() + (w.length > 1 ? w.substring(1) : '');
-        })
-        .join(' ');
-  }
-
-  final String titleKey = normalizeTitle(bodyType);
-  if (globalBodyTypeAssetMap.containsKey(titleKey)) {
-    return globalBodyTypeAssetMap[titleKey]!;
-  }
-
-  // Fallback to known static mappings for common names
-  final normalized = bodyType
-      .toLowerCase()
-      .replaceAll(RegExp(r'[_\\-]+'), ' ')
-      .trim();
-
-  switch (normalized) {
-    case 'micro':
-      return 'assets/body_types_png/micro.png';
-    case 'cuv':
-      return 'assets/body_types_png/cuv.png';
-    case 'sedan':
-      return 'assets/body_types_png/sedan.png';
-    case 'suv':
-      return 'assets/body_types_png/suv.png';
-    case 'hatchback':
-      return 'assets/body_types_png/hatchback.png';
-    case 'coupe':
-      return 'assets/body_types_png/coupe.png';
-    case 'wagon':
-    case 'station wagon':
-    case 'estate':
-      // No dedicated wagon asset; use hatchback as closest match.
-      return 'assets/body_types_png/hatchback.png';
-    case 'pickup':
-      return 'assets/body_types_png/pickup.png';
-    case 'roadster':
-      return 'assets/body_types_png/roadster.png';
-    case 'truck':
-      return 'assets/body_types_png/truck.png';
-    case 'minitruck':
-    case 'mini truck':
-      return 'assets/body_types_png/minitruck.png';
-    case 'bigtruck':
-    case 'big truck':
-      return 'assets/body_types_png/bigtruck.png';
-    case 'van':
-      return 'assets/body_types_png/van.png';
-    case 'minivan':
-    case 'mini van':
-    case 'mpv':
-      // No dedicated minivan asset; use van icon.
-      return 'assets/body_types_png/van.png';
-    case 'supercar':
-      return 'assets/body_types_png/supercar.png';
-    case 'cabriolet':
-    case 'convertible':
-    case 'cabrio':
-      return 'assets/body_types_png/cabriolet.png';
-    case 'motorcycle':
-      return 'assets/body_types_png/motorcycle.png';
-    case 'utv':
-      return 'assets/body_types_png/UTV.png';
-    case 'atv':
-      return 'assets/body_types_png/ATV.png';
-    default:
-      return 'assets/body_types_png/sedan.png';
-  }
-}
-
 

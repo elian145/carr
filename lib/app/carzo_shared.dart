@@ -26,6 +26,8 @@ import '../shared/vin/open_vin_search.dart';
 import '../shared/media/media_url.dart';
 import '../shared/i18n/locale_formatting.dart';
 import '../shared/i18n/legacy_inline_text.dart';
+import '../shared/i18n/region_spec_labels.dart' as region_spec_labels;
+export '../shared/i18n/region_spec_labels.dart';
 import '../shared/i18n/digits.dart';
 import '../shared/prefs/sell_draft_step.dart';
 import '../shared/ui/keyboard.dart';
@@ -74,6 +76,7 @@ import '../shared/listings/listing_management.dart'
 import '../shared/listings/listing_owner.dart';
 import '../features/comparison/state/car_comparison_store.dart';
 import '../features/saved_searches/saved_search_home_bridge.dart';
+import '../pages/saved_searches_page.dart';
 import '../features/listing/listing_mappers.dart';
 import '../data/car_catalog.dart';
 import '../data/car_name_translations.dart';
@@ -111,7 +114,6 @@ part '../features/sell/sell_step3.dart';
 part '../features/sell/sell_step4.dart';
 part '../features/sell/sell_step5.dart';
 part '../pages/car_details_page.dart';
-part '../pages/saved_searches_page.dart';
 part '../pages/comparison_page.dart';
 part '../pages/production_auth_pages.dart';
 part '../pages/production_account_pages.dart';
@@ -127,73 +129,17 @@ const List<String> _kOnlineSpecOptionKeys = [
   '_online_opts_seating',
 ];
 
-/// Canonical codes for listing / filter "region specs" (lowercase API / DB values).
-const List<String> kCarRegionSpecCodes = [
-  'us',
-  'gcc',
-  'iraq',
-  'canada',
-  'eu',
-  'cn',
-  'korea',
-  'ru',
-  'iran',
-];
+// Part libraries cannot see imports; forward region-spec helpers for home/sell/etc.
+const List<String> kCarRegionSpecCodes = region_spec_labels.kCarRegionSpecCodes;
 
-String carRegionSpecDisplayLabel(String code) {
-  switch (code.trim().toLowerCase()) {
-    case 'us':
-      return 'US';
-    case 'gcc':
-      return 'GCC';
-    case 'iraq':
-      return 'Iraq';
-    case 'canada':
-      return 'Canada';
-    case 'eu':
-      return 'EU';
-    case 'cn':
-      return 'CN';
-    case 'korea':
-      return 'Korea';
-    case 'ru':
-      return 'RU';
-    case 'iran':
-      return 'Iran';
-    default:
-      return code;
-  }
-}
+String carRegionSpecDisplayLabel(String code) =>
+    region_spec_labels.carRegionSpecDisplayLabel(code);
 
-String carRegionSpecDisplayLabelLocalized(BuildContext context, String code) {
-  switch (code.trim().toLowerCase()) {
-    case 'gcc':
-      return _trLegacyText(context, 'GCC', ar: 'خليجي', ku: 'کەنداو');
-    case 'us':
-      return _trLegacyText(context, 'US', ar: 'أمريكي', ku: 'ئەمەریکی');
-    case 'iraq':
-      return _trLegacyText(context, 'Iraq', ar: 'عراقي', ku: 'عێراقی');
-    case 'canada':
-      return _trLegacyText(context, 'Canada', ar: 'كندي', ku: 'کەنەدی');
-    case 'eu':
-      return _trLegacyText(context, 'EU', ar: 'أوروبي', ku: 'ئەوروپی');
-    case 'cn':
-      return _trLegacyText(context, 'CN', ar: 'صيني', ku: 'چینی');
-    case 'korea':
-      return _trLegacyText(context, 'Korea', ar: 'كوري', ku: 'کۆری');
-    case 'ru':
-      return _trLegacyText(context, 'RU', ar: 'روسي', ku: 'ڕووسی');
-    case 'iran':
-      return _trLegacyText(context, 'Iran', ar: 'إيراني', ku: 'ئێرانی');
-    default:
-      return carRegionSpecDisplayLabel(code);
-  }
-}
+String carRegionSpecDisplayLabelLocalized(BuildContext context, String code) =>
+    region_spec_labels.carRegionSpecDisplayLabelLocalized(context, code);
 
-bool isValidCarRegionSpecCode(String? s) {
-  if (s == null || s.isEmpty) return false;
-  return kCarRegionSpecCodes.contains(s.trim().toLowerCase());
-}
+bool isValidCarRegionSpecCode(String? s) =>
+    region_spec_labels.isValidCarRegionSpecCode(s);
 
 String _trLegacyText(
   BuildContext context,
@@ -1601,5 +1547,88 @@ Future<String?> generateVideoThumbnail(String videoPath) async {
   }
 }
 
+// Library-wide helper to map body types to asset paths for filter UIs.
+String _getBodyTypeAsset(String bodyType) {
+  if (bodyType.toLowerCase() == 'any') {
+    return 'assets/body_types_png/sedan.png';
+  }
 
+  String normalizeTitle(String s) {
+    final words = s
+        .replaceAll(RegExp(r'[_\\-]+'), ' ')
+        .trim()
+        .split(RegExp(r'\\s+'));
+    return words
+        .map((w) {
+          if (w.isEmpty) return w;
+          final lettersOnly = w.replaceAll(RegExp(r'[^a-zA-Z]'), '');
+          if (lettersOnly.isNotEmpty && lettersOnly.length <= 3) {
+            return w.toUpperCase();
+          }
+          return w[0].toUpperCase() + (w.length > 1 ? w.substring(1) : '');
+        })
+        .join(' ');
+  }
+
+  final String titleKey = normalizeTitle(bodyType);
+  if (globalBodyTypeAssetMap.containsKey(titleKey)) {
+    return globalBodyTypeAssetMap[titleKey]!;
+  }
+
+  final normalized = bodyType
+      .toLowerCase()
+      .replaceAll(RegExp(r'[_\\-]+'), ' ')
+      .trim();
+
+  switch (normalized) {
+    case 'micro':
+      return 'assets/body_types_png/micro.png';
+    case 'cuv':
+      return 'assets/body_types_png/cuv.png';
+    case 'sedan':
+      return 'assets/body_types_png/sedan.png';
+    case 'suv':
+      return 'assets/body_types_png/suv.png';
+    case 'hatchback':
+      return 'assets/body_types_png/hatchback.png';
+    case 'coupe':
+      return 'assets/body_types_png/coupe.png';
+    case 'wagon':
+    case 'station wagon':
+    case 'estate':
+      return 'assets/body_types_png/hatchback.png';
+    case 'pickup':
+      return 'assets/body_types_png/pickup.png';
+    case 'roadster':
+      return 'assets/body_types_png/roadster.png';
+    case 'truck':
+      return 'assets/body_types_png/truck.png';
+    case 'minitruck':
+    case 'mini truck':
+      return 'assets/body_types_png/minitruck.png';
+    case 'bigtruck':
+    case 'big truck':
+      return 'assets/body_types_png/bigtruck.png';
+    case 'van':
+      return 'assets/body_types_png/van.png';
+    case 'minivan':
+    case 'mini van':
+    case 'mpv':
+      return 'assets/body_types_png/van.png';
+    case 'supercar':
+      return 'assets/body_types_png/supercar.png';
+    case 'cabriolet':
+    case 'convertible':
+    case 'cabrio':
+      return 'assets/body_types_png/cabriolet.png';
+    case 'motorcycle':
+      return 'assets/body_types_png/motorcycle.png';
+    case 'utv':
+      return 'assets/body_types_png/UTV.png';
+    case 'atv':
+      return 'assets/body_types_png/ATV.png';
+    default:
+      return 'assets/body_types_png/sedan.png';
+  }
+}
 
