@@ -3232,9 +3232,13 @@ class _HomePageState extends State<HomePage> {
     IconData icon,
     Color color,
   ) {
-    return GestureDetector(
-      onTap: () => _clearFilter(filterType),
-      child: Container(
+    final chipLabel = '$label: $value';
+    return Semantics(
+      button: true,
+      label: '${AppLocalizations.of(context)!.clearFilters}, $chipLabel',
+      child: GestureDetector(
+        onTap: () => _clearFilter(filterType),
+        child: Container(
         padding: EdgeInsets.symmetric(horizontal: 8, vertical: 2),
         decoration: BoxDecoration(
           color: color.withValues(alpha: 0.2),
@@ -3262,6 +3266,7 @@ class _HomePageState extends State<HomePage> {
           ],
         ),
       ),
+    ),
     );
   }
 

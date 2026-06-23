@@ -65,10 +65,15 @@ class _SellStep5PageState extends State<SellStep5Page> {
                   Expanded(
                     child: SizedBox(
                       height: 50,
-                      child: ElevatedButton(
-                        onPressed: isSubmitting
-                            ? null
-                            : () async {
+                      child: Semantics(
+                        button: true,
+                        label: parentState?._isEditMode == true
+                            ? AppLocalizations.of(context)!.saveChangesButton
+                            : AppLocalizations.of(context)!.submitListing,
+                        child: ElevatedButton(
+                          onPressed: isSubmitting
+                              ? null
+                              : () async {
                                 setState(() {
                                   isSubmitting = true;
                                 });
@@ -334,6 +339,7 @@ class _SellStep5PageState extends State<SellStep5Page> {
                                   fontWeight: FontWeight.w600,
                                 ),
                               ),
+                        ),
                       ),
                     ),
                   ),

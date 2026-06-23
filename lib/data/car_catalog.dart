@@ -1,9 +1,27 @@
+import 'package:flutter/foundation.dart';
+
 /// Single source of truth for car brands, models, and trims.
 /// Generated from kk/legacy/app.py, tools/data/*.json, and recovered_*.json - run: python tools/extract_car_catalog.py
 class CarCatalog {
   CarCatalog._();
 
-  static final List<String> brands = [
+  static List<String>? _runtimeBrands;
+
+  /// Optional brand list from [assets/car_catalog.json] (set by [CarCatalogLoader]).
+  static void applyBrandsFromAsset(List<String> brands) {
+    if (brands.isEmpty) return;
+    _runtimeBrands = List.unmodifiable(brands);
+  }
+
+  /// Clears asset override (tests only).
+  @visibleForTesting
+  static void resetBrandsOverrideForTest() {
+    _runtimeBrands = null;
+  }
+
+  static List<String> get brands => _runtimeBrands ?? _embeddedBrands;
+
+  static final List<String> _embeddedBrands = [
     'Acura',
     'Aston Martin',
     'Audi',

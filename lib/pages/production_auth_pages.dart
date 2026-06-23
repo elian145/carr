@@ -1165,15 +1165,19 @@ class _SignupPageState extends State<SignupPage> {
                 ),
               ),
               SizedBox(height: 12),
-              ElevatedButton(
-                onPressed: (_loading || !_acceptedTerms) ? null : _signup,
-                child: _loading
-                    ? SizedBox(
-                        width: 18,
-                        height: 18,
-                        child: CircularProgressIndicator(strokeWidth: 2),
-                      )
-                    : Text(AppLocalizations.of(context)!.createAccount),
+              Semantics(
+                button: true,
+                label: AppLocalizations.of(context)!.createAccount,
+                child: ElevatedButton(
+                  onPressed: (_loading || !_acceptedTerms) ? null : _signup,
+                  child: _loading
+                      ? SizedBox(
+                          width: 18,
+                          height: 18,
+                          child: CircularProgressIndicator(strokeWidth: 2),
+                        )
+                      : Text(AppLocalizations.of(context)!.createAccount),
+                ),
               ),
               TextButton(
                 onPressed: () =>

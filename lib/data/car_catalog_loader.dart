@@ -2,6 +2,7 @@ import 'dart:convert';
 
 import 'package:flutter/services.dart';
 
+import 'car_catalog.dart';
 import '../shared/debug/app_log.dart';
 
 /// Loads [assets/car_catalog.json] when present (run `python tools/export_car_catalog_json.py`).
@@ -20,8 +21,12 @@ class CarCatalogLoader {
       final data = json.decode(raw) as Map<String, dynamic>;
       final brands = data['brands'];
       if (brands is List && brands.isNotEmpty) {
+        final list = brands.map((e) => e.toString()).toList(growable: false);
+        CarCatalog.applyBrandsFromAsset(list);
         assetAvailable = true;
-        appLog('CarCatalogLoader: assets/car_catalog.json available (${brands.length} brands)');
+        appLog(
+          'CarCatalogLoader: applied ${list.length} brands from assets/car_catalog.json',
+        );
       }
     } catch (_) {
       appLog('CarCatalogLoader: using embedded CarCatalog (no assets/car_catalog.json)');
