@@ -1,6 +1,6 @@
 part of 'sell_flow.dart';
 
-mixin _SellStep1Build on _SellStep1Logic {
+mixin _SellStep1Build on _SellStep1Pickers {
   @override
   Widget build(BuildContext context) {
     return SingleChildScrollView(
@@ -101,7 +101,7 @@ mixin _SellStep1Build on _SellStep1Logic {
                             padding: const EdgeInsets.all(6),
                             child: CachedNetworkImage(
                               imageUrl:
-                                  '${getApiBase()}/static/images/brands/${_brandSlug(selectedBrand!)}.png',
+                                  '${getApiBase()}/static/images/brands/${sellBrandSlug(selectedBrand!)}.png',
                               fit: BoxFit.contain,
                               errorWidget: (context, url, error) => Image.network(
                                 '${getApiBase()}/static/images/brands/default.png',
