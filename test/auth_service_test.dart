@@ -48,6 +48,12 @@ void main() {
     expect(AuthService.userMapFrom(raw)?['username'], 'elian');
   });
 
+  test('userMapFrom stringifies numeric user ids', () {
+    final raw = <String, dynamic>{'username': 'buyer', 'id': 1};
+    expect(AuthService.userMapFrom(raw)?['id'], '1');
+    expect(AuthService().userId, isNull);
+  });
+
   test('login survives stale profile load from startup init', () async {
     await ApiService.setTokens(
       accessToken: 'stale_access_token',

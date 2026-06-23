@@ -14,9 +14,14 @@ class AuthService extends ChangeNotifier {
   /// JSON maps from [ApiService] may be [Map<dynamic, dynamic>]; normalize safely.
   static Map<String, dynamic>? userMapFrom(Object? raw) {
     if (raw is! Map) return null;
-    return Map<String, dynamic>.from(
+    final map = Map<String, dynamic>.from(
       raw.map((key, value) => MapEntry(key.toString(), value)),
     );
+    final id = map['id'];
+    if (id != null && id is! String) {
+      map['id'] = id.toString();
+    }
+    return map;
   }
 
   static Map<String, dynamic> profileFromResponse(Map<String, dynamic> response) {
@@ -413,13 +418,13 @@ class AuthService extends ChangeNotifier {
       accessToken: 'test_access_token',
       refreshToken: 'test_refresh_token',
     );
-    _currentUser = user ??
-        {
+    _currentUser = userMapFrom(user) ??
+        userMapFrom({
           'id': 1,
           'username': 'test',
           'is_admin': false,
           'account_type': 'individual',
-        };
+        });
     _isAuthenticated = true;
     _isLoading = false;
     notifyListeners();
@@ -434,7 +439,11 @@ class AuthService extends ChangeNotifier {
   }
 
   // Get user ID
-  String? get userId => _currentUser?['id'];
+  String? get userId {
+    final id = _currentUser?['id'];
+    if (id == null) return null;
+    return id.toString();
+  }
 
   // Get user name
   String get userName => _currentUser != null
