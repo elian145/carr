@@ -60,6 +60,33 @@ class HomeFiltersSnapshot {
 
   static bool _isAny(String? v) =>
       v == null || v.isEmpty || v.toLowerCase() == 'any';
+
+  bool get hasActiveFilters =>
+      _has(brand) ||
+      _has(model) ||
+      _has(trim) ||
+      _has(minPrice) ||
+      _has(maxPrice) ||
+      _has(minYear) ||
+      _has(maxYear) ||
+      _has(minMileage) ||
+      _has(maxMileage) ||
+      _has(condition) ||
+      _has(transmission) ||
+      _has(fuelType) ||
+      _has(bodyType) ||
+      _has(color) ||
+      _has(driveType) ||
+      _has(regionSpecs) ||
+      _has(cylinderCount) ||
+      _has(seating) ||
+      _has(engineSize) ||
+      _has(city) ||
+      _has(plateType) ||
+      _has(plateCity) ||
+      _has(titleStatus) ||
+      _has(damagedParts) ||
+      _has(sortByUi);
 }
 
 /// Builds `/api/cars` query parameters from [filters].

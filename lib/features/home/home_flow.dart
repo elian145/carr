@@ -18,6 +18,7 @@ import '../../data/brand_logo_filenames.dart';
 import '../../data/car_catalog.dart';
 import '../../data/car_name_translations.dart';
 import '../../features/home/home_feed_errors.dart';
+import '../../features/home/home_filter_persistence.dart';
 import '../../features/home/home_filters_query.dart';
 import '../../features/home/more_filters_dialog_style.dart';
 import '../../features/home/widgets/home_feed_states.dart';
@@ -47,6 +48,8 @@ import '../../shared/prefs/listing_layout_prefs.dart';
 import '../../theme_provider.dart';
 
 part 'home_page.dart';
+part 'home_filter_catalog.dart';
+part 'home_filter_persist.dart';
 part 'home_filter_logic.dart';
 part 'home_fetch.dart';
 part 'home_filter_bar.dart';
