@@ -45,6 +45,9 @@ import '../../shared/prefs/listing_layout_prefs.dart';
 import '../../theme_provider.dart';
 
 part 'home_page.dart';
+part 'home_filter_logic.dart';
+part 'home_fetch.dart';
+part 'home_build.dart';
 
 const bool _kFlutterTest = bool.fromEnvironment('FLUTTER_TEST');
 
