@@ -1,25 +1,18 @@
 import 'package:flutter/material.dart';
+
 import 'package:flutter/cupertino.dart';
-import 'package:flutter/foundation.dart';
 import 'package:flutter/scheduler.dart';
-import 'package:http/http.dart' as http;
 import 'dart:convert';
 import 'package:google_fonts/google_fonts.dart';
-import 'package:auto_size_text/auto_size_text.dart';
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/services.dart' as services;
 import 'dart:ui' as ui;
 import 'dart:async';
-import 'dart:math' as math;
-import 'package:image_picker/image_picker.dart';
-import 'package:video_thumbnail/video_thumbnail.dart';
 import 'dart:io';
 import 'package:shared_preferences/shared_preferences.dart';
 import '../services/api_service.dart';
 import '../services/auth_service.dart';
 import '../shared/auth/token_store.dart';
-import '../shared/text/pretty_title_case.dart';
-import '../shared/media/media_url.dart';
 import '../shared/i18n/locale_formatting.dart';
 import '../shared/i18n/legacy_inline_text.dart';
 import '../shared/i18n/region_spec_labels.dart' as region_spec_labels;
@@ -27,44 +20,25 @@ export '../shared/i18n/region_spec_labels.dart';
 import '../shared/listings/body_type_assets.dart' as body_type_assets;
 export '../shared/listings/body_type_assets.dart';
 import '../shared/i18n/digits.dart';
-import '../shared/prefs/sell_draft_step.dart';
-import '../shared/ui/keyboard.dart';
 import '../shared/debug/app_log.dart';
-import '../shared/navigation/route_args.dart';
 import '../shared/i18n/listing_field_labels.dart';
 import '../shared/i18n/listing_value_labels.dart';
 import '../shared/i18n/sort_api_mapping.dart';
 import '../shared/listings/transmission_filter.dart';
-import '../shared/listings/listing_uploaded_ago.dart';
-import '../shared/auth/phone_verification_gate.dart';
-import '../shared/errors/user_error_text.dart';
 import '../features/home/home_feed_errors.dart';
 import '../shared/listings/listing_events.dart';
 import '../shared/listings/listing_identity.dart';
 import '../shared/listings/listing_card_data.dart' as listing_card_data;
 import '../shared/prefs/listing_layout_prefs.dart';
-import '../shared/prefs/sell_draft_media_persistence.dart';
-import '../shared/prefs/legacy_sell_draft_prefs.dart';
 import '../state/locale_controller.dart' as app_state;
-import '../globals.dart';
 import '../l10n/app_localizations.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
-import 'package:intl/intl.dart';
 import 'package:provider/provider.dart';
 import '../theme_provider.dart';
-import '../services/ai_service.dart';
-import '../services/car_service.dart';
-import 'package:mime/mime.dart';
-import 'package:http_parser/http_parser.dart';
-import 'package:path/path.dart' as p;
 import '../features/saved_searches/saved_search_home_bridge.dart';
 import '../pages/saved_searches_page.dart';
-import '../pages/comparison_page.dart';
 export '../pages/comparison_page.dart';
-import '../pages/car_details_page.dart';
 export '../pages/car_details_page.dart';
-import '../features/listing/car_listing_specs_grid.dart' as car_listing_specs_grid;
-import '../features/listing/listing_spec_item.dart';
 export '../features/listing/car_listing_specs_grid.dart';
 import '../features/listing/listing_mappers.dart';
 import '../data/car_catalog.dart';
@@ -72,25 +46,20 @@ import '../data/car_name_translations.dart';
 import '../services/car_spec_index.dart';
 import '../services/saved_search_service.dart';
 import '../models/online_spec_variant.dart';
-import '../pages/listing_image_gallery_page.dart';
-import '../features/sell/sell_flow.dart';
 export '../features/sell/sell_flow.dart' show SellCarPage;
-import '../features/sell/sell_entry.dart';
 export '../features/sell/sell_entry.dart';
 import '../shared/listings/body_type_image_widget.dart' as body_type_image;
+export 'legacy_fallback_routes.dart' show buildLegacyFallbackRoutes;
 import 'widgets/main_shell_navigation.dart' as main_shell_navigation;
 export 'widgets/main_shell_navigation.dart';
-import '../pages/production_auth_pages.dart';
 export '../pages/production_auth_pages.dart';
-import '../pages/production_account_pages.dart';
 export '../pages/production_account_pages.dart';
+import '../features/home/widgets/home_feed_states.dart';
+export '../features/home/widgets/home_feed_states.dart';
 import 'app_api_base.dart';
 import '../data/brand_logo_filenames.dart';
 import 'widgets/global_listing_card.dart';
 import 'widgets/home_search_dialog.dart';
-import 'widgets/listing_galleries.dart';
-import 'widgets/listing_network_image.dart';
-
 export 'widgets/global_listing_card.dart'
     show
         buildGlobalCarCard,
@@ -100,9 +69,7 @@ export 'widgets/global_listing_card.dart'
 export 'widgets/listing_galleries.dart'
     show FullScreenGalleryPage, ListingPreviewGalleryPage;
 export 'widgets/home_search_dialog.dart' show HomeSearchDialog;
-part '../features/home/widgets/home_feed_states.dart';
 part '../features/home/home_page.dart';
-part 'legacy_fallback_routes.dart';
 
 // Part libraries cannot see imports; forward region-spec helpers for home UIs.
 const List<String> kCarRegionSpecCodes = region_spec_labels.kCarRegionSpecCodes;
@@ -217,21 +184,8 @@ class KuWidgetsLocalizationsDelegate
 
 
 
-String _buildFullImageUrl(String rel) => buildLegacyFullImageUrl(rel);
-
-Widget _listingNetworkImage(
-  String url, {
-  BoxFit fit = BoxFit.cover,
-  double? width,
-  double? height,
-}) =>
-    listingNetworkImage(url, fit: fit, width: width, height: height);
-
 String? _translateValueGlobal(BuildContext context, String? raw) =>
     translateListingValue(context, raw);
-
-String _listingUploadedAgo(BuildContext context, Map car) =>
-    listingUploadedAgo(context, car);
 
 /// Normalizes API listing / favorite payloads into the shape expected by [buildGlobalCarCard].
 Map<String, dynamic> mapListingToGlobalCarCardData(
@@ -245,9 +199,6 @@ String _localizeDigitsGlobal(BuildContext context, String input) =>
 
 String _engineSizeChipLabel(BuildContext context, String raw) =>
     engineSizeChipLabel(context, raw);
-
-String _engineSizeSellRowLabel(BuildContext context, String raw) =>
-    engineSizeSellRowLabel(context, raw);
 
 // Locale-aware currency formatting with digit localization
 String _formatCurrencyGlobal(BuildContext context, dynamic raw) =>
@@ -298,9 +249,6 @@ Widget buildFloatingBottomNav(
 String _cancelTextGlobal(BuildContext context) {
   return AppLocalizations.of(context)!.cancelAction;
 }
-
-NumberFormat _decimalFormatterGlobal(BuildContext context) =>
-    decimalFormatterForLocale(context);
 
 String? _convertSortToApiValue(BuildContext context, String? sortOption) =>
     convertSortToApiValue(context, sortOption);

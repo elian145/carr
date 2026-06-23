@@ -1,15 +1,17 @@
-part of '../../../app/carzo_shared.dart';
+import 'package:flutter/material.dart';
+
+import '../../../l10n/app_localizations.dart';
 
 /// Empty listings message with optional one-time auto-fetch when a sort is active.
 class HomeEmptyListMessage extends StatefulWidget {
-  final String? selectedSortBy;
-  final VoidCallback onAutoFetch;
-
   const HomeEmptyListMessage({
     super.key,
     required this.selectedSortBy,
     required this.onAutoFetch,
   });
+
+  final String? selectedSortBy;
+  final VoidCallback onAutoFetch;
 
   @override
   State<HomeEmptyListMessage> createState() => _HomeEmptyListMessageState();

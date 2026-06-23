@@ -189,9 +189,6 @@ List<Map<String, dynamic>> _decodeSellDraftArchive(String? raw) =>
 String _encodeSellDraftArchive(List<Map<String, dynamic>> drafts) =>
     sell_draft_helpers.encodeSellDraftArchive(drafts);
 
-Map<String, dynamic> _normalizeSellDraftSnapshot(Map<String, dynamic> raw) =>
-    sell_draft_helpers.normalizeSellDraftSnapshot(raw);
-
 int _readSellDraftStepDynamic(dynamic raw, {int maxIdx = 4}) =>
     readSellDraftStepDynamic(raw, maxIdx: maxIdx);
 
@@ -232,9 +229,6 @@ String _formatCurrencyGlobal(BuildContext context, dynamic raw) =>
 
 NumberFormat _decimalFormatterGlobal(BuildContext context) =>
     decimalFormatterForLocale(context);
-
-String _engineSizeChipLabel(BuildContext context, String raw) =>
-    engineSizeChipLabel(context, raw);
 
 String _engineSizeSellRowLabel(BuildContext context, String raw) =>
     engineSizeSellRowLabel(context, raw);
