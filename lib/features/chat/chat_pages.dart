@@ -32,6 +32,7 @@ part 'chat_widgets.dart';
 part 'chat_list_page.dart';
 part 'chat_notifications_page.dart';
 part 'chat_conversation_fields.dart';
+part 'chat_conversation_transport_store.dart';
 part 'chat_conversation_transport.dart';
 part 'chat_conversation_media.dart';
 part 'chat_conversation_message_actions.dart';

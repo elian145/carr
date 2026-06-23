@@ -25,7 +25,7 @@ class ChatConversationPage extends StatefulWidget {
 }
 
 class _ChatConversationPageState extends _ChatConversationFields
-    with _ChatConversationTransport, _ChatConversationMedia, _ChatConversationMessageActions, _ChatConversationComposer, _ChatConversationMessageUi, WidgetsBindingObserver {
+    with _ChatConversationTransportStore, _ChatConversationTransport, _ChatConversationMedia, _ChatConversationMessageActions, _ChatConversationComposer, _ChatConversationMessageUi, WidgetsBindingObserver {
   @override
   void initState() {
     super.initState();
