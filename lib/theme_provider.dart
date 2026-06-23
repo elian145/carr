@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
+import 'widgets/edge_swipe_back.dart' show NavigationPopCoordinator;
+
 class ThemeProvider extends ChangeNotifier {
   static const String _themeKey = 'theme_mode';
 
@@ -132,7 +134,8 @@ class AppThemes {
     );
   }
 
-  static const _pageTransitions = AppNoTransitionsPageTransitionsBuilder();
+  static const _desktopPageTransitions = AppNoTransitionsPageTransitionsBuilder();
+  static const _mobilePageTransitions = AppHorizontalSlidePageTransitionsBuilder();
 
   static ThemeData get lightTheme {
     final scheme = ColorScheme.fromSeed(
@@ -163,12 +166,12 @@ class AppThemes {
       scaffoldBackgroundColor: lightAppBackground,
       pageTransitionsTheme: PageTransitionsTheme(
         builders: const {
-          TargetPlatform.android: _pageTransitions,
-          TargetPlatform.iOS: _pageTransitions,
-          TargetPlatform.linux: _pageTransitions,
-          TargetPlatform.macOS: _pageTransitions,
-          TargetPlatform.windows: _pageTransitions,
-          TargetPlatform.fuchsia: _pageTransitions,
+          TargetPlatform.android: _mobilePageTransitions,
+          TargetPlatform.iOS: _mobilePageTransitions,
+          TargetPlatform.linux: _desktopPageTransitions,
+          TargetPlatform.macOS: _desktopPageTransitions,
+          TargetPlatform.windows: _desktopPageTransitions,
+          TargetPlatform.fuchsia: _desktopPageTransitions,
         },
       ),
       appBarTheme: AppBarTheme(
@@ -239,12 +242,12 @@ class AppThemes {
       scaffoldBackgroundColor: scheme.surfaceContainerLowest,
       pageTransitionsTheme: PageTransitionsTheme(
         builders: const {
-          TargetPlatform.android: _pageTransitions,
-          TargetPlatform.iOS: _pageTransitions,
-          TargetPlatform.linux: _pageTransitions,
-          TargetPlatform.macOS: _pageTransitions,
-          TargetPlatform.windows: _pageTransitions,
-          TargetPlatform.fuchsia: _pageTransitions,
+          TargetPlatform.android: _mobilePageTransitions,
+          TargetPlatform.iOS: _mobilePageTransitions,
+          TargetPlatform.linux: _desktopPageTransitions,
+          TargetPlatform.macOS: _desktopPageTransitions,
+          TargetPlatform.windows: _desktopPageTransitions,
+          TargetPlatform.fuchsia: _desktopPageTransitions,
         },
       ),
       appBarTheme: AppBarTheme(
@@ -306,5 +309,38 @@ class AppNoTransitionsPageTransitionsBuilder extends PageTransitionsBuilder {
     Widget child,
   ) {
     return child;
+  }
+}
+
+/// Horizontal slide for push/pop on phone (CI-safe; no Cupertino import).
+class AppHorizontalSlidePageTransitionsBuilder extends PageTransitionsBuilder {
+  const AppHorizontalSlidePageTransitionsBuilder();
+
+  @override
+  Widget buildTransitions<T>(
+    PageRoute<T> route,
+    BuildContext context,
+    Animation<double> animation,
+    Animation<double> secondaryAnimation,
+    Widget child,
+  ) {
+    if (NavigationPopCoordinator.suppressNextRoutePopTransition &&
+        route.isCurrent) {
+      NavigationPopCoordinator.suppressNextRoutePopTransition = false;
+      return child;
+    }
+
+    final slide = Tween<Offset>(
+      begin: const Offset(1, 0),
+      end: Offset.zero,
+    ).animate(
+      CurvedAnimation(
+        parent: animation,
+        curve: Curves.easeOutCubic,
+        reverseCurve: Curves.easeInCubic,
+      ),
+    );
+
+    return SlideTransition(position: slide, child: child);
   }
 }

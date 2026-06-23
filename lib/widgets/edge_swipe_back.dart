@@ -1,5 +1,14 @@
 import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/scheduler.dart';
+
+/// When true, the next route pop skips the theme page transition (edge swipe
+/// already animated the dismiss).
+class NavigationPopCoordinator {
+  NavigationPopCoordinator._();
+
+  static bool suppressNextRoutePopTransition = false;
+}
 
 class EdgeSwipeBack extends StatefulWidget {
   const EdgeSwipeBack({
@@ -28,9 +37,27 @@ class EdgeSwipeBack extends StatefulWidget {
   State<EdgeSwipeBack> createState() => _EdgeSwipeBackState();
 }
 
-class _EdgeSwipeBackState extends State<EdgeSwipeBack> {
+class _EdgeSwipeBackState extends State<EdgeSwipeBack>
+    with SingleTickerProviderStateMixin {
   double _dragDx = 0;
   bool _popped = false;
+  late final AnimationController _settleController;
+  Animation<double>? _settleAnimation;
+
+  @override
+  void initState() {
+    super.initState();
+    _settleController = AnimationController(
+      vsync: this,
+      duration: const Duration(milliseconds: 180),
+    );
+  }
+
+  @override
+  void dispose() {
+    _settleController.dispose();
+    super.dispose();
+  }
 
   bool _canPop() {
     final nav = widget.navigatorKey.currentState;
@@ -38,8 +65,52 @@ class _EdgeSwipeBackState extends State<EdgeSwipeBack> {
   }
 
   void _reset() {
+    _settleController.stop();
+    _settleAnimation = null;
     _dragDx = 0;
     _popped = false;
+  }
+
+  void _animateTo(
+    double target, {
+    required Duration duration,
+    VoidCallback? onDone,
+  }) {
+    _settleController
+      ..stop()
+      ..duration = duration;
+    _settleAnimation = Tween<double>(
+      begin: _dragDx,
+      end: target,
+    ).animate(
+      CurvedAnimation(
+        parent: _settleController,
+        curve: Curves.easeOutCubic,
+      ),
+    )..addListener(() {
+        if (!mounted) return;
+        setState(() {
+          _dragDx = _settleAnimation!.value;
+        });
+      })
+      ..addStatusListener((status) {
+        if (status == AnimationStatus.completed && onDone != null) {
+          onDone();
+        }
+      });
+    _settleController.forward(from: 0);
+  }
+
+  void _animateBackToStart() {
+    if (_dragDx <= 0) {
+      _reset();
+      return;
+    }
+    _animateTo(
+      0,
+      duration: const Duration(milliseconds: 180),
+      onDone: _reset,
+    );
   }
 
   void _maybePop() {
@@ -49,8 +120,29 @@ class _EdgeSwipeBackState extends State<EdgeSwipeBack> {
     if (!nav.canPop()) return;
 
     _popped = true;
-    nav.maybePop();
-    _reset();
+    final width = MediaQuery.sizeOf(context).width;
+    final target = width.clamp(280.0, 1200.0);
+    _animateTo(
+      target,
+      duration: const Duration(milliseconds: 140),
+      onDone: () {
+        NavigationPopCoordinator.suppressNextRoutePopTransition = true;
+        _settleController.stop();
+        _settleAnimation = null;
+        _dragDx = 0;
+        if (mounted) {
+          setState(() {});
+        }
+        nav.maybePop();
+        SchedulerBinding.instance.addPostFrameCallback((_) {
+          if (mounted) {
+            setState(_reset);
+          } else {
+            _reset();
+          }
+        });
+      },
+    );
   }
 
   @override
@@ -71,7 +163,9 @@ class _EdgeSwipeBackState extends State<EdgeSwipeBack> {
               }
               ..onUpdate = (details) {
                 if (_popped) return;
+                _settleController.stop();
                 _dragDx = (_dragDx + details.delta.dx).clamp(0.0, double.infinity);
+                setState(() {});
                 if (_dragDx >= widget.triggerDistance) {
                   _maybePop();
                 }
@@ -82,16 +176,21 @@ class _EdgeSwipeBackState extends State<EdgeSwipeBack> {
                 if (_dragDx >= widget.triggerDistance ||
                     v >= widget.triggerVelocity) {
                   _maybePop();
+                } else {
+                  _animateBackToStart();
                 }
-                _reset();
               }
               ..onCancel = () {
-                _reset();
+                if (_popped) return;
+                _animateBackToStart();
               };
           },
         ),
       },
-      child: widget.child,
+      child: Transform.translate(
+        offset: Offset(_dragDx, 0),
+        child: widget.child,
+      ),
     );
   }
 }
@@ -108,10 +207,8 @@ class _EdgeBackGestureRecognizer extends HorizontalDragGestureRecognizer {
 
   @override
   void addAllowedPointer(PointerDownEvent event) {
-    // Global position: x==0 is the far-left edge of the screen.
     if (!_canStart()) return;
     if (event.position.dx > _edgeWidth) return;
     super.addAllowedPointer(event);
   }
 }
-
