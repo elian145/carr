@@ -1548,19 +1548,8 @@ class _HomePageState extends State<HomePage> {
         _debugLog('ðŸ“¦ Using cached data for key: $cacheKey');
         try {
           final decoded = json.decode(cached);
-          List<dynamic> listSource;
-          if (decoded is List) {
-            listSource = decoded;
-          } else if (decoded is Map && decoded['cars'] is List) {
-            listSource = decoded['cars'] as List;
-          } else {
-            listSource = const [];
-          }
-          final List<Map<String, dynamic>> parsed = listSource
-              .whereType<Map>()
-              .map((e) => e.map((k, v) => MapEntry(k.toString(), v)))
-              .toList()
-              .cast<Map<String, dynamic>>();
+          final List<Map<String, dynamic>> parsed =
+              listingMapsFromApiResponse(decoded);
           if (mounted) {
             setState(() {
               cars = _applyDamagedPartsExactFilter(parsed);
@@ -1599,25 +1588,16 @@ class _HomePageState extends State<HomePage> {
 
       if (response.statusCode == 200) {
         final decoded = json.decode(response.body);
-        List<dynamic> listSource;
-        if (decoded is List) {
-          listSource = decoded;
-        } else if (decoded is Map && decoded['cars'] is List) {
-          listSource = decoded['cars'] as List;
+        if (decoded is Map) {
           try {
             final pg = (decoded['pagination'] as Map?);
             if (pg != null && pg['has_next'] is bool) {
               _hasNext = pg['has_next'] as bool;
             }
           } catch (e, st) { logNonFatal(e, st); }
-        } else {
-          listSource = const [];
         }
-        final List<Map<String, dynamic>> parsed = listSource
-            .whereType<Map>()
-            .map((e) => e.map((k, v) => MapEntry(k.toString(), v)))
-            .toList()
-            .cast<Map<String, dynamic>>();
+        final List<Map<String, dynamic>> parsed =
+            listingMapsFromApiResponse(decoded);
 
         _debugLog('ðŸ“Š Parsed ${parsed.length} cars from response');
 
@@ -1740,25 +1720,16 @@ class _HomePageState extends State<HomePage> {
       );
       if (resp.statusCode == 200) {
         final decoded = json.decode(resp.body);
-        List<dynamic> listSource;
-        if (decoded is Map && decoded['cars'] is List) {
-          listSource = decoded['cars'] as List;
+        if (decoded is Map) {
           try {
             final pg = (decoded['pagination'] as Map?);
             if (pg != null && pg['has_next'] is bool) {
               _hasNext = pg['has_next'] as bool;
             }
           } catch (e, st) { logNonFatal(e, st); }
-        } else if (decoded is List) {
-          listSource = decoded;
-        } else {
-          listSource = const [];
         }
-        final List<Map<String, dynamic>> more = listSource
-            .whereType<Map>()
-            .map((e) => e.map((k, v) => MapEntry(k.toString(), v)))
-            .toList()
-            .cast<Map<String, dynamic>>();
+        final List<Map<String, dynamic>> more =
+            listingMapsFromApiResponse(decoded);
         if (mounted && more.isNotEmpty) {
           setState(() {
             cars.addAll(_applyDamagedPartsExactFilter(more));
@@ -1811,11 +1782,7 @@ class _HomePageState extends State<HomePage> {
         final decoded = json.decode(resp.body);
         if (decoded is Map && decoded['cars'] is List) {
           final List<Map<String, dynamic>> parsed =
-              List<Map<String, dynamic>>.from(
-                (decoded['cars'] as List).whereType<Map>().map(
-                  (e) => e.map((k, v) => MapEntry(k.toString(), v)),
-                ),
-              );
+              listingMapsFromApiResponse(decoded);
           if (mounted) {
             setState(() {
               cars = _applyDamagedPartsExactFilter(parsed);
@@ -1849,19 +1816,8 @@ class _HomePageState extends State<HomePage> {
       );
       if (response.statusCode == 200) {
         final decoded = json.decode(response.body);
-        List<dynamic> listSource;
-        if (decoded is List) {
-          listSource = decoded;
-        } else if (decoded is Map && decoded['cars'] is List) {
-          listSource = decoded['cars'] as List;
-        } else {
-          listSource = const [];
-        }
-        final List<Map<String, dynamic>> parsed = listSource
-            .whereType<Map>()
-            .map((e) => e.map((k, v) => MapEntry(k.toString(), v)))
-            .toList()
-            .cast<Map<String, dynamic>>();
+        final List<Map<String, dynamic>> parsed =
+            listingMapsFromApiResponse(decoded);
 
         if (mounted) {
           setState(() {
@@ -2167,16 +2123,8 @@ class _HomePageState extends State<HomePage> {
 
         if (response.statusCode == 200) {
           final decoded = json.decode(response.body);
-          final List<dynamic> listSource = decoded is List
-              ? decoded
-              : (decoded is Map && decoded['cars'] is List)
-              ? decoded['cars'] as List
-              : <dynamic>[];
-          final List<Map<String, dynamic>> parsed = listSource
-              .whereType<Map>()
-              .map((e) => e.map((k, v) => MapEntry(k.toString(), v)))
-              .toList()
-              .cast<Map<String, dynamic>>();
+          final List<Map<String, dynamic>> parsed =
+              listingMapsFromApiResponse(decoded);
 
           if (mounted) {
             setState(() {
@@ -2236,16 +2184,8 @@ class _HomePageState extends State<HomePage> {
 
         if (response.statusCode == 200) {
           final decoded = json.decode(response.body);
-          final List<dynamic> listSource = decoded is List
-              ? decoded
-              : (decoded is Map && decoded['cars'] is List)
-              ? decoded['cars'] as List
-              : <dynamic>[];
-          final List<Map<String, dynamic>> parsed = listSource
-              .whereType<Map>()
-              .map((e) => e.map((k, v) => MapEntry(k.toString(), v)))
-              .toList()
-              .cast<Map<String, dynamic>>();
+          final List<Map<String, dynamic>> parsed =
+              listingMapsFromApiResponse(decoded);
 
           if (mounted) {
             setState(() {
@@ -2290,16 +2230,8 @@ class _HomePageState extends State<HomePage> {
 
     if (response.statusCode == 200) {
       final decoded = json.decode(response.body);
-      final List<dynamic> listSource = decoded is List
-          ? decoded
-          : (decoded is Map && decoded['cars'] is List)
-          ? decoded['cars'] as List
-          : <dynamic>[];
-      final List<Map<String, dynamic>> parsed = listSource
-          .whereType<Map>()
-          .map((e) => e.map((k, v) => MapEntry(k.toString(), v)))
-          .toList()
-          .cast<Map<String, dynamic>>();
+      final List<Map<String, dynamic>> parsed =
+          listingMapsFromApiResponse(decoded);
 
       if (mounted) {
         setState(() {
@@ -2337,16 +2269,8 @@ class _HomePageState extends State<HomePage> {
 
       if (response.statusCode == 200) {
         final decoded = json.decode(response.body);
-        final List<dynamic> listSource = decoded is List
-            ? decoded
-            : (decoded is Map && decoded['cars'] is List)
-            ? decoded['cars'] as List
-            : <dynamic>[];
-        final List<Map<String, dynamic>> parsed = listSource
-            .whereType<Map>()
-            .map((e) => e.map((k, v) => MapEntry(k.toString(), v)))
-            .toList()
-            .cast<Map<String, dynamic>>();
+        final List<Map<String, dynamic>> parsed =
+            listingMapsFromApiResponse(decoded);
 
         if (mounted) {
           setState(() {

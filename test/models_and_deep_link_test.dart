@@ -50,17 +50,23 @@ void main() {
     expect(link, contains('abc123'));
   });
 
-  test('listingSummariesFromList parses API rows', () {
-    final rows = listingSummariesFromList([
+  test('listingMapsFromApiResponse parses list and cars wrapper', () {
+    final rows = listingMapsFromApiResponse([
       {'id': 1, 'title': 'Camry', 'brand': 'Toyota', 'price': 12000},
       {'car_id': 'x2', 'name': 'Civic'},
       'skip',
       {},
     ]);
     expect(rows.length, 2);
-    expect(rows.first.id, '1');
-    expect(rows.first.title, 'Camry');
-    expect(rows.last.id, 'x2');
-    expect(rows.last.title, 'Civic');
+    expect(rows.first['id'], '1');
+    expect(rows.first['title'], 'Camry');
+
+    final wrapped = listingMapsFromApiResponse({
+      'cars': [
+        {'id': 'w1', 'title': 'Wrapped'},
+      ],
+    });
+    expect(wrapped.length, 1);
+    expect(wrapped.first['id'], 'w1');
   });
 }

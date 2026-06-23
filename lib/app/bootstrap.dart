@@ -69,13 +69,15 @@ void _runZonedApp(Widget app) {
         await sp.remove('home_pending_saved_search_fetch_v1');
       } catch (e, st) { logNonFatal(e, st); }
 
+      // Catalog must load before sell/home filters use brand-model data.
+      try {
+        await CarCatalogLoader.ensureLoaded();
+      } catch (e, st) { logNonFatal(e, st); }
+
       runApp(app);
 
       // Defer heavy initializations to post-frame to avoid blocking first paint.
       Future.microtask(() async {
-        try {
-          await CarCatalogLoader.ensureLoaded();
-        } catch (e, st) { logNonFatal(e, st); }
         try {
           await PushNotificationService.initialize();
         } catch (e, st) { logNonFatal(e, st); }
