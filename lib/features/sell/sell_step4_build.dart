@@ -1,6 +1,6 @@
 part of 'sell_flow.dart';
 
-mixin _SellStep4Build on _SellStep4Body {
+mixin _SellStep4Build on _SellStep4Logic {
   @override
   Widget build(BuildContext context) {
     return SingleChildScrollView(

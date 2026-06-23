@@ -8,62 +8,12 @@ mixin _ChatConversationComposer on _ChatConversationMessageActions {
     bool dense = false,
     VoidCallback? onTap,
   }) {
-    final theme = Theme.of(context);
-    final baseColor = isMe
-        ? Colors.white.withValues(alpha: 0.14)
-        : _homeListingCardBackgroundFill(context);
-    final borderColor = isMe
-        ? Colors.white.withValues(alpha: 0.5)
-        : Colors.white.withValues(alpha: 0.12);
-    final inner = Container(
-      width: double.infinity,
-      margin: EdgeInsets.only(bottom: dense ? 6 : 8),
-      padding: EdgeInsets.symmetric(
-        horizontal: dense ? 8 : 10,
-        vertical: dense ? 6 : 8,
-      ),
-      decoration: BoxDecoration(
-        color: baseColor,
-        borderRadius: BorderRadius.circular(12),
-        border: Border(left: BorderSide(color: borderColor, width: 3)),
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          Text(
-            (reply.senderName ?? 'Message').trim().isNotEmpty
-                ? reply.senderName!.trim()
-                : 'Message',
-            maxLines: 1,
-            overflow: TextOverflow.ellipsis,
-            style: theme.textTheme.bodySmall?.copyWith(
-              fontWeight: FontWeight.w600,
-              color: Colors.white,
-            ),
-          ),
-          const SizedBox(height: 2),
-          Text(
-            reply.content.trim().isEmpty ? 'Message' : reply.content.trim(),
-            maxLines: dense ? 1 : 2,
-            overflow: TextOverflow.ellipsis,
-            style: theme.textTheme.bodySmall?.copyWith(
-              color: Colors.white70,
-            ),
-          ),
-        ],
-      ),
-    );
-
-    if (onTap == null) return inner;
-
-    return Material(
-      type: MaterialType.transparency,
-      child: InkWell(
-        borderRadius: BorderRadius.circular(12),
-        onTap: onTap,
-        child: inner,
-      ),
+    return buildChatReplyPreviewCard(
+      context,
+      reply,
+      isMe: isMe,
+      dense: dense,
+      onTap: onTap,
     );
   }
 

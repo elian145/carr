@@ -65,10 +65,17 @@ part 'sell_step2_logic.dart';
 part 'sell_step2_build.dart';
 part 'sell_step2.dart';
 part 'sell_step3_build.dart';
+part 'sell_step3_fields.dart';
+part 'sell_step3_logic.dart';
 part 'sell_step3.dart';
 part 'sell_step4_build.dart';
+part 'sell_step4_fields.dart';
+part 'sell_step4_logic.dart';
 part 'sell_step4.dart';
 part 'sell_step4_preview.dart';
+part 'sell_step5_fields.dart';
+part 'sell_step5_logic.dart';
+part 'sell_step5_build.dart';
 part 'sell_step5.dart';
 
 const List<String> _kOnlineSpecOptionKeys = [

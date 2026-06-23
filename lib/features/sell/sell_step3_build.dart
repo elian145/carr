@@ -1,6 +1,6 @@
 part of 'sell_flow.dart';
 
-mixin _SellStep3Build on _SellStep3Body {
+mixin _SellStep3Build on _SellStep3Logic {
   @override
   Widget build(BuildContext context) {
     return GestureDetector(
@@ -175,7 +175,7 @@ mixin _SellStep3Build on _SellStep3Body {
                                           ),
                                         ].map((p) => '\$$p').toList();
                                   final priceOptions = <String>[
-                                    _SellStep3Body._pricePickerNoneOption,
+                                    _SellStep3Fields._pricePickerNoneOption,
                                     ...numericOptions,
                                   ];
                                   final choice = await _pickFromList(
@@ -191,7 +191,7 @@ mixin _SellStep3Build on _SellStep3Body {
                                   if (choice != null) {
                                     setState(() {
                                       selectedPrice =
-                                          choice == _SellStep3Body._pricePickerNoneOption
+                                          choice == _SellStep3Fields._pricePickerNoneOption
                                           ? null
                                           : choice;
                                     });
