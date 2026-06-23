@@ -56,6 +56,8 @@ import 'sell_fancy_selector.dart' as sell_fancy_selector;
 import 'sell_video_helpers.dart' as sell_video_helpers;
 
 part 'sell_car_page.dart';
+part 'sell_step1_fields.dart';
+part 'sell_step1_logic.dart';
 part 'sell_step1.dart';
 part 'sell_step2_fields.dart';
 part 'sell_step2_logic.dart';

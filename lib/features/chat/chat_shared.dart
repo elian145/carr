@@ -265,3 +265,25 @@ bool _isAudioMessage(ChatMessage message) {
   return false;
 }
 
+bool _chatIsImageFile(XFile file) {
+  final mime = lookupMimeType(file.path) ?? '';
+  if (mime.startsWith('image/')) return true;
+  final path = file.path.toLowerCase();
+  return path.endsWith('.jpg') ||
+      path.endsWith('.jpeg') ||
+      path.endsWith('.png') ||
+      path.endsWith('.gif') ||
+      path.endsWith('.webp');
+}
+
+bool _chatIsVideoFile(XFile file) {
+  final mime = lookupMimeType(file.path) ?? '';
+  if (mime.startsWith('video/')) return true;
+  final path = file.path.toLowerCase();
+  return path.endsWith('.mp4') ||
+      path.endsWith('.mov') ||
+      path.endsWith('.avi') ||
+      path.endsWith('.mkv') ||
+      path.endsWith('.webm');
+}
+

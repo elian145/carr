@@ -1,6 +1,6 @@
 part of 'chat_pages.dart';
 
-mixin _ChatConversationMessageUi on _ChatConversationActions {
+mixin _ChatConversationMessageUi on _ChatConversationSend {
   void _flashHighlight(String messageId) {
     _highlightTimer?.cancel();
     if (!mounted) return;
