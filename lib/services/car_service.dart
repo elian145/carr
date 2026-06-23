@@ -1,6 +1,7 @@
 import 'package:flutter/foundation.dart';
 import 'package:image_picker/image_picker.dart';
 import 'api_service.dart';
+import '../features/listing/listing_mappers.dart';
 import '../shared/debug/app_log.dart';
 
 class CarService extends ChangeNotifier {
@@ -71,7 +72,7 @@ class CarService extends ChangeNotifier {
         engineType: engineType,
       );
 
-      final newCars = List<Map<String, dynamic>>.from(response['cars']);
+      final newCars = listingMapsFromApiResponse(response);
 
       if (refresh) {
         _cars = newCars;
@@ -376,7 +377,7 @@ class CarService extends ChangeNotifier {
 
     try {
       final response = await ApiService.getFavorites();
-      _favorites = List<Map<String, dynamic>>.from(response['cars']);
+      _favorites = listingMapsFromFavoritesResponse(response);
     } catch (e, st) {
       logNonFatal(e, st, 'CarService');
       rethrow;
