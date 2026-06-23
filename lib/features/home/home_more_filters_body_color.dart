@@ -162,7 +162,7 @@ mixin _HomePageMoreFiltersBodyColor on _HomePageMoreFiltersMileage {
                                               ),
                                             )
                                           : Icon(
-                                              _getBodyTypeIcon(
+                                              homeFilterBodyTypeIcon(
                                                 'car',
                                               ),
                                               color:
@@ -510,7 +510,7 @@ mixin _HomePageMoreFiltersBodyColor on _HomePageMoreFiltersMileage {
                                   color:
                                       selectedColor !=
                                           null
-                                      ? _getColorValue(
+                                      ? homeFilterNamedColor(
                                           selectedColor!,
                                         )
                                       : Colors.grey,
