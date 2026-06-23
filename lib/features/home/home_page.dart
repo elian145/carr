@@ -305,6 +305,7 @@ abstract class _HomePageFields extends State<HomePage> {
 
 class _HomePageState extends _HomePageFields
     with
+        _HomePageFetchCore,
         _HomePageFetch,
         _HomePageFilterCatalog,
         _HomePageFilterPersist,

@@ -72,6 +72,8 @@ part 'sell_step2_build_appearance.dart';
 part 'sell_step2_build_mechanical.dart';
 part 'sell_step2_build.dart';
 part 'sell_step2.dart';
+part 'sell_step3_build_price.dart';
+part 'sell_step3_build_details.dart';
 part 'sell_step3_build.dart';
 part 'sell_step3_fields.dart';
 part 'sell_step3_catalog.dart';
