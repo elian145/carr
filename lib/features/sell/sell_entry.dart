@@ -1,84 +1,15 @@
-part of '../../app/carzo_shared.dart';
+import 'dart:async';
+import 'dart:convert';
 
-const String _sellDraftArchiveKey = 'legacy_sell_draft_archive_v1';
+import 'package:flutter/material.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
-String _newSellDraftId() => DateTime.now().microsecondsSinceEpoch.toString();
-
-int _readSellDraftStepDynamic(dynamic raw, {int maxIdx = 4}) =>
-    readSellDraftStepDynamic(raw, maxIdx: maxIdx);
-
-int _mergeSellDraftStep({int? jsonStep, int? prefsStep}) =>
-    mergeSellDraftStep(jsonStep: jsonStep, prefsStep: prefsStep);
-
-int _maxSellDraftStep(int a, int b, [int c = 0]) =>
-    maxSellDraftStep(a, b, c);
-
-void _dismissAnyKeyboard([BuildContext? context]) =>
-    dismissAnyKeyboard(context);
-
-Map<String, dynamic> _normalizeSellDraftSnapshot(Map<String, dynamic> raw) {
-  final rawCarData = raw['carData'];
-  final carData = rawCarData is Map
-      ? Map<String, dynamic>.from(rawCarData.cast<String, dynamic>())
-      : <String, dynamic>{};
-  final draftId = (raw['draftId'] ?? '').toString().trim();
-  return <String, dynamic>{
-    'draftId': draftId.isEmpty ? _newSellDraftId() : draftId,
-    'currentStep': _readSellDraftStepDynamic(raw['currentStep']),
-    'carData': carData,
-    'isPlaceholder': raw['isPlaceholder'] == true,
-    'updatedAt': raw['updatedAt'] ?? DateTime.now().millisecondsSinceEpoch,
-  };
-}
-
-List<Map<String, dynamic>> _decodeSellDraftArchive(String? raw) {
-  if (raw == null || raw.trim().isEmpty) return <Map<String, dynamic>>[];
-  try {
-    final decoded = json.decode(raw);
-    if (decoded is! List) return <Map<String, dynamic>>[];
-    return decoded
-        .whereType<Map>()
-        .map(
-          (item) => _normalizeSellDraftSnapshot(
-            Map<String, dynamic>.from(item.cast<String, dynamic>()),
-          ),
-        )
-        .toList();
-  } catch (e, st) { logNonFatal(e, st); 
-    return <Map<String, dynamic>>[];
-  }
-}
-
-String _encodeSellDraftArchive(List<Map<String, dynamic>> drafts) {
-  return json.encode(
-    drafts.map((draft) => _normalizeSellDraftSnapshot(draft)).toList(),
-  );
-}
-
-bool _hasMeaningfulSellDraftValue(dynamic value) {
-  if (value == null) return false;
-  if (value is String) return value.trim().isNotEmpty;
-  if (value is num) return value != 0;
-  if (value is bool) return value;
-  if (value is XFile) return value.path.trim().isNotEmpty;
-  if (value is Map) {
-    for (final entry in value.entries) {
-      if (_hasMeaningfulSellDraftValue(entry.value)) return true;
-    }
-    return false;
-  }
-  if (value is Iterable) {
-    for (final item in value) {
-      if (_hasMeaningfulSellDraftValue(item)) return true;
-    }
-    return false;
-  }
-  return value.toString().trim().isNotEmpty;
-}
-
-bool _isVisibleSellDraft(Map<String, dynamic> draft) {
-  return _hasMeaningfulSellDraftValue(draft['carData']);
-}
+import '../../l10n/app_localizations.dart';
+import '../../shared/debug/app_log.dart';
+import '../../shared/i18n/legacy_inline_text.dart';
+import '../../shared/prefs/legacy_sell_draft_prefs.dart';
+import '../../shared/prefs/sell_draft_step.dart';
+import 'sell_draft_helpers.dart';
 
 class SellEntryRouterPage extends StatefulWidget {
   const SellEntryRouterPage({super.key});
@@ -89,24 +20,23 @@ class SellEntryRouterPage extends StatefulWidget {
 
 class _SellEntryRouterPageState extends State<SellEntryRouterPage> {
   static const String _draftSnapshotKey = 'legacy_sell_draft_snapshot_v1';
-  static const String _sellDraftArchiveKey = 'legacy_sell_draft_archive_v1';
 
   Future<void> _resolve() async {
     try {
       final sp = await SharedPreferences.getInstance();
       final activeRaw = sp.getString(_draftSnapshotKey);
-      final archive = _decodeSellDraftArchive(sp.getString(_sellDraftArchiveKey));
+      final archive = decodeSellDraftArchive(sp.getString(kSellDraftArchiveKey));
       bool hasAnyDraft = false;
       if (activeRaw != null && activeRaw.trim().isNotEmpty) {
         final decoded = json.decode(activeRaw);
         if (decoded is Map) {
-          final active = _normalizeSellDraftSnapshot(
+          final active = normalizeSellDraftSnapshot(
             Map<String, dynamic>.from(decoded.cast<String, dynamic>()),
           );
-          hasAnyDraft = _isVisibleSellDraft(active);
+          hasAnyDraft = isVisibleSellDraft(active);
         }
       }
-      hasAnyDraft = hasAnyDraft || archive.any(_isVisibleSellDraft);
+      hasAnyDraft = hasAnyDraft || archive.any(isVisibleSellDraft);
       if (!mounted) return;
       Navigator.pushReplacementNamed(
         context,
@@ -179,7 +109,7 @@ class _SellDraftGatePageState extends State<SellDraftGatePage> {
     try {
       final sp = await SharedPreferences.getInstance();
       final activeRaw = sp.getString(_draftSnapshotKey);
-      final archive = _decodeSellDraftArchive(sp.getString(_sellDraftArchiveKey));
+      final archive = decodeSellDraftArchive(sp.getString(kSellDraftArchiveKey));
 
       final drafts = <Map<String, dynamic>>[];
       final seenIds = <String>{};
@@ -187,10 +117,10 @@ class _SellDraftGatePageState extends State<SellDraftGatePage> {
         try {
           final decoded = json.decode(activeRaw);
           if (decoded is Map) {
-            final active = _normalizeSellDraftSnapshot(
+            final active = normalizeSellDraftSnapshot(
               Map<String, dynamic>.from(decoded.cast<String, dynamic>()),
             );
-            if (_isVisibleSellDraft(active)) {
+            if (isVisibleSellDraft(active)) {
               drafts.add(<String, dynamic>{...active, 'isActive': true});
               seenIds.add(active['draftId'].toString());
             }
@@ -198,7 +128,7 @@ class _SellDraftGatePageState extends State<SellDraftGatePage> {
         } catch (e, st) { logNonFatal(e, st); }
       }
       for (final draft in archive) {
-        if (!_isVisibleSellDraft(draft)) continue;
+        if (!isVisibleSellDraft(draft)) continue;
         final id = draft['draftId'].toString();
         if (seenIds.contains(id)) continue;
         drafts.add(<String, dynamic>{...draft, 'isActive': false});
@@ -234,17 +164,17 @@ class _SellDraftGatePageState extends State<SellDraftGatePage> {
       if (activeRaw != null && activeRaw.trim().isNotEmpty) {
         final decoded = json.decode(activeRaw);
         if (decoded is Map) {
-          final active = _normalizeSellDraftSnapshot(
+          final active = normalizeSellDraftSnapshot(
             Map<String, dynamic>.from(decoded.cast<String, dynamic>()),
           );
-          if (_isVisibleSellDraft(active)) {
+          if (isVisibleSellDraft(active)) {
             final archive =
-                _decodeSellDraftArchive(sp.getString(_sellDraftArchiveKey));
+                decodeSellDraftArchive(sp.getString(kSellDraftArchiveKey));
             archive.removeWhere((draft) => draft['draftId'] == active['draftId']);
             archive.insert(0, active);
             await sp.setString(
-              _sellDraftArchiveKey,
-              _encodeSellDraftArchive(archive),
+              kSellDraftArchiveKey,
+              encodeSellDraftArchive(archive),
             );
           }
         }
@@ -274,9 +204,9 @@ class _SellDraftGatePageState extends State<SellDraftGatePage> {
         await sp.remove('legacy_sell_draft_step4_v1');
       } else {
         final archive =
-            _decodeSellDraftArchive(sp.getString(_sellDraftArchiveKey));
+            decodeSellDraftArchive(sp.getString(kSellDraftArchiveKey));
         archive.removeWhere((item) => item['draftId'] == draftId);
-        await sp.setString(_sellDraftArchiveKey, _encodeSellDraftArchive(archive));
+        await sp.setString(kSellDraftArchiveKey, encodeSellDraftArchive(archive));
       }
       if (!mounted) return;
       setState(() {
@@ -305,16 +235,16 @@ class _SellDraftGatePageState extends State<SellDraftGatePage> {
   Future<void> _startFreshWithArchive() async => _startFresh();
 
   Future<void> _continueDraft(Map<String, dynamic> draft) async {
-    final normalized = _normalizeSellDraftSnapshot(draft);
+    final normalized = normalizeSellDraftSnapshot(draft);
     final isActive = draft['isActive'] == true;
     if (!isActive) {
       await _archiveActiveDraftIfAny(clearActive: false);
       try {
         final sp = await SharedPreferences.getInstance();
         final archive =
-            _decodeSellDraftArchive(sp.getString(_sellDraftArchiveKey));
+            decodeSellDraftArchive(sp.getString(kSellDraftArchiveKey));
         archive.removeWhere((item) => item['draftId'] == normalized['draftId']);
-        await sp.setString(_sellDraftArchiveKey, _encodeSellDraftArchive(archive));
+        await sp.setString(kSellDraftArchiveKey, encodeSellDraftArchive(archive));
         await sp.setString(_draftSnapshotKey, json.encode(normalized));
       } catch (e, st) { logNonFatal(e, st); }
     }
@@ -322,8 +252,8 @@ class _SellDraftGatePageState extends State<SellDraftGatePage> {
     try {
       final sp = await SharedPreferences.getInstance();
       final prefsStep = sp.getInt(_draftCurrentStepKey);
-      final fromNorm = _readSellDraftStepDynamic(normalized['currentStep']);
-      final merged = _mergeSellDraftStep(jsonStep: fromNorm, prefsStep: prefsStep);
+      final fromNorm = readSellDraftStepDynamic(normalized['currentStep']);
+      final merged = mergeSellDraftStep(jsonStep: fromNorm, prefsStep: prefsStep);
       normalized['currentStep'] = merged;
     } catch (e, st) { logNonFatal(e, st); }
     if (!mounted) return;
@@ -338,13 +268,13 @@ class _SellDraftGatePageState extends State<SellDraftGatePage> {
     final carData = draft['carData'] is Map
         ? Map<String, dynamic>.from((draft['carData'] as Map).cast<String, dynamic>())
         : <String, dynamic>{};
-    final currentStep = _readSellDraftStepDynamic(draft['currentStep']);
+    final currentStep = readSellDraftStepDynamic(draft['currentStep']);
     final labels = <String>[
-      _trLegacyText(context, 'Step 1: Basic info', ar: 'الخطوة 1: المعلومات الأساسية', ku: 'هەنگاو 1: زانیاری سەرەکی'),
-      _trLegacyText(context, 'Step 2: Details', ar: 'الخطوة 2: التفاصيل', ku: 'هەنگاو 2: وردەکاری'),
-      _trLegacyText(context, 'Step 3: Pricing', ar: 'الخطوة 3: السعر', ku: 'هەنگاو 3: نرخ'),
-      _trLegacyText(context, 'Step 4: Photos', ar: 'الخطوة 4: الصور', ku: 'هەنگاو 4: وێنەکان'),
-      _trLegacyText(context, 'Step 5: Review', ar: 'الخطوة 5: المراجعة', ku: 'هەنگاو 5: پێداچوونەوە'),
+      trLegacyText(context, 'Step 1: Basic info', ar: 'الخطوة 1: المعلومات الأساسية', ku: 'هەنگاو 1: زانیاری سەرەکی'),
+      trLegacyText(context, 'Step 2: Details', ar: 'الخطوة 2: التفاصيل', ku: 'هەنگاو 2: وردەکاری'),
+      trLegacyText(context, 'Step 3: Pricing', ar: 'الخطوة 3: السعر', ku: 'هەنگاو 3: نرخ'),
+      trLegacyText(context, 'Step 4: Photos', ar: 'الخطوة 4: الصور', ku: 'هەنگاو 4: وێنەکان'),
+      trLegacyText(context, 'Step 5: Review', ar: 'الخطوة 5: المراجعة', ku: 'هەنگاو 5: پێداچوونەوە'),
     ];
     final label = labels[currentStep.clamp(0, 4).toInt()];
     final title = _draftTitle(carData);
@@ -380,13 +310,13 @@ class _SellDraftGatePageState extends State<SellDraftGatePage> {
                     children: [
                       Text(
                         isActive
-                            ? _trLegacyText(
+                            ? trLegacyText(
                                 context,
                                 'Draft in progress',
                                 ar: 'مسودة قيد التقدم',
                                 ku: 'ڕەشنووسی لە پێشکەوتن',
                               )
-                            : _trLegacyText(
+                            : trLegacyText(
                                 context,
                                 'Saved draft',
                                 ar: 'مسودة محفوظة',
@@ -417,7 +347,7 @@ class _SellDraftGatePageState extends State<SellDraftGatePage> {
             ),
             const SizedBox(height: 6),
             Text(
-              _trLegacyText(
+              trLegacyText(
                 context,
                 'Continue, discard, or start a new listing without deleting this draft.',
                 ar: 'أكمل أو احذف أو ابدأ إعلانا جديدا بدون حذف هذه المسودة.',
@@ -433,7 +363,7 @@ class _SellDraftGatePageState extends State<SellDraftGatePage> {
                     onPressed: () => _continueDraft(draft),
                     icon: const Icon(Icons.play_arrow),
                     label: Text(
-                      _trLegacyText(
+                      trLegacyText(
                         context,
                         'Continue',
                         ar: 'متابعة',
@@ -448,7 +378,7 @@ class _SellDraftGatePageState extends State<SellDraftGatePage> {
                     onPressed: () => _discardDraft(draft),
                     icon: const Icon(Icons.delete_outline),
                     label: Text(
-                      _trLegacyText(
+                      trLegacyText(
                         context,
                         'Discard',
                         ar: 'حذف',
@@ -495,7 +425,7 @@ class _SellDraftGatePageState extends State<SellDraftGatePage> {
                       foregroundColor: Colors.white,
                     ),
                     child: Text(
-                      _trLegacyText(
+                      trLegacyText(
                         context,
                         'Start new listing',
                         ar: 'ابدأ إعلانا جديدا',
@@ -518,7 +448,7 @@ class _SellDraftGatePageState extends State<SellDraftGatePage> {
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
                           Text(
-                            _trLegacyText(
+                            trLegacyText(
                               context,
                               'Drafts in progress',
                               ar: 'مسودات قيد التقدم',
@@ -530,7 +460,7 @@ class _SellDraftGatePageState extends State<SellDraftGatePage> {
                           ),
                           const SizedBox(height: 4),
                           Text(
-                            _trLegacyText(
+                            trLegacyText(
                               context,
                               'Continue any draft, discard one, or start a new listing while keeping the others.',
                               ar: 'تابع أي مسودة أو احذف واحدة أو ابدأ إعلانا جديدا مع الاحتفاظ بالباقي.',
@@ -553,7 +483,7 @@ class _SellDraftGatePageState extends State<SellDraftGatePage> {
                           foregroundColor: Colors.white,
                         ),
                         child: Text(
-                          _trLegacyText(
+                          trLegacyText(
                             context,
                             'Start new listing',
                             ar: 'ابدأ إعلانا جديدا',
@@ -567,5 +497,3 @@ class _SellDraftGatePageState extends State<SellDraftGatePage> {
     );
   }
 }
-
-// Multi-step sell page

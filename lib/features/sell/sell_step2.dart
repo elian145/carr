@@ -1,4 +1,4 @@
-part of '../../app/carzo_shared.dart';
+part of 'sell_flow.dart';
 class SellStep2Page extends StatefulWidget {
   const SellStep2Page({super.key, this.specsHydrateToken = ''});
 

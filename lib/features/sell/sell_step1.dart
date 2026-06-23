@@ -1,4 +1,4 @@
-part of '../../app/carzo_shared.dart';
+part of 'sell_flow.dart';
 class SellStep1Page extends StatefulWidget {
   const SellStep1Page({super.key, this.resumeDraftToken = 0});
 

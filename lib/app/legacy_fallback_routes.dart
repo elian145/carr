@@ -18,10 +18,14 @@ Map<String, WidgetBuilder> buildLegacyFallbackRoutes() {
       final initialDraftSnapshot = sellDraftSnapshot(context);
       if (initialDraftSnapshot != null) {
         return AuthGuard(
+          promptSellAuthWhenLoggedOut: true,
           child: SellCarPage(initialDraftSnapshot: initialDraftSnapshot),
         );
       }
-      return AuthGuard(child: const SellCarPage(startFreshListing: true));
+      return AuthGuard(
+        promptSellAuthWhenLoggedOut: true,
+        child: const SellCarPage(startFreshListing: true),
+      );
     },
     '/legacy_car_detail': (context) {
       final args = readRouteArgs(context);

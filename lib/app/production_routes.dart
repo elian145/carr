@@ -37,6 +37,7 @@ Map<String, WidgetBuilder> buildProductionRoutes() {
                   final showDraftGate = args is Map && args['showDraftGate'] == true;
                   if (initialDraftSnapshot != null) {
                     return AuthGuard(
+                      promptSellAuthWhenLoggedOut: true,
                       child: SellCarPage(
                         initialDraftSnapshot: initialDraftSnapshot,
                       ),
@@ -44,15 +45,18 @@ Map<String, WidgetBuilder> buildProductionRoutes() {
                   }
                   if (startFresh) {
                     return AuthGuard(
+                      promptSellAuthWhenLoggedOut: true,
                       child: const SellCarPage(startFreshListing: true),
                     );
                   }
                   if (showDraftGate) {
                     return AuthGuard(
+                      promptSellAuthWhenLoggedOut: true,
                       child: const SellDraftGatePage(),
                     );
                   }
                   return AuthGuard(
+                    promptSellAuthWhenLoggedOut: true,
                     child: const SellEntryRouterPage(),
                   );
                 },

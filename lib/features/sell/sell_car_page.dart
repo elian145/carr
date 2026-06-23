@@ -1,4 +1,4 @@
-part of '../../app/carzo_shared.dart';
+part of 'sell_flow.dart';
 class SellCarPage extends StatefulWidget {
   const SellCarPage({
     super.key,

@@ -73,6 +73,11 @@ import '../services/car_spec_index.dart';
 import '../services/saved_search_service.dart';
 import '../models/online_spec_variant.dart';
 import '../pages/listing_image_gallery_page.dart';
+import '../features/sell/sell_flow.dart';
+export '../features/sell/sell_flow.dart' show SellCarPage;
+import '../features/sell/sell_entry.dart';
+export '../features/sell/sell_entry.dart';
+import '../shared/listings/body_type_image_widget.dart' as body_type_image;
 import 'widgets/main_shell_navigation.dart' as main_shell_navigation;
 export 'widgets/main_shell_navigation.dart';
 import '../pages/production_auth_pages.dart';
@@ -97,26 +102,9 @@ export 'widgets/listing_galleries.dart'
 export 'widgets/home_search_dialog.dart' show HomeSearchDialog;
 part '../features/home/widgets/home_feed_states.dart';
 part '../features/home/home_page.dart';
-part '../features/sell/sell_entry.dart';
-part '../features/sell/sell_car_page.dart';
-part '../features/sell/sell_step1.dart';
-part '../features/sell/sell_step2.dart';
-part '../features/sell/sell_step3.dart';
-part '../features/sell/sell_step4.dart';
-part '../features/sell/sell_step5.dart';
 part 'legacy_fallback_routes.dart';
 
-const List<String> _kOnlineSpecOptionKeys = [
-  '_online_opts_transmission',
-  '_online_opts_drive',
-  '_online_opts_body',
-  '_online_opts_fuel',
-  '_online_opts_engine_size',
-  '_online_opts_cylinder',
-  '_online_opts_seating',
-];
-
-// Part libraries cannot see imports; forward region-spec helpers for home/sell/etc.
+// Part libraries cannot see imports; forward region-spec helpers for home UIs.
 const List<String> kCarRegionSpecCodes = region_spec_labels.kCarRegionSpecCodes;
 
 String carRegionSpecDisplayLabel(String code) =>
@@ -128,15 +116,7 @@ String carRegionSpecDisplayLabelLocalized(BuildContext context, String code) =>
 bool isValidCarRegionSpecCode(String? s) =>
     region_spec_labels.isValidCarRegionSpecCode(s);
 
-Widget buildCarListingSpecsGrid(
-  BuildContext context,
-  Map<String, dynamic> car,
-) =>
-    car_listing_specs_grid.buildCarListingSpecsGrid(context, car);
-
-typedef _SpecItem = ListingSpecItem;
-
-// Part libraries cannot see imports; forward body-type asset state for home/sell UIs.
+// Part libraries cannot see imports; forward body-type asset state for home UIs.
 List<String> get globalBodyTypes => body_type_assets.globalBodyTypes;
 set globalBodyTypes(List<String> value) =>
     body_type_assets.globalBodyTypes = value;
@@ -149,6 +129,9 @@ set globalBodyTypeAssetMap(Map<String, String> value) =>
 String _getBodyTypeAsset(String bodyType) =>
     body_type_assets.getBodyTypeAsset(bodyType);
 
+Widget _buildBodyTypeImage(String assetPath) =>
+    body_type_image.buildBodyTypeImage(assetPath);
+
 String _trLegacyText(
   BuildContext context,
   String en, {
@@ -159,82 +142,6 @@ String _trLegacyText(
 
 String _translatePlateTypeLegacy(BuildContext context, String raw) =>
     translatePlateTypeLabel(context, raw);
-
-/// JSON list of [OnlineSpecVariant] maps for correlated step-2 fields (bundled catalog).
-const String _kOnlineSpecVariantsKey = '_online_spec_variants';
-
-void _clearOnlineSpecOptionsInCarData(Map<String, dynamic> d) {
-  for (final k in _kOnlineSpecOptionKeys) {
-    d.remove(k);
-  }
-  d.remove(_kOnlineSpecVariantsKey);
-}
-
-/// After catalog apply, pin step-2 pick lists to this row only (same keys as legacy `_online_opts_*`).
-void _applyCatalogSpecConstrainedOptionsToCarData(
-  Map<String, dynamic> d,
-  CatalogSpecFields f,
-) {
-  d['_online_opts_transmission'] = [sellFlowTransmissionLabel(f.transmission)];
-  d['_online_opts_drive'] = [sellFlowDriveLabel(f.driveType)];
-  d['_online_opts_body'] = [sellFlowBodyLabel(f.bodyType)];
-  d['_online_opts_fuel'] = [sellFlowFuelLabel(f.fuelType)];
-  if (f.engineSizeLiters != null && f.engineSizeLiters! > 0.001) {
-    d['_online_opts_engine_size'] = [
-      '${f.engineSizeLiters!.toStringAsFixed(1)}${f.displacementSuffix}',
-    ];
-  }
-  if (f.cylinderCount != null && f.cylinderCount! > 0) {
-    d['_online_opts_cylinder'] = ['${f.cylinderCount}'];
-  }
-  final seatLabel = sellFlowNearestSeatingLabel(f.seating);
-  if (seatLabel != null) {
-    d['_online_opts_seating'] = [seatLabel];
-  }
-}
-
-void _applyCatalogSellFieldUnionToCarData(
-  Map<String, dynamic> d,
-  CatalogSellFieldOptions o,
-) {
-  d['_online_opts_transmission'] = o.transmissions.toList()..sort();
-  d['_online_opts_drive'] = o.driveTypes.toList()..sort();
-  d['_online_opts_body'] = o.bodyTypes.toList()..sort();
-  d['_online_opts_fuel'] = o.fuelTypes.toList()..sort();
-  if (o.engineSizes.isNotEmpty) {
-    final eng = o.engineSizes.toList()
-      ..sort((a, b) {
-        final la = OnlineSpecVariant.parseLeadingEngineLiters(a) ?? 0;
-        final lb = OnlineSpecVariant.parseLeadingEngineLiters(b) ?? 0;
-        final c = la.compareTo(lb);
-        if (c != 0) return c;
-        return a.compareTo(b);
-      });
-    d['_online_opts_engine_size'] = eng;
-  }
-  if (o.cylinderCounts.isNotEmpty) {
-    d['_online_opts_cylinder'] = o.cylinderCounts.toList()
-      ..sort((a, b) => (int.tryParse(a) ?? 0).compareTo(int.tryParse(b) ?? 0));
-  }
-  if (o.seatings.isNotEmpty) {
-    d['_online_opts_seating'] = o.seatings.toList()..sort();
-  }
-}
-
-OnlineSpecVariant _onlineSpecVariantFromCatalogFields(CatalogSpecFields f) {
-  return OnlineSpecVariant(
-    engineSizeLiters: f.engineSizeLiters,
-    displacementSuffix: f.displacementSuffix,
-    cylinderCount: f.cylinderCount,
-    seating: f.seating,
-    fuelEconomy: f.fuelEconomy,
-    transmission: f.transmission,
-    drivetrain: f.driveType,
-    bodyType: f.bodyType,
-    engineType: f.engineType,
-    fuelType: f.fuelType,
-  );
-}
 
 // Sideload build flag to disable services that require entitlements on iOS
 const bool kSideloadBuild = bool.fromEnvironment(
@@ -254,89 +161,6 @@ const String kBuildSha = String.fromEnvironment(
 const bool _kFlutterTest = bool.fromEnvironment('FLUTTER_TEST');
 
 void _debugLog(String message) => appLog(message);
-
-Future<http.MultipartFile> _buildVideoMultipartFile(XFile video) async {
-  final path = video.path.trim();
-  final file = File(path);
-  List<int> headerBytes = const [];
-  try {
-    final raf = await file.open(mode: FileMode.read);
-    headerBytes = await raf.read(64);
-    await raf.close();
-  } catch (e, st) { logNonFatal(e, st); }
-
-  String? sniffFromHeader() {
-    if (headerBytes.length >= 12) {
-      // MP4/MOV/3GP family: [size][ftyp][brand...]
-      final box = String.fromCharCodes(headerBytes.sublist(4, 8));
-      if (box == 'ftyp') {
-        final brand = String.fromCharCodes(
-          headerBytes.sublist(8, 12),
-        ).toLowerCase();
-        if (brand.startsWith('qt')) return 'video/quicktime';
-        if (brand.startsWith('3g')) return 'video/3gpp';
-        return 'video/mp4';
-      }
-    }
-    if (headerBytes.length >= 4) {
-      // EBML (webm/mkv)
-      if (headerBytes[0] == 0x1A &&
-          headerBytes[1] == 0x45 &&
-          headerBytes[2] == 0xDF &&
-          headerBytes[3] == 0xA3) {
-        final lower = String.fromCharCodes(headerBytes).toLowerCase();
-        if (lower.contains('webm')) return 'video/webm';
-        return 'video/x-matroska';
-      }
-      // AVI
-      if (headerBytes.length >= 12 &&
-          String.fromCharCodes(headerBytes.sublist(0, 4)) == 'RIFF' &&
-          String.fromCharCodes(headerBytes.sublist(8, 12)) == 'AVI ') {
-        return 'video/x-msvideo';
-      }
-    }
-    return null;
-  }
-
-  String mime =
-      sniffFromHeader() ??
-      lookupMimeType(path, headerBytes: headerBytes) ??
-      'video/mp4';
-  if (!mime.startsWith('video/')) {
-    mime = 'video/mp4';
-  }
-
-  final srcName = video.name.trim().isNotEmpty
-      ? video.name.trim()
-      : p.basename(path);
-  final base = p.basenameWithoutExtension(srcName).trim();
-  final fallbackBase = base.isNotEmpty
-      ? base
-      : 'video_${DateTime.now().millisecondsSinceEpoch}';
-  String ext = extensionFromMime(mime) ?? '';
-  // Normalize edge cases to extensions backend validators commonly accept.
-  if (mime == 'video/quicktime') ext = 'mov';
-  if (mime == 'video/x-matroska') ext = 'mkv';
-  if (ext.isEmpty) {
-    ext = p.extension(srcName).replaceFirst('.', '');
-  }
-  final normalizedExt = ext.isNotEmpty ? ext : 'mp4';
-  final filename = '$fallbackBase.$normalizedExt';
-
-  MediaType contentType;
-  try {
-    contentType = MediaType.parse(mime);
-  } catch (e, st) { logNonFatal(e, st); 
-    contentType = MediaType('video', 'mp4');
-  }
-
-  return http.MultipartFile.fromPath(
-    'files',
-    path,
-    filename: filename,
-    contentType: contentType,
-  );
-}
 
 // Fallback delegates to provide Material/Cupertino/Widgets localizations for 'ku'
 class KuMaterialLocalizationsDelegate
@@ -429,55 +253,6 @@ String _engineSizeSellRowLabel(BuildContext context, String raw) =>
 String _formatCurrencyGlobal(BuildContext context, dynamic raw) =>
     formatCurrency(context, raw);
 
-// Custom currency icon widget that shows 'IQD' when IQD is selected
-Widget buildCurrencyIcon(String currency) {
-  if (currency == 'IQD') {
-    return Container(
-      width: 24,
-      height: 24,
-      decoration: BoxDecoration(
-        color: Color(0xFFFF6B00),
-        borderRadius: BorderRadius.circular(6),
-      ),
-      child: Center(
-        child: Text(
-          'IQD',
-          style: TextStyle(
-            color: Colors.white,
-            fontSize: 8,
-            fontWeight: FontWeight.bold,
-          ),
-        ),
-      ),
-    );
-  } else {
-    return Icon(Icons.attach_money, size: 24, color: Color(0xFFFF6B00));
-  }
-}
-
-/// Sell flow: light shell field fill (matches former fancy-selector gradient end).
-const Color kSellLightShellFieldFill = Color(0xFFFFF1E6);
-
-Color _sellFlowManualFieldFill(BuildContext context) =>
-    Theme.of(context).brightness == Brightness.dark
-    ? Colors.black.withValues(alpha: 0.2)
-    : kSellLightShellFieldFill;
-
-TextStyle _sellFlowManualFieldLabelStyle(BuildContext context) =>
-    Theme.of(context).brightness == Brightness.dark
-    ? const TextStyle(color: Colors.white, fontSize: 15, fontWeight: FontWeight.w700)
-    : TextStyle(color: Colors.grey[800]!, fontSize: 15, fontWeight: FontWeight.w700);
-
-TextStyle _sellFlowManualFieldHintStyle(BuildContext context) =>
-    Theme.of(context).brightness == Brightness.dark
-    ? const TextStyle(color: Colors.white54)
-    : TextStyle(color: Colors.grey[600]!);
-
-TextStyle _sellFlowManualFieldTextStyle(BuildContext context) =>
-    Theme.of(context).brightness == Brightness.dark
-    ? const TextStyle(color: Colors.white)
-    : TextStyle(color: Colors.grey[900]!);
-
 /// Persists home feed scroll when main tabs use [Navigator.pushReplacement],
 /// which disposes and rebuilds [HomePage].
 class _HomeFeedScrollPersistence {
@@ -520,155 +295,12 @@ Widget buildFloatingBottomNav(
       solidBackground: solidBackground,
     );
 
-// Fancy selector tile used in Sell page pickers
-Widget buildFancySelector(
-  BuildContext context, {
-  IconData? icon,
-  required String label,
-  required String? value,
-  Widget? leading,
-  bool isError = false,
-  String? currency,
-}) {
-  final bool isDark = Theme.of(context).brightness == Brightness.dark;
-  final Color accent = const Color(0xFFFF6B00);
-  final List<Color> bg = isDark
-      ? [Colors.white.withValues(alpha: 0.06), Colors.white.withValues(alpha: 0.03)]
-      : [kSellLightShellFieldFill, kSellLightShellFieldFill];
-  final Color borderColor = isError
-      ? Colors.redAccent
-      : (isDark ? Colors.white12 : accent.withValues(alpha: 0.25));
-  final Color labelColor = isError
-      ? Colors.redAccent
-      : (isDark ? Colors.white70 : Colors.grey[600]!);
-  final loc = AppLocalizations.of(context)!;
-  final bool valueShowsAny = value != null &&
-      value.isNotEmpty &&
-      (value == 'Any' ||
-          value.trim().toLowerCase() == 'any' ||
-          value == loc.any ||
-          value == loc.anyOption);
-  final bool isPlaceholder = value == null ||
-      value.isEmpty ||
-      value == loc.tapToSelect;
-  final Color valueColor = isPlaceholder
-      ? (isError ? Colors.redAccent : (isDark ? Colors.white38 : Colors.grey))
-      : (isError
-            ? Colors.redAccent
-            : (valueShowsAny
-                  ? accent
-                  : (isDark ? Colors.white : Colors.grey[900]!)));
-  return Container(
-    padding: const EdgeInsets.all(14),
-    decoration: BoxDecoration(
-      gradient: LinearGradient(
-        colors: bg,
-        begin: Alignment.topLeft,
-        end: Alignment.bottomRight,
-      ),
-      borderRadius: BorderRadius.circular(12),
-      border: Border.all(color: borderColor),
-      boxShadow: [
-        BoxShadow(
-          color: Colors.black.withValues(alpha: 0.06),
-          blurRadius: 10,
-          offset: const Offset(0, 6),
-        ),
-      ],
-    ),
-    child: Row(
-      children: [
-        Container(
-          width: 4,
-          height: 44,
-          decoration: BoxDecoration(
-            color: (isError ? Colors.redAccent : accent).withValues(alpha: 0.9),
-            borderRadius: BorderRadius.circular(999),
-          ),
-        ),
-        const SizedBox(width: 10),
-        leading ??
-            Container(
-              width: 36,
-              height: 36,
-              decoration: BoxDecoration(
-                color: (isError ? Colors.redAccent : accent).withValues(alpha: 0.12),
-                borderRadius: BorderRadius.circular(10),
-              ),
-              child: currency != null
-                  ? Center(child: buildCurrencyIcon(currency))
-                  : (icon != null
-                        ? Icon(icon, color: isError ? Colors.redAccent : accent)
-                        : const SizedBox.shrink()),
-            ),
-        const SizedBox(width: 12),
-        Expanded(
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Text(
-                label,
-                style: TextStyle(
-                  fontSize: 15,
-                  color: labelColor,
-                  fontWeight: FontWeight.w700,
-                ),
-              ),
-              const SizedBox(height: 2),
-              Text(
-                value == null || value.isEmpty
-                    ? AppLocalizations.of(context)!.tapToSelect
-                    : (value == 'Any'
-                          ? AppLocalizations.of(context)!.anyOption
-                          : value),
-                maxLines: 1,
-                overflow: TextOverflow.ellipsis,
-                style: TextStyle(
-                  fontSize: 15,
-                  fontWeight: FontWeight.w700,
-                  color: valueColor,
-                ),
-              ),
-            ],
-          ),
-        ),
-      ],
-    ),
-  );
-}
-
 String _cancelTextGlobal(BuildContext context) {
   return AppLocalizations.of(context)!.cancelAction;
 }
 
-String _pleaseFillRequiredGlobal(BuildContext context) {
-  return AppLocalizations.of(context)!.pleaseFillRequired;
-}
-
 NumberFormat _decimalFormatterGlobal(BuildContext context) =>
     decimalFormatterForLocale(context);
-
-String _tapToSelectTextGlobal(BuildContext context) {
-  return AppLocalizations.of(context)!.tapToSelect;
-}
-
-String _quickSellTextGlobal(BuildContext context) {
-  return AppLocalizations.of(context)!.quickSell;
-}
-
-String _photosRequiredTitleGlobal(BuildContext context) {
-  return AppLocalizations.of(context)!.photosRequired;
-}
-
-String _videosOptionalTitleGlobal(BuildContext context) {
-  return AppLocalizations.of(context)!.videosOptional;
-}
-
-String _pleaseSelectPhotoTextGlobal(BuildContext context) =>
-    pleaseSelectPhotoText(context);
-
-String _listingSubmittedSuccessTextGlobal(BuildContext context) =>
-    listingSubmittedSuccessText(context);
 
 String? _convertSortToApiValue(BuildContext context, String? sortOption) =>
     convertSortToApiValue(context, sortOption);
@@ -1046,9 +678,11 @@ class AuthGuard extends StatelessWidget {
     super.key,
     required this.child,
     this.allowWhenLoggedOut = false,
+    this.promptSellAuthWhenLoggedOut = false,
   });
   final Widget child;
   final bool allowWhenLoggedOut;
+  final bool promptSellAuthWhenLoggedOut;
 
   @override
   Widget build(BuildContext context) {
@@ -1059,7 +693,7 @@ class AuthGuard extends StatelessWidget {
     if (auth.isLoading || ApiService.isAuthenticated) {
       return const Scaffold(body: Center(child: CircularProgressIndicator()));
     }
-    if (child is SellCarPage) {
+    if (promptSellAuthWhenLoggedOut) {
       return const _SellAuthPrompt();
     }
     WidgetsBinding.instance.addPostFrameCallback((_) {
@@ -1073,178 +707,4 @@ class AuthGuard extends StatelessWidget {
 
 // Theme Toggle Widget
 // Moved to lib/widgets/theme_toggle_widget.dart
-
-List<double> _tintColorMatrix(Color color) {
-  const double lR = 0.2126;
-  const double lG = 0.7152;
-  const double lB = 0.0722;
-  final double r = color.r;
-  final double g = color.g;
-  final double b = color.b;
-  return [
-    lR * r,
-    lG * r,
-    lB * r,
-    0,
-    0,
-    lR * g,
-    lG * g,
-    lB * g,
-    0,
-    0,
-    lR * b,
-    lG * b,
-    lB * b,
-    0,
-    0,
-    0,
-    0,
-    0,
-    1,
-    0,
-  ];
-}
-
-Widget _buildBodyTypeImage(String assetPath) {
-  // Accept either PNG or SVG. Prefer PNG rendering via _WhiteKeyedImage; use SVG as fallback.
-  String pngAssetPath;
-  String svgFallbackPath;
-
-  if (assetPath.toLowerCase().endsWith('.png')) {
-    pngAssetPath = assetPath;
-    svgFallbackPath = assetPath
-        .replaceFirst('/body_types_png/', '/body_types_clean/')
-        .replaceAll('.png', '.svg');
-  } else {
-    // Treat as SVG path and derive PNG companion
-    svgFallbackPath = assetPath;
-    pngAssetPath = assetPath
-        .replaceFirst('/body_types_clean/', '/body_types_png/')
-        .replaceAll('.svg', '.png');
-  }
-
-  return ColorFiltered(
-    colorFilter: ColorFilter.matrix(_tintColorMatrix(const Color(0xFF707070))),
-    child: _WhiteKeyedImage(
-      assetPath: pngAssetPath,
-      svgFallbackPath: svgFallbackPath,
-    ),
-  );
-}
-
-// Simple in-memory cache so we only process each icon once per run
-final Map<String, Future<ui.Image>> _whiteKeyedCache = {};
-
-class _WhiteKeyedImage extends StatefulWidget {
-  final String assetPath;
-  final String svgFallbackPath;
-  const _WhiteKeyedImage({
-    required this.assetPath,
-    required this.svgFallbackPath,
-  });
-  @override
-  State<_WhiteKeyedImage> createState() => _WhiteKeyedImageState();
-}
-
-class _WhiteKeyedImageState extends State<_WhiteKeyedImage> {
-  Future<ui.Image>? _futureImage;
-
-  @override
-  void initState() {
-    super.initState();
-    _futureImage = (_whiteKeyedCache[widget.assetPath] ??=
-        _decodePngWithWhiteTransparent(widget.assetPath));
-  }
-
-  @override
-  void didUpdateWidget(covariant _WhiteKeyedImage oldWidget) {
-    super.didUpdateWidget(oldWidget);
-    if (oldWidget.assetPath != widget.assetPath) {
-      setState(() {
-        _futureImage = (_whiteKeyedCache[widget.assetPath] ??=
-            _decodePngWithWhiteTransparent(widget.assetPath));
-      });
-    }
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    return FutureBuilder<ui.Image>(
-      future: _futureImage,
-      builder: (context, snap) {
-        if (snap.hasData) {
-          return RawImage(
-            image: snap.data,
-            fit: BoxFit.contain,
-            filterQuality: FilterQuality.high,
-          );
-        }
-        if (snap.hasError) {
-          // If the white-key decode fails (or the asset is missing), fall back to
-          // the original asset, and finally to a Material icon.
-          return Image.asset(
-            widget.assetPath,
-            fit: BoxFit.contain,
-            errorBuilder: (context, error, stack) => const Icon(
-              Icons.directions_car,
-              color: Color(0xFF707070),
-            ),
-          );
-        }
-        return const SizedBox.shrink();
-      },
-    );
-  }
-}
-
-Future<ui.Image> _decodePngWithWhiteTransparent(String assetPath) async {
-  final services.ByteData data = await services.rootBundle.load(assetPath);
-  final Uint8List bytes = data.buffer.asUint8List();
-  final ui.Codec codec = await ui.instantiateImageCodec(bytes);
-  final ui.FrameInfo frame = await codec.getNextFrame();
-  final ui.Image image = frame.image;
-  final ByteData? raw = await image.toByteData(
-    format: ui.ImageByteFormat.rawRgba,
-  );
-  if (raw == null) {
-    throw Exception('Failed to read image bytes');
-  }
-  final Uint8List rgba = raw.buffer.asUint8List();
-  // Only punch out near-white pixels to fully transparent; keep icon colors unchanged
-  const int threshold = 250; // near pure white
-  for (int i = 0; i < rgba.length; i += 4) {
-    final int r = rgba[i];
-    final int g = rgba[i + 1];
-    final int b = rgba[i + 2];
-    if (r >= threshold && g >= threshold && b >= threshold) {
-      rgba[i + 3] = 0;
-    }
-  }
-  final Completer<ui.Image> completer = Completer<ui.Image>();
-  ui.decodeImageFromPixels(
-    rgba,
-    image.width,
-    image.height,
-    ui.PixelFormat.rgba8888,
-    (ui.Image img) => completer.complete(img),
-  );
-  return completer.future;
-}
-
-// Helper function to generate video thumbnail
-Future<String?> generateVideoThumbnail(String videoPath) async {
-  try {
-    final thumbnailPath = await VideoThumbnail.thumbnailFile(
-      video: videoPath,
-      thumbnailPath: (await Directory.systemTemp.createTemp()).path,
-      imageFormat: ImageFormat.JPEG,
-      maxWidth: 200,
-      quality: 75,
-    );
-    return thumbnailPath;
-  } catch (e) {
-    _debugLog('Error generating video thumbnail: $e');
-    return null;
-  }
-}
 
