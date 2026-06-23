@@ -1,6 +1,6 @@
 part of 'home_flow.dart';
 
-mixin _HomePageMoreFiltersDialog on _HomePageFilterLogic {
+mixin _HomePageMoreFiltersDialog on _HomePageFilterBar {
   Future<void> _showMoreFiltersDialog(BuildContext context) async {
   // Sync manual-entry controllers to current selections
   // (do this once when opening the dialog, not during typing).
