@@ -1,5 +1,5 @@
 {
   "logLevel": "warning",
-  "autoStartTrackingEnabled": true,
+  "autoStartTrackingEnabled": false,
   "isHandleAirbridgeDeeplinkOnly": true
 }

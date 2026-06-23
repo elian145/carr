@@ -91,7 +91,11 @@ class _FavoritesPageState extends State<FavoritesPage> {
       }
     } catch (e) {
       setState(() {
-        _error = e.toString();
+        _error = userErrorText(
+          context,
+          e,
+          fallback: AppLocalizations.of(context)!.error,
+        );
       });
     } finally {
       if (mounted) {
@@ -308,15 +312,19 @@ class _LoginPageState extends State<LoginPage> {
       );
       if (!mounted) return;
       Navigator.of(context).pushNamedAndRemoveUntil('/', (route) => false);
-    } catch (e) {
+    } catch (e, st) {
       if (!mounted) return;
-      developer.log('Login failed', name: 'LoginPage', error: e);
+      logNonFatal(e, st, 'LoginPage');
       showDialog(
         context: context,
         builder: (_) => AlertDialog(
           title: Text(AppLocalizations.of(context)!.errorTitle),
-          content: const Text(
-            'Login failed. Please check your credentials and try again.',
+          content: Text(
+            userErrorText(
+              context,
+              e,
+              fallback: AppLocalizations.of(context)!.error,
+            ),
           ),
           actions: [
             TextButton(
@@ -585,7 +593,13 @@ class _SignupPageState extends State<SignupPage> {
         context: context,
         builder: (_) => AlertDialog(
           title: Text(AppLocalizations.of(context)!.errorTitle),
-          content: Text(e.toString()),
+          content: Text(
+            userErrorText(
+              context,
+              e,
+              fallback: AppLocalizations.of(context)!.error,
+            ),
+          ),
           actions: [
             TextButton(
               onPressed: () => Navigator.pop(context),
@@ -759,9 +773,9 @@ class _SignupPageState extends State<SignupPage> {
           ],
         ),
       );
-    } catch (e) {
+    } catch (e, st) {
       if (!mounted) return;
-      developer.log('Signup failed', name: 'SignupPage', error: e);
+      logNonFatal(e, st, 'SignupPage');
       String message =
           'Signup failed. Please check your details and try again.';
       if (e is ApiException) {

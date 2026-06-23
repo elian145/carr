@@ -62,6 +62,23 @@ def _check_license() -> None:
     _check_file(ROOT / "LICENSE", "LICENSE")
 
 
+def _check_splash_assets() -> None:
+    ios_splash = ROOT / "ios/Runner/Assets.xcassets/LaunchImage.imageset/LaunchImage.png"
+    android_splash_dirs = list(
+        (ROOT / "android/app/src/main/res").glob("drawable*/splash.png")
+    )
+    if ios_splash.is_file() or android_splash_dirs:
+        _ok("splash screen assets present")
+    else:
+        _fail(
+            "splash assets missing; run: dart run flutter_native_splash:create"
+        )
+
+
+def _check_signing_example() -> None:
+    _check_file(ROOT / "android/signing.properties.example", "Android signing example")
+
+
 def _check_no_example_app_id() -> None:
     bad = []
     for rel in (
@@ -82,6 +99,8 @@ def main() -> None:
     _check_app_icon()
     _check_prod_firebase()
     _check_ios_firebase()
+    _check_splash_assets()
+    _check_signing_example()
     _check_no_example_app_id()
     print("All static publish checks passed.")
 

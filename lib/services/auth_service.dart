@@ -1,8 +1,8 @@
 import 'package:flutter/foundation.dart';
-import 'dart:developer' as developer;
 import 'api_service.dart';
 import 'push_notification_service.dart';
 import 'websocket_service.dart';
+import '../shared/debug/app_log.dart';
 
 class AuthService extends ChangeNotifier {
   static final AuthService _instance = AuthService._internal();
@@ -55,8 +55,8 @@ class AuthService extends ChangeNotifier {
         await WebSocketService.connect();
         await PushNotificationService.syncTokenWithBackend();
       }
-    } catch (e) {
-      developer.log('Auth initialization error: $e', name: 'AuthService');
+    } catch (e, st) {
+      logNonFatal(e, st, 'AuthService.initialize');
       await _clearAuthState();
     } finally {
       _setLoading(false);
@@ -108,8 +108,8 @@ class AuthService extends ChangeNotifier {
       _currentUser = profileFromResponse(response);
       _isAuthenticated = true;
       notifyListeners();
-    } catch (e) {
-      developer.log('Load profile error: $e', name: 'AuthService');
+    } catch (e, st) {
+      logNonFatal(e, st, 'AuthService._loadUserProfile');
       if (ApiService.accessToken != tokenAtStart) {
         return;
       }
@@ -184,10 +184,8 @@ class AuthService extends ChangeNotifier {
         try {
           final me = await ApiService.getProfile();
           _currentUser = profileFromResponse(me);
-        } catch (e) {
-          if (kDebugMode) {
-            developer.log('Profile fetch failed: $e', name: 'AuthService');
-          }
+        } catch (e, st) {
+          logNonFatal(e, st, 'AuthService.login.profileFetch');
         }
       }
       _isAuthenticated = true;
@@ -212,8 +210,8 @@ class AuthService extends ChangeNotifier {
     try {
       await ApiService.logout();
       WebSocketService.disconnect();
-    } catch (e) {
-      developer.log('Logout error: $e', name: 'AuthService');
+    } catch (e, st) {
+      logNonFatal(e, st, 'AuthService.logout');
     } finally {
       await _clearAuthState();
       _setLoading(false);
@@ -413,7 +411,10 @@ class AuthService extends ChangeNotifier {
   }
 
   /// Test-only: authenticated session without network login.
+  @visibleForTesting
   Future<void> adoptTestSession({Map<String, dynamic>? user}) async {
+    assert(kDebugMode, 'adoptTestSession is debug-only');
+    if (!kDebugMode) return;
     await ApiService.setTokens(
       accessToken: 'test_access_token',
       refreshToken: 'test_refresh_token',

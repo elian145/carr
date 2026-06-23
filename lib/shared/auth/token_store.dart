@@ -6,6 +6,9 @@ import '../../shared/debug/app_log.dart';
 ///
 /// Both API services and UI should use this instead of duplicating storage logic.
 /// Uses [FlutterSecureStorage] default options (strong encryption on Android/iOS).
+///
+/// On secure-storage failure (e.g. some sideload iOS builds), [save] / [saveRefresh]
+/// keep tokens in memory only for the current session; they are lost on app restart.
 class TokenStore {
   static const FlutterSecureStorage _storage = FlutterSecureStorage();
   static String? _token;
@@ -81,5 +84,38 @@ class TokenStore {
     }
     await save(null);
     await saveRefresh(null);
+    await savePushToken(null);
+  }
+
+  static Future<String?> readPushToken() async {
+    if (testMode) return _pushToken;
+    try {
+      return await _storage.read(key: 'push_token');
+    } catch (e, st) {
+      logNonFatal(e, st, 'TokenStore.readPushToken');
+      return _pushToken;
+    }
+  }
+
+  static String? _pushToken;
+
+  static Future<void> savePushToken(String? token) async {
+    final t = (token ?? '').trim();
+    if (testMode) {
+      _pushToken = t.isEmpty ? null : t;
+      return;
+    }
+    try {
+      if (t.isEmpty) {
+        await _storage.delete(key: 'push_token');
+        _pushToken = null;
+      } else {
+        await _storage.write(key: 'push_token', value: t);
+        _pushToken = t;
+      }
+    } catch (e, st) {
+      logNonFatal(e, st, 'TokenStore.savePushToken');
+      _pushToken = t.isEmpty ? null : t;
+    }
   }
 }

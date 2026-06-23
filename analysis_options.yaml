@@ -1,14 +1,4 @@
-# This file configures the analyzer, which statically analyzes Dart code to
-# check for errors, warnings, and lints.
-#
-# The issues identified by the analyzer are surfaced in the UI of Dart-enabled
-# IDEs (https://dart.dev/tools#ides-and-editors). The analyzer can also be
-# invoked from the command line by running `flutter analyze`.
-
 include: package:flutter_lints/flutter.yaml
-
-# Legacy code is analyzed as part of main_legacy.dart (single library).
-# Fix analyzer issues here in phases rather than excluding the folder.
 
 analyzer:
   exclude:
@@ -17,7 +7,4 @@ analyzer:
 
 linter:
   rules:
-    # Keep empty for now (no extra style lints enforced in CI).
-
-# Additional information about this file can be found at
-# https://dart.dev/guides/language/analysis-options
+    avoid_print: true

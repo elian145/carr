@@ -6,11 +6,11 @@ import '../chat_ui_theme_controller.dart';
 import '../features/comparison/state/car_comparison_store.dart';
 import '../l10n/app_localizations.dart';
 import '../services/auth_service.dart';
-import '../services/deep_link_service.dart';
 import '../theme_provider.dart';
 import '../widgets/edge_swipe_back.dart';
 import 'carzo_shared.dart';
 import 'production_routes.dart';
+import 'widgets/app_with_deep_links.dart';
 
 export 'carzo_shared.dart'
     show
@@ -20,29 +20,6 @@ export 'carzo_shared.dart'
         navigateMainShellTab,
         mapListingToGlobalCarCardData,
         buildLegacyFallbackRoutes;
-
-/// Wraps [MaterialApp] and inits deep link handling after first frame.
-class _AppWithDeepLinks extends StatefulWidget {
-  const _AppWithDeepLinks({required this.child});
-
-  final Widget child;
-
-  @override
-  State<_AppWithDeepLinks> createState() => _AppWithDeepLinksState();
-}
-
-class _AppWithDeepLinksState extends State<_AppWithDeepLinks> {
-  @override
-  void initState() {
-    super.initState();
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      DeepLinkService.instance.init(productionNavigatorKey);
-    });
-  }
-
-  @override
-  Widget build(BuildContext context) => widget.child;
-}
 
 /// Production app shell (`lib/main.dart` entry).
 class MyApp extends StatelessWidget {
@@ -60,7 +37,8 @@ class MyApp extends StatelessWidget {
       child: ValueListenableBuilder<Locale?>(
         valueListenable: LocaleController.currentLocale,
         builder: (context, locale, _) => Consumer<ThemeProvider>(
-          builder: (context, themeProvider, child) => _AppWithDeepLinks(
+          builder: (context, themeProvider, child) => AppWithDeepLinks(
+            navigatorKey: productionNavigatorKey,
             child: MaterialApp(
               navigatorKey: productionNavigatorKey,
               title: 'CarNet',

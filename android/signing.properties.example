@@ -1,0 +1,13 @@
+# Copy to android/signing.properties (gitignored) for Play Store upload builds.
+# Codemagic writes this file automatically when CM_KEYSTORE env vars are set.
+#
+# Generate keystore (one time):
+#   keytool -genkey -v -keystore release-keystore.jks -keyalg RSA -keysize 2048 -validity 10000 -alias upload
+#
+# List SHA-256 for Render env ANDROID_SHA256_CERT_FINGERPRINTS (App Links):
+#   python scripts/print_android_app_link_sha.py
+
+STORE_FILE=/absolute/path/to/release-keystore.jks
+STORE_PASSWORD=your_store_password
+KEY_ALIAS=upload
+KEY_PASSWORD=your_key_password

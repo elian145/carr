@@ -607,7 +607,11 @@ Widget buildGlobalCarCard(
                   ],
                 );
 
-  return Container(
+  final titleForA11y = localizedCarTitleForCard(context, car);
+  return Semantics(
+    button: true,
+    label: titleForA11y.isEmpty ? locCard.navHome : titleForA11y,
+    child: Container(
     decoration: BoxDecoration(
       color: cardFill,
       borderRadius: BorderRadius.circular(20),
@@ -644,6 +648,7 @@ Widget buildGlobalCarCard(
             child: buildListingSoldBadge(context),
           ),
       ],
+    ),
     ),
   );
 }

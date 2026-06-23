@@ -5,7 +5,7 @@
 keytool -genkey -v -keystore release-keystore.jks -keyalg RSA -keysize 2048 -validity 10000 -alias upload
 ```
 
-2. Copy `signing.properties.example` to `signing.properties` in the project root and fill in real paths/passwords (file is gitignored).
+2. Copy `android/signing.properties.example` to `android/signing.properties` and fill in real paths/passwords (file is gitignored). Gradle reads `android/signing.properties` (repo-root `signing.properties` is also supported).
 
 3. After Play App Signing is enabled, add the release **SHA-256** to Render as `ANDROID_SHA256_CERT_FINGERPRINTS` (comma-separated). List fingerprints with:
 ```

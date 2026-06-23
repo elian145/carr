@@ -66,7 +66,28 @@ def privacy_policy():
 
 @bp.route("/health", methods=["GET"])
 def health():
-    return jsonify({"status": "ok"}), 200
+    """Liveness + optional production readiness hints (no secrets)."""
+    payload: dict = {"status": "ok"}
+    env = (os.environ.get("APP_ENV") or os.environ.get("FLASK_ENV") or "production").strip().lower()
+    if env == "production":
+        payload["redis_configured"] = bool((os.environ.get("REDIS_URL") or "").strip())
+        r2_ok = all(
+            (os.environ.get(k) or "").strip()
+            for k in (
+                "R2_ACCOUNT_ID",
+                "R2_BUCKET_NAME",
+                "R2_ACCESS_KEY_ID",
+                "R2_SECRET_ACCESS_KEY",
+                "R2_PUBLIC_URL",
+            )
+        )
+        upload_folder = (os.environ.get("UPLOAD_FOLDER") or "").strip()
+        payload["upload_persistence"] = "r2" if r2_ok else ("disk" if upload_folder else "ephemeral")
+        payload["app_links_android"] = bool(
+            (os.environ.get("ANDROID_SHA256_CERT_FINGERPRINTS") or "").strip()
+        )
+        payload["app_links_ios"] = bool((os.environ.get("APPLE_TEAM_ID") or "").strip())
+    return jsonify(payload), 200
 
 
 @bp.route("/health/push", methods=["GET"])

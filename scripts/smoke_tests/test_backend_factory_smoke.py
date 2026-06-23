@@ -510,6 +510,15 @@ class BackendFactorySmokeTest(unittest.TestCase):
         )
         self.assertEqual(unblock.status_code, 200, unblock.data)
 
+    def test_health_and_push_status(self):
+        r = self.client.get("/health")
+        self.assertEqual(r.status_code, 200)
+        body = r.get_json()
+        self.assertEqual(body.get("status"), "ok")
+        push = self.client.get("/health/push")
+        self.assertEqual(push.status_code, 200)
+        self.assertIn("credentials_present", push.get_json())
+
     def test_well_known_app_links_require_env(self):
         """Without store env vars, deep-link files must 404 (not serve invalid stubs)."""
         for path in (

@@ -124,10 +124,10 @@ class _RetryingListingNetworkImageState
       },
       errorBuilder: (context, error, stackTrace) {
         try {
-          debugPrint(
-            'Listing image failed (attempt=$_attempt): $url :: $error',
-          );
-        } catch (e, st) { logNonFatal(e, st); }
+          appLog('Listing image failed (attempt=$_attempt)');
+        } catch (e, st) {
+          logNonFatal(e, st, 'ListingNetworkImage.error');
+        }
         _scheduleRetry();
         return Container(
           color: Colors.grey[900],

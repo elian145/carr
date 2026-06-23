@@ -15,6 +15,7 @@ class HelpCenterPage extends StatefulWidget {
 class _HelpCenterPageState extends State<HelpCenterPage> {
   TrustConfigData? _config;
   bool _loading = true;
+  String? _loadError;
 
   @override
   void initState() {
@@ -23,12 +24,25 @@ class _HelpCenterPageState extends State<HelpCenterPage> {
   }
 
   Future<void> _load() async {
-    final cfg = await TrustConfig.load();
-    if (!mounted) return;
     setState(() {
-      _config = cfg;
-      _loading = false;
+      _loading = true;
+      _loadError = null;
     });
+    try {
+      final cfg = await TrustConfig.load();
+      if (!mounted) return;
+      setState(() {
+        _config = cfg;
+        _loading = false;
+      });
+    } catch (e) {
+      if (!mounted) return;
+      setState(() {
+        _config = const TrustConfigData();
+        _loadError = AppLocalizations.of(context)!.error;
+        _loading = false;
+      });
+    }
   }
 
   Future<void> _openUrl(String url) async {
@@ -59,6 +73,16 @@ class _HelpCenterPageState extends State<HelpCenterPage> {
           : ListView(
               padding: const EdgeInsets.fromLTRB(16, 8, 16, 32),
               children: [
+                if (_loadError != null)
+                  Padding(
+                    padding: const EdgeInsets.only(bottom: 12),
+                    child: MaterialBanner(
+                      content: Text(_loadError!),
+                      actions: [
+                        TextButton(onPressed: _load, child: Text(loc.retryAction)),
+                      ],
+                    ),
+                  ),
                 Text(
                   loc.helpHowCanWeHelp,
                   style: Theme.of(context).textTheme.titleLarge,

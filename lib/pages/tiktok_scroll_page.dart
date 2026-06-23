@@ -43,6 +43,22 @@ class _TikTokScrollPageState extends State<TikTokScrollPage> {
 
   @override
   Widget build(BuildContext context) {
+    final loc = AppLocalizations.of(context)!;
+    if (_cars.isEmpty) {
+      return Scaffold(
+        backgroundColor: Colors.black,
+        appBar: AppBar(
+          backgroundColor: Colors.transparent,
+          iconTheme: const IconThemeData(color: Colors.white),
+        ),
+        body: Center(
+          child: Text(
+            loc.noListingsFound,
+            style: const TextStyle(color: Colors.white70),
+          ),
+        ),
+      );
+    }
     return Scaffold(
       backgroundColor: Colors.black,
       body: PageView.builder(

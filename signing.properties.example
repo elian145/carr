@@ -1,5 +1,6 @@
-# Copy to signing.properties in the project root (gitignored).
-# Required for Play Store upload builds; CI uses debug signing when this file is absent.
+# Copy to android/signing.properties (preferred) or signing.properties at repo root (gitignored).
+# Gradle rootProject is android/, so android/signing.properties is the canonical path.
+# Required for Play Store upload builds; prod release fails without it unless ALLOW_DEBUG_RELEASE_SIGNING=true.
 #
 # Generate keystore (one time):
 #   keytool -genkey -v -keystore release-keystore.jks -keyalg RSA -keysize 2048 -validity 10000 -alias upload

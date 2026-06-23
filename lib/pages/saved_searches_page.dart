@@ -12,6 +12,7 @@ class SavedSearchesPage extends StatefulWidget {
 class _SavedSearchesPageState extends State<SavedSearchesPage> {
   List<Map<String, dynamic>> _items = [];
   bool _loading = true;
+  String? _error;
 
   @override
   void initState() {
@@ -20,12 +21,28 @@ class _SavedSearchesPageState extends State<SavedSearchesPage> {
   }
 
   Future<void> _load() async {
-    final merged = await SavedSearchService.loadMerged();
-    if (!mounted) return;
     setState(() {
-      _items = merged;
-      _loading = false;
+      _loading = true;
+      _error = null;
     });
+    try {
+      final merged = await SavedSearchService.loadMerged();
+      if (!mounted) return;
+      setState(() {
+        _items = merged;
+        _loading = false;
+      });
+    } catch (e) {
+      if (!mounted) return;
+      setState(() {
+        _error = userErrorText(
+          context,
+          e,
+          fallback: AppLocalizations.of(context)!.error,
+        );
+        _loading = false;
+      });
+    }
   }
 
   Future<void> _save() async {
@@ -88,7 +105,21 @@ class _SavedSearchesPageState extends State<SavedSearchesPage> {
         title: Text(AppLocalizations.of(context)!.savedSearchesTitle),
       ),
       body: _loading
-          ? Center(child: CircularProgressIndicator())
+          ? const Center(child: CircularProgressIndicator())
+          : _error != null
+          ? Center(
+              child: Column(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  Text(_error!),
+                  const SizedBox(height: 12),
+                  FilledButton(
+                    onPressed: _load,
+                    child: Text(AppLocalizations.of(context)!.retryAction),
+                  ),
+                ],
+              ),
+            )
           : _items.isEmpty
           ? Center(
               child: Column(

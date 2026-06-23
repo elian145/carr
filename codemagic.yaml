@@ -401,25 +401,26 @@ workflows:
           else
             echo "AIRBRIDGE_* not set; Airbridge native init skipped on Android."
           fi
-      - name: Write Android signing files (optional)
+      - name: Write Android signing files (required for store)
         script: |
-          if [ -n "$CM_KEYSTORE" ]; then
-            echo "Signing config detected; writing keystore + signing.properties"
-            KEYSTORE_PATH="$CM_BUILD_DIR/android/upload-keystore.jks"
-            echo "$CM_KEYSTORE" | base64 --decode > "$KEYSTORE_PATH"
-            # rootProject in app/build.gradle.kts is android/, so signing.properties goes there
-            printf 'STORE_FILE=%s\nSTORE_PASSWORD=%s\nKEY_ALIAS=%s\nKEY_PASSWORD=%s\n' \
-              "$KEYSTORE_PATH" "$CM_KEYSTORE_PASSWORD" "$CM_KEY_ALIAS" "$CM_KEY_PASSWORD" \
-              > "$CM_BUILD_DIR/android/signing.properties"
-          else
-            echo "No signing env vars set; building a release signed with debug key (not store-ready)."
+          if [ -z "$CM_KEYSTORE" ]; then
+            echo "ERROR: CM_KEYSTORE is required for android-prod-release workflow."
+            echo "Set CM_KEYSTORE, CM_KEYSTORE_PASSWORD, CM_KEY_ALIAS, CM_KEY_PASSWORD in Codemagic."
+            exit 1
           fi
+          echo "Signing config detected; writing keystore + signing.properties"
+          KEYSTORE_PATH="$CM_BUILD_DIR/android/upload-keystore.jks"
+          echo "$CM_KEYSTORE" | base64 --decode > "$KEYSTORE_PATH"
+          printf 'STORE_FILE=%s\nSTORE_PASSWORD=%s\nKEY_ALIAS=%s\nKEY_PASSWORD=%s\n' \
+            "$KEYSTORE_PATH" "$CM_KEYSTORE_PASSWORD" "$CM_KEY_ALIAS" "$CM_KEY_PASSWORD" \
+            > "$CM_BUILD_DIR/android/signing.properties"
       - name: Analyze
         script: flutter analyze
       - name: Tests
         script: bash scripts/flutter_test_ci.sh --no-pub
-      - name: Publish preflight (static)
-        script: python scripts/verify_publish_ready.py
+      - name: Publish preflight (static + deployed)
+        script: |
+          python scripts/verify_preflight.py --host "$API_BASE" --require-app-links
       - name: Build APK (release)
         script: |
           flutter build apk --release --no-pub --flavor "$FLAVOR" \

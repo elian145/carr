@@ -5,7 +5,7 @@ import '../pages/admin_reports_page.dart';
 import '../pages/analytics_page.dart';
 import '../pages/auth_pages.dart' as auth_pages;
 import '../pages/change_password_page.dart';
-import '../pages/chat_pages.dart' as carzo_chat;
+import '../features/chat/chat_pages.dart' as carzo_chat;
 import '../pages/dealer_profile_page.dart';
 import '../pages/dealers_directory_page.dart';
 import '../pages/edit_dealer_page.dart';

@@ -1,67 +1,10 @@
-part of '../app/carzo_shared.dart';
+part of '../../app/carzo_shared.dart';
 
 class HomePage extends StatefulWidget {
   const HomePage({super.key});
 
   @override
   State<HomePage> createState() => _HomePageState();
-}
-
-/// Empty listings: shows only the message. When a non-default sort is already
-/// selected, still runs a one-time auto-fetch (no extra controls on this screen).
-class _HomeEmptyListMessage extends StatefulWidget {
-  final String? selectedSortBy;
-  final VoidCallback onAutoFetch;
-
-  const _HomeEmptyListMessage({
-    required this.selectedSortBy,
-    required this.onAutoFetch,
-  });
-
-  @override
-  State<_HomeEmptyListMessage> createState() => _HomeEmptyListMessageState();
-}
-
-class _HomeEmptyListMessageState extends State<_HomeEmptyListMessage> {
-  bool _didAutoFetch = false;
-
-  @override
-  void initState() {
-    super.initState();
-    if (widget.selectedSortBy != null && widget.selectedSortBy!.isNotEmpty) {
-      WidgetsBinding.instance.addPostFrameCallback((_) {
-        if (!_didAutoFetch && mounted) {
-          _didAutoFetch = true;
-          widget.onAutoFetch();
-        }
-      });
-    }
-  }
-
-  @override
-  void didUpdateWidget(_HomeEmptyListMessage oldWidget) {
-    super.didUpdateWidget(oldWidget);
-    if (widget.selectedSortBy != null &&
-        widget.selectedSortBy != oldWidget.selectedSortBy &&
-        !_didAutoFetch) {
-      WidgetsBinding.instance.addPostFrameCallback((_) {
-        if (!_didAutoFetch && mounted) {
-          _didAutoFetch = true;
-          widget.onAutoFetch();
-        }
-      });
-    }
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    return Center(
-      child: Text(
-        AppLocalizations.of(context)!.noCarsFound,
-        style: TextStyle(color: Colors.white70),
-      ),
-    );
-  }
 }
 
 class _HomePageState extends State<HomePage> {
@@ -7615,7 +7558,7 @@ class _HomePageState extends State<HomePage> {
                   else if (cars.isEmpty)
                     SliverFillRemaining(
                       hasScrollBody: false,
-                      child: _HomeEmptyListMessage(
+                      child: HomeEmptyListMessage(
                         selectedSortBy: selectedSortBy,
                         onAutoFetch: () {
                           if (!_autoFetchedForEmptyWithSort &&

@@ -4,7 +4,6 @@ import 'package:flutter/foundation.dart';
 import 'package:flutter/scheduler.dart';
 import 'package:http/http.dart' as http;
 import 'dart:convert';
-import 'dart:developer' as developer;
 import 'package:google_fonts/google_fonts.dart';
 import 'package:auto_size_text/auto_size_text.dart';
 import 'package:cached_network_image/cached_network_image.dart';
@@ -63,7 +62,7 @@ import '../services/websocket_service.dart';
 import 'package:mime/mime.dart';
 import 'package:http_parser/http_parser.dart';
 import 'package:path/path.dart' as p;
-import '../pages/chat_pages.dart' as carzo_chat;
+import '../features/chat/chat_pages.dart' as carzo_chat;
 import '../pages/dealers_directory_page.dart';
 import '../shared/listings/listing_management.dart'
     show
@@ -99,8 +98,15 @@ export 'widgets/global_listing_card.dart'
 export 'widgets/listing_galleries.dart'
     show FullScreenGalleryPage, ListingPreviewGalleryPage;
 export 'widgets/home_search_dialog.dart' show HomeSearchDialog;
-part '../pages/home_page.dart';
-part '../pages/sell_flow_page.dart';
+part '../features/home/widgets/home_feed_states.dart';
+part '../features/home/home_page.dart';
+part '../features/sell/sell_entry.dart';
+part '../features/sell/sell_car_page.dart';
+part '../features/sell/sell_step1.dart';
+part '../features/sell/sell_step2.dart';
+part '../features/sell/sell_step3.dart';
+part '../features/sell/sell_step4.dart';
+part '../features/sell/sell_step5.dart';
 part '../pages/car_details_page.dart';
 part '../pages/saved_searches_page.dart';
 part '../pages/comparison_page.dart';
@@ -654,7 +660,9 @@ Widget buildFloatingBottomNav(
           child: bar,
         );
 
-  return Padding(
+  return Semantics(
+    label: AppLocalizations.of(context)!.navHome,
+    child: Padding(
     padding: const EdgeInsets.fromLTRB(12, 0, 12, 10),
     child: SafeArea(
       top: false,
@@ -681,6 +689,7 @@ Widget buildFloatingBottomNav(
           child: navBody,
         ),
       ),
+    ),
     ),
   );
 }

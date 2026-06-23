@@ -3,37 +3,15 @@ import 'package:provider/provider.dart';
 import 'package:provider/single_child_widget.dart';
 
 import '../l10n/app_localizations.dart';
-import '../services/deep_link_service.dart';
 import '../shared/i18n/ku_delegates.dart';
 import '../state/locale_controller.dart';
 import '../theme_provider.dart';
 import '../widgets/edge_swipe_back.dart';
 import 'providers.dart';
 import 'routes.dart';
+import 'widgets/app_with_deep_links.dart';
 
 final GlobalKey<NavigatorState> appNavigatorKey = GlobalKey<NavigatorState>();
-
-class _AppWithDeepLinks extends StatefulWidget {
-  const _AppWithDeepLinks({required this.child});
-
-  final Widget child;
-
-  @override
-  State<_AppWithDeepLinks> createState() => _AppWithDeepLinksState();
-}
-
-class _AppWithDeepLinksState extends State<_AppWithDeepLinks> {
-  @override
-  void initState() {
-    super.initState();
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      DeepLinkService.instance.init(appNavigatorKey);
-    });
-  }
-
-  @override
-  Widget build(BuildContext context) => widget.child;
-}
 
 class CarzoApp extends StatelessWidget {
   const CarzoApp({super.key});
@@ -50,7 +28,8 @@ class CarzoApp extends StatelessWidget {
         builder: (context, locale, _) {
           return Consumer<ThemeProvider>(
             builder: (context, themeProvider, _) {
-              return _AppWithDeepLinks(
+              return AppWithDeepLinks(
+                navigatorKey: appNavigatorKey,
                 child: MaterialApp(
                   navigatorKey: appNavigatorKey,
                   title: 'CarNet',

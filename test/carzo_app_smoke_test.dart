@@ -1,12 +1,11 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 
-import 'package:car_listing_app/app/app.dart';
+import 'package:car_listing_app/app/production_app.dart';
 
 import 'fake_api_server.dart';
 
-/// Smoke coverage for the refactor shell (`lib/app/CarzoApp`), which is not
-/// the production entrypoint but should stay buildable during migration.
+/// Smoke coverage for production routes via [MyApp].
 void main() {
   setUpAll(() async {
     await FakeApiServer.ensureStarted();
@@ -16,8 +15,8 @@ void main() {
     await FakeApiServer.stop();
   });
 
-  testWidgets('CarzoApp smoke: boot and visit app routes', (tester) async {
-    await tester.pumpWidget(const CarzoApp());
+  testWidgets('MyApp smoke: boot and visit app routes', (tester) async {
+    await tester.pumpWidget(const MyApp());
     await tester.pump();
     await tester.pump(const Duration(milliseconds: 200));
 

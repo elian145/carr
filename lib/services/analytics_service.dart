@@ -1,4 +1,4 @@
-import 'dart:developer' as developer;
+import '../shared/debug/app_log.dart';
 
 import '../models/analytics_model.dart';
 import 'api_service.dart';
@@ -79,11 +79,8 @@ class AnalyticsService {
         final rows =
             await ApiService.getAuthenticatedJsonList('/analytics/listings');
         return _parseListingAnalyticsRows(rows);
-      } catch (e) {
-        developer.log(
-          'Analytics endpoint failed, falling back to my_listings: $e',
-          name: 'AnalyticsService',
-        );
+      } catch (e, st) {
+        logNonFatal(e, st, 'AnalyticsService.endpointFallback');
       }
 
       final listings = await ApiService.getMyListingsCompat();
@@ -134,11 +131,8 @@ class AnalyticsService {
         id,
         snapshot: listingSnapshot,
       );
-    } catch (e) {
-      developer.log(
-        'Failed to record recently viewed: $e',
-        name: 'AnalyticsService',
-      );
+    } catch (e, st) {
+      logNonFatal(e, st, 'AnalyticsService.recentlyViewed');
     }
 
     try {
@@ -150,8 +144,8 @@ class AnalyticsService {
         '/analytics/track/view',
         body: {'listing_id': id},
       );
-    } catch (e) {
-      developer.log('Failed to track view: $e', name: 'AnalyticsService');
+    } catch (e, st) {
+      logNonFatal(e, st, 'AnalyticsService.trackView');
     }
   }
 
@@ -166,8 +160,8 @@ class AnalyticsService {
         '/analytics/track/message',
         body: {'listing_id': listingId},
       );
-    } catch (e) {
-      developer.log('Failed to track message: $e', name: 'AnalyticsService');
+    } catch (e, st) {
+      logNonFatal(e, st, 'AnalyticsService.trackMessage');
     }
   }
 
@@ -182,8 +176,8 @@ class AnalyticsService {
         '/analytics/track/call',
         body: {'listing_id': listingId},
       );
-    } catch (e) {
-      developer.log('Failed to track call: $e', name: 'AnalyticsService');
+    } catch (e, st) {
+      logNonFatal(e, st, 'AnalyticsService.trackCall');
     }
   }
 
@@ -198,8 +192,8 @@ class AnalyticsService {
         '/analytics/track/share',
         body: {'listing_id': listingId},
       );
-    } catch (e) {
-      developer.log('Failed to track share: $e', name: 'AnalyticsService');
+    } catch (e, st) {
+      logNonFatal(e, st, 'AnalyticsService.trackShare');
     }
   }
 
@@ -214,8 +208,8 @@ class AnalyticsService {
         '/analytics/track/favorite',
         body: {'listing_id': listingId},
       );
-    } catch (e) {
-      developer.log('Failed to track favorite: $e', name: 'AnalyticsService');
+    } catch (e, st) {
+      logNonFatal(e, st, 'AnalyticsService.trackFavorite');
     }
   }
 

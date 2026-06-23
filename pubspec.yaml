@@ -43,7 +43,6 @@ dependencies:
   share_plus: ^12.0.1
   intl: ^0.20.2
   provider: ^6.1.2
-  web_socket_channel: ^3.0.3
   firebase_core: ^4.2.0
   firebase_messaging: ^16.0.3
   flutter_local_notifications: ^19.5.0
@@ -82,6 +81,7 @@ dev_dependencies:
   # rules and activating additional ones.
   flutter_lints: ^6.0.0
   flutter_launcher_icons: ^0.14.3
+  flutter_native_splash: ^2.4.6
 
 # Generate store launcher icons from assets/icon/app_icon.png (1024×1024 PNG recommended):
 #   dart run flutter_launcher_icons
@@ -92,6 +92,17 @@ flutter_launcher_icons:
   remove_alpha_ios: true
   adaptive_icon_background: "#000000"
   adaptive_icon_foreground: assets/icon/app_icon.png
+
+# Branded splash (Android + iOS). Regenerate after icon change:
+#   dart run flutter_native_splash:create
+flutter_native_splash:
+  color: "#000000"
+  image: assets/icon/app_icon.png
+  android_12:
+    color: "#000000"
+    image: assets/icon/app_icon.png
+  ios: true
+  android: true
 
 # For information on the generic Dart part of this file, see the
 # following page: https://dart.dev/tools/pub/pubspec

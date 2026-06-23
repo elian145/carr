@@ -43,8 +43,10 @@ jobs:
       - name: Analyze
         run: flutter analyze --no-fatal-infos
 
-      - name: Publish preflight (static)
-        run: python scripts/verify_preflight.py --skip-host
+      - name: Publish preflight (static + optional host)
+        run: |
+          python scripts/verify_preflight.py --host https://carr-5hrm.onrender.com || \
+          python scripts/verify_preflight.py --skip-host
 
       - name: Run tests
         run: bash scripts/flutter_test_ci.sh --no-pub --coverage

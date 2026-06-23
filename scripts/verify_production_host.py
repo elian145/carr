@@ -48,7 +48,7 @@ def _json(body: bytes) -> Any:
     return json.loads(body.decode("utf-8", errors="replace"))
 
 
-def _check_critical(host: str, timeout: float) -> list[str]:
+def _check_critical(host: str, timeout: float, require_production_ready: bool = False) -> list[str]:
     errors: list[str] = []
     base = host.rstrip("/")
 
@@ -59,6 +59,14 @@ def _check_critical(host: str, timeout: float) -> list[str]:
         data = _json(body)
         if not (isinstance(data, dict) and data.get("status") == "ok"):
             errors.append("/health JSON missing status=ok")
+        elif require_production_ready and isinstance(data, dict):
+            if not data.get("redis_configured"):
+                errors.append("/health redis_configured=false (set REDIS_URL on Render)")
+            upload = data.get("upload_persistence")
+            if upload == "ephemeral":
+                errors.append(
+                    "/health upload_persistence=ephemeral (set R2_* or UPLOAD_FOLDER)"
+                )
 
     code, body, _ = _fetch(f"{base}/api/cars", timeout)
     if code != 200:
@@ -152,24 +160,28 @@ def _check_app_links(host: str, timeout: float, required: bool) -> list[str]:
     return errors
 
 
-def _check_push_health(host: str, timeout: float) -> None:
+def _check_push_health(host: str, timeout: float, required: bool) -> list[str]:
+    errors: list[str] = []
     base = host.rstrip("/")
     code, body, _ = _fetch(f"{base}/health/push", timeout)
     if code != 200:
-        print(f"WARN: /health/push returned {code}")
-        return
+        _note(required, errors, f"/health/push returned {code}")
+        return errors
     data = _json(body)
     if not isinstance(data, dict):
-        print("WARN: /health/push invalid JSON")
-        return
+        _note(required, errors, "/health/push invalid JSON")
+        return errors
     if data.get("credentials_oauth_ok") is True:
         print("OK: FCM credentials (/health/push)")
     elif data.get("credentials_present") is True:
-        print("WARN: FCM credentials present but OAuth check failed")
+        _note(required, errors, "FCM credentials present but OAuth check failed")
     else:
-        print(
-            "WARN: FCM not configured (set FIREBASE_SERVICE_ACCOUNT_BASE64 on Render)"
+        _note(
+            required,
+            errors,
+            "FCM not configured (set FIREBASE_SERVICE_ACCOUNT_BASE64 on Render)",
         )
+    return errors
 
 
 def main() -> None:
@@ -186,6 +198,16 @@ def main() -> None:
         action="store_true",
         help="Fail if Android/iOS well-known files are not configured",
     )
+    p.add_argument(
+        "--require-push",
+        action="store_true",
+        help="Fail if FCM push credentials are not configured",
+    )
+    p.add_argument(
+        "--require-production-ready",
+        action="store_true",
+        help="Fail if Redis or upload persistence are not configured on /health",
+    )
     args = p.parse_args()
     host = args.host.strip().rstrip("/")
     if not host.startswith("https://"):
@@ -194,7 +216,9 @@ def main() -> None:
 
     print(f"Checking {host} (timeout={args.timeout}s)")
 
-    errors = _check_critical(host, args.timeout)
+    errors = _check_critical(
+        host, args.timeout, require_production_ready=args.require_production_ready
+    )
     for e in errors:
         print(f"FAIL: {e}", file=sys.stderr)
 
@@ -202,9 +226,11 @@ def main() -> None:
     for e in link_errors:
         print(f"FAIL: {e}", file=sys.stderr)
 
-    _check_push_health(host, args.timeout)
+    push_errors = _check_push_health(host, args.timeout, required=args.require_push)
+    for e in push_errors:
+        print(f"FAIL: {e}", file=sys.stderr)
 
-    if errors or link_errors:
+    if errors or link_errors or push_errors:
         raise SystemExit(1)
 
     print("All requested production checks passed.")

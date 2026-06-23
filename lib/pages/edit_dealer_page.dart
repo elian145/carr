@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:ui';
 import 'dart:io';
 import 'dart:convert';
@@ -55,6 +56,7 @@ class _EditDealerPageState extends State<EditDealerPage> {
   XFile? _logo;
   XFile? _cover;
   bool _saving = false;
+  bool _hydratingProfile = true;
   String? _currentLogo;
   String? _currentCover;
   double? _pickLat;
@@ -511,7 +513,21 @@ class _EditDealerPageState extends State<EditDealerPage> {
     _openingHoursTileKeys = {
       for (final d in _days) d.key: GlobalKey(),
     };
-    final me = context.read<AuthService>().currentUser;
+    unawaited(_hydrateProfile());
+  }
+
+  Future<void> _hydrateProfile() async {
+    try {
+      await context.read<AuthService>().refreshProfile();
+    } catch (e, st) {
+      logNonFatal(e, st, 'EditDealerPage.refreshProfile');
+    }
+    if (!mounted) return;
+    _applyDealerUser(context.read<AuthService>().currentUser);
+    setState(() => _hydratingProfile = false);
+  }
+
+  void _applyDealerUser(Map<String, dynamic>? me) {
     _name.text = (me?['dealership_name'] ?? '').toString();
     final initialPhones = <String>[];
     final rawPhones = me?['dealership_phones'];
@@ -798,6 +814,15 @@ class _EditDealerPageState extends State<EditDealerPage> {
       Theme.of(context).colorScheme.surface.withValues(alpha: 0.88),
       isLightShell ? Colors.white : AppThemes.darkHomeShellBackground,
     );
+
+    if (_hydratingProfile) {
+      return Scaffold(
+        appBar: AppBar(
+          title: Text(_tr('Edit dealer', ar: 'تعديل الوكيل', ku: 'دەستکاری وەکیل')),
+        ),
+        body: const Center(child: CircularProgressIndicator()),
+      );
+    }
 
     return Scaffold(
       appBar: AppBar(

@@ -10,6 +10,7 @@ import 'package:shared_preferences/shared_preferences.dart';
 
 import 'api_service.dart' show ApiException, ApiService;
 import 'config.dart';
+import '../shared/auth/token_store.dart';
 import '../shared/debug/app_log.dart';
 
 const AndroidNotificationChannel _chatChannel = AndroidNotificationChannel(
@@ -140,7 +141,8 @@ class PushNotificationService {
 
       final token = await messaging.getToken();
       if (token != null && token.isNotEmpty) {
-        await sp.setString('push_token', token);
+        await TokenStore.savePushToken(token);
+        await sp.remove('push_token');
         await sp.remove('push_last_sync_error');
         if (kDebugMode) {
           // ignore: avoid_print
@@ -160,7 +162,8 @@ class PushNotificationService {
         _refreshListenerAttached = true;
         messaging.onTokenRefresh.listen((newToken) async {
           if (newToken.isEmpty) return;
-          await sp.setString('push_token', newToken);
+          await TokenStore.savePushToken(newToken);
+          await sp.remove('push_token');
           await syncTokenWithBackend();
         });
       }
@@ -213,14 +216,23 @@ class PushNotificationService {
       if (!(sp.getBool('push_enabled') ?? true)) return;
       if (!ApiService.isAuthenticated) return;
 
-      var token = sp.getString('push_token')?.trim() ?? '';
+      var token = (await TokenStore.readPushToken())?.trim() ?? '';
+      if (token.isEmpty) {
+        token = sp.getString('push_token')?.trim() ?? '';
+        if (token.isNotEmpty) {
+          await TokenStore.savePushToken(token);
+          await sp.remove('push_token');
+        }
+      }
       if (token.isEmpty) {
         try {
           token = (await FirebaseMessaging.instance.getToken())?.trim() ?? '';
           if (token.isNotEmpty) {
-            await sp.setString('push_token', token);
+            await TokenStore.savePushToken(token);
           }
-        } catch (e, st) { logNonFatal(e, st); }
+        } catch (e, st) {
+          logNonFatal(e, st, 'PushNotificationService.getToken');
+        }
       }
       if (token.isEmpty) return;
 
