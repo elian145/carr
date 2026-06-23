@@ -49,6 +49,34 @@ abstract class _HomePageFields extends State<HomePage> {
   String? contactPhone;
   String? selectedSortBy;
 
+  HomeFiltersSnapshot _homeFiltersSnapshot() => HomeFiltersSnapshot(
+        brand: selectedBrand,
+        model: selectedModel,
+        trim: selectedTrim,
+        minPrice: selectedMinPrice,
+        maxPrice: selectedMaxPrice,
+        minYear: selectedMinYear,
+        maxYear: selectedMaxYear,
+        minMileage: selectedMinMileage,
+        maxMileage: selectedMaxMileage,
+        condition: selectedCondition,
+        transmission: selectedTransmission,
+        fuelType: selectedFuelType,
+        bodyType: selectedBodyType,
+        color: selectedColor,
+        driveType: selectedDriveType,
+        regionSpecs: selectedRegionSpecs,
+        cylinderCount: selectedCylinderCount,
+        seating: selectedSeating,
+        engineSize: selectedEngineSize,
+        city: selectedCity,
+        plateType: selectedPlateType,
+        plateCity: selectedPlateCity,
+        titleStatus: selectedTitleStatus,
+        damagedParts: selectedDamagedParts,
+        sortByUi: selectedSortBy,
+      );
+
   // Toggle states for unified filters
   bool isPriceDropdown = true;
   bool isYearDropdown = true;
@@ -434,7 +462,17 @@ abstract class _HomePageFields extends State<HomePage> {
 }
 
 class _HomePageState extends _HomePageFields
-    with _HomePageFetch, _HomePageFilterLogic, _HomePageFilterBar, _HomePageMoreFiltersDialog, _HomePageSlivers, _HomePageBuild {
+    with
+        _HomePageFetch,
+        _HomePageFilterLogic,
+        _HomePageFilterBar,
+        _HomePageMoreFiltersPrice,
+        _HomePageMoreFiltersYear,
+        _HomePageMoreFiltersMid,
+        _HomePageMoreFiltersSpecs,
+        _HomePageMoreFiltersDialog,
+        _HomePageSlivers,
+        _HomePageBuild {
   @override
   void initState() {
     super.initState();

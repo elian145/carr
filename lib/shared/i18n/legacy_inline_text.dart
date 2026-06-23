@@ -72,6 +72,42 @@ String homeFeedSortingListingsText(BuildContext context) {
   );
 }
 
+String homeFeedCachedResultsBannerText(BuildContext context) {
+  return trLegacyText(
+    context,
+    'Showing cached results',
+    ar: 'عرض النتائج المخزنة مؤقتاً',
+    ku: 'پیشاندانی ئەنجامە کاشکراوەکان',
+  );
+}
+
+String homeFeedSortedLocallyText(BuildContext context) {
+  return trLegacyText(
+    context,
+    'Sorted locally (server unavailable)',
+    ar: 'تم الترتيب محلياً (الخادم غير متاح)',
+    ku: 'لە ناوخۆدا ڕیزکرا (سێرڤەر بەردەست نییە)',
+  );
+}
+
+String homeFeedRefreshText(BuildContext context) {
+  return trLegacyText(
+    context,
+    'Refresh',
+    ar: 'تحديث',
+    ku: 'نوێکردنەوە',
+  );
+}
+
+String homeFeedSortDisabledText(BuildContext context) {
+  return trLegacyText(
+    context,
+    'Sorting temporarily disabled due to server issue',
+    ar: 'تم تعطيل الترتيب مؤقتاً بسبب مشكلة في الخادم',
+    ku: 'ڕیزکردن بە کاتییەوە ناچالاک کرا بەهۆی کێشەی سێرڤەر',
+  );
+}
+
 String homeFeedNetworkErrorText(BuildContext context) {
   return trLegacyText(
     context,

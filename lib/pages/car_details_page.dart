@@ -6,10 +6,13 @@ import 'package:provider/provider.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:url_launcher/url_launcher.dart';
 
-import '../app/widgets/global_listing_card.dart'
-    show buildGlobalCarCard, mapListingToGlobalCarCardData;
 import '../app/widgets/listing_network_image.dart';
 import '../data/car_name_translations.dart';
+import '../features/listing/car_details_listing_fields.dart';
+import '../features/listing/car_details_recommendations.dart';
+import '../features/listing/widgets/car_details_contact_bar.dart';
+import '../features/listing/widgets/car_details_horizontal_list.dart';
+import '../features/listing/widgets/car_details_seller_section.dart';
 import '../features/chat/chat_pages.dart' as carzo_chat;
 import '../features/comparison/widgets/comparison_button.dart';
 import '../features/listing/car_listing_specs_grid.dart';
@@ -210,7 +213,7 @@ class _CarDetailsPageState extends State<CarDetailsPage> {
       return;
     }
     if (value == 'report_user') {
-      final seller = _sellerMap();
+      final seller = sellerMapFromListing(car);
       final sellerId =
           (seller?['id'] ?? seller?['user_id'] ?? '').toString().trim();
       if (sellerId.isNotEmpty) {
@@ -578,131 +581,39 @@ class _CarDetailsPageState extends State<CarDetailsPage> {
   }
 
   Widget _buildContactButtonsRow() {
-    return Row(
-      children: [
-        Expanded(
-          child: SizedBox(
-            height: 46,
-            child: Semantics(
-              button: true,
-              label: AppLocalizations.of(context)!.chatOnWhatsApp,
-              child: ElevatedButton.icon(
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: const Color(0xFF25D366),
-                  foregroundColor: Colors.white,
-                  elevation: 2,
-                  shadowColor: Colors.black26,
-                  padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
-                  minimumSize: const Size(0, 46),
-                  tapTargetSize: MaterialTapTargetSize.shrinkWrap,
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(17),
-                  ),
-                ),
-                icon: const Icon(Icons.chat, size: 19),
-                label: Text(
-                  AppLocalizations.of(context)!.chatOnWhatsApp,
-                  style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w600),
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
-                ),
-                onPressed: _openWhatsAppToSeller,
-              ),
-            ),
-          ),
-        ),
-        const SizedBox(width: 6),
-        Expanded(
-          child: SizedBox(
-            height: 46,
-            child: Semantics(
-              button: true,
-              label: trLegacyText(
-                context,
-                'Call Seller',
-                ar: 'اتصل بالبائع',
-                ku: 'پەیوەندی بە فرۆشیار',
-              ),
-              child: ElevatedButton.icon(
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: const Color(0xFF007AFF),
-                  foregroundColor: Colors.white,
-                  elevation: 2,
-                  shadowColor: Colors.black26,
-                  padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
-                  minimumSize: const Size(0, 46),
-                  tapTargetSize: MaterialTapTargetSize.shrinkWrap,
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(17),
-                  ),
-                ),
-                icon: const Icon(Icons.phone, size: 19),
-                label: Text(
-                  trLegacyText(context, 'Call Seller', ar: 'اتصل بالبائع', ku: 'پەیوەندی بە فرۆشیار'),
-                  style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w600),
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
-                ),
-                onPressed: () async {
-                  final String raw = _sellerPhoneRawForContact() ?? '';
-                  final String digits = raw.replaceAll(RegExp(r'[^0-9]'), '');
-                  if (digits.isEmpty) {
-                    if (mounted) {
-                      ScaffoldMessenger.of(context).showSnackBar(
-                        SnackBar(content: Text(AppLocalizations.of(context)!.sellerPhoneNotAvailable)),
-                      );
-                    }
-                    return;
-                  }
-                  final Uri callUri = Uri.parse('tel:$digits');
-                  bool launched = await launchUrl(callUri, mode: LaunchMode.externalApplication).catchError((_) => false);
-                  if (launched) {
-                    await AnalyticsService.trackCall(widget.carId.toString());
-                  } else if (mounted) {
-                    ScaffoldMessenger.of(context).showSnackBar(
-                      const SnackBar(content: Text('Unable to make call')),
-                    );
-                  }
-                },
-              ),
-            ),
-          ),
-        ),
-      ],
+    return CarDetailsContactBar(
+      onWhatsApp: _openWhatsAppToSeller,
+      onCall: _callSeller,
     );
   }
 
-  /// Listing phone for WhatsApp/call: `contact_phone` or nested `seller.*` (API shape varies).
-  String? _sellerPhoneRawForContact() {
-    if (car == null) return null;
-    final direct = car!['contact_phone']?.toString().trim();
-    if (direct != null && direct.isNotEmpty) return direct;
-    final seller = car!['seller'];
-    if (seller is Map) {
-      final m = Map<String, dynamic>.from(seller);
-      for (final key in [
-        'phone_number',
-        'phone',
-        'whatsapp',
-        'mobile',
-        'contact_phone',
-      ]) {
-        final v = m[key]?.toString().trim();
-        if (v != null && v.isNotEmpty) return v;
+  Future<void> _callSeller() async {
+    final String raw = sellerPhoneRawForContact(car) ?? '';
+    final String digits = raw.replaceAll(RegExp(r'[^0-9]'), '');
+    if (digits.isEmpty) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text(AppLocalizations.of(context)!.sellerPhoneNotAvailable)),
+        );
       }
+      return;
     }
-    return null;
+    final Uri callUri = Uri.parse('tel:$digits');
+    final launched = await launchUrl(callUri, mode: LaunchMode.externalApplication).catchError((_) => false);
+    if (launched) {
+      await AnalyticsService.trackCall(widget.carId.toString());
+    } else if (mounted) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Unable to make call')),
+      );
+    }
   }
 
-  bool get _hasDialableSellerPhone {
-    final raw = _sellerPhoneRawForContact();
-    if (raw == null || raw.isEmpty) return false;
-    return raw.replaceAll(RegExp(r'[^0-9]'), '').isNotEmpty;
-  }
+  bool get _hasDialableSellerPhone => hasDialableSellerPhone(car);
 
   Future<void> _openWhatsAppToSeller() async {
     if (car == null) return;
-    final String? raw = _sellerPhoneRawForContact();
+    final String? raw = sellerPhoneRawForContact(car);
     if (raw == null || raw.isEmpty) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
@@ -873,7 +784,6 @@ class _CarDetailsPageState extends State<CarDetailsPage> {
   Future<void> _loadSimilarAndRelated() async {
     if (car == null) return;
     final String brand = (car!['brand'] ?? '').toString().trim();
-    final String model = (car!['model'] ?? '').toString().trim();
     if (brand.isEmpty) return;
     if (!mounted) return;
     setState(() {
@@ -881,126 +791,16 @@ class _CarDetailsPageState extends State<CarDetailsPage> {
       loadingRelated = true;
     });
     try {
-      final sp = await SharedPreferences.getInstance();
-      final simKey = 'cache_similar_${widget.carId}';
-      final relKey = 'cache_related_${widget.carId}';
-      // Load cached similar/related first
-      try {
-        final simCached = sp.getString(simKey);
-        if (simCached != null && simCached.isNotEmpty) {
-          final simData = json.decode(simCached);
-          if (simData is List && mounted) {
-            setState(() {
-              similarCars = simData.cast<Map<String, dynamic>>();
-            });
-          }
-        }
-        final relCached = sp.getString(relKey);
-        if (relCached != null && relCached.isNotEmpty) {
-          final relData = json.decode(relCached);
-          if (relData is List && mounted) {
-            setState(() {
-              relatedCars = relData.cast<Map<String, dynamic>>();
-            });
-          }
-        }
-      } catch (e, st) { logNonFatal(e, st); }
-      List<Map<String, dynamic>> toCarList(dynamic decoded) {
-        final dynamic raw = (decoded is Map)
-            ? (decoded['cars'] ?? decoded['data'] ?? decoded['list'] ?? decoded)
-            : decoded;
-        final List<dynamic> list = raw is List ? raw : const <dynamic>[];
-        return list
-            .whereType<Map>()
-            .map((m) => Map<String, dynamic>.from(m.cast<String, dynamic>()))
-            .toList();
-      }
-
-      final currentIds = <String>{
-        widget.carId.toString(),
-        (car!['id'] ?? '').toString(),
-        (car!['public_id'] ?? '').toString(),
-      }..removeWhere((e) => e.trim().isEmpty);
-
-      // Similar: strictly same brand + model
-      if (model.isNotEmpty) {
-        final simData = await ApiService.getCars(
-          page: 1,
-          perPage: 20,
-          brand: brand,
-          model: model,
-        );
-        final list = toCarList(simData)
-            .where((e) {
-              final id = (e['public_id'] ?? e['id'] ?? '').toString();
-              return id.isEmpty || !currentIds.contains(id);
-            })
-            .take(12)
-            .toList();
-        if (mounted) setState(() => similarCars = list);
-        unawaited(sp.setString(simKey, json.encode(similarCars)));
-      } else {
-        if (mounted) setState(() => similarCars = []);
-      }
-
-      // Related: same brand and matching key attributes ("same filters")
-      // Build a query around the viewed car's attributes: price/year ranges, transmission, fuel, condition, city
-      // Price band: +/- 15%
-      final num? priceNum = (car!['price'] is num)
-          ? (car!['price'] as num)
-          : num.tryParse((car!['price'] ?? '').toString());
-      double? priceMin;
-      double? priceMax;
-      if (priceNum != null && priceNum > 0) {
-        priceMin = (priceNum * 0.85).floorToDouble();
-        priceMax = (priceNum * 1.15).ceilToDouble();
-      }
-      // Year band: +/- 2 years
-      final int? yearNum = (car!['year'] is int)
-          ? (car!['year'] as int)
-          : int.tryParse((car!['year'] ?? '').toString());
-      int? yearMin;
-      int? yearMax;
-      if (yearNum != null && yearNum > 0) {
-        yearMin = yearNum - 2;
-        yearMax = yearNum + 2;
-      }
-      final relData = await ApiService.getCars(
-        page: 1,
-        perPage: 20,
-        brand: brand,
-        yearMin: yearMin,
-        yearMax: yearMax,
-        priceMin: priceMin,
-        priceMax: priceMax,
-        location: (car!['city'] ?? car!['location'] ?? '').toString().trim().isEmpty
-            ? null
-            : (car!['city'] ?? car!['location']).toString().trim(),
-        condition: (car!['condition'] ?? '').toString().trim().isEmpty
-            ? null
-            : (car!['condition'] ?? '').toString().trim(),
-        bodyType: (car!['body_type'] ?? car!['bodyType'] ?? '').toString().trim().isEmpty
-            ? null
-            : (car!['body_type'] ?? car!['bodyType']).toString().trim(),
-        transmission: (car!['transmission'] ?? '').toString().trim().isEmpty
-            ? null
-            : (car!['transmission'] ?? '').toString().trim(),
-        driveType: (car!['drive_type'] ?? car!['driveType'] ?? '').toString().trim().isEmpty
-            ? null
-            : (car!['drive_type'] ?? car!['driveType']).toString().trim(),
-        engineType: (car!['engine_type'] ?? car!['engineType'] ?? '').toString().trim().isEmpty
-            ? null
-            : (car!['engine_type'] ?? car!['engineType']).toString().trim(),
+      final result = await loadCarDetailsRecommendations(
+        car: car!,
+        cacheCarId: widget.carId,
       );
-      final list = toCarList(relData)
-          .where((e) {
-            final id = (e['public_id'] ?? e['id'] ?? '').toString();
-            return id.isEmpty || !currentIds.contains(id);
-          })
-          .take(12)
-          .toList();
-      if (mounted) setState(() => relatedCars = list);
-      unawaited(sp.setString(relKey, json.encode(relatedCars)));
+      if (mounted) {
+        setState(() {
+          similarCars = result.similar;
+          relatedCars = result.related;
+        });
+      }
     } catch (e) {
       appLog('Failed to load similar/related: $e');
     } finally {
@@ -1140,8 +940,8 @@ class _CarDetailsPageState extends State<CarDetailsPage> {
                               ),
                             ),
                           ),
-                          if ((_sellerMap()?['id'] ??
-                                  _sellerMap()?['user_id'] ??
+                          if ((sellerMapFromListing(car)?['id'] ??
+                                  sellerMapFromListing(car)?['user_id'] ??
                                   '')
                               .toString()
                               .trim()
@@ -1445,7 +1245,7 @@ class _CarDetailsPageState extends State<CarDetailsPage> {
                           Builder(
                             builder: (context) {
                               final cityDetail =
-                                  (_getFirstNonEmpty(car!, [
+                                  (listingFirstNonEmpty(car!, [
                                             'city',
                                             'location',
                                           ]) ??
@@ -1493,7 +1293,7 @@ class _CarDetailsPageState extends State<CarDetailsPage> {
                                                   Flexible(
                                                     child: Text(
                                                       '${AppLocalizations.of(context)!.cityLabel}: '
-                                                      '${translateListingValue(context, _getFirstNonEmpty(car!, ['city', 'location'])) ?? _getFirstNonEmpty(car!, ['city', 'location'])}',
+                                                      '${translateListingValue(context, listingFirstNonEmpty(car!, ['city', 'location'])) ?? listingFirstNonEmpty(car!, ['city', 'location'])}',
                                                       style: cityLabelStyle,
                                                       // Allow long cities like "Sulaymaniyah" to show fully.
                                                       maxLines: 2,
@@ -1591,7 +1391,7 @@ class _CarDetailsPageState extends State<CarDetailsPage> {
                                 ),
                               ),
                               ],
-                              _buildSellerProfileSection(),
+                              CarDetailsSellerSection(car: car!),
                             ],
                           ),
                           SizedBox(height: 28),
@@ -1607,8 +1407,9 @@ class _CarDetailsPageState extends State<CarDetailsPage> {
                               ),
                             ),
                             SizedBox(height: 12),
-                            _buildHorizontalList(
-                              similarCars,
+                            CarDetailsHorizontalList(
+                              items: similarCars,
+                              listingColumnsPref: _listingColumnsPref,
                               snapController: _similarSnapController,
                             ),
                             SizedBox(height: 28),
@@ -1642,8 +1443,9 @@ class _CarDetailsPageState extends State<CarDetailsPage> {
                               ),
                             ),
                             SizedBox(height: 12),
-                            _buildHorizontalList(
-                              relatedCars,
+                            CarDetailsHorizontalList(
+                              items: relatedCars,
+                              listingColumnsPref: _listingColumnsPref,
                               snapController: _relatedSnapController,
                             ),
                           ] else if (loadingRelated) ...[
@@ -1682,408 +1484,5 @@ class _CarDetailsPageState extends State<CarDetailsPage> {
     );
   }
 
-  // Safely get the first non-empty string value from several possible keys (handles snake_case and camelCase)
-  String? _getFirstNonEmpty(Map<String, dynamic> map, List<String> keys) {
-    for (final key in keys) {
-      final dynamic value = map[key];
-      if (value == null) continue;
-      final String stringValue = value.toString().trim();
-      if (stringValue.isNotEmpty) return stringValue;
-    }
-    return null;
-  }
-
-  Map<String, dynamic>? _sellerMap() {
-    if (car == null) return null;
-    final dynamic seller = car!['seller'];
-    if (seller is Map) {
-      return Map<String, dynamic>.from(seller);
-    }
-    return null;
-  }
-
-  Widget _buildSellerProfileSection() {
-    final Map<String, dynamic> seller = _sellerMap() ?? <String, dynamic>{};
-    final bool isLight = Theme.of(context).brightness == Brightness.light;
-
-    final String firstName = (seller['first_name'] ?? '').toString().trim();
-    final String lastName = (seller['last_name'] ?? '').toString().trim();
-    final String fullName = '$firstName $lastName'.trim();
-    final String name =
-        (_getFirstNonEmpty(seller, ['name', 'display_name']) ??
-                _getFirstNonEmpty(car ?? <String, dynamic>{}, [
-                  'seller_name',
-                  'owner_name',
-                  'posted_by',
-                ]) ??
-                '')
-            .trim();
-    final String phone =
-        (_getFirstNonEmpty(seller, ['phone_number', 'phone', 'mobile']) ??
-                _sellerPhoneRawForContact() ??
-                '')
-            .trim();
-    final String email =
-        ((_getFirstNonEmpty(seller, ['email']) ??
-                    _getFirstNonEmpty(car ?? <String, dynamic>{}, [
-                      'seller_email',
-                    ])) ??
-                '')
-            .trim();
-    final String city =
-        ((_getFirstNonEmpty(seller, ['city', 'location']) ??
-                    _getFirstNonEmpty(car ?? <String, dynamic>{}, [
-                      'city',
-                      'location',
-                    ])) ??
-                '')
-            .trim();
-    final String avatarRaw =
-        ((_getFirstNonEmpty(seller, [
-                      'profile_picture',
-                      'avatar',
-                      'avatar_url',
-                      'image_url',
-                      'photo_url',
-                    ]) ??
-                    _getFirstNonEmpty(car ?? <String, dynamic>{}, [
-                      'seller_profile_picture',
-                    ])) ??
-                '')
-            .trim();
-    final String avatarUrl = avatarRaw.isEmpty
-        ? ''
-        : buildLegacyFullImageUrl(avatarRaw);
-
-    final bool isVerified =
-        seller['is_verified'] == true || seller['verified'] == true;
-    final String accountType = (seller['account_type'] ?? '').toString().trim();
-    final String dealerStatus = (seller['dealer_status'] ?? '').toString().trim();
-    final String dealershipName =
-        (seller['dealership_name'] ?? '').toString().trim();
-    final String dealershipLocation =
-        (seller['dealership_location'] ?? '').toString().trim();
-    final String dealershipDescription =
-        (seller['dealership_description'] ?? seller['dealer_description'] ?? '')
-            .toString()
-            .trim();
-    final bool isApprovedDealer =
-        accountType == 'dealer' && dealerStatus == 'approved';
-    final bool isDealerSeller = accountType == 'dealer';
-    final String sellerTypeLabel = isDealerSeller
-        ? trLegacyText(context, 'Dealership', ar: 'معرض', ku: 'نمایشگا')
-        : trLegacyText(
-            context,
-            'Private seller',
-            ar: 'بائع فردي',
-            ku: 'فرۆشیاری تاک',
-          );
-    final String dealerPublicId =
-        (seller['id'] ?? seller['user_id'] ?? '').toString().trim();
-    final bool canOpenDealerPage =
-        isApprovedDealer && dealerPublicId.isNotEmpty;
-
-    final String displayName = isDealerSeller
-        ? ((isApprovedDealer && dealershipName.isNotEmpty)
-              ? dealershipName
-              : (name.isNotEmpty
-                    ? name
-                    : (fullName.isNotEmpty
-                          ? fullName
-                          : trLegacyText(
-                              context,
-                              'Dealer',
-                              ar: 'وكيل',
-                              ku: 'وەکیل',
-                            ))))
-        : sellerTypeLabel;
-
-    final String locationShown =
-        (isApprovedDealer && dealershipLocation.isNotEmpty)
-            ? dealershipLocation
-            : city;
-
-    String initials = 'S';
-    if (displayName.isNotEmpty) {
-      final List<String> parts = displayName
-          .split(RegExp(r'\s+'))
-          .where((s) => s.trim().isNotEmpty)
-          .toList();
-      if (parts.length >= 2) {
-        initials = '${parts[0][0]}${parts[1][0]}'.toUpperCase();
-      } else {
-        initials = parts.first[0].toUpperCase();
-      }
-    }
-
-    Widget detailRow(IconData icon, String label, String value) {
-      if (value.trim().isEmpty) return const SizedBox.shrink();
-      return Padding(
-        padding: const EdgeInsets.only(top: 8),
-        child: Row(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Icon(icon, size: 16, color: const Color(0xFFFF6B00)),
-            const SizedBox(width: 8),
-            Expanded(
-              child: RichText(
-                text: TextSpan(
-                  style: TextStyle(
-                    fontSize: 13,
-                    color: isLight
-                        ? AppThemes.darkHomeShellBackground
-                        : Colors.white70,
-                  ),
-                  children: [
-                    TextSpan(
-                      text: '$label: ',
-                      style: const TextStyle(fontWeight: FontWeight.w600),
-                    ),
-                    TextSpan(text: value),
-                  ],
-                ),
-              ),
-            ),
-          ],
-        ),
-      );
-    }
-
-    return Material(
-      color: Colors.transparent,
-      child: InkWell(
-        borderRadius: BorderRadius.circular(14),
-        onTap: canOpenDealerPage
-            ? () => Navigator.pushNamed(
-                  context,
-                  '/dealer/profile',
-                  arguments: {'dealerPublicId': dealerPublicId},
-                )
-            : null,
-        child: Container(
-          width: double.infinity,
-          margin: const EdgeInsets.only(top: 12),
-          padding: const EdgeInsets.all(12),
-          decoration: BoxDecoration(
-            color: isLight ? Colors.white : const Color(0xFF1A120E),
-            borderRadius: BorderRadius.circular(14),
-            border: Border.all(
-              color: isLight ? const Color(0x1A000000) : const Color(0x33FF6B00),
-            ),
-          ),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Row(
-                children: [
-                  CircleAvatar(
-                    radius: 22,
-                    backgroundColor: const Color(0x26FF6B00),
-                    backgroundImage: isDealerSeller && avatarUrl.isNotEmpty
-                        ? NetworkImage(avatarUrl)
-                        : null,
-                    child: !isDealerSeller
-                        ? const Icon(
-                            Icons.person,
-                            color: Color(0xFFFF6B00),
-                            size: 26,
-                          )
-                        : avatarUrl.isEmpty
-                        ? Text(
-                            initials,
-                            style: const TextStyle(
-                              color: Color(0xFFFF6B00),
-                              fontSize: 16,
-                              fontWeight: FontWeight.w700,
-                            ),
-                          )
-                        : null,
-                  ),
-                  const SizedBox(width: 10),
-                  Expanded(
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        if (isDealerSeller) ...[
-                          Text(
-                            sellerTypeLabel,
-                            maxLines: 1,
-                            overflow: TextOverflow.ellipsis,
-                            style: TextStyle(
-                              fontSize: 12,
-                              fontWeight: FontWeight.w600,
-                              color: isLight ? Colors.black54 : Colors.white60,
-                            ),
-                          ),
-                          const SizedBox(height: 2),
-                        ],
-                        Text(
-                          displayName,
-                          maxLines: 1,
-                          overflow: TextOverflow.ellipsis,
-                          style: TextStyle(
-                            fontSize: 15,
-                            fontWeight: FontWeight.w700,
-                            color: isLight
-                                ? AppThemes.darkHomeShellBackground
-                                : Colors.white,
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
-                  if (isDealerSeller && isVerified)
-                    Container(
-                      padding: const EdgeInsets.symmetric(
-                        horizontal: 8,
-                        vertical: 4,
-                      ),
-                      decoration: BoxDecoration(
-                        color: const Color(0x1A4CAF50),
-                        borderRadius: BorderRadius.circular(999),
-                      ),
-                      child: Row(
-                        mainAxisSize: MainAxisSize.min,
-                        children: [
-                          Icon(
-                            Icons.verified,
-                            color: Color(0xFF4CAF50),
-                            size: 13,
-                          ),
-                          SizedBox(width: 4),
-                          Text(
-                            trLegacyText(
-                              context,
-                              'Verified',
-                              ar: 'موثّق',
-                              ku: 'پشتڕاستکراوە',
-                            ),
-                            style: TextStyle(
-                              fontSize: 11,
-                              color: Color(0xFF4CAF50),
-                              fontWeight: FontWeight.w600,
-                            ),
-                          ),
-                        ],
-                      ),
-                    ),
-                ],
-              ),
-              if (isDealerSeller) ...[
-                detailRow(
-                  Icons.phone_outlined,
-                  trLegacyText(context, 'Phone', ar: 'الهاتف', ku: 'تەلەفۆن'),
-                  phone,
-                ),
-                detailRow(
-                  Icons.email_outlined,
-                  trLegacyText(context, 'Email', ar: 'البريد الإلكتروني', ku: 'ئیمەیل'),
-                  email,
-                ),
-              ],
-              if (isDealerSeller)
-                detailRow(
-                  Icons.location_on_outlined,
-                  trLegacyText(context, 'Location', ar: 'الموقع', ku: 'شوێن'),
-                  locationShown,
-                ),
-              if (isDealerSeller)
-                detailRow(
-                  Icons.notes_outlined,
-                  AppLocalizations.of(context)?.descriptionTitle ?? 'Description',
-                  dealershipDescription,
-                ),
-              if (canOpenDealerPage)
-                Padding(
-                  padding: const EdgeInsets.only(top: 10),
-                  child: Text(
-                    trLegacyText(
-                      context,
-                      'Tap to open dealership page',
-                      ar: 'اضغط لفتح صفحة المعرض',
-                      ku: 'کرتە بکە بۆ کردنەوەی پەڕەی نمایشگا',
-                    ),
-                    style: TextStyle(
-                      fontSize: 12,
-                      color: isLight ? Colors.black54 : Colors.white60,
-                    ),
-                  ),
-                ),
-            ],
-          ),
-        ),
-      ),
-    );
-  }
-
   Widget _buildSpecsGrid() => buildCarListingSpecsGrid(context, car!);
-
-  Widget _buildHorizontalList(
-    List<Map<String, dynamic>> items, {
-    required PageController snapController,
-  }) {
-    // When the user selects "one listing per row" (list layout),
-    // render similar/related as a horizontal swipe list of full-width rows.
-    if (_listingColumnsPref == 1) {
-      return LayoutBuilder(
-        builder: (context, constraints) {
-          final double viewportW = constraints.maxWidth;
-          final double itemW = (viewportW.isFinite && viewportW > 0)
-              ? viewportW
-              : MediaQuery.of(context).size.width;
-          final double h = (itemW.isFinite && itemW > 0) ? (itemW / 2.78) : 140;
-
-          return SizedBox(
-            height: h,
-            child: PageView.builder(
-              controller: snapController,
-              physics: const PageScrollPhysics(),
-              pageSnapping: true,
-              itemCount: items.length,
-              itemBuilder: (context, index) {
-                final item = Map<String, dynamic>.from(items[index]);
-                final normalized = mapListingToGlobalCarCardData(context, item);
-                return Padding(
-                  padding: const EdgeInsets.symmetric(horizontal: 2),
-                  child: SizedBox(
-                    width: itemW,
-                    height: h,
-                    child: buildGlobalCarCard(
-                      context,
-                      normalized,
-                      listLayout: true,
-                    ),
-                  ),
-                );
-              },
-            ),
-          );
-        },
-      );
-    }
-
-    // Default: keep the horizontal carousel in grid-card style.
-    return SizedBox(
-      height: 320,
-      child: ListView.separated(
-        padding: const EdgeInsets.symmetric(horizontal: 2),
-        scrollDirection: Axis.horizontal,
-        itemCount: items.length,
-        separatorBuilder: (context, index) => SizedBox(width: 12),
-        itemBuilder: (context, index) {
-          final item = Map<String, dynamic>.from(items[index]);
-          final normalized = mapListingToGlobalCarCardData(context, item);
-          return SizedBox(
-            width: 200,
-            child: AspectRatio(
-              // Match Home grid card aspect ratio so layout doesn't overflow.
-              aspectRatio: 0.72,
-              child: buildGlobalCarCard(context, normalized),
-            ),
-          );
-        },
-      ),
-    );
-  }
 }
-

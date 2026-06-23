@@ -623,85 +623,11 @@ mixin _HomePageFilterLogic on _HomePageFetch {
 
   // Get current filter state as a map
   Map<String, dynamic> _getCurrentFilterState() {
-    final Map<String, dynamic> filters = {};
-
-    // Brand and Model filters
-    if (selectedBrand?.isNotEmpty == true) filters['brand'] = selectedBrand!;
-    if (selectedModel?.isNotEmpty == true) filters['model'] = selectedModel!;
-    if (selectedTrim?.isNotEmpty == true) filters['trim'] = selectedTrim!;
-
-    // Price filters - apply individually, not requiring both
-    if (selectedMinPrice?.isNotEmpty == true) {
-      filters['min_price'] = selectedMinPrice!;
-    }
-    if (selectedMaxPrice?.isNotEmpty == true) {
-      filters['max_price'] = selectedMaxPrice!;
-    }
-
-    // Year filters - apply individually, not requiring both
-    if (selectedMinYear?.isNotEmpty == true) {
-      filters['min_year'] = selectedMinYear!;
-    }
-    if (selectedMaxYear?.isNotEmpty == true) {
-      filters['max_year'] = selectedMaxYear!;
-    }
-
-    // Mileage filters - apply individually, not requiring both
-    if (selectedMinMileage?.isNotEmpty == true) {
-      filters['min_mileage'] = selectedMinMileage!;
-    }
-    if (selectedMaxMileage?.isNotEmpty == true) {
-      filters['max_mileage'] = selectedMaxMileage!;
-    }
-
-    // Vehicle condition and specifications
-    if (selectedCondition?.isNotEmpty == true && selectedCondition != 'Any') {
-      filters['condition'] = selectedCondition!.toLowerCase();
-    }
-    if (selectedTransmission?.isNotEmpty == true &&
-        selectedTransmission != 'Any') {
-      filters['transmission'] = selectedTransmission!.toLowerCase();
-    }
-    if (selectedFuelType?.isNotEmpty == true && selectedFuelType != 'Any') {
-      filters['fuel_type'] = selectedFuelType!.toLowerCase();
-    }
-    if (selectedBodyType?.isNotEmpty == true && selectedBodyType != 'Any') {
-      filters['body_type'] = selectedBodyType!.toLowerCase();
-    }
-    if (selectedColor?.isNotEmpty == true && selectedColor != 'Any') {
-      filters['color'] = selectedColor!.toLowerCase();
-    }
-    if (selectedDriveType?.isNotEmpty == true && selectedDriveType != 'Any') {
-      filters['drive_type'] = selectedDriveType!.toLowerCase();
-    }
-    if (selectedRegionSpecs?.isNotEmpty == true &&
-        isValidCarRegionSpecCode(selectedRegionSpecs)) {
-      filters['region_specs'] = selectedRegionSpecs!.trim().toLowerCase();
-    }
-    if (selectedCylinderCount?.isNotEmpty == true &&
-        selectedCylinderCount != 'Any') {
-      filters['cylinder_count'] = selectedCylinderCount!;
-    }
-    if (selectedSeating?.isNotEmpty == true && selectedSeating != 'Any') {
-      filters['seating'] = selectedSeating!;
-    }
-
-    // Location and other filters
-    if (selectedCity?.isNotEmpty == true) filters['city'] = selectedCity!;
-    // Convert localized sort option to backend API value
     final apiSortValue = _convertSortToApiValue(context, selectedSortBy);
-    if (apiSortValue?.isNotEmpty == true) filters['sort_by'] = apiSortValue!;
-
-    // Title status and damaged parts
-    if (selectedTitleStatus?.isNotEmpty == true) {
-      filters['title_status'] = selectedTitleStatus!;
-      if (selectedTitleStatus == 'damaged' &&
-          selectedDamagedParts?.isNotEmpty == true) {
-        filters['damaged_parts'] = selectedDamagedParts!;
-      }
-    }
-
-    return filters;
+    return homeFiltersToSavedSearchJson(
+      _homeFiltersSnapshot(),
+      apiSortValue: apiSortValue,
+    );
   }
 
   String _generateSearchName() {
@@ -752,91 +678,20 @@ mixin _HomePageFilterLogic on _HomePageFetch {
       }
       return const ['Any'];
     }
-
-    if (selectedBrand != null &&
-        selectedModel != null &&
-        selectedTrim != null) {
-      final specs =
-          globalVehicleSpecs[selectedBrand]?[selectedModel]?[selectedTrim];
-      if (specs != null && specs['engineSizes'] != null) {
-        return ['Any', ...specs['engineSizes']];
-      }
-    }
     return engineSizes;
   }
 
-  List<String> getAvailableConditions() {
-    return conditions;
-  }
+  List<String> getAvailableConditions() => conditions;
 
-  List<String> getAvailableBodyTypes() {
-    if (selectedBrand == null ||
-        selectedModel == null ||
-        selectedTrim == null) {
-      return bodyTypes;
-    }
+  List<String> getAvailableBodyTypes() => bodyTypes;
 
-    final specs =
-        globalVehicleSpecs[selectedBrand]?[selectedModel]?[selectedTrim];
-    if (specs != null && specs['bodyTypes'] != null) {
-      return ['Any', ...specs['bodyTypes']];
-    }
-    return bodyTypes;
-  }
+  List<String> getAvailableTransmissions() => transmissions
+      .where((t) => t == 'Any' || !_isExcludedTransmissionFilter(t))
+      .toList();
 
-  List<String> getAvailableTransmissions() {
-    final List<String> base;
-    if (selectedBrand == null ||
-        selectedModel == null ||
-        selectedTrim == null) {
-      base = transmissions;
-    } else {
-      final specs =
-          globalVehicleSpecs[selectedBrand]?[selectedModel]?[selectedTrim];
-      if (specs != null && specs['transmissions'] != null) {
-        final fromSpecs = (specs['transmissions'] as List<dynamic>)
-            .map((e) => e.toString())
-            .where((t) => !_isExcludedTransmissionFilter(t))
-            .toList();
-        base = ['Any', ...fromSpecs];
-      } else {
-        base = transmissions;
-      }
-    }
-    return base
-        .where((t) => t == 'Any' || !_isExcludedTransmissionFilter(t))
-        .toList();
-  }
+  List<String> getAvailableFuelTypes() => fuelTypes;
 
-  List<String> getAvailableFuelTypes() {
-    if (selectedBrand == null ||
-        selectedModel == null ||
-        selectedTrim == null) {
-      return fuelTypes;
-    }
-
-    final specs =
-        globalVehicleSpecs[selectedBrand]?[selectedModel]?[selectedTrim];
-    if (specs != null && specs['fuelTypes'] != null) {
-      return ['Any', ...specs['fuelTypes']];
-    }
-    return fuelTypes;
-  }
-
-  List<String> getAvailableDriveTypes() {
-    if (selectedBrand == null ||
-        selectedModel == null ||
-        selectedTrim == null) {
-      return driveTypes;
-    }
-
-    final specs =
-        globalVehicleSpecs[selectedBrand]?[selectedModel]?[selectedTrim];
-    if (specs != null && specs['driveTypes'] != null) {
-      return ['Any', ...specs['driveTypes']];
-    }
-    return driveTypes;
-  }
+  List<String> getAvailableDriveTypes() => driveTypes;
 
   List<String> getAvailableCylinderCounts() {
     final mot = _catalogMotorFilterOptions();
@@ -846,48 +701,12 @@ mixin _HomePageFilterLogic on _HomePageFetch {
       }
       return const ['Any'];
     }
-
-    if (selectedBrand != null &&
-        selectedModel != null &&
-        selectedTrim != null) {
-      final specs =
-          globalVehicleSpecs[selectedBrand]?[selectedModel]?[selectedTrim];
-      if (specs != null && specs['cylinderCounts'] != null) {
-        return ['Any', ...specs['cylinderCounts']];
-      }
-    }
     return cylinderCounts;
   }
 
-  List<String> getAvailableSeatings() {
-    if (selectedBrand == null ||
-        selectedModel == null ||
-        selectedTrim == null) {
-      return seatings;
-    }
+  List<String> getAvailableSeatings() => seatings;
 
-    final specs =
-        globalVehicleSpecs[selectedBrand]?[selectedModel]?[selectedTrim];
-    if (specs != null && specs['seatings'] != null) {
-      return ['Any', ...specs['seatings']];
-    }
-    return seatings;
-  }
-
-  List<String> getAvailableColors() {
-    if (selectedBrand == null ||
-        selectedModel == null ||
-        selectedTrim == null) {
-      return colors;
-    }
-
-    final specs =
-        globalVehicleSpecs[selectedBrand]?[selectedModel]?[selectedTrim];
-    if (specs != null && specs['colors'] != null) {
-      return ['Any', ...specs['colors']];
-    }
-    return colors;
-  }
+  List<String> getAvailableColors() => colors;
 
   // Helper method to get a valid drive type value for dropdown (dropdown uses '' for Any)
   String? _getValidDriveTypeValue() {

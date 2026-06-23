@@ -183,7 +183,7 @@ mixin _HomePageFetch on _HomePageFields {
     bool isRetry = false,
   }) async {
     _debugLog(
-      'ðŸš€ fetchCars called with bypassCache: $bypassCache, isRetry: $isRetry',
+      '[home-feed] fetchCars called with bypassCache: $bypassCache, isRetry: $isRetry',
     );
     // Analytics tracking for search fetch
     // Only show full-screen loading when there is no feed yet. If we already have
@@ -211,9 +211,9 @@ mixin _HomePageFetch on _HomePageFields {
     );
 
     // Debug: Print the URL being called
-    _debugLog('ðŸ” Fetching cars from: $url');
-    _debugLog('ðŸ” Applied filters: $filters');
-    _debugLog('ðŸ” Sort parameter: ${filters['sort_by']}');
+    _debugLog('[home-feed] Fetching cars from: $url');
+    _debugLog('[home-feed] Applied filters: $filters');
+    _debugLog('[home-feed] Sort parameter: ${filters['sort_by']}');
 
     // Offline-first cache (skip cache if bypassCache is true)
     final sp = await SharedPreferences.getInstance();
@@ -223,7 +223,7 @@ mixin _HomePageFetch on _HomePageFields {
       // Use cached data to improve reliability and reduce API dependency
       cached = sp.getString(cacheKey);
       if (cached != null && cached.isNotEmpty) {
-        _debugLog('ðŸ“¦ Using cached data for key: $cacheKey');
+        _debugLog('[home-feed] Using cached data for key: $cacheKey');
         try {
           final decoded = json.decode(cached);
           final List<Map<String, dynamic>> parsed =
@@ -241,7 +241,7 @@ mixin _HomePageFetch on _HomePageFields {
         } catch (e, st) { logNonFatal(e, st); }
       }
     } else {
-      _debugLog('ðŸš« Bypassing cache for key: $cacheKey');
+      _debugLog('[home-feed] Bypassing cache for key: $cacheKey');
     }
 
     try {
@@ -261,8 +261,8 @@ mixin _HomePageFetch on _HomePageFields {
             },
       );
 
-      _debugLog('ðŸ“¡ Response status: ${response.statusCode}');
-      _debugLog('ðŸ“¡ Response body length: ${response.body.length}');
+      _debugLog('[home-feed] Response status: ${response.statusCode}');
+      _debugLog('[home-feed] Response body length: ${response.body.length}');
 
       if (response.statusCode == 200) {
         final decoded = json.decode(response.body);
@@ -277,7 +277,7 @@ mixin _HomePageFetch on _HomePageFields {
         final List<Map<String, dynamic>> parsed =
             listingMapsFromApiResponse(decoded);
 
-        _debugLog('ðŸ“Š Parsed ${parsed.length} cars from response');
+        _debugLog('[home-feed] Parsed ${parsed.length} cars from response');
 
         if (mounted) {
           setState(() {
@@ -294,13 +294,13 @@ mixin _HomePageFetch on _HomePageFields {
         }
         // Save fresh cache
         unawaited(sp.setString(cacheKey, response.body));
-        _debugLog('âœ… Found ${parsed.length} cars with applied filters');
+        _debugLog('[home-feed] Found ${parsed.length} cars with applied filters');
         _page = 2; // next page to request
         // Reset retry count on success
         _fetchRetryCount = 0;
       } else {
-        _debugLog('âŒ Server error: ${response.statusCode}');
-        _debugLog('âŒ Response body: ${response.body}');
+        _debugLog('[home-feed] Server error: ${response.statusCode}');
+        _debugLog('[home-feed] Response body: ${response.body}');
         await _handleFetchError(
           bypassCache,
           cached,
@@ -309,7 +309,7 @@ mixin _HomePageFetch on _HomePageFields {
         );
       }
     } catch (e) {
-      _debugLog('âŒ Network error: $e');
+      _debugLog('[home-feed] Network error: $e');
       await _handleFetchError(
         bypassCache,
         cached,
@@ -329,7 +329,7 @@ mixin _HomePageFetch on _HomePageFields {
     bool isRetry = false,
   }) async {
     // Don't show error immediately - try fallback strategies first
-    _debugLog('ðŸ”„ Handling fetch error: $errorMessage, isRetry: $isRetry');
+    _debugLog('[home-feed] Handling fetch error: $errorMessage, isRetry: $isRetry');
 
     // First, attempt the alternative endpoint /api/cars (server returns { cars: [...], pagination: {...} })
     try {
@@ -339,12 +339,12 @@ mixin _HomePageFetch on _HomePageFields {
 
     // If sorting failed and we have a sort parameter, try without sorting first
     if (selectedSortBy != null && selectedSortBy!.isNotEmpty && !isRetry) {
-      _debugLog('ðŸ”„ Sorting failed, trying without sort parameter');
+      _debugLog('[home-feed] Sorting failed, trying without sort parameter');
       try {
         await _fetchWithoutSort();
         return; // Success, don't show error
       } catch (e) {
-        _debugLog('âŒ Fallback without sort also failed: $e');
+        _debugLog('[home-feed] Fallback without sort also failed: $e');
       }
     }
 
@@ -354,7 +354,7 @@ mixin _HomePageFetch on _HomePageFields {
         !isRetry) {
       _fetchRetryCount++;
       _debugLog(
-        'ðŸ”„ Auto-retrying fetch (attempt $_fetchRetryCount/$_HomePageFields._maxRetries)',
+      '[home-feed] Auto-retrying fetch (attempt $_fetchRetryCount/$_HomePageFields._maxRetries)',
       );
       await Future.delayed(Duration(seconds: 1)); // Shorter delay for better UX
       if (mounted) {
@@ -362,7 +362,7 @@ mixin _HomePageFetch on _HomePageFields {
           await fetchCars(bypassCache: bypassCache, isRetry: true);
           return; // Success, don't show error
         } catch (e) {
-          _debugLog('âŒ Auto-retry failed: $e');
+          _debugLog('[home-feed] Auto-retry failed: $e');
         }
       }
     }
@@ -474,7 +474,7 @@ mixin _HomePageFetch on _HomePageFields {
 
   Future<void> _fetchWithoutSort() async {
     try {
-      _debugLog('ðŸ”„ Attempting fetch without sort parameter');
+      _debugLog('[home-feed] Attempting fetch without sort parameter');
       Map<String, String> filters = _buildFilters(includeSort: false);
 
       String query = Uri(queryParameters: filters).query;
@@ -482,7 +482,7 @@ mixin _HomePageFetch on _HomePageFields {
         '${getApiBase()}/api/cars${query.isNotEmpty ? '?$query' : ''}',
       );
 
-      _debugLog('ðŸ” Fallback URL: $url');
+      _debugLog('[home-feed] Fallback URL: $url');
 
       final response = await ApiService.getCarsRaw(
         filters,
@@ -503,21 +503,21 @@ mixin _HomePageFetch on _HomePageFields {
         }
 
         _debugLog(
-          'âœ… Fallback fetch successful: ${parsed.length} cars loaded',
+      '[home-feed] Fallback fetch successful: ${parsed.length} cars loaded',
         );
 
         // Show a message that sorting was disabled
         if (mounted) {
           ScaffoldMessenger.of(context).showSnackBar(
             SnackBar(
-              content: Text('Sorting temporarily disabled due to server issue'),
+              content: Text(homeFeedSortDisabledText(context)),
               duration: Duration(seconds: 3),
               backgroundColor: Colors.orange,
             ),
           );
         }
       } else {
-        _debugLog('âŒ Fallback fetch failed: ${response.statusCode}');
+        _debugLog('[home-feed] Fallback fetch failed: ${response.statusCode}');
         if (mounted) {
           setState(() {
             loadErrorMessage = HomeFeedErrors.server(response.statusCode);
@@ -526,7 +526,7 @@ mixin _HomePageFetch on _HomePageFields {
         }
       }
     } catch (e) {
-      _debugLog('âŒ Fallback fetch error: $e');
+      _debugLog('[home-feed] Fallback fetch error: $e');
       if (mounted) {
         setState(() {
           loadErrorMessage = HomeFeedErrors.network;
@@ -545,150 +545,26 @@ mixin _HomePageFetch on _HomePageFields {
 
   List<Map<String, dynamic>> _applyDamagedPartsExactFilter(
     List<Map<String, dynamic>> input,
-  ) {
-    if (selectedTitleStatus != 'damaged') return input;
-    final targetParts = int.tryParse(selectedDamagedParts ?? '');
-    if (targetParts == null) return input;
-
-    return input.where((car) {
-      final titleStatus = (car['title_status']?.toString() ?? '')
-          .trim()
-          .toLowerCase();
-      if (titleStatus != 'damaged') return false;
-      final parts = int.tryParse(car['damaged_parts']?.toString() ?? '');
-      return parts == targetParts;
-    }).toList();
-  }
-
+  ) =>
+      applyDamagedPartsListingFilter(
+        input,
+        selectedTitleStatus: selectedTitleStatus,
+        selectedDamagedParts: selectedDamagedParts,
+      );
 
   Map<String, String> _buildFilters({bool includeSort = true}) {
-    Map<String, String> filters = {};
-
-    // Brand and Model filters
-    if (selectedBrand != null && selectedBrand!.isNotEmpty) {
-      filters['brand'] = selectedBrand!;
-    }
-    if (selectedModel != null && selectedModel!.isNotEmpty) {
-      filters['model'] = selectedModel!;
-    }
-    if (selectedTrim != null && selectedTrim!.isNotEmpty) {
-      filters['trim'] = selectedTrim!;
-    }
-
-    // Price filters - apply individually, not requiring both
-    if (selectedMinPrice != null && selectedMinPrice!.isNotEmpty) {
-      filters['min_price'] = selectedMinPrice!;
-    }
-    if (selectedMaxPrice != null && selectedMaxPrice!.isNotEmpty) {
-      filters['max_price'] = selectedMaxPrice!;
-    }
-
-    // Year filters - apply individually, not requiring both
-    if (selectedMinYear != null && selectedMinYear!.isNotEmpty) {
-      filters['min_year'] = selectedMinYear!;
-    }
-    if (selectedMaxYear != null && selectedMaxYear!.isNotEmpty) {
-      filters['max_year'] = selectedMaxYear!;
-    }
-
-    // Mileage filters - apply individually, not requiring both
-    if (selectedMinMileage != null && selectedMinMileage!.isNotEmpty) {
-      filters['min_mileage'] = selectedMinMileage!;
-    }
-    if (selectedMaxMileage != null && selectedMaxMileage!.isNotEmpty) {
-      filters['max_mileage'] = selectedMaxMileage!;
-    }
-
-    // Vehicle condition and specifications
-    if (selectedCondition != null &&
-        selectedCondition!.isNotEmpty &&
-        selectedCondition != 'Any') {
-      filters['condition'] = selectedCondition!.toLowerCase();
-    }
-    if (selectedTransmission != null &&
-        selectedTransmission!.isNotEmpty &&
-        selectedTransmission != 'Any') {
-      filters['transmission'] = selectedTransmission!.toLowerCase();
-    }
-    if (selectedFuelType != null &&
-        selectedFuelType!.isNotEmpty &&
-        selectedFuelType != 'Any') {
-      filters['fuel_type'] = selectedFuelType!.toLowerCase();
-    }
-    if (selectedBodyType != null &&
-        selectedBodyType!.isNotEmpty &&
-        selectedBodyType != 'Any') {
-      filters['body_type'] = selectedBodyType!.toLowerCase();
-    }
-    if (selectedColor != null &&
-        selectedColor!.isNotEmpty &&
-        selectedColor != 'Any') {
-      filters['color'] = selectedColor!.toLowerCase();
-    }
-    if (selectedDriveType != null &&
-        selectedDriveType!.isNotEmpty &&
-        selectedDriveType != 'Any') {
-      filters['drive_type'] = selectedDriveType!.toLowerCase();
-    }
-    if (selectedRegionSpecs != null &&
-        selectedRegionSpecs!.isNotEmpty &&
-        isValidCarRegionSpecCode(selectedRegionSpecs)) {
-      filters['region_specs'] = selectedRegionSpecs!.trim().toLowerCase();
-    }
-    if (selectedCylinderCount != null &&
-        selectedCylinderCount!.isNotEmpty &&
-        selectedCylinderCount != 'Any') {
-      filters['cylinder_count'] = selectedCylinderCount!;
-    }
-    if (selectedSeating != null &&
-        selectedSeating!.isNotEmpty &&
-        selectedSeating != 'Any') {
-      filters['seating'] = selectedSeating!;
-    }
-    if (selectedEngineSize != null &&
-        selectedEngineSize!.isNotEmpty &&
-        selectedEngineSize != 'Any') {
-      filters['engine_size'] = selectedEngineSize!;
-    }
-
-    // Location and other filters
-    if (selectedCity != null && selectedCity!.isNotEmpty) {
-      filters['city'] = selectedCity!;
-    }
-    if (selectedPlateType != null &&
-        selectedPlateType!.isNotEmpty &&
-        selectedPlateType != 'Any') {
-      filters['plate_type'] = selectedPlateType!.toLowerCase();
-    }
-    if (selectedPlateCity != null &&
-        selectedPlateCity!.isNotEmpty &&
-        selectedPlateCity != 'Any') {
-      filters['plate_city'] = selectedPlateCity!;
-    }
-
-    // Only include sort if requested and valid
-    if (includeSort) {
-      final apiSortValue = _convertSortToApiValue(context, selectedSortBy);
-      if (apiSortValue != null && apiSortValue.isNotEmpty) {
-        filters['sort_by'] = apiSortValue;
-      }
-    }
-
-    // Title status and damaged parts
-    if (selectedTitleStatus != null && selectedTitleStatus!.isNotEmpty) {
-      filters['title_status'] = selectedTitleStatus!;
-      if (selectedTitleStatus == 'damaged' &&
-          selectedDamagedParts != null &&
-          selectedDamagedParts!.isNotEmpty) {
-        filters['damaged_parts'] = selectedDamagedParts!;
-      }
-    }
-
-    return filters;
+    final apiSortValue = includeSort
+        ? _convertSortToApiValue(context, selectedSortBy)
+        : null;
+    return homeFiltersToApiQuery(
+      _homeFiltersSnapshot(),
+      apiSortValue: apiSortValue,
+      includeSort: includeSort,
+    );
   }
 
   void onSortChanged() async {
-    _debugLog('ðŸ”„ Sort changed to: $selectedSortBy');
+    _debugLog('[home-feed] Sort changed to: $selectedSortBy');
     // Analytics tracking for sort changed
 
     // Cancel any pending sort operation
@@ -716,9 +592,9 @@ mixin _HomePageFetch on _HomePageFields {
       final query = Uri(queryParameters: currentFilters).query;
       final cacheKey = 'cache_home_${query.hashCode}';
       await sp.remove(cacheKey);
-      _debugLog('ðŸ—‘ï¸ Cleared cache for current filters: $cacheKey');
+      _debugLog('[home-feed] Cleared cache for current filters: $cacheKey');
     } catch (e) {
-      _debugLog('âŒ Error clearing cache: $e');
+      _debugLog('[home-feed] Error clearing cache: $e');
     }
 
     // Try the sort operation immediately
@@ -729,11 +605,11 @@ mixin _HomePageFetch on _HomePageFields {
     // Validate sort parameter before attempting
     final apiSortValue = _convertSortToApiValue(context, selectedSortBy);
     _debugLog(
-      'ðŸ”„ Sort parameter validation: $selectedSortBy -> $apiSortValue',
+      '[home-feed] Sort parameter validation: $selectedSortBy -> $apiSortValue',
     );
 
     if (apiSortValue == null || apiSortValue.isEmpty) {
-      _debugLog('âš ï¸ Invalid sort parameter, skipping sort');
+      _debugLog('[home-feed] Invalid sort parameter, skipping sort');
       await fetchCars(bypassCache: true);
       return;
     }
@@ -749,12 +625,12 @@ mixin _HomePageFetch on _HomePageFields {
 
     for (int i = 0; i < strategies.length; i++) {
       try {
-        _debugLog('ðŸ”„ Trying strategy ${i + 1}/${strategies.length}');
+        _debugLog('[home-feed] Trying strategy ${i + 1}/${strategies.length}');
         await strategies[i]();
-        _debugLog('âœ… Strategy ${i + 1} successful');
+        _debugLog('[home-feed] Strategy ${i + 1} successful');
         return;
       } catch (e) {
-        _debugLog('âŒ Strategy ${i + 1} failed: $e');
+        _debugLog('[home-feed] Strategy ${i + 1} failed: $e');
         if (i < strategies.length - 1) {
           await Future.delayed(Duration(milliseconds: 200));
         }
@@ -771,14 +647,14 @@ mixin _HomePageFetch on _HomePageFields {
   }
 
   Future<void> _tryDirectSort(String apiSortValue) async {
-    _debugLog('ðŸ”„ Direct sort attempt with: $apiSortValue');
+    _debugLog('[home-feed] Direct sort attempt with: $apiSortValue');
 
     // Try up to 5 times with increasing delays and different approaches
     for (int attempt = 1; attempt <= 5; attempt++) {
       try {
         // Use different timeout and connection settings based on attempt
         final timeout = Duration(seconds: 10 + (attempt * 5));
-        _debugLog('ðŸ”„ Attempt $attempt with ${timeout.inSeconds}s timeout');
+        _debugLog('[home-feed] Attempt $attempt with ${timeout.inSeconds}s timeout');
 
         Map<String, String> filters = _buildFilters();
         final response = await ApiService.getCarsRaw(
@@ -817,13 +693,13 @@ mixin _HomePageFetch on _HomePageFields {
           unawaited(sp.setString(cacheKey, response.body));
 
           unawaited(_autoSaveSearch());
-          _debugLog('âœ… Direct sort successful on attempt $attempt');
+          _debugLog('[home-feed] Direct sort successful on attempt $attempt');
           return;
         } else {
           throw Exception('Server error: ${response.statusCode}');
         }
       } catch (e) {
-        _debugLog('âŒ Direct sort attempt $attempt failed: $e');
+        _debugLog('[home-feed] Direct sort attempt $attempt failed: $e');
         if (attempt < 5) {
           await Future.delayed(Duration(milliseconds: 200 * attempt));
         } else {
@@ -834,7 +710,7 @@ mixin _HomePageFetch on _HomePageFields {
   }
 
   Future<void> _tryAlternativeSort(String apiSortValue) async {
-    _debugLog('ðŸ”„ Alternative sort attempt with: $apiSortValue');
+    _debugLog('[home-feed] Alternative sort attempt with: $apiSortValue');
 
     // Try with different connection approaches
     for (int attempt = 1; attempt <= 3; attempt++) {
@@ -872,13 +748,13 @@ mixin _HomePageFetch on _HomePageFields {
           }
 
           unawaited(_autoSaveSearch());
-          _debugLog('âœ… Alternative sort successful on attempt $attempt');
+          _debugLog('[home-feed] Alternative sort successful on attempt $attempt');
           return;
         } else {
           throw Exception('Server error: ${response.statusCode}');
         }
       } catch (e) {
-        _debugLog('âŒ Alternative sort attempt $attempt failed: $e');
+        _debugLog('[home-feed] Alternative sort attempt $attempt failed: $e');
         if (attempt < 3) {
           await Future.delayed(Duration(milliseconds: 300));
         } else {
@@ -889,7 +765,7 @@ mixin _HomePageFetch on _HomePageFields {
   }
 
   Future<void> _trySimpleSort(String apiSortValue) async {
-    _debugLog('ðŸ”„ Simple sort attempt with: $apiSortValue');
+    _debugLog('[home-feed] Simple sort attempt with: $apiSortValue');
     // Try with minimal headers and shorter timeout
     Map<String, String> filters = _buildFilters();
 
@@ -923,7 +799,7 @@ mixin _HomePageFetch on _HomePageFields {
   }
 
   Future<void> _tryConnectionReset(String apiSortValue) async {
-    _debugLog('ðŸ”„ Connection reset attempt with: $apiSortValue');
+    _debugLog('[home-feed] Connection reset attempt with: $apiSortValue');
 
     // Wait a bit longer and try with a completely fresh approach
     await Future.delayed(Duration(milliseconds: 1000));
@@ -957,24 +833,24 @@ mixin _HomePageFetch on _HomePageFields {
         }
 
         unawaited(_autoSaveSearch());
-        _debugLog('âœ… Connection reset successful');
+        _debugLog('[home-feed] Connection reset successful');
       } else {
         throw Exception('Server error: ${response.statusCode}');
       }
     } catch (e) {
-      _debugLog('âŒ Connection reset failed: $e');
+      _debugLog('[home-feed] Connection reset failed: $e');
       rethrow;
     }
   }
 
   Future<void> _tryWithoutSort() async {
-    _debugLog('ðŸ”„ Fallback: trying without sort');
+    _debugLog('[home-feed] Fallback: trying without sort');
     try {
       await _fetchWithoutSort();
       // If we get here, try client-side sorting as a last resort
       await _tryClientSideSort();
     } catch (e) {
-      _debugLog('âŒ Fallback also failed: $e');
+      _debugLog('[home-feed] Fallback also failed: $e');
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
@@ -988,7 +864,7 @@ mixin _HomePageFetch on _HomePageFields {
   }
 
   Future<void> _tryClientSideSort() async {
-    _debugLog('ðŸ”„ Attempting client-side sort');
+    _debugLog('[home-feed] Attempting client-side sort');
     final apiSortValue = _convertSortToApiValue(context, selectedSortBy);
     if (apiSortValue == null || selectedSortBy == null) return;
 
@@ -1059,18 +935,18 @@ mixin _HomePageFetch on _HomePageFields {
         });
       }
 
-      _debugLog('âœ… Client-side sort successful');
+      _debugLog('[home-feed] Client-side sort successful');
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: Text('Sorted locally (server unavailable)'),
+            content: Text(homeFeedSortedLocallyText(context)),
             duration: Duration(seconds: 2),
             backgroundColor: Colors.blue,
           ),
         );
       }
     } catch (e) {
-      _debugLog('âŒ Client-side sort failed: $e');
+      _debugLog('[home-feed] Client-side sort failed: $e');
       rethrow;
     }
   }

@@ -544,7 +544,7 @@ mixin _HomePageSlivers on _HomePageMoreFiltersDialog {
                   SizedBox(width: 8),
                   Expanded(
                     child: Text(
-                      'Showing cached results',
+                      homeFeedCachedResultsBannerText(context),
                       style: TextStyle(
                         color: Colors.orange,
                         fontSize: 12,
@@ -561,7 +561,7 @@ mixin _HomePageSlivers on _HomePageMoreFiltersDialog {
                       minimumSize: Size(0, 0),
                     ),
                     child: Text(
-                      'Refresh',
+                      homeFeedRefreshText(context),
                       style: TextStyle(
                         color: Colors.orange,
                         fontSize: 12,
