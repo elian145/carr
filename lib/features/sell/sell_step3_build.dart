@@ -1,6 +1,6 @@
 part of 'sell_flow.dart';
 
-mixin _SellStep3Build on _SellStep3Logic {
+mixin _SellStep3Build on _SellStep3Pickers {
   @override
   Widget build(BuildContext context) {
     return GestureDetector(
@@ -226,7 +226,7 @@ mixin _SellStep3Build on _SellStep3Logic {
                           // Convert price when switching currency
                           if (selectedPrice != null &&
                               selectedPrice!.isNotEmpty) {
-                            String convertedPrice = _convertCurrency(
+                            String convertedPrice = convertSellListingPrice(
                               selectedPrice!,
                               selectedCurrency,
                               selectedCurrency == 'USD' ? 'IQD' : 'USD',

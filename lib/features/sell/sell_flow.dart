@@ -54,6 +54,7 @@ import '../../theme_provider.dart';
 import 'sell_draft_helpers.dart' as sell_draft_helpers;
 import 'sell_listing_payload.dart';
 import 'sell_brand_slug.dart';
+import 'sell_currency_convert.dart';
 import 'sell_fancy_selector.dart' as sell_fancy_selector;
 import 'sell_video_helpers.dart' as sell_video_helpers;
 
@@ -70,7 +71,8 @@ part 'sell_step2_build.dart';
 part 'sell_step2.dart';
 part 'sell_step3_build.dart';
 part 'sell_step3_fields.dart';
-part 'sell_step3_logic.dart';
+part 'sell_step3_catalog.dart';
+part 'sell_step3_pickers.dart';
 part 'sell_step3.dart';
 part 'sell_step4_build.dart';
 part 'sell_step4_fields.dart';

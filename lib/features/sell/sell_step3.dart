@@ -7,4 +7,4 @@ class SellStep3Page extends StatefulWidget {
 }
 
 class _SellStep3PageState extends State<SellStep3Page>
-    with _SellStep3Fields, _SellStep3Logic, _SellStep3Build {}
+    with _SellStep3Fields, _SellStep3Catalog, _SellStep3Pickers, _SellStep3Build {}
