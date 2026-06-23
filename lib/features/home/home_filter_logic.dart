@@ -97,32 +97,28 @@ mixin _HomePageFilterLogic on _HomePageFilterPersist {
   }
 
   void _showSearchDialog(BuildContext context) {
-    showDialog(
+    showHomeBrandModelSearchDialog(
       context: context,
-      builder: (context) => HomeSearchDialog(
-        brands: homeBrands,
-        models: models,
-        onBrandSelected: (brand) {
-          setState(() {
-            selectedBrand = brand;
-            selectedModel = null;
-            selectedTrim = null;
-            clearFiltersOnVehicleChange();
-          });
-          onFilterChanged();
-          Navigator.pop(context);
-        },
-        onModelSelected: (brand, model) {
-          setState(() {
-            selectedBrand = brand;
-            selectedModel = model;
-            selectedTrim = null;
-            clearFiltersOnVehicleChange();
-          });
-          onFilterChanged();
-          Navigator.pop(context);
-        },
-      ),
+      brands: homeBrands,
+      models: models,
+      onBrandSelected: (brand) {
+        setState(() {
+          selectedBrand = brand;
+          selectedModel = null;
+          selectedTrim = null;
+          clearFiltersOnVehicleChange();
+        });
+        onFilterChanged();
+      },
+      onModelSelected: (brand, model) {
+        setState(() {
+          selectedBrand = brand;
+          selectedModel = model;
+          selectedTrim = null;
+          clearFiltersOnVehicleChange();
+        });
+        onFilterChanged();
+      },
     );
   }
 }

@@ -34,6 +34,7 @@ part 'chat_notifications_page.dart';
 part 'chat_conversation_fields.dart';
 part 'chat_conversation_transport.dart';
 part 'chat_conversation_media.dart';
+part 'chat_conversation_message_actions.dart';
 part 'chat_conversation_composer.dart';
 part 'chat_conversation_send.dart';
 part 'chat_conversation_actions.dart';

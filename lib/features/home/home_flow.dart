@@ -12,12 +12,12 @@ import 'package:shared_preferences/shared_preferences.dart';
 
 import '../../app/app_api_base.dart' show getApiBase;
 import '../../app/widgets/global_listing_card.dart';
-import '../../app/widgets/home_search_dialog.dart';
 import '../../app/widgets/main_shell_navigation.dart' as main_shell_navigation;
 import '../../data/brand_logo_filenames.dart';
 import '../../data/car_catalog.dart';
 import '../../data/car_name_translations.dart';
 import '../../features/home/home_feed_errors.dart';
+import '../../features/home/home_brand_model_search.dart';
 import '../../features/home/home_filter_chip_style.dart';
 import '../../features/home/home_filter_chips.dart';
 import '../../features/home/home_filter_persistence.dart';
