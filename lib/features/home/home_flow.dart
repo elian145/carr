@@ -49,6 +49,7 @@ part 'home_filter_logic.dart';
 part 'home_fetch.dart';
 part 'home_filter_bar.dart';
 part 'home_more_filters_dialog.dart';
+part 'home_slivers.dart';
 part 'home_build.dart';
 
 const bool _kFlutterTest = bool.fromEnvironment('FLUTTER_TEST');
