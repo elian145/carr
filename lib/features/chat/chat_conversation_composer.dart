@@ -36,182 +36,36 @@ mixin _ChatConversationComposer on _ChatConversationMessageActions {
       isDeleted: previewMessage.isDeleted,
     );
 
-    return Padding(
-      padding: const EdgeInsets.only(bottom: 8),
-      child: Row(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  isEditMode
-                      ? _chatText(
-                          context,
-                          'Editing message',
-                          ar: 'تعديل الرسالة',
-                          ku: 'دەستکاریکردنی پەیام',
-                        )
-                      : _chatText(
-                          context,
-                          'Replying to message',
-                          ar: 'الرد على الرسالة',
-                          ku: 'وەڵامدانەوەی پەیام',
-                        ),
-                  style: Theme.of(
-                    context,
-                  ).textTheme.bodySmall?.copyWith(fontWeight: FontWeight.w600),
-                ),
-                const SizedBox(height: 6),
-                _buildReplyPreviewCard(
-                  context,
-                  replyPreview,
-                  isMe: false,
-                  dense: true,
-                ),
-              ],
-            ),
-          ),
-          IconButton(
-            onPressed: _cancelComposerAction,
-            icon: const Icon(Icons.close),
-            tooltip: AppLocalizations.of(context)?.cancelAction ?? 'Cancel',
-          ),
-        ],
-      ),
+    return buildChatComposerActionBanner(
+      context,
+      isEditMode: isEditMode,
+      replyPreview: replyPreview,
+      onCancel: _cancelComposerAction,
     );
   }
 
   Widget _buildDraftAttachmentsPreview(BuildContext context) {
-    if (_draftAttachments.isEmpty) return const SizedBox.shrink();
-
-    Widget tileFor(XFile file, int index) {
-      final isVideo = _chatIsVideoFile(file);
-      final path = file.path;
-      return Stack(
-        children: [
-          ClipRRect(
-            borderRadius: BorderRadius.circular(10),
-            child: Container(
-              width: 72,
-              height: 72,
-              color: Theme.of(context).cardColor,
-              child: isVideo
-                  ? const Center(child: Icon(Icons.videocam, size: 28))
-                  : Image.file(
-                      File(path),
-                      width: 72,
-                      height: 72,
-                      fit: BoxFit.cover,
-                      errorBuilder: (context, error, stackTrace) =>
-                          const Center(
-                            child: Icon(Icons.broken_image_outlined),
-                          ),
-                    ),
-            ),
-          ),
-          Positioned(
-            top: 4,
-            right: 4,
-            child: InkWell(
-              onTap: () => _removeDraftAttachmentAt(index),
-              child: Container(
-                decoration: BoxDecoration(
-                  color: Colors.black54,
-                  borderRadius: BorderRadius.circular(10),
-                ),
-                padding: const EdgeInsets.all(4),
-                child: const Icon(Icons.close, size: 14, color: Colors.white),
-              ),
-            ),
-          ),
-        ],
-      );
-    }
-
-    return Padding(
-      padding: const EdgeInsets.only(bottom: 10),
-      child: SizedBox(
-        height: 78,
-        child: ListView.separated(
-          scrollDirection: Axis.horizontal,
-          itemCount: _draftAttachments.length,
-          separatorBuilder: (context, index) => const SizedBox(width: 10),
-          itemBuilder: (context, index) =>
-              tileFor(_draftAttachments[index], index),
-        ),
-      ),
+    return buildChatDraftAttachmentsPreview(
+      context,
+      files: _draftAttachments,
+      isVideoFile: _chatIsVideoFile,
+      onRemoveAt: _removeDraftAttachmentAt,
     );
   }
 
   Widget _buildEditingAttachmentsPreview(BuildContext context) {
-    if (_editingMessageId == null || _editingKeepAttachments.isEmpty) {
-      return const SizedBox.shrink();
-    }
+    if (_editingMessageId == null) return const SizedBox.shrink();
 
-    Widget tileFor(ChatAttachment attachment, int index) {
-      final isVideo = attachment.type.toLowerCase() == 'video';
-      final resolved = buildMediaUrl(attachment.url);
-      return Stack(
-        children: [
-          ClipRRect(
-            borderRadius: BorderRadius.circular(10),
-            child: Container(
-              width: 72,
-              height: 72,
-              color: Theme.of(context).cardColor,
-              child: isVideo
-                  ? const Center(child: Icon(Icons.videocam, size: 28))
-                  : Image.network(
-                      resolved,
-                      width: 72,
-                      height: 72,
-                      fit: BoxFit.cover,
-                      errorBuilder: (context, error, stackTrace) =>
-                          const Center(
-                            child: Icon(Icons.broken_image_outlined),
-                          ),
-                    ),
-            ),
-          ),
-          Positioned(
-            top: 4,
-            right: 4,
-            child: InkWell(
-              onTap: () {
-                setState(() {
-                  if (index >= 0 && index < _editingKeepAttachments.length) {
-                    _editingKeepAttachments.removeAt(index);
-                  }
-                });
-              },
-              child: Container(
-                decoration: BoxDecoration(
-                  color: Colors.black54,
-                  borderRadius: BorderRadius.circular(10),
-                ),
-                padding: const EdgeInsets.all(4),
-                child: const Icon(Icons.close, size: 14, color: Colors.white),
-              ),
-            ),
-          ),
-        ],
-      );
-    }
-
-    return Padding(
-      padding: const EdgeInsets.only(bottom: 10),
-      child: SizedBox(
-        height: 78,
-        child: ListView.separated(
-          scrollDirection: Axis.horizontal,
-          itemCount: _editingKeepAttachments.length,
-          separatorBuilder: (context, index) => const SizedBox(width: 10),
-          itemBuilder: (context, index) =>
-              tileFor(_editingKeepAttachments[index], index),
-        ),
-      ),
+    return buildChatEditingAttachmentsPreview(
+      context,
+      attachments: _editingKeepAttachments,
+      onRemoveAt: (index) {
+        setState(() {
+          if (index >= 0 && index < _editingKeepAttachments.length) {
+            _editingKeepAttachments.removeAt(index);
+          }
+        });
+      },
     );
   }
 
