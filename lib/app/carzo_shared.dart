@@ -28,6 +28,8 @@ import '../shared/i18n/locale_formatting.dart';
 import '../shared/i18n/legacy_inline_text.dart';
 import '../shared/i18n/region_spec_labels.dart' as region_spec_labels;
 export '../shared/i18n/region_spec_labels.dart';
+import '../shared/listings/body_type_assets.dart' as body_type_assets;
+export '../shared/listings/body_type_assets.dart';
 import '../shared/i18n/digits.dart';
 import '../shared/prefs/sell_draft_step.dart';
 import '../shared/ui/keyboard.dart';
@@ -140,6 +142,19 @@ String carRegionSpecDisplayLabelLocalized(BuildContext context, String code) =>
 
 bool isValidCarRegionSpecCode(String? s) =>
     region_spec_labels.isValidCarRegionSpecCode(s);
+
+// Part libraries cannot see imports; forward body-type asset state for home/sell UIs.
+List<String> get globalBodyTypes => body_type_assets.globalBodyTypes;
+set globalBodyTypes(List<String> value) =>
+    body_type_assets.globalBodyTypes = value;
+
+Map<String, String> get globalBodyTypeAssetMap =>
+    body_type_assets.globalBodyTypeAssetMap;
+set globalBodyTypeAssetMap(Map<String, String> value) =>
+    body_type_assets.globalBodyTypeAssetMap = value;
+
+String _getBodyTypeAsset(String bodyType) =>
+    body_type_assets.getBodyTypeAsset(bodyType);
 
 String _trLegacyText(
   BuildContext context,
@@ -893,10 +908,6 @@ class NoAnimationsPageTransitionsBuilder extends PageTransitionsBuilder {
 
 //
 
-// Dynamically discovered body types from assets
-List<String> globalBodyTypes = ['Any'];
-Map<String, String> globalBodyTypeAssetMap = {};
-
 // Global vehicle specifications database - accessible to all pages
 final Map<String, Map<String, Map<String, Map<String, dynamic>>>>
 globalVehicleSpecs = {
@@ -1544,91 +1555,6 @@ Future<String?> generateVideoThumbnail(String videoPath) async {
   } catch (e) {
     _debugLog('Error generating video thumbnail: $e');
     return null;
-  }
-}
-
-// Library-wide helper to map body types to asset paths for filter UIs.
-String _getBodyTypeAsset(String bodyType) {
-  if (bodyType.toLowerCase() == 'any') {
-    return 'assets/body_types_png/sedan.png';
-  }
-
-  String normalizeTitle(String s) {
-    final words = s
-        .replaceAll(RegExp(r'[_\\-]+'), ' ')
-        .trim()
-        .split(RegExp(r'\\s+'));
-    return words
-        .map((w) {
-          if (w.isEmpty) return w;
-          final lettersOnly = w.replaceAll(RegExp(r'[^a-zA-Z]'), '');
-          if (lettersOnly.isNotEmpty && lettersOnly.length <= 3) {
-            return w.toUpperCase();
-          }
-          return w[0].toUpperCase() + (w.length > 1 ? w.substring(1) : '');
-        })
-        .join(' ');
-  }
-
-  final String titleKey = normalizeTitle(bodyType);
-  if (globalBodyTypeAssetMap.containsKey(titleKey)) {
-    return globalBodyTypeAssetMap[titleKey]!;
-  }
-
-  final normalized = bodyType
-      .toLowerCase()
-      .replaceAll(RegExp(r'[_\\-]+'), ' ')
-      .trim();
-
-  switch (normalized) {
-    case 'micro':
-      return 'assets/body_types_png/micro.png';
-    case 'cuv':
-      return 'assets/body_types_png/cuv.png';
-    case 'sedan':
-      return 'assets/body_types_png/sedan.png';
-    case 'suv':
-      return 'assets/body_types_png/suv.png';
-    case 'hatchback':
-      return 'assets/body_types_png/hatchback.png';
-    case 'coupe':
-      return 'assets/body_types_png/coupe.png';
-    case 'wagon':
-    case 'station wagon':
-    case 'estate':
-      return 'assets/body_types_png/hatchback.png';
-    case 'pickup':
-      return 'assets/body_types_png/pickup.png';
-    case 'roadster':
-      return 'assets/body_types_png/roadster.png';
-    case 'truck':
-      return 'assets/body_types_png/truck.png';
-    case 'minitruck':
-    case 'mini truck':
-      return 'assets/body_types_png/minitruck.png';
-    case 'bigtruck':
-    case 'big truck':
-      return 'assets/body_types_png/bigtruck.png';
-    case 'van':
-      return 'assets/body_types_png/van.png';
-    case 'minivan':
-    case 'mini van':
-    case 'mpv':
-      return 'assets/body_types_png/van.png';
-    case 'supercar':
-      return 'assets/body_types_png/supercar.png';
-    case 'cabriolet':
-    case 'convertible':
-    case 'cabrio':
-      return 'assets/body_types_png/cabriolet.png';
-    case 'motorcycle':
-      return 'assets/body_types_png/motorcycle.png';
-    case 'utv':
-      return 'assets/body_types_png/UTV.png';
-    case 'atv':
-      return 'assets/body_types_png/ATV.png';
-    default:
-      return 'assets/body_types_png/sedan.png';
   }
 }
 

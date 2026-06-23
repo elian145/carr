@@ -541,27 +541,31 @@ class _CarDetailsPageState extends State<CarDetailsPage> {
         Expanded(
           child: SizedBox(
             height: 46,
-            child: ElevatedButton.icon(
-              style: ElevatedButton.styleFrom(
-                backgroundColor: const Color(0xFF25D366),
-                foregroundColor: Colors.white,
-                elevation: 2,
-                shadowColor: Colors.black26,
-                padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
-                minimumSize: const Size(0, 46),
-                tapTargetSize: MaterialTapTargetSize.shrinkWrap,
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(17),
+            child: Semantics(
+              button: true,
+              label: AppLocalizations.of(context)!.chatOnWhatsApp,
+              child: ElevatedButton.icon(
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: const Color(0xFF25D366),
+                  foregroundColor: Colors.white,
+                  elevation: 2,
+                  shadowColor: Colors.black26,
+                  padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
+                  minimumSize: const Size(0, 46),
+                  tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(17),
+                  ),
                 ),
+                icon: const Icon(Icons.chat, size: 19),
+                label: Text(
+                  AppLocalizations.of(context)!.chatOnWhatsApp,
+                  style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w600),
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                ),
+                onPressed: _openWhatsAppToSeller,
               ),
-              icon: const Icon(Icons.chat, size: 19),
-              label: Text(
-                AppLocalizations.of(context)!.chatOnWhatsApp,
-                style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w600),
-                maxLines: 1,
-                overflow: TextOverflow.ellipsis,
-              ),
-              onPressed: _openWhatsAppToSeller,
             ),
           ),
         ),
@@ -569,47 +573,56 @@ class _CarDetailsPageState extends State<CarDetailsPage> {
         Expanded(
           child: SizedBox(
             height: 46,
-            child: ElevatedButton.icon(
-              style: ElevatedButton.styleFrom(
-                backgroundColor: const Color(0xFF007AFF),
-                foregroundColor: Colors.white,
-                elevation: 2,
-                shadowColor: Colors.black26,
-                padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
-                minimumSize: const Size(0, 46),
-                tapTargetSize: MaterialTapTargetSize.shrinkWrap,
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(17),
+            child: Semantics(
+              button: true,
+              label: _trLegacyText(
+                context,
+                'Call Seller',
+                ar: 'اتصل بالبائع',
+                ku: 'پەیوەندی بە فرۆشیار',
+              ),
+              child: ElevatedButton.icon(
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: const Color(0xFF007AFF),
+                  foregroundColor: Colors.white,
+                  elevation: 2,
+                  shadowColor: Colors.black26,
+                  padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
+                  minimumSize: const Size(0, 46),
+                  tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(17),
+                  ),
                 ),
-              ),
-              icon: const Icon(Icons.phone, size: 19),
-              label: Text(
-                _trLegacyText(context, 'Call Seller', ar: 'اتصل بالبائع', ku: 'پەیوەندی بە فرۆشیار'),
-                style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w600),
-                maxLines: 1,
-                overflow: TextOverflow.ellipsis,
-              ),
-              onPressed: () async {
-                final String raw = _sellerPhoneRawForContact() ?? '';
-                final String digits = raw.replaceAll(RegExp(r'[^0-9]'), '');
-                if (digits.isEmpty) {
-                  if (mounted) {
+                icon: const Icon(Icons.phone, size: 19),
+                label: Text(
+                  _trLegacyText(context, 'Call Seller', ar: 'اتصل بالبائع', ku: 'پەیوەندی بە فرۆشیار'),
+                  style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w600),
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                ),
+                onPressed: () async {
+                  final String raw = _sellerPhoneRawForContact() ?? '';
+                  final String digits = raw.replaceAll(RegExp(r'[^0-9]'), '');
+                  if (digits.isEmpty) {
+                    if (mounted) {
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        SnackBar(content: Text(AppLocalizations.of(context)!.sellerPhoneNotAvailable)),
+                      );
+                    }
+                    return;
+                  }
+                  final Uri callUri = Uri.parse('tel:$digits');
+                  bool launched = await launchUrl(callUri, mode: LaunchMode.externalApplication).catchError((_) => false);
+                  if (launched) {
+                    await AnalyticsService.trackCall(widget.carId.toString());
+                  } else if (mounted) {
                     ScaffoldMessenger.of(context).showSnackBar(
-                      SnackBar(content: Text(AppLocalizations.of(context)!.sellerPhoneNotAvailable)),
+                      const SnackBar(content: Text('Unable to make call')),
                     );
                   }
-                  return;
-                }
-                final Uri callUri = Uri.parse('tel:$digits');
-                bool launched = await launchUrl(callUri, mode: LaunchMode.externalApplication).catchError((_) => false);
-                if (launched) {
-                  await AnalyticsService.trackCall(widget.carId.toString());
-                } else if (mounted) {
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    const SnackBar(content: Text('Unable to make call')),
-                  );
-                }
-              },
+                },
+              ),
             ),
           ),
         ),
@@ -981,14 +994,19 @@ class _CarDetailsPageState extends State<CarDetailsPage> {
                   stretch: true,
                   foregroundColor: isLightShell ? Colors.white : null,
                   expandedHeight: 300,
-                  leading: IconButton(
-                    icon: Icon(Icons.arrow_back),
-                    onPressed: () => Navigator.of(context).maybePop(),
+                  leading: Semantics(
+                    button: true,
+                    label: AppLocalizations.of(context)!.backAction,
+                    child: IconButton(
+                      icon: Icon(Icons.arrow_back),
+                      onPressed: () => Navigator.of(context).maybePop(),
+                    ),
                   ),
                   actions: [
                     if (_isListingOwner) ...[
-                      IconButton(
-                        tooltip: _isListingSold
+                      Semantics(
+                        button: true,
+                        label: _isListingSold
                             ? _trLegacyText(
                                 context,
                                 'Mark as available',
@@ -1001,36 +1019,68 @@ class _CarDetailsPageState extends State<CarDetailsPage> {
                                 ar: 'تحديد كمباع',
                                 ku: 'وەک فرۆشراو',
                               ),
-                        onPressed: _toggleListingSoldStatus,
-                        icon: Icon(
-                          _isListingSold
-                              ? Icons.undo_outlined
-                              : Icons.sell_outlined,
+                        child: IconButton(
+                          tooltip: _isListingSold
+                              ? _trLegacyText(
+                                  context,
+                                  'Mark as available',
+                                  ar: 'متاح مجدداً',
+                                  ku: 'بەردەست بکەرەوە',
+                                )
+                              : _trLegacyText(
+                                  context,
+                                  'Mark as sold',
+                                  ar: 'تحديد كمباع',
+                                  ku: 'وەک فرۆشراو',
+                                ),
+                          onPressed: _toggleListingSoldStatus,
+                          icon: Icon(
+                            _isListingSold
+                                ? Icons.undo_outlined
+                                : Icons.sell_outlined,
+                          ),
                         ),
                       ),
-                      IconButton(
-                        tooltip: AppLocalizations.of(context)!.editAction,
-                        onPressed: _editOwnListing,
-                        icon: const Icon(Icons.edit_outlined),
+                      Semantics(
+                        button: true,
+                        label: AppLocalizations.of(context)!.editAction,
+                        child: IconButton(
+                          tooltip: AppLocalizations.of(context)!.editAction,
+                          onPressed: _editOwnListing,
+                          icon: const Icon(Icons.edit_outlined),
+                        ),
                       ),
-                      IconButton(
-                        tooltip: AppLocalizations.of(context)!.deleteAction,
-                        onPressed: _deleteOwnListing,
-                        icon: Icon(
-                          Icons.delete_outline,
-                          color: Theme.of(context).colorScheme.error,
+                      Semantics(
+                        button: true,
+                        label: AppLocalizations.of(context)!.deleteAction,
+                        child: IconButton(
+                          tooltip: AppLocalizations.of(context)!.deleteAction,
+                          onPressed: _deleteOwnListing,
+                          icon: Icon(
+                            Icons.delete_outline,
+                            color: Theme.of(context).colorScheme.error,
+                          ),
                         ),
                       ),
                     ],
-                    IconButton(
-                      tooltip: AppLocalizations.of(context)!.shareAction,
-                      onPressed: _shareCar,
-                      icon: const Icon(Icons.share_outlined),
+                    Semantics(
+                      button: true,
+                      label: AppLocalizations.of(context)!.shareAction,
+                      child: IconButton(
+                        tooltip: AppLocalizations.of(context)!.shareAction,
+                        onPressed: _shareCar,
+                        icon: const Icon(Icons.share_outlined),
+                      ),
                     ),
-                    IconButton(
-                      onPressed: _toggleFavoriteOnServer,
-                      icon: Icon(
-                        isFavorite ? Icons.favorite : Icons.favorite_border,
+                    Semantics(
+                      button: true,
+                      label: AppLocalizations.of(context)!.favoriteAction,
+                      child: IconButton(
+                        tooltip: AppLocalizations.of(context)!.favoriteAction,
+                        onPressed: _toggleFavoriteOnServer,
+                        icon: Icon(
+                          isFavorite ? Icons.favorite : Icons.favorite_border,
+                        ),
                       ),
                     ),
                     if (!_isListingOwner &&
