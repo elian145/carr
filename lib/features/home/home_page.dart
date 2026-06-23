@@ -310,6 +310,8 @@ class _HomePageState extends _HomePageFields
         _HomePageFilterBar,
         _HomePageMoreFiltersPrice,
         _HomePageMoreFiltersYear,
+        _HomePageMoreFiltersMileage,
+        _HomePageMoreFiltersBodyColor,
         _HomePageMoreFiltersMid,
         _HomePageMoreFiltersSpecs,
         _HomePageMoreFiltersDialog,

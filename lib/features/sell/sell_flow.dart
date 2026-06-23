@@ -57,6 +57,8 @@ import 'sell_video_helpers.dart' as sell_video_helpers;
 
 part 'sell_car_page.dart';
 part 'sell_step1.dart';
+part 'sell_step2_fields.dart';
+part 'sell_step2_logic.dart';
 part 'sell_step2.dart';
 part 'sell_step3.dart';
 part 'sell_step4.dart';
