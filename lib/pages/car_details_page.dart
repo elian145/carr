@@ -55,6 +55,8 @@ part 'car_details_page_lifecycle.dart';
 part 'car_details_page_load.dart';
 part 'car_details_page_init.dart';
 part 'car_details_page_contact.dart';
+part 'car_details_page_build_hero.dart';
+part 'car_details_page_build_body.dart';
 part 'car_details_page_build.dart';
 
 class CarDetailsPage extends StatefulWidget {
@@ -73,4 +75,6 @@ class _CarDetailsPageState extends _CarDetailsPageFields
         _CarDetailsPageLoad,
         _CarDetailsPageInit,
         _CarDetailsPageContact,
+        _CarDetailsPageBuildHero,
+        _CarDetailsPageBuildBody,
         _CarDetailsPageBuild {}
