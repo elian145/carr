@@ -48,8 +48,66 @@ mixin _SellStep3Build on _SellStep3BuildDetails {
 
   List<Widget> _sellStep3BuildNavSection() {
     return [
-
+      const SizedBox(height: 32),
+      buildSellWizardNavRow(
+        context,
+        onPrevious: _onSellStep3PreviousPressed,
+        onNext: _onSellStep3NextPressed,
+      ),
     ];
+  }
+
+  void _onSellStep3PreviousPressed() {
+    _dismissKeyboard();
+    final phoneDigits = _phoneController.text.trim();
+    setState(() {
+      contactPhone = phoneDigits.isEmpty ? null : '+964$phoneDigits';
+    });
+    _syncStep3DraftToParent();
+    context.findAncestorStateOfType<_SellCarPageState>()?._goToPreviousStep();
+  }
+
+  void _onSellStep3NextPressed() {
+    _dismissKeyboard();
+    final l = AppLocalizations.of(context)!;
+    final phoneLabel = _trLegacyText(
+      context,
+      'WhatsApp/Phone Number',
+      ar: 'رقم واتساب/الهاتف',
+      ku: 'ژمارەی واتساپ/مۆبایل',
+    );
+    final List<String> missing = [];
+
+    if (selectedCity == null || selectedCity!.trim().isEmpty) {
+      missing.add(l.cityLabel);
+    }
+
+    final phoneDigits = _phoneController.text.trim();
+    setState(() {
+      contactPhone = phoneDigits.isEmpty ? null : '+964$phoneDigits';
+    });
+    if (phoneDigits.isEmpty) {
+      missing.add(phoneLabel);
+    }
+
+    final formValid = _formKey.currentState?.validate() ?? false;
+
+    if (missing.isNotEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(
+            '${_pleaseFillRequiredGlobal(context)}: ${missing.join(', ')}',
+          ),
+          backgroundColor: Colors.red,
+        ),
+      );
+      return;
+    }
+    if (!formValid) return;
+
+    _syncStep3DraftToParent();
+    final parentState = context.findAncestorStateOfType<_SellCarPageState>();
+    parentState?._goToNextStep();
   }
 
   @override

@@ -1,6 +1,6 @@
 part of 'home_flow.dart';
 
-mixin _HomePageMoreFiltersPrice on _HomePageFilterBar {
+mixin _HomePageMoreFiltersPrice on _HomePageMoreFiltersVehicle {
   List<Widget> _moreFiltersPriceWidgets(
     BuildContext context,
     void Function(void Function()) setStateDialog,

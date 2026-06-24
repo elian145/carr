@@ -451,6 +451,9 @@ class AppLocalizationsKu extends AppLocalizations {
   String get addMorePhotos => 'وێنە زیاتر زیاد بکە';
 
   @override
+  String get addMoreListings => 'ڕیکلامی زیاتر زیاد بکە';
+
+  @override
   String get defaultSort => 'بنەڕەتی';
 
   @override

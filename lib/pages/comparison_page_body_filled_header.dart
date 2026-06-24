@@ -86,7 +86,7 @@ extension _CarComparisonPageBodyFilledHeader on CarComparisonPage {
                                     label: Text(
                                       AppLocalizations.of(
                                         context,
-                                      )!.addMorePhotos,
+                                      )!.addMoreListings,
                                     ),
                                   ),
                                   Semantics(

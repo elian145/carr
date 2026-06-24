@@ -326,6 +326,67 @@ Future<String?> generateVideoThumbnail(String videoPath) =>
 String _pleaseFillRequiredGlobal(BuildContext context) =>
     AppLocalizations.of(context)!.pleaseFillRequired;
 
+Widget buildSellWizardNavRow(
+  BuildContext context, {
+  required VoidCallback onPrevious,
+  required VoidCallback onNext,
+}) {
+  return Row(
+    children: [
+      Expanded(
+        child: SizedBox(
+          height: 50,
+          child: OutlinedButton(
+            onPressed: onPrevious,
+            style: OutlinedButton.styleFrom(
+              side: const BorderSide(color: Color(0xFFFF6B00)),
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(12),
+              ),
+            ),
+            child: Text(
+              AppLocalizations.of(context)!.previousButton,
+              style: const TextStyle(
+                fontSize: 16,
+                fontWeight: FontWeight.w600,
+                color: Color(0xFFFF6B00),
+              ),
+            ),
+          ),
+        ),
+      ),
+      const SizedBox(width: 16),
+      Expanded(
+        child: SizedBox(
+          height: 50,
+          child: Semantics(
+            button: true,
+            label: AppLocalizations.of(context)!.nextStep,
+            child: ElevatedButton(
+              onPressed: onNext,
+              style: ElevatedButton.styleFrom(
+                backgroundColor: const Color(0xFFFF6B00),
+                foregroundColor: Colors.white,
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(12),
+                ),
+                elevation: 2,
+              ),
+              child: Text(
+                AppLocalizations.of(context)!.nextStep,
+                style: const TextStyle(
+                  fontSize: 16,
+                  fontWeight: FontWeight.w600,
+                ),
+              ),
+            ),
+          ),
+        ),
+      ),
+    ],
+  );
+}
+
 String _photosRequiredTitleGlobal(BuildContext context) =>
     AppLocalizations.of(context)!.photosRequired;
 

@@ -451,6 +451,9 @@ class AppLocalizationsEn extends AppLocalizations {
   String get addMorePhotos => 'Add More Photos';
 
   @override
+  String get addMoreListings => 'Add More Listings';
+
+  @override
   String get defaultSort => 'Default';
 
   @override

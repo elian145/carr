@@ -8,7 +8,7 @@ mixin _AnalyticsPageListingSelection on _AnalyticsPageListingCard {
       physics: NeverScrollableScrollPhysics(),
       gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
         crossAxisCount: 2,
-        childAspectRatio: 0.62, // Match home listing grid (tall enough for card content)
+        childAspectRatio: ListingLayoutPrefs.gridChildAspectRatio(2),
         crossAxisSpacing: 8, // Same spacing as home page
         mainAxisSpacing: 8, // Same spacing as home page
       ),

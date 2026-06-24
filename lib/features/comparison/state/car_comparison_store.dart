@@ -4,6 +4,7 @@ import 'package:flutter/foundation.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 import '../../../shared/debug/app_log.dart';
+import '../../../shared/listings/listing_identity.dart';
 
 class CarComparisonStore extends ChangeNotifier {
   final List<Map<String, dynamic>> _comparisonCars = [];
@@ -26,16 +27,34 @@ class CarComparisonStore extends ChangeNotifier {
   }
 
   bool isCarInComparison(String carId) {
-    return _comparisonCars.any((car) => (car['id'] ?? car['public_id'] ?? '').toString() == carId);
+    final candidate = carId.trim();
+    if (candidate.isEmpty) return false;
+    return _comparisonCars.any((car) => listingMatchesId(car, candidate));
   }
 
   void addCarToComparison(Map<String, dynamic> car) {
     if (_comparisonCars.length >= 5) return;
-    final id = _carKey(car['id'] ?? car['public_id'] ?? car['car_id'] ?? car['carId']);
-    if (id == null) return;
+    final id = listingPrimaryId(car);
+    if (id.isEmpty) {
+      final fallback = _carKey(
+        car['id'] ?? car['public_id'] ?? car['car_id'] ?? car['carId'],
+      );
+      if (fallback == null) return;
+      if (isCarInComparison(fallback)) return;
+      final normalized = Map<String, dynamic>.from(car);
+      normalized['id'] = fallback;
+      _comparisonCars.add(normalized);
+      _saveToPrefs();
+      notifyListeners();
+      return;
+    }
     if (!isCarInComparison(id)) {
       final normalized = Map<String, dynamic>.from(car);
       normalized['id'] = id;
+      final publicId = (car['public_id'] ?? '').toString().trim();
+      if (publicId.isNotEmpty) {
+        normalized['public_id'] = publicId;
+      }
       _comparisonCars.add(normalized);
       _saveToPrefs();
       notifyListeners();
@@ -43,7 +62,9 @@ class CarComparisonStore extends ChangeNotifier {
   }
 
   void removeCarFromComparison(String carId) {
-    _comparisonCars.removeWhere((car) => (car['id'] ?? car['public_id'] ?? '').toString() == carId);
+    final candidate = carId.trim();
+    if (candidate.isEmpty) return;
+    _comparisonCars.removeWhere((car) => listingMatchesId(car, candidate));
     _saveToPrefs();
     notifyListeners();
   }
@@ -80,14 +101,15 @@ class CarComparisonStore extends ChangeNotifier {
 
       bool changed = false;
       for (final Map<String, dynamic> car in loaded) {
-        final dynamic rawId =
-            car['id'] ?? car['car_id'] ?? car['carId'] ?? car['uuid'];
-        final loadedId = _carKey(rawId);
-        if (loadedId == null) continue;
+        final loadedId = listingPrimaryId(car);
+        final resolvedId = loadedId.isNotEmpty
+            ? loadedId
+            : _carKey(car['id'] ?? car['car_id'] ?? car['carId'] ?? car['uuid']);
+        if (resolvedId == null) continue;
 
-        if (!_comparisonCars.any((c) => (c['id'] ?? '').toString() == loadedId)) {
+        if (!isCarInComparison(resolvedId)) {
           final normalized = Map<String, dynamic>.from(car);
-          normalized['id'] = loadedId;
+          normalized['id'] = resolvedId;
           _comparisonCars.add(normalized);
           changed = true;
         }

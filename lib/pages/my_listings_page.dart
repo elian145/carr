@@ -1,5 +1,4 @@
 import 'dart:async';
-import 'dart:io' show Platform;
 
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
@@ -326,9 +325,10 @@ class _MyListingsPageState extends State<MyListingsPage> {
                                   gridDelegate:
                                       SliverGridDelegateWithFixedCrossAxisCount(
                                     crossAxisCount: listingColumns,
-                                    childAspectRatio: listingColumns == 2
-                                        ? (Platform.isIOS ? 0.66 : 0.61)
-                                        : 2.78,
+                                    childAspectRatio:
+                                        ListingLayoutPrefs.gridChildAspectRatio(
+                                      listingColumns,
+                                    ),
                                     crossAxisSpacing: 8,
                                     mainAxisSpacing: 8,
                                   ),

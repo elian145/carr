@@ -451,6 +451,9 @@ class AppLocalizationsAr extends AppLocalizations {
   String get addMorePhotos => 'إضافة المزيد من الصور';
 
   @override
+  String get addMoreListings => 'إضافة المزيد من الإعلانات';
+
+  @override
   String get defaultSort => 'افتراضي';
 
   @override

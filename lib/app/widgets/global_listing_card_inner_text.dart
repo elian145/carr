@@ -17,6 +17,8 @@ Widget _buildGlobalCarCardInnerText(
   // brand+model text larger so it has stronger hierarchy than trim.
   const double titleBoxFontSize = 15;
   const double titleFontSize = 17;
+  const double yearFontSize = 14;
+  const double priceFontSize = 18;
   const double titleLineHeight = 1.1;
   const int titleMaxLines = 2;
   final double reservedTitleHeight =
@@ -101,7 +103,7 @@ Widget _buildGlobalCarCardInnerText(
           );
         },
       ),
-      const SizedBox(height: 10),
+      const SizedBox(height: 8),
       Visibility(
         visible: hasTrim,
         maintainAnimation: true,
@@ -141,7 +143,9 @@ Widget _buildGlobalCarCardInnerText(
               style: TextStyle(
                 color: Color(0xFFFF6B00),
                 fontWeight: FontWeight.w600,
-                fontSize: 14,
+                fontSize:
+                    yearDisplay.isNotEmpty ? yearFontSize : priceFontSize,
+                height: 1.1,
               ),
               maxLines: 1,
               overflow: TextOverflow.ellipsis,
@@ -158,7 +162,8 @@ Widget _buildGlobalCarCardInnerText(
                   style: TextStyle(
                     color: Color(0xFFFF6B00),
                     fontWeight: FontWeight.w600,
-                    fontSize: 14,
+                    fontSize: priceFontSize,
+                    height: 1.1,
                   ),
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,

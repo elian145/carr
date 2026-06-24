@@ -329,17 +329,22 @@ mixin _SellStep1Build on _SellStep1Pickers {
                 ),
               ],
             ),
-            SizedBox(height: 32),
+            const SizedBox(height: 32),
 
-            // Next Button
-            SizedBox(
-              width: double.infinity,
-              height: 50,
-              child: Semantics(
-                button: true,
-                label: AppLocalizations.of(context)!.nextStep,
-                child: ElevatedButton(
-                  onPressed: () {
+            buildSellWizardNavRow(
+              context,
+              onPrevious: () {
+                final parentState = context
+                    .findAncestorStateOfType<_SellCarPageState>();
+                if (parentState == null) return;
+                parentState.carData['brand'] = selectedBrand;
+                parentState.carData['model'] = selectedModel;
+                parentState.carData['trim'] = selectedTrim;
+                parentState.carData['year'] = selectedYear;
+                unawaited(parentState._saveSellDraftSnapshot());
+                parentState._goToPreviousStep();
+              },
+              onNext: () {
                   // Manual validation for required selectors (since we use custom tiles)
                   final List<String> missing = [];
                   if (selectedBrand == null || (selectedBrand ?? '').isEmpty) {
@@ -394,20 +399,6 @@ mixin _SellStep1Build on _SellStep1Pickers {
                     unawaited(parentState._saveSellDraftSnapshot());
                   }
                 },
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: Color(0xFFFF6B00),
-                  foregroundColor: Colors.white,
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(12),
-                  ),
-                  elevation: 2,
-                ),
-                child: Text(
-                  AppLocalizations.of(context)!.nextStep,
-                  style: TextStyle(fontSize: 16, fontWeight: FontWeight.w600),
-                ),
-              ),
-            ),
             ),
           ],
         ),

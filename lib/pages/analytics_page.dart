@@ -6,6 +6,7 @@ import '../models/analytics_model.dart';
 import '../services/analytics_service.dart';
 import '../shared/errors/user_error_text.dart';
 import '../app/listing_shell.dart' show buildGlobalCarCard;
+import '../shared/prefs/listing_layout_prefs.dart';
 import '../theme_provider.dart';
 import '../shared/text/pretty_title_case.dart';
 part 'analytics_page_fields.dart';

@@ -251,11 +251,7 @@ mixin _CarDetailsPageBuildBody on _CarDetailsPageBuildHero {
                                 ),
                                 SizedBox(height: 6),
                               ],
-                              SizedBox(
-                                width: double.infinity,
-                                height: 46,
-                                child: ComparisonButton(car: car!),
-                              ),
+                              ComparisonButton(car: car!),
                               if (!_isListingSold) ...[
                               SizedBox(height: 6),
                               SizedBox(

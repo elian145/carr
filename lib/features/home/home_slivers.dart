@@ -192,9 +192,9 @@ mixin _HomePageSlivers on _HomePageSliversFilterCard {
               // One column: horizontal row — wider vs tall to match strip layout.
               // One column: horizontal card. Larger ratio => shorter cell height
               // so the text column is not left with a tall empty band under the last row.
-              childAspectRatio: listingColumns == 1
-                  ? 2.78
-                  : (Platform.isIOS ? 0.66 : 0.61),
+              childAspectRatio: ListingLayoutPrefs.gridChildAspectRatio(
+                listingColumns,
+              ),
               crossAxisSpacing: 8,
               mainAxisSpacing: 8,
             ),

@@ -976,6 +976,12 @@ abstract class AppLocalizations {
   /// **'Add More Photos'**
   String get addMorePhotos;
 
+  /// No description provided for @addMoreListings.
+  ///
+  /// In en, this message translates to:
+  /// **'Add More Listings'**
+  String get addMoreListings;
+
   /// No description provided for @defaultSort.
   ///
   /// In en, this message translates to:

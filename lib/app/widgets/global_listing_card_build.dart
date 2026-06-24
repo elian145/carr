@@ -59,7 +59,7 @@ Widget buildGlobalCarCard(
   final EdgeInsets listingCardTextPadding = listLayout
       // Horizontal cards: keep top tighter so title sits higher; keep a bit of bottom room.
       ? const EdgeInsets.fromLTRB(8, 8, 8, 6)
-      : const EdgeInsets.fromLTRB(12, 8, 12, 10);
+      : const EdgeInsets.fromLTRB(12, 8, 12, 8);
 
   Widget wrapCardTextTap(Widget child) {
     if (onCardTap == null) return child;

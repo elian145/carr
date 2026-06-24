@@ -193,9 +193,10 @@ class _FavoritesPageState extends State<FavoritesPage> {
                       crossAxisCount: listingColumns,
                       crossAxisSpacing: 8,
                       mainAxisSpacing: 8,
-                      childAspectRatio: listingColumns == 2
-                          ? (Platform.isIOS ? 0.66 : 0.61)
-                          : 2.78,
+                      childAspectRatio:
+                          ListingLayoutPrefs.gridChildAspectRatio(
+                        listingColumns,
+                      ),
                     ),
                     itemCount: _favorites.length,
                     itemBuilder: (context, index) {

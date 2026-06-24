@@ -12,6 +12,24 @@ mixin _HomePageBuild on _HomePageSlivers {
         titleSpacing: NavigationToolbar.kMiddleSpacing,
         actions: [
           Padding(
+            padding: const EdgeInsetsDirectional.only(end: 8),
+            child: OutlinedButton.icon(
+              onPressed: () => _openHomeSearchFiltersPage(context),
+              icon: const Icon(Icons.search, color: Colors.white),
+              label: Text(
+                AppLocalizations.of(context)!.homeSearchHeading,
+                style: const TextStyle(color: Colors.white),
+              ),
+              style: OutlinedButton.styleFrom(
+                side: const BorderSide(color: Colors.white70),
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(8),
+                ),
+                padding: const EdgeInsets.symmetric(horizontal: 12),
+              ),
+            ),
+          ),
+          Padding(
             padding: const EdgeInsetsDirectional.only(
               end: NavigationToolbar.kMiddleSpacing,
             ),
