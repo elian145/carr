@@ -15,6 +15,7 @@ abstract class _HomePageFields extends State<HomePage> {
   static bool _homeDeleteHandlerRegistered = false;
 
   List<Map<String, dynamic>> cars = [];
+  List<Map<String, dynamic>> featuredCars = [];
   bool isLoading = true;
   bool hasLoadedOnce = false;
   String? loadErrorMessage;
@@ -328,7 +329,9 @@ class _HomePageState extends _HomePageFields
         _HomePageMoreFiltersSpecsPlate,
         _HomePageMoreFiltersSpecs,
         _HomePageMoreFiltersDialog,
-        _HomePageSliversFilterCard,
+        _HomePageSearchFiltersPageUi,
+        _HomePageSliversSearchBar,
+        _HomePageSliversFeatured,
         _HomePageSlivers,
         _HomePageBuild {
   @override
@@ -407,6 +410,7 @@ class _HomePageState extends _HomePageFields
         // saved offset. User can pull-to-refresh or change filters to refetch.
         fetchCars();
       }
+      unawaited(fetchFeaturedCars());
       // Kick restoration once the first frame is mounted, instead of waiting
       // for user interaction/layout changes.
       _scheduleHomeScrollRestoreAfterListReady();
@@ -447,6 +451,7 @@ class _HomePageState extends _HomePageFields
     if (id == null || id.isEmpty || !mounted) return;
     setState(() {
       cars.removeWhere((c) => listingMatchesId(c, id));
+      featuredCars.removeWhere((c) => listingMatchesId(c, id));
     });
   }
   @override

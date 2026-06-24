@@ -1,6 +1,6 @@
 part of 'home_flow.dart';
 
-mixin _HomePageSlivers on _HomePageSliversFilterCard {
+mixin _HomePageSlivers on _HomePageSliversFeatured {
   List<Widget> _buildHomeFeedSlivers(BuildContext context) {
     return [
       if (isLoading)

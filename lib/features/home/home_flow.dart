@@ -46,6 +46,7 @@ import '../../shared/listings/body_type_assets.dart' as body_type_assets;
 import '../../shared/listings/body_type_image_widget.dart' as body_type_image;
 import '../../shared/listings/listing_events.dart';
 import '../../shared/listings/listing_identity.dart';
+import '../../shared/listings/plate_type_assets.dart';
 import '../../shared/listings/transmission_filter.dart';
 import '../../shared/listings/engine_size_filter_options.dart';
 import '../../shared/prefs/listing_layout_prefs.dart';
@@ -72,7 +73,9 @@ part 'home_more_filters_specs_drive.dart';
 part 'home_more_filters_specs_engine.dart';
 part 'home_more_filters_specs.dart';
 part 'home_more_filters_dialog.dart';
-part 'home_slivers_filter_card.dart';
+part 'home_search_filters_page_ui.dart';
+part 'home_slivers_search_bar.dart';
+part 'home_slivers_featured.dart';
 part 'home_slivers.dart';
 part 'home_build.dart';
 

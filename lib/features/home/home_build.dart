@@ -98,7 +98,8 @@ mixin _HomePageBuild on _HomePageSlivers {
               child: CustomScrollView(
                 controller: _homeScrollController,
                 slivers: [
-                  _buildHomeFilterCardSliver(context),
+                  _buildHomeSearchCityBarSliver(context),
+                  _buildFeaturedListingsSliver(context),
                   ..._buildHomeFeedSlivers(context),
                 ],
               ),

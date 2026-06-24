@@ -539,8 +539,47 @@ mixin _HomePageFetchCore on _HomePageFields {
   void onFilterChanged() {
     // Analytics tracking for filters applied
     fetchCars();
+    unawaited(fetchFeaturedCars());
     // Auto-save search after applying filters
     unawaited(_autoSaveSearch());
+  }
+
+  bool _isListingFeatured(Map<String, dynamic> car) {
+    final value = car['is_featured'];
+    if (value is bool) return value;
+    if (value is num) return value != 0;
+    if (value is String) {
+      final normalized = value.trim().toLowerCase();
+      return normalized == 'true' || normalized == '1';
+    }
+    return false;
+  }
+
+  Future<void> fetchFeaturedCars() async {
+    if (_kFlutterTest || Platform.environment.containsKey('FLUTTER_TEST')) {
+      return;
+    }
+    try {
+      final filters = <String, String>{
+        'page': '1',
+        'per_page': '40',
+      };
+      final city = selectedCity?.trim();
+      if (city != null && city.isNotEmpty && city != 'Any') {
+        filters['city'] = city;
+      }
+      final response = await ApiService.getCarsRaw(filters);
+      if (response.statusCode != 200 || !mounted) return;
+      final decoded = json.decode(response.body);
+      final parsed = listingMapsFromApiResponse(decoded);
+      final featured = parsed
+          .where(_isListingFeatured)
+          .map((car) => Map<String, dynamic>.from(car))
+          .toList(growable: false);
+      setState(() => featuredCars = featured);
+    } catch (e, st) {
+      logNonFatal(e, st);
+    }
   }
 
   List<Map<String, dynamic>> _applyDamagedPartsExactFilter(

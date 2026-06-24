@@ -30,6 +30,82 @@ mixin _HomePageMoreFiltersVehicle on _HomePageFilterBar {
     );
   }
 
+  InputDecoration _moreFiltersFilterFieldDecoration(
+    MoreFiltersDialogStyle style,
+    String label,
+  ) {
+    return InputDecoration(
+      labelText: label,
+      labelStyle: TextStyle(
+        color: style.onSurface,
+        fontSize: 18,
+        fontWeight: FontWeight.bold,
+      ),
+      filled: true,
+      fillColor: style.fieldFill,
+      border: OutlineInputBorder(
+        borderRadius: BorderRadius.circular(12),
+      ),
+    );
+  }
+
+  Widget _moreFiltersRangeModeToggle({
+    required MoreFiltersDialogStyle style,
+    required bool isDropdown,
+    required VoidCallback onPressed,
+  }) {
+    return IconButton(
+      onPressed: onPressed,
+      icon: Icon(
+        isDropdown ? Icons.edit : Icons.list,
+        color: const Color(0xFFFF6B00),
+      ),
+      style: IconButton.styleFrom(
+        backgroundColor: style.fieldFill,
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(8),
+        ),
+      ),
+    );
+  }
+
+  Widget _moreFiltersRangeSectionHeader({
+    required String title,
+    required MoreFiltersDialogStyle style,
+    required Widget toggle,
+  }) {
+    return Row(
+      children: [
+        Expanded(
+          child: Text(
+            title,
+            style: TextStyle(
+              color: style.onSurface,
+              fontWeight: FontWeight.bold,
+              fontSize: 18,
+            ),
+          ),
+        ),
+        toggle,
+      ],
+    );
+  }
+
+  Widget _moreFiltersMinMaxRow({
+    required Widget minField,
+    required Widget maxField,
+    double gap = 8,
+  }) {
+    return Row(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Expanded(child: minField),
+        SizedBox(width: gap),
+        Expanded(child: maxField),
+      ],
+    );
+  }
+
   InputDecoration _moreFiltersVehicleFieldDecoration(
     BuildContext context,
     MoreFiltersDialogStyle style,

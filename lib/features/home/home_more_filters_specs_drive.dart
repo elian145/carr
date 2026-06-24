@@ -77,6 +77,13 @@ mixin _HomePageMoreFiltersSpecsDrive on _HomePageMoreFiltersMid {
                               _persistFilters();
                             },
                           ),
+      ];
+
+  List<Widget> _moreFiltersRegionSpecsWidgets(
+    BuildContext context,
+    void Function(void Function()) setStateDialog,
+    MoreFiltersDialogStyle style,
+  ) => [
                           SizedBox(height: 12),
                           DropdownButtonFormField<
                             String

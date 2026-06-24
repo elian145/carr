@@ -119,6 +119,7 @@ flutter:
 
   assets:
     - assets/body_types_png/
+    - assets/plate_types/
     - assets/car_spec_dataset.json
     - assets/car_catalog.json
 

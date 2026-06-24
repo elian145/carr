@@ -36,17 +36,6 @@ mixin _HomePageMoreFiltersDialog on _HomePageMoreFiltersSpecs {
     ];
   }
 
-  List<Widget> _searchFiltersPageWidgets(
-    BuildContext context,
-    StateSetter setStateDialog,
-    MoreFiltersDialogStyle style,
-  ) {
-    return [
-      ..._moreFiltersVehicleWidgets(context, setStateDialog, style),
-      ..._moreFiltersAdvancedWidgets(context, setStateDialog, style),
-    ];
-  }
-
   Map<String, dynamic> _searchFiltersPageSnapshot() {
     return {
       ..._moreFiltersDialogSnapshot(),
@@ -94,7 +83,6 @@ mixin _HomePageMoreFiltersDialog on _HomePageMoreFiltersSpecs {
     MoreFiltersDialogStyle style,
     Map<String, dynamic> moreFiltersSnapshot, {
     required VoidCallback onClose,
-    bool fullSearchPage = false,
     required void Function(Map<String, dynamic> snapshot) onCancel,
   }) {
     return SizedBox(
@@ -104,13 +92,9 @@ mixin _HomePageMoreFiltersDialog on _HomePageMoreFiltersSpecs {
         children: [
           TextButton(
             onPressed: () async {
-              if (fullSearchPage) {
-                await _resetSearchFiltersPage(() => setStateDialog(() {}));
-              } else {
-                await _resetFiltersFromMoreFiltersDialog(
-                  () => setStateDialog(() {}),
-                );
-              }
+              await _resetFiltersFromMoreFiltersDialog(
+                () => setStateDialog(() {}),
+              );
             },
             child: Text(
               AppLocalizations.of(context)!.resetButton,
@@ -217,80 +201,6 @@ mixin _HomePageMoreFiltersDialog on _HomePageMoreFiltersSpecs {
           },
         );
       },
-    );
-  }
-
-  Future<void> _openHomeSearchFiltersPage(BuildContext context) async {
-    _syncMoreFiltersControllers();
-    final searchFiltersSnapshot = _searchFiltersPageSnapshot();
-    await Navigator.of(context).push<void>(
-      MaterialPageRoute<void>(
-        builder: (pageContext) {
-          return StatefulBuilder(
-            builder: (context, setStateDialog) {
-              final style = _moreFiltersStyle(context);
-              final isLightShell =
-                  Theme.of(context).brightness == Brightness.light;
-              return PopScope(
-                canPop: true,
-                onPopInvokedWithResult: (bool didPop, dynamic result) {
-                  if (didPop) {
-                    _cancelSearchFiltersPage(searchFiltersSnapshot);
-                  }
-                },
-                child: Scaffold(
-                  backgroundColor: isLightShell ? Colors.white : null,
-                  appBar: AppBar(
-                    title: Text(
-                      AppLocalizations.of(context)!.homeSearchHeading,
-                    ),
-                    leading: IconButton(
-                      icon: const Icon(Icons.arrow_back),
-                      onPressed: () {
-                        _cancelSearchFiltersPage(searchFiltersSnapshot);
-                        Navigator.pop(context);
-                      },
-                    ),
-                  ),
-                  body: Container(
-                    decoration: isLightShell
-                        ? null
-                        : AppThemes.shellBackgroundDecoration(
-                            Theme.of(context).brightness,
-                          ),
-                    child: SingleChildScrollView(
-                      padding: const EdgeInsets.fromLTRB(16, 8, 16, 16),
-                      child: KeyedSubtree(
-                        key: ValueKey<int>(_moreFiltersDialogFieldGeneration),
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.stretch,
-                          children: _searchFiltersPageWidgets(
-                            context,
-                            setStateDialog,
-                            style,
-                          ),
-                        ),
-                      ),
-                    ),
-                  ),
-                  bottomNavigationBar: SafeArea(
-                    minimum: const EdgeInsets.fromLTRB(16, 8, 16, 12),
-                    child: _moreFiltersActionBar(
-                      context,
-                      setStateDialog,
-                      style,
-                      searchFiltersSnapshot,
-                      fullSearchPage: true,
-                      onClose: () => Navigator.pop(context),
-                      onCancel: _cancelSearchFiltersPage,
-                    ),
-                  ),
-                ),
-              );
-            },
-          );
-        },
-      ),
     );
   }
 }

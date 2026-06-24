@@ -221,6 +221,140 @@ mixin _HomePageFilterBarBrand on _HomePageFilterLogic {
     );
   }
 
+  Future<String?> _showHomeModelPickerDialog(
+    BuildContext context, {
+    required String brand,
+  }) {
+    final modelList = models[brand] ?? const <String>[];
+    final localizedBrand =
+        CarNameTranslations.getLocalizedBrand(context, brand).isNotEmpty
+            ? CarNameTranslations.getLocalizedBrand(context, brand)
+            : brand;
+
+    return showDialog<String>(
+      context: context,
+      builder: (context) {
+        return Dialog(
+          backgroundColor: Colors.grey[900]?.withValues(alpha: 0.98),
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(20),
+          ),
+          child: Container(
+            width: 400,
+            padding: const EdgeInsets.all(20),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            _trLegacyText(
+                              context,
+                              'Select Model',
+                              ar: 'اختر الموديل',
+                              ku: 'مۆدێل هەڵبژێرە',
+                            ),
+                            style: GoogleFonts.orbitron(
+                              color: const Color(0xFFFF6B00),
+                              fontWeight: FontWeight.bold,
+                              fontSize: 20,
+                            ),
+                          ),
+                          const SizedBox(height: 4),
+                          Text(
+                            localizedBrand,
+                            style: GoogleFonts.orbitron(
+                              color: Colors.white70,
+                              fontSize: 13,
+                              fontWeight: FontWeight.w600,
+                            ),
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                          ),
+                        ],
+                      ),
+                    ),
+                    IconButton(
+                      icon: const Icon(Icons.close, color: Colors.white),
+                      onPressed: () => Navigator.pop(context),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 10),
+                SizedBox(
+                  height: 380,
+                  child: modelList.isEmpty
+                      ? Center(
+                          child: Text(
+                            _trLegacyText(
+                              context,
+                              'No models found',
+                              ar: 'لا توجد موديلات',
+                              ku: 'هیچ مۆدێلێک نەدۆزرایەوە',
+                            ),
+                            style: const TextStyle(color: Colors.white70),
+                          ),
+                        )
+                      : ListView.separated(
+                          physics: const BouncingScrollPhysics(),
+                          itemCount: modelList.length,
+                          separatorBuilder: (context, index) =>
+                              const SizedBox(height: 8),
+                          itemBuilder: (context, index) {
+                            final model = modelList[index];
+                            final display =
+                                CarNameTranslations.getLocalizedModel(
+                                          context,
+                                          brand,
+                                          model,
+                                        ).isNotEmpty
+                                    ? CarNameTranslations.getLocalizedModel(
+                                        context,
+                                        brand,
+                                        model,
+                                      )
+                                    : model;
+                            return InkWell(
+                              borderRadius: BorderRadius.circular(12),
+                              onTap: () => Navigator.pop(context, model),
+                              child: Container(
+                                width: double.infinity,
+                                padding: const EdgeInsets.symmetric(
+                                  horizontal: 14,
+                                  vertical: 12,
+                                ),
+                                decoration: BoxDecoration(
+                                  color: Colors.black.withValues(alpha: 0.15),
+                                  borderRadius: BorderRadius.circular(12),
+                                  border: Border.all(color: Colors.white24),
+                                ),
+                                child: Text(
+                                  display,
+                                  style: GoogleFonts.orbitron(
+                                    fontSize: 14,
+                                    color: Colors.white,
+                                    fontWeight: FontWeight.bold,
+                                  ),
+                                ),
+                              ),
+                            );
+                          },
+                        ),
+                ),
+              ],
+            ),
+          ),
+        );
+      },
+    );
+  }
+
   Future<void> _pickHomeBrand(BuildContext context) async {
     final brand = await _showHomeBrandPickerDialog(context);
     if (brand != null) {

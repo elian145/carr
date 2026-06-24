@@ -1,7 +1,7 @@
 part of 'home_flow.dart';
 
 mixin _HomePageMoreFiltersMileageChips on _HomePageMoreFiltersMileageRange {
-  List<Widget> _moreFiltersMileageChipsWidgets(
+  List<Widget> _moreFiltersTitleConditionWidgets(
     BuildContext context,
     void Function(void Function()) setStateDialog,
     MoreFiltersDialogStyle style,
@@ -204,6 +204,13 @@ mixin _HomePageMoreFiltersMileageChips on _HomePageMoreFiltersMileageRange {
                               }).toList(),
                             ),
                           ),
+      ];
+
+  List<Widget> _moreFiltersTransmissionChipWidgets(
+    BuildContext context,
+    void Function(void Function()) setStateDialog,
+    MoreFiltersDialogStyle style,
+  ) => [
                           SizedBox(
                             height:
                                 style.fieldGap,
@@ -264,6 +271,23 @@ mixin _HomePageMoreFiltersMileageChips on _HomePageMoreFiltersMileageRange {
                               ],
                             ),
                           ),
+      ];
+
+  List<Widget> _moreFiltersMileageChipsWidgets(
+    BuildContext context,
+    void Function(void Function()) setStateDialog,
+    MoreFiltersDialogStyle style,
+  ) => [
+        ..._moreFiltersTitleConditionWidgets(
+          context,
+          setStateDialog,
+          style,
+        ),
+        ..._moreFiltersTransmissionChipWidgets(
+          context,
+          setStateDialog,
+          style,
+        ),
       ];
 }
 
