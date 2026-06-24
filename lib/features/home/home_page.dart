@@ -318,6 +318,7 @@ class _HomePageState extends _HomePageFields
         _HomePageMoreFiltersMid,
         _HomePageMoreFiltersSpecs,
         _HomePageMoreFiltersDialog,
+        _HomePageSliversFilterCard,
         _HomePageSlivers,
         _HomePageBuild {
   @override

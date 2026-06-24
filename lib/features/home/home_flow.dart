@@ -65,6 +65,7 @@ part 'home_more_filters_body_color.dart';
 part 'home_more_filters_mid.dart';
 part 'home_more_filters_specs.dart';
 part 'home_more_filters_dialog.dart';
+part 'home_slivers_filter_card.dart';
 part 'home_slivers.dart';
 part 'home_build.dart';
 

@@ -58,6 +58,8 @@ import 'sell_currency_convert.dart';
 import 'sell_fancy_selector.dart' as sell_fancy_selector;
 import 'sell_video_helpers.dart' as sell_video_helpers;
 
+part 'sell_car_page_fields.dart';
+part 'sell_car_page_draft.dart';
 part 'sell_car_page.dart';
 part 'sell_step1_fields.dart';
 part 'sell_step1_catalog.dart';
@@ -88,7 +90,8 @@ part 'sell_step4_build.dart';
 part 'sell_step4_fields.dart';
 part 'sell_step4_logic.dart';
 part 'sell_step4.dart';
-part 'sell_step4_preview.dart';
+part 'sell_step4_preview_listing.dart';
+part 'sell_step4_preview_review.dart';
 part 'sell_step5_fields.dart';
 part 'sell_step5_logic.dart';
 part 'sell_step5_build.dart';
