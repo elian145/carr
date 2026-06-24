@@ -1,7 +1,7 @@
 part of 'home_flow.dart';
 
-mixin _HomePageMoreFiltersColor on _HomePageMoreFiltersBodyType {
-  List<Widget> _moreFiltersColorWidgets(
+mixin _HomePageMoreFiltersBodyType on _HomePageMoreFiltersFuel {
+  List<Widget> _moreFiltersBodyTypeWidgets(
     BuildContext context,
     void Function(void Function()) setStateDialog,
     MoreFiltersDialogStyle style,
@@ -12,24 +12,20 @@ mixin _HomePageMoreFiltersColor on _HomePageMoreFiltersBodyType {
                           ),
                           TextFormField(
                             key: ValueKey(
-                              'color_${selectedColor ?? 'any'}',
+                              'bodyType_${selectedBodyType ?? 'any'}',
                             ),
                             readOnly: true,
                             style: TextStyle(
                               color:
-                                  (selectedColor !=
+                                  (selectedBodyType !=
                                           null &&
-                                      selectedColor!
+                                      selectedBodyType!
                                           .isNotEmpty)
                                   ? style.onSurface
                                   : style.anyOrange,
                             ),
                             initialValue:
-                                (_translateValueGlobal(
-                                  context,
-                                  selectedColor,
-                                ) ??
-                                selectedColor ??
+                                (selectedBodyType ??
                                 AppLocalizations.of(
                                   context,
                                 )!.any),
@@ -37,7 +33,7 @@ mixin _HomePageMoreFiltersColor on _HomePageMoreFiltersBodyType {
                               labelText:
                                   AppLocalizations.of(
                                     context,
-                                  )!.colorLabel,
+                                  )!.bodyTypeLabel,
                               filled: true,
                               fillColor:
                                   style.fieldFill,
@@ -54,34 +50,57 @@ mixin _HomePageMoreFiltersColor on _HomePageMoreFiltersBodyType {
                                     ),
                               ),
                               suffixIcon: Container(
-                                width: 24,
-                                height: 24,
                                 margin:
                                     EdgeInsets.all(
                                       8,
                                     ),
+                                width: 44,
+                                height: 44,
                                 decoration: BoxDecoration(
+                                  shape: BoxShape
+                                      .circle,
                                   color:
-                                      selectedColor !=
-                                          null
-                                      ? homeFilterNamedColor(
-                                          selectedColor!,
-                                        )
-                                      : Colors.grey,
-                                  borderRadius:
-                                      BorderRadius.circular(
+                                      Colors.white,
+                                  border: Border.all(
+                                    color: Color(
+                                      0xFFFF6B00,
+                                    ),
+                                    width: 2,
+                                  ),
+                                ),
+                                child: Padding(
+                                  padding:
+                                      EdgeInsets.all(
                                         6,
                                       ),
-                                  border: Border.all(
-                                    color: Colors
-                                        .white24,
-                                    width: 2,
+                                  child: ClipOval(
+                                    child: FittedBox(
+                                      fit: BoxFit
+                                          .contain,
+                                      child:
+                                          (selectedBodyType !=
+                                                  null &&
+                                              selectedBodyType!
+                                                  .isNotEmpty)
+                                          ? _buildBodyTypeImage(
+                                              _getBodyTypeAsset(
+                                                selectedBodyType!,
+                                              ),
+                                            )
+                                          : Icon(
+                                              homeFilterBodyTypeIcon(
+                                                'car',
+                                              ),
+                                              color:
+                                                  Colors.black,
+                                            ),
+                                    ),
                                   ),
                                 ),
                               ),
                             ),
                             onTap: () async {
-                              final color = await showDialog<String>(
+                              final bodyType = await showDialog<String>(
                                 context: context,
                                 builder: (dlgContext) {
                                   final isLightPicker =
@@ -107,21 +126,25 @@ mixin _HomePageMoreFiltersColor on _HomePageMoreFiltersBodyType {
                                         )
                                       : Colors
                                             .white;
+                                  final onPickerMuted =
+                                      isLightPicker
+                                      ? const Color(
+                                          0xFF616161,
+                                        )
+                                      : Colors
+                                            .white70;
                                   final borderSubtle =
                                       isLightPicker
                                       ? Colors
                                             .black26
                                       : Colors
                                             .white24;
-                                  final cellFill =
+                                  final shadowIdle =
                                       isLightPicker
                                       ? Colors
-                                            .grey
-                                            .shade200
-                                      : Colors.black
-                                            .withValues(alpha: 
-                                              0.15,
-                                            );
+                                            .black12
+                                      : Colors
+                                            .black54;
                                   return Dialog(
                                     backgroundColor:
                                         pickerBg,
@@ -152,7 +175,7 @@ mixin _HomePageMoreFiltersColor on _HomePageMoreFiltersBodyType {
                                               Text(
                                                 AppLocalizations.of(
                                                   context,
-                                                )!.selectColor,
+                                                )!.selectBodyType,
                                                 style: GoogleFonts.orbitron(
                                                   color: Color(
                                                     0xFFFF6B00,
@@ -188,86 +211,82 @@ mixin _HomePageMoreFiltersColor on _HomePageMoreFiltersBodyType {
                                                 crossAxisCount:
                                                     3,
                                                 childAspectRatio:
-                                                    1.2,
+                                                    0.82,
                                                 crossAxisSpacing:
-                                                    10,
+                                                    12,
                                                 mainAxisSpacing:
-                                                    10,
+                                                    12,
                                               ),
                                               itemCount:
-                                                  getAvailableColors().length,
+                                                  getAvailableBodyTypes().length,
                                               itemBuilder:
                                                   (
                                                     context,
                                                     index,
                                                   ) {
-                                                    final colorName = getAvailableColors()[index];
-                                                    Color
-                                                    colorValue = Colors.grey;
-                                                    switch (colorName.toLowerCase()) {
-                                                      case 'black':
-                                                        colorValue = Colors.black;
-                                                        break;
-                                                      case 'white':
-                                                        colorValue = Colors.white;
-                                                        break;
-                                                      case 'silver':
-                                                        colorValue = Colors.grey[300]!;
-                                                        break;
-                                                      case 'gray':
-                                                        colorValue = Colors.grey[600]!;
-                                                        break;
-                                                      case 'red':
-                                                        colorValue = Colors.red;
-                                                        break;
-                                                      case 'blue':
-                                                        colorValue = Colors.blue;
-                                                        break;
-                                                      case 'green':
-                                                        colorValue = Colors.green;
-                                                        break;
-                                                      case 'yellow':
-                                                        colorValue = Colors.yellow;
-                                                        break;
-                                                      case 'orange':
-                                                        colorValue = Colors.orange;
-                                                        break;
-                                                      case 'purple':
-                                                        colorValue = Colors.purple;
-                                                        break;
-                                                      case 'brown':
-                                                        colorValue = Colors.brown;
-                                                        break;
-                                                      case 'beige':
-                                                        colorValue = Color(
-                                                          0xFFF5F5DC,
-                                                        );
-                                                        break;
-                                                      case 'gold':
-                                                        colorValue = Color(
-                                                          0xFFFFD700,
-                                                        );
-                                                        break;
-                                                      default:
-                                                        colorValue = Colors.grey;
-                                                    }
+                                                    final bodyTypeName = getAvailableBodyTypes()[index];
+                                                    final asset = _getBodyTypeAsset(
+                                                      bodyTypeName,
+                                                    );
+                                                    final bool
+                                                    isSelected =
+                                                        (selectedBodyType ??
+                                                            AppLocalizations.of(
+                                                              context,
+                                                            )!.any) ==
+                                                        bodyTypeName;
                                                     return InkWell(
                                                       borderRadius: BorderRadius.circular(
                                                         12,
                                                       ),
                                                       onTap: () => Navigator.pop(
                                                         dlgContext,
-                                                        colorName,
+                                                        bodyTypeName,
                                                       ),
                                                       child: Container(
                                                         decoration: BoxDecoration(
-                                                          color: cellFill,
+                                                          color: Colors.transparent,
                                                           borderRadius: BorderRadius.circular(
                                                             12,
                                                           ),
                                                           border: Border.all(
-                                                            color: borderSubtle,
+                                                            color: isSelected
+                                                                ? const Color(
+                                                                    0xFFFF6B00,
+                                                                  )
+                                                                : borderSubtle,
+                                                            width: isSelected
+                                                                ? 2
+                                                                : 1,
                                                           ),
+                                                          boxShadow: isSelected
+                                                              ? [
+                                                                  BoxShadow(
+                                                                    color:
+                                                                        const Color(
+                                                                          0xFFFF6B00,
+                                                                        ).withValues(alpha: 
+                                                                          0.35,
+                                                                        ),
+                                                                    blurRadius: 14,
+                                                                    spreadRadius: 1,
+                                                                    offset: const Offset(
+                                                                      0,
+                                                                      4,
+                                                                    ),
+                                                                  ),
+                                                                ]
+                                                              : [
+                                                                  BoxShadow(
+                                                                    color: shadowIdle,
+                                                                    blurRadius: 10,
+                                                                    spreadRadius: 0,
+                                                                    offset: const Offset(
+                                                                      0,
+                                                                      3,
+                                                                    ),
+                                                                  ),
+                                                                ],
                                                         ),
                                                         padding: EdgeInsets.all(
                                                           8,
@@ -276,31 +295,55 @@ mixin _HomePageMoreFiltersColor on _HomePageMoreFiltersBodyType {
                                                           mainAxisAlignment: MainAxisAlignment.center,
                                                           children: [
                                                             Container(
-                                                              width: 40,
-                                                              height: 40,
+                                                              width: 56,
+                                                              height: 56,
                                                               decoration: BoxDecoration(
-                                                                color: colorValue,
-                                                                borderRadius: BorderRadius.circular(
+                                                                shape: BoxShape.circle,
+                                                                color: Colors.white,
+                                                                border: Border.all(
+                                                                  color: isSelected
+                                                                      ? const Color(
+                                                                          0xFFFF6B00,
+                                                                        )
+                                                                      : borderSubtle,
+                                                                  width: isSelected
+                                                                      ? 2
+                                                                      : 1,
+                                                                ),
+                                                              ),
+                                                              child: Padding(
+                                                                padding: const EdgeInsets.all(
                                                                   8,
                                                                 ),
-                                                                border: Border.all(
-                                                                  color: borderSubtle,
-                                                                  width: 2,
+                                                                child: FittedBox(
+                                                                  fit: BoxFit.contain,
+                                                                  child: _buildBodyTypeImage(
+                                                                    asset,
+                                                                  ),
                                                                 ),
                                                               ),
                                                             ),
-                                                            SizedBox(
+                                                            const SizedBox(
                                                               height: 8,
                                                             ),
                                                             Text(
-                                                              _translateValueGlobal(
-                                                                    context,
-                                                                    colorName,
-                                                                  ) ??
-                                                                  colorName,
+                                                              bodyTypeName ==
+                                                                      'Any'
+                                                                  ? AppLocalizations.of(
+                                                                      context,
+                                                                    )!.anyOption
+                                                                  : (_translateValueGlobal(
+                                                                          context,
+                                                                          bodyTypeName,
+                                                                        ) ??
+                                                                        bodyTypeName),
                                                               style: GoogleFonts.orbitron(
                                                                 fontSize: 12,
-                                                                color: onPicker,
+                                                                color: isSelected
+                                                                    ? const Color(
+                                                                        0xFFFF6B00,
+                                                                      )
+                                                                    : onPickerMuted,
                                                                 fontWeight: FontWeight.bold,
                                                               ),
                                                               textAlign: TextAlign.center,
@@ -320,12 +363,14 @@ mixin _HomePageMoreFiltersColor on _HomePageMoreFiltersBodyType {
                                   );
                                 },
                               );
-                              if (color != null) {
+                              if (bodyType !=
+                                  null) {
                                 setState(() {
-                                  selectedColor =
-                                      color == 'Any'
+                                  selectedBodyType =
+                                      bodyType ==
+                                          'Any'
                                       ? null
-                                      : color;
+                                      : bodyType;
                                 });
                                 setStateDialog(
                                   () {},
@@ -333,18 +378,5 @@ mixin _HomePageMoreFiltersColor on _HomePageMoreFiltersBodyType {
                               }
                             },
                           ),
-                          SizedBox(height: 12),
-      ];
-}
-
-mixin _HomePageMoreFiltersBodyColor on _HomePageMoreFiltersColor {
-  List<Widget> _moreFiltersBodyColorWidgets(
-    BuildContext context,
-    void Function(void Function()) setStateDialog,
-    MoreFiltersDialogStyle style,
-  ) => [
-        ..._moreFiltersFuelWidgets(context, setStateDialog, style),
-        ..._moreFiltersBodyTypeWidgets(context, setStateDialog, style),
-        ..._moreFiltersColorWidgets(context, setStateDialog, style),
       ];
 }

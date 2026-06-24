@@ -62,6 +62,8 @@ part 'home_more_filters_price.dart';
 part 'home_more_filters_year.dart';
 part 'home_more_filters_mileage_range.dart';
 part 'home_more_filters_mileage.dart';
+part 'home_more_filters_fuel.dart';
+part 'home_more_filters_body_type.dart';
 part 'home_more_filters_body_color.dart';
 part 'home_more_filters_mid.dart';
 part 'home_more_filters_specs.dart';
