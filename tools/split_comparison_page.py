@@ -62,6 +62,8 @@ rows_block = "\n".join(helper_lines[rows_start:-1]).rstrip()
     + "\n\n"
     + "part 'comparison_page_helpers.dart';\n"
     + "part 'comparison_page_rows.dart';\n"
+    + "part 'comparison_page_body_empty.dart';\n"
+    + "part 'comparison_page_body_filled.dart';\n"
     + "part 'comparison_page_body.dart';\n\n"
     + "class CarComparisonPage extends StatelessWidget {\n"
     + "  const CarComparisonPage({super.key});\n\n"
