@@ -13,5 +13,8 @@ import '../widgets/theme_toggle_widget.dart';
 
 part 'auth_pages_i18n.dart';
 part 'auth_login_page.dart';
+part 'auth_register_page_fields.dart';
+part 'auth_register_page_actions.dart';
+part 'auth_register_page_build.dart';
 part 'auth_register_page.dart';
 part 'auth_forgot_password_page.dart';
