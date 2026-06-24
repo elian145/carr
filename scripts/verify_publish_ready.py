@@ -79,6 +79,17 @@ def _check_signing_example() -> None:
     _check_file(ROOT / "android/signing.properties.example", "Android signing example")
 
 
+def _check_local_signing() -> None:
+    for rel in ("android/signing.properties", "signing.properties"):
+        path = ROOT / rel
+        if path.is_file():
+            _ok(f"local Android signing config ({rel})")
+            return
+    print(
+        "WARN: signing.properties missing locally (copy android/signing.properties.example for release builds)"
+    )
+
+
 def _check_no_example_app_id() -> None:
     bad = []
     for rel in (
@@ -114,6 +125,7 @@ def main() -> None:
     _check_ios_firebase()
     _check_splash_assets()
     _check_signing_example()
+    _check_local_signing()
     _check_no_example_app_id()
     _check_car_catalog_asset()
     print("All static publish checks passed.")

@@ -13,12 +13,47 @@ If signing.properties is missing, prints manual steps and exits 1.
 
 from __future__ import annotations
 
+import glob
+import os
 import re
+import shutil
 import subprocess
 import sys
 from pathlib import Path
 
 REPO_ROOT = Path(__file__).resolve().parents[1]
+
+
+def _find_keytool() -> str | None:
+    found = shutil.which("keytool")
+    if found:
+        return found
+
+    java_home = os.environ.get("JAVA_HOME", "").strip()
+    if java_home:
+        for name in ("keytool.exe", "keytool"):
+            candidate = Path(java_home) / "bin" / name
+            if candidate.is_file():
+                return str(candidate)
+
+    program_files = os.environ.get("ProgramFiles", r"C:\Program Files")
+    local_app_data = os.environ.get("LOCALAPPDATA", "")
+    candidates: list[Path] = []
+    for android_root in (
+        Path(program_files) / "Android",
+        Path(local_app_data) / "Programs" / "Android",
+    ):
+        if android_root.is_dir():
+            candidates.extend(android_root.glob("Android Studio*/jbr/bin/keytool.exe"))
+
+    candidates.extend(
+        Path(p) for p in glob.glob(str(Path(program_files) / "Java" / "*" / "bin" / "keytool.exe"))
+    )
+
+    for candidate in candidates:
+        if candidate.is_file():
+            return str(candidate)
+    return None
 
 
 def _load_signing_props() -> tuple[dict[str, str], Path] | tuple[None, None]:
@@ -68,7 +103,20 @@ def main() -> None:
         print(f"Keystore not found: {store_file}", file=sys.stderr)
         raise SystemExit(1)
 
-    cmd = ["keytool", "-list", "-v", "-keystore", str(keystore), "-alias", alias]
+    print(f"Using keystore: {keystore} (alias={alias})")
+    keytool = _find_keytool()
+    if keytool is None:
+        print(
+            "keytool not found. Install JDK or Android Studio, or add JAVA_HOME/bin to PATH.",
+            file=sys.stderr,
+        )
+        print(
+            "\nManual: keytool -list -v -keystore release-keystore.jks -alias upload",
+            file=sys.stderr,
+        )
+        raise SystemExit(1)
+
+    cmd = [keytool, "-list", "-v", "-keystore", str(keystore), "-alias", alias]
     store_pass = props.get("STORE_PASSWORD", "").strip()
     key_pass = props.get("KEY_PASSWORD", "").strip()
     if store_pass:
@@ -76,7 +124,6 @@ def main() -> None:
     if key_pass:
         cmd.extend(["-keypass", key_pass])
 
-    print(f"Using keystore: {keystore} (alias={alias})")
     result = subprocess.run(cmd, capture_output=True, text=True)
     if result.returncode != 0:
         print(result.stderr or result.stdout, file=sys.stderr)
@@ -92,7 +139,7 @@ def main() -> None:
     normalized = [fp.strip().upper() for fp in fingerprints]
     value = ",".join(normalized)
 
-    print("\nPaste into Render → Environment:")
+    print("\nPaste into Render -> Environment:")
     print(f"ANDROID_SHA256_CERT_FINGERPRINTS={value}")
     print("\nRedeploy the web service, then verify:")
     print("  python scripts/verify_production_host.py --host https://YOUR_HOST --require-app-links")

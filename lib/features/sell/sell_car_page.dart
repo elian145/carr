@@ -14,7 +14,7 @@ class SellCarPage extends StatefulWidget {
   State<SellCarPage> createState() => _SellCarPageState();
 }
 
-class _SellCarPageState extends _SellCarPageFields with _SellCarPageDraft {
+class _SellCarPageState extends _SellCarPageFields with _SellCarPageDraftPersist, _SellCarPageDraftBanner {
   @override
   void initState() {
     super.initState();
