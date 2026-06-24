@@ -15,7 +15,11 @@ first_decl = next(
     if line.strip() and not line.startswith("import ") and not line.startswith("//")
 )
 load_result_start = next(i for i, line in enumerate(lines) if line.startswith("class CarSpecIndexLoadResult"))
-index_start = next(i for i, line in enumerate(lines) if line.startswith("class CarSpecIndex {"))
+index_start = next(
+    i
+    for i, line in enumerate(lines)
+    if line.startswith("class CarSpecIndex ") or line.startswith("class CarSpecIndex {")
+)
 types_start = next(i for i, line in enumerate(lines) if line.startswith("class CarDatasetVariant"))
 labels_start = next(i for i, line in enumerate(lines) if line.startswith("String sellFlowTransmissionLabel"))
 models_start = next(i for i, line in enumerate(lines) if line.startswith("class _Brand"))
@@ -31,6 +35,10 @@ models_block = "\n".join(lines[models_start:]).rstrip()
     imports
     + "\n\n"
     + "part 'car_spec_index_parse.dart';\n"
+    + "part 'car_spec_index_base.dart';\n"
+    + "part 'car_spec_index_helpers.dart';\n"
+    + "part 'car_spec_index_catalog.dart';\n"
+    + "part 'car_spec_index_home.dart';\n"
     + "part 'car_spec_index_impl.dart';\n"
     + "part 'car_spec_index_types.dart';\n"
     + "part 'car_spec_index_sell_labels.dart';\n"
@@ -64,3 +72,4 @@ models_block = "\n".join(lines[models_start:]).rstrip()
 )
 
 print("Split car_spec_index")
+print("Run tools/split_car_spec_index_impl.py after editing the monolithic impl export.")
