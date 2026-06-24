@@ -8,12 +8,11 @@ PAGE = REPO / "lib/pages/edit_dealer_page.dart"
 BODY = REPO / "lib/pages/edit_dealer_page_build_body.dart"
 OUT = REPO / "lib/pages"
 
-PREAMBLE = """    final logoUrl = buildMediaUrl((_currentLogo ?? '').trim());
+PREAMBLE_UPPER = """    final logoUrl = buildMediaUrl((_currentLogo ?? '').trim());
     final coverUrl = buildMediaUrl((_currentCover ?? '').trim());
     final brightness = Theme.of(context).brightness;
     final cardShape = _pageCardShape(brightness);
     final isLightShell = brightness == Brightness.light;
-    final dividerColor = isLightShell ? Colors.grey.shade200 : Colors.white12;
     final cardFill = isLightShell
         ? Colors.white
         : Color.alphaBlend(
@@ -21,8 +20,6 @@ PREAMBLE = """    final logoUrl = buildMediaUrl((_currentLogo ?? '').trim());
             AppThemes.darkHomeShellBackground,
           );
 """
-
-PREAMBLE_UPPER = PREAMBLE
 
 PREAMBLE_LOWER = """    final brightness = Theme.of(context).brightness;
     final cardShape = _pageCardShape(brightness);

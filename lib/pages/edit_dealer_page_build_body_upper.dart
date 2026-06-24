@@ -7,7 +7,6 @@ mixin _EditDealerPageBuildBodyUpper on _EditDealerPageSave {
     final brightness = Theme.of(context).brightness;
     final cardShape = _pageCardShape(brightness);
     final isLightShell = brightness == Brightness.light;
-    final dividerColor = isLightShell ? Colors.grey.shade200 : Colors.white12;
     final cardFill = isLightShell
         ? Colors.white
         : Color.alphaBlend(

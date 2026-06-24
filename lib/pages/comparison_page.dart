@@ -24,6 +24,8 @@ import '../widgets/theme_toggle_widget.dart';
 part 'comparison_page_helpers.dart';
 part 'comparison_page_rows.dart';
 part 'comparison_page_body_empty.dart';
+part 'comparison_page_body_filled_header.dart';
+part 'comparison_page_body_filled_table.dart';
 part 'comparison_page_body_filled.dart';
 part 'comparison_page_body.dart';
 
