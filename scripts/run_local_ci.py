@@ -3,11 +3,16 @@
 
 from __future__ import annotations
 
+import shutil
 import subprocess
 import sys
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[1]
+
+
+def _flutter() -> str:
+    return shutil.which("flutter") or "flutter"
 
 
 def run(cmd: list[str]) -> None:
@@ -17,8 +22,8 @@ def run(cmd: list[str]) -> None:
 
 def main() -> None:
     run([sys.executable, "scripts/verify_preflight.py", "--skip-host"])
-    run(["flutter", "analyze", "--no-fatal-infos"])
-    run(["flutter", "test", "--coverage"])
+    run([_flutter(), "analyze", "--no-fatal-infos"])
+    run([_flutter(), "test", "--coverage"])
     run([sys.executable, "scripts/smoke_tests/test_backend_factory_smoke.py"])
     print("\nAll local CI checks passed.")
 
