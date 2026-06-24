@@ -47,5 +47,6 @@ part 'chat_conversation_actions.dart';
 part 'chat_conversation_message_ui_nav.dart';
 part 'chat_conversation_message_ui.dart';
 part 'chat_conversation_page_lifecycle.dart';
+part 'chat_conversation_page_build_body.dart';
 part 'chat_conversation_page_build.dart';
 part 'chat_conversation_page.dart';

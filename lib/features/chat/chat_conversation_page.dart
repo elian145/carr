@@ -41,4 +41,5 @@ class _ChatConversationPageState extends _ChatConversationFields
         _ChatConversationMessageUi,
         WidgetsBindingObserver,
         _ChatConversationPageLifecycle,
+        _ChatConversationPageBuildBody,
         _ChatConversationPageBuild {}
