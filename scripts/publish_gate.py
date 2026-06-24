@@ -103,6 +103,11 @@ def main() -> None:
     _note_android_sha()
 
     print("\nPublish gate passed.")
+    if args.skip_app_links:
+        print(
+            "\nReminder: set ANDROID_SHA256_CERT_FINGERPRINTS on Render, redeploy, then "
+            "run without --skip-app-links before Play upload.",
+        )
 
 
 if __name__ == "__main__":

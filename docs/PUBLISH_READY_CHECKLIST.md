@@ -34,6 +34,23 @@ This checklist is the final gate before uploading Android AAB/APK or iOS builds.
 
 ## 5) QA and validation commands
 
+**Store-upload gate (recommended):**
+
+```bash
+python scripts/publish_gate.py
+python scripts/publish_gate.py --skip-app-links   # before Render SHA env is set
+python scripts/publish_gate.py --skip-host        # local static + AAB only
+python scripts/publish_gate.py --with-flutter     # + analyze + test
+```
+
+**Android prod build:**
+
+```bash
+python scripts/build_prod_android.py
+python scripts/verify_aab_signing.py
+python scripts/print_android_app_link_sha.py      # paste into Render ANDROID_SHA256_CERT_FINGERPRINTS
+```
+
 - `python scripts/verify_preflight.py --host https://<your-api-host>` (static + deployed API; add `--require-app-links` before store upload)
 - `python scripts/verify_publish_ready.py` (static file/bundle-id checks only; runs in CI)
 - `python scripts/verify_production_host.py --host https://<your-api-host>` (deployed API only)
@@ -41,12 +58,14 @@ This checklist is the final gate before uploading Android AAB/APK or iOS builds.
 - `flutter pub get`
 - `flutter analyze`
 - `flutter test` (193 tests)
+
 ```bash
 python scripts/run_local_ci.py
 ```
 
 Runs static preflight, `flutter analyze`, `flutter test`, and backend factory smoke tests.
-- Android release builds:
+
+- Android release builds (or use `build_prod_android.py` above):
   - `flutter build apk --release --flavor prod --dart-define=API_BASE=https://your-api-domain`
   - `flutter build appbundle --release --flavor prod --dart-define=API_BASE=https://your-api-domain`
 - Optional: `--dart-define=SENTRY_DSN=https://…` for release crash reporting

@@ -528,6 +528,26 @@ class BackendFactorySmokeTest(unittest.TestCase):
             r = self.client.get(path)
             self.assertEqual(r.status_code, 404, (path, r.data))
 
+    def test_assetlinks_served_when_sha_env_set(self):
+        """Render ANDROID_SHA256_CERT_FINGERPRINTS enables assetlinks.json."""
+        fp = "9E:7A:AC:CF:0B:CE:7E:A3:0E:B9:9D:AF:DF:37:8E:1D:3E:6C:F6:C5:E8:C8:22:41:1E:53:F5:A5:72:40:97:E8"
+        prev = os.environ.get("ANDROID_SHA256_CERT_FINGERPRINTS")
+        os.environ["ANDROID_SHA256_CERT_FINGERPRINTS"] = fp
+        try:
+            r = self.client.get("/.well-known/assetlinks.json")
+            self.assertEqual(r.status_code, 200, r.data)
+            body = r.get_json()
+            self.assertIsInstance(body, list)
+            self.assertGreaterEqual(len(body), 1)
+            target = (body[0] or {}).get("target") or {}
+            self.assertEqual(target.get("package_name"), "com.carzo.app")
+            self.assertIn(fp, target.get("sha256_cert_fingerprints") or [])
+        finally:
+            if prev is None:
+                os.environ.pop("ANDROID_SHA256_CERT_FINGERPRINTS", None)
+            else:
+                os.environ["ANDROID_SHA256_CERT_FINGERPRINTS"] = prev
+
     def test_trust_config_and_legal_pages(self):
         trust = self.client.get("/api/config/trust")
         self.assertEqual(trust.status_code, 200, trust.data)
