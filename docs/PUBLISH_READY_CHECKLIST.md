@@ -40,7 +40,7 @@ This checklist is the final gate before uploading Android AAB/APK or iOS builds.
 - `flutter clean`
 - `flutter pub get`
 - `flutter analyze`
-- `flutter test` (legacy MyApp smoke + auth/verification unit tests; 42 tests)
+- `flutter test` (193 tests)
 ```bash
 python scripts/run_local_ci.py
 ```

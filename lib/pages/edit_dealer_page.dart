@@ -27,6 +27,8 @@ part 'edit_dealer_page_profile.dart';
 part 'edit_dealer_page_location.dart';
 part 'edit_dealer_page_media.dart';
 part 'edit_dealer_page_save.dart';
+part 'edit_dealer_page_build_body_upper.dart';
+part 'edit_dealer_page_build_body_lower.dart';
 part 'edit_dealer_page_build_body.dart';
 part 'edit_dealer_page_build.dart';
 
@@ -45,5 +47,7 @@ class _EditDealerPageState extends _EditDealerPageFields
         _EditDealerPageLocation,
         _EditDealerPageMedia,
         _EditDealerPageSave,
+        _EditDealerPageBuildBodyUpper,
+        _EditDealerPageBuildBodyLower,
         _EditDealerPageBuildBody,
         _EditDealerPageBuild {}

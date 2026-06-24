@@ -68,11 +68,22 @@ shell_block = "\n".join(
 )
 
 page = PAGE.read_text(encoding="utf-8")
-part = "part 'edit_dealer_page_build_body.dart';\n"
-if part not in page:
+if "edit_dealer_page_build_body_upper.dart" not in page:
     page = page.replace(
-        "part 'edit_dealer_page_build.dart';\n",
-        part + "part 'edit_dealer_page_build.dart';\n",
+        "part 'edit_dealer_page_build_body.dart';\n",
+        "part 'edit_dealer_page_build_body_upper.dart';\n"
+        "part 'edit_dealer_page_build_body_lower.dart';\n"
+        "part 'edit_dealer_page_build_body.dart';\n",
+    )
+    PAGE.write_text(page, encoding="utf-8")
+
+if "_EditDealerPageBuildBodyUpper" not in page:
+    page = PAGE.read_text(encoding="utf-8")
+    page = page.replace(
+        "        _EditDealerPageBuildBody,\n",
+        "        _EditDealerPageBuildBodyUpper,\n"
+        "        _EditDealerPageBuildBodyLower,\n"
+        "        _EditDealerPageBuildBody,\n",
     )
     PAGE.write_text(page, encoding="utf-8")
 
