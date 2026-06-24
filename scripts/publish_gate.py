@@ -36,6 +36,13 @@ def _note_aab() -> None:
     if AAB.is_file():
         size_mb = AAB.stat().st_size / (1024 * 1024)
         print(f"OK: prod AAB present ({AAB.relative_to(ROOT)}, {size_mb:.1f} MB)")
+        try:
+            subprocess.check_call(
+                [sys.executable, "scripts/verify_aab_signing.py", str(AAB)],
+                cwd=ROOT,
+            )
+        except subprocess.CalledProcessError:
+            print("WARN: AAB signing verification failed (rebuild with build_prod_android.py)")
     else:
         print(
             "WARN: prod AAB not built yet; run: python scripts/build_prod_android.py",

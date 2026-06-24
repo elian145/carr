@@ -74,6 +74,10 @@ def main() -> None:
     print(f"\nBuilt prod {target} with API_BASE={api_base}")
     if artifact.is_file():
         print(f"Artifact: {artifact.relative_to(ROOT)}")
+        subprocess.check_call(
+            [sys.executable, "scripts/verify_aab_signing.py", str(artifact)],
+            cwd=ROOT,
+        )
     print("\nBefore Play upload:")
     print("  1. Set ANDROID_SHA256_CERT_FINGERPRINTS on Render (python scripts/print_android_app_link_sha.py)")
     print("  2. python scripts/publish_gate.py --host", api_base)

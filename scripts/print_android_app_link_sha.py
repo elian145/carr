@@ -13,82 +13,32 @@ If signing.properties is missing, prints manual steps and exits 1.
 
 from __future__ import annotations
 
-import glob
-import os
 import re
-import shutil
 import subprocess
 import sys
 from pathlib import Path
 
-REPO_ROOT = Path(__file__).resolve().parents[1]
-
-
-def _find_keytool() -> str | None:
-    found = shutil.which("keytool")
-    if found:
-        return found
-
-    java_home = os.environ.get("JAVA_HOME", "").strip()
-    if java_home:
-        for name in ("keytool.exe", "keytool"):
-            candidate = Path(java_home) / "bin" / name
-            if candidate.is_file():
-                return str(candidate)
-
-    program_files = os.environ.get("ProgramFiles", r"C:\Program Files")
-    local_app_data = os.environ.get("LOCALAPPDATA", "")
-    candidates: list[Path] = []
-    for android_root in (
-        Path(program_files) / "Android",
-        Path(local_app_data) / "Programs" / "Android",
-    ):
-        if android_root.is_dir():
-            candidates.extend(android_root.glob("Android Studio*/jbr/bin/keytool.exe"))
-
-    candidates.extend(
-        Path(p) for p in glob.glob(str(Path(program_files) / "Java" / "*" / "bin" / "keytool.exe"))
-    )
-
-    for candidate in candidates:
-        if candidate.is_file():
-            return str(candidate)
-    return None
-
-
-def _load_signing_props() -> tuple[dict[str, str], Path] | tuple[None, None]:
-    for rel in ("signing.properties", "android/signing.properties"):
-        path = REPO_ROOT / rel
-        if not path.is_file():
-            continue
-        props: dict[str, str] = {}
-        for line in path.read_text(encoding="utf-8", errors="replace").splitlines():
-            line = line.strip()
-            if not line or line.startswith("#") or "=" not in line:
-                continue
-            key, value = line.split("=", 1)
-            props[key.strip()] = value.strip()
-        return props, path
-    return None, None
-
-
-def _resolve_keystore(store_file: str) -> Path | None:
-    p = Path(store_file)
-    if p.is_file():
-        return p
-    candidate = REPO_ROOT / store_file
-    if candidate.is_file():
-        return candidate
-    return None
+sys.path.insert(0, str(Path(__file__).resolve().parent))
+from android_jdk_tools import (
+    find_jdk_tool,
+    load_signing_properties,
+    resolve_keystore,
+)
 
 
 def main() -> None:
-    loaded = _load_signing_props()
+    loaded = load_signing_properties()
     if loaded[0] is None:
-        print("No signing.properties found. Copy signing.properties.example to signing.properties.", file=sys.stderr)
+        print(
+            "No signing.properties found. Copy android/signing.properties.example.",
+            file=sys.stderr,
+        )
         print("\nUpload keystore fingerprint:", file=sys.stderr)
         print("  keytool -list -v -keystore release-keystore.jks -alias upload", file=sys.stderr)
-        print("\nOr use Play Console → Release → Setup → App signing → App signing key certificate", file=sys.stderr)
+        print(
+            "\nOr use Play Console -> Release -> Setup -> App signing key certificate",
+            file=sys.stderr,
+        )
         raise SystemExit(1)
 
     props, props_path = loaded
@@ -98,13 +48,13 @@ def main() -> None:
         print(f"STORE_FILE is empty in {props_path}", file=sys.stderr)
         raise SystemExit(1)
 
-    keystore = _resolve_keystore(store_file)
+    keystore = resolve_keystore(store_file)
     if keystore is None:
         print(f"Keystore not found: {store_file}", file=sys.stderr)
         raise SystemExit(1)
 
     print(f"Using keystore: {keystore} (alias={alias})")
-    keytool = _find_keytool()
+    keytool = find_jdk_tool("keytool")
     if keytool is None:
         print(
             "keytool not found. Install JDK or Android Studio, or add JAVA_HOME/bin to PATH.",
@@ -135,7 +85,6 @@ def main() -> None:
         print("No SHA256 line found in keytool output.", file=sys.stderr)
         raise SystemExit(1)
 
-    # Render expects comma-separated SHA-256 strings (colon-separated hex).
     normalized = [fp.strip().upper() for fp in fingerprints]
     value = ",".join(normalized)
 
