@@ -29,4 +29,7 @@ import '../theme_provider.dart';
 part 'production_favorites_page.dart';
 part 'production_chat_list_page.dart';
 part 'production_login_page.dart';
+part 'production_signup_page_fields.dart';
+part 'production_signup_page_actions.dart';
+part 'production_signup_page_build.dart';
 part 'production_signup_page.dart';
