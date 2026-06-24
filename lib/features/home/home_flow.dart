@@ -66,6 +66,8 @@ part 'home_more_filters_fuel.dart';
 part 'home_more_filters_body_type.dart';
 part 'home_more_filters_body_color.dart';
 part 'home_more_filters_mid.dart';
+part 'home_more_filters_specs_drive.dart';
+part 'home_more_filters_specs_engine.dart';
 part 'home_more_filters_specs.dart';
 part 'home_more_filters_dialog.dart';
 part 'home_slivers_filter_card.dart';
