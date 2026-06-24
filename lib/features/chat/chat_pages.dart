@@ -28,7 +28,9 @@ import '../../widgets/in_app_video_screen.dart';
 import '../../shared/debug/app_log.dart';
 
 part 'chat_shared.dart';
-part 'chat_widgets.dart';
+part 'chat_widgets_voice.dart';
+part 'chat_widgets_media.dart';
+part 'chat_widgets_composer.dart';
 part 'chat_list_page.dart';
 part 'chat_notifications_page.dart';
 part 'chat_conversation_fields.dart';
