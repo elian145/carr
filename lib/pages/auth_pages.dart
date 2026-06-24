@@ -12,9 +12,15 @@ import '../widgets/theme_toggle_widget.dart';
 // Lightweight i18n helpers for auth pages
 
 part 'auth_pages_i18n.dart';
+part 'auth_login_page_fields.dart';
+part 'auth_login_page_actions.dart';
+part 'auth_login_page_build.dart';
 part 'auth_login_page.dart';
 part 'auth_register_page_fields.dart';
 part 'auth_register_page_actions.dart';
 part 'auth_register_page_build.dart';
 part 'auth_register_page.dart';
+part 'auth_forgot_password_page_fields.dart';
+part 'auth_forgot_password_page_actions.dart';
+part 'auth_forgot_password_page_build.dart';
 part 'auth_forgot_password_page.dart';
