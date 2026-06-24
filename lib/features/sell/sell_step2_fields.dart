@@ -50,4 +50,42 @@ abstract class _SellStep2Fields extends State<SellStep2Page> {
   late TextEditingController _engineSizeController;
   late TextEditingController _vinController;
 
+  final List<String> conditions = ['New', 'Used'];
+  final List<String> transmissions = ['Automatic', 'Manual'];
+  final List<String> fuelTypes = [
+    'Gasoline',
+    'Diesel',
+    'Electric',
+    'Hybrid',
+    'Plug-in Hybrid',
+  ];
+  final List<String> bodyTypes = [
+    'Sedan',
+    'SUV',
+    'Hatchback',
+    'Coupe',
+    'Convertible',
+    'Wagon',
+    'Pickup',
+    'Van',
+    'Minivan',
+  ];
+  final List<String> colors = [
+    'Black',
+    'White',
+    'Silver',
+    'Gray',
+    'Red',
+    'Blue',
+    'Green',
+    'Brown',
+    'Gold',
+    'Other',
+  ];
+  final List<String> driveTypes = ['FWD', 'RWD', 'AWD', '4WD'];
+  final List<String> seatings = ['2', '4', '5', '6', '7', '8'];
+  // Same engine size options as More Filters (0.5 to 16.0 step 0.1)
+  final List<String> engineSizes = kEngineSizeFilterOptions;
+  final List<String> cylinderCounts = ['3', '4', '5', '6', '8', '10', '12'];
+  final List<String> titleStatuses = ['Clean', 'Damaged'];
 }

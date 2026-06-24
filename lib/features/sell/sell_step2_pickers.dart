@@ -1,6 +1,6 @@
 part of 'sell_flow.dart';
 
-mixin _SellStep2Pickers on _SellStep2Catalog {
+mixin _SellStep2Pickers on _SellStep2CatalogHydrate {
   Future<String?> _pickFromList(String title, List<String> options) async {
     return await showGeneralDialog<String>(
       context: context,
