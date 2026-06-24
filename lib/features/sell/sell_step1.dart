@@ -10,7 +10,7 @@ class SellStep1Page extends StatefulWidget {
 }
 
 class _SellStep1PageState extends _SellStep1Fields
-    with _SellStep1Catalog, _SellStep1Pickers, _SellStep1Build {
+    with _SellStep1Catalog, _SellStep1PickersTrim, _SellStep1Pickers, _SellStep1Build {
   @override
   void initState() {
     super.initState();
