@@ -57,6 +57,7 @@ part 'home_filter_persist.dart';
 part 'home_filter_logic.dart';
 part 'home_fetch_core.dart';
 part 'home_fetch.dart';
+part 'home_filter_bar_brand.dart';
 part 'home_filter_bar.dart';
 part 'home_more_filters_price.dart';
 part 'home_more_filters_year.dart';

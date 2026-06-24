@@ -310,6 +310,7 @@ class _HomePageState extends _HomePageFields
         _HomePageFilterCatalog,
         _HomePageFilterPersist,
         _HomePageFilterLogic,
+        _HomePageFilterBarBrand,
         _HomePageFilterBar,
         _HomePageMoreFiltersPrice,
         _HomePageMoreFiltersYear,
