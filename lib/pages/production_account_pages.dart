@@ -21,5 +21,8 @@ import '../shared/media/media_url.dart';
 import '../state/locale_controller.dart';
 import '../theme_provider.dart';
 
+part 'production_profile_style.dart';
+part 'production_profile_body.dart';
+part 'production_profile_widgets.dart';
 part 'production_profile_page.dart';
 part 'production_settings_page.dart';
