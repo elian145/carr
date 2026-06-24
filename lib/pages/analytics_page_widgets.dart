@@ -1,6 +1,6 @@
 part of 'analytics_page.dart';
 
-mixin _AnalyticsPageWidgets on _AnalyticsPageListingWidgets {
+mixin _AnalyticsPageWidgets on _AnalyticsPageListingSelection {
   Widget _buildErrorState(BuildContext context) {
     final loc = AppLocalizations.of(context)!;
     return Center(

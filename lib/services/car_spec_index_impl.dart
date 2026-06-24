@@ -11,6 +11,8 @@ class CarSpecIndex extends CarSpecIndexBase
 
   static Future<CarSpecIndex?> load() => CarSpecIndexBase.load();
 
+  // Private super constructor cannot use super-parameters (analyzer false positive).
+  // ignore: use_super_parameters
   CarSpecIndex._({
     required Map<int, _Brand> brandsById,
     required Map<int, _Model> modelsById,

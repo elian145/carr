@@ -10,7 +10,8 @@ import '../theme_provider.dart';
 import '../shared/text/pretty_title_case.dart';
 part 'analytics_page_fields.dart';
 part 'analytics_page_load.dart';
-part 'analytics_page_listing_widgets.dart';
+part 'analytics_page_listing_selection.dart';
+part 'analytics_page_listing_card.dart';
 part 'analytics_page_widgets.dart';
 part 'analytics_page_core.dart';
 
@@ -24,6 +25,7 @@ class AnalyticsPage extends StatefulWidget {
 class _AnalyticsPageState extends _AnalyticsPageFields
     with
         _AnalyticsPageLoad,
-        _AnalyticsPageListingWidgets,
+        _AnalyticsPageListingCard,
+        _AnalyticsPageListingSelection,
         _AnalyticsPageWidgets,
         _AnalyticsPageCore {}
