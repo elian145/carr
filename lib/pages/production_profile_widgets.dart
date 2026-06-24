@@ -1,6 +1,6 @@
 part of 'production_account_pages.dart';
 
-extension _ProfilePageWidgets on _ProfilePageState {
+mixin _ProfilePageWidgets on _ProfilePageLoad {
   Widget _buildInfoRow(IconData icon, String label, String value) {
     final c = context;
     return Row(

@@ -1,6 +1,6 @@
 part of 'production_account_pages.dart';
 
-extension _ProfilePageStyle on _ProfilePageState {
+mixin _ProfilePageStyle on _ProfilePageFields {
   BoxDecoration _shellDecoration(BuildContext context) =>
       AppThemes.shellBackgroundDecoration(Theme.of(context).brightness);
 
