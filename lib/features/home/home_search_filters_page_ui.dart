@@ -105,7 +105,12 @@ mixin _HomePageSearchFiltersPageUi on _HomePageMoreFiltersDialog {
             selected: selectedDriveType,
             onSelected: (v) => selectedDriveType = v,
             iconForOption: _searchDriveTypeIcon,
+            imageAssetForOption: driveTypeImageAsset,
             labelForOption: (ctx, o) => _translateValueGlobal(ctx, o) ?? o,
+            scrollHorizontally: true,
+            tileWidth: 88,
+            tileImageWidth: 64,
+            tileImageHeight: 64,
           ),
           _searchIconCardSection(
             context,
@@ -115,7 +120,12 @@ mixin _HomePageSearchFiltersPageUi on _HomePageMoreFiltersDialog {
             selected: selectedTransmission,
             onSelected: (v) => selectedTransmission = v ?? 'Any',
             iconForOption: _searchTransmissionIcon,
+            imageAssetForOption: transmissionTypeImageAsset,
             labelForOption: (ctx, o) => _translateValueGlobal(ctx, o) ?? o,
+            scrollHorizontally: true,
+            tileWidth: 88,
+            tileImageWidth: 64,
+            tileImageHeight: 64,
           ),
           _searchIconCardSection(
             context,
@@ -129,8 +139,8 @@ mixin _HomePageSearchFiltersPageUi on _HomePageMoreFiltersDialog {
                 selectedDamagedParts = null;
               }
             },
-            iconForOption: _searchTitleStatusIcon,
             labelForOption: _searchTitleStatusLabel,
+            textOnly: true,
           ),
           if (selectedTitleStatus == 'damaged')
             _searchNumericRangeCard(
@@ -143,11 +153,11 @@ mixin _HomePageSearchFiltersPageUi on _HomePageMoreFiltersDialog {
             context,
             setStateDialog,
             title: loc.conditionLabel,
-            options: conditions,
+            options: const ['Any', 'New', 'Used'],
             selected: selectedCondition,
             onSelected: (v) => selectedCondition = v ?? 'Any',
-            iconForOption: _searchConditionIcon,
             labelForOption: (ctx, o) => _translateValueGlobal(ctx, o) ?? o,
+            textOnly: true,
           ),
           _searchIconCardSection(
             context,
@@ -157,9 +167,15 @@ mixin _HomePageSearchFiltersPageUi on _HomePageMoreFiltersDialog {
             selected: selectedRegionSpecs,
             onSelected: (v) => selectedRegionSpecs = v,
             iconForOption: _searchRegionSpecIcon,
+            imageAssetForOption: regionSpecFlagAsset,
             labelForOption: (ctx, o) =>
                 carRegionSpecDisplayLabelLocalized(ctx, o),
             scrollHorizontally: true,
+            tileWidth: 80,
+            tileImageWidth: 40,
+            tileImageHeight: 28,
+            tileImageFit: BoxFit.cover,
+            tileImageBorderRadius: 4,
           ),
           _searchIconCardSection(
             context,
@@ -633,17 +649,6 @@ mixin _HomePageSearchFiltersPageUi on _HomePageMoreFiltersDialog {
     }
   }
 
-  IconData _searchTitleStatusIcon(String status) {
-    switch (status) {
-      case 'clean':
-        return Icons.verified_outlined;
-      case 'damaged':
-        return Icons.car_crash_outlined;
-      default:
-        return Icons.grid_view_rounded;
-    }
-  }
-
   String _searchTitleStatusLabel(BuildContext context, String status) {
     final loc = AppLocalizations.of(context)!;
     switch (status) {
@@ -655,17 +660,6 @@ mixin _HomePageSearchFiltersPageUi on _HomePageMoreFiltersDialog {
         return loc.value_title_damaged;
       default:
         return status;
-    }
-  }
-
-  IconData _searchConditionIcon(String condition) {
-    switch (condition) {
-      case 'New':
-        return Icons.fiber_new_outlined;
-      case 'Used':
-        return Icons.history_toggle_off_outlined;
-      default:
-        return Icons.grid_view_rounded;
     }
   }
 
@@ -740,6 +734,37 @@ mixin _HomePageSearchFiltersPageUi on _HomePageMoreFiltersDialog {
         selected;
   }
 
+  double _searchIconTileHeight({
+    required bool textOnly,
+    double? imageHeight,
+  }) {
+    if (textOnly) return 52;
+    final slotHeight = imageHeight ?? 26;
+    final verticalPadding = slotHeight > 80 ? 16.0 : 20.0;
+    const gap = 6.0;
+    const labelHeight = 16.0;
+    return verticalPadding + slotHeight + gap + labelHeight;
+  }
+
+  double _searchIconScrollListHeight({
+    required bool textOnly,
+    required List<String> options,
+    double? tileImageHeight,
+    String? Function(String option)? imageAssetForOption,
+  }) {
+    if (textOnly) return 52;
+    var maxHeight = 0.0;
+    for (final option in options) {
+      final asset = imageAssetForOption?.call(option);
+      final height = _searchIconTileHeight(
+        textOnly: false,
+        imageHeight: asset == null ? null : tileImageHeight,
+      );
+      if (height > maxHeight) maxHeight = height;
+    }
+    return maxHeight + 4;
+  }
+
   Widget _searchIconOptionTile(
     BuildContext context, {
     required bool selected,
@@ -750,39 +775,66 @@ mixin _HomePageSearchFiltersPageUi on _HomePageMoreFiltersDialog {
     double? width = 72,
     double? imageWidth,
     double? imageHeight,
+    BoxFit imageFit = BoxFit.contain,
+    double imageBorderRadius = 0,
+    bool textOnly = false,
   }) {
     final isLight = Theme.of(context).brightness == Brightness.light;
     final idleColor = isLight ? const Color(0xFF1A1A1A) : Colors.white;
-    final slotWidth = imageWidth ?? 26;
-    final slotHeight = imageHeight ?? 26;
-    final Widget slotChild;
-    if (imageAsset != null) {
-      slotChild = Image.asset(
-        imageAsset,
+    final Widget? graphic;
+    if (textOnly) {
+      graphic = null;
+    } else {
+      final slotWidth = imageWidth ?? 26;
+      final slotHeight = imageHeight ?? 26;
+      final Widget slotChild;
+      if (imageAsset != null) {
+        if (imageBorderRadius > 0) {
+          slotChild = ClipRRect(
+            borderRadius: BorderRadius.circular(imageBorderRadius),
+            child: Image.asset(
+              imageAsset,
+              width: slotWidth,
+              height: slotHeight,
+              fit: imageFit,
+              filterQuality: FilterQuality.high,
+            ),
+          );
+        } else {
+          slotChild = Image.asset(
+            imageAsset,
+            width: slotWidth,
+            height: slotHeight,
+            fit: BoxFit.contain,
+            filterQuality: FilterQuality.high,
+          );
+        }
+      } else {
+        slotChild = Icon(
+          icon ?? Icons.grid_view_rounded,
+          size: slotHeight * 0.85,
+          color: selected ? _searchAccent : idleColor,
+        );
+      }
+      graphic = SizedBox(
         width: slotWidth,
         height: slotHeight,
-        fit: BoxFit.contain,
-        filterQuality: FilterQuality.high,
-      );
-    } else {
-      slotChild = Icon(
-        icon ?? Icons.grid_view_rounded,
-        size: slotHeight * 0.85,
-        color: selected ? _searchAccent : idleColor,
+        child: Center(child: slotChild),
       );
     }
-    final graphic = SizedBox(
-      width: slotWidth,
-      height: slotHeight,
-      child: Center(child: slotChild),
-    );
     final tile = Material(
+      clipBehavior: Clip.none,
       color: Colors.transparent,
       child: InkWell(
         onTap: onTap,
         borderRadius: BorderRadius.circular(12),
         child: Ink(
-          padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 4),
+          padding: EdgeInsets.symmetric(
+            vertical: textOnly
+                ? 14
+                : ((imageHeight ?? 0) > 80 ? 8 : 10),
+            horizontal: textOnly ? 12 : 8,
+          ),
           decoration: BoxDecoration(
             color: isLight ? Colors.white : Colors.black.withValues(alpha: 0.15),
             borderRadius: BorderRadius.circular(12),
@@ -794,15 +846,18 @@ mixin _HomePageSearchFiltersPageUi on _HomePageMoreFiltersDialog {
           child: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
-              graphic,
-              const SizedBox(height: 8),
+              if (graphic != null) ...[
+                graphic,
+                const SizedBox(height: 6),
+              ],
               Text(
                 label,
                 textAlign: TextAlign.center,
                 maxLines: 1,
                 overflow: TextOverflow.ellipsis,
                 style: TextStyle(
-                  fontSize: 12,
+                  fontSize: textOnly ? 15 : 12,
+                  height: 1.2,
                   fontWeight: FontWeight.w600,
                   color: selected ? _searchAccent : idleColor,
                 ),
@@ -823,13 +878,17 @@ mixin _HomePageSearchFiltersPageUi on _HomePageMoreFiltersDialog {
     required List<String> options,
     required String? selected,
     required void Function(String? value) onSelected,
-    required IconData Function(String option) iconForOption,
+    IconData Function(String option)? iconForOption,
     String? Function(String option)? imageAssetForOption,
     String Function(BuildContext, String)? labelForOption,
     bool scrollHorizontally = false,
+    bool textOnly = false,
     double tileWidth = 72,
     double? tileImageWidth,
     double? tileImageHeight,
+    BoxFit tileImageFit = BoxFit.contain,
+    double tileImageBorderRadius = 0,
+    double? scrollListHeight,
   }) {
     final loc = AppLocalizations.of(context)!;
     final normalizedSelected =
@@ -849,14 +908,19 @@ mixin _HomePageSearchFiltersPageUi on _HomePageMoreFiltersDialog {
       return _searchIconOptionTile(
         context,
         selected: isSelected,
-        icon: imageAssetForOption?.call(option) == null
-            ? iconForOption(option)
-            : null,
-        imageAsset: imageAssetForOption?.call(option),
+        icon: textOnly
+            ? null
+            : (imageAssetForOption?.call(option) == null
+                ? iconForOption?.call(option)
+                : null),
+        imageAsset: textOnly ? null : imageAssetForOption?.call(option),
         label: label,
         width: scrollHorizontally ? tileWidth : null,
         imageWidth: imageAssetForOption == null ? null : tileImageWidth,
         imageHeight: imageAssetForOption == null ? null : tileImageHeight,
+        imageFit: tileImageFit,
+        imageBorderRadius: tileImageBorderRadius,
+        textOnly: textOnly,
         onTap: () {
           setState(() => onSelected(isAny ? null : option));
           setStateDialog(() {});
@@ -887,7 +951,13 @@ mixin _HomePageSearchFiltersPageUi on _HomePageMoreFiltersDialog {
             const SizedBox(height: 12),
             if (scrollHorizontally)
               SizedBox(
-                height: 88,
+                height: scrollListHeight ??
+                    _searchIconScrollListHeight(
+                      textOnly: textOnly,
+                      options: options,
+                      tileImageHeight: tileImageHeight,
+                      imageAssetForOption: imageAssetForOption,
+                    ),
                 child: ListView.separated(
                   scrollDirection: Axis.horizontal,
                   itemCount: tiles.length,

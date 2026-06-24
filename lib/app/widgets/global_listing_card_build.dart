@@ -59,7 +59,7 @@ Widget buildGlobalCarCard(
   final EdgeInsets listingCardTextPadding = listLayout
       // Horizontal cards: keep top tighter so title sits higher; keep a bit of bottom room.
       ? const EdgeInsets.fromLTRB(8, 8, 8, 6)
-      : const EdgeInsets.fromLTRB(12, 8, 12, 8);
+      : const EdgeInsets.fromLTRB(12, 8, 12, 6);
 
   Widget wrapCardTextTap(Widget child) {
     if (onCardTap == null) return child;
@@ -256,23 +256,20 @@ Widget buildGlobalCarCard(
                         ),
                       ),
                     ),
-                    // Content section (year/mileage + city below price — in flow, no overlap)
-                    Expanded(
+                    // Content section sits directly under the image (no spacer gap).
+                    Padding(
+                      padding: listingCardTextPadding,
                       child: wrapCardTextTap(
-                        Padding(
-                          padding: listingCardTextPadding,
-                          child: _buildGlobalCarCardInnerText(
-                            context,
-                            car,
-                            brandId: brandId,
-                            trimLine: trimLine,
-                            yearDisplay: yearDisplay,
-                            mileageDisplay: mileageDisplay,
-                            cityLine: cityLine,
-                            dividerLineColor: dividerLineColor,
-                            metaTextColor: metaTextColor,
-                            pinBottomMeta: true,
-                          ),
+                        _buildGlobalCarCardInnerText(
+                          context,
+                          car,
+                          brandId: brandId,
+                          trimLine: trimLine,
+                          yearDisplay: yearDisplay,
+                          mileageDisplay: mileageDisplay,
+                          cityLine: cityLine,
+                          dividerLineColor: dividerLineColor,
+                          metaTextColor: metaTextColor,
                         ),
                       ),
                     ),

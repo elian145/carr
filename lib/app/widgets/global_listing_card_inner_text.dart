@@ -176,7 +176,7 @@ Widget _buildGlobalCarCardInnerText(
       ),
       if (pinBottomMeta) const Spacer(),
       if (mileageDisplay.isNotEmpty || cityLine.isNotEmpty) ...[
-        const SizedBox(height: 6),
+        const SizedBox(height: 12),
         Row(
           crossAxisAlignment: CrossAxisAlignment.center,
           children: [
