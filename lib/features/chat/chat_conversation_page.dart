@@ -28,6 +28,11 @@ class ChatConversationPage extends StatefulWidget {
 class _ChatConversationPageState extends _ChatConversationFields
     with
         _ChatConversationTransportStore,
+        _ChatConversationTransportSync,
+        _ChatConversationTransportListing,
+        _ChatConversationTransportMedia,
+        _ChatConversationTransportPaging,
+        _ChatConversationTransportRealtime,
         _ChatConversationTransport,
         _ChatConversationMedia,
         _ChatConversationMessageActions,

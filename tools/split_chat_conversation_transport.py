@@ -1,71 +1,73 @@
-"""Split chat transport into store helpers + sync/events mixin."""
+"""Split chat_conversation_transport.dart into sync, paging, listing, media, and realtime mixins."""
 from __future__ import annotations
 
 from pathlib import Path
 
 REPO = Path(__file__).resolve().parents[1]
-TRANSPORT = REPO / "lib/features/chat/chat_conversation_transport.dart"
+FILE = REPO / "lib/features/chat/chat_conversation_transport.dart"
 PAGES = REPO / "lib/features/chat/chat_pages.dart"
 PAGE = REPO / "lib/features/chat/chat_conversation_page.dart"
 OUT = REPO / "lib/features/chat"
 
-lines = TRANSPORT.read_text(encoding="utf-8").splitlines()
+lines = FILE.read_text(encoding="utf-8").splitlines()
 
+paging_start = next(i for i, line in enumerate(lines) if line.strip().startswith("void _onScroll()"))
+listing_start = next(i for i, line in enumerate(lines) if line.strip().startswith("Map<String, dynamic> _mergedListingMeta()"))
+media_start = next(i for i, line in enumerate(lines) if line.strip().startswith("void _mergeInFlightMediaPending()"))
+realtime_start = next(i for i, line in enumerate(lines) if line.strip().startswith("void _setupWebSocketListeners()"))
 
-def find(substr: str, start: int = 0) -> int:
-    for i in range(start, len(lines)):
-        if substr in lines[i]:
-            return i
-    raise ValueError(substr)
+sync_block = "\n".join(lines[3:paging_start]).rstrip()
+paging_block = "\n".join(lines[paging_start:listing_start]).rstrip()
+listing_block = "\n".join(lines[listing_start:media_start]).rstrip()
+media_block = "\n".join(lines[media_start:realtime_start]).rstrip()
+realtime_block = "\n".join(lines[realtime_start:-1]).rstrip()
 
+parts = [
+    ("chat_conversation_transport_sync.dart", "_ChatConversationTransportSync", "_ChatConversationTransportStore", sync_block),
+    ("chat_conversation_transport_listing.dart", "_ChatConversationTransportListing", "_ChatConversationTransportSync", listing_block),
+    ("chat_conversation_transport_media.dart", "_ChatConversationTransportMedia", "_ChatConversationTransportListing", media_block),
+    ("chat_conversation_transport_paging.dart", "_ChatConversationTransportPaging", "_ChatConversationTransportMedia", paging_block),
+    ("chat_conversation_transport_realtime.dart", "_ChatConversationTransportRealtime", "_ChatConversationTransportPaging", realtime_block),
+]
 
-sync_start = find("void _setupTypingListener()")
-store_start = find("void _addMessageIfMissing(ChatMessage message)")
-listing_start = find("Map<String, dynamic> _mergedListingMeta()")
-scroll_start = find("void _scrollToBottom({bool jump = false})")
+for filename, mixin_name, on_name, body in parts:
+    (OUT / filename).write_text(
+        "part of 'chat_pages.dart';\n\n"
+        f"mixin {mixin_name} on {on_name} {{\n"
+        f"{body}\n"
+        "}\n",
+        encoding="utf-8",
+    )
 
-sync_block = "\n".join(lines[sync_start:store_start]).rstrip()
-store_block = "\n".join(
-    lines[store_start:listing_start] + [""] + lines[scroll_start:-1]
-).rstrip()
-listing_block = "\n".join(lines[listing_start:scroll_start]).rstrip()
-
-(OUT / "chat_conversation_transport_store.dart").write_text(
+(FILE).write_text(
     "part of 'chat_pages.dart';\n\n"
-    "mixin _ChatConversationTransportStore on _ChatConversationFields {\n"
-    f"{store_block}\n"
-    "}\n",
-    encoding="utf-8",
-)
-
-(OUT / "chat_conversation_transport.dart").write_text(
-    "part of 'chat_pages.dart';\n\n"
-    "mixin _ChatConversationTransport on _ChatConversationTransportStore {\n"
-    f"{sync_block}\n\n"
-    f"{listing_block}\n"
-    "}\n",
+    "mixin _ChatConversationTransport on _ChatConversationTransportRealtime {}\n",
     encoding="utf-8",
 )
 
 pages = PAGES.read_text(encoding="utf-8")
-if "chat_conversation_transport_store.dart" not in pages:
-    pages = pages.replace(
-        "part 'chat_conversation_transport.dart';\n",
-        "part 'chat_conversation_transport_store.dart';\n"
-        "part 'chat_conversation_transport.dart';\n",
-    )
-    PAGES.write_text(pages, encoding="utf-8")
+for filename, _, _, _ in parts:
+    part = f"part '{filename}';\n"
+    if part not in pages:
+        pages = pages.replace(
+            "part 'chat_conversation_transport.dart';\n",
+            part + "part 'chat_conversation_transport.dart';\n",
+        )
+PAGES.write_text(pages, encoding="utf-8")
 
 page = PAGE.read_text(encoding="utf-8")
-page = page.replace(
-    "_ChatConversationTransport, _ChatConversationMedia",
-    "_ChatConversationTransportStore, _ChatConversationTransport, _ChatConversationMedia",
-)
+if "_ChatConversationTransportSync" not in page:
+    page = page.replace(
+        "        _ChatConversationTransportStore,\n"
+        "        _ChatConversationTransport,\n",
+        "        _ChatConversationTransportStore,\n"
+        "        _ChatConversationTransportSync,\n"
+        "        _ChatConversationTransportListing,\n"
+        "        _ChatConversationTransportMedia,\n"
+        "        _ChatConversationTransportPaging,\n"
+        "        _ChatConversationTransportRealtime,\n"
+        "        _ChatConversationTransport,\n",
+    )
 PAGE.write_text(page, encoding="utf-8")
 
-print(
-    "store",
-    len(store_block.splitlines()),
-    "transport",
-    len(sync_block.splitlines()) + len(listing_block.splitlines()),
-)
+print("Split chat_conversation_transport into", len(parts), "mixins")
