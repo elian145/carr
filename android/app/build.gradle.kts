@@ -6,8 +6,31 @@ plugins {
     id("dev.flutter.flutter-gradle-plugin")
 }
 
+import java.io.File
 import java.util.Properties
 import org.jetbrains.kotlin.gradle.dsl.JvmTarget
+
+fun loadSigningProperties(root: org.gradle.api.Project): Pair<Properties, java.io.File?> {
+    val props = Properties()
+    var loaded: java.io.File? = null
+    for (rel in listOf("signing.properties", "android/signing.properties")) {
+        val candidate = root.file(rel)
+        if (candidate.exists()) {
+            candidate.inputStream().use { props.load(it) }
+            loaded = candidate
+            break
+        }
+    }
+    return props to loaded
+}
+
+fun resolveKeystoreFile(root: org.gradle.api.Project, storeFilePath: String): File {
+    val fromRoot = root.file(storeFilePath)
+    if (fromRoot.exists()) return fromRoot
+    val absolute = File(storeFilePath)
+    if (absolute.exists()) return absolute
+    return fromRoot
+}
 
 val localProperties = Properties()
 val localPropertiesFile = rootProject.file("local.properties")
@@ -69,7 +92,7 @@ android {
     }
 
     // Signing setup:
-    // - Store prod release builds require `signing.properties` at repo root.
+    // - Store prod release builds require signing.properties (repo root or android/).
     // - Local/dev release builds can still use debug signing for smoke testing.
     //
     // signing.properties format:
@@ -77,11 +100,7 @@ android {
     //   STORE_PASSWORD=...
     //   KEY_ALIAS=...
     //   KEY_PASSWORD=...
-    val signingProps = Properties()
-    val signingPropsFile = rootProject.file("signing.properties")
-    if (signingPropsFile.exists()) {
-        signingPropsFile.inputStream().use { signingProps.load(it) }
-    }
+    val (signingProps, _) = loadSigningProperties(rootProject)
     val hasReleaseSigning =
         (signingProps.getProperty("STORE_FILE")?.trim().orEmpty().isNotEmpty()) &&
         (signingProps.getProperty("STORE_PASSWORD")?.trim().orEmpty().isNotEmpty()) &&
@@ -101,7 +120,7 @@ android {
                 keyAliasValue.isNotEmpty() &&
                 keyPasswordValue.isNotEmpty()
             ) {
-                storeFile = file(storeFilePath)
+                storeFile = resolveKeystoreFile(rootProject, storeFilePath)
                 storePassword = storePasswordValue
                 keyAlias = keyAliasValue
                 keyPassword = keyPasswordValue
@@ -152,11 +171,7 @@ gradle.taskGraph.whenReady {
         task.name.contains("ProdRelease", ignoreCase = true)
     }
     if (isProdReleaseBuild && !allowDebugReleaseSigning) {
-        val props = Properties()
-        val propsFile = rootProject.file("signing.properties")
-        if (propsFile.exists()) {
-            propsFile.inputStream().use { props.load(it) }
-        }
+        val (props, propsFile) = loadSigningProperties(rootProject)
         val hasStoreSigning =
             (props.getProperty("STORE_FILE")?.trim().orEmpty().isNotEmpty()) &&
             (props.getProperty("STORE_PASSWORD")?.trim().orEmpty().isNotEmpty()) &&
@@ -164,7 +179,7 @@ gradle.taskGraph.whenReady {
             (props.getProperty("KEY_PASSWORD")?.trim().orEmpty().isNotEmpty())
         if (!hasStoreSigning) {
             throw GradleException(
-                "Prod release builds require signing.properties. " +
+                "Prod release builds require signing.properties (repo root or android/). " +
                     "Set ALLOW_DEBUG_RELEASE_SIGNING=true only for local smoke-test builds."
             )
         }
