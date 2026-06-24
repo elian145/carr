@@ -91,6 +91,7 @@ part 'sell_step4_build.dart';
 part 'sell_step4_fields.dart';
 part 'sell_step4_logic.dart';
 part 'sell_step4.dart';
+part 'sell_step4_preview_helpers.dart';
 part 'sell_step4_preview_listing.dart';
 part 'sell_step4_preview_review.dart';
 part 'sell_step5_fields.dart';
