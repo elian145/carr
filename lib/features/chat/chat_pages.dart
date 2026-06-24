@@ -39,5 +39,6 @@ part 'chat_conversation_message_actions.dart';
 part 'chat_conversation_composer.dart';
 part 'chat_conversation_send.dart';
 part 'chat_conversation_actions.dart';
+part 'chat_conversation_message_ui_nav.dart';
 part 'chat_conversation_message_ui.dart';
 part 'chat_conversation_page.dart';
