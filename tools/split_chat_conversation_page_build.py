@@ -50,16 +50,34 @@ shell_block += "\n            body: _buildChatConversationBody(context),\n    );
 )
 
 pages = PAGES.read_text(encoding="utf-8")
-part = "part 'chat_conversation_page_build_body.dart';\n"
-if part not in pages:
-    pages = pages.replace(
-        "part 'chat_conversation_page_build.dart';\n",
-        part + "part 'chat_conversation_page_build.dart';\n",
-    )
+if "chat_conversation_page_build_body_messages.dart" not in pages:
+    if "part 'chat_conversation_page_build_body.dart';\n" in pages:
+        pages = pages.replace(
+            "part 'chat_conversation_page_build_body.dart';\n",
+            "part 'chat_conversation_page_build_body_messages.dart';\n"
+            "part 'chat_conversation_page_build_body_composer.dart';\n"
+            "part 'chat_conversation_page_build_body.dart';\n",
+        )
+    else:
+        pages = pages.replace(
+            "part 'chat_conversation_page_build.dart';\n",
+            "part 'chat_conversation_page_build_body_messages.dart';\n"
+            "part 'chat_conversation_page_build_body_composer.dart';\n"
+            "part 'chat_conversation_page_build_body.dart';\n"
+            "part 'chat_conversation_page_build.dart';\n",
+        )
     PAGES.write_text(pages, encoding="utf-8")
 
 page = PAGE.read_text(encoding="utf-8")
-if "_ChatConversationPageBuildBody" not in page:
+if "_ChatConversationPageBuildBodyMessages" not in page:
+    page = page.replace(
+        "        _ChatConversationPageBuildBody,\n",
+        "        _ChatConversationPageBuildBodyMessages,\n"
+        "        _ChatConversationPageBuildBodyComposer,\n"
+        "        _ChatConversationPageBuildBody,\n",
+    )
+    PAGE.write_text(page, encoding="utf-8")
+elif "_ChatConversationPageBuildBody" not in page:
     page = page.replace(
         "        _ChatConversationPageBuild {}",
         "        _ChatConversationPageBuildBody,\n        _ChatConversationPageBuild {}",
