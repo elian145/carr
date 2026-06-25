@@ -1,7 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
-import 'widgets/edge_swipe_back.dart' show NavigationPopCoordinator;
+import 'widgets/edge_swipe_back.dart'
+    show EdgeSwipeBackCoordinator, NavigationPopCoordinator;
 
 class ThemeProvider extends ChangeNotifier {
   static const String _themeKey = 'theme_mode';
@@ -341,6 +342,26 @@ class AppHorizontalSlidePageTransitionsBuilder extends PageTransitionsBuilder {
       ),
     );
 
-    return SlideTransition(position: slide, child: child);
+    final width = MediaQuery.sizeOf(context).width;
+    final coordinator = EdgeSwipeBackCoordinator.instance;
+
+    return AnimatedBuilder(
+      animation: Listenable.merge([animation, coordinator]),
+      builder: (context, child) {
+        final dragFraction = route.isCurrent
+            ? (coordinator.dragDx / width).clamp(0.0, 1.0)
+            : 0.0;
+        final offset = Offset(
+          slide.value.dx + dragFraction,
+          slide.value.dy,
+        );
+        return FractionalTranslation(
+          translation: offset,
+          transformHitTests: true,
+          child: child,
+        );
+      },
+      child: child,
+    );
   }
 }

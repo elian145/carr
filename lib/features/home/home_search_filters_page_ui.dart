@@ -78,13 +78,13 @@ mixin _HomePageSearchFiltersPageUi on _HomePageMoreFiltersDialog {
             labelForOption: (ctx, o) => _translateValueGlobal(ctx, o) ?? o,
             scrollHorizontally: true,
           ),
-          _searchIconCardSection(
+          _searchMultiIconCardSection(
             context,
             setStateDialog,
             title: loc.bodyTypeLabel,
-            options: bodyTypes,
-            selected: selectedBodyType,
-            onSelected: (v) => selectedBodyType = v,
+            options: bodyTypes.where((t) => t != 'Any').toList(),
+            selectedValues: _homeSelectedBodyTypes,
+            onToggle: _homeToggleBodyType,
             iconForOption: _searchBodyTypeIcon,
             labelForOption: (ctx, o) => _translateValueGlobal(ctx, o) ?? o,
             scrollHorizontally: true,
@@ -216,20 +216,14 @@ mixin _HomePageSearchFiltersPageUi on _HomePageMoreFiltersDialog {
     );
   }
 
-  String _searchBrandLabel(BuildContext context) {
-    final loc = AppLocalizations.of(context)!;
-    if (selectedBrand == null || selectedBrand!.isEmpty) return loc.any;
-    final localized =
-        CarNameTranslations.getLocalizedBrand(context, selectedBrand);
-    return localized.isNotEmpty ? localized : selectedBrand!;
-  }
+  String _searchBrandLabel(BuildContext context) => _homeBrandFilterLabel(context);
 
   String _searchModelLabel(BuildContext context) {
     final loc = AppLocalizations.of(context)!;
     if (selectedModel == null || selectedModel!.isEmpty) return loc.any;
     final localized = CarNameTranslations.getLocalizedModel(
       context,
-      selectedBrand,
+      _homeSingleSelectedBrand,
       selectedModel,
     );
     return localized.isNotEmpty ? localized : selectedModel!;
@@ -377,12 +371,13 @@ mixin _HomePageSearchFiltersPageUi on _HomePageMoreFiltersDialog {
     BuildContext context,
     void Function(void Function()) setStateDialog,
   ) async {
-    final brand = await _showHomeBrandPickerDialog(context);
-    if (brand == null) return;
+    final brands = await _showHomeBrandMultiPickerDialog(
+      context,
+      initialSelection: _homeSelectedBrands,
+    );
+    if (brands == null) return;
     setState(() {
-      selectedBrand = brand;
-      selectedModel = null;
-      selectedTrim = null;
+      _homeSetSelectedBrands(brands);
       clearFiltersOnVehicleChange();
     });
     setStateDialog(() {});
@@ -396,12 +391,13 @@ mixin _HomePageSearchFiltersPageUi on _HomePageMoreFiltersDialog {
     final isLight = Theme.of(context).brightness == Brightness.light;
     final labelColor = isLight ? const Color(0xFF1A1A1A) : Colors.white;
     final featured = _searchFeaturedBrands();
-    final hasBrand =
-        selectedBrand != null && selectedBrand!.trim().isNotEmpty;
+    final hasBrand = _homeSelectedBrands.isNotEmpty;
     final hasModel =
-        selectedModel != null && selectedModel!.trim().isNotEmpty;
+        _homeSingleSelectedBrand != null &&
+        selectedModel != null &&
+        selectedModel!.trim().isNotEmpty;
     final trimList = hasBrand && hasModel
-        ? (trimsByBrandModel[selectedBrand!]?[selectedModel!] ??
+        ? (trimsByBrandModel[_homeSingleSelectedBrand!]?[selectedModel!] ??
             const <String>[])
         : const <String>[];
 
@@ -416,8 +412,13 @@ mixin _HomePageSearchFiltersPageUi on _HomePageMoreFiltersDialog {
               context,
               title: loc.brandLabel,
               valueSummary: _searchBrandLabel(context),
-              onSummaryTap: () =>
-                  _openSearchBrandPicker(context, setStateDialog),
+              onSummaryTap: () {
+                  setState(() {
+                    _homeSetSelectedBrands([]);
+                    clearFiltersOnVehicleChange();
+                  });
+                  setStateDialog(() {});
+                },
             ),
             const SizedBox(height: 14),
             SizedBox(
@@ -477,7 +478,7 @@ mixin _HomePageSearchFiltersPageUi on _HomePageMoreFiltersDialog {
                     );
                   }
                   final brand = featured[index];
-                  final selected = selectedBrand == brand;
+                  final selected = _homeSelectedBrands.contains(brand);
                   final display = CarNameTranslations.getLocalizedBrand(
                             context,
                             brand,
@@ -487,9 +488,7 @@ mixin _HomePageSearchFiltersPageUi on _HomePageMoreFiltersDialog {
                   return InkWell(
                     onTap: () {
                       setState(() {
-                        selectedBrand = brand;
-                        selectedModel = null;
-                        selectedTrim = null;
+                        _homeToggleBrand(brand);
                         clearFiltersOnVehicleChange();
                       });
                       setStateDialog(() {});
@@ -530,7 +529,7 @@ mixin _HomePageSearchFiltersPageUi on _HomePageMoreFiltersDialog {
                 },
               ),
             ),
-            if (hasBrand) ...[
+            if (hasModel && _homeSingleSelectedBrand != null) ...[
               const SizedBox(height: 16),
               _searchSectionHeader(
                 context,
@@ -985,13 +984,118 @@ mixin _HomePageSearchFiltersPageUi on _HomePageMoreFiltersDialog {
     );
   }
 
+  Widget _searchMultiIconCardSection(
+    BuildContext context,
+    StateSetter setStateDialog, {
+    required String title,
+    required List<String> options,
+    required List<String> selectedValues,
+    required void Function(String value) onToggle,
+    IconData Function(String option)? iconForOption,
+    String? Function(String option)? imageAssetForOption,
+    String Function(BuildContext, String)? labelForOption,
+    bool scrollHorizontally = false,
+    double tileWidth = 72,
+    double? tileImageWidth,
+    double? tileImageHeight,
+    BoxFit tileImageFit = BoxFit.contain,
+    double tileImageBorderRadius = 0,
+    double? scrollListHeight,
+  }) {
+    final loc = AppLocalizations.of(context)!;
+
+    final tiles = options.map((option) {
+      final isSelected = selectedValues.contains(option);
+      final label = labelForOption?.call(context, option) ??
+          _translateValueGlobal(context, option) ??
+          option;
+      return _searchIconOptionTile(
+        context,
+        selected: isSelected,
+        icon: imageAssetForOption?.call(option) == null
+            ? iconForOption?.call(option)
+            : null,
+        imageAsset: imageAssetForOption?.call(option),
+        label: label,
+        width: scrollHorizontally ? tileWidth : null,
+        imageWidth: imageAssetForOption == null ? null : tileImageWidth,
+        imageHeight: imageAssetForOption == null ? null : tileImageHeight,
+        imageFit: tileImageFit,
+        imageBorderRadius: tileImageBorderRadius,
+        onTap: () {
+          setState(() => onToggle(option));
+          setStateDialog(() {});
+        },
+      );
+    }).toList();
+
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 14),
+      child: _searchCard(
+        context,
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            _searchSectionHeader(
+              context,
+              title: title,
+              valueSummary: homeFilterSummaryLabel(
+                loc.any,
+                selectedValues,
+                (value) =>
+                    labelForOption?.call(context, value) ??
+                    _translateValueGlobal(context, value) ??
+                    value,
+              ),
+              onSummaryTap: () {
+                setState(() => _homeSetSelectedBodyTypes([]));
+                setStateDialog(() {});
+              },
+            ),
+            const SizedBox(height: 12),
+            if (scrollHorizontally)
+              SizedBox(
+                height: scrollListHeight ??
+                    _searchIconScrollListHeight(
+                      textOnly: false,
+                      options: options,
+                      tileImageHeight: tileImageHeight,
+                      imageAssetForOption: imageAssetForOption,
+                    ),
+                child: ListView.separated(
+                  scrollDirection: Axis.horizontal,
+                  itemCount: tiles.length,
+                  separatorBuilder: (context, index) =>
+                      const SizedBox(width: 6),
+                  itemBuilder: (context, index) => tiles[index],
+                ),
+              )
+            else
+              Row(
+                children: tiles
+                    .map(
+                      (tile) => Expanded(
+                        child: Padding(
+                          padding: const EdgeInsets.symmetric(horizontal: 3),
+                          child: tile,
+                        ),
+                      ),
+                    )
+                    .toList(),
+              ),
+          ],
+        ),
+      ),
+    );
+  }
+
   Widget _searchModelField(
     BuildContext context,
     StateSetter setStateDialog,
   ) {
     final loc = AppLocalizations.of(context)!;
     final isLight = Theme.of(context).brightness == Brightness.light;
-    final brand = selectedBrand;
+    final brand = _homeSingleSelectedBrand;
     if (brand == null || brand.isEmpty) return const SizedBox.shrink();
     final modelList = models[brand] ?? const <String>[];
     if (modelList.isEmpty) return const SizedBox.shrink();

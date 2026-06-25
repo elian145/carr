@@ -73,7 +73,7 @@ class ComparisonButton extends StatelessWidget {
         icon: Icon(
           inComparison ? Icons.compare_arrows : Icons.compare_arrows_outlined,
           size: 18,
-          color: inComparison ? Theme.of(context).colorScheme.primary : null,
+          color: inComparison ? const Color(0xFFFFB300) : null,
         ),
       );
     }
@@ -84,8 +84,8 @@ class ComparisonButton extends StatelessWidget {
       child: OutlinedButton.icon(
         onPressed: () => _toggle(context, store, inComparison),
         style: OutlinedButton.styleFrom(
-          foregroundColor: const Color(0xFFFF6B00),
-          side: const BorderSide(color: Color(0xFFFF6B00)),
+          foregroundColor: const Color(0xFFFFB300),
+          side: const BorderSide(color: Color(0xFFFFB300)),
           padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
           minimumSize: const Size(0, 46),
           tapTargetSize: MaterialTapTargetSize.shrinkWrap,

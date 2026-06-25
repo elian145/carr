@@ -46,14 +46,25 @@ def _ilike_match(haystack: str | None, needle: str) -> bool:
     return n in h or n.replace(" ", "-") in h.replace(" ", "-")
 
 
+def _multi_values(val) -> list[str]:
+    if val is None or val == "":
+        return []
+    return [
+        part.strip().lower()
+        for part in str(val).split(",")
+        if part.strip() and part.strip().lower() not in ("any", "")
+    ]
+
+
 def car_matches_filters(car: Car, filters: dict[str, Any] | None) -> bool:
     """Return True if car satisfies all non-empty filters."""
     if not filters or not isinstance(filters, dict):
         return True
 
-    brand = _norm_str(filters.get("brand"))
-    if brand and not _ilike_match(car.brand, brand):
-        return False
+    brands = _multi_values(filters.get("brand"))
+    if brands:
+        if not any(_ilike_match(car.brand, brand) for brand in brands):
+            return False
 
     model = _norm_str(filters.get("model"))
     if model and not _ilike_match(car.model, model):
@@ -96,9 +107,11 @@ def car_matches_filters(car: Car, filters: dict[str, Any] | None) -> bool:
     if transmission and transmission not in ("any", "") and _norm_str(car.transmission) != transmission:
         return False
 
-    body_type = _norm_str(filters.get("body_type"))
-    if body_type and body_type not in ("any", "") and _norm_str(car.body_type) != body_type:
-        return False
+    body_types = _multi_values(filters.get("body_type"))
+    if body_types:
+        car_body = _norm_str(car.body_type)
+        if car_body not in body_types:
+            return False
 
     drive_type = _norm_str(filters.get("drive_type"))
     if drive_type and drive_type not in ("any", "") and not _ilike_match(car.drive_type, drive_type):

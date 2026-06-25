@@ -7,7 +7,7 @@ from datetime import datetime
 from flask import Blueprint, current_app, jsonify, request
 from flask_jwt_extended import jwt_required, verify_jwt_in_request
 from ..security import rate_limit
-from sqlalchemy import select, update
+from sqlalchemy import or_, select, update, func
 from sqlalchemy.orm import joinedload, selectinload
 
 from ..auth import get_current_user, log_user_action, phone_verification_required_response
@@ -68,6 +68,16 @@ def _clamp_pagination(page: int, per_page: int) -> tuple[int, int]:
     if pp > MAX_PER_PAGE:
         pp = MAX_PER_PAGE
     return p, pp
+
+
+def _split_multi_filter(val: str | None) -> list[str]:
+    if not val:
+        return []
+    return [
+        part.strip()
+        for part in val.split(",")
+        if part.strip() and part.strip().lower() not in ("any", "")
+    ]
 
 
 def _client_ip() -> str:
@@ -286,8 +296,11 @@ def get_cars():
             )
         )
 
-        if brand:
-            query = query.filter(Car.brand.ilike(f"%{brand}%"))
+        brands = _split_multi_filter(brand)
+        if brands:
+            query = query.filter(
+                or_(*[Car.brand.ilike(f"%{b}%") for b in brands])
+            )
         if model:
             query = query.filter(Car.model.ilike(f"%{model}%"))
         if trim:
@@ -308,8 +321,11 @@ def get_cars():
             query = query.filter(Car.location.ilike(f"%{location}%"))
         if condition:
             query = query.filter(Car.condition == condition)
-        if body_type:
-            query = query.filter(Car.body_type == body_type)
+        body_types = _split_multi_filter(body_type)
+        if body_types:
+            query = query.filter(
+                or_(*[func.lower(Car.body_type) == bt.lower() for bt in body_types])
+            )
         if transmission:
             query = query.filter(Car.transmission == transmission)
         if drive_type:
@@ -442,8 +458,11 @@ def get_cars_alias():
                 joinedload(Car.seller),
             )
         )
-        if brand:
-            query = query.filter(Car.brand.ilike(f"%{brand}%"))
+        brands = _split_multi_filter(brand)
+        if brands:
+            query = query.filter(
+                or_(*[Car.brand.ilike(f"%{b}%") for b in brands])
+            )
         if model:
             query = query.filter(Car.model.ilike(f"%{model}%"))
         if year_min:
@@ -458,8 +477,11 @@ def get_cars_alias():
             query = query.filter(Car.location.ilike(f"%{location}%"))
         if condition:
             query = query.filter(Car.condition == condition)
-        if body_type:
-            query = query.filter(Car.body_type == body_type)
+        body_types = _split_multi_filter(body_type)
+        if body_types:
+            query = query.filter(
+                or_(*[func.lower(Car.body_type) == bt.lower() for bt in body_types])
+            )
         if transmission:
             query = query.filter(Car.transmission == transmission)
         if drive_type:

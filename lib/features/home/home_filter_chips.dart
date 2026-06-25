@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import '../../shared/i18n/region_spec_labels.dart';
 import 'home_filter_chip_style.dart';
 import 'home_filters_query.dart';
+import 'home_multi_select_filter.dart';
 
 /// One active home filter chip (label, value, clear key, presentation).
 class HomeFilterChipDescriptor {
@@ -121,10 +122,47 @@ bool homeFilterSortChipActive(String? sortBy) {
 }
 
 /// Clears one chip filter (and dependent fields) from [filters].
+HomeFiltersSnapshot _homeFilterRemoveListValue(
+  HomeFiltersSnapshot filters, {
+  required String field,
+  required String value,
+}) {
+  switch (field) {
+    case 'brand':
+      final remaining = homeFilterDecodeList(filters.brand)
+          .where((b) => b != value)
+          .toList();
+      return filters.copyWith(
+        brand: homeFilterEncodeList(remaining),
+        clearModel: remaining.length != 1,
+        clearTrim: remaining.length != 1,
+      );
+    case 'bodyType':
+      final remaining = homeFilterDecodeList(filters.bodyType)
+          .where((b) => b != value)
+          .toList();
+      return filters.copyWith(
+        bodyType: homeFilterEncodeList(remaining),
+      );
+    default:
+      return filters;
+  }
+}
+
+/// Clears one chip filter (and dependent fields) from [filters].
 HomeFiltersSnapshot clearHomeFilterChip(
   HomeFiltersSnapshot filters,
   String filterType,
 ) {
+  final parsed = homeFilterParseChipKey(filterType);
+  if (parsed.$2 != null) {
+    return _homeFilterRemoveListValue(
+      filters,
+      field: parsed.$1,
+      value: parsed.$2!,
+    );
+  }
+
   switch (filterType) {
     case 'brand':
       return filters.copyWith(clearBrand: true, clearModel: true, clearTrim: true);
@@ -235,19 +273,23 @@ List<HomeFilterChipDescriptor> buildHomeFilterChipDescriptors({
     );
   }
 
-  if (homeFilterChipValueActive(filters.brand)) {
-    final brand = formatters.localizedBrand(filters.brand);
+  for (final brandValue in homeFilterDecodeList(filters.brand)) {
+    final brand = formatters.localizedBrand(brandValue);
     add(
       labels.brand,
-      brand.isNotEmpty ? brand : filters.brand!,
-      'brand',
+      brand.isNotEmpty ? brand : brandValue,
+      homeFilterChipItemKey('brand', brandValue),
       Icons.directions_car,
       brandOrange,
     );
   }
 
   if (homeFilterChipValueActive(filters.model)) {
-    final model = formatters.localizedModel(filters.brand, filters.model);
+    final brandForModel = homeFilterDecodeList(filters.brand);
+    final model = formatters.localizedModel(
+      brandForModel.length == 1 ? brandForModel.first : filters.brand,
+      filters.model,
+    );
     add(
       labels.model,
       model.isNotEmpty ? model : filters.model!,
@@ -360,12 +402,12 @@ List<HomeFilterChipDescriptor> buildHomeFilterChipDescriptors({
     );
   }
 
-  if (homeFilterChipValueActive(filters.bodyType)) {
+  for (final bodyTypeValue in homeFilterDecodeList(filters.bodyType)) {
     add(
       labels.bodyType,
-      formatters.translateValue(filters.bodyType),
-      'bodyType',
-      homeFilterBodyTypeIcon(filters.bodyType!),
+      formatters.translateValue(bodyTypeValue),
+      homeFilterChipItemKey('bodyType', bodyTypeValue),
+      homeFilterBodyTypeIcon(bodyTypeValue),
       brandOrange,
     );
   }

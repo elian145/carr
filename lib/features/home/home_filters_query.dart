@@ -1,3 +1,4 @@
+import 'home_multi_select_filter.dart';
 import '../../shared/i18n/region_spec_labels.dart';
 
 /// Immutable home filter selection used for API queries and saved searches.
@@ -205,7 +206,12 @@ Map<String, String> homeFiltersToApiQuery(
     put('fuel_type', filters.fuelType!.toLowerCase());
   }
   if (!HomeFiltersSnapshot._isAny(filters.bodyType)) {
-    put('body_type', filters.bodyType!.toLowerCase());
+    final bodyTypes = homeFilterDecodeList(filters.bodyType)
+        .map((b) => b.toLowerCase())
+        .toList();
+    if (bodyTypes.isNotEmpty) {
+      put('body_type', bodyTypes.join(homeFilterListSeparator));
+    }
   }
   if (!HomeFiltersSnapshot._isAny(filters.color)) {
     put('color', filters.color!.toLowerCase());
@@ -281,7 +287,12 @@ Map<String, dynamic> homeFiltersToSavedSearchJson(
     put('fuel_type', filters.fuelType!.toLowerCase());
   }
   if (!HomeFiltersSnapshot._isAny(filters.bodyType)) {
-    put('body_type', filters.bodyType!.toLowerCase());
+    final bodyTypes = homeFilterDecodeList(filters.bodyType)
+        .map((b) => b.toLowerCase())
+        .toList();
+    if (bodyTypes.isNotEmpty) {
+      put('body_type', bodyTypes.join(homeFilterListSeparator));
+    }
   }
   if (!HomeFiltersSnapshot._isAny(filters.color)) {
     put('color', filters.color!.toLowerCase());

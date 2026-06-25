@@ -10,6 +10,28 @@ class NavigationPopCoordinator {
   static bool suppressNextRoutePopTransition = false;
 }
 
+/// Drives interactive edge-swipe offset for the top route's page transition.
+class EdgeSwipeBackCoordinator extends ChangeNotifier {
+  EdgeSwipeBackCoordinator._();
+
+  static final EdgeSwipeBackCoordinator instance = EdgeSwipeBackCoordinator._();
+
+  double _dragDx = 0;
+
+  double get dragDx => _dragDx;
+
+  void setDragDx(double dx) {
+    final clamped = dx.clamp(0.0, double.infinity);
+    if (_dragDx == clamped) return;
+    _dragDx = clamped;
+    notifyListeners();
+  }
+
+  void reset() {
+    setDragDx(0);
+  }
+}
+
 class EdgeSwipeBack extends StatefulWidget {
   const EdgeSwipeBack({
     super.key,
@@ -39,10 +61,10 @@ class EdgeSwipeBack extends StatefulWidget {
 
 class _EdgeSwipeBackState extends State<EdgeSwipeBack>
     with SingleTickerProviderStateMixin {
-  double _dragDx = 0;
   bool _popped = false;
   late final AnimationController _settleController;
   Animation<double>? _settleAnimation;
+  final EdgeSwipeBackCoordinator _coordinator = EdgeSwipeBackCoordinator.instance;
 
   @override
   void initState() {
@@ -67,7 +89,7 @@ class _EdgeSwipeBackState extends State<EdgeSwipeBack>
   void _reset() {
     _settleController.stop();
     _settleAnimation = null;
-    _dragDx = 0;
+    _coordinator.reset();
     _popped = false;
   }
 
@@ -80,7 +102,7 @@ class _EdgeSwipeBackState extends State<EdgeSwipeBack>
       ..stop()
       ..duration = duration;
     _settleAnimation = Tween<double>(
-      begin: _dragDx,
+      begin: _coordinator.dragDx,
       end: target,
     ).animate(
       CurvedAnimation(
@@ -89,9 +111,7 @@ class _EdgeSwipeBackState extends State<EdgeSwipeBack>
       ),
     )..addListener(() {
         if (!mounted) return;
-        setState(() {
-          _dragDx = _settleAnimation!.value;
-        });
+        _coordinator.setDragDx(_settleAnimation!.value);
       })
       ..addStatusListener((status) {
         if (status == AnimationStatus.completed && onDone != null) {
@@ -102,7 +122,7 @@ class _EdgeSwipeBackState extends State<EdgeSwipeBack>
   }
 
   void _animateBackToStart() {
-    if (_dragDx <= 0) {
+    if (_coordinator.dragDx <= 0) {
       _reset();
       return;
     }
@@ -129,14 +149,11 @@ class _EdgeSwipeBackState extends State<EdgeSwipeBack>
         NavigationPopCoordinator.suppressNextRoutePopTransition = true;
         _settleController.stop();
         _settleAnimation = null;
-        _dragDx = 0;
-        if (mounted) {
-          setState(() {});
-        }
+        _coordinator.reset();
         nav.maybePop();
         SchedulerBinding.instance.addPostFrameCallback((_) {
           if (mounted) {
-            setState(_reset);
+            _reset();
           } else {
             _reset();
           }
@@ -164,16 +181,17 @@ class _EdgeSwipeBackState extends State<EdgeSwipeBack>
               ..onUpdate = (details) {
                 if (_popped) return;
                 _settleController.stop();
-                _dragDx = (_dragDx + details.delta.dx).clamp(0.0, double.infinity);
-                setState(() {});
-                if (_dragDx >= widget.triggerDistance) {
+                _coordinator.setDragDx(
+                  _coordinator.dragDx + details.delta.dx,
+                );
+                if (_coordinator.dragDx >= widget.triggerDistance) {
                   _maybePop();
                 }
               }
               ..onEnd = (details) {
                 if (_popped) return;
                 final v = details.primaryVelocity ?? 0;
-                if (_dragDx >= widget.triggerDistance ||
+                if (_coordinator.dragDx >= widget.triggerDistance ||
                     v >= widget.triggerVelocity) {
                   _maybePop();
                 } else {
@@ -187,10 +205,7 @@ class _EdgeSwipeBackState extends State<EdgeSwipeBack>
           },
         ),
       },
-      child: Transform.translate(
-        offset: Offset(_dragDx, 0),
-        child: widget.child,
-      ),
+      child: widget.child,
     );
   }
 }

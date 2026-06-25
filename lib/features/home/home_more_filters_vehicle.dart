@@ -11,7 +11,7 @@ mixin _HomePageMoreFiltersVehicle on _HomePageFilterBar {
       models: models,
       onBrandSelected: (brand) {
         setState(() {
-          selectedBrand = brand;
+          _homeSetSelectedBrands([brand]);
           selectedModel = null;
           selectedTrim = null;
           clearFiltersOnVehicleChange();
@@ -20,7 +20,7 @@ mixin _HomePageMoreFiltersVehicle on _HomePageFilterBar {
       },
       onModelSelected: (brand, model) {
         setState(() {
-          selectedBrand = brand;
+          _homeSetSelectedBrands([brand]);
           selectedModel = model;
           selectedTrim = null;
           clearFiltersOnVehicleChange();
@@ -36,15 +36,22 @@ mixin _HomePageMoreFiltersVehicle on _HomePageFilterBar {
   ) {
     return InputDecoration(
       labelText: label,
+      isDense: true,
       labelStyle: TextStyle(
         color: style.onSurface,
-        fontSize: 18,
-        fontWeight: FontWeight.bold,
+        fontSize: 13,
+        fontWeight: FontWeight.w600,
+      ),
+      floatingLabelStyle: TextStyle(
+        color: style.onSurface,
+        fontSize: 12,
+        fontWeight: FontWeight.w600,
       ),
       filled: true,
       fillColor: style.fieldFill,
+      contentPadding: const EdgeInsets.symmetric(horizontal: 8, vertical: 12),
       border: OutlineInputBorder(
-        borderRadius: BorderRadius.circular(12),
+        borderRadius: BorderRadius.circular(8),
       ),
     );
   }
@@ -96,13 +103,20 @@ mixin _HomePageMoreFiltersVehicle on _HomePageFilterBar {
     required Widget maxField,
     double gap = 8,
   }) {
-    return Row(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Expanded(child: minField),
-        SizedBox(width: gap),
-        Expanded(child: maxField),
-      ],
+    return Align(
+      alignment: AlignmentDirectional.centerStart,
+      child: FractionallySizedBox(
+        widthFactor: 0.84,
+        alignment: AlignmentDirectional.centerStart,
+        child: Row(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Expanded(child: minField),
+            SizedBox(width: gap),
+            Expanded(child: maxField),
+          ],
+        ),
+      ),
     );
   }
 
@@ -139,12 +153,7 @@ mixin _HomePageMoreFiltersVehicle on _HomePageFilterBar {
     final anyLabelStyle = TextStyle(color: style.anyOrange);
 
     String brandLabel() {
-      if (selectedBrand == null || selectedBrand!.isEmpty) {
-        return loc.any;
-      }
-      final localized =
-          CarNameTranslations.getLocalizedBrand(context, selectedBrand);
-      return localized.isNotEmpty ? localized : selectedBrand!;
+      return _homeBrandFilterLabel(context);
     }
 
     return [
@@ -197,7 +206,7 @@ mixin _HomePageMoreFiltersVehicle on _HomePageFilterBar {
           ),
           child: Row(
             children: [
-              if (selectedBrand != null && selectedBrand!.isNotEmpty)
+              if (_homeSelectedBrands.length == 1)
                 Container(
                   width: 24,
                   height: 24,
@@ -208,7 +217,7 @@ mixin _HomePageMoreFiltersVehicle on _HomePageFilterBar {
                   padding: const EdgeInsets.all(2),
                   child: CachedNetworkImage(
                     imageUrl:
-                        '${getApiBase()}/static/images/brands/${brandLogoFilenames[selectedBrand] ?? selectedBrand!.toLowerCase().replaceAll(' ', '-')}.png',
+                        '${getApiBase()}/static/images/brands/${brandLogoFilenames[_homeSelectedBrands.first] ?? _homeSelectedBrands.first.toLowerCase().replaceAll(' ', '-')}.png',
                     placeholder: (context, url) => const SizedBox(
                       width: 16,
                       height: 16,
@@ -222,6 +231,8 @@ mixin _HomePageMoreFiltersVehicle on _HomePageFilterBar {
                     fit: BoxFit.contain,
                   ),
                 )
+              else if (_homeSelectedBrands.isNotEmpty)
+                Icon(Icons.layers_outlined, size: 20, color: style.anyOrange)
               else
                 Icon(Icons.directions_car, size: 20, color: style.anyOrange),
               const SizedBox(width: 8),
@@ -247,9 +258,9 @@ mixin _HomePageMoreFiltersVehicle on _HomePageFilterBar {
         style: TextStyle(color: dropdownInk, fontWeight: FontWeight.w600),
         value: selectedModel != null &&
                 selectedModel!.isNotEmpty &&
-                selectedBrand != null &&
-                models[selectedBrand] != null &&
-                models[selectedBrand]!.contains(selectedModel)
+                _homeSingleSelectedBrand != null &&
+                models[_homeSingleSelectedBrand] != null &&
+                models[_homeSingleSelectedBrand]!.contains(selectedModel)
             ? selectedModel
             : '',
         decoration: _moreFiltersVehicleFieldDecoration(
@@ -262,19 +273,20 @@ mixin _HomePageMoreFiltersVehicle on _HomePageFilterBar {
             value: '',
             child: Text(loc.any, style: anyLabelStyle),
           ),
-          if (selectedBrand != null && models[selectedBrand] != null)
-            ...models[selectedBrand]!.map(
+          if (_homeSingleSelectedBrand != null &&
+              models[_homeSingleSelectedBrand] != null)
+            ...models[_homeSingleSelectedBrand]!.map(
               (model) => DropdownMenuItem(
                 value: model,
                 child: Text(
                   CarNameTranslations.getLocalizedModel(
                             context,
-                            selectedBrand,
+                            _homeSingleSelectedBrand,
                             model,
                           ).isNotEmpty
                       ? CarNameTranslations.getLocalizedModel(
                           context,
-                          selectedBrand,
+                          _homeSingleSelectedBrand,
                           model,
                         )
                       : model,
@@ -283,7 +295,7 @@ mixin _HomePageMoreFiltersVehicle on _HomePageFilterBar {
               ),
             ),
         ],
-        onChanged: selectedBrand == null
+        onChanged: _homeSingleSelectedBrand == null
             ? null
             : (value) {
                 setState(() {
@@ -301,11 +313,12 @@ mixin _HomePageMoreFiltersVehicle on _HomePageFilterBar {
         style: TextStyle(color: dropdownInk, fontWeight: FontWeight.w600),
         value: selectedTrim != null &&
                 selectedTrim!.isNotEmpty &&
-                selectedBrand != null &&
+                _homeSingleSelectedBrand != null &&
                 selectedModel != null &&
-                trimsByBrandModel[selectedBrand] != null &&
-                trimsByBrandModel[selectedBrand]![selectedModel] != null &&
-                trimsByBrandModel[selectedBrand]![selectedModel]!
+                trimsByBrandModel[_homeSingleSelectedBrand] != null &&
+                trimsByBrandModel[_homeSingleSelectedBrand]![selectedModel] !=
+                    null &&
+                trimsByBrandModel[_homeSingleSelectedBrand]![selectedModel]!
                     .contains(selectedTrim)
             ? selectedTrim
             : '',
@@ -319,18 +332,19 @@ mixin _HomePageMoreFiltersVehicle on _HomePageFilterBar {
             value: '',
             child: Text(loc.any, style: anyLabelStyle),
           ),
-          if (selectedBrand != null &&
+          if (_homeSingleSelectedBrand != null &&
               selectedModel != null &&
-              trimsByBrandModel[selectedBrand] != null &&
-              trimsByBrandModel[selectedBrand]![selectedModel] != null)
-            ...trimsByBrandModel[selectedBrand]![selectedModel]!.map(
+              trimsByBrandModel[_homeSingleSelectedBrand] != null &&
+              trimsByBrandModel[_homeSingleSelectedBrand]![selectedModel] !=
+                  null)
+            ...trimsByBrandModel[_homeSingleSelectedBrand]![selectedModel]!.map(
               (trim) => DropdownMenuItem(
                 value: trim,
                 child: Text(trim, overflow: TextOverflow.ellipsis),
               ),
             ),
         ],
-        onChanged: selectedBrand == null || selectedModel == null
+        onChanged: _homeSingleSelectedBrand == null || selectedModel == null
             ? null
             : (value) {
                 setState(() {

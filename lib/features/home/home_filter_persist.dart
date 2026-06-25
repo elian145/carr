@@ -348,16 +348,18 @@ mixin _HomePageFilterPersist on _HomePageFilterCatalog {
 
   String _generateSearchName() {
     final parts = <String>[];
-    if (selectedBrand?.isNotEmpty == true) {
+    final brands = homeFilterDecodeList(selectedBrand);
+    for (final brand in brands) {
       parts.add(
-        CarNameTranslations.getLocalizedBrand(context, selectedBrand!),
+        CarNameTranslations.getLocalizedBrand(context, brand),
       );
     }
-    if (selectedModel?.isNotEmpty == true) {
+    final singleBrand = brands.length == 1 ? brands.first : null;
+    if (singleBrand != null && selectedModel?.isNotEmpty == true) {
       parts.add(
         CarNameTranslations.getLocalizedModel(
           context,
-          selectedBrand,
+          singleBrand,
           selectedModel!,
         ),
       );

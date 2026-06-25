@@ -27,15 +27,16 @@ mixin _HomePageFilterCatalog on _HomePageFetch {
 
   /// Spec rows for correlating engine ↔ cylinders in More Filters (cached per scope).
   List<OnlineSpecVariant> _homeMoreFiltersSpecVariants() {
-    final b = selectedBrand?.trim();
+    final b = homeFilterDecodeList(selectedBrand);
+    final singleBrand = b.length == 1 ? b.first.trim() : '';
     final m = selectedModel?.trim();
-    if (b == null || b.isEmpty || m == null || m.isEmpty) return const [];
+    if (singleBrand.isEmpty || m == null || m.isEmpty) return const [];
     final idx = _homeCarSpecIdx;
     if (idx == null) return const [];
     final trimKey = selectedTrim?.trim() ?? '';
     final yb = _homeFilterYearBounds();
     final key =
-        'sv|$b|\x1e|$m|\x1e|$trimKey|\x1e|${yb.minY ?? ''}|\x1e|${yb.maxY ?? ''}';
+        'sv|$singleBrand|\x1e|$m|\x1e|$trimKey|\x1e|${yb.minY ?? ''}|\x1e|${yb.maxY ?? ''}';
     if (_homeFilterSpecVariantsCacheKey == key &&
         _homeFilterSpecVariantsCache != null) {
       return _homeFilterSpecVariantsCache!;
@@ -44,7 +45,7 @@ mixin _HomePageFilterCatalog on _HomePageFetch {
         ? CarSpecIndex.catalogAutofillModelOnly
         : trimKey;
     final list = idx.homeFilterSpecVariantsUnion(
-      b,
+      singleBrand,
       m,
       appTrim,
       rangeMinYear: yb.minY,
@@ -178,9 +179,10 @@ mixin _HomePageFilterCatalog on _HomePageFetch {
   /// Catalog-backed engine/cylinder unions for the current brand + model (+ trim), or null.
   ({List<String> engines, List<String> cylinders})?
   _catalogMotorFilterOptions() {
-    final b = selectedBrand?.trim();
+    final brands = homeFilterDecodeList(selectedBrand);
+    final b = brands.length == 1 ? brands.first.trim() : '';
     final m = selectedModel?.trim();
-    if (b == null || b.isEmpty || m == null || m.isEmpty) return null;
+    if (b.isEmpty || m == null || m.isEmpty) return null;
     final idx = _homeCarSpecIdx;
     if (idx == null) return null;
     final trimKey = selectedTrim?.trim() ?? '';

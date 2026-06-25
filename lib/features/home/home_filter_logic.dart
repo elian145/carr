@@ -1,6 +1,50 @@
 part of 'home_flow.dart';
 
 mixin _HomePageFilterLogic on _HomePageFilterPersist {
+  List<String> get _homeSelectedBrands => homeFilterDecodeList(selectedBrand);
+
+  List<String> get _homeSelectedBodyTypes =>
+      homeFilterDecodeList(selectedBodyType);
+
+  String? get _homeSingleSelectedBrand =>
+      _homeSelectedBrands.length == 1 ? _homeSelectedBrands.first : null;
+
+  void _homeSetSelectedBrands(List<String> brands) {
+    selectedBrand = homeFilterEncodeList(brands);
+    if (brands.length != 1) {
+      selectedModel = null;
+      selectedTrim = null;
+    }
+  }
+
+  void _homeToggleBrand(String brand) {
+    _homeSetSelectedBrands(homeFilterToggleValue(_homeSelectedBrands, brand));
+  }
+
+  void _homeSetSelectedBodyTypes(List<String> types) {
+    selectedBodyType = homeFilterEncodeList(types);
+  }
+
+  void _homeToggleBodyType(String bodyType) {
+    if (bodyType == 'Any') {
+      _homeSetSelectedBodyTypes([]);
+      return;
+    }
+    _homeSetSelectedBodyTypes(
+      homeFilterToggleValue(_homeSelectedBodyTypes, bodyType),
+    );
+  }
+
+  String _homeBodyTypeFilterLabel(BuildContext context) {
+    final loc = AppLocalizations.of(context)!;
+    return homeFilterSummaryLabel(
+      loc.any,
+      _homeSelectedBodyTypes,
+      (bodyType) =>
+          _translateValueGlobal(context, bodyType) ?? bodyType,
+    );
+  }
+
   bool _hasActiveFilters() => _homeFiltersSnapshot().hasActiveFilters;
 
   // Helper method to clear all filters
@@ -103,16 +147,14 @@ mixin _HomePageFilterLogic on _HomePageFilterPersist {
       models: models,
       onBrandSelected: (brand) {
         setState(() {
-          selectedBrand = brand;
-          selectedModel = null;
-          selectedTrim = null;
+          _homeSetSelectedBrands([brand]);
           clearFiltersOnVehicleChange();
         });
         onFilterChanged();
       },
       onModelSelected: (brand, model) {
         setState(() {
-          selectedBrand = brand;
+          _homeSetSelectedBrands([brand]);
           selectedModel = model;
           selectedTrim = null;
           clearFiltersOnVehicleChange();
