@@ -1283,7 +1283,9 @@ mixin _HomePageSearchFiltersPageUi on _HomePageMoreFiltersDialog {
 
   Future<void> _openHomeSearchFiltersPage(BuildContext context) async {
     _syncMoreFiltersControllers();
-    final searchFiltersSnapshot = _searchFiltersPageSnapshot();
+    final revertSnapshot = <Map<String, dynamic>>[
+      _searchFiltersPageSnapshot(),
+    ];
     final applied = await Navigator.of(context).push<bool>(
       MaterialPageRoute<bool>(
         fullscreenDialog: true,
@@ -1298,7 +1300,7 @@ mixin _HomePageSearchFiltersPageUi on _HomePageMoreFiltersDialog {
                 canPop: true,
                 onPopInvokedWithResult: (bool didPop, dynamic result) {
                   if (didPop && result != true) {
-                    _cancelSearchFiltersPage(searchFiltersSnapshot);
+                    _cancelSearchFiltersPage(revertSnapshot.first);
                   }
                 },
                 child: Scaffold(
@@ -1337,6 +1339,8 @@ mixin _HomePageSearchFiltersPageUi on _HomePageMoreFiltersDialog {
                                   await _resetSearchFiltersPage(
                                     () => setStateDialog(() {}),
                                   );
+                                  revertSnapshot[0] =
+                                      _searchFiltersPageSnapshot();
                                 },
                                 child: Text(
                                   AppLocalizations.of(context)!.resetButton,
@@ -1406,8 +1410,9 @@ mixin _HomePageSearchFiltersPageUi on _HomePageMoreFiltersDialog {
       ),
     );
     if (!mounted) return;
-    if (applied == true) {
-      setState(() {});
+    setState(() {});
+    if (applied != true) {
+      onFilterChanged();
     }
   }
 }
