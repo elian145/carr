@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 
 import '../../../app/widgets/global_listing_card.dart'
     show buildGlobalCarCard, mapListingToGlobalCarCardData;
+import '../../../shared/ui/responsive.dart';
 
 /// Similar / related listings carousel on the detail page.
 class CarDetailsHorizontalList extends StatelessWidget {
@@ -58,22 +59,23 @@ class CarDetailsHorizontalList extends StatelessWidget {
       );
     }
 
+    final cardW = AppResponsive.homeGridListingCardWidth(context);
+    final cardH = AppResponsive.homeGridListingCardHeight(context);
+
     return SizedBox(
-      height: 320,
+      height: cardH,
       child: ListView.separated(
-        padding: const EdgeInsets.symmetric(horizontal: 2),
+        padding: const EdgeInsets.symmetric(horizontal: 4),
         scrollDirection: Axis.horizontal,
         itemCount: items.length,
-        separatorBuilder: (context, index) => const SizedBox(width: 12),
+        separatorBuilder: (context, index) => const SizedBox(width: 10),
         itemBuilder: (context, index) {
           final item = Map<String, dynamic>.from(items[index]);
           final normalized = mapListingToGlobalCarCardData(context, item);
           return SizedBox(
-            width: 200,
-            child: AspectRatio(
-              aspectRatio: 0.72,
-              child: buildGlobalCarCard(context, normalized),
-            ),
+            width: cardW,
+            height: cardH,
+            child: buildGlobalCarCard(context, normalized),
           );
         },
       ),

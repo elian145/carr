@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 
+import '../prefs/listing_layout_prefs.dart';
+
 /// Layout helpers so UI stays consistent and overflow-free across phone sizes.
 abstract final class AppResponsive {
   static const double _dialogHorizontalInset = 24;
@@ -60,13 +62,22 @@ abstract final class AppResponsive {
   }
 
   static double featuredCarouselHeight(BuildContext context) {
-    final h = screenSize(context).height;
-    return (h * 0.36).clamp(240, 300);
+    return homeGridListingCardHeight(context);
   }
 
   static double featuredCardWidth(BuildContext context) {
+    return homeGridListingCardWidth(context);
+  }
+
+  /// Matches a single cell in the home 2-column listing grid.
+  static double homeGridListingCardWidth(BuildContext context) {
     final w = screenSize(context).width;
-    return (w * 0.48).clamp(160, 196);
+    return ((w - 24) / 2).clamp(160, 210);
+  }
+
+  static double homeGridListingCardHeight(BuildContext context) {
+    final width = homeGridListingCardWidth(context);
+    return width / ListingLayoutPrefs.gridChildAspectRatio(2);
   }
 
   static double listingGridImageHeight(

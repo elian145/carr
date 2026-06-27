@@ -40,8 +40,11 @@ mixin _HomePageSliversFeatured on _HomePageSliversSearchBar {
                   final item = Map<String, dynamic>.from(featuredCars[index]);
                   final normalized =
                       mapListingToGlobalCarCardData(context, item);
+                  final cardW = AppResponsive.homeGridListingCardWidth(context);
+                  final cardH = AppResponsive.homeGridListingCardHeight(context);
                   return SizedBox(
-                    width: AppResponsive.featuredCardWidth(context),
+                    width: cardW,
+                    height: cardH,
                     child: buildGlobalCarCard(
                       context,
                       normalized,
