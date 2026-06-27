@@ -325,11 +325,8 @@ class AppHorizontalSlidePageTransitionsBuilder extends PageTransitionsBuilder {
     Animation<double> secondaryAnimation,
     Widget child,
   ) {
-    if (NavigationPopCoordinator.suppressNextRoutePopTransition &&
-        route.isCurrent) {
-      NavigationPopCoordinator.suppressNextRoutePopTransition = false;
-      return child;
-    }
+    final skipPopSlide = NavigationPopCoordinator.suppressNextRoutePopTransition &&
+        route.isCurrent;
 
     final slide = Tween<Offset>(
       begin: const Offset(1, 0),
@@ -351,14 +348,16 @@ class AppHorizontalSlidePageTransitionsBuilder extends PageTransitionsBuilder {
         final dragFraction = route.isCurrent
             ? (coordinator.dragDx / width).clamp(0.0, 1.0)
             : 0.0;
+        final slideOffset = skipPopSlide ? Offset.zero : slide.value;
         final offset = Offset(
-          slide.value.dx + dragFraction,
-          slide.value.dy,
+          slideOffset.dx + dragFraction,
+          slideOffset.dy,
         );
+        if (offset == Offset.zero) return child!;
         return FractionalTranslation(
           translation: offset,
           transformHitTests: true,
-          child: child,
+          child: child!,
         );
       },
       child: child,

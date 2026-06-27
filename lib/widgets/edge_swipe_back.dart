@@ -2,8 +2,8 @@ import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/scheduler.dart';
 
-/// When true, the next route pop skips the theme page transition (edge swipe
-/// already animated the dismiss).
+/// When true, the outgoing route keeps its edge-swipe offset and skips the
+/// theme pop slide until cleared after [Navigator.maybePop].
 class NavigationPopCoordinator {
   NavigationPopCoordinator._();
 
@@ -149,14 +149,12 @@ class _EdgeSwipeBackState extends State<EdgeSwipeBack>
         NavigationPopCoordinator.suppressNextRoutePopTransition = true;
         _settleController.stop();
         _settleAnimation = null;
-        _coordinator.reset();
+        // Keep drag offset until after pop so the page stays off-screen instead
+        // of snapping back (black flash) before the route is removed.
         nav.maybePop();
         SchedulerBinding.instance.addPostFrameCallback((_) {
-          if (mounted) {
-            _reset();
-          } else {
-            _reset();
-          }
+          NavigationPopCoordinator.suppressNextRoutePopTransition = false;
+          _reset();
         });
       },
     );
