@@ -195,7 +195,19 @@ Widget buildGlobalCarCard(
                     ),
                   ],
                 )
-              : Column(
+              : LayoutBuilder(
+                  builder: (context, constraints) {
+                    final bannerH = quickSell ? 35.0 : 0.0;
+                    const textReserve = 136.0;
+                    final maxImage = (constraints.maxHeight - bannerH - textReserve)
+                        .clamp(quickSell ? 100.0 : 120.0, 190.0);
+                    final imageH = AppResponsive.listingGridImageHeight(
+                      context,
+                      quickSell: quickSell,
+                      maxHeight: maxImage,
+                    );
+
+                    return Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   mainAxisSize: MainAxisSize.max,
                   children: [
@@ -238,10 +250,7 @@ Widget buildGlobalCarCard(
                       ),
                     // Image section
                     SizedBox(
-                      height: AppResponsive.listingGridImageHeight(
-                        context,
-                        quickSell: quickSell,
-                      ),
+                      height: imageH,
                       child: ClipRRect(
                         borderRadius: BorderRadius.vertical(
                           top:
@@ -260,23 +269,37 @@ Widget buildGlobalCarCard(
                       ),
                     ),
                     // Content section sits directly under the image (no spacer gap).
-                    Padding(
-                      padding: listingCardTextPadding,
-                      child: wrapCardTextTap(
-                        _buildGlobalCarCardInnerText(
-                          context,
-                          car,
-                          brandId: brandId,
-                          trimLine: trimLine,
-                          yearDisplay: yearDisplay,
-                          mileageDisplay: mileageDisplay,
-                          cityLine: cityLine,
-                          dividerLineColor: dividerLineColor,
-                          metaTextColor: metaTextColor,
+                    Expanded(
+                      child: Align(
+                        alignment: Alignment.topCenter,
+                        child: FittedBox(
+                          fit: BoxFit.scaleDown,
+                          alignment: Alignment.topCenter,
+                          child: SizedBox(
+                            width: constraints.maxWidth,
+                            child: Padding(
+                              padding: listingCardTextPadding,
+                              child: wrapCardTextTap(
+                                _buildGlobalCarCardInnerText(
+                                  context,
+                                  car,
+                                  brandId: brandId,
+                                  trimLine: trimLine,
+                                  yearDisplay: yearDisplay,
+                                  mileageDisplay: mileageDisplay,
+                                  cityLine: cityLine,
+                                  dividerLineColor: dividerLineColor,
+                                  metaTextColor: metaTextColor,
+                                ),
+                              ),
+                            ),
+                          ),
                         ),
                       ),
                     ),
                   ],
+                );
+                  },
                 );
 
   final titleForA11y = localizedCarTitleForCard(context, car);

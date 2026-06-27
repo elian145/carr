@@ -72,11 +72,22 @@ abstract final class AppResponsive {
   static double listingGridImageHeight(
     BuildContext context, {
     bool quickSell = false,
+    double? maxHeight,
   }) {
     final w = screenSize(context).width;
     final colW = (w - 24) / 2;
     final ratio = quickSell ? 0.62 : 0.88;
-    return (colW * ratio).clamp(quickSell ? 100.0 : 140.0, quickSell ? 130.0 : 190.0);
+    var height = (colW * ratio).clamp(
+      quickSell ? 100.0 : 140.0,
+      quickSell ? 130.0 : 190.0,
+    );
+    if (maxHeight != null && maxHeight.isFinite) {
+      height = height.clamp(
+        quickSell ? 100.0 : 120.0,
+        maxHeight.clamp(quickSell ? 100.0 : 120.0, 190.0),
+      );
+    }
+    return height;
   }
 
   static double previewHeroHeight(BuildContext context) {
