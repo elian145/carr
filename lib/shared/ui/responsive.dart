@@ -105,7 +105,8 @@ abstract final class AppResponsive {
     return (screenSize(context).height * 0.35).clamp(220, 300);
   }
 
-  static bool compactAppBarActions(BuildContext context) {
+  /// Tighter app bar button padding on narrow phones (labels always stay visible).
+  static bool narrowAppBar(BuildContext context) {
     return screenSize(context).width < 380;
   }
 
