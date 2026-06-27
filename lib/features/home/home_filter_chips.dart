@@ -138,6 +138,9 @@ HomeFiltersSnapshot _homeFilterRemoveListValue(
       final remaining = homeFilterDecodeList(filters.bodyType)
           .where((b) => b != value)
           .toList();
+      if (remaining.isEmpty) {
+        return filters.copyWith(clearBodyType: true);
+      }
       return filters.copyWith(
         bodyType: homeFilterEncodeList(remaining),
       );
@@ -145,6 +148,9 @@ HomeFiltersSnapshot _homeFilterRemoveListValue(
       final remaining = homeFilterDecodeList(filters.fuelType)
           .where((f) => f != value)
           .toList();
+      if (remaining.isEmpty) {
+        return filters.copyWith(clearFuelType: true);
+      }
       return filters.copyWith(
         fuelType: homeFilterEncodeList(remaining),
       );
@@ -152,6 +158,9 @@ HomeFiltersSnapshot _homeFilterRemoveListValue(
       final remaining = homeFilterDecodeList(filters.driveType)
           .where((d) => d != value)
           .toList();
+      if (remaining.isEmpty) {
+        return filters.copyWith(clearDriveType: true);
+      }
       return filters.copyWith(
         driveType: homeFilterEncodeList(remaining),
       );

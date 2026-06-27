@@ -1284,8 +1284,8 @@ mixin _HomePageSearchFiltersPageUi on _HomePageMoreFiltersDialog {
   Future<void> _openHomeSearchFiltersPage(BuildContext context) async {
     _syncMoreFiltersControllers();
     final searchFiltersSnapshot = _searchFiltersPageSnapshot();
-    await Navigator.of(context).push<void>(
-      MaterialPageRoute<void>(
+    final applied = await Navigator.of(context).push<bool>(
+      MaterialPageRoute<bool>(
         fullscreenDialog: true,
         builder: (pageContext) {
           return StatefulBuilder(
@@ -1405,5 +1405,9 @@ mixin _HomePageSearchFiltersPageUi on _HomePageMoreFiltersDialog {
         },
       ),
     );
+    if (!mounted) return;
+    if (applied == true) {
+      setState(() {});
+    }
   }
 }

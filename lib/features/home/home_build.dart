@@ -112,6 +112,7 @@ mixin _HomePageBuild on _HomePageSlivers {
                 controller: _homeScrollController,
                 slivers: [
                   _buildHomeSearchCityBarSliver(context),
+                  _buildHomeActiveFiltersSliver(context),
                   _buildFeaturedListingsSliver(context),
                   ..._buildHomeFeedSlivers(context),
                 ],

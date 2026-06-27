@@ -173,4 +173,30 @@ mixin _HomePageSliversSearchBar on _HomePageSearchFiltersPageUi {
       ),
     );
   }
+
+  Widget _buildHomeActiveFiltersSliver(BuildContext context) {
+    if (!_hasActiveFilters()) {
+      return const SliverToBoxAdapter(child: SizedBox.shrink());
+    }
+
+    final chips = _buildActiveFilterChips();
+    if (chips.isEmpty) {
+      return const SliverToBoxAdapter(child: SizedBox.shrink());
+    }
+
+    return SliverToBoxAdapter(
+      child: Padding(
+        padding: const EdgeInsets.fromLTRB(8, 0, 8, 6),
+        child: SizedBox(
+          height: 30,
+          child: ListView.separated(
+            scrollDirection: Axis.horizontal,
+            itemCount: chips.length,
+            separatorBuilder: (_, __) => const SizedBox(width: 6),
+            itemBuilder: (context, index) => chips[index],
+          ),
+        ),
+      ),
+    );
+  }
 }

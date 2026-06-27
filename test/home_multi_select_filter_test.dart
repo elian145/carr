@@ -57,4 +57,20 @@ void main() {
       expect(cleared.trim, isNull);
     });
   });
+
+  group('clearHomeFilterChip multi-select', () {
+    test('clearing last fuel type removes fuel filter entirely', () {
+      const filters = HomeFiltersSnapshot(fuelType: 'Gasoline');
+      final key = homeFilterChipItemKey('fuelType', 'Gasoline');
+      final cleared = clearHomeFilterChip(filters, key);
+      expect(cleared.fuelType, isNull);
+    });
+
+    test('clearing one of multiple fuel types keeps the rest', () {
+      const filters = HomeFiltersSnapshot(fuelType: 'Gasoline,Hybrid');
+      final key = homeFilterChipItemKey('fuelType', 'Gasoline');
+      final cleared = clearHomeFilterChip(filters, key);
+      expect(cleared.fuelType, 'Hybrid');
+    });
+  });
 }

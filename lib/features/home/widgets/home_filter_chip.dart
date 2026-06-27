@@ -22,35 +22,41 @@ class HomeFilterChip extends StatelessWidget {
     return Semantics(
       button: true,
       label: '${AppLocalizations.of(context)!.clearFilters}, $chipLabel',
-      child: GestureDetector(
-        onTap: onClear,
-        child: Container(
-          padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
-          decoration: BoxDecoration(
-            color: color.withValues(alpha: 0.2),
-            borderRadius: BorderRadius.circular(10),
-            border: Border.all(color: color, width: 1),
-          ),
-          child: Row(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              Icon(descriptor.icon, color: color, size: 10),
-              const SizedBox(width: 4),
-              Text(
-                chipLabel,
-                style: GoogleFonts.orbitron(
-                  fontSize: 9,
-                  color: color,
-                  fontWeight: FontWeight.bold,
-                  height: 1.0,
-                ),
-                maxLines: 1,
-                overflow: TextOverflow.ellipsis,
+      child: Container(
+        padding: const EdgeInsets.only(left: 8, top: 2, bottom: 2),
+        decoration: BoxDecoration(
+          color: color.withValues(alpha: 0.2),
+          borderRadius: BorderRadius.circular(10),
+          border: Border.all(color: color, width: 1),
+        ),
+        child: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Icon(descriptor.icon, color: color, size: 10),
+            const SizedBox(width: 4),
+            Text(
+              chipLabel,
+              style: GoogleFonts.orbitron(
+                fontSize: 9,
+                color: color,
+                fontWeight: FontWeight.bold,
+                height: 1.0,
               ),
-              const SizedBox(width: 4),
-              Icon(Icons.close, color: color, size: 9),
-            ],
-          ),
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
+            ),
+            Material(
+              color: Colors.transparent,
+              child: InkWell(
+                onTap: onClear,
+                borderRadius: BorderRadius.circular(8),
+                child: Padding(
+                  padding: const EdgeInsets.fromLTRB(4, 2, 6, 2),
+                  child: Icon(Icons.close, color: color, size: 12),
+                ),
+              ),
+            ),
+          ],
         ),
       ),
     );
