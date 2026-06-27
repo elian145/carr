@@ -1,4 +1,4 @@
-/// Comma-separated multi-value encoding for home filters (brand, body type).
+/// Comma-separated multi-value encoding for home filters (body type, fuel, drive).
 const String homeFilterListSeparator = ',';
 
 /// Separator between chip filter type and a single list item value.
@@ -11,6 +11,12 @@ List<String> homeFilterDecodeList(String? raw) {
       .map((s) => s.trim())
       .where((s) => s.isNotEmpty && s.toLowerCase() != 'any')
       .toList();
+}
+
+/// First value from a stored filter string (e.g. single brand from legacy multi).
+String? homeFilterDecodeSingle(String? raw) {
+  final values = homeFilterDecodeList(raw);
+  return values.isEmpty ? null : values.first;
 }
 
 String? homeFilterEncodeList(Iterable<String> values) {

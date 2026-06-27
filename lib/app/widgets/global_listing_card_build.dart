@@ -238,7 +238,10 @@ Widget buildGlobalCarCard(
                       ),
                     // Image section
                     SizedBox(
-                      height: quickSell ? 120 : 170,
+                      height: AppResponsive.listingGridImageHeight(
+                        context,
+                        quickSell: quickSell,
+                      ),
                       child: ClipRRect(
                         borderRadius: BorderRadius.vertical(
                           top:

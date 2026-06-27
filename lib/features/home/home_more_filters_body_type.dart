@@ -43,9 +43,7 @@ mixin _HomePageMoreFiltersBodyType on _HomePageMoreFiltersFuel {
               shape: RoundedRectangleBorder(
                 borderRadius: BorderRadius.circular(20),
               ),
-              child: Container(
-                width: 400,
-                padding: const EdgeInsets.all(20),
+              child: ResponsiveDialogBody(
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   mainAxisSize: MainAxisSize.min,
@@ -88,13 +86,18 @@ mixin _HomePageMoreFiltersBodyType on _HomePageMoreFiltersFuel {
                         ),
                       ),
                     SizedBox(
-                      height: 300,
+                      height: AppResponsive.dialogScrollHeight(
+                        context,
+                        preferred: 300,
+                        headerFooterReserve: 160,
+                      ),
                       child: GridView.builder(
                         shrinkWrap: true,
                         physics: const BouncingScrollPhysics(),
                         gridDelegate:
-                            const SliverGridDelegateWithFixedCrossAxisCount(
-                          crossAxisCount: 3,
+                            SliverGridDelegateWithFixedCrossAxisCount(
+                          crossAxisCount:
+                              AppResponsive.bodyTypeGridCrossAxisCount(context),
                           childAspectRatio: 0.82,
                           crossAxisSpacing: 12,
                           mainAxisSpacing: 12,

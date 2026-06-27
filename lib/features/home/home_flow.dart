@@ -54,6 +54,7 @@ import '../../shared/listings/transmission_type_assets.dart';
 import '../../shared/listings/transmission_filter.dart';
 import '../../shared/listings/engine_size_filter_options.dart';
 import '../../shared/prefs/listing_layout_prefs.dart';
+import '../../shared/ui/responsive.dart';
 import '../../theme_provider.dart';
 
 part 'home_page.dart';

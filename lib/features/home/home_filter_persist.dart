@@ -33,7 +33,7 @@ mixin _HomePageFilterPersist on _HomePageFilterCatalog {
   String? _filterStr(dynamic value) => homeFilterNormalizeStr(value);
 
   void _applyParsedHomeFilterFields(HomeFilterParsedFields parsed) {
-    selectedBrand = parsed.brand;
+    selectedBrand = homeFilterDecodeSingle(parsed.brand);
     selectedModel = parsed.model;
     selectedTrim = parsed.trim;
     selectedMinPrice = parsed.minPrice;
@@ -61,7 +61,7 @@ mixin _HomePageFilterPersist on _HomePageFilterCatalog {
   }
 
   void _applyHomeFiltersSnapshot(HomeFiltersSnapshot snap) {
-    selectedBrand = snap.brand;
+    selectedBrand = homeFilterDecodeSingle(snap.brand);
     selectedModel = snap.model;
     selectedTrim = snap.trim;
     selectedMinPrice = snap.minPrice;
@@ -348,18 +348,17 @@ mixin _HomePageFilterPersist on _HomePageFilterCatalog {
 
   String _generateSearchName() {
     final parts = <String>[];
-    final brands = homeFilterDecodeList(selectedBrand);
-    for (final brand in brands) {
+    final brand = homeFilterDecodeSingle(selectedBrand);
+    if (brand != null) {
       parts.add(
         CarNameTranslations.getLocalizedBrand(context, brand),
       );
     }
-    final singleBrand = brands.length == 1 ? brands.first : null;
-    if (singleBrand != null && selectedModel?.isNotEmpty == true) {
+    if (brand != null && selectedModel?.isNotEmpty == true) {
       parts.add(
         CarNameTranslations.getLocalizedModel(
           context,
-          singleBrand,
+          brand,
           selectedModel!,
         ),
       );

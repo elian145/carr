@@ -51,7 +51,7 @@ abstract class _HomePageFields extends State<HomePage> {
   String? selectedSortBy;
 
   HomeFiltersSnapshot _homeFiltersSnapshot() => HomeFiltersSnapshot(
-        brand: selectedBrand,
+        brand: homeFilterDecodeSingle(selectedBrand),
         model: selectedModel,
         trim: selectedTrim,
         minPrice: selectedMinPrice,

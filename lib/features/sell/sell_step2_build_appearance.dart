@@ -18,9 +18,7 @@ mixin _SellStep2BuildAppearance on _SellStep2BuildCore {
                         shape: RoundedRectangleBorder(
                           borderRadius: BorderRadius.circular(20),
                         ),
-                        child: Container(
-                          width: 400,
-                          padding: EdgeInsets.all(20),
+                        child: ResponsiveDialogBody(
                           child: Column(
                             crossAxisAlignment: CrossAxisAlignment.start,
                             mainAxisSize: MainAxisSize.min,
@@ -50,13 +48,20 @@ mixin _SellStep2BuildAppearance on _SellStep2BuildCore {
                               ),
                               SizedBox(height: 10),
                               SizedBox(
-                                height: 300,
+                                height: AppResponsive.dialogScrollHeight(
+                                  context,
+                                  preferred: 300,
+                                  headerFooterReserve: 100,
+                                ),
                                 child: GridView.builder(
                                   shrinkWrap: true,
                                   physics: BouncingScrollPhysics(),
                                   gridDelegate:
                                       SliverGridDelegateWithFixedCrossAxisCount(
-                                        crossAxisCount: 3,
+                                        crossAxisCount:
+                                            AppResponsive.bodyTypeGridCrossAxisCount(
+                                          context,
+                                        ),
                                         childAspectRatio: 0.82,
                                         crossAxisSpacing: 12,
                                         mainAxisSpacing: 12,
@@ -211,9 +216,7 @@ mixin _SellStep2BuildAppearance on _SellStep2BuildCore {
                         shape: RoundedRectangleBorder(
                           borderRadius: BorderRadius.circular(20),
                         ),
-                        child: Container(
-                          width: 400,
-                          padding: EdgeInsets.all(20),
+                        child: ResponsiveDialogBody(
                           child: Column(
                             crossAxisAlignment: CrossAxisAlignment.start,
                             mainAxisSize: MainAxisSize.min,
@@ -241,13 +244,20 @@ mixin _SellStep2BuildAppearance on _SellStep2BuildCore {
                               ),
                               SizedBox(height: 10),
                               SizedBox(
-                                height: 300,
+                                height: AppResponsive.dialogScrollHeight(
+                                  context,
+                                  preferred: 300,
+                                  headerFooterReserve: 100,
+                                ),
                                 child: GridView.builder(
                                   shrinkWrap: true,
                                   physics: BouncingScrollPhysics(),
                                   gridDelegate:
                                       SliverGridDelegateWithFixedCrossAxisCount(
-                                        crossAxisCount: 3,
+                                        crossAxisCount:
+                                            AppResponsive.bodyTypeGridCrossAxisCount(
+                                          context,
+                                        ),
                                         childAspectRatio: 1.2,
                                         crossAxisSpacing: 10,
                                         mainAxisSpacing: 10,

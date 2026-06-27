@@ -7,6 +7,7 @@ import '../features/comparison/state/car_comparison_store.dart';
 import '../l10n/app_localizations.dart';
 import '../services/auth_service.dart';
 import '../theme_provider.dart';
+import '../shared/ui/responsive.dart';
 import '../widgets/edge_swipe_back.dart';
 import 'carzo_shared.dart';
 import 'route_registry.dart';
@@ -46,9 +47,12 @@ class MyApp extends StatelessWidget {
             child: MaterialApp(
               navigatorKey: productionNavigatorKey,
               title: 'CarNet',
-              builder: (context, child) => EdgeSwipeBack(
-                navigatorKey: productionNavigatorKey,
-                child: child ?? const SizedBox.shrink(),
+              builder: (context, child) => AppResponsive.wrapApp(
+                context,
+                EdgeSwipeBack(
+                  navigatorKey: productionNavigatorKey,
+                  child: child ?? const SizedBox.shrink(),
+                ),
               ),
               locale: locale,
               supportedLocales: const [

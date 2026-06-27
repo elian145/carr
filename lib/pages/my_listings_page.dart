@@ -13,6 +13,7 @@ import '../shared/errors/user_error_text.dart';
 import '../shared/listings/listing_events.dart';
 import '../shared/listings/listing_identity.dart';
 import '../shared/prefs/sell_listing_draft_prefs.dart';
+import '../shared/ui/responsive.dart';
 import '../shared/prefs/sell_draft_media_persistence.dart';
 import '../shared/prefs/legacy_sell_draft_list.dart';
 import '../shared/text/pretty_title_case.dart';

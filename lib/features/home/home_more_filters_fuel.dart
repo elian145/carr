@@ -10,11 +10,18 @@ mixin _HomePageMoreFiltersFuel on _HomePageMoreFiltersMileage {
                             height:
                                 style.fieldGap,
                           ),
-                          DropdownButtonFormField<
-                            String
-                          >(
-                            initialValue:
-                                _getValidFuelTypeValue(),
+                          TextFormField(
+                            key: ValueKey(
+                              'fuel_${_homeSelectedFuelTypes.join(',')}',
+                            ),
+                            readOnly: true,
+                            style: TextStyle(
+                              color:
+                                  _homeSelectedFuelTypes.isNotEmpty
+                                  ? style.onSurface
+                                  : style.anyOrange,
+                            ),
+                            initialValue: _homeFuelTypeFilterLabel(context),
                             decoration: InputDecoration(
                               labelText:
                                   AppLocalizations.of(
@@ -35,49 +42,30 @@ mixin _HomePageMoreFiltersFuel on _HomePageMoreFiltersMileage {
                                       12,
                                     ),
                               ),
-                            ),
-                            items: [
-                              DropdownMenuItem(
-                                value: '',
-                                child: Text(
-                                  AppLocalizations.of(
-                                    context,
-                                  )!.any,
-                                  style: TextStyle(
-                                    color:
-                                        style.anyOrange,
-                                  ),
-                                ),
+                              suffixIcon: const Icon(
+                                Icons.local_gas_station,
+                                color: Color(0xFFFF6B00),
                               ),
-                              ...getAvailableFuelTypes()
-                                  .where(
-                                    (f) =>
-                                        f != 'Any',
-                                  )
-                                  .map(
-                                    (
-                                      f,
-                                    ) => DropdownMenuItem(
-                                      value: f,
-                                      child: Text(
-                                        _translateValueGlobal(
-                                              context,
-                                              f,
-                                            ) ??
-                                            f,
-                                      ),
-                                    ),
-                                  ),
-                            ],
-                            onChanged: (value) =>
-                                setState(
-                                  () =>
-                                      selectedFuelType =
-                                          value ==
-                                              ''
-                                          ? 'Any'
-                                          : value,
-                                ),
+                            ),
+                            onTap: () async {
+                              final fuelTypes =
+                                  await _showHomeMultiValuePickerDialog(
+                                context,
+                                title: AppLocalizations.of(
+                                  context,
+                                )!.fuelTypeLabel,
+                                options: getAvailableFuelTypes(),
+                                initialSelection: _homeSelectedFuelTypes,
+                                labelForOption: (ctx, value) =>
+                                    _translateValueGlobal(ctx, value) ??
+                                    value,
+                              );
+                              if (fuelTypes == null) return;
+                              setState(() {
+                                _homeSetSelectedFuelTypes(fuelTypes);
+                              });
+                              setStateDialog(() {});
+                            },
                           ),
       ];
 }

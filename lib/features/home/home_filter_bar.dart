@@ -44,7 +44,7 @@ mixin _HomePageFilterBar on _HomePageFilterBarBrand {
               ),
               child: Row(
                 children: [
-                  if (_homeSelectedBrands.length == 1)
+                  if (_homeSelectedBrand != null)
                     Container(
                       width: 24,
                       height: 24,
@@ -56,7 +56,7 @@ mixin _HomePageFilterBar on _HomePageFilterBarBrand {
                       padding: EdgeInsets.all(2),
                       child: CachedNetworkImage(
                         imageUrl:
-                            '${getApiBase()}/static/images/brands/${brandLogoFilenames[_homeSelectedBrands.first] ?? _homeSelectedBrands.first.toLowerCase().replaceAll(' ', '-')}.png',
+                            '${getApiBase()}/static/images/brands/${brandLogoFilenames[_homeSelectedBrand!] ?? _homeSelectedBrand!.toLowerCase().replaceAll(' ', '-')}.png',
                         placeholder: (context, url) =>
                             SizedBox(
                               width: 16,
@@ -80,12 +80,6 @@ mixin _HomePageFilterBar on _HomePageFilterBarBrand {
                             ),
                         fit: BoxFit.contain,
                       ),
-                    )
-                  else if (_homeSelectedBrands.isNotEmpty)
-                    Icon(
-                      Icons.layers_outlined,
-                      size: 20,
-                      color: Color(0xFFFF6B00),
                     )
                   else
                     Icon(

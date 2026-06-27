@@ -6,12 +6,19 @@ mixin _HomePageMoreFiltersSpecsDrive on _HomePageMoreFiltersMid {
     void Function(void Function()) setStateDialog,
     MoreFiltersDialogStyle style,
   ) => [
-                          // Drive Type Dropdown
-                          DropdownButtonFormField<
-                            String
-                          >(
-                            initialValue:
-                                _getValidDriveTypeValue(),
+                          // Drive Type multi-select
+                          TextFormField(
+                            key: ValueKey(
+                              'drive_${_homeSelectedDriveTypes.join(',')}',
+                            ),
+                            readOnly: true,
+                            style: TextStyle(
+                              color:
+                                  _homeSelectedDriveTypes.isNotEmpty
+                                  ? style.onSurface
+                                  : style.anyOrange,
+                            ),
+                            initialValue: _homeDriveTypeFilterLabel(context),
                             decoration: InputDecoration(
                               labelText:
                                   AppLocalizations.of(
@@ -32,48 +39,29 @@ mixin _HomePageMoreFiltersSpecsDrive on _HomePageMoreFiltersMid {
                                       12,
                                     ),
                               ),
-                            ),
-                            items: [
-                              DropdownMenuItem(
-                                value: '',
-                                child: Text(
-                                  AppLocalizations.of(
-                                    context,
-                                  )!.any,
-                                  style: TextStyle(
-                                    color:
-                                        style.anyOrange,
-                                  ),
-                                ),
+                              suffixIcon: const Icon(
+                                Icons.settings,
+                                color: Color(0xFFFF6B00),
                               ),
-                              ...getAvailableDriveTypes()
-                                  .where(
-                                    (d) =>
-                                        d != 'Any',
-                                  )
-                                  .map(
-                                    (
-                                      d,
-                                    ) => DropdownMenuItem(
-                                      value: d,
-                                      child: Text(
-                                        _translateValueGlobal(
-                                              context,
-                                              d,
-                                            ) ??
-                                            d,
-                                      ),
-                                    ),
-                                  ),
-                            ],
-                            onChanged: (value) {
-                              setState(
-                                () =>
-                                    selectedDriveType =
-                                        value == ''
-                                        ? null
-                                        : value,
+                            ),
+                            onTap: () async {
+                              final driveTypes =
+                                  await _showHomeMultiValuePickerDialog(
+                                context,
+                                title: AppLocalizations.of(
+                                  context,
+                                )!.driveType,
+                                options: getAvailableDriveTypes(),
+                                initialSelection: _homeSelectedDriveTypes,
+                                labelForOption: (ctx, value) =>
+                                    _translateValueGlobal(ctx, value) ??
+                                    value,
                               );
+                              if (driveTypes == null) return;
+                              setState(() {
+                                _homeSetSelectedDriveTypes(driveTypes);
+                              });
+                              setStateDialog(() {});
                               _persistFilters();
                             },
                           ),

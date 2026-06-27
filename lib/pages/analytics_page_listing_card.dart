@@ -73,30 +73,31 @@ mixin _AnalyticsPageListingCard on _AnalyticsPageLoad {
         return Dialog(
           backgroundColor: Colors.transparent,
           elevation: 0,
-          child: Container(
-            width: 360,
-            height: 600,
-            decoration: BoxDecoration(
-              borderRadius: BorderRadius.circular(24),
-              gradient: LinearGradient(
-                begin: Alignment.topLeft,
-                end: Alignment.bottomRight,
-                colors: [Colors.white, Colors.grey[50]!],
+          child: ResponsiveDialogShell(
+            preferredWidth: 360,
+            padding: EdgeInsets.zero,
+            child: Container(
+              decoration: BoxDecoration(
+                borderRadius: BorderRadius.circular(24),
+                gradient: LinearGradient(
+                  begin: Alignment.topLeft,
+                  end: Alignment.bottomRight,
+                  colors: [Colors.white, Colors.grey[50]!],
+                ),
+                boxShadow: [
+                  BoxShadow(
+                    color: Colors.black.withValues(alpha: 0.1),
+                    blurRadius: 30,
+                    offset: Offset(0, 10),
+                  ),
+                  BoxShadow(
+                    color: Colors.black.withValues(alpha: 0.05),
+                    blurRadius: 60,
+                    offset: Offset(0, 20),
+                  ),
+                ],
               ),
-              boxShadow: [
-                BoxShadow(
-                  color: Colors.black.withValues(alpha: 0.1),
-                  blurRadius: 30,
-                  offset: Offset(0, 10),
-                ),
-                BoxShadow(
-                  color: Colors.black.withValues(alpha: 0.05),
-                  blurRadius: 60,
-                  offset: Offset(0, 20),
-                ),
-              ],
-            ),
-            child: Column(
+              child: Column(
               children: [
                 // Modern header with gradient
                 Container(
@@ -396,6 +397,7 @@ mixin _AnalyticsPageListingCard on _AnalyticsPageLoad {
                   ),
                 ),
               ],
+            ),
             ),
           ),
         );

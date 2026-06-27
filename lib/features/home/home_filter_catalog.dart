@@ -27,8 +27,7 @@ mixin _HomePageFilterCatalog on _HomePageFetch {
 
   /// Spec rows for correlating engine ↔ cylinders in More Filters (cached per scope).
   List<OnlineSpecVariant> _homeMoreFiltersSpecVariants() {
-    final b = homeFilterDecodeList(selectedBrand);
-    final singleBrand = b.length == 1 ? b.first.trim() : '';
+    final singleBrand = homeFilterDecodeSingle(selectedBrand) ?? '';
     final m = selectedModel?.trim();
     if (singleBrand.isEmpty || m == null || m.isEmpty) return const [];
     final idx = _homeCarSpecIdx;
@@ -179,8 +178,7 @@ mixin _HomePageFilterCatalog on _HomePageFetch {
   /// Catalog-backed engine/cylinder unions for the current brand + model (+ trim), or null.
   ({List<String> engines, List<String> cylinders})?
   _catalogMotorFilterOptions() {
-    final brands = homeFilterDecodeList(selectedBrand);
-    final b = brands.length == 1 ? brands.first.trim() : '';
+    final b = homeFilterDecodeSingle(selectedBrand)?.trim() ?? '';
     final m = selectedModel?.trim();
     if (b.isEmpty || m == null || m.isEmpty) return null;
     final idx = _homeCarSpecIdx;

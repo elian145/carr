@@ -13,6 +13,7 @@ import '../../shared/i18n/listing_value_labels.dart';
 import '../../shared/i18n/locale_formatting.dart';
 import '../../shared/listings/listing_card_data.dart' as listing_card_data;
 import '../../shared/listings/listing_card_media.dart';
+import '../../shared/ui/responsive.dart';
 import '../../shared/listings/listing_status.dart';
 import '../../shared/listings/listing_sold_badge.dart';
 import '../../shared/media/media_url.dart';

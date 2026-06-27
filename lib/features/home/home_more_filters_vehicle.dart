@@ -11,16 +11,14 @@ mixin _HomePageMoreFiltersVehicle on _HomePageFilterBar {
       models: models,
       onBrandSelected: (brand) {
         setState(() {
-          _homeSetSelectedBrands([brand]);
-          selectedModel = null;
-          selectedTrim = null;
+          _homeSetSelectedBrand(brand);
           clearFiltersOnVehicleChange();
         });
         setStateDialog(() {});
       },
       onModelSelected: (brand, model) {
         setState(() {
-          _homeSetSelectedBrands([brand]);
+          _homeSetSelectedBrand(brand);
           selectedModel = model;
           selectedTrim = null;
           clearFiltersOnVehicleChange();
@@ -206,7 +204,7 @@ mixin _HomePageMoreFiltersVehicle on _HomePageFilterBar {
           ),
           child: Row(
             children: [
-              if (_homeSelectedBrands.length == 1)
+              if (_homeSelectedBrand != null)
                 Container(
                   width: 24,
                   height: 24,
@@ -217,7 +215,7 @@ mixin _HomePageMoreFiltersVehicle on _HomePageFilterBar {
                   padding: const EdgeInsets.all(2),
                   child: CachedNetworkImage(
                     imageUrl:
-                        '${getApiBase()}/static/images/brands/${brandLogoFilenames[_homeSelectedBrands.first] ?? _homeSelectedBrands.first.toLowerCase().replaceAll(' ', '-')}.png',
+                        '${getApiBase()}/static/images/brands/${brandLogoFilenames[_homeSelectedBrand!] ?? _homeSelectedBrand!.toLowerCase().replaceAll(' ', '-')}.png',
                     placeholder: (context, url) => const SizedBox(
                       width: 16,
                       height: 16,
@@ -231,8 +229,6 @@ mixin _HomePageMoreFiltersVehicle on _HomePageFilterBar {
                     fit: BoxFit.contain,
                   ),
                 )
-              else if (_homeSelectedBrands.isNotEmpty)
-                Icon(Icons.layers_outlined, size: 20, color: style.anyOrange)
               else
                 Icon(Icons.directions_car, size: 20, color: style.anyOrange),
               const SizedBox(width: 8),

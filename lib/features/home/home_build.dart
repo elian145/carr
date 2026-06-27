@@ -13,47 +13,59 @@ mixin _HomePageBuild on _HomePageSlivers {
         actions: [
           Padding(
             padding: const EdgeInsetsDirectional.only(end: 8),
-            child: OutlinedButton.icon(
-              onPressed: () => _openHomeSearchFiltersPage(context),
-              icon: const Icon(Icons.search, color: Colors.white),
-              label: Text(
-                AppLocalizations.of(context)!.homeSearchHeading,
-                style: const TextStyle(color: Colors.white),
-              ),
-              style: OutlinedButton.styleFrom(
-                side: const BorderSide(color: Colors.white70),
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(8),
-                ),
-                padding: const EdgeInsets.symmetric(horizontal: 12),
-              ),
-            ),
+            child: AppResponsive.compactAppBarActions(context)
+                ? IconButton(
+                    tooltip: AppLocalizations.of(context)!.homeSearchHeading,
+                    onPressed: () => _openHomeSearchFiltersPage(context),
+                    icon: const Icon(Icons.search, color: Colors.white),
+                  )
+                : OutlinedButton.icon(
+                    onPressed: () => _openHomeSearchFiltersPage(context),
+                    icon: const Icon(Icons.search, color: Colors.white),
+                    label: Text(
+                      AppLocalizations.of(context)!.homeSearchHeading,
+                      style: const TextStyle(color: Colors.white),
+                    ),
+                    style: OutlinedButton.styleFrom(
+                      side: const BorderSide(color: Colors.white70),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(8),
+                      ),
+                      padding: const EdgeInsets.symmetric(horizontal: 12),
+                    ),
+                  ),
           ),
           Padding(
             padding: const EdgeInsetsDirectional.only(
               end: NavigationToolbar.kMiddleSpacing,
             ),
-            child: OutlinedButton.icon(
-              onPressed: () {
-                // Same as leaving Home via bottom nav: keep scroll offset for return.
-                _persistCurrentHomeOffsetNow();
-                // Match former bottom-nav Sell: shell swap + SellEntryRouterPage
-                // (draft gate / resume / start fresh), not a raw SellCarPage push.
-                _switchMainTabNoAnimation(context, '/sell');
-              },
-              icon: Icon(Icons.add, color: Colors.white),
-              label: Text(
-                AppLocalizations.of(context)!.sellButton,
-                style: TextStyle(color: Colors.white),
-              ),
-              style: OutlinedButton.styleFrom(
-                side: BorderSide(color: Colors.white70),
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(8),
-                ),
-                padding: EdgeInsets.symmetric(horizontal: 12),
-              ),
-            ),
+            child: AppResponsive.compactAppBarActions(context)
+                ? IconButton(
+                    tooltip: AppLocalizations.of(context)!.sellButton,
+                    onPressed: () {
+                      _persistCurrentHomeOffsetNow();
+                      _switchMainTabNoAnimation(context, '/sell');
+                    },
+                    icon: const Icon(Icons.add, color: Colors.white),
+                  )
+                : OutlinedButton.icon(
+                    onPressed: () {
+                      _persistCurrentHomeOffsetNow();
+                      _switchMainTabNoAnimation(context, '/sell');
+                    },
+                    icon: Icon(Icons.add, color: Colors.white),
+                    label: Text(
+                      AppLocalizations.of(context)!.sellButton,
+                      style: TextStyle(color: Colors.white),
+                    ),
+                    style: OutlinedButton.styleFrom(
+                      side: BorderSide(color: Colors.white70),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(8),
+                      ),
+                      padding: EdgeInsets.symmetric(horizontal: 12),
+                    ),
+                  ),
           ),
         ],
       ),

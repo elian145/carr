@@ -30,7 +30,7 @@ mixin _HomePageSliversFeatured on _HomePageSliversSearchBar {
             ),
             const SizedBox(height: 8),
             SizedBox(
-              height: 300,
+              height: AppResponsive.featuredCarouselHeight(context),
               child: ListView.separated(
                 scrollDirection: Axis.horizontal,
                 padding: const EdgeInsets.symmetric(horizontal: 4),
@@ -41,7 +41,7 @@ mixin _HomePageSliversFeatured on _HomePageSliversSearchBar {
                   final normalized =
                       mapListingToGlobalCarCardData(context, item);
                   return SizedBox(
-                    width: 196,
+                    width: AppResponsive.featuredCardWidth(context),
                     child: buildGlobalCarCard(
                       context,
                       normalized,

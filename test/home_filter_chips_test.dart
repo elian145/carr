@@ -75,7 +75,7 @@ void main() {
         formatters: formatters,
       );
       expect(chips.map((c) => c.filterType), [
-        homeFilterChipItemKey('brand', 'Toyota'),
+        'brand',
         'model',
         'trim',
         'price',

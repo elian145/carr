@@ -153,7 +153,7 @@ class _SellReviewCarDetailScrollViewState
       slivers: [
         SliverToBoxAdapter(
           child: SizedBox(
-            height: 300,
+            height: AppResponsive.previewHeroHeight(context),
             child: ClipRRect(
               borderRadius: BorderRadius.zero,
               child: Stack(

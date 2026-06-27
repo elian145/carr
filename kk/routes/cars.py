@@ -328,12 +328,19 @@ def get_cars():
             )
         if transmission:
             query = query.filter(Car.transmission == transmission)
-        if drive_type:
-            query = query.filter(Car.drive_type.ilike(drive_type))
+        drive_types = _split_multi_filter(drive_type)
+        if drive_types:
+            query = query.filter(
+                or_(*[Car.drive_type.ilike(dt) for dt in drive_types])
+            )
         if engine_type:
             query = query.filter(Car.engine_type == engine_type)
         if fuel_type:
-            query = query.filter(Car.fuel_type.ilike(fuel_type))
+            fuel_types = _split_multi_filter(fuel_type)
+            if fuel_types:
+                query = query.filter(
+                    or_(*[Car.fuel_type.ilike(ft) for ft in fuel_types])
+                )
         if seating is not None:
             query = query.filter(Car.seating == seating)
         if cylinder_count is not None:
@@ -484,8 +491,11 @@ def get_cars_alias():
             )
         if transmission:
             query = query.filter(Car.transmission == transmission)
-        if drive_type:
-            query = query.filter(Car.drive_type == drive_type)
+        drive_types = _split_multi_filter(drive_type)
+        if drive_types:
+            query = query.filter(
+                or_(*[Car.drive_type.ilike(dt) for dt in drive_types])
+            )
         if engine_type:
             query = query.filter(Car.engine_type == engine_type)
 

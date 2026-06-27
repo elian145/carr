@@ -186,7 +186,7 @@ Map<String, String> homeFiltersToApiQuery(
     if (value != null && value.isNotEmpty) out[key] = value;
   }
 
-  put('brand', filters.brand);
+  put('brand', homeFilterDecodeSingle(filters.brand));
   put('model', filters.model);
   put('trim', filters.trim);
   put('min_price', filters.minPrice);
@@ -203,7 +203,12 @@ Map<String, String> homeFiltersToApiQuery(
     put('transmission', filters.transmission!.toLowerCase());
   }
   if (!HomeFiltersSnapshot._isAny(filters.fuelType)) {
-    put('fuel_type', filters.fuelType!.toLowerCase());
+    final fuelTypes = homeFilterDecodeList(filters.fuelType)
+        .map((f) => f.toLowerCase())
+        .toList();
+    if (fuelTypes.isNotEmpty) {
+      put('fuel_type', fuelTypes.join(homeFilterListSeparator));
+    }
   }
   if (!HomeFiltersSnapshot._isAny(filters.bodyType)) {
     final bodyTypes = homeFilterDecodeList(filters.bodyType)
@@ -217,7 +222,12 @@ Map<String, String> homeFiltersToApiQuery(
     put('color', filters.color!.toLowerCase());
   }
   if (!HomeFiltersSnapshot._isAny(filters.driveType)) {
-    put('drive_type', filters.driveType!.toLowerCase());
+    final driveTypes = homeFilterDecodeList(filters.driveType)
+        .map((d) => d.toLowerCase())
+        .toList();
+    if (driveTypes.isNotEmpty) {
+      put('drive_type', driveTypes.join(homeFilterListSeparator));
+    }
   }
   if (HomeFiltersSnapshot._has(filters.regionSpecs) &&
       isValidCarRegionSpecCode(filters.regionSpecs)) {
@@ -267,7 +277,7 @@ Map<String, dynamic> homeFiltersToSavedSearchJson(
     if (value != null && value.isNotEmpty) out[key] = value;
   }
 
-  put('brand', filters.brand);
+  put('brand', homeFilterDecodeSingle(filters.brand));
   put('model', filters.model);
   put('trim', filters.trim);
   put('min_price', filters.minPrice);
@@ -284,7 +294,12 @@ Map<String, dynamic> homeFiltersToSavedSearchJson(
     put('transmission', filters.transmission!.toLowerCase());
   }
   if (!HomeFiltersSnapshot._isAny(filters.fuelType)) {
-    put('fuel_type', filters.fuelType!.toLowerCase());
+    final fuelTypes = homeFilterDecodeList(filters.fuelType)
+        .map((f) => f.toLowerCase())
+        .toList();
+    if (fuelTypes.isNotEmpty) {
+      put('fuel_type', fuelTypes.join(homeFilterListSeparator));
+    }
   }
   if (!HomeFiltersSnapshot._isAny(filters.bodyType)) {
     final bodyTypes = homeFilterDecodeList(filters.bodyType)
@@ -298,7 +313,12 @@ Map<String, dynamic> homeFiltersToSavedSearchJson(
     put('color', filters.color!.toLowerCase());
   }
   if (!HomeFiltersSnapshot._isAny(filters.driveType)) {
-    put('drive_type', filters.driveType!.toLowerCase());
+    final driveTypes = homeFilterDecodeList(filters.driveType)
+        .map((d) => d.toLowerCase())
+        .toList();
+    if (driveTypes.isNotEmpty) {
+      put('drive_type', driveTypes.join(homeFilterListSeparator));
+    }
   }
   if (HomeFiltersSnapshot._has(filters.regionSpecs) &&
       isValidCarRegionSpecCode(filters.regionSpecs)) {

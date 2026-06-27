@@ -129,13 +129,10 @@ HomeFiltersSnapshot _homeFilterRemoveListValue(
 }) {
   switch (field) {
     case 'brand':
-      final remaining = homeFilterDecodeList(filters.brand)
-          .where((b) => b != value)
-          .toList();
       return filters.copyWith(
-        brand: homeFilterEncodeList(remaining),
-        clearModel: remaining.length != 1,
-        clearTrim: remaining.length != 1,
+        clearBrand: true,
+        clearModel: true,
+        clearTrim: true,
       );
     case 'bodyType':
       final remaining = homeFilterDecodeList(filters.bodyType)
@@ -143,6 +140,20 @@ HomeFiltersSnapshot _homeFilterRemoveListValue(
           .toList();
       return filters.copyWith(
         bodyType: homeFilterEncodeList(remaining),
+      );
+    case 'fuelType':
+      final remaining = homeFilterDecodeList(filters.fuelType)
+          .where((f) => f != value)
+          .toList();
+      return filters.copyWith(
+        fuelType: homeFilterEncodeList(remaining),
+      );
+    case 'driveType':
+      final remaining = homeFilterDecodeList(filters.driveType)
+          .where((d) => d != value)
+          .toList();
+      return filters.copyWith(
+        driveType: homeFilterEncodeList(remaining),
       );
     default:
       return filters;
@@ -273,21 +284,21 @@ List<HomeFilterChipDescriptor> buildHomeFilterChipDescriptors({
     );
   }
 
-  for (final brandValue in homeFilterDecodeList(filters.brand)) {
+  if (homeFilterChipValueActive(filters.brand)) {
+    final brandValue = homeFilterDecodeSingle(filters.brand)!;
     final brand = formatters.localizedBrand(brandValue);
     add(
       labels.brand,
       brand.isNotEmpty ? brand : brandValue,
-      homeFilterChipItemKey('brand', brandValue),
+      'brand',
       Icons.directions_car,
       brandOrange,
     );
   }
 
   if (homeFilterChipValueActive(filters.model)) {
-    final brandForModel = homeFilterDecodeList(filters.brand);
     final model = formatters.localizedModel(
-      brandForModel.length == 1 ? brandForModel.first : filters.brand,
+      homeFilterDecodeSingle(filters.brand),
       filters.model,
     );
     add(
@@ -372,11 +383,11 @@ List<HomeFilterChipDescriptor> buildHomeFilterChipDescriptors({
     );
   }
 
-  if (homeFilterChipValueActive(filters.fuelType)) {
+  for (final fuelValue in homeFilterDecodeList(filters.fuelType)) {
     add(
       labels.fuel,
-      formatters.translateValue(filters.fuelType),
-      'fuelType',
+      formatters.translateValue(fuelValue),
+      homeFilterChipItemKey('fuelType', fuelValue),
       Icons.local_gas_station,
       Colors.orange,
     );
@@ -422,11 +433,11 @@ List<HomeFilterChipDescriptor> buildHomeFilterChipDescriptors({
     );
   }
 
-  if (homeFilterChipValueActive(filters.driveType)) {
+  for (final driveValue in homeFilterDecodeList(filters.driveType)) {
     add(
       labels.driveType,
-      formatters.translateValue(filters.driveType),
-      'driveType',
+      formatters.translateValue(driveValue),
+      homeFilterChipItemKey('driveType', driveValue),
       Icons.directions_car,
       Colors.cyan,
     );

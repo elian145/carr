@@ -113,14 +113,15 @@ def car_matches_filters(car: Car, filters: dict[str, Any] | None) -> bool:
         if car_body not in body_types:
             return False
 
-    drive_type = _norm_str(filters.get("drive_type"))
-    if drive_type and drive_type not in ("any", "") and not _ilike_match(car.drive_type, drive_type):
-        return False
+    drive_types = _multi_values(filters.get("drive_type"))
+    if drive_types:
+        if not any(_ilike_match(car.drive_type, dt) for dt in drive_types):
+            return False
 
-    fuel_type = _norm_str(filters.get("fuel_type") or filters.get("engine_type"))
-    if fuel_type and fuel_type not in ("any", ""):
+    fuel_types = _multi_values(filters.get("fuel_type") or filters.get("engine_type"))
+    if fuel_types:
         ft = _norm_str(getattr(car, "fuel_type", None) or car.engine_type)
-        if ft != fuel_type and not _ilike_match(ft, fuel_type):
+        if not any(_ilike_match(ft, fuel) for fuel in fuel_types):
             return False
 
     color = _norm_str(filters.get("color"))

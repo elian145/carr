@@ -2,6 +2,7 @@ part of 'home_flow.dart';
 
 mixin _HomePageSearchFiltersPageUi on _HomePageMoreFiltersDialog {
   static const Color _searchAccent = Color(0xFFFF6B00);
+  static const IconData _searchAnyOptionIcon = Icons.grid_view_rounded;
 
   MoreFiltersDialogStyle _searchMoreFiltersStyle(BuildContext context) {
     final base = _moreFiltersStyle(context);
@@ -67,13 +68,14 @@ mixin _HomePageSearchFiltersPageUi on _HomePageMoreFiltersDialog {
               style,
             ),
           ),
-          _searchIconCardSection(
+          _searchMultiIconCardSection(
             context,
             setStateDialog,
             title: loc.fuelTypeLabel,
             options: fuelTypes,
-            selected: selectedFuelType,
-            onSelected: (v) => selectedFuelType = v ?? 'Any',
+            selectedValues: _homeSelectedFuelTypes,
+            onToggle: _homeToggleFuelType,
+            onClear: () => _homeSetSelectedFuelTypes([]),
             iconForOption: _searchFuelTypeIcon,
             labelForOption: (ctx, o) => _translateValueGlobal(ctx, o) ?? o,
             scrollHorizontally: true,
@@ -82,9 +84,10 @@ mixin _HomePageSearchFiltersPageUi on _HomePageMoreFiltersDialog {
             context,
             setStateDialog,
             title: loc.bodyTypeLabel,
-            options: bodyTypes.where((t) => t != 'Any').toList(),
+            options: bodyTypes,
             selectedValues: _homeSelectedBodyTypes,
             onToggle: _homeToggleBodyType,
+            onClear: () => _homeSetSelectedBodyTypes([]),
             iconForOption: _searchBodyTypeIcon,
             labelForOption: (ctx, o) => _translateValueGlobal(ctx, o) ?? o,
             scrollHorizontally: true,
@@ -97,13 +100,14 @@ mixin _HomePageSearchFiltersPageUi on _HomePageMoreFiltersDialog {
               style,
             ),
           ),
-          _searchIconCardSection(
+          _searchMultiIconCardSection(
             context,
             setStateDialog,
             title: loc.driveType,
             options: driveTypes,
-            selected: selectedDriveType,
-            onSelected: (v) => selectedDriveType = v,
+            selectedValues: _homeSelectedDriveTypes,
+            onToggle: _homeToggleDriveType,
+            onClear: () => _homeSetSelectedDriveTypes([]),
             iconForOption: _searchDriveTypeIcon,
             imageAssetForOption: driveTypeImageAsset,
             labelForOption: (ctx, o) => _translateValueGlobal(ctx, o) ?? o,
@@ -371,13 +375,13 @@ mixin _HomePageSearchFiltersPageUi on _HomePageMoreFiltersDialog {
     BuildContext context,
     void Function(void Function()) setStateDialog,
   ) async {
-    final brands = await _showHomeBrandMultiPickerDialog(
+    final brand = await _showHomeBrandPickerDialog(
       context,
-      initialSelection: _homeSelectedBrands,
+      initialBrand: _homeSelectedBrand,
     );
-    if (brands == null) return;
+    if (brand == null) return;
     setState(() {
-      _homeSetSelectedBrands(brands);
+      _homeSetSelectedBrand(brand.isEmpty ? null : brand);
       clearFiltersOnVehicleChange();
     });
     setStateDialog(() {});
@@ -391,7 +395,7 @@ mixin _HomePageSearchFiltersPageUi on _HomePageMoreFiltersDialog {
     final isLight = Theme.of(context).brightness == Brightness.light;
     final labelColor = isLight ? const Color(0xFF1A1A1A) : Colors.white;
     final featured = _searchFeaturedBrands();
-    final hasBrand = _homeSelectedBrands.isNotEmpty;
+    final hasBrand = _homeSelectedBrand != null;
     final hasModel =
         _homeSingleSelectedBrand != null &&
         selectedModel != null &&
@@ -414,7 +418,7 @@ mixin _HomePageSearchFiltersPageUi on _HomePageMoreFiltersDialog {
               valueSummary: _searchBrandLabel(context),
               onSummaryTap: () {
                   setState(() {
-                    _homeSetSelectedBrands([]);
+                    _homeSetSelectedBrand(null);
                     clearFiltersOnVehicleChange();
                   });
                   setStateDialog(() {});
@@ -478,7 +482,7 @@ mixin _HomePageSearchFiltersPageUi on _HomePageMoreFiltersDialog {
                     );
                   }
                   final brand = featured[index];
-                  final selected = _homeSelectedBrands.contains(brand);
+                  final selected = _homeSelectedBrand == brand;
                   final display = CarNameTranslations.getLocalizedBrand(
                             context,
                             brand,
@@ -529,7 +533,7 @@ mixin _HomePageSearchFiltersPageUi on _HomePageMoreFiltersDialog {
                 },
               ),
             ),
-            if (hasModel && _homeSingleSelectedBrand != null) ...[
+            if (hasBrand && _homeSingleSelectedBrand != null) ...[
               const SizedBox(height: 16),
               _searchSectionHeader(
                 context,
@@ -715,7 +719,7 @@ mixin _HomePageSearchFiltersPageUi on _HomePageMoreFiltersDialog {
   }
 
   IconData _searchBodyTypeIcon(String bodyType) {
-    if (bodyType == 'Any') return Icons.grid_view_rounded;
+    if (bodyType == 'Any') return _searchAnyOptionIcon;
     return homeFilterBodyTypeIcon(bodyType.toLowerCase());
   }
 
@@ -907,12 +911,16 @@ mixin _HomePageSearchFiltersPageUi on _HomePageMoreFiltersDialog {
       return _searchIconOptionTile(
         context,
         selected: isSelected,
-        icon: textOnly
+        icon: isAny
+            ? _searchAnyOptionIcon
+            : (textOnly
+                ? null
+                : (imageAssetForOption?.call(option) == null
+                    ? iconForOption?.call(option)
+                    : null)),
+        imageAsset: isAny
             ? null
-            : (imageAssetForOption?.call(option) == null
-                ? iconForOption?.call(option)
-                : null),
-        imageAsset: textOnly ? null : imageAssetForOption?.call(option),
+            : (textOnly ? null : imageAssetForOption?.call(option)),
         label: label,
         width: scrollHorizontally ? tileWidth : null,
         imageWidth: imageAssetForOption == null ? null : tileImageWidth,
@@ -991,6 +999,7 @@ mixin _HomePageSearchFiltersPageUi on _HomePageMoreFiltersDialog {
     required List<String> options,
     required List<String> selectedValues,
     required void Function(String value) onToggle,
+    required VoidCallback onClear,
     IconData Function(String option)? iconForOption,
     String? Function(String option)? imageAssetForOption,
     String Function(BuildContext, String)? labelForOption,
@@ -1005,17 +1014,24 @@ mixin _HomePageSearchFiltersPageUi on _HomePageMoreFiltersDialog {
     final loc = AppLocalizations.of(context)!;
 
     final tiles = options.map((option) {
-      final isSelected = selectedValues.contains(option);
-      final label = labelForOption?.call(context, option) ??
-          _translateValueGlobal(context, option) ??
-          option;
+      final isAny = option == 'Any';
+      final isSelected = isAny
+          ? selectedValues.isEmpty
+          : selectedValues.contains(option);
+      final label = isAny
+          ? loc.any
+          : (labelForOption?.call(context, option) ??
+              _translateValueGlobal(context, option) ??
+              option);
       return _searchIconOptionTile(
         context,
         selected: isSelected,
-        icon: imageAssetForOption?.call(option) == null
-            ? iconForOption?.call(option)
-            : null,
-        imageAsset: imageAssetForOption?.call(option),
+        icon: isAny
+            ? _searchAnyOptionIcon
+            : (imageAssetForOption?.call(option) == null
+                ? iconForOption?.call(option)
+                : null),
+        imageAsset: isAny ? null : imageAssetForOption?.call(option),
         label: label,
         width: scrollHorizontally ? tileWidth : null,
         imageWidth: imageAssetForOption == null ? null : tileImageWidth,
@@ -1023,7 +1039,11 @@ mixin _HomePageSearchFiltersPageUi on _HomePageMoreFiltersDialog {
         imageFit: tileImageFit,
         imageBorderRadius: tileImageBorderRadius,
         onTap: () {
-          setState(() => onToggle(option));
+          if (isAny) {
+            setState(onClear);
+          } else {
+            setState(() => onToggle(option));
+          }
           setStateDialog(() {});
         },
       );
@@ -1048,7 +1068,7 @@ mixin _HomePageSearchFiltersPageUi on _HomePageMoreFiltersDialog {
                     value,
               ),
               onSummaryTap: () {
-                setState(() => _homeSetSelectedBodyTypes([]));
+                setState(onClear);
                 setStateDialog(() {});
               },
             ),

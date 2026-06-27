@@ -5,6 +5,7 @@ import 'package:google_fonts/google_fonts.dart';
 import '../../data/brand_logo_filenames.dart';
 import '../../data/car_name_translations.dart';
 import '../../shared/i18n/legacy_inline_text.dart';
+import '../../shared/ui/responsive.dart';
 import '../app_api_base.dart';
 
 // Search Dialog Widget
@@ -125,10 +126,8 @@ class HomeSearchDialogState extends State<HomeSearchDialog> {
     return Dialog(
       backgroundColor: Colors.grey[900]?.withValues(alpha: 0.98),
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
-      child: Container(
-        width: 500,
-        height: 600,
-        padding: EdgeInsets.all(20),
+      child: ResponsiveDialogShell(
+        preferredWidth: 500,
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [

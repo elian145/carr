@@ -50,6 +50,7 @@ import '../../shared/prefs/sell_draft_media_persistence.dart';
 import '../../shared/prefs/sell_draft_step.dart';
 import '../../shared/text/pretty_title_case.dart';
 import '../../shared/ui/keyboard.dart';
+import '../../shared/ui/responsive.dart';
 import '../../theme_provider.dart';
 import 'sell_draft_helpers.dart' as sell_draft_helpers;
 import 'sell_listing_payload.dart';

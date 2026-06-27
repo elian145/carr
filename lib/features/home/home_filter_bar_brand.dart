@@ -1,34 +1,22 @@
 part of 'home_flow.dart';
 
 mixin _HomePageFilterBarBrand on _HomePageFilterLogic {
-  Future<List<String>?> _showHomeBrandMultiPickerDialog(
+  Future<String?> _showHomeBrandPickerDialog(
     BuildContext context, {
-    required List<String> initialSelection,
+    String? initialBrand,
   }) {
-    return showDialog<List<String>>(
+    return showDialog<String>(
       context: context,
       builder: (dialogContext) {
-        final selected = Set<String>.from(initialSelection);
+        String? selected = initialBrand;
         return StatefulBuilder(
           builder: (context, setDialogState) {
-            void toggle(String brand) {
-              setDialogState(() {
-                if (selected.contains(brand)) {
-                  selected.remove(brand);
-                } else {
-                  selected.add(brand);
-                }
-              });
-            }
-
             return Dialog(
               backgroundColor: Colors.grey[900]?.withValues(alpha: 0.98),
               shape: RoundedRectangleBorder(
                 borderRadius: BorderRadius.circular(20),
               ),
-              child: Container(
-                width: 400,
-                padding: const EdgeInsets.all(20),
+              child: ResponsiveDialogBody(
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   mainAxisSize: MainAxisSize.min,
@@ -46,8 +34,7 @@ mixin _HomePageFilterBarBrand on _HomePageFilterLogic {
                           ),
                         ),
                         TextButton(
-                          onPressed: () =>
-                              Navigator.pop(dialogContext, <String>[]),
+                          onPressed: () => Navigator.pop(dialogContext, ''),
                           child: Text(
                             AppLocalizations.of(context)!.any,
                             style: const TextStyle(color: Colors.white70),
@@ -59,30 +46,19 @@ mixin _HomePageFilterBarBrand on _HomePageFilterLogic {
                         ),
                       ],
                     ),
-                    if (selected.isNotEmpty)
-                      Padding(
-                        padding: const EdgeInsets.only(bottom: 8),
-                        child: Text(
-                          _trLegacyText(
-                            context,
-                            '${selected.length} selected',
-                            ar: '${selected.length} محدد',
-                            ku: '${selected.length} هەڵبژێردراو',
-                          ),
-                          style: const TextStyle(
-                            color: Colors.white70,
-                            fontSize: 13,
-                          ),
-                        ),
-                      ),
                     SizedBox(
-                      height: 380,
+                      height: AppResponsive.dialogScrollHeight(
+                        context,
+                        preferred: 380,
+                      ),
                       child: GridView.builder(
                         shrinkWrap: true,
                         physics: const BouncingScrollPhysics(),
                         gridDelegate:
-                            const SliverGridDelegateWithFixedCrossAxisCount(
-                          crossAxisCount: 4,
+                            SliverGridDelegateWithFixedCrossAxisCount(
+                          crossAxisCount: AppResponsive.pickerGridCrossAxisCount(
+                            context,
+                          ),
                           childAspectRatio: 0.85,
                           crossAxisSpacing: 10,
                           mainAxisSpacing: 10,
@@ -90,7 +66,7 @@ mixin _HomePageFilterBarBrand on _HomePageFilterLogic {
                         itemCount: homeBrands.length,
                         itemBuilder: (context, index) {
                           final brand = homeBrands[index];
-                          final isSelected = selected.contains(brand);
+                          final isSelected = selected == brand;
                           final logoFile =
                               brandLogoFilenames[brand] ??
                               brand
@@ -102,7 +78,8 @@ mixin _HomePageFilterBarBrand on _HomePageFilterLogic {
                               '${getApiBase()}/static/images/brands/$logoFile.png';
                           return InkWell(
                             borderRadius: BorderRadius.circular(12),
-                            onTap: () => toggle(brand),
+                            onTap: () =>
+                                Navigator.pop(dialogContext, brand),
                             child: Container(
                               decoration: BoxDecoration(
                                 color: Colors.black.withValues(alpha: 0.15),
@@ -174,27 +151,6 @@ mixin _HomePageFilterBarBrand on _HomePageFilterLogic {
                         },
                       ),
                     ),
-                    const SizedBox(height: 12),
-                    SizedBox(
-                      width: double.infinity,
-                      child: FilledButton(
-                        onPressed: () => Navigator.pop(
-                          dialogContext,
-                          selected.toList(),
-                        ),
-                        style: FilledButton.styleFrom(
-                          backgroundColor: const Color(0xFFFF6B00),
-                        ),
-                        child: Text(
-                          _trLegacyText(
-                            context,
-                            'Apply',
-                            ar: 'تطبيق',
-                            ku: 'جێبەجێکردن',
-                          ),
-                        ),
-                      ),
-                    ),
                   ],
                 ),
               ),
@@ -214,18 +170,15 @@ mixin _HomePageFilterBarBrand on _HomePageFilterLogic {
         CarNameTranslations.getLocalizedBrand(context, brand).isNotEmpty
             ? CarNameTranslations.getLocalizedBrand(context, brand)
             : brand;
-
     return showDialog<String>(
       context: context,
-      builder: (context) {
+      builder: (dialogContext) {
         return Dialog(
           backgroundColor: Colors.grey[900]?.withValues(alpha: 0.98),
           shape: RoundedRectangleBorder(
             borderRadius: BorderRadius.circular(20),
           ),
-          child: Container(
-            width: 400,
-            padding: const EdgeInsets.all(20),
+          child: ResponsiveDialogBody(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               mainAxisSize: MainAxisSize.min,
@@ -234,59 +187,34 @@ mixin _HomePageFilterBarBrand on _HomePageFilterLogic {
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
                     Expanded(
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Text(
-                            _trLegacyText(
-                              context,
-                              'Select Model',
-                              ar: 'اختر الموديل',
-                              ku: 'مۆدێل هەڵبژێرە',
-                            ),
-                            style: GoogleFonts.orbitron(
-                              color: const Color(0xFFFF6B00),
-                              fontWeight: FontWeight.bold,
-                              fontSize: 20,
-                            ),
-                          ),
-                          const SizedBox(height: 4),
-                          Text(
-                            localizedBrand,
-                            style: GoogleFonts.orbitron(
-                              color: Colors.white70,
-                              fontSize: 13,
-                              fontWeight: FontWeight.w600,
-                            ),
-                            maxLines: 1,
-                            overflow: TextOverflow.ellipsis,
-                          ),
-                        ],
+                      child: Text(
+                        localizedBrand,
+                        style: GoogleFonts.orbitron(
+                          color: const Color(0xFFFF6B00),
+                          fontWeight: FontWeight.bold,
+                          fontSize: 20,
+                        ),
                       ),
                     ),
                     IconButton(
                       icon: const Icon(Icons.close, color: Colors.white),
-                      onPressed: () => Navigator.pop(context),
+                      onPressed: () => Navigator.pop(dialogContext),
                     ),
                   ],
                 ),
-                const SizedBox(height: 10),
                 SizedBox(
-                  height: 380,
+                  height: AppResponsive.dialogScrollHeight(
+                    context,
+                    preferred: 380,
+                  ),
                   child: modelList.isEmpty
                       ? Center(
                           child: Text(
-                            _trLegacyText(
-                              context,
-                              'No models found',
-                              ar: 'لا توجد موديلات',
-                              ku: 'هیچ مۆدێلێک نەدۆزرایەوە',
-                            ),
+                            AppLocalizations.of(context)!.pleaseSelectModel,
                             style: const TextStyle(color: Colors.white70),
                           ),
                         )
                       : ListView.separated(
-                          physics: const BouncingScrollPhysics(),
                           itemCount: modelList.length,
                           separatorBuilder: (context, index) =>
                               const SizedBox(height: 8),
@@ -340,28 +268,15 @@ mixin _HomePageFilterBarBrand on _HomePageFilterLogic {
   }
 
   Future<void> _pickHomeBrand(BuildContext context) async {
-    final brands = await _showHomeBrandMultiPickerDialog(
+    final brand = await _showHomeBrandPickerDialog(
       context,
-      initialSelection: _homeSelectedBrands,
+      initialBrand: _homeSelectedBrand,
     );
-    if (brands == null) return;
+    if (brand == null) return;
     setState(() {
-      _homeSetSelectedBrands(brands);
+      _homeSetSelectedBrand(brand.isEmpty ? null : brand);
       clearFiltersOnVehicleChange();
     });
     onFilterChanged();
-  }
-
-  String _homeBrandFilterLabel(BuildContext context) {
-    final loc = AppLocalizations.of(context)!;
-    return homeFilterSummaryLabel(
-      loc.any,
-      _homeSelectedBrands,
-      (brand) {
-        final localized =
-            CarNameTranslations.getLocalizedBrand(context, brand);
-        return localized.isNotEmpty ? localized : brand;
-      },
-    );
   }
 }

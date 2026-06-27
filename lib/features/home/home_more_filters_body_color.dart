@@ -131,8 +131,7 @@ mixin _HomePageMoreFiltersColor on _HomePageMoreFiltersBodyType {
                                             20,
                                           ),
                                     ),
-                                    child: Container(
-                                      width: 400,
+                                    child: ResponsiveDialogBody(
                                       padding:
                                           EdgeInsets.all(
                                             20,
@@ -178,7 +177,11 @@ mixin _HomePageMoreFiltersColor on _HomePageMoreFiltersBodyType {
                                           ),
                                           SizedBox(
                                             height:
-                                                300,
+                                                AppResponsive.dialogScrollHeight(
+                                              dlgContext,
+                                              preferred: 300,
+                                              headerFooterReserve: 100,
+                                            ),
                                             child: GridView.builder(
                                               shrinkWrap:
                                                   true,
@@ -186,7 +189,9 @@ mixin _HomePageMoreFiltersColor on _HomePageMoreFiltersBodyType {
                                                   BouncingScrollPhysics(),
                                               gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
                                                 crossAxisCount:
-                                                    3,
+                                                    AppResponsive.bodyTypeGridCrossAxisCount(
+                                                  dlgContext,
+                                                ),
                                                 childAspectRatio:
                                                     1.2,
                                                 crossAxisSpacing:

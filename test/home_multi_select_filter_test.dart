@@ -25,29 +25,36 @@ void main() {
   });
 
   group('homeFiltersToApiQuery multi filters', () {
-    test('sends comma-separated brand and body_type', () {
+    test('sends comma-separated body_type fuel and drive', () {
       const f = HomeFiltersSnapshot(
-        brand: 'Toyota,BMW',
         bodyType: 'Sedan,SUV',
+        fuelType: 'Gasoline,Hybrid',
+        driveType: 'FWD,AWD',
       );
       final q = homeFiltersToApiQuery(f);
-      expect(q['brand'], 'Toyota,BMW');
       expect(q['body_type'], 'sedan,suv');
+      expect(q['fuel_type'], 'gasoline,hybrid');
+      expect(q['drive_type'], 'fwd,awd');
+    });
+
+    test('sends only first brand when legacy multi-brand value stored', () {
+      const f = HomeFiltersSnapshot(brand: 'Toyota,BMW');
+      final q = homeFiltersToApiQuery(f);
+      expect(q['brand'], 'Toyota');
     });
   });
 
-  group('clearHomeFilterChip multi brand', () {
-    test('removes one brand and keeps model when one brand remains', () {
+  group('clearHomeFilterChip brand', () {
+    test('clearing brand also clears model and trim', () {
       const filters = HomeFiltersSnapshot(
-        brand: 'Toyota,BMW',
+        brand: 'Toyota',
         model: 'Camry',
+        trim: 'LE',
       );
-      final cleared = clearHomeFilterChip(
-        filters,
-        homeFilterChipItemKey('brand', 'BMW'),
-      );
-      expect(cleared.brand, 'Toyota');
-      expect(cleared.model, 'Camry');
+      final cleared = clearHomeFilterChip(filters, 'brand');
+      expect(cleared.brand, isNull);
+      expect(cleared.model, isNull);
+      expect(cleared.trim, isNull);
     });
   });
 }

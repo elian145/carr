@@ -282,8 +282,10 @@ extension _MyListingsPageWidgets on _MyListingsPageState {
       builder: (context) {
         return AlertDialog(
           title: Text(loc?.analyticsTitle ?? 'Analytics'),
-          content: SizedBox(
-            width: 360,
+          content: ConstrainedBox(
+            constraints: BoxConstraints(
+              maxWidth: AppResponsive.dialogWidth(context, preferred: 360),
+            ),
             child: FutureBuilder<ListingAnalytics>(
               future: future,
               builder: (context, snapshot) {
