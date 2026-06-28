@@ -7,6 +7,7 @@ Widget buildGlobalCarCard(
   bool listLayout = false,
   int carouselResetSeed = 0,
   VoidCallback? onCardTap,
+  bool allowOwnerManagementOnOpen = false,
 }) {
   final brand = car['brand'] ?? '';
   final brandId =
@@ -84,7 +85,10 @@ Widget buildGlobalCarCard(
     Navigator.pushNamed(
       context,
       '/car_detail',
-      arguments: {'carId': carId},
+      arguments: {
+        'carId': carId,
+        if (allowOwnerManagementOnOpen) 'allowOwnerManagement': true,
+      },
     );
   }
 
@@ -153,6 +157,8 @@ Widget buildGlobalCarCard(
                                     car,
                                     carouselResetSeed: carouselResetSeed,
                                     enableDetailTap: onCardTap == null,
+                                    allowOwnerManagementOnOpen:
+                                        allowOwnerManagementOnOpen,
                                   ),
                                   if (showVideoCountBadge)
                                     Positioned(
@@ -265,6 +271,8 @@ Widget buildGlobalCarCard(
                           car,
                           carouselResetSeed: carouselResetSeed,
                           enableDetailTap: onCardTap == null,
+                          allowOwnerManagementOnOpen:
+                              allowOwnerManagementOnOpen,
                         ),
                       ),
                     ),

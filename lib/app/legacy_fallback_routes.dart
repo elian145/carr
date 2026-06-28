@@ -43,7 +43,10 @@ Map<String, WidgetBuilder> buildLegacyFallbackRoutes() {
       if (carId.isEmpty) {
         return navigationErrorScaffold('Missing listing id');
       }
-      return CarDetailsPage(carId: carId);
+      return CarDetailsPage(
+        carId: carId,
+        allowOwnerManagement: args?['allowOwnerManagement'] == true,
+      );
     },
     '/legacy_comparison': (context) => CarComparisonPage(),
     '/legacy_favorites': (context) =>

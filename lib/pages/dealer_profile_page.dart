@@ -26,7 +26,15 @@ part 'dealer_profile_page_helpers.dart';
 
 class DealerProfilePage extends StatefulWidget {
   final String dealerPublicId;
-  const DealerProfilePage({super.key, required this.dealerPublicId});
+
+  /// When false (default), the owner cannot edit from this browse view.
+  final bool allowOwnerEdit;
+
+  const DealerProfilePage({
+    super.key,
+    required this.dealerPublicId,
+    this.allowOwnerEdit = false,
+  });
 
   @override
   State<DealerProfilePage> createState() => _DealerProfilePageState();
@@ -242,7 +250,7 @@ class _DealerProfilePageState extends State<DealerProfilePage> {
                                 overflow: TextOverflow.ellipsis,
                               ),
                             ],
-                            if (isDealerOwner) ...[
+                            if (widget.allowOwnerEdit && isDealerOwner) ...[
                               const SizedBox(height: 10),
                               OutlinedButton.icon(
                                 onPressed: () async {

@@ -368,6 +368,7 @@ class _MyListingsPageState extends State<MyListingsPage> {
                                       context,
                                       mapped,
                                       listLayout: listingColumns == 1,
+                                      allowOwnerManagementOnOpen: true,
                                     );
 
                                     return _buildOwnedListingTile(

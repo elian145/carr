@@ -32,6 +32,7 @@ Widget _buildGlobalCardImageCarousel(
   Map car, {
   int carouselResetSeed = 0,
   bool enableDetailTap = true,
+  bool allowOwnerManagementOnOpen = false,
 }) {
   final slots = ListingCardMedia.collectFromCar(
     car,
@@ -90,7 +91,11 @@ Widget _buildGlobalCardImageCarousel(
                 Navigator.pushNamed(
                   context,
                   '/car_detail',
-                  arguments: {'carId': carId},
+                  arguments: {
+                    'carId': carId,
+                    if (allowOwnerManagementOnOpen)
+                      'allowOwnerManagement': true,
+                  },
                 );
               },
               child: pageView,

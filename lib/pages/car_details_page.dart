@@ -61,7 +61,16 @@ part 'car_details_page_build.dart';
 
 class CarDetailsPage extends StatefulWidget {
   final String carId;
-  const CarDetailsPage({super.key, required this.carId});
+
+  /// When false (default), owner edit/delete/sold controls are hidden — e.g. when
+  /// opened from the home browse feed. Set true from My Listings.
+  final bool allowOwnerManagement;
+
+  const CarDetailsPage({
+    super.key,
+    required this.carId,
+    this.allowOwnerManagement = false,
+  });
   @override
   State<CarDetailsPage> createState() => _CarDetailsPageState();
 }

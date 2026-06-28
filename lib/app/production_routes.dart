@@ -77,7 +77,11 @@ Map<String, WidgetBuilder> buildProductionRoutes() {
                   if (carId.isEmpty) {
                     return navigationErrorScaffold('Missing listing id');
                   }
-                  return CarDetailsPage(carId: carId);
+                  return CarDetailsPage(
+                    carId: carId,
+                    allowOwnerManagement:
+                        args?['allowOwnerManagement'] == true,
+                  );
                 },
                 '/tiktok_scroll': (context) {
                   final args = readRouteArgs(context);
@@ -200,7 +204,10 @@ Map<String, WidgetBuilder> buildProductionRoutes() {
                       ),
                     );
                   }
-                  return DealerProfilePage(dealerPublicId: dealerPublicId);
+                  return DealerProfilePage(
+                    dealerPublicId: dealerPublicId,
+                    allowOwnerEdit: args?['allowOwnerEdit'] == true,
+                  );
                 },
               };
 }

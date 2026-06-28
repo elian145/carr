@@ -20,6 +20,9 @@ mixin _CarDetailsPageOwner on _CarDetailsPageTitles {
     return isListingOwner(car, auth.userId);
   }
 
+  bool get _canManageOwnListing =>
+      widget.allowOwnerManagement && _isListingOwner;
+
   Future<void> _editOwnListing() async {
     final current = car;
     if (current == null) return;

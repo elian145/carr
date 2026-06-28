@@ -16,7 +16,7 @@ mixin _CarDetailsPageBuildHero on _CarDetailsPageContact {
                     ),
                   ),
                   actions: [
-                    if (_isListingOwner) ...[
+                    if (_canManageOwnListing) ...[
                       Semantics(
                         button: true,
                         label: _isListingSold
